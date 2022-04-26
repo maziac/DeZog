@@ -517,7 +517,6 @@ export class DebugSessionClass extends DebugSession {
 		// Setup the disassembler
 		DisassemblyClass.createDisassemblyInstance();
 		Disassembly.initWithCodeAdresses([], []);	// TODO: Allow to input a MAME trace file
-		this.forceDisassembly = true;
 
 		// Init
 		this.processingSteppingRequest = false;
@@ -886,8 +885,10 @@ export class DebugSessionClass extends DebugSession {
 		const pcLong = Remote.getPCLong();
 		const fetchAddresses = new Array<number>();
 		// Only do a disassembly if the PC address changed (stackTraceRequest might be called more than once)
+		console.log('longPcAddressesHistory=', this.longPcAddressesHistory);
 		const histLength = this.longPcAddressesHistory.length;
-		if (histLength == 0 || pcLong != this.longPcAddressesHistory[0]) {
+		if (this.forceDisassembly || histLength == 0 || pcLong != this.longPcAddressesHistory[0]) {
+			this.forceDisassembly = false;
 			//console.log('pcLong=', pcLong);
 			// If address is already in the list move it to the top.
 			const k = this.longPcAddressesHistory.indexOf(pcLong);
@@ -955,160 +956,157 @@ export class DebugSessionClass extends DebugSession {
 			}
 			*/
 
-			// Check if disassembly is required.
-			if (this.forceDisassembly) {	// TODO: REMOVE. Disassembel anyway each step.
-				// Do disassembly.
-				//this.forceDisassembly = false;	// TODO: Enable
+			// Do disassembly.
+			//this.forceDisassembly = false;	// TODO: remove
 
-				// Get BPs located in previous disassembly and assign the addresses.
-				const prevBpAddresses = this.getDisassemblyBreakpoints();
-				// Remove BPs temporary
-				const removeBps = prevBpAddresses.map(sbpAddr => sbpAddr.sbp);
-				vscode.debug.removeBreakpoints(removeBps);
+			// Get BPs located in previous disassembly and assign the addresses.
+			const prevBpAddresses = this.getDisassemblyBreakpoints();
+			// Remove BPs temporary
+			const removeBps = prevBpAddresses.map(sbpAddr => sbpAddr.sbp);
+			vscode.debug.removeBreakpoints(removeBps);
 
-				// Create text document
-				const absFilePath = DisassemblyClass.getAbsFilePath();
-				const uri = vscode.Uri.file(absFilePath);
-				try {
-					this.disasmTextDoc = await vscode.workspace.openTextDocument(uri);
-					// Delete all lines
-					//				const editDelete = new vscode.WorkspaceEdit();
-					//				editDelete.delete(uri, new vscode.Range(0, 0, 10000000, 0));
-					//				await vscode.workspace.applyEdit(editDelete);
-				}
-				catch (e) {
-					// If file does not exist, create it
-					const editCreate = new vscode.WorkspaceEdit();
-					editCreate.createFile(uri);
-					await vscode.workspace.applyEdit(editCreate);
-					this.disasmTextDoc = await vscode.workspace.openTextDocument(uri);
-				}
+			// Create text document
+			const absFilePath = DisassemblyClass.getAbsFilePath();
+			const uri = vscode.Uri.file(absFilePath);
+			try {
+				this.disasmTextDoc = await vscode.workspace.openTextDocument(uri);
+				// Delete all lines
+				//				const editDelete = new vscode.WorkspaceEdit();
+				//				editDelete.delete(uri, new vscode.Range(0, 0, 10000000, 0));
+				//				await vscode.workspace.applyEdit(editDelete);
+			}
+			catch (e) {
+				// If file does not exist, create it
+				const editCreate = new vscode.WorkspaceEdit();
+				editCreate.createFile(uri);
+				await vscode.workspace.applyEdit(editCreate);
+				this.disasmTextDoc = await vscode.workspace.openTextDocument(uri);
+			}
 
-				// Get previous disassembly text
-				const prevLines = this.disasmTextDoc.getText().split('\n');
-				//const prevLines = Disassembly.getDisassemblyLines();
-				//	const prevText = Disassembly.getDisassemblyText();
+			// Get previous disassembly text
+			const prevLines = this.disasmTextDoc.getText().split('\n');
+			//const prevLines = Disassembly.getDisassemblyLines();
+			//	const prevText = Disassembly.getDisassemblyText();
 
-				// Initialize disassembly
-				Disassembly.initWithCodeAdresses(fetchAddresses, memArray.ranges as Array<{address: number, data: Uint8Array}>);
+			// Initialize disassembly
+			Disassembly.initWithCodeAdresses(fetchAddresses, memArray.ranges as Array<{address: number, data: Uint8Array}>);
 
-				//Disassembly.addMemAndAddresses(memArray.ranges as Array<{address: number, data: Uint8Array}>, [...historyAddresses, ...fetchAddresses]);
+			//Disassembly.addMemAndAddresses(memArray.ranges as Array<{address: number, data: Uint8Array}>, [...historyAddresses, ...fetchAddresses]);
 
-				// Disassemble
-				Disassembly.disassemble();
-				// Read data
-				const text = Disassembly.getDisassemblyText();
+			// Disassemble
+			Disassembly.disassemble();
+			// Read data
+			const text = Disassembly.getDisassemblyText();
 
-				const fnamep = Utility.getRelTmpFilePath('disasm_real_p.list');
-				const fname = Utility.getRelTmpFilePath('disasm_real.list');
-				fs.copyFileSync(fname, fnamep)
-				fs.writeFileSync(fname, text);
+			const fnamep = Utility.getRelTmpFilePath('disasm_real_p.list');	// TODO: remove these files
+			const fname = Utility.getRelTmpFilePath('disasm_real.list');
+			fs.copyFileSync(fname, fnamep)
+			fs.writeFileSync(fname, text);
 
-				/*
-							let edit = new vscode.WorkspaceEdit();
-							edit.createFile(uri);
-							await vscode.workspace.applyEdit(edit);
-							let doc = await vscode.workspace.openTextDocument(uri);
-							await doc.save();
+			/*
+						let edit = new vscode.WorkspaceEdit();
+						edit.createFile(uri);
+						await vscode.workspace.applyEdit(edit);
+						let doc = await vscode.workspace.openTextDocument(uri);
+						await doc.save();
 
-							const t1 = doc.getText();
+						const t1 = doc.getText();
 
-							edit = new vscode.WorkspaceEdit();
-							edit.replace(uri, new vscode.Range(0, 0, 0, 0), 'replace1\n');
-							await vscode.workspace.applyEdit(edit);
-							await doc.save();
+						edit = new vscode.WorkspaceEdit();
+						edit.replace(uri, new vscode.Range(0, 0, 0, 0), 'replace1\n');
+						await vscode.workspace.applyEdit(edit);
+						await doc.save();
 
-							const t2 = doc.getText();
+						const t2 = doc.getText();
 
-							edit = new vscode.WorkspaceEdit();
-							edit.replace(uri, new vscode.Range(1, 0, 1, 0), 'replace2');
-							await vscode.workspace.applyEdit(edit);
-							await doc.save();
-				*/
+						edit = new vscode.WorkspaceEdit();
+						edit.replace(uri, new vscode.Range(1, 0, 1, 0), 'replace2');
+						await vscode.workspace.applyEdit(edit);
+						await doc.save();
+			*/
 
 
-				// Check for change in the disassembly text
-				const lines = Disassembly.getDisassemblyLines();
-				let options: IDiffComputerOpts = {
-					shouldPostProcessCharChanges: true,
-					shouldIgnoreTrimWhitespace: true,
-					shouldMakePrettyDiff: true,
-					shouldComputeCharChanges: true,
-					maxComputationTime: 0 // time in milliseconds, 0 => no computation limit.
-				}
-				//			lines.push('');
-				const diffComputer = new DiffComputer(prevLines, lines, options);
-				let lineChanges: ILineChange[] = diffComputer.computeDiff().changes;
-				if (lineChanges.length > 0) {
-					// Create and apply edits for the changes.
-					console.log("lineChanges:", lineChanges);
-					// Work from bottom to top
-					const uri = this.disasmTextDoc.uri;
-					//const edit = new vscode.WorkspaceEdit();
-					for (let i = lineChanges.length - 1; i >= 0; i--) {
-						// Get change
-						const change = lineChanges[i];
-						// Check kind of  change (Note: change-line-numbers are 1-based, vscode positions are 0-based)
-						const edit = new vscode.WorkspaceEdit();
+			// Check for change in the disassembly text
+			const lines = Disassembly.getDisassemblyLines();
+			let options: IDiffComputerOpts = {
+				shouldPostProcessCharChanges: true,	// TODO: Do I need all of this?
+				shouldIgnoreTrimWhitespace: true,
+				shouldMakePrettyDiff: true,
+				shouldComputeCharChanges: true,
+				maxComputationTime: 0 // time in milliseconds, 0 => no computation limit.
+			}
+			//			lines.push('');
+			const diffComputer = new DiffComputer(prevLines, lines, options);
+			let lineChanges: ILineChange[] = diffComputer.computeDiff().changes;
+			if (lineChanges.length > 0) {
+				// Create and apply edits for the changes.
+				console.log("lineChanges:", lineChanges);
+				// Work from bottom to top
+				const uri = this.disasmTextDoc.uri;
+				//const edit = new vscode.WorkspaceEdit();
+				for (let i = lineChanges.length - 1; i >= 0; i--) {
+					// Get change
+					const change = lineChanges[i];
+					// Check kind of  change (Note: change-line-numbers are 1-based, vscode positions are 0-based)
+					const edit = new vscode.WorkspaceEdit();
 
-						if (change.originalEndLineNumber == 0) {
-							// Get text to insert
-							const insertLines = lines.slice(change.modifiedStartLineNumber - 1, change.modifiedEndLineNumber);
-							let insertText = insertLines.join('\n') + '\n';
-							// Workaround: Some oddity in vscode: if appending ot last line it does not honor the new line, so we have to add one.
-							if (change.originalStartLineNumber >= prevLines.length)
-								insertText = '\n' + insertText;
-							// Insert after originalStartLineNumber
-							edit.insert(uri, new vscode.Position(change.originalStartLineNumber, 0), insertText);
+					if (change.originalEndLineNumber == 0) {
+						// Get text to insert
+						const insertLines = lines.slice(change.modifiedStartLineNumber - 1, change.modifiedEndLineNumber);
+						let insertText = insertLines.join('\n') + '\n';
+						// Workaround: Some oddity in vscode: if appending ot last line it does not honor the new line, so we have to add one.
+						if (change.originalStartLineNumber >= prevLines.length)
+							insertText = '\n' + insertText;
+						// Insert after originalStartLineNumber
+						edit.insert(uri, new vscode.Position(change.originalStartLineNumber, 0), insertText);
 
-							//console.log("prevlines=", prevLines);
-							//console.log("lines=", lines);
-							//console.log("insertlines=", insertLines);
-						}
-						else if (change.modifiedEndLineNumber == 0) {
-							// Remove
-							//if (lines.length > change.originalStartLineNumber)
-							{
-								edit.delete(uri, new vscode.Range(change.originalStartLineNumber - 1, 0, change.originalEndLineNumber, 0));
-							}
-						}
-						else {
-							// Get text to replace
-							let replaceText = '';
-							//	if (change.modifiedEndLineNumber > 0) {
-							const replaceLines = lines.slice(change.modifiedStartLineNumber - 1, change.modifiedEndLineNumber);
-							replaceText = replaceLines.join('\n') + '\n';
-							//	}
-							// Replace
-							edit.replace(uri, new vscode.Range(change.originalStartLineNumber - 1, 0, change.originalEndLineNumber, 0), replaceText);
-						}
-
-						await vscode.workspace.applyEdit(edit);	// TODO: change to overall applEdit
+						//console.log("prevlines=", prevLines);
+						//console.log("lines=", lines);
+						//console.log("insertlines=", insertLines);
 					}
-					// Apply changes
-					//		await vscode.workspace.applyEdit(edit);
-					// Save after edit (to be able to set breakpoints)
-					await this.disasmTextDoc.save();
-
-					// Check for error
-					const currentText = this.disasmTextDoc.getText();
-					if (currentText != text) {
-						// Error
-						this.showWarning('Disassembly text wrong!!!');
+					else if (change.modifiedEndLineNumber == 0) {
+						// Remove
+						//if (lines.length > change.originalStartLineNumber)
+						{
+							edit.delete(uri, new vscode.Range(change.originalStartLineNumber - 1, 0, change.originalEndLineNumber, 0));
+						}
+					}
+					else {
+						// Get text to replace
+						let replaceText = '';
+						//	if (change.modifiedEndLineNumber > 0) {
+						const replaceLines = lines.slice(change.modifiedStartLineNumber - 1, change.modifiedEndLineNumber);
+						replaceText = replaceLines.join('\n') + '\n';
+						//	}
+						// Replace
+						edit.replace(uri, new vscode.Range(change.originalStartLineNumber - 1, 0, change.originalEndLineNumber, 0), replaceText);
 					}
 
+					await vscode.workspace.applyEdit(edit);	// TODO: change to overall applEdit
+				}
+				// Apply changes
+				//		await vscode.workspace.applyEdit(edit);
+				// Save after edit (to be able to set breakpoints)
+				await this.disasmTextDoc.save();
+
+				// Check for error
+				const currentText = this.disasmTextDoc.getText();
+				if (currentText != text) {
+					// Error
+					this.showWarning('Disassembly text wrong!!!');
+				}
 
 
-					// Check all breakpoints
-					this.disassemblyReassignBreakpoints(prevBpAddresses);
 
-					// If disassembly text editor is open, then show decorations
-					const editors = vscode.window.visibleTextEditors;
-					for (const editor of editors) {
-						if (editor.document == this.disasmTextDoc) {
-							Decoration.setDisasmCoverageDecoration(editor);
-							// TODO: Check if coverage decorations still work.
-						}
+				// Check all breakpoints
+				this.disassemblyReassignBreakpoints(prevBpAddresses);
+
+				// If disassembly text editor is open, then show decorations
+				const editors = vscode.window.visibleTextEditors;
+				for (const editor of editors) {
+					if (editor.document == this.disasmTextDoc) {
+						Decoration.setDisasmCoverageDecoration(editor);
+						// TODO: Check if coverage decorations still work.
 					}
 				}
 			}
@@ -3702,16 +3700,11 @@ E.g. use "-help -view" to put the help text in an own view.
 			Remote.readListFiles(Settings.launch);
 
 			// Reset a few things
-			// TODO: E.g. code coverage, history ?
+			Decoration.clearAllDecorations();
+			StepHistory.init();	// Is only cleared because coverage is cleared (otherwise it looks inconsistent)
 
 			// Do disassembly anew
 			this.forceDisassembly = true;
-		//	DisassemblyClass.createDisassemblyInstance();
-
-			// Both do work: ThreadEvent or invalidatedEvent or even without
-			// this.sendEvent(new ThreadEvent('started', DebugSessionClass.THREAD_ID));
-//			this.sendEvent(new InvalidatedEvent(undefined, DebugSessionClass.THREAD_ID, 0));
-
 			this.sendEvent(new StoppedEvent("Labels reloaded", DebugSessionClass.THREAD_ID));
 		}
 		catch (e) {

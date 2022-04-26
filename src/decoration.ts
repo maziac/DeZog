@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
 import {Labels, SourceFileEntry} from './labels/labels';
-//import {Log} from './log';
-//import { Settings } from './settings';
 import {Disassembly, DisassemblyClass} from './disassembly/disassembly';
 import {UnifiedPath} from './misc/unifiedpath';
 import {Utility} from './misc/utility';
@@ -27,7 +25,7 @@ class DecorationFileMap {
 
 /**
  * A singleton that holds the editor decorations for code coverage,
- * reverse debugging andother decorations, e.g. 'break'.
+ * reverse debugging and other decorations, e.g. 'break'.
  *
  * Decorations are tedious to handle.
  * If an editor becomes inactive (hidden) it looses its decorations
@@ -36,7 +34,7 @@ class DecorationFileMap {
  * - and to store the decorations for each document/editor
  * This means: decoration are added to the editor as soon as they occur and also
  * whenever the active editor changes.
- * What makes it even more complicated is the fact that the disasm.asm file may not even exist
+ * What makes it even more complicated is the fact that the disasm.list file may not even exist
  * when a decoration comes in. And, furthermore, the file may exist already but change
  * its contents.
  * The disasm.list is created during the stackTraceRequest.
