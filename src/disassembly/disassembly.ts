@@ -154,6 +154,8 @@ export class DisassemblyClass extends Disassembler {
 		this.equsInDisassembly = false;
 		this.orgInDisassembly = false;
 		this.numberOfLinesBetweenBlocks = 2;
+		this.numberOfDefbBytes = 4;
+		this.addDefbComments = true;
 		// Disassemble
 		super.disassemble();
 		// Get address/line relationship.

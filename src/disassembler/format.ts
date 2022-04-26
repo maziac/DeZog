@@ -22,23 +22,6 @@ export class Format {
 
 
 	/**
-	 * Adds spaces to the end of the string until the given total length
-	 * is reached.
-	 * @param s The string.
-	 * @param totalLength The total filled length of the resulting string
-	 * @returns s + ' ' (several spaces)
-	 */
-	public static addSpaces(s: string, totalLength: number): string {
-		const countString = s.length;
-		const repeat = totalLength - countString;
-		if (repeat <= 0)
-			return s;
-		const res = s + ' '.repeat(repeat);
-		return res;
-	}
-
-
-	/**
 	 * Puts together a few common conversions for a byte value.
 	 * E.g. decimal and ASCII.
 	 * Used to create the comment for an opcode or a data label.
@@ -118,7 +101,7 @@ export class Format {
 		if (clmnsAddress > 0) {
 			if (!addrString)
 				addrString = Format.getHexString(address);
-			line = Format.addSpaces(addrString + ' ', clmnsAddress);
+			line = addrString.padEnd(clmnsAddress);
 		}
 
 		// Add bytes of opcode?
@@ -129,14 +112,14 @@ export class Format {
 				bytesString += Format.getHexString(memVal, 2) + ' ';
 			}
 		}
-		line += Format.addSpaces(bytesString, clmnsBytes);
+		line += bytesString.padEnd(clmnsBytes) + ' ';	// Should end with 2 spaces
 
 		// Add opcode (or defb)
 		const arr = mainString.split(' ');
 		assert(arr.length > 0, 'formatDisassembly');
-		arr[0] = Format.addSpaces(arr[0], clmnsOpcodeFirstPart - 1);	// 1 is added anyway when joining
-		let resMainString = arr.join(' ');
-		resMainString = Format.addSpaces(resMainString + ' ', clmsnOpcodeTotal);
+		arr[0] = arr[0].padEnd(clmnsOpcodeFirstPart - 1);	// 1 is added anyway when joining
+		let resMainString = arr.join(' ') + ' ';
+		resMainString = resMainString.padEnd(clmsnOpcodeTotal);
 
 		line += resMainString;
 

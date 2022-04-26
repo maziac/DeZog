@@ -90,6 +90,13 @@ export class Disassembler extends EventEmitter {
 	/// Choose to add the opcode bytes also, e.g. "CB 01" for "RLC C"
 	public addOpcodeBytes = true;
 
+	/// Adds a comment after the DEFB output that contains the hex values changed to ASCII if possible
+	public addDefbComments = true;
+
+	/// Number of bytes that are grouped in one line for a DEFB data output
+	public numberOfDefbBytes = 16;
+
+
 	/// Label prefixes
 	public labelSubPrefix = "SUB";
 	public labelLblPrefix = "LBL";
@@ -597,7 +604,7 @@ export class Disassembler extends EventEmitter {
 					firstLabel = false;
 				}
 				// "Disassemble"
-				const statement = Format.addSpaces(label.name + ':', this.clmnsBytes - 1) + ' ' + this.rightCase('EQU ') + Format.getHexString(address, 4).padStart(5, ' ') + 'h';
+				const statement = (label.name + ':').padEnd(this.clmnsBytes - 1) + ' ' + this.rightCase('EQU ') + Format.getHexString(address, 4).padStart(5, ' ') + 'h';
 				// Comment
 				const comment = this.addressComments.get(address);
 				const commentLines = Comment.getLines(comment, statement, this.commentsInDisassembly);
@@ -2215,9 +2222,9 @@ export class Disassembler extends EventEmitter {
 					// Add label on separate line
 					let labelLine = addrLabel.name + ':';
 					if (this.clmnsAddress > 0) {
-						labelLine = Format.addSpaces(Format.getHexString(address), this.clmnsAddress) + labelLine;
+						labelLine = Format.getHexString(address).padEnd(this.clmnsAddress) + labelLine;
 						if (this.DBG_ADD_DEC_ADDRESS) {
-							labelLine = Format.addSpaces(address.toString(), 5) + ' ' + labelLine;
+							labelLine = address.toString().padEnd(5) + ' ' + labelLine;
 						}
 					}
 
@@ -2230,6 +2237,7 @@ export class Disassembler extends EventEmitter {
 				let addAddress;
 				let line;
 				let commentText;
+
 				if (attr & MemAttribute.CODE) {
 					// CODE
 
@@ -2248,24 +2256,47 @@ export class Disassembler extends EventEmitter {
 					if (!(prevMemoryAttribute & MemAttribute.DATA))
 						this.addEmptyLines(lines);
 
+					// Store first byte
+					const memValue = this.memory.getValueAt(address);
+					const bytes = new Array<number>();
+					bytes.push(memValue);
+
+					// Read a block of data for one line (if possible)
+					let j = 1;
+					for (; j < this.numberOfDefbBytes; j++) {
+						// Check attribute
+						const addr = (address + j) & 0xFFFF;
+						const nextAttr = this.memory.getAttributeAt(addr);
+						if (!(nextAttr & MemAttribute.ASSIGNED) || (nextAttr & MemAttribute.CODE)) {
+							// Leave if not assigned or CODE
+							break;
+						}
+
+						// Read memory value at address
+						const memValue = this.memory.getValueAt(addr);
+						bytes.push(memValue);
+
+						// Next
+						attr = nextAttr;
+					}
 					// Turn memory to data memory
 					attr |= MemAttribute.DATA;
-
-					// Read memory value at address
-					let memValue = this.memory.getValueAt(address);
-
+					addAddress = j;
+					
 					// Disassemble the data line
-					let mainString = this.rightCase('DEFB ') + Format.getHexString(memValue, 2) + 'h';	// TODO: Output better as ASCII
-					commentText = Format.getVariousConversionsForByte(memValue);
-					line = this.formatDisassembly(address, 1, mainString);
-
-					// Next address
-					addAddress = 1;
+					//const mainString = this.rightCase('DEFB ') + Format.getHexString(memValue, 2) + 'h';
+					const mainString = 'DEFB ' + bytes.map(value =>
+					'$' + Format.getHexString(value, 2)).join(' ');
+					line = this.formatDisassembly(address, j, mainString);
+					if (this.addDefbComments) {
+						commentText = this.getDefbComment(bytes);
+						line += '\t; ' + commentText;
+					}
 				}
 
 				// Debug
 				if (this.DBG_ADD_DEC_ADDRESS) {
-					line = Format.addSpaces(address.toString(), 5) + ' ' + line;
+					line = address.toString().padEnd(5) + ' ' + line;
 				}
 
 				// If not done before, add comments
@@ -2695,5 +2726,72 @@ export class Disassembler extends EventEmitter {
 		return text;
 	}
 
-}
 
+	/**
+	 * Formats a series of bytes into a comment string.
+	 * @param bytes An array with bytes.
+	 * @returns All hex data is converted to ASCII. Non-printable cahracters are displayed as '?'.
+	 * E.g. 'mystring'
+	 */
+	protected getDefbComment(bytes: number[]): string {
+		let result = '';
+		for (const byte of bytes) {
+			// Check if printable ASCII
+			const printable = (byte >= 0x20) && (byte < 0x80);
+			// Add to string
+			if (printable) {
+				const c = String.fromCharCode(byte);
+				result += c;
+			}
+			else {
+				// Non-printable
+				result += '?'
+			}
+		}
+		// Return
+		return "ASCII: " + result + "'";
+	}
+
+
+	/**
+	 * Formats a series of bytes into a comment string.
+	 * @param bytes An array with bytes.
+	 * @returns A disassembled line starting a string that contains
+	 * the data as hex or as string.
+	 * E.g. '$FA, 'mystring', $00
+	 */
+	/*
+	protected getDefbComment(bytes: number[]): string {
+		let s = '';
+		let result = '';
+		let sep = '';
+		for (const byte of bytes) {
+			// Check if printable ASCII
+			const printable = (byte >= 0x20) && (byte < 0x80);
+			// Add to string
+			if (s && !printable) {
+				result += sep + "'" + s + "'";
+				s = '';
+			}
+			if (printable) {
+				const c = String.fromCharCode(byte);
+				if (c == "'")
+					s += "\\'";
+				else
+					s += c;
+			}
+			else {
+				result += sep + '$' + Format.getHexString(byte, 2);
+			}
+
+			// Next
+			sep = ', ';
+		}
+		// If something is missing
+		if (s)
+			result += sep + s;
+		// Return
+		return result;
+	}
+	*/
+}
