@@ -70,7 +70,7 @@ export class Opcode {
 		if (Opcode.convertToLabelHandler)
 			valueString = Opcode.convertToLabelHandler(value);
 		if (!valueString) {
-			valueString = Format.getHexString(value) + 'h';
+			valueString = Format.getHexFormattedString(value);
 		}
 		return valueString;
 	}
@@ -427,7 +427,7 @@ export class Opcode {
 		}
 		else if (this.valueType == NumberType.CODE_RST) {
 			// Use value instead of label (looks better)
-			valueName = Format.getHexString(this.value, 2) + 'h';
+			valueName = Format.getHexFormattedString(this.value, 2);
 		}
 		else {
 			// Use direct value
@@ -435,12 +435,12 @@ export class Opcode {
 			// Add comment
 			if (this.valueType == NumberType.NUMBER_BYTE) {
 				// byte
-				valueName = Format.getHexString(val, 2) + 'h';
+				valueName = Format.getHexFormattedString(val, 2);
 				comment = Format.getVariousConversionsForByte(val);
 			}
 			else {
 				// word
-				valueName = Format.getHexString(val, 4) + 'h';
+				valueName = Format.getHexFormattedString(val, 4);
 				comment = Format.getVariousConversionsForWord(val);
 			}
 		}
@@ -582,7 +582,7 @@ class OpcodeIndexImmediate extends Opcode {
 		const dasm = super.disassemble(memory);
 		// Results e.g. in "LD (IX+6),%s"
 
-		const valueName = Format.getHexString(this.secondValue, 2) + 'h';
+		const valueName = Format.getHexFormattedString(this.secondValue, 2);
 		const comment = Format.getVariousConversionsForByte(this.secondValue);
 		const dasm2 = util.format(dasm.mnemonic, valueName);
 		return {mnemonic: dasm2, comment};
@@ -779,7 +779,7 @@ class OpcodeNext_nextreg_n_a extends OpcodeNext {	// NOSONAR
 
 			default:
 				// unknown
-				regname = Format.getHexString(regId, 2) + 'h';
+				regname = Format.getHexFormattedString(regId, 2);
 				break;
 		}
 		return regname;
@@ -846,11 +846,11 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 				break;
 
 			case 1: // REG_VERSION
-				valuename = Format.getHexString(regValue, 2) + 'h (v' + (regValue >>> 4) + '.' + (regValue & 0x0f) + ')';
+				valuename = Format.getHexFormattedString(regValue, 2) + '(v' + (regValue >>> 4) + '.' + (regValue & 0x0f) + ')';
 				break;
 
 			case 2: // REG_RESET
-				valuename = Format.getHexString(regValue, 2) + 'h';
+				valuename = Format.getHexFormattedString(regValue, 2);
 				arr = new Array<string>();
 				if (regValue & 0x04)
 					arr.push("RR_POWER_ON_RESET");
@@ -863,7 +863,7 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 				break;
 
 			case 3: // REG_MACHINE_TYPE
-				valuename = Format.getHexString(regValue, 2) + 'h';
+				valuename = Format.getHexFormattedString(regValue, 2);
 				arr = new Array<string>();
 				if (regValue & 0x80)
 					arr.push("lock timing");
@@ -1101,7 +1101,7 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 
 		// Check if undefined
 		if (!valuename)
-			valuename = Format.getHexString(regValue, 2) + 'h';
+			valuename = Format.getHexFormattedString(regValue, 2);
 		return valuename;
 	}
 }

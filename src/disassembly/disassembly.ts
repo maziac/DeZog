@@ -5,6 +5,7 @@ import {Settings} from '../settings';
 import {Z80Registers} from "../remotes/z80registers";
 import {Labels} from "../labels/labels";
 import {MemAttribute} from "../disassembler/memory";
+import {Format} from "../disassembler/format";
 
 
 
@@ -125,24 +126,6 @@ export class DisassemblyClass extends Disassembler {
 
 
 	/**
-	 * Adds new memory and (trace) addresses.
-	 * @param mem An array with memory data.
-	 * @param addresses An array with code addresses. (Only the 64k part will be used)
-	 */
-/*
-	public addMemAndAddresses(mem: Array<{address: number, data: Uint8Array}>, addresses: number[]) {
-		// Write new memory
-		//this.memory.clrAssignedAttributesAt(0x0000, 0x10000);	// Clear all memory
-		for (const block of mem)
-			this.setMemory(block.address & 0xFFFF, block.data);
-
-		// Convert addresses to 64k
-		const addresses64k = addresses.map(addr => addr & 0xFFFF);
-		this.addressQueue.push(...addresses64k);
-	}
-*/
-
-	/**
 	 * Disassembles the memory.
 	 * Additionally keeps the address/line locations.
 	 */
@@ -156,6 +139,8 @@ export class DisassemblyClass extends Disassembler {
 		this.numberOfLinesBetweenBlocks = 2;
 		this.numberOfDefbBytes = 4;
 		this.addDefbComments = true;
+		Format.hexFormat = 'h';
+
 		// Disassemble
 		super.disassemble();
 		// Get address/line relationship.

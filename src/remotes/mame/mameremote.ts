@@ -38,9 +38,6 @@ export class MameRemote extends DzrpQeuedRemote {
 	// Stores the received data.
 	protected receivedData: string;
 
-	// Receiving state, i.e. if waiting on an ACK (+)
-	protected waitingOnAck = false;	// TODO: REMOVE
-
 
 	/// Constructor.
 	constructor() {
@@ -323,10 +320,6 @@ export class MameRemote extends DzrpQeuedRemote {
 			this.stopCmdRespTimeout();
 			// Get latest sent message
 			const msg = this.messageQueue[0];
-
-			if (!msg)
-				console.log("No MESSAGE");	// TODO REMOVE
-
 			Utility.assert(msg, "MAME: Response received without request.");
 
 			// Queue next message

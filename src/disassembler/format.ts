@@ -7,6 +7,10 @@ export class Format {
 	/// Choose opcodes in lower or upper case.
 	public static hexNumbersLowerCase = false;
 
+	// The used hex format in the disassembly (not used in the starting addresses).
+	public static hexFormat: '$' | '0x' | 'h' = 'h';
+
+
 	/**
 	 * Returns a hex string with a fixed number of digits.
 	 * @param value The value to convert.
@@ -18,6 +22,24 @@ export class Format {
 		if (!Format.hexNumbersLowerCase)
 			s = s.toUpperCase();
 		return s.padStart(countDigits, '0');
+	}
+
+
+	/**
+	 * Returns a hex string with a fixed number of digits.
+	 * @param value The value to convert.
+	 * @param countDigits The number of digits.
+	 * @returns a string, e.g. "0x04fd".
+	 */
+	public static getHexFormattedString(value: number, countDigits = 4): string {
+		let s = this.getHexString(value, countDigits);
+		if (this.hexFormat == '$')
+			s = '$' + s;
+		else if (this.hexFormat == 'h')
+			s += 'h';
+		else
+			s = '0x' + s;
+		return s;
 	}
 
 

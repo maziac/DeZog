@@ -516,7 +516,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async launch(response: DebugProtocol.Response) {
 		// Setup the disassembler
 		DisassemblyClass.createDisassemblyInstance();
-		Disassembly.initWithCodeAdresses([], []);	// TODO: Allow to input a MAME trace file
+
 
 		// Init
 		this.processingSteppingRequest = false;
@@ -887,7 +887,7 @@ export class DebugSessionClass extends DebugSession {
 		// Only do a disassembly if the PC address changed (stackTraceRequest might be called more than once)
 		console.log('longPcAddressesHistory=', this.longPcAddressesHistory);
 		const histLength = this.longPcAddressesHistory.length;
-		this.forceDisassembly = true;	// TODO: REMOVE
+		//this.forceDisassembly = true;
 		if (this.forceDisassembly || histLength == 0 || pcLong != this.longPcAddressesHistory[0]) {
 			this.forceDisassembly = false;
 			//console.log('pcLong=', pcLong);
@@ -965,50 +965,34 @@ export class DebugSessionClass extends DebugSession {
 			// Read data
 			const text = Disassembly.getDisassemblyText();
 
-			const fnamep = Utility.getRelTmpFilePath('disasm_real_p.list');	// TODO: remove these files
+			// TODO: remove these files after testing phase (if warning 'Disassembly text wrong!!!' does nto show up anymore)
+			const fnamep = Utility.getRelTmpFilePath('disasm_real_p.list');
 			const fname = Utility.getRelTmpFilePath('disasm_real.list');
 			const fnamevp = Utility.getRelTmpFilePath('disasm_vscode_p.list');
-			fs.copyFileSync(fname, fnamep)
+			try {
+				fs.copyFileSync(fname, fnamep);
+			}
+			catch {}
 			fs.writeFileSync(fname, text);
 			const prevLinesText = prevLines.join('\n');
 			fs.writeFileSync(fnamevp, prevLinesText);
 
-			/*
-						let edit = new vscode.WorkspaceEdit();
-						edit.createFile(uri);
-						await vscode.workspace.applyEdit(edit);
-						let doc = await vscode.workspace.openTextDocument(uri);
-						await doc.save();
-
-						const t1 = doc.getText();
-
-						edit = new vscode.WorkspaceEdit();
-						edit.replace(uri, new vscode.Range(0, 0, 0, 0), 'replace1\n');
-						await vscode.workspace.applyEdit(edit);
-						await doc.save();
-
-						const t2 = doc.getText();
-
-						edit = new vscode.WorkspaceEdit();
-						edit.replace(uri, new vscode.Range(1, 0, 1, 0), 'replace2');
-						await vscode.workspace.applyEdit(edit);
-						await doc.save();
-			*/
-
-
 			// Check for change in the disassembly text
 			const lines = Disassembly.getDisassemblyLines();
 			let options: IDiffComputerOpts = {
-				shouldPostProcessCharChanges: true,	// TODO: Do I need all of this?
-				shouldIgnoreTrimWhitespace: true,
-				shouldMakePrettyDiff: true,
-				shouldComputeCharChanges: true,
+				shouldPostProcessCharChanges: false,	// TODO: Do I need all of this?
+				shouldIgnoreTrimWhitespace: false,
+				shouldMakePrettyDiff: false,
+				shouldComputeCharChanges: false,
 				maxComputationTime: 0 // time in milliseconds, 0 => no computation limit.
 			}
 			//			lines.push('');
 			const diffComputer = new DiffComputer(prevLines, lines, options);
 			let lineChanges: ILineChange[] = diffComputer.computeDiff().changes;
 			if (lineChanges.length > 0) {
+
+				let lastInsertText;
+				let lastInsertLines;
 				// Create and apply edits for the changes.
 				console.log("lineChanges:", lineChanges);
 				// Work from bottom to top
@@ -1020,15 +1004,18 @@ export class DebugSessionClass extends DebugSession {
 					// Check kind of  change (Note: change-line-numbers are 1-based, vscode positions are 0-based)
 					const edit = new vscode.WorkspaceEdit();
 
+
 					if (change.originalEndLineNumber == 0) {
 						// Get text to insert
 						const insertLines = lines.slice(change.modifiedStartLineNumber - 1, change.modifiedEndLineNumber);
 						let insertText = insertLines.join('\n') + '\n';
 						// Workaround: Some oddity in vscode: if appending ot last line it does not honor the new line, so we have to add one.
-						if (change.originalStartLineNumber >= prevLines.length)
-							insertText = '\n' + insertText;
+				//		if (change.originalStartLineNumber >= prevLines.length)
+				//			insertText = '\n' + insertText;
 						// Insert after originalStartLineNumber
 						edit.insert(uri, new vscode.Position(change.originalStartLineNumber, 0), insertText);
+						lastInsertText = insertText;
+						lastInsertLines = insertLines;
 
 						//console.log("prevlines=", prevLines);
 						//console.log("lines=", lines);
@@ -1062,6 +1049,11 @@ export class DebugSessionClass extends DebugSession {
 				// Check for error
 				const currentText = this.disasmTextDoc.getText();
 				if (currentText != text) {
+					const len = 20;
+					const cText = currentText.substring(currentText.length - len);
+					const ttext = text.substring(text.length - len);
+					const cArr = currentText.split('\n');
+					const tArr = text.split('\n');
 					// Error
 					this.showWarning('Disassembly text wrong!!!');
 				}

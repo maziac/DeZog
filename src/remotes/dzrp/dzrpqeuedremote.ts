@@ -1,5 +1,5 @@
 import {LogTransport} from '../../log';
-import {DzrpRemote, DZRP} from './dzrpremote';
+import {DzrpRemote} from './dzrpremote';
 import {Utility} from '../../misc/utility';
 
 
@@ -118,12 +118,14 @@ export class DzrpQeuedRemote extends DzrpRemote {
 	protected putIntoQueue(buffer: Buffer, respTimeoutTime: number, resolve: (buffer) => void, reject: (error) => void): MessageBuffer {
 
 		// TODO: REMOVE
+		/*
 		const l = this.messageQueue.length;
 		if (l > 0) {
 			const prevMsg = this.messageQueue[l - 1];
 			if (prevMsg[5] == DZRP.CMD_CONTINUE)
 				console.log();
 		}
+		*/
 
 		// Create new buffer entry
 		const entry = new MessageBuffer();

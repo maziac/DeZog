@@ -250,7 +250,10 @@ export class Disassembler extends EventEmitter {
 	 * Make sure to run 'disassemble' beforehand.
 	 */
 	public getDisassemblyText(): string {
-		return this.getDisassemblyLines().join('\n');
+		const lines = this.getDisassemblyLines();
+		if (lines.length == 0)
+			return '';
+		return lines.join('\n') + '\n';
 	}
 
 
@@ -2282,11 +2285,11 @@ export class Disassembler extends EventEmitter {
 					// Turn memory to data memory
 					attr |= MemAttribute.DATA;
 					addAddress = j;
-					
+
 					// Disassemble the data line
 					//const mainString = this.rightCase('DEFB ') + Format.getHexString(memValue, 2) + 'h';
 					const mainString = 'DEFB ' + bytes.map(value =>
-					'$' + Format.getHexString(value, 2)).join(' ');
+						Format.getHexFormattedString(value, 2)).join(' ');
 					line = this.formatDisassembly(address, j, mainString);
 					if (this.addDefbComments) {
 						commentText = this.getDefbComment(bytes);
