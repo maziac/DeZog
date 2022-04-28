@@ -1,8 +1,8 @@
 # Reverse Engineering with DeZog
 
-DeZog primary goal is to develop new Z80 SW and debug it.
+DeZog's primary goal is to develop new Z80 SW and debug it.
 
-Another way to use DeZog is for reverse engineering of existing SW.
+But another way to use DeZog is for reverse engineering of existing SW.
 
 The process is shown here with MAME as an example.
 
