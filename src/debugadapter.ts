@@ -33,7 +33,7 @@ import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
 import {DiagnosticsHandler} from './diagnosticshandler';
 import {GenericWatchpoint} from './genericwatchpoint';
 import {SimpleDisassembly} from './disassembly/simpledisassembly';
-import {DiffComputer, IDiffComputerOpts, ILineChange} from 'vscode-diff';
+import * as Diff from 'diff';
 
 
 
@@ -958,8 +958,6 @@ export class DebugSessionClass extends DebugSession {
 			// Initialize disassembly
 			Disassembly.initWithCodeAdresses(fetchAddresses, memArray.ranges as Array<{address: number, data: Uint8Array}>);
 
-			//Disassembly.addMemAndAddresses(memArray.ranges as Array<{address: number, data: Uint8Array}>, [...historyAddresses, ...fetchAddresses]);
-
 			// Disassemble
 			Disassembly.disassemble();
 			// Read data
@@ -978,75 +976,95 @@ export class DebugSessionClass extends DebugSession {
 			fs.writeFileSync(fnamevp, prevLinesText);
 
 			// Check for change in the disassembly text
-			const lines = Disassembly.getDisassemblyLines();
-			let options: IDiffComputerOpts = {
-				shouldPostProcessCharChanges: false,	// TODO: Do I need all of this?
-				shouldIgnoreTrimWhitespace: false,
-				shouldMakePrettyDiff: false,
-				shouldComputeCharChanges: false,
-				maxComputationTime: 0 // time in milliseconds, 0 => no computation limit.
-			}
-			//			lines.push('');
-			const diffComputer = new DiffComputer(prevLines, lines, options);
-			let lineChanges: ILineChange[] = diffComputer.computeDiff().changes;
-			if (lineChanges.length > 0) {
+			const newLines = Disassembly.getDisassemblyText();
+			const opt = {
+				ignoreWhitespace: false,
+				newlineIsToken: true
+			};
+			const diffLines = Diff.diffLines(prevLinesText, newLines, opt);
 
-				let lastInsertText;
-				let lastInsertLines;
-				// Create and apply edits for the changes.
-				console.log("lineChanges:", lineChanges);
-				// Work from bottom to top
-				const uri = this.disasmTextDoc.uri;
-				//const edit = new vscode.WorkspaceEdit();
-				for (let i = lineChanges.length - 1; i >= 0; i--) {
-					// Get change
-					const change = lineChanges[i];
-					// Check kind of  change (Note: change-line-numbers are 1-based, vscode positions are 0-based)
+			let lineNr = 0;
+			let clmn = 0;
+			let edited = false;
+
+			// Note: I cannot simply combine everything into one applyEdit. Otherwise the line number does not fit anymore.
+			// If I want to do it in the future: don't add count to lineNr for 'insert', instead add count fpr 'delete'.
+			FIRST  commit  then do it!
+
+			for (const diff of diffLines) {
+				if (diff.added) {
+					// Added
 					const edit = new vscode.WorkspaceEdit();
-
-
-					if (change.originalEndLineNumber == 0) {
-						// Get text to insert
-						const insertLines = lines.slice(change.modifiedStartLineNumber - 1, change.modifiedEndLineNumber);
-						let insertText = insertLines.join('\n') + '\n';
-						// Workaround: Some oddity in vscode: if appending ot last line it does not honor the new line, so we have to add one.
-				//		if (change.originalStartLineNumber >= prevLines.length)
-				//			insertText = '\n' + insertText;
-						// Insert after originalStartLineNumber
-						edit.insert(uri, new vscode.Position(change.originalStartLineNumber, 0), insertText);
-						lastInsertText = insertText;
-						lastInsertLines = insertLines;
-
-						//console.log("prevlines=", prevLines);
-						//console.log("lines=", lines);
-						//console.log("insertlines=", insertLines);
-					}
-					else if (change.modifiedEndLineNumber == 0) {
-						// Remove
-						//if (lines.length > change.originalStartLineNumber)
-						{
-							edit.delete(uri, new vscode.Range(change.originalStartLineNumber - 1, 0, change.originalEndLineNumber, 0));
-						}
-					}
-					else {
-						// Get text to replace
-						let replaceText = '';
-						//	if (change.modifiedEndLineNumber > 0) {
-						const replaceLines = lines.slice(change.modifiedStartLineNumber - 1, change.modifiedEndLineNumber);
-						replaceText = replaceLines.join('\n') + '\n';
-						//	}
-						// Replace
-						edit.replace(uri, new vscode.Range(change.originalStartLineNumber - 1, 0, change.originalEndLineNumber, 0), replaceText);
-					}
-
-					await vscode.workspace.applyEdit(edit);	// TODO: change to overall applEdit
+					edit.insert(uri, new vscode.Position(lineNr, clmn), diff.value);
+					await vscode.workspace.applyEdit(edit);
+					const count = Utility.countOccurrencesOf('\n', diff.value);
+					lineNr += count;
+					edited = true;
 				}
-				// Apply changes
-				//		await vscode.workspace.applyEdit(edit);
+				else if (diff.removed) {
+					// Removed
+					const count = Utility.countOccurrencesOf('\n', diff.value);
+					let endClmn = diff.value.lastIndexOf('\n');
+					if (endClmn < 0)
+						endClmn = diff.value.length;
+					else
+						endClmn = diff.value.length - endClmn - 1;
+					const edit = new vscode.WorkspaceEdit();
+					edit.delete(uri, new vscode.Range(lineNr, 0, lineNr + count, endClmn));
+					await vscode.workspace.applyEdit(edit);
+					edited = true;
+				}
+				else {
+					// Unchanged
+					const count = Utility.countOccurrencesOf('\n', diff.value);
+					lineNr += count;
+					clmn = diff.value.lastIndexOf('\n');
+					if (clmn < 0)
+						clmn = diff.value.length;
+					else
+						clmn = diff.value.length - clmn - 1;
+				}
+			}
+			/*
+			for (const diff of diffLines) {
+				if (diff.added) {
+					// Added
+					edit.insert(uri, new vscode.Position(lineNr, clmn), diff.value);
+					const count = Utility.countOccurrencesOf('\n', diff.value);
+					lineNr += count;
+					edited = true;
+				}
+				else if (diff.removed) {
+					// Removed
+					const count = Utility.countOccurrencesOf('\n', diff.value);
+					let endClmn = diff.value.lastIndexOf('\n');
+					if (endClmn < 0)
+						endClmn = diff.value.length;
+					else
+						endClmn = diff.value.length - endClmn - 1;
+					edit.delete(uri, new vscode.Range(lineNr, 0, lineNr + count, endClmn));
+					edited = true;
+				}
+				else {
+					// Unchanged
+					const count = Utility.countOccurrencesOf('\n', diff.value);
+					lineNr += count;
+					clmn = diff.value.lastIndexOf('\n');
+					if (clmn < 0)
+						clmn = diff.value.length;
+					else
+						clmn = diff.value.length - clmn - 1;
+				}
+			}
+			*/
+
+			// Apply changes
+			if (edited) {
+				//await vscode.workspace.applyEdit(edit);
 				// Save after edit (to be able to set breakpoints)
 				await this.disasmTextDoc.save();
 
-				// Check for error
+				// Check for error // TODO: REMOVE once it'S clear that everythign is working fine
 				const currentText = this.disasmTextDoc.getText();
 				if (currentText != text) {
 					const len = 20;
@@ -1057,18 +1075,16 @@ export class DebugSessionClass extends DebugSession {
 					// Error
 					this.showWarning('Disassembly text wrong!!!');
 				}
+			}
 
+			// Check all breakpoints
+			this.disassemblyReassignBreakpoints(prevBpAddresses);
 
-
-				// Check all breakpoints
-				this.disassemblyReassignBreakpoints(prevBpAddresses);
-
-				// If disassembly text editor is open, then show decorations
-				const editors = vscode.window.visibleTextEditors;
-				for (const editor of editors) {
-					if (editor.document == this.disasmTextDoc) {
-						Decoration.setDisasmCoverageDecoration(editor);
-					}
+			// If disassembly text editor is open, then show decorations
+			const editors = vscode.window.visibleTextEditors;
+			for (const editor of editors) {
+				if (editor.document == this.disasmTextDoc) {
+					Decoration.setDisasmCoverageDecoration(editor);
 				}
 			}
 		}

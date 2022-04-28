@@ -264,7 +264,7 @@ API.log('Custom code: init start');
 API.log('Custom code: init end');
 API.log('-------------------------------------\\n');`
 		// Find line offset
-		const lineOffset = Utility.countOccurencesOf('\n', preamble);
+		const lineOffset = Utility.countOccurrencesOf('\n', preamble);
 
 		// Execute/initialize the javascript
 		CustomCode.runInContext(

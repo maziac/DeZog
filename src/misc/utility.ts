@@ -1341,7 +1341,7 @@ export class Utility {
 			return undefined;
 		// Now get the line number by counting the \n
 		const tmp = text.substring(0, match.index);
-		const lineNr = this.countOccurencesOf('\n', tmp);
+		const lineNr = this.countOccurrencesOf('\n', tmp);
 		return lineNr;
 	}
 
@@ -1352,7 +1352,7 @@ export class Utility {
 	 * @param text Searhcend in this string.
 	 * @returns Number of occurrences.
 	 */
-	public static countOccurencesOf(search: string, text: string) {
+	public static countOccurrencesOf(search: string, text: string) {
 		let count = -1;
 		const len = search.length;
 		let pos = -len;

@@ -51,6 +51,7 @@
 		"binary-file": "^0.2.3",
 		"gif-writer": "^0.9.4",
 		"glob": "^7.2.0",
+		"jsdiff": "^1.1.1",
 		"jsonc-parser": "^3.0.0",
 		"node-gzip": "^1.1.2",
 		"posthtml": "^0.16.5",
@@ -61,8 +62,7 @@
 		"showdown": "^2.0.0",
 		"ts-node": "^10.4.0",
 		"vscode-debugadapter": "^1.49.0",
-		"vscode-debugprotocol": "1.49.0",
-		"vscode-diff": "^2.0.2"
+		"vscode-debugprotocol": "1.49.0"
 	},
 	"devDependencies": {
 		"@types/mocha": "9.0.0",
@@ -259,7 +259,7 @@
 					"group": "debug"
 				}
 			],
-            "dezog.disassemblyAtCursor": [
+			"dezog.disassemblyAtCursor": [
 				{
 					"command": "dezog.disassemblyAtCursor.code"
 				},
