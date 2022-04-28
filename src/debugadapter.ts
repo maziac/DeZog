@@ -987,91 +987,59 @@ export class DebugSessionClass extends DebugSession {
 			let clmn = 0;
 			let edited = false;
 
-			// Note: I cannot simply combine everything into one applyEdit. Otherwise the line number does not fit anymore.
-			// If I want to do it in the future: don't add count to lineNr for 'insert', instead add count fpr 'delete'.
-			FIRST  commit  then do it!
+			// Note: For combining in o one edit I need to take into account to use the original line numbers and column numbers.
+			// Therefore the lineNr is increased on 'removed' and not on 'insert'.
+			const edit = new vscode.WorkspaceEdit();
 
 			for (const diff of diffLines) {
 				if (diff.added) {
 					// Added
-					const edit = new vscode.WorkspaceEdit();
 					edit.insert(uri, new vscode.Position(lineNr, clmn), diff.value);
-					await vscode.workspace.applyEdit(edit);
-					const count = Utility.countOccurrencesOf('\n', diff.value);
-					lineNr += count;
+					//const count = Utility.countOccurrencesOf('\n', diff.value);
+					//lineNr += count;
 					edited = true;
 				}
 				else if (diff.removed) {
 					// Removed
 					const count = Utility.countOccurrencesOf('\n', diff.value);
-					let endClmn = diff.value.lastIndexOf('\n');
-					if (endClmn < 0)
-						endClmn = diff.value.length;
+					const prevClmn = clmn;
+					const lClmn = diff.value.lastIndexOf('\n');
+					if (lClmn < 0)
+						clmn += diff.value.length;
 					else
-						endClmn = diff.value.length - endClmn - 1;
-					const edit = new vscode.WorkspaceEdit();
-					edit.delete(uri, new vscode.Range(lineNr, 0, lineNr + count, endClmn));
-					await vscode.workspace.applyEdit(edit);
+						clmn = diff.value.length - lClmn - 1;
+					edit.delete(uri, new vscode.Range(lineNr, prevClmn, lineNr + count, clmn));
+					lineNr += count;
 					edited = true;
 				}
 				else {
 					// Unchanged
 					const count = Utility.countOccurrencesOf('\n', diff.value);
 					lineNr += count;
-					clmn = diff.value.lastIndexOf('\n');
-					if (clmn < 0)
-						clmn = diff.value.length;
+					const lClmn = diff.value.lastIndexOf('\n');
+					if (lClmn < 0)
+						clmn += diff.value.length;
 					else
-						clmn = diff.value.length - clmn - 1;
+						clmn = diff.value.length - lClmn - 1;
 				}
 			}
-			/*
-			for (const diff of diffLines) {
-				if (diff.added) {
-					// Added
-					edit.insert(uri, new vscode.Position(lineNr, clmn), diff.value);
-					const count = Utility.countOccurrencesOf('\n', diff.value);
-					lineNr += count;
-					edited = true;
-				}
-				else if (diff.removed) {
-					// Removed
-					const count = Utility.countOccurrencesOf('\n', diff.value);
-					let endClmn = diff.value.lastIndexOf('\n');
-					if (endClmn < 0)
-						endClmn = diff.value.length;
-					else
-						endClmn = diff.value.length - endClmn - 1;
-					edit.delete(uri, new vscode.Range(lineNr, 0, lineNr + count, endClmn));
-					edited = true;
-				}
-				else {
-					// Unchanged
-					const count = Utility.countOccurrencesOf('\n', diff.value);
-					lineNr += count;
-					clmn = diff.value.lastIndexOf('\n');
-					if (clmn < 0)
-						clmn = diff.value.length;
-					else
-						clmn = diff.value.length - clmn - 1;
-				}
-			}
-			*/
 
 			// Apply changes
 			if (edited) {
-				//await vscode.workspace.applyEdit(edit);
+				await vscode.workspace.applyEdit(edit);
 				// Save after edit (to be able to set breakpoints)
 				await this.disasmTextDoc.save();
 
-				// Check for error // TODO: REMOVE once it'S clear that everythign is working fine
+				// Check for error // TODO: REMOVE once it's clear that everything is working fine
 				const currentText = this.disasmTextDoc.getText();
 				if (currentText != text) {
+					/*
 					const len = 20;
 					const cText = currentText.substring(currentText.length - len);
 					const ttext = text.substring(text.length - len);
 					const cArr = currentText.split('\n');
 					const tArr = text.split('\n');
+					*/
 					// Error
 					this.showWarning('Disassembly text wrong!!!');
 				}
