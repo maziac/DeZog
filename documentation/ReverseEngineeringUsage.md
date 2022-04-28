@@ -8,10 +8,9 @@ The process is shown here with MAME as an example.
 
 When reverse engineering existing SW the whole object code already exists whereas the source code, i.e. the commented assembler sources normally do not exist.
 The goal of reverse engineering is to discover the purpose of the binary code by disassembling and debugging it.
-Once a sub routine has been understood it can be commented and the disassembly can be saved.
+Once a sub routine has been understood it can be commented, labels can be renamed to more meaningful names and the disassembly can be saved.
 
-The next time the debugger is started the already debugged and commented disassembled code is read in as a list file.
-All labels are now known to DeZog and the next sub routine can be debugged and understood.
+These commented disassembly is reloaded and taken as source for hte further stepping. Also the new labels are used.
 
 The more of the binary is understood the more complete the list file becomes until at the end hopefully all code is commented and understood.
 
@@ -57,12 +56,14 @@ Start with an empty pacman.list file.
 2. Start a DeZog debug session
 3. Step, understand code
 4. Copy understood code from disasm.list to pacman.list
-5. Work on new code in pacman.list
+5. Work on the code in pacman.list
 	- Comment the code
 	- Exchange label names with more meaningful names.
-6. Goto 3
-7. If a portion of code has been understood save pacman.list
-8. Terminate the debug session
-9. Goto 2 to re-read the pacman.list file with the symbols.
+6. Save pacman.list
+7. Reload the list file. In the command palette type: ```DeZog: reload the list file(s).```
+At that point DeZog will re-read the symbols and also do a new disassembly: The code from the pacman.list is removed from the disassembly. So, when stepping the pacman.list is used whenever the PC points to code in that file.
+The rest of the disassembly will also use the new labels.
+7. Goto 3
 
+Note: The re-load of the list file takes place while the debug session is still active. I.e. you can simply continue with the debugging.
 
