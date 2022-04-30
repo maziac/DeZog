@@ -34,6 +34,7 @@ import {DiagnosticsHandler} from './diagnosticshandler';
 import {GenericWatchpoint} from './genericwatchpoint';
 import {SimpleDisassembly} from './disassembly/simpledisassembly';
 import * as Diff from 'diff';
+import {CallStackFrame} from './callstackframe';
 
 
 
@@ -77,7 +78,6 @@ export class DebugSessionClass extends DebugSession {
 	protected unitTestsStartCallbacks: PromiseCallbacks<DebugSessionClass> | undefined;
 
 	/// The text document used for the temporary disassembly.
-	protected disasmTextDoc: vscode.TextDocument;	// TODO: It should be possible to get rid of this member variable.
 
 	/// A list for the VARIABLES (references)
 	protected listVariables = new RefList<ShallowVar>();
@@ -362,6 +362,7 @@ export class DebugSessionClass extends DebugSession {
 		CpuHistoryClass.removeCpuHistory();
 		// Clear Remote
 		RemoteFactory.removeRemote(); // Also disposes
+		/*
 		// Remove disassembly text editor. vscode does not support closing directly, thus this hack:
 		if (this.disasmTextDoc) {	// TODO: Maybe I should leave it open.
 			vscode.window.showTextDocument(this.disasmTextDoc.uri, {preview: true, preserveFocus: false})
@@ -369,6 +370,7 @@ export class DebugSessionClass extends DebugSession {
 					return vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 				});
 		}
+		*/
 
 		// Clear all decorations
 		if (this.state == DbgAdapterState.UNITTEST) {
@@ -529,6 +531,7 @@ export class DebugSessionClass extends DebugSession {
 		// Setup the disassembler
 		DisassemblyClass.createDisassemblyInstance();
 		this.disassemblyUpToDate = false;
+		Decoration.showDisasmOutdated();
 
 		// Init
 		this.processingSteppingRequest = false;
@@ -874,60 +877,29 @@ export class DebugSessionClass extends DebugSession {
 
 		// Go through complete call stack and get the sources.
 		// If no source exists the stack frame will have 'src' as undefined.
-		const longFetchAddresses = new Array<number>();
-		const frameCount = callStack.length;
-		const sfrs = new Array<StackFrameAddr>();
-		for (let index = frameCount - 1; index >= 0; index--) {
-			const frame = callStack[index];
-			// Get file for address
-			const addr = frame.addr;
-			const file = Labels.getFileAndLineForAddress(addr);
-			// Store file, if it does not exist the name is empty
-			const src = this.createSource(file.fileName);
-			const lineNr = (src) ? this.convertDebuggerLineToClient(file.lineNr) : 0;
-			const sf = new StackFrameAddr(index + 1, frame.name, src, lineNr);
-			sf.longAddress = addr;
-			sfrs.push(sf);
-			if (!src) {
-				// Add to fetch addresses for disassembly
-				longFetchAddresses.push(addr);
-			}
-		}
+		const [sfrs, longFetchAddresses] = this.stackFramesForCallStack(callStack);
 
 		// Check if the complete call stack and the
 
 		// Filter addresses by current banking
 		console.log('longPcAddressesHistory=', this.longPcAddressesHistory);
-		const histLength = this.longPcAddressesHistory.length;
 		const disassembleMemory = (longFetchAddresses.length > 0);
 		//this.forceDisassembly = true;
 		if (disassembleMemory)	// Disassembly only if PC or call stack is unknown
 		{
 			this.forceDisassembly = false;	// TODO: REMOVE
 
-			// Filter addresses not currently paged and add to fetch addresses
-			const slots = Z80Registers.getSlots();
-			for (const longAddr of this.longPcAddressesHistory) {
-				// Create 64k address
-				const addr64k = longAddr & 0xFFFF;
-				// Check if longAddr is currently paged in
-				const longCmpAddress = Z80Registers.createLongAddress(addr64k, slots);
-				// Compare
-				if (longAddr == longCmpAddress) {
-					// Is paged in
-					longFetchAddresses.push(longAddr);
-				}
-			}
+			// Add addresses from PC history.
+			this.addAddressesFromPcHistory(longFetchAddresses);
 
-			// Create memory array.
+			// Get memory.
 			const fetchAddresses = longFetchAddresses.map(longAddr => (longAddr & 0xFFFF));
-			const memArray = new MemoryArray();
-			memArray.addRangesWithSize(fetchAddresses, 100);	// Assume 100 bytes each
+			const memArray = await this.fetchMemoryForAddresses(fetchAddresses);
 
-			// Fetch memory
-			for (const range of memArray.ranges) {
-				range.data = await Remote.readMemoryDump(range.address, range.size);
-			}
+			// Create text document
+			const disasmTextDoc = await this.getOrCreateDisasmTextDoc();
+			// Read previous text
+			const prevText = disasmTextDoc.getText();
 
 			// Get BPs located in previous disassembly and assign the addresses.
 			const prevBpAddresses = this.getDisassemblyBreakpoints();
@@ -935,35 +907,11 @@ export class DebugSessionClass extends DebugSession {
 			const removeBps = prevBpAddresses.map(sbpAddr => sbpAddr.sbp);
 			vscode.debug.removeBreakpoints(removeBps);
 
-			// Create text document
-			const absFilePath = DisassemblyClass.getAbsFilePath();
-			const uri = vscode.Uri.file(absFilePath);
-			try {
-				this.disasmTextDoc = await vscode.workspace.openTextDocument(uri);
-				// Delete all lines
-				//				const editDelete = new vscode.WorkspaceEdit();
-				//				editDelete.delete(uri, new vscode.Range(0, 0, 10000000, 0));
-				//				await vscode.workspace.applyEdit(editDelete);
-			}
-			catch (e) {
-				// If file does not exist, create it
-				const editCreate = new vscode.WorkspaceEdit();
-				editCreate.createFile(uri);
-				await vscode.workspace.applyEdit(editCreate);
-				this.disasmTextDoc = await vscode.workspace.openTextDocument(uri);
-			}
-
-			// Get previous disassembly text
-			const prevLines = this.disasmTextDoc.getText().split('\n');
-			//const prevLines = Disassembly.getDisassemblyLines();
-			//	const prevText = Disassembly.getDisassemblyText();
-
 			// Initialize disassembly
 			Disassembly.initWithCodeAdresses(fetchAddresses, memArray.ranges as Array<{address: number, data: Uint8Array}>);
 
 			// Disassemble
 			Disassembly.disassemble();
-			// Read data
 			const text = Disassembly.getDisassemblyText();
 
 			// TODO: remove these files after testing phase (if warning 'Disassembly text wrong!!!' does not show up anymore)
@@ -975,84 +923,38 @@ export class DebugSessionClass extends DebugSession {
 			}
 			catch {}
 			fs.writeFileSync(fname, text);
-			const prevLinesText = prevLines.join('\n');
-			fs.writeFileSync(fnamevp, prevLinesText);
+			fs.writeFileSync(fnamevp, prevText);
 
 			// Check for change in the disassembly text
-			const newLines = Disassembly.getDisassemblyText();
 			const opt = {
 				ignoreWhitespace: false,
 				newlineIsToken: true
 			};
-			const diffLines = Diff.diffLines(prevLinesText, newLines, opt);
+			const diffLines = Diff.diffLines(prevText, text, opt);
 
-			let lineNr = 0;
-			let clmn = 0;
-			let edited = false;
+			// Apply diffs to editor
+			await this.applyDiffToVscodeEditor(diffLines, disasmTextDoc);
 
-			// Note: For combining in o one edit I need to take into account to use the original line numbers and column numbers.
-			// Therefore the lineNr is increased on 'removed' and not on 'insert'.
-			const edit = new vscode.WorkspaceEdit();
+			// Check for error // TODO: REMOVE once it's clear that everything is working fine
+			const currentText = disasmTextDoc.getText();
+			const dText = Disassembly.getDisassemblyText();
+			if (currentText != dText) {
 
-			for (const diff of diffLines) {
-				if (diff.added) {
-					// Added
-					edit.insert(uri, new vscode.Position(lineNr, clmn), diff.value);
-					//const count = Utility.countOccurrencesOf('\n', diff.value);
-					//lineNr += count;
-					edited = true;
-				}
-				else if (diff.removed) {
-					// Removed
-					const count = Utility.countOccurrencesOf('\n', diff.value);
-					const prevClmn = clmn;
-					const lClmn = diff.value.lastIndexOf('\n');
-					if (lClmn < 0)
-						clmn += diff.value.length;
-					else
-						clmn = diff.value.length - lClmn - 1;
-					edit.delete(uri, new vscode.Range(lineNr, prevClmn, lineNr + count, clmn));
-					lineNr += count;
-					edited = true;
-				}
-				else {
-					// Unchanged
-					const count = Utility.countOccurrencesOf('\n', diff.value);
-					lineNr += count;
-					const lClmn = diff.value.lastIndexOf('\n');
-					if (lClmn < 0)
-						clmn += diff.value.length;
-					else
-						clmn = diff.value.length - lClmn - 1;
-				}
-			}
+				const len = 20;
+				const cText = currentText.substring(currentText.length - len);
+				const ttext = text.substring(text.length - len);
+				const cArr = currentText.split('\n');
+				const tArr = text.split('\n');
 
-			// Apply changes
-			if (edited) {
-				await vscode.workspace.applyEdit(edit);
-				// Save after edit (to be able to set breakpoints)
-				await this.disasmTextDoc.save();
-
-				// Check for error // TODO: REMOVE once it's clear that everything is working fine
-				const currentText = this.disasmTextDoc.getText();
-				if (currentText != text) {
-					/*
-					const len = 20;
-					const cText = currentText.substring(currentText.length - len);
-					const ttext = text.substring(text.length - len);
-					const cArr = currentText.split('\n');
-					const tArr = text.split('\n');
-					*/
-					// Error
-					this.showWarning('Disassembly text wrong!!!');
-				}
+				// Error
+				this.showWarning('Disassembly text wrong!!!');
 			}
 
 			// Check all breakpoints
 			this.disassemblyReassignBreakpoints(prevBpAddresses);
 
 			// If disassembly text editor is open, then show decorations
-			const docEditors = this.getEditorsForTextDoc(this.disasmTextDoc);
+			const docEditors = this.getEditorsForTextDoc(disasmTextDoc);
 			for (const editor of docEditors)
 				Decoration.setDisasmCoverageDecoration(editor);
 		}
@@ -1067,7 +969,6 @@ export class DebugSessionClass extends DebugSession {
 				Decoration.showDisasmOutdated();
 		}
 
-
 		// Add PC to history (independent of disassembly)
 		const pcLong = Remote.getPCLong();
 		//console.log('pcLong=', pcLong);
@@ -1077,6 +978,7 @@ export class DebugSessionClass extends DebugSession {
 			this.longPcAddressesHistory.splice(k, 1);
 		}
 		else {
+			const histLength = this.longPcAddressesHistory.length;
 			// Otherwise add it and remove the last one
 			if (histLength >= 20)
 				this.longPcAddressesHistory.pop();
@@ -1084,23 +986,8 @@ export class DebugSessionClass extends DebugSession {
 		this.longPcAddressesHistory.unshift(pcLong);
 
 
-		// Get lines for addresses and send response.
-		if (frameCount > 0) {
-			//const absFilePath = DisassemblyClass.getAbsFilePath();
-			//const src = this.createSource(absFilePath) as Source;
-			for (const sf of sfrs) {
-				if (!sf.source) {
-					// Get line number for stack address from disassembly
-					const addr = sf.longAddress;
-					const lineNr = Disassembly.getLineForAddress(addr) || -1;	// TODO: is this able to handle banking?
-					if (lineNr >= 0) {	// -1 should not happen
-						// Store
-						sf.source = this.createSource(this.disasmTextDoc.uri.fsPath);
-						sf.line = this.convertDebuggerLineToClient(lineNr);
-					}
-				}
-			}
-		}
+		// Get lines for addresses for the disassembly
+		this.addDisasmSourceInfo(sfrs);
 
 		// Send as often as there have been requests
 		while (this.stackTraceResponses.length > 0) {
@@ -1120,6 +1007,129 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
+	 * Returns the StackFrames for a given callstack.
+	 * I.e. converts into files/lines for vscode.
+	 * Is called at the start of the stackTraceRequest to determine what needs to be disassembled.
+	 * @param callStack The callstack from the Remote.
+	 * @returns [sfrs, addresses] The StackFrames (StackFrameAddrs) for vscode and a list of
+	 * addresses without reference to a file. (For the disassembly)
+	 */
+	protected stackFramesForCallStack(callStack: RefList<CallStackFrame>): [StackFrameAddr[], number[]] {
+		const frameCount = callStack.length;
+		const sfrs: StackFrameAddr[] = [];
+		const longFetchAddresses: number[] = [];
+		for (let index = frameCount - 1; index >= 0; index--) {
+			const frame = callStack[index];
+			// Get file for address
+			const addr = frame.addr;
+			const file = Labels.getFileAndLineForAddress(addr);
+			// Store file, if it does not exist the name is empty
+			const src = this.createSource(file.fileName);
+			const lineNr = (src) ? this.convertDebuggerLineToClient(file.lineNr) : 0;
+			const sf = new StackFrameAddr(index + 1, frame.name, src, lineNr);
+			sf.longAddress = addr;
+			sfrs.push(sf);
+			if (!src) {
+				// Add to fetch addresses for disassembly
+				longFetchAddresses.push(addr);
+			}
+		}
+		return [sfrs, longFetchAddresses];
+	}
+
+
+	/**
+	 * Returns the StackFrames for a given callstack.
+	 * I.e. converts into files/lines for vscode.
+	 * Called at the end of the stackTraceRequest to fill the missing
+	 * source files.
+	 * @param sfrs Some of the sfrs[n].src is undefined. These will be filled with the info from the disasm.list.
+	 * @returns [sfrs, addresses] The StackFrames (StackFrameAddrs) for vscode and a list of
+	 * addresses without reference to a file. (For the disassembly)
+	 */
+	protected addDisasmSourceInfo(sfrs: StackFrameAddr[]) {
+		for (const sf of sfrs) {
+			if (!sf.source) {
+				// Get line number for stack address from disassembly
+				const addr = sf.longAddress;
+				const lineNr = Disassembly.getLineForAddress(addr) || -1;	// TODO: is this able to handle banking?
+				if (lineNr >= 0) {	// -1 should not happen
+					// Store
+					sf.source = this.createSource(DisassemblyClass.getAbsFilePath());
+					sf.line = this.convertDebuggerLineToClient(lineNr);
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * Adds addresses of the PC history if they are currently paged in.
+	 * @param addresses This list may already contain entries. New entries are added.
+	 * Addresses are in long format.
+	 */
+	protected addAddressesFromPcHistory(addresses: number[]) {
+		const slots = Z80Registers.getSlots();
+		for (const longAddr of this.longPcAddressesHistory) {
+			// Create 64k address
+			const addr64k = longAddr & 0xFFFF;
+			// Check if longAddr is currently paged in
+			const longCmpAddress = Z80Registers.createLongAddress(addr64k, slots);
+			// Compare
+			if (longAddr == longCmpAddress) {
+				// Is paged in
+				addresses.push(longAddr);
+			}
+		}
+	}
+
+
+
+	/**
+	 * Fetches memory from the remote for the given address list.
+	 * The memory area is concatenated before and for each address
+	 * at least 100 bytes are fetched.
+	 * @param addresses A list of (64k) addresses to fetch (+100 bytes).
+	 * @returns A MemoryArray with ranges and fetched data.
+	 */
+	protected async fetchMemoryForAddresses(addresses: number[]): Promise<MemoryArray> {
+		const memArray = new MemoryArray();
+		memArray.addRangesWithSize(addresses, 100);	// Assume 100 bytes each
+
+		// Fetch memory
+		for (const range of memArray.ranges) {
+			range.data = await Remote.readMemoryDump(range.address, range.size);
+		}
+
+		return memArray;
+	}
+
+
+	/**
+	 * Opens the text document for disasm.list.
+	 * If it does not exist, it is created.
+	 * @return The text document associated with disasm.list.
+	 */
+	protected async getOrCreateDisasmTextDoc(): Promise<vscode.TextDocument> {
+		const absFilePath = DisassemblyClass.getAbsFilePath();
+		const uri = vscode.Uri.file(absFilePath);
+		let disasmTextDoc;
+		try {
+			disasmTextDoc = await vscode.workspace.openTextDocument(uri);
+		}
+		catch (e) {
+			// If file does not exist, create it
+			const editCreate = new vscode.WorkspaceEdit();
+			editCreate.createFile(uri);
+			await vscode.workspace.applyEdit(editCreate);
+			disasmTextDoc = await vscode.workspace.openTextDocument(uri);
+		}
+		Utility.assert(disasmTextDoc);
+		return disasmTextDoc;
+	}
+
+
+	/**
 	 * Returns the TextEditors currently in use for a given doc.
 	 * @param doc The doc to search for.
 	 * @returns An array of editors. Can be empty or contain even more than 1 editor for the same document.
@@ -1133,6 +1143,59 @@ export class DebugSessionClass extends DebugSession {
 			}
 		}
 		return docEditors;
+	}
+
+
+	/**
+	 * Apply diff to previous disassembly also to the vscode editor.
+	 * @param diffLines The diff as it is returned by js-diff.
+	 * @param doc The vscode textEditor to update.
+	 */
+	protected async applyDiffToVscodeEditor(diffLines, doc: vscode.TextDocument) {
+		let lineNr = 0;
+		let clmn = 0;
+		let edited = false;
+		const uri = doc.uri;
+		// Note: For combining in one edit I need to take into account to use the original line numbers and column numbers.
+		// Therefore the lineNr is increased on 'removed' and not on 'insert'.
+		const edit = new vscode.WorkspaceEdit();
+		for (const diff of diffLines) {
+			if (diff.added) {
+				// Added
+				edit.insert(uri, new vscode.Position(lineNr, clmn), diff.value);
+				edited = true;
+			}
+			else if (diff.removed) {
+				// Removed
+				const count = Utility.countOccurrencesOf('\n', diff.value);
+				const prevClmn = clmn;
+				const lClmn = diff.value.lastIndexOf('\n');
+				if (lClmn < 0)
+					clmn += diff.value.length;
+				else
+					clmn = diff.value.length - lClmn - 1;
+				edit.delete(uri, new vscode.Range(lineNr, prevClmn, lineNr + count, clmn));
+				lineNr += count;
+				edited = true;
+			}
+			else {
+				// Unchanged
+				const count = Utility.countOccurrencesOf('\n', diff.value);
+				lineNr += count;
+				const lClmn = diff.value.lastIndexOf('\n');
+				if (lClmn < 0)
+					clmn += diff.value.length;
+				else
+					clmn = diff.value.length - lClmn - 1;
+			}
+		}
+
+		// Apply changes
+		if (edited) {
+			await vscode.workspace.applyEdit(edit);
+			// Save after edit (to be able to set breakpoints)
+			await doc.save();
+		}
 	}
 
 
@@ -1156,17 +1219,17 @@ export class DebugSessionClass extends DebugSession {
 	protected getLocationForAddress(addr: number): {uri: vscode.Uri, lineNr: number} {
 		let uri;
 		let {fileName, lineNr} = Labels.getFileAndLineForAddress(addr);
-		if (fileName) {
-			// Found in other file
-			uri = vscode.Uri.file(fileName);
-		}
-		else {
-			// Now check in disasm.list
+		if (!fileName) {
+			// Check disassembly
 			lineNr = Disassembly.getLineForAddress(addr) || -1;	// TODO: is this able to handle banking?
 			if (lineNr >= 0) {
 				// Found
-				uri = this.disasmTextDoc.uri;
+				fileName = DisassemblyClass.getAbsFilePath();
 			}
+		}
+		if(fileName) {
+			// Found in other file
+			uri = vscode.Uri.file(fileName);
 		}
 		return {uri, lineNr};
 	}
@@ -1177,16 +1240,13 @@ export class DebugSessionClass extends DebugSession {
 	 * their addresses.
 	 */
 	protected getDisassemblyBreakpoints(): SbpAddr[] {
-		// Check if disassembly exists
-		if (!this.disasmTextDoc)
-			return [];
 		// Get all source breakpoints of the disassembly file.
 		const bps = vscode.debug.breakpoints as vscode.SourceBreakpoint[];
-		const disSrc = this.disasmTextDoc.uri.toString();
+		const filePath = DisassemblyClass.getAbsFilePath();
 		const sbps = bps.filter(bp => {
 			if (bp.location) {
-				const sbpSrc = bp.location.uri.toString();
-				if (sbpSrc == disSrc)
+				const sbpSrc = bp.location.uri.fsPath;
+				if (sbpSrc == filePath)
 					return true;
 			}
 			return false;

@@ -636,7 +636,6 @@ export class DecorationClass {
 	 */
 	public clearDisasmOutdated() {
 		this.disasmOutdatedRange = [];
-		this.disasmOutdatedRange = [new vscode.Range(0, 0, 1000000, 0)];
 		const disasmFile = DisassemblyClass.getAbsFilePath();
 		const editors = this.getEditorsForFile(disasmFile);
 		for (const editor of editors)
