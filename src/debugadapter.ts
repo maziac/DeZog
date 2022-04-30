@@ -939,13 +939,13 @@ export class DebugSessionClass extends DebugSession {
 			const currentText = disasmTextDoc.getText();
 			const dText = Disassembly.getDisassemblyText();
 			if (currentText != dText) {
-
+				/*
 				const len = 20;
 				const cText = currentText.substring(currentText.length - len);
 				const ttext = text.substring(text.length - len);
 				const cArr = currentText.split('\n');
 				const tArr = text.split('\n');
-
+				*/
 				// Error
 				this.showWarning('Disassembly text wrong!!!');
 			}
