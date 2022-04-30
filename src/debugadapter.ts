@@ -362,6 +362,11 @@ export class DebugSessionClass extends DebugSession {
 		CpuHistoryClass.removeCpuHistory();
 		// Clear Remote
 		RemoteFactory.removeRemote(); // Also disposes
+		// Disassembly: Remove all breakpoints
+		const disasmBps = this.getDisassemblyBreakpoints();
+		// Remove BPs temporary
+		const removeBps = disasmBps.map(sbpAddr => sbpAddr.sbp);
+		vscode.debug.removeBreakpoints(removeBps);
 		/*
 		// Remove disassembly text editor. vscode does not support closing directly, thus this hack:
 		if (this.disasmTextDoc) {	// TODO: Maybe I should leave it open.
