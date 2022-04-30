@@ -2189,7 +2189,7 @@ export class Disassembler extends EventEmitter {
 				// Check if memory has already been disassembled
 				let attr = this.memory.getAttributeAt(address);
 				if (!(attr & MemAttribute.ASSIGNED)) {
-					break;	// E.g. an EQU label
+					break;	// E.g. an EQU label or unassigned memory
 				}
 
 				// Check if any addresses need to be filtered from the output.
@@ -2258,8 +2258,8 @@ export class Disassembler extends EventEmitter {
 						let incomplete = false;
 						const len = opcode.length;
 						for (let i = 1; i < len; i++) {
-							const addr = (address + i) & 0xFFFF;
-							const attr = this.memory.getAttributeAt(addr);
+							const addr64k = (address + i) & 0xFFFF;
+							const attr = this.memory.getAttributeAt(addr64k);
 							if (!(attr & MemAttribute.ASSIGNED)) {
 								incomplete = true;
 								break;
@@ -2354,6 +2354,9 @@ export class Disassembler extends EventEmitter {
 				// Log
 				//				console.log('DISASSEMBLY: ' + lines[lines.length-1]);
 			}
+			// The while(true) loop is left if unassigned memory was found.
+			// Add dots:
+			lines.push('...');
 		}
 
 		// Return
