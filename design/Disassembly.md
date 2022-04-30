@@ -12,7 +12,7 @@ This document discusses the 2nd (intelligent) disassembly.
 
 | Name | Description |
 |------|-------------|
-| reverse engineered list file | The list file maintained by the user. Code that the user has reverse engineered and understood is out here. Normally the user will copy part of the disassembly here, change the labels to meaningful names and add comments. |
+| reverse engineered list file (rev-eng.list)| The list file maintained by the user. Code that the user has reverse engineered and understood is out here. Normally the user will copy part of the disassembly here, change the labels to meaningful names and add comments. |
 
 
 # Intelligent Disassembly (z80dismblr)
@@ -70,50 +70,20 @@ To mitigate flickering a diff between old and new disassembly is created and the
 
 At the end it is also required to update the decorations for the code coverage info.
 
+If no callstack address needs to be disassembled then no disassembly takes place.
+To visualize the situation the disassembly is not removed but stays.
+But it's decoration is changed to _italic_ and it's dimmed.
+This indicates the disassembly is not up-to-date.
+
+On debug session termination the disassembly list file itself stays there and is not removed. Maybe the user would want to continue with reverse engineerig after the debug session.
+But the breakpoints associated with the disassembly list files are removed.
+Otherwise these would show up as error (not associated breakpoints), and would be removed, at the next start of an debug session.
+
 
 
 # When to disassemble
 
-Disassembly is down on every step. Memory could have changed and normally also the range changed.
-Only if the memory contents and range did not change the disassembly is omitted.
-
-
-# ROM
-
-How to handle (optimize) areas that are known to be ROM?
-
-
-# Strategies
-
-## Everything anew
-
-With this strategy the memory is cleared for each new disassembly.
-The disassembly only shows a small area of the complete memory.
-The user should focus and understand a (small) part of the code and then move it into the reverse engineered list file.
-
-Without banking:
-1. Clear disassembly memory
-2. Collect all entry addresses (from the stack + 0000h) (Call stack + step history)
-3. Read the current memory from these addresses (size e.g. 100)
-4. Copy read memory into disassembly memory
-5. Disassemble with entry-addresses
-6. Filter (remove) addresses/lines that appear in the reverse engineering list file already.
-
-With banking:
-The same.
-Simply the long addresses would be shown with a different bank.
-
-
-## Persistent Memory
-
-This is similar but mainly the old disassembly memory is not cleared and also the known entry addresses are remembered.
-For performance reasons it would be beneficial to read not all of the memory on every step.
-It becomes problematic if the memory changed in unread/not compared areas.
-
-An advantage could be that larger blocks could be disassembled and maybe a disassembly is not necessary on each step.
-
-Maybe an optimization to "Everything anew" would also be to read-in all ROM areas.
-These are known not to change and could be used for disassembly.
-Some re-disassembly would be required if the bank changes, of course.
-
+Disassembly is done on every step if at least one call stack address is found without file association.
+The memory is read and that memory portion is disassembled.
+If in one step no disassembly is done the disassembly file is shown in italic to visualize that.
 

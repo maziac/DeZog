@@ -52,7 +52,7 @@ The launch.json for DeZog is:
 
 Start with an empty pacman.list file.
 
-1. Start MAME while loop
+1. Start MAME (while loop)
 2. Start a DeZog debug session
 3. Step, understand code
 4. Copy understood code from disasm.list to pacman.list
@@ -66,4 +66,20 @@ The rest of the disassembly will also use the new labels.
 7. Goto 3
 
 Note: The re-load of the list file takes place while the debug session is still active. I.e. you can simply continue with the debugging.
+
+
+# Disassembly
+
+The disassembly shows only part of the code.
+I.e. the disassembly around the current PC and also disassembly from the addresses on the call stack.
+
+If one of these addresses is not associated with a file (either a list file or an asm source) then a disassembly is done.
+
+The disassembly contains only of the addresses where no association to another file exists.
+
+If no address needs to be disassembled then no disassembly takes place.
+However the "old" disassembly file (disasm.list) is not removed.
+It stays but it is shown in _italic_ to visualize that the contents is outdated.
+(Of course, in 99% of the cases the disassembly contents will still be correct. It would be incorrect only if data in the area of the disassembly would have been written or if banking had happened.)
+Anyhow, if the disassembly is shown regularly (not _italic_) you are assured that the disassembly up-to-date.
 
