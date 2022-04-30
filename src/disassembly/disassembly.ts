@@ -109,6 +109,26 @@ export class DisassemblyClass extends Disassembler {
 
 
 	/**
+	 * Constructor.
+	 */
+	constructor() {
+		super();
+
+		// Initialize for DeZog
+		this.automaticAddresses = false;
+		this.commentsInDisassembly = false;
+		this.enableStatistics = false;
+		this.equsInDisassembly = false;
+		this.orgInDisassembly = false;
+		this.numberOfLinesBetweenBlocks = 2;
+		this.numberOfDefbBytes = 4;
+		this.addDefbComments = true;
+		this.ignoreIncompleteOpcodes = true;
+		Format.hexFormat = 'h';
+	}
+
+
+	/**
 	 * Initializes the memory with the data at the given addresses.
 	 * Additionally puts the addresses in the address queue.
 	 */
@@ -130,17 +150,6 @@ export class DisassemblyClass extends Disassembler {
 	 * Additionally keeps the address/line locations.
 	 */
 	public disassemble() {
-		// No comments/statistics etc.
-		this.automaticAddresses = false;
-		this.commentsInDisassembly = false;
-		this.enableStatistics = false;
-		this.equsInDisassembly = false;
-		this.orgInDisassembly = false;
-		this.numberOfLinesBetweenBlocks = 2;
-		this.numberOfDefbBytes = 4;
-		this.addDefbComments = true;
-		Format.hexFormat = 'h';
-
 		// Disassemble
 		super.disassemble();
 		// Get address/line relationship.

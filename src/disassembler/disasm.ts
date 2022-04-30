@@ -172,6 +172,12 @@ export class Disassembler extends EventEmitter {
 	// For DeZog. Disable the ORG output in disassembly.
 	public orgInDisassembly = true;
 
+	// For DeZog. Ignore incomplete opcodes.
+	// If true and if there is not enough memory available to disassemble a specific opcode
+	// the line is left empty.
+	// With DeZog this can happen as it does a disassembly only on part of the memory.
+	public ignoreIncompleteOpcodes = false;
+
 
 	/**
 	 * Initializes the Opcode formatting.
@@ -2246,6 +2252,22 @@ export class Disassembler extends EventEmitter {
 
 					// Read opcode at address
 					const opcode = Opcode.getOpcodeAt(this.memory, address);
+
+					// Check if incomplete instructions should be omitted
+					if (this.ignoreIncompleteOpcodes) {
+						let incomplete = false;
+						const len = opcode.length;
+						for (let i = 1; i < len; i++) {
+							const addr = (address + i) & 0xFFFF;
+							const attr = this.memory.getAttributeAt(addr);
+							if (!(attr & MemAttribute.ASSIGNED)) {
+								incomplete = true;
+								break;
+							}
+						}
+						if (incomplete)
+							break;	// while(true)
+					}
 
 					// Disassemble the single opcode
 					const opCodeDescription = opcode.disassemble(this.memory);
