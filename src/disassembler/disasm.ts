@@ -925,19 +925,13 @@ export class Disassembler extends EventEmitter {
 		else if (opcode.valueType == NumberType.DATA_LBL) {
 			// It's a data label, like "LD A,(nn)"
 			let address = opcode.value;
-			// Check if it the top of stack
+			// Check if it is the top of stack
 			if (opcode.flags & OpcodeFlag.LOAD_STACK_TOP) {
 				// yes, top of stack i.e. "LD SP,nn".
-				// In this case the data 2 byte below is shown as last stack element
-				const offs = -2;
-				// add offset label
-				this.offsetLabels.set(address, offs);
-				// change address
-				address += offs;
 				// add comment
 				if (!this.addressComments.get(address)) {
 					const comment = new Comment();
-					comment.addBefore('; Last element of stack:');
+					comment.addBefore('; Top of the stack:');
 					this.addressComments.set(address, comment);
 				}
 			}
