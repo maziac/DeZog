@@ -56,6 +56,15 @@ interface SbpAddr {
 
 
 /**
+ * Structure used to store the address for disassembly.
+ */
+class StackFrameAddr extends StackFrame {
+	public longAddress: number;	// The associated long address
+}
+
+
+
+/**
  * The Emulator Debug Adapter.
  * It receives the requests from vscode and sends events to it.
  */
@@ -126,6 +135,9 @@ export class DebugSessionClass extends DebugSession {
 	/// An array of a limited amount of last PC addresses (long).
 	/// Used for disassembly.
 	protected longPcAddressesHistory: number[] = [];
+
+	/// Is used to display  the disassembly in a different decoration.
+	protected disassemblyUpToDate = false;
 
 
 	/**
@@ -344,7 +356,7 @@ export class DebugSessionClass extends DebugSession {
 		// Stop machine
 		this.removeAllListeners();	// Don't react on events anymore
 		// Disconnect
-		if(Remote)
+		if (Remote)
 			await Remote.disconnect();
 		// Clear the history instance
 		CpuHistoryClass.removeCpuHistory();
@@ -516,7 +528,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async launch(response: DebugProtocol.Response) {
 		// Setup the disassembler
 		DisassemblyClass.createDisassemblyInstance();
-
+		this.disassemblyUpToDate = false;
 
 		// Init
 		this.processingSteppingRequest = false;
@@ -861,9 +873,10 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// Go through complete call stack and get the sources.
-		// If no source exists than get a hexdump and disassembly later.
+		// If no source exists the stack frame will have 'src' as undefined.
+		const longFetchAddresses = new Array<number>();
 		const frameCount = callStack.length;
-		const sfrs = new Array<StackFrame>();
+		const sfrs = new Array<StackFrameAddr>();
 		for (let index = frameCount - 1; index >= 0; index--) {
 			const frame = callStack[index];
 			// Get file for address
@@ -872,38 +885,27 @@ export class DebugSessionClass extends DebugSession {
 			// Store file, if it does not exist the name is empty
 			const src = this.createSource(file.fileName);
 			const lineNr = (src) ? this.convertDebuggerLineToClient(file.lineNr) : 0;
-			const sf = new StackFrame(index + 1, frame.name, src, lineNr);
+			const sf = new StackFrameAddr(index + 1, frame.name, src, lineNr);
+			sf.longAddress = addr;
 			sfrs.push(sf);
-			// Create array with addresses that need to be fetched for disassembly
-			//if (!src) {
-			//	const csFrame = callStack[index];
-			//	fetchAddresses.push(csFrame.addr);
-			//}
+			if (!src) {
+				// Add to fetch addresses for disassembly
+				longFetchAddresses.push(addr);
+			}
 		}
 
+		// Check if the complete call stack and the
+
 		// Filter addresses by current banking
-		const pcLong = Remote.getPCLong();
-		const fetchAddresses = new Array<number>();
-		// Only do a disassembly if the PC address changed (stackTraceRequest might be called more than once)
 		console.log('longPcAddressesHistory=', this.longPcAddressesHistory);
 		const histLength = this.longPcAddressesHistory.length;
+		const disassembleMemory = (longFetchAddresses.length > 0);
 		//this.forceDisassembly = true;
-		if (this.forceDisassembly || histLength == 0 || pcLong != this.longPcAddressesHistory[0]) {
-			this.forceDisassembly = false;
-			//console.log('pcLong=', pcLong);
-			// If address is already in the list move it to the top.
-			const k = this.longPcAddressesHistory.indexOf(pcLong);
-			if (k >= 0) {
-				this.longPcAddressesHistory.splice(k, 1);
-			}
-			else {
-				// Otherwise add it and remove the last one
-				if (histLength >= 20)
-					this.longPcAddressesHistory.pop();
-			}
-			this.longPcAddressesHistory.unshift(pcLong);
+		if (disassembleMemory)	// Disassembly only if PC or call stack is unknown
+		{
+			this.forceDisassembly = false;	// TODO: REMOVE
 
-			// Filter and change to 64k addresses
+			// Filter addresses not currently paged and add to fetch addresses
 			const slots = Z80Registers.getSlots();
 			for (const longAddr of this.longPcAddressesHistory) {
 				// Create 64k address
@@ -913,11 +915,12 @@ export class DebugSessionClass extends DebugSession {
 				// Compare
 				if (longAddr == longCmpAddress) {
 					// Is paged in
-					fetchAddresses.push(addr64k);
+					longFetchAddresses.push(longAddr);
 				}
 			}
 
 			// Create memory array.
+			const fetchAddresses = longFetchAddresses.map(longAddr => (longAddr & 0xFFFF));
 			const memArray = new MemoryArray();
 			memArray.addRangesWithSize(fetchAddresses, 100);	// Assume 100 bytes each
 
@@ -963,7 +966,7 @@ export class DebugSessionClass extends DebugSession {
 			// Read data
 			const text = Disassembly.getDisassemblyText();
 
-			// TODO: remove these files after testing phase (if warning 'Disassembly text wrong!!!' does nto show up anymore)
+			// TODO: remove these files after testing phase (if warning 'Disassembly text wrong!!!' does not show up anymore)
 			const fnamep = Utility.getRelTmpFilePath('disasm_real_p.list');
 			const fname = Utility.getRelTmpFilePath('disasm_real.list');
 			const fnamevp = Utility.getRelTmpFilePath('disasm_vscode_p.list');
@@ -1049,35 +1052,53 @@ export class DebugSessionClass extends DebugSession {
 			this.disassemblyReassignBreakpoints(prevBpAddresses);
 
 			// If disassembly text editor is open, then show decorations
-			const editors = vscode.window.visibleTextEditors;
-			for (const editor of editors) {
-				if (editor.document == this.disasmTextDoc) {
-					Decoration.setDisasmCoverageDecoration(editor);
-				}
-			}
+			const docEditors = this.getEditorsForTextDoc(this.disasmTextDoc);
+			for (const editor of docEditors)
+				Decoration.setDisasmCoverageDecoration(editor);
 		}
 
+		// Check if decoration need to be changed
+		if (disassembleMemory != this.disassemblyUpToDate) {
+			this.disassemblyUpToDate = disassembleMemory;
+			// Change decoration
+			if (disassembleMemory)
+				Decoration.clearDisasmOutdated();
+			else
+				Decoration.showDisasmOutdated();
+		}
+
+
+		// Add PC to history (independent of disassembly)
+		const pcLong = Remote.getPCLong();
+		//console.log('pcLong=', pcLong);
+		// If address is already in the list move it to the top.
+		const k = this.longPcAddressesHistory.indexOf(pcLong);
+		if (k >= 0) {
+			this.longPcAddressesHistory.splice(k, 1);
+		}
+		else {
+			// Otherwise add it and remove the last one
+			if (histLength >= 20)
+				this.longPcAddressesHistory.pop();
+		}
+		this.longPcAddressesHistory.unshift(pcLong);
+
+
 		// Get lines for addresses and send response.
-		// Determine line numbers (binary search)
 		if (frameCount > 0) {
 			//const absFilePath = DisassemblyClass.getAbsFilePath();
 			//const src = this.createSource(absFilePath) as Source;
-			let indexDump = 0;
-			for (let i = 0; i < frameCount; i++) {
-				const sf = sfrs[i];
-				if (sf.source)
-					continue;
-				// Get line number for stack address
-				const addr = fetchAddresses[indexDump];
-				// Get line number and location
-				const {uri, lineNr} = this.getLocationForAddress(addr);
-				if (uri) { 	// Safety check
-					// Store
-					sf.source = this.createSource(uri.fsPath);
-					sf.line = this.convertDebuggerLineToClient(lineNr);
+			for (const sf of sfrs) {
+				if (!sf.source) {
+					// Get line number for stack address from disassembly
+					const addr = sf.longAddress;
+					const lineNr = Disassembly.getLineForAddress(addr) || -1;	// TODO: is this able to handle banking?
+					if (lineNr >= 0) {	// -1 should not happen
+						// Store
+						sf.source = this.createSource(this.disasmTextDoc.uri.fsPath);
+						sf.line = this.convertDebuggerLineToClient(lineNr);
+					}
 				}
-				// Next
-				indexDump++;
 			}
 		}
 
@@ -1095,6 +1116,23 @@ export class DebugSessionClass extends DebugSession {
 		// Note: codeCoverage is handled differently because it is not sent during
 		// step-back.
 		this.processDelayedDecorations();
+	}
+
+
+	/**
+	 * Returns the TextEditors currently in use for a given doc.
+	 * @param doc The doc to search for.
+	 * @returns An array of editors. Can be empty or contain even more than 1 editor for the same document.
+	 */
+	protected getEditorsForTextDoc(doc: vscode.TextDocument): vscode.TextEditor[] {
+		const docEditors: vscode.TextEditor[] = [];
+		const editors = vscode.window.visibleTextEditors;
+		for (const editor of editors) {
+			if (editor.document == doc) {
+				docEditors.push(editor);
+			}
+		}
+		return docEditors;
 	}
 
 
@@ -1172,7 +1210,7 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Reassigns the breakpoints to the disassembly.
+	 * Reassigns the breakpoints to the disassembly and list file(s).
 	 * @param sbpAddrs A list with source breakpoints plus addresses.
 	 */
 	protected disassemblyReassignBreakpoints(sbpAddrs: SbpAddr[]) {

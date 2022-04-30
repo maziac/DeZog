@@ -50,6 +50,10 @@ class DecorationFileMap {
  * 'historySpot', 'revDbg' and 'break' always contain the complete decoration information.
  * All those calls are delayed in the debugAdapter until the disasm.list file is created in the
  * stackTraceRequest. This is already done in the debugAdapter.
+ *
+ * The disasm.list file got one more decoration: an italic style for the whole doc
+ * to indicate that the file is ot up-to-date.
+ * This is handled simpler as only one file is affected.
  */
 export class DecorationClass {
 	// Names to identify the decorations.
@@ -63,6 +67,13 @@ export class DecorationClass {
 
 	// Collects the coverage addresses that are not assigned yet to any file.
 	protected unassignedCodeCoverageAddresses: Set<number>;
+
+	// The outdated disassembly decoration is handled a little different as
+	// it is only used for one file.
+	protected disasmOutdatedDecoType: vscode.TextEditorDecorationType;
+
+	// The range for the outdated decoration. Is either empty or covers the complete text.
+	protected disasmOutdatedRange: vscode.Range[] = [];
 
 
 	/// Initialize. Call from 'activate' to set the icon paths.
@@ -161,6 +172,12 @@ export class DecorationClass {
 			}
 		});
 
+		// Decoration for 'Outdated' files (i.e. the disasm.list)
+		this.disasmOutdatedDecoType = vscode.window.createTextEditorDecorationType({
+			fontStyle: 'italic',
+			opacity: '0.5'
+		});
+
 		// Create the map
 		this.decorationFileMaps = new Map<string, DecorationFileMap>();
 
@@ -188,11 +205,19 @@ export class DecorationClass {
 
 		// Watch the text editors to decorate them.
 		vscode.window.onDidChangeActiveTextEditor(editor => {
+			if (!editor)
+				return;
 			// This is called for the editor that is going to hide and for the editor
 			// that is shown.
 			// Unfortunately there is no way to differentiate so both are handled.
 			// Note: Editors forget the decorations when they are hidden. I.e. decorations have to be re-applied here.
 			this.setAllDecorations(editor);
+			// Check for outdated and disassembly
+			const edFilename = UnifiedPath.getUnifiedPath(editor.document.fileName);
+
+			// Special case for disassembly file and coverage.
+			if (edFilename == DisassemblyClass.getAbsFilePath())
+				this.setDisasmOutdatedDecoration(editor);
 		});
 	}
 
@@ -248,6 +273,7 @@ export class DecorationClass {
 
 	/**
 	 * Clears all decorations for all editors.
+	 * Except DISASM_OUTDATED.
 	 */
 	public clearAllDecorations() {
 		for (const [, map] of this.decorationFileMaps) {
@@ -584,6 +610,58 @@ export class DecorationClass {
 			}
 		}
 		return location;
+	}
+
+
+	/**
+	 * Returns the TextEditors currently in use for a given file.
+	 * @param fileName The file name to search for.
+	 * @returns An array of editors. Can be empty or contain even more than 1 editor for the same document.
+	 */
+	protected getEditorsForFile(fileName: string): vscode.TextEditor[] {
+		const docEditors: vscode.TextEditor[] = [];
+		const editors = vscode.window.visibleTextEditors;
+		for (const editor of editors) {
+			const edFilename = UnifiedPath.getUnifiedPath(editor.document.fileName);
+			if (edFilename == fileName) {
+				docEditors.push(editor);
+			}
+		}
+		return docEditors;
+	}
+
+
+	/**
+	 * Clears the outdated decoration for the disassembly.
+	 */
+	public clearDisasmOutdated() {
+		this.disasmOutdatedRange = [];
+		this.disasmOutdatedRange = [new vscode.Range(0, 0, 1000000, 0)];
+		const disasmFile = DisassemblyClass.getAbsFilePath();
+		const editors = this.getEditorsForFile(disasmFile);
+		for (const editor of editors)
+			this.setDisasmOutdatedDecoration(editor);
+	}
+
+
+	/**
+	 * Sets the outdated decoration for the disassembly.
+	 */
+	public showDisasmOutdated() {
+		this.disasmOutdatedRange = [new vscode.Range(0, 0, 1000000, 0)];
+		const disasmFile = DisassemblyClass.getAbsFilePath();
+		const editors = this.getEditorsForFile(disasmFile);
+		for (const editor of editors)
+			this.setDisasmOutdatedDecoration(editor);
+	}
+
+
+	/**
+	 * Sets the outdated decoration anew.
+	 * Either clears or sets it for the complete editor.
+	 */
+	protected setDisasmOutdatedDecoration(editor: vscode.TextEditor) {
+		editor.setDecorations(this.disasmOutdatedDecoType, this.disasmOutdatedRange);
 	}
 }
 

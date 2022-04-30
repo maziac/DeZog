@@ -17,7 +17,7 @@ This document discusses the 2nd (intelligent) disassembly.
 
 # Intelligent Disassembly (z80dismblr)
 
-Basically the disassembler works on own 'memory', 64k address block.
+Basically the disassembler works on own 'memory', a 64k address block.
 The memory can have attributes attached to each address.
 When nothing is known yet about the memory all is UNKNOWN (0).
 But ass soon as something gets known more flags are added.
@@ -26,7 +26,7 @@ If it gets known that the memory location is used for code it gets the CODE flag
 If it is the first byte of an opcode additionally it receives the CODE_FIRST flag.
 If it is data it gets the DATA flag.
 
-Note: as these are flags combinations are unlikely but possible. e.g. an address with CODE could also have the DATA attribute if it is e.g. self-modifying code.
+Note: as these are flags, combinations are unlikely, but possible. e.g. an address with CODE could also have the DATA attribute if it is e.g. self-modifying code.
 
 The other important structure is the 'addressQueue' which holds a number of known addresses that have been stepped through. I.e. addresses that for sure share the CODE|CODE_FIRST attribute.
 
@@ -35,9 +35,11 @@ When starting a disassembly these addresses are used as entry points into the di
 The original z80dismblr works only on 64k without paging/memory banks.
 There are some strategies to overcome the limitation.
 
-As the disassembly takes a little time it is not done on every step.
-Instead some memory (at the entry addresses) is retrieved and compared to the existing memory.
-If it is new or differs a new disassembly is done.
+As the disassembly takes a little time and is done on every step it is not done on the complete memory but only a portion of it.
+This portion contains of the last stepped addresses and the call stack addresses.
+The call stack addresses could potentially be wrong but they have to be used otherwise a mouse-click on the call-stack would lead nowhere.
+
+These addresses plus some range of about 100 bytes (in total this will on average sum up to ~1000 bytes) is retrieved and disassembled on each step.
 
 
 # DisassemblyClass
@@ -55,7 +57,8 @@ About 20 addresses of last steps. As these are PC values it is assured that thes
 The history is independent of the StepHistory so that is is filled even if StepHistory is not available.
 Also the size can be adjusted independently.
 Size is about 20 entries.
-Before a disassembly is done the list is filtered by current banking, i.e. only addresses are used that ae currently reachable.
+This list of addresses is concatenated with the address from the call stack.
+Before a disassembly is done the list is filtered by current banking, i.e. only addresses are used that are currently reachable.
 
 This list of addresses is used for fetching the memory (+100 byte for each address) and past to the disassembly. (Note: the disassembly only works on 64k.)
 
@@ -71,17 +74,8 @@ At the end it is also required to update the decorations for the code coverage i
 
 # When to disassemble
 
-In general a disassembly needs to be done if the underlying memory changes.
-Since not all of the memory is retrieved only part of the memory is to be disassembled.
-On each step it would be necessary to compare this memory with the retrieved memory.
-If different memory areas are used or if the memory contents has changed, a new disassembly is required.
-
-Also if banking occurred a new disassembly is required.
-Even if the banking is not even in range of the disassembled memory there could be references to it, e.g. a LD A,(...) from that area, that would require to display the labels differently (with a different bank information).
-
-At the moment, with only a small area being disassembled, a disassembly is simply done on each step.
-
-Note: for optimizations: If it is known that an area is ROM the whole checks could be omitted. Even the memory could be preloaded at the beginning.
+Disassembly is down on every step. Memory could have changed and normally also the range changed.
+Only if the memory contents and range did not change the disassembly is omitted.
 
 
 # ROM
