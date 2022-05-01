@@ -1027,7 +1027,7 @@ export class DebugSessionClass extends DebugSession {
 			const frame = callStack[index];
 			// Get file for address
 			const addr = frame.addr;
-			const file = Labels.getFileAndLineForAddress(addr); 
+			const file = Labels.getFileAndLineForAddress(addr);
 			// Store file, if it does not exist the name is empty
 			let src;
 			if (file.size > 0)
@@ -3045,8 +3045,20 @@ E.g. use "-help -view" to put the help text in an own view.
 		if (enableMap.size == 0)
 			result += ' none';
 		else {
-			for (const [grp, enable] of enableMap) {
-				result += '\n  ' + grp + ': ' + ((enable) ? 'enabled' : 'disabled');
+			for (const [grp, enabled] of enableMap) {
+				result += '\n  ' + grp + ': ' + ((enabled) ? 'enabled' : 'disabled');
+				if (enabled) {
+					// List log breakpoints
+					const lps = Remote.getLogpointsForGroup(grp);
+					for (const lp of lps) {
+						result += '\n    ' + Utility.getLongAddressString(lp.address);
+						const labels = Labels.getLabelsForLongAddress(lp.address);
+						if (labels.length > 0) {
+							const labelsString = labels.join(', ');
+							result += ' (' + labelsString + ')';
+						}
+					}
+				}
 			}
 		}
 		return result;
@@ -3748,6 +3760,8 @@ E.g. use "-help -view" to put the help text in an own view.
 			Labels.init(Settings.launch.smallValuesMaximum);
 			// Read list files
 			Remote.readListFiles(Settings.launch);
+			// Re-read the watchpoints etc.
+			Remote.initWpmemAssertionLogpoints();
 
 			// Reset a few things
 			Decoration.clearAllDecorations();

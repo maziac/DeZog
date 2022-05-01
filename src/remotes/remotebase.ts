@@ -150,6 +150,31 @@ export class RemoteBase extends EventEmitter {
 		await this.doInitialization();
 
 		// This needs to be done after the initialization to get the labels converted correctly:
+		await this.initWpmemAssertionLogpoints();
+	}
+
+
+	/**
+	 * Initializes the WPMEM, ASSERTION and LOGPOINT arrays.
+	 * Beforehand any existing arrays are cleared.
+	 */
+	public async initWpmemAssertionLogpoints() {
+		// Remove any previously set watchpoints (this is for re-load, on start the arrays would anyhow be empty).
+		// Remove WPMEM breakpoints
+		const prevWpmemEnabled = this.wpmemEnabled;
+		if(prevWpmemEnabled)
+			await this.enableWPMEM(false);
+		// Remove ASSERTION breakpoints
+		const prevAssertionBreakpointsEnabled = this.assertionBreakpointsEnabled;
+		if (prevAssertionBreakpointsEnabled)
+			await this.enableAssertionBreakpoints(false);
+		// Remove Logpoints
+		const prevEnabledLpGroups: string[] = [];
+		for (const [group, enabled] of this.logpointsEnabled) {
+			if (enabled)
+				prevEnabledLpGroups.push(group);
+		}
+		await this.enableLogpointGroup(undefined, false);
 
 		// Set watchpoints (memory guards)
 		const watchPointLines = Labels.getWatchPointLines();
@@ -166,6 +191,14 @@ export class RemoteBase extends EventEmitter {
 		const logPointLines = Labels.getLogPointLines();
 		const logPointsMap = this.createLogPoints(logPointLines);
 		this.setLOGPOINTArray(logPointsMap);
+
+		// Re-enable
+		if (prevWpmemEnabled)
+			await this.enableWPMEM(true);
+		if (prevAssertionBreakpointsEnabled)
+			await this.enableAssertionBreakpoints(true);
+		for (const group of prevEnabledLpGroups)
+			await this.enableLogpointGroup(group, true);
 	}
 
 
@@ -1061,7 +1094,7 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * @returns Returns a list of all enabled lopgoints from all groups.
+	 * @returns Returns a list of all enabled logpoints from all groups.
 	 */
 	protected getEnabledLogpoints(): Array<GenericBreakpoint> {
 		const result = new Array<GenericBreakpoint>();
@@ -1074,6 +1107,16 @@ export class RemoteBase extends EventEmitter {
 				result.push(...arr);
 		}
 		return result;
+	}
+
+
+	/**
+	 * @param group the group name for the logpoints
+	 * @returns Returns a list of logpoints for a certain group.
+	 */
+	public getLogpointsForGroup(group: string): Array<GenericBreakpoint> {
+		const lps = this.logpoints.get(group) || [];
+		return lps;
 	}
 
 
