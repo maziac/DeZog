@@ -47,7 +47,7 @@ export class DisassemblyClass extends Disassembler {
 			const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
 			// Check if label has a file associated
 			const entry = Labels.getSourceFileEntryForAddress(longAddr);	// TODO: test banking
-			return (entry == undefined);	// Filter only non-existing addresses
+			return (entry == undefined || entry.size == 0);	// Filter only non-existing addresses or addresses with no code
 		};
 
 

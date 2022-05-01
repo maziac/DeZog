@@ -384,7 +384,7 @@ export class DecorationClass {
 			// Get file location for address
 			let location = Labels.getFileAndLineForAddress(addr);
 			let filename = location.fileName;
-			if (filename.length == 0) {
+			if (filename.length == 0 || location.size == 0) {
 				// No file found, so remember address
 				this.unassignedCodeCoverageAddresses.add(addr);
 				return;
@@ -596,11 +596,17 @@ export class DecorationClass {
 
 	/**
 	 * Returns the location of addr. Either from asm file(s) or from the disassembly file.
+	 * If the associated code size is 0 then it also tries to get the location from the disassembly.
+	 * If not successful it reports the original location.
+	 * This is to handle a special case for reverse-engineering when you set a breakpoint at a list file but
+	 * it does not occupy any bytes.
+	 * (Those bytes would be visible in the disasm.list file).
+	 * E.g. the breakpoint reason string should appear in that case in the disasm-list file.
 	 * @param addr The address to convert.
 	 */
 	protected getFileAndLineForAddress(addr: number): SourceFileEntry {
 		const location = Labels.getFileAndLineForAddress(addr);
-		if (location.fileName.length == 0) {
+		if (location.fileName.length == 0 || location.size == 0) {
 			// Try disasm file
 			const lineNr = Disassembly.getLineForAddress(addr);
 			if (lineNr != undefined) {

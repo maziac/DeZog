@@ -19,6 +19,7 @@ export interface SourceFileEntry {
 	lineNr: number;		/// The line number of the associated source file
 	modulePrefix?: string;	/// For sjasmplus: module is an optional module prefix that is added to all labels (e.g. "sprites.sw.").
 	lastLabel?: string;	/// For local labels: lastLabel is the last non-local label that is used as prefix for local labels. modulePrefix and lastLabel are used for hovering.
+	size: number;		/// The size of bytes the line extends to. I.e. the line covers addresses [address;address+size-1]. Can be 0 if just a label is defined.
 }
 
 
@@ -27,7 +28,6 @@ export interface SourceFileEntry {
  */
 export interface ListFileLine extends SourceFileEntry {
 	addr?: number;		/// The corresponding address from the list file
-	size: number;		/// The size of bytes the line extends to. I.e. the line covers addresses [address;address+size-1]
 	line: string;		/// The text of the line of the list file
 }
 
@@ -621,12 +621,13 @@ export class LabelsClass {
 		if (!entry) {
 			entry = this.fileLineNrs.get(address & 0xFFFF);	// Try 64k address, in case some sld file was without banking.
 			if (!entry) {
-				return {fileName: '', lineNr: 0, modulePrefix: undefined, lastLabel: undefined};
+				return {fileName: '', lineNr: 0, modulePrefix: undefined, lastLabel: undefined, size: 0};
 			}
 		}
 
 		const filePath = Utility.getAbsFilePath(entry.fileName);
-		return {fileName: filePath, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel};
+		return {fileName: filePath, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: entry.size
+};
 	}
 
 

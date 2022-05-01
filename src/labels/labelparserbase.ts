@@ -312,19 +312,27 @@ export class LabelParserBase {
 			}
 			*/
 
-			for (let i = 0; i < entry.size; i++) { // TODO: long addresses?
-				const addr = (entry.addr + i) & 0xFFFF;	// All list file parsing (z80asm and z88dk) is 16 bit only.
-				//const prevFileLine = this.fileLineNrs.get(addr);
-				//if (!prevFileLine)
-				{
-					this.fileLineNrs.set(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
+			const countBytes = entry.size;
+			if (countBytes > 0) {
+				for (let i = 0; i < entry.size; i++) { // TODO: long addresses?
+					const addr = (entry.addr + i) & 0xFFFF + (entry.addr & ~0xFFFF);
+					//const prevFileLine = this.fileLineNrs.get(addr);
+					//if (!prevFileLine)
+					{
+						this.fileLineNrs.set(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: 1});
+					}
 				}
+			}
+			else {
+				// Just for reverse engineering: to be able to define a breakpoint at a label with no associated bytes.
+				const addr = entry.addr;
+				this.fileLineNrs.set(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: 0});
 			}
 
 			// Set address
 			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
-				if(entry.size > 0)	// Only real code gets an address, e.g. not just a label without opcode
-					lineArray[entry.lineNr] = entry.addr;
+//				if(entry.size > 0)	// Only real code gets an address, e.g. not just a label without opcode
+				lineArray[entry.lineNr] = entry.addr;
 				//console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));
 			}
 		}
@@ -361,7 +369,8 @@ export class LabelParserBase {
 			// last address entry wins:
 			for (let i=0; i<entry.size; i++) {
 				const addr=(i==0) ? entry.addr : (entry.addr+i)&0xFFFF;	// Don't mask entry addr if size is 1, i.e. for sjasmplus sld allow higher addresses
-				this.fileLineNrs.set(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
+				this.fileLineNrs.set(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: entry.size
+});
 			}
 
 

@@ -10,7 +10,7 @@ When reverse engineering existing SW the whole object code already exists wherea
 The goal of reverse engineering is to discover the purpose of the binary code by disassembling and debugging it.
 Once a sub routine has been understood it can be commented, labels can be renamed to more meaningful names and the disassembly can be saved.
 
-These commented disassembly is reloaded and taken as source for hte further stepping. Also the new labels are used.
+These commented disassembly is reloaded and taken as source for the further stepping. Also the new labels are used.
 
 The more of the binary is understood the more complete the list file becomes until at the end hopefully all code is commented and understood.
 
@@ -82,4 +82,20 @@ However the "old" disassembly file (disasm.list) is not removed.
 It stays but it is shown in _italic_ to visualize that the contents is outdated.
 (Of course, in 99% of the cases the disassembly contents will still be correct. It would be incorrect only if data in the area of the disassembly would have been written or if banking had happened.)
 Anyhow, if the disassembly is shown regularly (not _italic_) you are assured that the disassembly up-to-date.
+
+
+# Breakpoints
+
+Breakpoints can be set via the vscode editor as normal.
+Breakpoints can be set either in the disassembly or in the list file.
+
+Breakpoints will most of the time "survive" in the disassembly even if the file is created anew.
+Breakpoints are only removed if there does not exist any correspondent file/line/address for that breakpoint anymore after a disassembly has taken place.
+
+If you need to set a breakpoint to some location that does not exist in either the disassembly or the list file then you can do the following:
+1. In the list file just type in the address (in hex) at a start of a line.
+2. In the command palette type: ```DeZog: reload the list file(s).```
+3. Set a breakpoint at the line of the address. The picture shows this for a breakpoint at address 0x8000:
+![](images/rev_eng_bp_in_listfile.jpg)
+
 

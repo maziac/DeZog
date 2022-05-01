@@ -1027,9 +1027,11 @@ export class DebugSessionClass extends DebugSession {
 			const frame = callStack[index];
 			// Get file for address
 			const addr = frame.addr;
-			const file = Labels.getFileAndLineForAddress(addr);
+			const file = Labels.getFileAndLineForAddress(addr); 
 			// Store file, if it does not exist the name is empty
-			const src = this.createSource(file.fileName);
+			let src;
+			if (file.size > 0)
+				src = this.createSource(file.fileName);
 			const lineNr = (src) ? this.convertDebuggerLineToClient(file.lineNr) : 0;
 			const sf = new StackFrameAddr(index + 1, frame.name, src, lineNr);
 			sf.longAddress = addr;

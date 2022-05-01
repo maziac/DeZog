@@ -98,9 +98,11 @@ suite('Labels (revEng)', () => {
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 8);
 
-			// no bytes -> no file association
+			// no bytes -> file association, but size == 0
 			res = lbls.getFileAndLineForAddress(0x0015);
-			assert.equal(res.fileName, '');
+			//assert.equal(res.fileName, '');
+			assert.equal(res.fileName, 'tests/data/labels/projects/revEng/main.list');
+			assert.equal(res.size, 0);
 
 			// long label: C1AC@3 FA
 			res = lbls.getFileAndLineForAddress(0xC1AC + (3 + 1) * 0x10000);
@@ -158,7 +160,8 @@ suite('Labels (revEng)', () => {
 
 			// label2.localb
 			addr = lbls.getAddrForFileAndLine(fname, 9);
-			assert.equal(addr, -1);
+			//assert.equal(addr, -1);
+			assert.equal(addr, 5);
 
 			// label4
 			addr = lbls.getAddrForFileAndLine(fname, 14);

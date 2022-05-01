@@ -268,7 +268,8 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 						fileName: sourceFile,
 						lineNr: lineNr,
 						modulePrefix: this.modulePrefix,
-						lastLabel: this.lastLabel
+						lastLabel: this.lastLabel,
+						size: 1	// size is used in the disassembly at the moment for reverse engineering only and it is only important if 0 or not 0. We don't know the instruction size in sld, so we assume 1 here.
 					});
 					// Also assume for max. instruction size and associate the following
 					// 3 bytes as well (but only to "estimated")
@@ -279,7 +280,8 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 							fileName: sourceFile,
 							lineNr: lineNr,
 							modulePrefix: this.modulePrefix,
-							lastLabel: this.lastLabel
+							lastLabel: this.lastLabel,
+							size: 1
 						});
 					}
 
