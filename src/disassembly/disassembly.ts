@@ -6,7 +6,6 @@ import {Z80Registers} from "../remotes/z80registers";
 import {Labels} from "../labels/labels";
 import {MemAttribute} from "../disassembler/memory";
 import {Format} from "../disassembler/format";
-import {addListener} from "process";
 
 
 

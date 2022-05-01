@@ -495,6 +495,9 @@ export class Z80RegistersClass {
 	 * @return The corresponding long address, i.e. addr+((bank+1)<<16).
 	 */
 	public getLongAddressWithBank(addr: number, bank: number): number {
+		if (bank < 0)
+			return addr;	// 64k address
+		// Long address:
 		const longAddr = addr + ((bank + 1) << 16);
 		return longAddr;
 	}

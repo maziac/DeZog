@@ -1,4 +1,5 @@
 import {Utility} from '../misc/utility';
+import {Z80Registers} from '../remotes/z80registers';
 import {LabelParserBase} from './labelparserbase';
 
 
@@ -44,7 +45,7 @@ export class ReverseEngineeringParser extends LabelParserBase {
 	protected regexEqu = /^\s*([\w_][\w_\d\.]*):\s*EQU\s+([^;]+)/i;	// NOSONAR: sonar wrong
 
 	// Regex to parse the address
-	protected regexAddr = /^(([\da-f]+)(@\d+)?\s*)/i;
+	protected regexAddr = /^(([\da-f]+)(:\d+)?\s*)/i;
 
 	// Regex to parse the bytes after the address
 	protected regexByte = /^([\da-f][\da-f]\s)/i;
@@ -104,14 +105,14 @@ export class ReverseEngineeringParser extends LabelParserBase {
 		}
 		const addr64kStr = matchAddr[2];
 		const addr64k = parseInt(addr64kStr, 16);
-		let bank = 0;	// 0 = no bank
+		let bank = -1;	// 0 = no bank
 		const bankStr = matchAddr[3];
 		if (bankStr)
-			bank = 1 + parseInt(bankStr.substring(1));
+			bank = parseInt(bankStr.substring(1));
 		workLine = workLine.substring(matchAddr[1].length);
 
 		// Create long address
-		const longAddress = addr64k + bank * 0x10000;
+	 	const longAddress = Z80Registers.getLongAddressWithBank(addr64k, bank);
 
 		// Bytes
 		// E.g. "05 FC ..."
