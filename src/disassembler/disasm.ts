@@ -2225,7 +2225,12 @@ export class Disassembler extends EventEmitter {
 					// Add label on separate line
 					let labelLine = addrLabel.name + ':';
 					if (this.clmnsAddress > 0) {
-						labelLine = Format.getHexString(address).padEnd(this.clmnsAddress) + labelLine;
+						let addrString;
+						if (this.funcFormatAddress)
+							addrString = this.funcFormatAddress(address);
+						else
+							addrString = Format.getHexString(address);
+						labelLine = addrString.padEnd(this.clmnsAddress) + labelLine;
 						if (this.DBG_ADD_DEC_ADDRESS) {
 							labelLine = address.toString().padEnd(5) + ' ' + labelLine;
 						}

@@ -6,6 +6,7 @@ import {Z80Registers} from "../remotes/z80registers";
 import {Labels} from "../labels/labels";
 import {MemAttribute} from "../disassembler/memory";
 import {Format} from "../disassembler/format";
+import {addListener} from "process";
 
 
 
@@ -31,20 +32,22 @@ export class DisassemblyClass extends Disassembler {
 		// Use internal labels.
 		Disassembly.funcAssignLabels = (addr64k: number) => {
 			// Convert to long address
-			const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
+			const slots = Z80Registers.getSlots();	// TODO: Couldn't both accessed to Z80Registers be combined?
+			const longAddr = Z80Registers.createLongAddress(addr64k, slots);
 			// Check if label already known
 			const labels = Labels.getLabelsForLongAddress(longAddr);	// TODO: Test long addresses
 			if (labels && labels.length > 0) {
 				return labels.join(' or ');
 			}
-			// Otherwise simple hex string
+			// Otherwise simple hex string, e.g. "C000"
 			return 'L' + Utility.getHexString(addr64k, 4);
 		};
 
 		// Filter any address that is already present in the list file(s).
 		Disassembly.funcFilterAddresses = (addr64k: number) => {
 			// Convert to long address
-			const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
+			const slots = Z80Registers.getSlots();
+			const longAddr = Z80Registers.createLongAddress(addr64k, slots);
 			// Check if label has a file associated
 			const entry = Labels.getSourceFileEntryForAddress(longAddr);	// TODO: test banking
 			return (entry == undefined || entry.size == 0);	// Filter only non-existing addresses or addresses with no code
@@ -54,7 +57,8 @@ export class DisassemblyClass extends Disassembler {
 		// Add bank info to the address.
 		Disassembly.funcFormatAddress = (addr64k: number) => {
 			// Convert to long address
-			const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
+			const slots = Z80Registers.getSlots();
+			const longAddr = Z80Registers.createLongAddress(addr64k, slots);
 			// Get bank
 			const bank = Z80Registers.getBankFromAddress(longAddr);
 			// Formatting

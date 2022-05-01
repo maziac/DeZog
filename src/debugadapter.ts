@@ -870,7 +870,6 @@ export class DebugSessionClass extends DebugSession {
 
 		// Get the call stack trace.
 		let callStack;
-		//let slots;
 		if (StepHistory.isInStepBackMode()) {
 			// Get callstack
 			callStack = StepHistory.getCallStack();

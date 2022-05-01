@@ -252,6 +252,7 @@ export class LabelsClass {
 				if (warnings)
 					this.warnings += 'revEng parser warnings (' + config.path + '):\n' + warnings;
 			}
+			this.bankSize = 0x4000;	// TODO: need to be read from somewhere
 		}
 
 		// Add new assemblers here ...
