@@ -6,6 +6,7 @@ import {Z80Registers} from "../remotes/z80registers";
 import {Labels} from "../labels/labels";
 import {MemAttribute} from "../disassembler/memory";
 import {Format} from "../disassembler/format";
+import {Remote} from "../remotes/remotebase";
 
 
 
@@ -63,7 +64,7 @@ export class DisassemblyClass extends Disassembler {
 			// Formatting
 			let addrString = Utility.getHexString(addr64k, 4);
 			if (bank >= 0)
-				addrString += ':' + bank;
+				addrString += ':' + Remote.memoryModel.getBankName(bank);
 			//addrString += '[' + bank + ']';
 			return addrString;
 		};

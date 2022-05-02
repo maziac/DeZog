@@ -15,7 +15,7 @@ import {CpuHistory} from '../src/remotes/cpuhistory';
 // Mock for the socket.
 class MockZesaruxSocket extends ZesaruxSocket {
 	public dataArray: Array<string>=[];
-	public send(command: string, handler: {(data)}=(data) => {}, suppressErrorHandling=false, /*, timeout = -1*/) {
+	public send(command: string, handler: {(data)}=(data) => {}, suppressErrorHandling=false, /*, timeout = -1*/) {	// NOSONAR
 		// Calls the handler directly
 		const data=this.dataArray.shift();
 		assert.notEqual(data, undefined);

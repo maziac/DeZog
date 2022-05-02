@@ -3,7 +3,7 @@
 This documents deals with the problems of memory paging.
 
 Traditionally DeZog was working on an address space of 64k only.
-As this is the address space a Z80 PU can directly address.
+As this is the address space a Z80 CPU can directly address.
 
 If more memory is to be used the memory has to be paged in with certain commands.
 Usually a write to some port or register (see ZX Next).
@@ -16,7 +16,51 @@ Several problems arise if memory is used in this way.
 - History (lite history): This is independent of the emulator. I.e. if the current PC address and bank number can be retrieved it is possible to store it.
 
 
-# Long Addresses Representation
+# Long Address, Slots, Bank
+
+## Slots, Banks, Paging
+
+A slot is a memory range.
+E.g. 0x0000-0x3FFF or 0xC000-0xFFFF
+
+Slots have indices, e.g. for the ZX128K there exist 4 slots:
+- Slot 0: 0x0000-0x3FFF
+- Slot 1: 0x4000-0x7FFF
+- Slot 2: 0x8000-0xBFFF
+- Slot 3: 0xC000-0xFFFF
+
+In a ZXNext we have 8 slots:
+- Slot 0: 0x0000-0x1FFF
+- Slot 1: 0x2000-0x3FFF
+- Slot 2: 0x4000-0x5FFF
+- Slot 3: 0x6000-0x7FFF
+- Slot 0: 0x8000-0x9FFF
+- Slot 1: 0xA000-0xBFFF
+- Slot 2: 0xC000-0xDFFF
+- Slot 3: 0xE000-0xFFFF
+
+
+Certain slots can be assigned to certain memory.
+Eg.
+- Slot 0: 0x0000-0x3FFF:  ROM
+- Slot 1: 0x4000-0x7FFF:  Bank 2
+- Slot 2: 0x8000-0xBFFF:  Bank 5
+- Slot 3: 0xC000-0xFFFF:  Bank 0
+
+Slot sizes don't need to be equal in size, e.g. the ZX16K would use:
+- Slot 0: 0x0000-0x3FFF:  ROM
+- Slot 1: 0x4000-0x7FFF:  RAM
+- Slot 2: 0x8000-0xFFFF:  Unassigned
+
+A slot can be paged but does not have to.
+Paging means that different memory banks can be paged into a slot.
+E.g. slot 1 could either contain bank 4, bank 7 or bank 12.
+If a slot is pageable and what banks are usable depends on the MemoryModel used.
+E.g. ZX16K and ZX128K use different MemoryModels: Zx16MemoryModel and ZX128MemoryModel.
+
+The term bank is used here ormally only for memory that can be paged into slots. Not for memory that is assigned to one slot but cannot be changed (like ROM and RAM in ZX16K).
+
+## Long Addresses Representation
 
 To store a "long address", i.e. an address with bank number information, it is necessary to know the bank size at first.
 For the ZXNext this is usually 8k and any examples here will use this as assumption.
@@ -36,6 +80,8 @@ Everything bigger is a long address with the coding:
 ~~~
 where address includes the upper bits for the slot index.
 It is necessary to increase the bank_nr by 1 because 0 is left for normal addresses.
+
+Note: long addresses are used only for the pageable slots. The other slots use normal 64k addresses as there is no requirement to distinguish the address from some other bank,
 
 
 

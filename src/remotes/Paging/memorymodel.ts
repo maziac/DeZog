@@ -52,6 +52,23 @@ export class MemoryModel {
 
 
 	/**
+	 * Returns the name of a bank.
+	 * Used e.g. for the long address display in the disassembly.
+	 * The non-overridden method simply returns the number as string.
+	 * But overridden methods could also prepend teh number with e.g. an
+	 * "R" for ROM.
+	 * @param bank Bank number. Starts at 0.
+	 * @returns The bank number as string or an empty string if bank is < 0
+	 * (no bank number).
+	 */
+	public getBankName(bank: number): string {
+		if (bank < 0)
+			return '';
+		return bank.toString();
+	}
+
+
+	/**
 	 * Returns the bank size.
 	 * @returns 0 in this case = no banks used.
 	 */
@@ -205,6 +222,21 @@ export class Zx128MemoryModel extends MemoryModel {
 		}
 		// Return
 		return pages;
+	}
+
+
+	/**
+	 * Returns the name of a bank.
+	 * Ovverides to return a prepended 'R' to indicate ROM banks.
+	 * @param bank Bank number. Starts at 0.
+	 * @returns E.g. '0' or 'R1' for rom bank 1
+	 */
+	public getBankName(bank: number): string {
+		if (bank < 0)
+			return '';
+		// Banks 8 and 9 are used for ROM. The other banks 0-7 are RAM.
+		const name = (bank >= 8) ? "R" + (bank & 0x01) : bank.toString();
+		return name;
 	}
 
 
