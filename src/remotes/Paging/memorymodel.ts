@@ -1,53 +1,328 @@
-import {CustomMemoryType} from "../../settings";
+import exp = require("constants");
+import {CustomMemoryBank, CustomMemorySlot, CustomMemoryType} from "../../settingscustommemory";
 import {Z80Registers} from "../z80registers";
-import {BankType} from "../zsimulator/simmemory";
 
 
+// TODO: SimMemory: Da gab es glaub ich ein paar Vereinfachungen beim Zugriff über Grenzen hinaus. Da vorher alles eine zusammenhängendes lineares Memory war.
 
-/// Definition of one memory bank, i.e. memory slot/bank relationship.
+
+// TODO: Change into individual files.
+
+// Definition of one memory bank, i.e. memory slot/bank relationship.
 export interface MemoryBank {
-	/// Z80 start address of page.
+	// Z80 start address of page.
 	start: number;
 
-	/// Z80 end address of page.
+	// Z80 end address of page.
 	end: number;
 
-	/// The name of the mapped memory area.
+	// The name of the mapped memory area.
 	name: string;
 }
 
 
+/**
+ * For storing the slot ranges.
+ */
+interface SlotRange {
+	// Z80 start address of slot.
+	start: number;
+
+	// Z80 end address of page.
+	end: number;
+
+	// The IO configuration for switching the banks
+	ioMmu?: any;	// TODO
+}
+
 
 /**
- * Class that takes care of the memory paging.
- * I.e. it defines which memory bank to slot association is used.
- *
- * Is the base class and defines:
- * 0000-FFFF: RAM
+ * For storing the banks.
+ */
+interface BankInfo {
+	// The name of the bank, can include the index variable.
+	// Used in the VARIABLE pane. E.g. "ROM0"
+	// E.g. 'BANK3' or 'ROM0'.
+	name: string;
+
+	// The name of the bank, can include the index variable.
+	// Used in the disassembly. E.g. '3' or 'R0'.
+	shortName: string;
+
+	// The size of the bank
+	size: number;
+
+
+	/**
+	 * Optional. If specified, set the slot as ROM.
+	 * The content is the buffer content, or the path of the ROM content.
+	 * File content should be in raw format (i.e. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).
+	 * Array content is flat and it should cover the whole bank span.
+	 */
+	rom?: string | Uint8Array;	// TODO: Do I need this here?
+
+	/**
+	 * Optional offset of the ROM file/content
+	 * TODOQ: Check usage
+	 */
+	romOffset?: number;
+}
+
+
+/**
+ * Class that takes care of the memory model.
+ * I.e. it holds the definition of the memory ranges and the associated
+ * banks (if any).
+ * It is highly configurable. All ranges, sizes ad banks are configured through the
+ * constructor.
  */
 export class MemoryModel {
+	// Holds all slot ranges.
+	protected slotRanges: SlotRange[] = [];
+
+	// Holds the initial bank association for a slot.
+	// Item is undefined if no memory is assigned.
+	// TODO: This is not needed for the MemoryModel but for the SimulatedMemory only. Move it?
+	protected initialSlots: (number|undefined)[] = [];
+
+	// Holds the complete bank info.
+	protected banks: BankInfo[] = [];
+
+
+	/**
+	 * Constructor.
+	 * @param cfg The custom memory model configuration. From the settings.
+	 */
+	constructor(cfg: CustomMemorySlot[]) {
+		let expectedStart = 0;
+		// Parse the config
+		for (const custMemSlot of cfg) {
+			// Check if block needs to be inserted
+			const start = custMemSlot.range[0];
+			const diff = start - expectedStart;
+			if (diff < 0)
+				throw Error("Range-start lower or equal than last range-end.");
+			if (diff > 0) {
+				// Unassigned area between slots
+				const unassignedSlotRange = {
+					start: expectedStart,
+					end: start - 1
+				}
+				this.slotRanges.push(unassignedSlotRange);
+				this.initialSlots.push(undefined);
+			}
+
+			// Add slot
+			const end = custMemSlot.range[1];
+			if (end < start)
+				throw Error("Range-end lower than range-start.");
+
+			// Initial bak for slot
+			let initialBank = custMemSlot.initialBank;
+
+			// Banks
+			const size = end + 1 - start;
+			const banks = custMemSlot.banks;
+			if (banks.length == 0)
+				throw Error("No banks specified for range.");
+			for (const bank of banks) {
+				const indexStart = this.createBankOrBanks(bank, size);
+				// Store initial bank?
+				if (initialBank == undefined)
+					initialBank = indexStart;
+			}
+
+			// Initialize slot with bank
+			this.initialSlots.push(initialBank);
+			// Slot ranges
+			const slotRange = {
+				start,
+				end,
+				ioMMu: custMemSlot.ioMmu
+			}
+			this.slotRanges.push(slotRange);
+
+			// Next
+			expectedStart = end + 1;
+		}
+
+		// Last element
+		if (expectedStart < 0x10000) {
+			// Unassigned area at the end
+			const unassignedSlotRange = {
+				start: expectedStart,
+				end: 0xFFFF
+			}
+			this.slotRanges.push(unassignedSlotRange);
+			this.initialSlots.push(undefined);
+		}
+
+		// Set default names for unnamed banks
+		for (let index = 0; index < this.banks.length; index++) {
+			const bank = this.banks[index];
+			if (bank.name == undefined)
+				bank.name = 'BANK' + index;
+			if (bank.shortName == undefined)
+				bank.shortName = index.toString();
+		}
+	}
+
+
+	/**
+	 * Sets the bank info for one bank.
+	 * Since the same bank could be defined in different slots it could be set
+	 * several times. In this case the biggest size is used.
+	 * And the names are checked for equality (if not undefined).
+	 * @param index The index number of the bank. 0-indexed.
+	 * @param bankInfo The bank info to set.
+	 */
+	protected setBankInfo(index: number, bankInfo: BankInfo) {
+		let prevInfo = this.banks[index];
+		if (prevInfo) {
+			// Update previous entry:
+			// Get the bigger of both sizes
+			if (prevInfo.size < bankInfo.size)
+				prevInfo.size = bankInfo.size;
+			// Check if both names are the same
+			if (prevInfo.name && bankInfo.name) {
+				if (prevInfo.name != bankInfo.name)
+					throw Error("Different names given for same the bank.");
+			}
+			if (prevInfo.shortName && bankInfo.shortName) {
+				if (prevInfo.shortName != bankInfo.shortName)
+					throw Error("Different short names given for the same bank.");
+			}
+		}
+		else {
+			// New entry
+			this.banks[index] = bankInfo;
+		}
+	}
+
+
+	/**
+	 * Creates the BankInfo of one bank or several banks in a row if
+	 * a range is given.
+	 * If a bank with the index already exists then the max. size is selected and
+	 * an error is thrown if the names do not match.
+	 * @param bank The configuration from the settings.
+	 * @param size The size of the bank.
+	 * @returns The index of the (first) bank created.
+	 */
+	protected createBankOrBanks(bank: CustomMemoryBank, size: number): number {
+		let indexStart: number;
+		let indexOrRange = bank.index;
+		// Check for bank range
+		if (typeof indexOrRange == 'number') {
+			// Just one bank
+			indexStart = indexOrRange;
+			if (indexStart >= 256)
+				throw Error("Bank index too high.");
+			if (indexStart < 0)
+				throw Error("Bank index < 0.");
+			const bankInfo: BankInfo = {
+				name: this.createBankName(bank.name, indexStart),
+				shortName: this.createBankShortName(bank.shortName, indexStart),
+				size
+				// TODO: rom?
+			};
+			this.setBankInfo(indexStart, bankInfo);
+		}
+		else {
+			// A bank range
+			indexStart = indexOrRange[0];
+			const indexEnd = indexOrRange[1];
+			if (indexStart > indexEnd)
+				throw Error("Bank range: first index bigger than last index.");
+			if (indexEnd >= 256)
+				throw Error("Bank index too high.");
+			if (indexStart < 0)
+				throw Error("Bank index < 0.");
+			for (let index = indexStart; index <= indexEnd; index++) {
+				const bankInfo: BankInfo = {
+					name: this.createBankName(bank.name, index),
+					shortName: this.createBankShortName(bank.shortName, index),
+					size
+					// TODO: rom?
+				};
+				this.setBankInfo(index, bankInfo);
+			}
+		}
+		// Return
+		return indexStart;
+	}
+
+
+	/**
+	 * Returns the bank name.
+	 * @param name The name, might contain a variable.
+	 * @param index The bank index. Might be used to construct the returned name.
+	 */
+	protected createBankName(name: string | undefined, index: number): string {
+		if (name == undefined)
+			return undefined!;
+		// Use given name
+		return name;	// TODO: evaluate name.
+	}
+
+
+	/**
+	 * Returns the bank short name.
+	 * @param name The name, might contain a variable.
+	 * @param index The bank index. Might be used to construct the returned name.
+	 */
+	protected createBankShortName(shortName: string | undefined, index: number): string {
+		if (shortName == undefined)
+			return undefined!;
+		// Use given name
+		return shortName;	// TODO: evaluate name.
+	}
+
+
+	/**
+	 * Returns a description for the slots used in the variables section.
+	 * @param slots The slots to use for display.
+	 * @returns An array with the available memory pages. Contains start and end address
+	 * and a name.
+	 */
+	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
+		const pages: Array<MemoryBank> = [];
+		if (slots) { // TODO: slots shouldn't be undefined
+			const len = this.slotRanges.length;
+			for (let i = 0; i < len; i++) {
+				const bankNr = slots[i];
+				let name;
+				if (bankNr == undefined) {
+					// Unassigned
+					name = 'UNASSIGNED';
+				}
+				else {
+					// Use bank
+					const bank = this.banks[bankNr];
+					name = bank.name;
+				}
+				// Store
+				const slotRange = this.slotRanges[i];
+				pages.push({start: slotRange.start, end: slotRange.end, name});
+			}
+		}
+		// Return
+		return pages;
+	}
+
+
+
+
+
+
+
+
 	/**
 	 * Initialize.
 	 * Set decoder.
 	 */
 	public init() {
 		Z80Registers.setSlotsAndBanks(undefined, undefined);
-	}
-
-
-	/**
-	 * Returns the standard description, I.e. 0-FFFF =  RAM.
-	 * @param slots Not used.
-	 * @returns An array with the available memory pages. Contains start and end address
-	 * and a name.
-	 */
-	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
-		// Prepare array
-		const pages: Array<MemoryBank> = [
-			{start: 0x0000, end: 0xFFFF, name: "RAM"}
-		];
-		// Return
-		return pages;
 	}
 
 
@@ -365,7 +640,7 @@ export class CustomMemoryModel extends MemoryModel {
 		for (let i = 0; i < nob; i++) {
 			let bankName = customMemory.banks[i.toString()];
 			if (bankName == undefined)
-				bankName = BankType[BankType.UNUSED];
+				bankName = 'UNUSED';
 			this.memoryBanks.push({
 				start: addr,
 				end: addr + bankSize - 1,
@@ -378,7 +653,9 @@ export class CustomMemoryModel extends MemoryModel {
 
 
 	/**
-	 * Returns the standard description, I.e. 0-3FFF = ROM, rest is RAM.
+	 * Returns the standard description, E.g. 0-3FFF = ROM, rest is RAM.
+	 * Used by the 'Memory Banks' description in the VARIABLE pane and in the
+	 * visual RAM of zsim.
 	 * @param slots Not used.
 	 * @returns An array with the available memory banks. Contains start and end address
 	 * and a name.
