@@ -58,7 +58,12 @@ E.g. slot 1 could either contain bank 4, bank 7 or bank 12.
 If a slot is pageable and what banks are usable depends on the MemoryModel used.
 E.g. ZX16K and ZX128K use different MemoryModels: Zx16MemoryModel and ZX128MemoryModel.
 
-The term bank is used here ormally only for memory that can be paged into slots. Not for memory that is assigned to one slot but cannot be changed (like ROM and RAM in ZX16K).
+The term bank is used here for memory that can be bank switched but also for memory that can't. E.g. the ZX48K has 2 banks: 16k ROM and 48k RAM.
+
+Slots that are not assigned will internally be set to a special bank (bank number is 1 higher than the maximum bank number used).
+This bank is not seen in the UI.
+This "trick" makes the handling easier and faster.
+
 
 ## Long Addresses Representation
 

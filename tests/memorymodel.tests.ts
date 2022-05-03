@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import {MemoryModel} from '../src/remotes/Paging/memorymodel';
+import {BankType, MemoryModel} from '../src/remotes/Paging/memorymodel';
 import {Zx128kMemModel, Zx16kMemModel, Zx48kMemModel, ZxNextMemModel} from '../src/settingspredefinedmemory';
 
 suite('MemoryModel', () => {
@@ -410,11 +410,18 @@ suite('MemoryModel', () => {
 			assert.equal(mm.initialSlots.length, 3);
 			assert.equal(mm.initialSlots[0], 0);
 			assert.equal(mm.initialSlots[1], 1);
-			assert.equal(mm.initialSlots[2], undefined);
+			assert.equal(mm.initialSlots[2], 2);	// UNUSED
 
-			assert.equal(mm.banks.length, 2);
+			assert.equal(mm.banks.length, 3);
 			assert.equal(mm.banks[0].name, "ROM");
 			assert.equal(mm.banks[1].name, "RAM");
+			assert.equal(mm.banks[2].name, "UNUSED");
+			assert.equal(mm.banks[0].shortName, "");
+			assert.equal(mm.banks[1].shortName, "");
+			assert.equal(mm.banks[2].shortName, "");
+			assert.equal(mm.banks[0].bankType, BankType.RAM);	// TODO: needs to be ROM
+			assert.equal(mm.banks[1].bankType, BankType.RAM);
+			assert.equal(mm.banks[2].bankType, BankType.UNUSED);
 
 			const memBanks = mm.getMemoryBanks([0, 1, undefined]);
 			assert.equal(memBanks.length, 3);
@@ -447,6 +454,14 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks.length, 2);
 			assert.equal(mm.banks[0].name, "ROM");
 			assert.equal(mm.banks[1].name, "RAM");
+
+			assert.equal(mm.banks.length, 2);
+			assert.equal(mm.banks[0].name, "ROM");
+			assert.equal(mm.banks[1].name, "RAM");
+			assert.equal(mm.banks[0].shortName, "");
+			assert.equal(mm.banks[1].shortName, "");
+			assert.equal(mm.banks[0].bankType, BankType.RAM);	// TODO: needs to be ROM
+			assert.equal(mm.banks[1].bankType, BankType.RAM);
 
 			const memBanks = mm.getMemoryBanks([0, 1, undefined]);
 			assert.equal(memBanks.length, 2);
@@ -502,6 +517,40 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks[7].shortName, "7");
 			assert.equal(mm.banks[8].shortName, "R0");
 			assert.equal(mm.banks[9].shortName, "R1");
+
+			assert.equal(mm.banks.length, 10);
+			assert.equal(mm.banks[0].name, "BANK0");
+			assert.equal(mm.banks[1].name, "BANK1");
+			assert.equal(mm.banks[2].name, "BANK2");
+			assert.equal(mm.banks[3].name, "BANK3");
+			assert.equal(mm.banks[4].name, "BANK4");
+			assert.equal(mm.banks[5].name, "BANK5");
+			assert.equal(mm.banks[6].name, "BANK6");
+			assert.equal(mm.banks[7].name, "BANK7");
+			assert.equal(mm.banks[8].name, "ROM0");
+			assert.equal(mm.banks[9].name, "ROM1");
+
+			assert.equal(mm.banks[0].shortName, "0");
+			assert.equal(mm.banks[1].shortName, "1");
+			assert.equal(mm.banks[2].shortName, "2");
+			assert.equal(mm.banks[3].shortName, "3");
+			assert.equal(mm.banks[4].shortName, "4");
+			assert.equal(mm.banks[5].shortName, "5");
+			assert.equal(mm.banks[6].shortName, "6");
+			assert.equal(mm.banks[7].shortName, "7");
+			assert.equal(mm.banks[8].shortName, "R0");
+			assert.equal(mm.banks[9].shortName, "R1");
+
+			assert.equal(mm.banks[0].bankType, BankType.RAM);
+			assert.equal(mm.banks[1].bankType, BankType.RAM);
+			assert.equal(mm.banks[2].bankType, BankType.RAM);
+			assert.equal(mm.banks[3].bankType, BankType.RAM);
+			assert.equal(mm.banks[4].bankType, BankType.RAM);
+			assert.equal(mm.banks[5].bankType, BankType.RAM);
+			assert.equal(mm.banks[6].bankType, BankType.RAM);
+			assert.equal(mm.banks[7].bankType, BankType.RAM);
+			assert.equal(mm.banks[8].bankType, BankType.RAM);	// TODO: needs to be ROM
+			assert.equal(mm.banks[9].bankType, BankType.RAM);	// TODO: needs to be ROM
 
 			const memBanks = mm.getMemoryBanks([9, 7, 6, 5] );
 			assert.equal(memBanks.length, 4);
@@ -570,6 +619,12 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks[254].shortName, "R");
 			assert.equal(mm.banks[255].shortName, "R");
 
+			assert.equal(mm.banks[0].bankType, BankType.RAM);
+			assert.equal(mm.banks[1].bankType, BankType.RAM);
+			assert.equal(mm.banks[253].bankType, BankType.RAM);
+			assert.equal(mm.banks[254].bankType, BankType.RAM);	// TODO: needs to be ROM
+			assert.equal(mm.banks[255].bankType, BankType.RAM);	// TODO: needs to be ROM
+
 			const memBanks = mm.getMemoryBanks([254, 255, 6, 5, 3, 0, 251, 6 ]);
 			assert.equal(memBanks.length, 8);
 			assert.equal(memBanks[0].start, 0x0000);
@@ -596,6 +651,14 @@ suite('MemoryModel', () => {
 			assert.equal(memBanks[7].start, 0xE000);
 			assert.equal(memBanks[7].end, 0xFFFF);
 			assert.equal(memBanks[7].name, "BANK6");
+		});
+	});
+
+
+	suite('long address calculations', () => {
+
+		test('ZX16K', () => {
+			// TODO:
 		});
 	});
 });

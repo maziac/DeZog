@@ -1,4 +1,3 @@
-import exp = require("constants");
 import {CustomMemoryBank, CustomMemorySlot, CustomMemoryType} from "../../settingscustommemory";
 import {Z80Registers} from "../z80registers";
 
@@ -6,7 +5,17 @@ import {Z80Registers} from "../z80registers";
 // TODO: SimMemory: Da gab es glaub ich ein paar Vereinfachungen beim Zugriff über Grenzen hinaus. Da vorher alles eine zusammenhängendes lineares Memory war.
 
 
-// TODO: Change into individual files.
+
+
+/**
+ * The memory in the banks can be ROM, RAM or completely unused.
+ */
+export enum BankType {
+	ROM = 0,	// Readonly memory, not writable by Z80 but writable from the debugger and e.g. loadBinSna/Nex.
+	RAM = 1,	// Readwrite memory, writable and readable by Z80 and the debugger
+	UNUSED = 2	// Not writable by Z80 and debugger. Will be filled with 0xFF.
+}
+
 
 // Definition of one memory bank, i.e. memory slot/bank relationship.
 export interface MemoryBank {
@@ -52,6 +61,8 @@ interface BankInfo {
 	// The size of the bank
 	size: number;
 
+	// The type: ROM, RAM, ...
+	bankType: BankType;
 
 	/**
 	 * Optional. If specified, set the slot as ROM.
@@ -83,10 +94,15 @@ export class MemoryModel {
 	// Holds the initial bank association for a slot.
 	// Item is undefined if no memory is assigned.
 	// TODO: This is not needed for the MemoryModel but for the SimulatedMemory only. Move it?
-	protected initialSlots: (number|undefined)[] = [];
+	protected initialSlots: number[] = [];
 
 	// Holds the complete bank info.
 	protected banks: BankInfo[] = [];
+
+	// A complete 64k address range is used to associate addresses to slots.
+	// This is the most flexible way to assign slots to ranges and the decoding can be done
+	// quite fast.
+	protected slotAddress64kAssociation = new Array<number>(0x10000);
 
 
 	/**
@@ -108,8 +124,10 @@ export class MemoryModel {
 					start: expectedStart,
 					end: start - 1
 				}
+				const slotIndex = this.slotRanges.length;
+				this.slotAddress64kAssociation.fill(slotIndex, unassignedSlotRange.start, unassignedSlotRange.end);
 				this.slotRanges.push(unassignedSlotRange);
-				this.initialSlots.push(undefined);
+				this.initialSlots.push(-1);
 			}
 
 			// Add slot
@@ -123,17 +141,23 @@ export class MemoryModel {
 			// Banks
 			const size = end + 1 - start;
 			const banks = custMemSlot.banks;
-			if (banks.length == 0)
+			const banksLen = banks.length;
+			if (banksLen == 0)
 				throw Error("No banks specified for range.");
 			for (const bank of banks) {
-				const indexStart = this.createBankOrBanks(bank, size);
+				const indexStart = this.createBankOrBanks(bank, size, (banksLen > 1));
 				// Store initial bank?
 				if (initialBank == undefined)
 					initialBank = indexStart;
 			}
 
+			// Associate address range with slot index
+			const slotIndex = this.slotRanges.length;
+			this.slotAddress64kAssociation.fill(slotIndex, start, end);
+
 			// Initialize slot with bank
-			this.initialSlots.push(initialBank);
+			this.initialSlots.push(initialBank!);
+
 			// Slot ranges
 			const slotRange = {
 				start,
@@ -154,7 +178,7 @@ export class MemoryModel {
 				end: 0xFFFF
 			}
 			this.slotRanges.push(unassignedSlotRange);
-			this.initialSlots.push(undefined);
+			this.initialSlots.push(-1);
 		}
 
 		// Set default names for unnamed banks
@@ -164,6 +188,36 @@ export class MemoryModel {
 				bank.name = 'BANK' + index;
 			if (bank.shortName == undefined)
 				bank.shortName = index.toString();
+		}
+
+		// Assign unused memory
+		this.createUnusedBanks();
+	}
+
+
+	/**
+	 * Assigns the unused slot ranges to new banks.
+	 * This is just an implementation detail to make the slot/bank handling easier.
+	 */
+	protected createUnusedBanks() {
+		// Assign banks to unassigned memory (above max bank number)
+		let unassignedIndex = this.banks.length;
+		for (let i = 0; i < this.slotRanges.length; i++) {
+			const slot = this.initialSlots[i];
+			if (slot == -1) {
+				const slotRange = this.slotRanges[i];
+				const size = slotRange.end + 1 - slotRange.start;
+				const bankInfo: BankInfo = {
+					name: 'UNUSED',
+					shortName: '',
+					size,
+					bankType: BankType.UNUSED
+				};
+				this.banks.push(bankInfo);
+				this.initialSlots[i] = unassignedIndex;
+				// Next
+				unassignedIndex++;
+			}
 		}
 	}
 
@@ -207,11 +261,13 @@ export class MemoryModel {
 	 * an error is thrown if the names do not match.
 	 * @param bank The configuration from the settings.
 	 * @param size The size of the bank.
+	 * @param assignShortName If false then short name will be set to ''.
 	 * @returns The index of the (first) bank created.
 	 */
-	protected createBankOrBanks(bank: CustomMemoryBank, size: number): number {
+	protected createBankOrBanks(bank: CustomMemoryBank, size: number, assignShortName: boolean): number {
 		let indexStart: number;
 		let indexOrRange = bank.index;
+		const bankType = BankType.RAM;	// TODO: Need to be user selectable
 		// Check for bank range
 		if (typeof indexOrRange == 'number') {
 			// Just one bank
@@ -222,8 +278,9 @@ export class MemoryModel {
 				throw Error("Bank index < 0.");
 			const bankInfo: BankInfo = {
 				name: this.createBankName(bank.name, indexStart),
-				shortName: this.createBankShortName(bank.shortName, indexStart),
-				size
+				shortName: (assignShortName) ? this.createBankShortName(bank.shortName, indexStart) : '',
+				size,
+				bankType
 				// TODO: rom?
 			};
 			this.setBankInfo(indexStart, bankInfo);
@@ -241,8 +298,9 @@ export class MemoryModel {
 			for (let index = indexStart; index <= indexEnd; index++) {
 				const bankInfo: BankInfo = {
 					name: this.createBankName(bank.name, index),
-					shortName: this.createBankShortName(bank.shortName, index),
-					size
+					shortName: (assignShortName) ? this.createBankShortName(bank.shortName, index) : '',
+					size,
+					bankType
 					// TODO: rom?
 				};
 				this.setBankInfo(index, bankInfo);
@@ -311,18 +369,26 @@ export class MemoryModel {
 	}
 
 
-
-
-
-
-
-
 	/**
 	 * Initialize.
 	 * Set decoder.
 	 */
 	public init() {
-		Z80Registers.setSlotsAndBanks(undefined, undefined);
+		// 4x16k banks
+		Z80Registers.setSlotsAndBanks(
+			(addr64k: number, slots: number[]) => {
+				// Calculate long address
+				const slotIndex = this.slotAddress64kAssociation[addr64k];
+				const bank = slots[slotIndex] + 1;
+				const result = addr64k + (bank << 16);
+				return result;
+			},
+			(addr64k: number) => {
+				// Returns slot index from address
+				const slotIndex = this.slotAddress64kAssociation[addr64k];
+				return slotIndex;	// TODO: slot index can be undefined. what to do with it?
+			}
+		);
 	}
 
 
