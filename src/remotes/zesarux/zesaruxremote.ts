@@ -8,8 +8,7 @@ import {ZesaruxCpuHistory, DecodeZesaruxHistoryInfo} from './zesaruxcpuhistory';
 import {Z80RegistersClass, Z80Registers} from '../z80registers';
 import {DecodeZesaruxRegisters} from './decodezesaruxdata';
 import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
-import {MemoryModel, Zx128MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
-import {PromiseCallbacks} from '../../misc/promisecallbacks';
+import {PromiseCallbacks} from '../../misc/promisecallbacks';import {MemoryModelUnknown, MemoryModelZx128k, MemoryModelZxNext} from '../Paging/predefinedmemorymodels';
 
 
 
@@ -209,17 +208,18 @@ export class ZesaruxRemote extends RemoteBase {
 					// "ZX Spectrum Next" since zesarux 9.2.
 					// 8x8k banks
 					Z80Registers.decoder = new DecodeZesaruxRegisters(8);
-					this.memoryModel = new ZxNextMemoryModel();
+					this.memoryModel = new MemoryModelZxNext()
 				}
 				else if (machineType.indexOf("128k") >= 0) {
 					// 4x16k banks
 					Z80Registers.decoder = new DecodeZesaruxRegisters(4);
-					this.memoryModel = new Zx128MemoryModel();
+					this.memoryModel = new MemoryModelZx128k()
 				}
+					// TODO: also add 16K and 48K
 				else {
-					// For all others no paging is assumed.
+					// For all others:
 					Z80Registers.decoder = new DecodeZesaruxRegisters(0);
-					this.memoryModel = new MemoryModel();
+					this.memoryModel = new MemoryModelUnknown();
 				}
 				// Init
 				this.memoryModel.init();

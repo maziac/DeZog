@@ -183,6 +183,7 @@ export class MemBuffer {
 		return value;
 	}
 
+
 	/**
 	 * Reads a value from the next position (offset).
 	 */
@@ -192,8 +193,9 @@ export class MemBuffer {
 		return value;
 	}
 
+
 	/**
-	 * Writes an array from the next position (offset).
+	 * Reads an array from the next position (offset).
 	 */
 	public readArrayBuffer(): Uint8Array {
 		const wholeBuffer=new Uint8Array(this.buffer);

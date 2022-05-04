@@ -702,7 +702,7 @@ export class RemoteBase extends EventEmitter {
 	protected async getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number} | undefined> {
 		// Get the 3 bytes before address.
 		const addr = parseInt(stackEntryValue, 16);
-		const data = await this.readMemoryDump(addr - 3, 3);
+		const data = await this.readMemoryDump((addr - 3) & 0xFFFF, 3);
 		let calledAddr;
 		let callerAddr;
 		// Check for Call

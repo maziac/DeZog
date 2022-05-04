@@ -57,11 +57,7 @@ Example:
  * The custom defined memory is used in zsim and in revEng (at least if mame gdbstub
  * cannot return the memory model).
  */
-export interface CustomMemoryType {
-	// The slots
-	slots: CustomMemorySlot[];
-}
-
+export type CustomMemoryType = CustomMemorySlot[];
 
 /**
  * Custom layout of a memory slot.

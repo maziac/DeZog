@@ -2,10 +2,12 @@ import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {Utility} from './misc/utility';
 import * as fs from 'fs';
 import {UnifiedPath} from './misc/unifiedpath';
-import {BankType} from './remotes/zsimulator/simmemory';
-import * as hjoin from '@bartificer/human-join';
+//import * as hjoin from '@bartificer/human-join';
+import {CustomMemoryType} from './settingscustommemory';
+//import {BankType} from './remotes/Paging/memorymodel';
 
 
+// TODO: Move settings in own folder.
 
 ///  The absolute minimum base for all assembler configurations.
 export interface ListConfigBase {
@@ -167,21 +169,6 @@ export interface CustomCodeType {
 }
 
 
-/**
- * The user can define a custom memory.
- * Note: It is only possible to define 64k of memory.
- * No paging mechanism.
- */
-export interface CustomMemoryType {
-	// The number of banks to use, power of 2.
-	numberOfBanks: number,
-
-	// A map with the bank number, bank name combinations.
-	// E.g. "0": "ROM".
-	banks: Map<string, string>
-}
-
-
 /// Definitions for the 'zsim' remote type.
 export interface ZSimType {
 	// If enabled the simulator shows a keyboard to simulate keypresses.
@@ -226,10 +213,7 @@ export interface ZSimType {
 	 *		}
 	 *	},
 	 */
-	customMemory: {
-		numberOfBanks: number,
-		banks: Map<string, string>
-	},
+	customMemory: CustomMemoryType,
 
 	// The number of interrupts to calculate the average from. 0 to disable.
 	cpuLoadInterruptRange: number,
@@ -834,6 +818,8 @@ export class Settings {
 		// Custom memory model
 		const customMemory = Settings.launch.zsim.customMemory;
 		if (customMemory) {
+			/*
+			TODO: needs a new check:
 			// Number of banks should be a power of 2
 			const nob = customMemory.numberOfBanks;
 			if (nob == undefined)
@@ -859,6 +845,7 @@ export class Settings {
 					throw Error("Don't understand '" + name + "' in 'customMemory.banks'. Should be " + joined + ".");
 				}
 			}
+			*/
 		}
 
 		// Check if customMemory is defined if it was chosen.

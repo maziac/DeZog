@@ -1,8 +1,5 @@
-import {CustomMemoryBank, CustomMemorySlot, CustomMemoryType} from "../../settingscustommemory";
+import {CustomMemoryBank, CustomMemoryType} from "../../settingscustommemory";
 import {Z80Registers} from "../z80registers";
-
-
-// TODO: SimMemory: Da gab es glaub ich ein paar Vereinfachungen beim Zugriff über Grenzen hinaus. Da vorher alles eine zusammenhängendes lineares Memory war.
 
 
 
@@ -88,29 +85,37 @@ interface BankInfo {
  * constructor.
  */
 export class MemoryModel {
+	// The name of the model
+	public name = 'CUSTOM';
+
 	// Holds all slot ranges.
-	protected slotRanges: SlotRange[] = [];
+	public slotRanges: SlotRange[] = [];
 
 	// Holds the initial bank association for a slot.
 	// Item is undefined if no memory is assigned.
 	// TODO: This is not needed for the MemoryModel but for the SimulatedMemory only. Move it?
-	protected initialSlots: number[] = [];
+	public initialSlots: number[] = [];
 
 	// Holds the complete bank info.
-	protected banks: BankInfo[] = [];
+	public banks: BankInfo[] = [];
 
 	// A complete 64k address range is used to associate addresses to slots.
 	// This is the most flexible way to assign slots to ranges and the decoding can be done
 	// quite fast.
-	protected slotAddress64kAssociation = new Array<number>(0x10000);
+	public slotAddress64kAssociation = new Array<number>(0x10000);
+
+	// Is set to true if the configuration at least contains one slot with
+	// more than one bank.
+	protected bankSwitchingUsed = false;	// TODO: unclear if necessary. I think labels are always tested also on 64k, then this would not be needed.
 
 
 	/**
 	 * Constructor.
 	 * @param cfg The custom memory model configuration. From the settings.
 	 */
-	constructor(cfg: CustomMemorySlot[]) {
+	constructor(cfg: CustomMemoryType) {
 		let expectedStart = 0;
+		this.bankSwitchingUsed = false;
 		// Parse the config
 		for (const custMemSlot of cfg) {
 			// Check if block needs to be inserted
@@ -125,7 +130,7 @@ export class MemoryModel {
 					end: start - 1
 				}
 				const slotIndex = this.slotRanges.length;
-				this.slotAddress64kAssociation.fill(slotIndex, unassignedSlotRange.start, unassignedSlotRange.end);
+				this.slotAddress64kAssociation.fill(slotIndex, unassignedSlotRange.start, unassignedSlotRange.end+1);
 				this.slotRanges.push(unassignedSlotRange);
 				this.initialSlots.push(-1);
 			}
@@ -144,6 +149,8 @@ export class MemoryModel {
 			const banksLen = banks.length;
 			if (banksLen == 0)
 				throw Error("No banks specified for range.");
+			if (banksLen > 1)
+				this.bankSwitchingUsed = true;
 			for (const bank of banks) {
 				const indexStart = this.createBankOrBanks(bank, size, (banksLen > 1));
 				// Store initial bank?
@@ -153,7 +160,7 @@ export class MemoryModel {
 
 			// Associate address range with slot index
 			const slotIndex = this.slotRanges.length;
-			this.slotAddress64kAssociation.fill(slotIndex, start, end);
+			this.slotAddress64kAssociation.fill(slotIndex, start, end+1);
 
 			// Initialize slot with bank
 			this.initialSlots.push(initialBank!);
@@ -206,7 +213,9 @@ export class MemoryModel {
 			const slot = this.initialSlots[i];
 			if (slot == -1) {
 				const slotRange = this.slotRanges[i];
-				const size = slotRange.end + 1 - slotRange.start;
+				const start = slotRange.start;
+				const end = slotRange.end;
+				const size = end + 1 - start;
 				const bankInfo: BankInfo = {
 					name: 'UNUSED',
 					shortName: '',
@@ -215,6 +224,7 @@ export class MemoryModel {
 				};
 				this.banks.push(bankInfo);
 				this.initialSlots[i] = unassignedIndex;
+				this.slotAddress64kAssociation.fill(i, start, end+1);
 				// Next
 				unassignedIndex++;
 			}
@@ -374,19 +384,24 @@ export class MemoryModel {
 	 * Set decoder.
 	 */
 	public init() {
-		// 4x16k banks
+		/* TODO: Is this required?
+		if (!this.bankSwitchingUsed) {
+			Z80Registers.setSlotsAndBanks(undefined, undefined);
+		}
+		*/
 		Z80Registers.setSlotsAndBanks(
+			// Calculate long address
 			(addr64k: number, slots: number[]) => {
-				// Calculate long address
 				const slotIndex = this.slotAddress64kAssociation[addr64k];
 				const bank = slots[slotIndex] + 1;
 				const result = addr64k + (bank << 16);
 				return result;
 			},
+
+			// Returns slot index from address
 			(addr64k: number) => {
-				// Returns slot index from address
 				const slotIndex = this.slotAddress64kAssociation[addr64k];
-				return slotIndex;	// TODO: slot index can be undefined. what to do with it?
+				return slotIndex;
 			}
 		);
 	}
@@ -396,7 +411,7 @@ export class MemoryModel {
 	 * Returns the name of a bank.
 	 * Used e.g. for the long address display in the disassembly.
 	 * The non-overridden method simply returns the number as string.
-	 * But overridden methods could also prepend teh number with e.g. an
+	 * But overridden methods could also prepend the number with e.g. an
 	 * "R" for ROM.
 	 * @param bank Bank number. Starts at 0.
 	 * @returns The bank number as string or an empty string if bank is < 0
@@ -416,328 +431,4 @@ export class MemoryModel {
 	public getBankSize() {
 		return 0;
 	}
-
 }
-
-
-/**
- * Class that takes care of the memory paging.
- * I.e. it defines which memory bank to slot association is used.
- *
- * Is the base class and defines:
- * 0000-3FFF: ROM
- * 4000-7FFF: RAM
- */
-export class Zx16MemoryModel extends MemoryModel {
-
-	/**
-	 * Returns the standard description, I.e. 0-3FFF = ROM, rest is RAM.
-	 * @param slots Not used.
-	 * @returns An array with the available memory pages. Contains start and end address
-	 * and a name.
-	 */
-	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
-		return [
-			{start: 0x0000, end: 0x3FFF, name: "ROM"},
-			{start: 0x4000, end: 0x7FFF, name: "RAM"},
-			{start: 0x8000, end: 0xFFFF, name: "UNUSED"}
-		];
-	}
-
-
-	/**
-	 * Returns the bank size.
-	 * @returns 0 in this case = no banks used.
-	 */
-	public getBankSize() {
-		return 0;
-	}
-
-}
-
-
-/**
- * Class that takes care of the memory paging.
- * I.e. it defines which memory bank to slot association is used.
- *
- * Is the base class and defines:
- * 0000-3FFF: ROM
- * 4000-FFFF: RAM
- */
-export class Zx48MemoryModel extends MemoryModel {
-
-	/**
-	 * Returns the standard description, I.e. 0-3FFF = ROM, rest is RAM.
-	 * @param slots Not used.
-	 * @returns An array with the available memory pages. Contains start and end address
-	 * and a name.
-	 */
-	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
-		return [
-			{start: 0x0000, end: 0x3FFF, name: "ROM"},
-			{start: 0x4000, end: 0xFFFF, name: "RAM"}
-		];
-	}
-
-
-	/**
-	 * Returns the bank size.
-	 * @returns 0 in this case = no banks used.
-	 */
-	public getBankSize() {
-		return 0;
-	}
-}
-
-
-/**
- * The ZX 128k memory model:
- * 4 slots per 16k.
- * 0000-3FFF: ROM
- * 4000-7FFF: RAM
- * 8000-BFFF: RAM
- * C000-FFFF: RAM
- */
-export class Zx128MemoryModel extends MemoryModel {
-
-	// Number of slots used for the 64k. 64k/slots is the used bank size.
-	protected countSlots: number;
-
-	// The size of one bank.
-	protected bankSize: number;
-
-	/**
-	 * Constructor.
-	 * @param countSlots Number of slots used for the 64k. 64k/slots is the used bank size.
-	 * For ZX128k these are 4 slots.
-	 */
-	constructor(countSlots = 4) {
-		super();
-		this.countSlots = countSlots;
-		this.bankSize = 0x10000 / countSlots;
-	}
-
-	/**
-	 * Initialize.
-	 * Set decoder.
-	 */
-	public init() {
-		// 4x16k banks
-		Z80Registers.setSlotsAndBanks(
-			(address: number, slots: number[]) => {
-				// Calculate long address
-				const slotNr = address >>> 14;
-				const bank = slots[slotNr] + 1;
-				const result = address + (bank << 16);
-				return result;
-			},
-			(addr: number) => {
-				const slotIndex = (addr >>> 14) & 0x03;
-				return slotIndex;
-			}
-		);
-	}
-
-
-	/**
-	 * Returns a description for the slots used in the variables section.
-	 * @param slots The slots to use for display.
-	 * @returns An array with the available memory pages. Contains start and end address
-	 * and a name.
-	 */
-	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
-		// Prepare array
-		const pages: Array<MemoryBank> = [];
-		// Fill array
-		if (slots) {
-			let start = 0x0000;
-			let i = 0;
-			slots.forEach(bank => {
-				const end = start + this.bankSize - 1;
-				const name = (i == 0) ? "ROM" + (bank & 0x01) : "BANK" + bank;
-				pages.push({start, end, name});
-				// Next
-				start = end + 1;
-				i++;
-			});
-		}
-		// Return
-		return pages;
-	}
-
-
-	/**
-	 * Returns the name of a bank.
-	 * Ovverides to return a prepended 'R' to indicate ROM banks.
-	 * @param bank Bank number. Starts at 0.
-	 * @returns E.g. '0' or 'R1' for rom bank 1
-	 */
-	public getBankName(bank: number): string {
-		if (bank < 0)
-			return '';
-		// Banks 8 and 9 are used for ROM. The other banks 0-7 are RAM.
-		const name = (bank >= 8) ? "R" + (bank & 0x01) : bank.toString();
-		return name;
-	}
-
-
-	/**
-	 * Returns the bank size.
-	 * @returns this.bankSize
-	 */
-	public getBankSize() {
-		return this.bankSize;
-	}
-}
-
-
-/**
- * The ZX Next memory model:
- * 8 slots per 8k.
- * 0000-1FFF: RAM/ROM
- * 2000-3FFF: RAM/ROM
- * 4000-5FFF: RAM
- * 6000-7FFF: RAM
- * 8000-9FFF: RAM
- * A000-BFFF: RAM
- * C000-DFFF: RAM
- * A000-FFFF: RAM
- */
-export class ZxNextMemoryModel extends Zx128MemoryModel {
-
-	/**
-	 * Constructor.
-	 */
-	constructor() {
-		super(8);
-	}
-
-
-	/**
-	 * Initialize.
-	 * Set decoder.
-	 */
-	public init() {
-		// 8x8k banks
-		Z80Registers.setSlotsAndBanks(
-			(address: number, slots: number[]) => {
-				// Calculate long address
-				const slotNr = address >>> 13;
-				const bank = slots[slotNr] + 1;
-				const result = address + (bank << 16);
-				return result;
-			},
-			(addr: number) => {
-				const slotIndex = (addr >>> 13) & 0x07;
-				return slotIndex;
-			}
-		);
-	}
-
-
-	/**
-	 * Returns a description for the slots used in the variables section.
-	 * @param slots The slots to use for display.
-	 * @returns An array with the available memory pages. Contains start and end address
-	 * and a name.
-	 */
-	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
-		// Prepare array
-		const pages: Array<MemoryBank> = [];
-		// Fill array
-		if (slots) {
-			let start = 0x0000;
-			slots.forEach(bank => {
-				const end = start + this.bankSize - 1;
-				const name = (bank >= 254) ? "ROM" : "BANK" + bank;
-				pages.push({start, end, name});
-				start = end + 1;
-			});
-		}
-		// Return
-		return pages;
-	}
-}
-
-
-
-
-/**
- * AllRomModel:
- * Has no banks, or only one continuous 64k bank.
- */
-export class AllRomModel extends MemoryModel {
-
-	/**
-	 * Returns 0-FFFF =  ROM.
-	 * @param slots Not used.
-	 * @returns An array with the available memory pages. Contains start and end address
-	 * and a name.
-	 */
-	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
-		// Prepare array
-		const pages: Array<MemoryBank> = [
-			{start: 0x0000, end: 0xFFFF, name: "ROM"}
-		];
-		// Return
-		return pages;
-	}
-}
-
-
-
-/**
- * Takes the custom memory model description and creates the description of the memory banks.
- */
-export class CustomMemoryModel extends MemoryModel {
-
-	// The custom memory description.
-	protected memoryBanks: MemoryBank[] = [];
-
-	/**
-	 * Constructor.
-	 * @param customMemory The memory description.
-	 */
-	constructor(customMemory: CustomMemoryType) {
-		super();
-		const nob = customMemory.numberOfBanks;
-		const bankSize = 0x10000 / nob;
-		let addr = 0;
-		for (let i = 0; i < nob; i++) {
-			let bankName = customMemory.banks[i.toString()];
-			if (bankName == undefined)
-				bankName = 'UNUSED';
-			this.memoryBanks.push({
-				start: addr,
-				end: addr + bankSize - 1,
-				name: bankName
-			});
-			// Next
-			addr += bankSize;
-		}
-	}
-
-
-	/**
-	 * Returns the standard description, E.g. 0-3FFF = ROM, rest is RAM.
-	 * Used by the 'Memory Banks' description in the VARIABLE pane and in the
-	 * visual RAM of zsim.
-	 * @param slots Not used.
-	 * @returns An array with the available memory banks. Contains start and end address
-	 * and a name.
-	 */
-	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
-		return this.memoryBanks
-	}
-
-
-	/**
-	 * Returns the bank size.
-	 * @returns 0 in this case = no banks used.
-	 */
-	public getBankSize() {
-		return 0;
-	}
-
-}
-

@@ -7,7 +7,7 @@ suite('MetaBlocks', () => {
 	suite('1 block', () => {
 
 		test('block creation', () => {
-			new MemoryDump();
+			new MemoryDump();	// NOSONAR
 		});
 
 		test('1 block A', () => {

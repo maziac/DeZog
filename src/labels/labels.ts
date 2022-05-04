@@ -731,7 +731,8 @@ export class LabelsClass {
 
 
 		// Note: If bank size is 0 no banking is used and labels are converted to 64k.
-		const targetBankSize = memModel.getBankSize();
+		//const targetBankSize = memModel.getBankSize();	// TODO: need to do something here. Banksize is no longer fixed.
+		const targetBankSize = 0;
 		this.convertLabelsToBankSize(targetBankSize);
 	}
 

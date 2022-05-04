@@ -1,7 +1,9 @@
 
 import * as assert from 'assert';
 import {BankType, MemoryModel} from '../src/remotes/Paging/memorymodel';
-import {Zx128kMemModel, Zx16kMemModel, Zx48kMemModel, ZxNextMemModel} from '../src/settingspredefinedmemory';
+import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/Paging/predefinedmemorymodels';
+import {Z80Registers, Z80RegistersClass} from '../src/remotes/z80registers';
+import {Settings} from '../src/settings';
 
 suite('MemoryModel', () => {
 
@@ -96,6 +98,56 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks.length, 3);
 		});
 	});
+
+
+	suite('slot/address association', () => {
+
+		test('assigned and unassigned', () => {
+			const mm = new MemoryModel([
+			{
+				range: [0x1000, 0x7F11],
+				banks: [
+					{
+						index: 0
+					}
+				]
+			},
+			{
+				range: [0xA123, 0xAF00],
+				banks: [
+					{
+						index: 1
+					}
+				]
+			},
+			{
+				range: [0xB000, 0xEFFF],
+				banks: [
+					{
+						index: 2
+					}
+				]
+			}
+			]) as any;
+
+			assert.equal(mm.slotRanges.length, 7);
+			assert.equal(mm.slotAddress64kAssociation[0x0000], 0);	// Slot 0, bank 3, UNUSED
+			assert.equal(mm.slotAddress64kAssociation[0x0FFF], 0);	// Slot 0, bank 3, UNUSED
+			assert.equal(mm.slotAddress64kAssociation[0x1000], 1);	// Slot 1, bank 0
+			assert.equal(mm.slotAddress64kAssociation[0x7F11], 1);	// Slot 1, bank 0
+			assert.equal(mm.slotAddress64kAssociation[0x7F12], 2);	// Slot 2, bank 4, UNUSED
+			assert.equal(mm.slotAddress64kAssociation[0xA122], 2);	// Slot 2, bank 4, UNUSED
+			assert.equal(mm.slotAddress64kAssociation[0xA123], 3);	// Slot 3, bank 1
+			assert.equal(mm.slotAddress64kAssociation[0xAF00], 3);	// Slot 3, bank 1
+			assert.equal(mm.slotAddress64kAssociation[0xAF01], 4);	// Slot 4, bank 5, UNUSED
+			assert.equal(mm.slotAddress64kAssociation[0xAFFF], 4);	// Slot 4, bank 5, UNUSED
+			assert.equal(mm.slotAddress64kAssociation[0xB000], 5);	// Slot 5, bank 2
+			assert.equal(mm.slotAddress64kAssociation[0xEFFF], 5);	// Slot 5, bank 2
+			assert.equal(mm.slotAddress64kAssociation[0xF000], 6);	// Slot 6, bank 6, UNUSED
+			assert.equal(mm.slotAddress64kAssociation[0xFFFF], 6);	// Slot 6, bank 6, UNUSED
+		});
+	});
+
 
 	suite('banks', () => {
 
@@ -395,7 +447,7 @@ suite('MemoryModel', () => {
 	suite('predefined memory models', () => {
 
 		test('ZX16K', () => {
-			const mm = new MemoryModel(Zx16kMemModel) as any;
+			const mm = new MemoryModelZx16k() as any;
 			assert.equal(mm.slotRanges.length, 3);
 			assert.equal(mm.slotRanges[0].start, 0x0000);
 			assert.equal(mm.slotRanges[0].end, 0x3FFF);
@@ -438,7 +490,7 @@ suite('MemoryModel', () => {
 
 
 		test('ZX48K', () => {
-			const mm = new MemoryModel(Zx48kMemModel) as any;
+			const mm = new MemoryModelZx48k() as any;
 			assert.equal(mm.slotRanges.length, 2);
 			assert.equal(mm.slotRanges[0].start, 0x0000);
 			assert.equal(mm.slotRanges[0].end, 0x3FFF);
@@ -475,7 +527,7 @@ suite('MemoryModel', () => {
 
 
 		test('ZX128K', () => {
-			const mm = new MemoryModel(Zx128kMemModel) as any;
+			const mm = new MemoryModelZx128k() as any;
 			assert.equal(mm.slotRanges.length, 4);
 			assert.equal(mm.slotRanges[0].start, 0x0000);
 			assert.equal(mm.slotRanges[0].end, 0x3FFF);
@@ -570,7 +622,7 @@ suite('MemoryModel', () => {
 
 
 		test('ZXNEXT', () => {
-			const mm = new MemoryModel(ZxNextMemModel) as any;
+			const mm = new MemoryModelZxNext() as any;
 			assert.equal(mm.slotRanges.length, 8);
 			assert.equal(mm.slotRanges[0].start, 0x0000);
 			assert.equal(mm.slotRanges[0].end, 0x1FFF);
@@ -655,10 +707,112 @@ suite('MemoryModel', () => {
 	});
 
 
-	suite('long address calculations', () => {
+	suite('long address and slot calculations', () => {
+
+		setup(() => {
+			const cfgEmpty: any = {
+			};
+			Settings.launch = Settings.Init(cfgEmpty);
+		});
 
 		test('ZX16K', () => {
-			// TODO:
+			const mm = new MemoryModelZx16k() as any;
+			assert.equal(mm.slotRanges.length, 3);
+			const slots = [0, 1, 2];	// 0 = ROM (0-0x3FFF), 1 = RAM (0x4000-0x7FFF), 2 = UNUSED (0x8000-0xFFFF)
+
+			// Z80Registers
+			Z80RegistersClass.createRegisters();
+			mm.init();
+
+			// Long address
+			assert.equal(Z80Registers.createLongAddress(0x0000, slots), 0x010000); // 0x01... = bank 0
+			assert.equal(Z80Registers.createLongAddress(0x3FFF, slots), 0x013FFF); // 0x01... = bank 0
+			assert.equal(Z80Registers.createLongAddress(0x4000, slots), 0x024000); // 0x02... = bank 1
+			assert.equal(Z80Registers.createLongAddress(0x7FFF, slots), 0x027FFF); // 0x02... = bank 1
+			assert.equal(Z80Registers.createLongAddress(0x8000, slots), 0x038000); // 0x03... = bank 2, UNUSED
+			assert.equal(Z80Registers.createLongAddress(0xFFFF, slots), 0x03FFFF); // 0x03... = bank 2, UNUSED
+
+			// Slots
+			assert.equal(Z80Registers.getSlotFromAddress(0x0000), 0);
+			assert.equal(Z80Registers.getSlotFromAddress(0x3FFF), 0);
+			assert.equal(Z80Registers.getSlotFromAddress(0x4000), 1);
+			assert.equal(Z80Registers.getSlotFromAddress(0x7FFF), 1);
+			assert.equal(Z80Registers.getSlotFromAddress(0x8000), 2);
+			assert.equal(Z80Registers.getSlotFromAddress(0xFFFF), 2);
+		});
+
+		test('ZX48K', () => {
+			const mm = new MemoryModelZx48k() as any;
+			assert.equal(mm.slotRanges.length, 2);
+			const slots = [0, 1];	// 0 = ROM (0-0x3FFF), 1 = RAM (0x4000-0x7FFF)
+
+			// Z80Registers
+			Z80RegistersClass.createRegisters();
+			mm.init();
+
+			// Long address
+			assert.equal(Z80Registers.createLongAddress(0x0000, slots), 0x010000); // 0x01... = bank 0
+			assert.equal(Z80Registers.createLongAddress(0x3FFF, slots), 0x013FFF); // 0x01... = bank 0
+			assert.equal(Z80Registers.createLongAddress(0x4000, slots), 0x024000); // 0x02... = bank 1
+			assert.equal(Z80Registers.createLongAddress(0xFFFF, slots), 0x02FFFF); // 0x02... = bank 1
+
+			// Slots
+			assert.equal(Z80Registers.getSlotFromAddress(0x0000), 0);
+			assert.equal(Z80Registers.getSlotFromAddress(0x3FFF), 0);
+			assert.equal(Z80Registers.getSlotFromAddress(0x4000), 1);
+			assert.equal(Z80Registers.getSlotFromAddress(0xFFFF), 1);
+		});
+
+		test('ZX128K', () => {
+			const mm = new MemoryModelZx128k() as any;
+			assert.equal(mm.slotRanges.length, 4);
+			const slots = [0, 1, 2, 3];	// 4 slots a 16K
+
+			// Z80Registers
+			Z80RegistersClass.createRegisters();
+			mm.init();
+
+			// Long address
+			assert.equal(Z80Registers.createLongAddress(0x0000, slots), 0x010000);
+			assert.equal(Z80Registers.createLongAddress(0x4000, slots), 0x024000);
+			assert.equal(Z80Registers.createLongAddress(0x8000, slots), 0x038000);
+			assert.equal(Z80Registers.createLongAddress(0xC000, slots), 0x04C000);
+
+			// Slots
+			assert.equal(Z80Registers.getSlotFromAddress(0x0000), 0);
+			assert.equal(Z80Registers.getSlotFromAddress(0x4000), 1);
+			assert.equal(Z80Registers.getSlotFromAddress(0x8000), 2);
+			assert.equal(Z80Registers.getSlotFromAddress(0xC000), 3);
+		});
+
+		test('ZXNEXT', () => {
+			const mm = new MemoryModelZxNext() as any;
+			assert.equal(mm.slotRanges.length, 8);
+			const slots = [7, 6, 5, 4, 3, 2, 1, 0];	// 8 slots a 8K
+
+			// Z80Registers
+			Z80RegistersClass.createRegisters();
+			mm.init();
+
+			// Long address
+			assert.equal(Z80Registers.createLongAddress(0x0000, slots), 0x080000);
+			assert.equal(Z80Registers.createLongAddress(0x2000, slots), 0x072000);
+			assert.equal(Z80Registers.createLongAddress(0x4000, slots), 0x064000);
+			assert.equal(Z80Registers.createLongAddress(0x6000, slots), 0x056000);
+			assert.equal(Z80Registers.createLongAddress(0x8000, slots), 0x048000);
+			assert.equal(Z80Registers.createLongAddress(0xA000, slots), 0x03A000);
+			assert.equal(Z80Registers.createLongAddress(0xC000, slots), 0x02C000);
+			assert.equal(Z80Registers.createLongAddress(0xE000, slots), 0x01E000);
+
+			// Slots
+			assert.equal(Z80Registers.getSlotFromAddress(0x0000), 0);
+			assert.equal(Z80Registers.getSlotFromAddress(0x2000), 1);
+			assert.equal(Z80Registers.getSlotFromAddress(0x4000), 2);
+			assert.equal(Z80Registers.getSlotFromAddress(0x6000), 3);
+			assert.equal(Z80Registers.getSlotFromAddress(0x8000), 4);
+			assert.equal(Z80Registers.getSlotFromAddress(0xA000), 5);
+			assert.equal(Z80Registers.getSlotFromAddress(0xC000), 6);
+			assert.equal(Z80Registers.getSlotFromAddress(0xE000), 7);
 		});
 	});
 });

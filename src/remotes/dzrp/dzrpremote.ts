@@ -12,9 +12,9 @@ import {Labels} from '../../labels/labels';
 import {gzip, ungzip} from 'node-gzip';
 import {TimeWait} from '../../misc/timewait';
 import {Log} from '../../log';
-import {Zx128MemoryModel, Zx48MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {PromiseCallbacks} from '../../misc/promisecallbacks';
+import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../Paging/predefinedmemorymodels';
 
 
 
@@ -198,17 +198,21 @@ export class DzrpRemote extends RemoteBase {
 			Z80Registers.decoder = new Z80RegistersStandardDecoder();
 			// Set memory model according machine type
 			switch (resp.machineType) {
+				case DzrpMachineType.ZX16K:
+					// ZX Spectrum 16K
+					this.memoryModel = new MemoryModelZx16k();
+					break;
 				case DzrpMachineType.ZX48K:
 					// ZX Spectrum 48K
-					this.memoryModel = new Zx48MemoryModel();
+					this.memoryModel = new MemoryModelZx48k();
 					break;
 				case DzrpMachineType.ZX128K:
 					// ZX Spectrum 128K
-					this.memoryModel = new Zx128MemoryModel();
+					this.memoryModel = new MemoryModelZx128k();
 					break;
 				case DzrpMachineType.ZXNEXT:
 					// ZxNext: 8x8k banks
-					this.memoryModel = new ZxNextMemoryModel();
+					this.memoryModel = new MemoryModelZxNext();
 					break;
 				default:
 					// Error: Unknown type

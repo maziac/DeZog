@@ -10,11 +10,7 @@ import {MemBuffer} from '../../misc/membuffer';
 import {CodeCoverageArray} from './codecovarray';
 import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhistory';
 import {ZSimCpuHistory} from './zsimcpuhistory';
-import {Zx16Memory} from './zx16memory';
-import {Zx48Memory} from './zx48memory';
-import {Zx128Memory} from './zx128memory';
-import {ZxNextMemory} from './zxnextmemory';
-import {MemoryModel, Zx16MemoryModel, Zx48MemoryModel, Zx128MemoryModel, ZxNextMemoryModel, CustomMemoryModel} from '../Paging/memorymodel';
+import {MemoryModel} from '../Paging/memorymodel';
 import {SimulatedMemory} from './simmemory';
 import {SnaFile} from '../dzrp/snafile';
 import {NexFile} from '../dzrp/nexfile';
@@ -22,7 +18,7 @@ import {CustomCode} from './customcode';
 import {BeeperBuffer, ZxBeeper} from './zxbeeper';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
-import {CustomMemory} from './custommemory';
+import {MemoryModelAllRam, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../Paging/predefinedmemorymodels';
 
 
 
@@ -299,32 +295,28 @@ export class ZSimRemote extends DzrpRemote {
 				{
 					// 64K RAM, no ZX
 					// Memory Model
-					this.memoryModel = new MemoryModel();
-					this.memory = new SimulatedMemory(1, 1);
+					this.memoryModel = new MemoryModelAllRam();
 				}
 				break;
 			case "ZX16K":
 				{
 					// ZX 16K
 					// Memory Model
-					this.memoryModel = new Zx16MemoryModel();
-					this.memory = new Zx16Memory();
+					this.memoryModel = new MemoryModelZx16k();
 				}
 				break;
 			case "ZX48K":
 				{
 					// ZX 48K
 					// Memory Model
-					this.memoryModel = new Zx48MemoryModel();
-					this.memory = new Zx48Memory();
+					this.memoryModel = new MemoryModelZx48k();
 				}
 				break;
 			case "ZX128K":
 				{
 					// ZX 128K
 					// Memory Model
-					this.memoryModel = new Zx128MemoryModel();
-					this.memory = new Zx128Memory();
+					this.memoryModel = new MemoryModelZx128k();
 					// Bank switching.
 					this.ports.registerSpecificOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
 					// Screen address is initially bank 5
@@ -335,9 +327,8 @@ export class ZSimRemote extends DzrpRemote {
 				{
 					// ZX Next
 					// Memory Model
-					this.memoryModel = new ZxNextMemoryModel();
-					this.memory = new ZxNextMemory();
-					// Bank switching.
+					this.memoryModel = new MemoryModelZxNext();
+					// Bank switching. // TODO: change
 					for (let tbblueRegister = 0x50; tbblueRegister <= 0x57; tbblueRegister++) {
 						this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
 						this.tbblueRegisterReadHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsRead.bind(this));
@@ -353,17 +344,19 @@ export class ZSimRemote extends DzrpRemote {
 			case "CUSTOM":
 				{
 					// Custom Memory Model
-					this.memoryModel = new CustomMemoryModel(zsim.customMemory);
-					this.memory = new CustomMemory(zsim.customMemory);
+					this.memoryModel = new MemoryModel(zsim.customMemory);
 				}
 				break;
 			default:
 				throw Error("Unknown memory model: '" + zsim.memoryModel + "'.");
 		}
 
+		// Create memory
+		this.memory = new SimulatedMemory(this.memoryModel);
+
 		// Convert labels if necessary.
 		this.memoryModel.init();
-		Labels.convertLabelsTo(this.memoryModel);
+		Labels.convertLabelsTo(this.memoryModel);	// TODO: still needed?
 
 		// Create a Z80 CPU to emulate Z80 behavior
 		this.z80Cpu = new Z80Cpu(this.memory, this.ports, () => {
@@ -947,9 +940,26 @@ export class ZSimRemote extends DzrpRemote {
 	 * @returns The screen as a UInt8Array.
 	 */
 	public getUlaScreen(): Uint8Array {
-		const memory = this.memory.getMemoryData();
-		const ulaScreen = memory.slice(this.ulaScreenAddress, this.ulaScreenAddress + 0x1B00);
-		return ulaScreen;
+		if (this.memoryModel instanceof MemoryModelZx16k || this.memoryModel instanceof MemoryModelZx48k) {
+			const bank = this.memory.getBankMemory(1);
+			return bank.slice(0, 0x1B00);
+		}
+
+		if (this.memoryModel instanceof MemoryModelZx128k) {
+			// TODO: check bit 3 of port $7FFD: 0 = bank 5, 1= bank 7
+			const bank = this.memory.getBankMemory(5);
+			return bank.slice(0, 0x1B00);
+		}
+
+		if (this.memoryModel instanceof MemoryModelZxNext) {
+			// TODO: check bit 3 of port $7FFD: 0 = bank 5, 1= bank 7
+			const bank = this.memory.getBankMemory(2*5);
+			return bank.slice(0, 0x1B00);
+		}
+
+		// Otherwise return empty screen
+		// TODO: error to the user?
+		return new Uint8Array(0x1B00);
 	}
 
 
@@ -991,32 +1001,32 @@ export class ZSimRemote extends DzrpRemote {
 		// Set the border
 		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
 
-		// Transfer 16k memory banks
-		const slots = this.memory.getSlots();
-		const slotCount = (slots) ? slots.length : 1;
-		const bankSize = 0x10000 / slotCount;
-		const convAddresses = [ // 0x10000 would be out of range,
-			0xC000, 0x10000, 0x8000, 0x10000,
-			0x10000, 0x4000, 0x10000, 0x10000
-		];
-		for (const memBank of snaFile.memBanks) {
-			let addr17;
-			// Convert banks to 17 bit addresses (128K Spectrum)
-			if (!slots) {
-				// For e.g. ZX48 without banks
-				addr17 = convAddresses[memBank.bank];
+		// Write banks
+		if (snaFile.is128kSnaFile) {
+			// ZX128K SNA file
+			if (!(this.memoryModel instanceof MemoryModelZx128k))
+				throw Error("A 128k SNA file can't be loaded into a '"+this.memoryModel.name+"' memory model.");
+			for (const memBank of snaFile.memBanks) {
+				this.memory.writeMemoryData(memBank.bank, memBank.data);
 			}
-			else {
-				// For another banked machine
-				addr17 = memBank.bank * 0x4000;
+		}
+		else {
+			// ZX48K SNA file
+			if (!(this.memoryModel instanceof MemoryModelZx48k || this.memoryModel instanceof MemoryModelZx128k))
+				throw Error("A 48k SNA file can't be loaded into a '" + this.memoryModel.name + "' memory model.");
+			// 48K
+			if (this.memoryModel instanceof MemoryModelZx48k) {
+				for (let i = 0; i < 3; i++) {
+					const memBank = snaFile.memBanks[i];
+					this.memory.writeMemoryData(memBank.bank, memBank.data, i * 0x4000);
+				}
 			}
-			// Write data
-			let offs = 0;
-			while (offs <= 0x4000) {
-				const data = memBank.data.slice(offs, offs + bankSize);	// Assumes that bankSize is always smaller as 0x4000 which is used in sna format
-				this.memory.writeMemoryData(addr17 + offs, data);
-				// Next
-				offs += bankSize;
+			// 128K
+			if (this.memoryModel instanceof MemoryModelZx48k) {
+				for (let i = 0; i < 3; i++) {
+					const memBank = snaFile.memBanks[i];
+					this.memory.writeMemoryData(memBank.bank, memBank.data, i * 0x4000);
+				}
 			}
 		}
 
@@ -1049,6 +1059,10 @@ export class ZSimRemote extends DzrpRemote {
 	 * See https://wiki.specnext.dev/NEX_file_format
 	 */
 	protected async loadBinNex(filePath: string): Promise<void> {
+		// Check for 128K
+		if (!(this.memoryModel instanceof MemoryModelZxNext))
+			throw Error("A NEX file can only be loaded into a 'ZXNEXT' memory model. This is a '" + this.memoryModel.name + "' memory model.");
+
 		// Load and parse file
 		const nexFile = new NexFile();
 		nexFile.readFile(filePath);
@@ -1056,43 +1070,20 @@ export class ZSimRemote extends DzrpRemote {
 		// Set the border
 		await this.sendDzrpCmdSetBorder(nexFile.borderColor);
 
-		// Transfer 16k memory banks
-		const slots = this.memory.getSlots();
-		const slotCount = (slots) ? slots.length : 1;
-		const bankSize = 0x10000 / slotCount;
-		const convAddresses = [ // 0x10000 would be out of range,
-			0xC000, 0x10000, 0x8000, 0x10000,
-			0x10000, 0x4000, 0x10000, 0x10000
-		];
+		// Load memory banks
 		for (const memBank of nexFile.memBanks) {
-			let addr17;
-			// Convert banks to 17 bit addresses (128K Spectrum)
-			if (!slots) {
-				// For e.g. ZX48 without banks
-				addr17 = convAddresses[memBank.bank];
-			}
-			else {
-				// For another banked machine
-				addr17 = memBank.bank * 0x4000;
-			}
-			// Write data
-			let offs = 0;
-			while (offs <= 0x4000) {
-				const data = memBank.data.slice(offs, offs + bankSize);	// Assumes that bankSize is always smaller as 0x4000 which is used in sna format
-				this.memory.writeMemoryData(addr17 + offs, data);
-				// Next
-				offs += bankSize;
-			}
+			// Convert 16K to 8K banks
+			const bank = 2 * memBank.bank;
+			this.memory.writeMemoryData(bank, memBank.data);
+			this.memory.writeMemoryData(bank + 1, memBank.data, + 0x2000);
 		}
 
 		// Set the default slot/bank association if ZXNext
-		if (this.memoryModel instanceof ZxNextMemoryModel) {
-			// Convert 16k bank into 8k
-			const entryBank8 = 2 * nexFile.entryBank;
-			// Change banks in slot at 0xC000
-			await this.sendDzrpCmdSetSlot(6, entryBank8);
-			await this.sendDzrpCmdSetSlot(7, entryBank8 + 1);
-		}
+		// Convert 16k bank into 8k
+		const entryBank8 = 2 * nexFile.entryBank;
+		// Change banks in slot at 0xC000
+		await this.sendDzrpCmdSetSlot(6, entryBank8);
+		await this.sendDzrpCmdSetSlot(7, entryBank8 + 1);
 
 		// Set the SP and PC registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.SP, nexFile.sp);

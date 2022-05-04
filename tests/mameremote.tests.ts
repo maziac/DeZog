@@ -115,7 +115,7 @@ suite('MameRemote', () => {
 
 			assert.throws(() => {
 				mame.parseXml('<architecture>x86</architecture>');
-			}, Error, "Architecture 'x86' is not supported by DeZog. Please select a driver/ROM in MAME with a 'z80' architecture.");
+			}, Error("Architecture 'x86' is not supported by DeZog. Please select a driver/ROM in MAME with a 'z80' architecture."));
 
 			assert.throws(() => {
 				mame.parseXml(`l<?xml version="1.0"?>
@@ -136,7 +136,7 @@ suite('MameRemote', () => {
     <reg name="pc" bitsize="16" type="code_ptr"/>
   </feature>
 </target>`);
-			}, Error, "No architecture found in reply from MAME.");
+			}, Error("No architecture found in reply of MAME."));
 
 			assert.throws(() => {
 				mame.parseXml(`l<?xml version="1.0"?>
@@ -158,7 +158,7 @@ suite('MameRemote', () => {
     <reg name="pc" bitsize="16" type="code_ptr"/>
   </feature>
 </target>`);
-			}, Error, "Architecture '6510' is not supported by DeZog. Please select a driver/ROM in MAME with a 'z80' architecture.");
+			}, Error("Architecture '6510' is not supported by DeZog. Please select a driver/ROM in MAME with a 'z80' architecture."));
 
 			// Does not throw
 			mame.parseXml(`l<?xml version="1.0"?>
@@ -194,7 +194,7 @@ suite('MameRemote', () => {
 
 			assert.throws(() => {
 				result = mame.parseStopReplyPacket('T050a:0000;');
-			}, Error, "No break address found.");
+			}, Error("No break address (PC) found."));
 
 			result = mame.parseStopReplyPacket('T05watch:12FE;a:0000;0b:0100;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.WATCHPOINT_WRITE);

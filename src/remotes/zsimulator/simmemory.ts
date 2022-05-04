@@ -1,5 +1,5 @@
 import {MemBuffer, Serializeable} from '../../misc/membuffer';
-import {Utility} from '../../misc/utility';
+import {BankType, MemoryModel} from '../Paging/memorymodel';
 
 
 
@@ -14,15 +14,6 @@ interface SimWatchpoint {
 }
 
 
-/**
- * The memory in the banks can be ROM, RAM or completely unused.
- */
-export enum BankType {
-	ROM = 0,	// Readonly memory, not writable by Z80 but writable from the debugger and e.g. loadBinSna/Nex.
-	RAM = 1,	// Readwrite memory, writable and readable by Z80 and the debugger
-	UNUSED = 2	// Not writable by Z80 and debugger. Will be filled with 0xFF.
-}
-
 
 /**
  * Represents the simulated memory.
@@ -34,9 +25,21 @@ export enum BankType {
  * But for configuration (what is ROM/RAM) it is required.
  */
 export class SimulatedMemory implements Serializeable {
-	// The memory in one big block.
-	// If banking is used in a derived class this array will extend 64k.
-	protected memoryData: Uint8Array;
+	// The memory separated in banks.
+	protected memoryBanks: Uint8Array[];
+
+	// The memory model used for this memory.
+	protected memoryModel: MemoryModel;
+
+	// Points to this.memoryModel.slotAddress64kAssociation
+	protected slotAddress64kAssociation;
+
+	// Derived from this.memoryModel.slotAddress64kAssociation.
+	// Holds only the start address of the slot.
+	protected slotRangesStart: number[];
+
+	// Holds only the
+	protected slotRangesSize: number[];
 
 	// Holds the slot assignments to the banks.
 	protected slots: number[];
@@ -46,9 +49,6 @@ export class SimulatedMemory implements Serializeable {
 	// RAM is writable.
 	// ROM and unpopulated areas (see ZX16K) are  not writable.
 	protected bankTypes: BankType[];
-
-	// The used bank size.
-	protected bankSize: number;
 
 	// The number of bits to shift to get the slot from the address
 	protected shiftCount: number;
@@ -87,34 +87,34 @@ export class SimulatedMemory implements Serializeable {
 	/**
 	 * Constructor.
 	 * Configures the slot and bank count.
-	 * @param slotCount Number of slots.
-	 * @param bankCount Number of banks.
+	 * @param memModel The memory model to use. Includes all slots definition and banks.
 	 */
-	constructor(slotCount: number, bankCount: number) {
-		Utility.assert(bankCount >= slotCount);
-		// Create visual memory
-		this.visualMemory = new Array<number>(1 << (16 - this.VISUAL_MEM_SIZE_SHIFT));
-		this.clearVisualMemory();
-		// The "real" memory
-		this.bankSize = 0x10000 / slotCount;
-		// Create RAM
-		this.memoryData = new Uint8Array(bankCount * this.bankSize);
-		// No ROM at start
-		this.bankTypes = new Array<BankType>(bankCount);
-		this.bankTypes.fill(BankType.RAM);
+	constructor(memModel: MemoryModel) {
+		// Store
+		this.memoryModel = memModel;
+		this.slotAddress64kAssociation = memModel.slotAddress64kAssociation;
+		this.slotRangesStart = memModel.slotRanges.map(slotRange => slotRange.start);
+		this.slotRangesSize = memModel.slotRanges.map(slotRange => slotRange.end + 1 - slotRange.start);
 
-		// Calculate number of bits to shift to get the slot index from the address.
-		let sc = slotCount;
-		let bits = 0;
-		while (sc > 1) {
-			bits++;
-			sc /= 2;
+		// Create visual memory
+		this.visualMemory = new Array<number>(1 << (16 - this.VISUAL_MEM_SIZE_SHIFT));	// E.g. 256
+		this.clearVisualMemory();
+
+		// Memory is organized in banks.
+		const bankCount = memModel.banks.length;
+		this.memoryBanks = new Array<Uint8Array>(bankCount);
+		this.bankTypes = new Array<BankType>(bankCount);
+		// Allocate
+		for (let i = 0; i < bankCount; i++) {
+			const bank = memModel.banks[i];
+			if (bank) {
+				this.memoryBanks[i] = new Uint8Array(bank.size);
+				this.bankTypes[i] = bank.bankType;
+			}
 		}
-		this.shiftCount = 16 - bits;
+
 		// Associate banks with slots
-		this.slots = new Array<number>(slotCount);
-		for (let i = 0; i < slotCount; i++)
-			this.slots[i] = i;
+		this.slots = [...memModel.initialSlots];	// Copy
 
 		// Breakpoints
 		this.clearHit();
@@ -128,32 +128,10 @@ export class SimulatedMemory implements Serializeable {
 	 * So far only used by unit tests.
 	 */
 	public clear() {
-		this.memoryData.fill(0);
+		for(const bank of this.memoryBanks)
+			bank.fill(0);
 	}
 
-
-	/**
-	 * Returns the memory used in all banks.
-	 * @returns this.memoryData
-	 */
-	public getMemoryData(): Uint8Array {
-		return this.memoryData;
-	}
-
-
-	/**
-	 * At start all banks are RAM, even 0xFE and 0xFF.
-	 * Use this method to switch a bank to ROM.
-	 * I.e. any write8() will do nothing.
-	 * Is used e.g. if "loadZxRom" is used.
-	 * @param bank The bank number, e.g. 0xFE.
-	 * @param enableRom true to turn bank into ROM, false to turn it into RAM.
-	 */
-	/*
-	public setRomBank(bank: number, enableRom: boolean) {
-		this.romBanks[bank]=enableRom;
-	}
-	*/
 
 	/**
 	 * Returns the size the serialized object would consume.
@@ -178,8 +156,9 @@ export class SimulatedMemory implements Serializeable {
 		for (const bank of this.slots)
 			memBuffer.write8(bank);
 
-		// Get RAM
-		memBuffer.writeArrayBuffer(this.memoryData);
+		// Store banks
+		for(const bank of this.memoryBanks)
+			memBuffer.writeArrayBuffer(bank);
 	}
 
 
@@ -194,9 +173,12 @@ export class SimulatedMemory implements Serializeable {
 			this.slots.push(memBuffer.read8());
 
 		// Create memory banks
-		const buffer = memBuffer.readArrayBuffer();
-		Utility.assert(buffer.length == this.memoryData.byteLength);
-		this.memoryData.set(buffer);
+		for (const bank of this.memoryBanks) {
+			const buffer = memBuffer.readArrayBuffer();
+			if (buffer.length != bank.byteLength)
+				throw Error("Can't read data. Loaded format is different.");
+			bank.set(buffer);
+		}
 
 		// Clear visual memory
 		this.clearVisualMemory();
@@ -254,212 +236,150 @@ export class SimulatedMemory implements Serializeable {
 
 	// Read 1 byte.
 	// This is used by the Z80 CPU.
-	public read8(addr: number): number {
+	public read8(addr64k: number): number {
 		// Check for watchpoint access
-		const wp = this.watchPointMemory[addr];
+		const wp = this.watchPointMemory[addr64k];
 		if (wp) {
 			// Check access
 			if ((this.hitAddress < 0) && wp.read > 0) {
 				// Read access
-				this.hitAddress = addr;
+				this.hitAddress = addr64k;
 				this.hitAccess = 'r';
 			}
 		}
 
 		// Visual memory
-		this.visualMemory[addr >>> this.VISUAL_MEM_SIZE_SHIFT] = this.VISUAL_MEM_COL_READ;
+		this.visualMemory[addr64k >>> this.VISUAL_MEM_SIZE_SHIFT] = this.VISUAL_MEM_COL_READ;
+
+		// Read
+		const slotIndex = this.slotAddress64kAssociation[addr64k];
+		const bankNr = this.slots[slotIndex];
+		const rangeStart = this.slotRangesStart[slotIndex];
+		const offs = addr64k - rangeStart;
+		const value = this.memoryBanks[bankNr][offs];
+
+
+/*
 		// Read
 		const slotIndex = addr >>> this.shiftCount;
 		const bankNr = this.slots[slotIndex];
 		const ramAddr = bankNr * this.bankSize + (addr & (this.bankSize - 1));	// Convert to flat address
 		const value = this.memoryData[ramAddr];
+*/
 		return value;
 	}
 
 	// Write 1 byte.
 	// This is used by the Z80 CPU.
-	public write8(addr: number, val: number) {
+	public write8(addr64k: number, val: number) {
 		// Check for watchpoint access
-		const wp = this.watchPointMemory[addr];
+		const wp = this.watchPointMemory[addr64k];
 		if (wp) {
 			// Check access
 			if ((this.hitAddress < 0) && wp.write > 0) {
 				// Write access
-				this.hitAddress = addr;
+				this.hitAddress = addr64k;
 				this.hitAccess = 'w';
 			}
 		}
 
 		// Visual memory
-		this.visualMemory[addr >>> this.VISUAL_MEM_SIZE_SHIFT] = this.VISUAL_MEM_COL_WRITE;
+		this.visualMemory[addr64k >>> this.VISUAL_MEM_SIZE_SHIFT] = this.VISUAL_MEM_COL_WRITE;
 
+
+		// Read
+		const slotIndex = this.slotAddress64kAssociation[addr64k];
+		const bankNr = this.slots[slotIndex];
+
+		// Don't write if non-writable, e.g. ROM or UNUSED
+		if (this.bankTypes[bankNr] == BankType.RAM) {
+			const rangeStart = this.slotRangesStart[slotIndex];
+			const offs = addr64k - rangeStart;
+			// Write
+			this.memoryBanks[bankNr][offs] = val;
+		}
+
+		/*
 		// Convert to bank
-		const slotIndex = addr >>> this.shiftCount;
+		const slotIndex = addr64k >>> this.shiftCount;
 		const bankNr = this.slots[slotIndex];
 
 		// Don't write if non-writable, e.g. ROM or UNUSED
 		if (this.bankTypes[bankNr] == BankType.RAM) {
 			// Convert to flat address
-			const ramAddr = bankNr * this.bankSize + (addr & (this.bankSize - 1));
+			const ramAddr = bankNr * this.bankSize + (addr64k & (this.bankSize - 1));
 			// Write
 			this.memoryData[ramAddr] = val;
 		}
+	*/
 	}
 
 
-	// Reads one byte.
+	/**
+	 * @param bankNr The bank number.
+	 * @returns the Uint8Array of a bank.
+	 */
+	public getBankMemory(bankNr: number) {
+		return this.memoryBanks[bankNr];
+	}
+
+
+	// Reads a value from the memory. Value can span over several bytes.
 	// This is **not** used by the Z80 CPU.
-	/* Not used:
-	public getMemory8(addr: number): number {
-		const slotIndex = addr >>> this.shiftCount;
-		const bankNr = this.slots[slotIndex];
-		const ramAddr = bankNr * this.bankSize + (addr & (this.bankSize - 1));	// Convert to flat address
-		const value = this.memoryData[ramAddr];
+	// Used to read the WORD at SP or to read a 4 byte opcode.
+	// @param addr64k The 64k start address
+	// @param size The length of the value in bytes.
+	// @returns The value (little endian)
+	public getMemoryValue(addr64k: number, size: number): number {
+		let value = 0;
+
+		for (let i = size; i > 0; i--) {
+			// Read
+			const slotIndex = this.slotAddress64kAssociation[addr64k];
+			const bankNr = this.slots[slotIndex];
+			const rangeStart = this.slotRangesStart[slotIndex];
+			const offs = addr64k - rangeStart;
+			const val8 = this.memoryBanks[bankNr][offs];
+			// Store
+			value = (value << 8) + val8;
+			// Next
+			addr64k = (addr64k + 1) & 0xFFFF;
+		}
+
 		return value;
 	}
-	*/
 
 
 	// Reads 2 bytes.
 	// This is **not** used by the Z80 CPU.
 	// Used to read the WORD at SP.
-	public getMemory16(addr: number): number {
-		// First byte
-		let address = addr & (this.bankSize - 1);
-		let slotIndex = addr >>> this.shiftCount;
-		let bankNr = this.slots[slotIndex];
-		let ramAddr = bankNr * this.bankSize + address;	// Convert to flat address
-		const mem = this.memoryData;
-		let value = mem[ramAddr];
-		// Second byte
-		address++;
-		if (address < this.bankSize) {
-			// No overflow, same bank, normal case
-			ramAddr++;
-		}
-		else {
-			// Overflow
-			slotIndex = ((addr + 1) & 0xFFFF) >>> this.shiftCount;
-			bankNr = this.slots[slotIndex];
-			ramAddr = bankNr * this.bankSize;	// Convert to flat address
-		}
-		value += mem[ramAddr] << 8;
-		return value;
+	public getMemory16(addr64k: number): number {
+		return this.getMemoryValue(addr64k, 2);
 	}
 
 	// Reads 4 bytes.
 	// This is **not** used by the Z80 CPU.
 	// Used to read an opcode which is max. 4 bytes.
-	public getMemory32(addr: number): number {
-		// First byte
-		let address = addr & (this.bankSize - 1);
-		let slotIndex = addr >>> this.shiftCount;
-		let bankNr = this.slots[slotIndex];
-		let ramAddr = bankNr * this.bankSize + address;	// Convert to flat address
-		const mem = this.memoryData;
-		let value = mem[ramAddr];
-		// Second byte
-		if (address < this.bankSize - 3) {  // E.g. 0x2000-3
-			// No overflow, same bank, normal case
-			value += mem[++ramAddr] << 8;
-			value += mem[++ramAddr] << 16;
-			// Otherwise the result might be negative:
-			value += mem[++ramAddr] * 256 * 65536;	 // NOSONAR
-		}
-		else {
-			// Overflow, do each part one-by-one
-			let mult = 256;
-			for (let i = 3; i > 0; i--) {
-				addr++;
-				address = addr & (this.bankSize - 1);
-				slotIndex = (addr & 0xFFFF) >>> this.shiftCount;
-				bankNr = this.slots[slotIndex];
-				ramAddr = bankNr * this.bankSize + address;	// Convert to flat address
-				value += mem[ramAddr] * mult;
-				// Next
-				mult *= 256;
-			}
-		}
-		return value;
+	public getMemory32(addr64k: number): number {
+		return this.getMemoryValue(addr64k, 2);
 	}
-
-
-	// Sets one byte.
-	// This is **not** used by the Z80 CPU.
-	/* Not Used:
-	public setMemory8(addr: number, val: number) {
-		let address = addr & (this.bankSize - 1);
-		let slotIndex = addr >>> this.shiftCount;
-		let bankNr = this.slots[slotIndex];
-		let ramAddr = bankNr * this.bankSize + address;	// Convert to flat address
-		const mem = this.memoryData;
-		mem[ramAddr] = val & 0xFF;
-	}
-	*/
-
-
-	// Sets one word.
-	// This is **not** used by the Z80 CPU.
-	/* Not used:
-	public setMemory16(addr: number, val: number) {
-		// First byte
-		let address = addr & (this.bankSize - 1);
-		let slotIndex = addr >>> this.shiftCount;
-		let bankNr = this.slots[slotIndex];
-		let ramAddr = bankNr * this.bankSize + address;	// Convert to flat address
-		const mem = this.memoryData;
-		mem[ramAddr] = val & 0xFF;
-		// Second byte
-		address++;
-		if (address < 0x2000) {
-			// No overflow, same bank, normal case
-			ramAddr++;
-		}
-		else {
-			// Overflow
-			slotIndex = ((addr + 1) & 0xFFFF) >>> this.shiftCount;
-			bankNr = this.slots[slotIndex];
-			ramAddr = bankNr * this.bankSize;	// Convert to flat address
-		}
-		mem[ramAddr] = val >>> 8;
-	}
-	*/
 
 
 	/**
-	 * Write to memoryData directly.
+	 * Write to memoryData directly into a bank.
 	 * Is e.g. used during SNA / NEX file loading.
-	 * @param offset Offset into the memData. I.e. can be bigger than 0x10000.
+	 * @param bankNr The bank to write.
 	 * @param data The data to write.
+	 * @param offset Offset into the data buffer.
 	 */
-	public writeMemoryData(offset: number, data: Uint8Array) {
+	public writeMemoryData(bankNr: number, data: Uint8Array, offset = 0) {
+		const bank = this.memoryBanks[bankNr];
 		// Check size
-		let size = data.length;
-		if (offset + size > this.memoryData.length)
-			size = this.memoryData.length - offset;
-
-		let start = 0;
-		const bankSize = this.bankSize;
-		while (size > 0) {
-			// Get associated bank
-			const bank = Math.floor(offset / bankSize);
-			const offsRemainder = offset % bankSize;
-			// Check boundaries
-			let minSize = size;
-			if (offsRemainder + minSize > bankSize)
-				minSize = bankSize - offsRemainder;
-			// Check if RAM, others are not written
-			const bankType = this.bankTypes[bank];
-			if (bankType == BankType.RAM) {
-				// Write data
-				const data2 = data.slice(start, minSize);
-				this.memoryData.set(data2, offset);
-			}
-			// Next
-			start += minSize;
-			offset += minSize;
-			size -= minSize;
-		}
+		let size = bank.length;
+		if (data.length - offset < bank.length)
+			size = data.length - offset;
+		// Write
+		bank.set(data.slice(offset, offset+size));
 	}
 
 
@@ -467,36 +387,6 @@ export class SimulatedMemory implements Serializeable {
 	public setVisualProg(addr: number) {
 		// Visual memory
 		this.visualMemory[addr >>> this.VISUAL_MEM_SIZE_SHIFT] = this.VISUAL_MEM_COL_PROG;
-	}
-
-
-	/**
-	 * Returns the bank memory and the address into it.
-	 * @param addr The ZX spectrum memory address.
-	 * @returns [number, Uint8Array] The address (0-0x1FFF) and the memory bank array.
-	 */
-	/*
-	public getBankForAddr(addr: number): [number, Uint8Array] {
-		const slot=(addr>>>13)&0x07;
-		const bankAddr=addr&0x1FFF;
-		const bank=this.slots[slot];
-		const bankMem=this.banks[bank];
-		Utility.assert(bankMem);
-		return [bankAddr, bankMem];
-	}
-	*/
-
-
-	/**
-	 * Fills the bank with a specific values.
-	 * Is e.g. used for un-populated banks (E.g. a ZX16K does not have memory attached above 0x8000.
-	 * The memory model will fill the values with 0xFF).
-	 * @param bank The bank to fill.
-	 * @param fillValue The byte value to fill.
-	 */
-	public fillBank(bank: number, fillValue: number) {
-		const ramAddr = bank * this.bankSize;
-		this.memoryData.fill(fillValue, ramAddr, ramAddr + this.bankSize);
 	}
 
 
@@ -512,96 +402,86 @@ export class SimulatedMemory implements Serializeable {
 	 * Returns the slots array, or undefined if not paged.
 	 */
 	public getSlots(): number[] | undefined {
-		//return this.slots;
-		return undefined;
+		return this.slots;
 	}
 
 
 	/**
 	 * Reads a block of bytes.
-	 * @param startAddress Start address.
-	 * @param size The size of the block.
+	 * @param startAddr64k The 64k start address
+	 * @param size The length of the data in bytes.
+	 * @returns The data as Uint8Array (a new array is returned.)
 	 */
-	public readBlock(startAddress: number, size: number): Uint8Array {
-		const totalBlock = new Uint8Array(size);
-		let offset = 0;
-		// The block may span several banks.
-		let addr = startAddress;
-		const mem = this.memoryData;
+	public readBlock(startAddr64k: number, size: number): Uint8Array {
+		const data = new Uint8Array(size);
+		let dataOffset = 0;
+
 		while (size > 0) {
-			// Get memory bank
-			const slot = (addr & 0xFFFF) >>> this.shiftCount;
-			const bankAddr = addr & (this.bankSize - 1);
-			const bank = this.slots[slot];
-			let ramAddr = bank * this.bankSize + bankAddr;
-			// Get block within one bank
-			let blockEnd = bankAddr + size;
-			if (blockEnd > this.bankSize)
-				blockEnd = this.bankSize;
-			const partBlockSize = blockEnd - bankAddr;
-			// Copy partial block
-			const partBlock = mem.subarray(ramAddr, ramAddr + partBlockSize);
-			// Add to total block
-			totalBlock.set(partBlock, offset);
+			// Get start address and bank
+			const slotIndex = this.slotAddress64kAssociation[startAddr64k];
+			const bankNr = this.slots[slotIndex];
+			const rangeStart = this.slotRangesStart[slotIndex];
+			const offs = startAddr64k - rangeStart;
+			const bank = this.memoryBanks[bankNr];
+			const rangeSize = this.slotRangesSize[slotIndex];
+			// Copy
+			let sizeOffs = rangeSize - offs;
+			if (sizeOffs > size)
+				sizeOffs = size;
+			data.set(bank.slice(offs, sizeOffs), dataOffset);
 			// Next
-			offset += partBlockSize;
-			size -= partBlockSize;
-			addr += partBlockSize;
+			dataOffset += sizeOffs;
+			size -= sizeOffs;
+			startAddr64k = (startAddr64k + sizeOffs) & 0xFFFF;
 		}
-		return totalBlock;
+
+		return data;
 	}
 
 
 	/**
 	 * Writes a block of bytes.
-	 * @param startAddress Start address.
-	 * @param totalBlock The block to write.
+	 * @param startAddress The 64k start address.
+	 * @param data The block to write.
 	 */
-	public writeBlock(startAddress: number, totalBlock: Buffer | Uint8Array) {
-		if (!(totalBlock instanceof Uint8Array))
-			totalBlock = new Uint8Array(totalBlock);
-		let offset = 0;
+	public writeBlock(startAddr64k: number, data: Buffer | Uint8Array) {
+		if (!(data instanceof Uint8Array))
+			data = new Uint8Array(data);
 		// The block may span several banks.
-		let addr = startAddress;
-		let size = totalBlock.length;
-		const mem = this.memoryData;
+		let dataOffset = 0;
+		let size = data.byteLength;
+
 		while (size > 0) {
-			// Get memory bank
-			const slot = (addr & 0xFFFF) >>> this.shiftCount;
-			const bankAddr = addr & (this.bankSize - 1);
-			const bank = this.slots[slot];
-			let ramAddr = bank * this.bankSize + bankAddr;
-			// Get block within one bank
-			let blockEnd = bankAddr + size;
-			if (blockEnd > this.bankSize)
-				blockEnd = this.bankSize;
-			const partBlockSize = blockEnd - bankAddr;
-			// Check if bank is used
-			if (this.bankTypes[bank] != BankType.UNUSED) {
-				// Copy partial block
-				const partBlock = totalBlock.subarray(offset, offset + partBlockSize);
-				// Copy to memory bank
-				mem.set(partBlock, ramAddr);
-			}
+			// Get start address and bank
+			const slotIndex = this.slotAddress64kAssociation[startAddr64k];
+			const bankNr = this.slots[slotIndex];
+			const rangeStart = this.slotRangesStart[slotIndex];
+			const offs = startAddr64k - rangeStart;
+			const bank = this.memoryBanks[bankNr];
+			const rangeSize = this.slotRangesSize[slotIndex];
+			// Copy
+			let sizeOffs = rangeSize - offs;
+			if (sizeOffs > size)
+				sizeOffs = size;
+			bank.set(data.slice(dataOffset, sizeOffs), offs);
 			// Next
-			offset += partBlockSize;
-			size -= partBlockSize;
-			addr += partBlockSize;
+			dataOffset += sizeOffs;
+			size -= sizeOffs;
+			startAddr64k = (startAddr64k + sizeOffs) & 0xFFFF;
 		}
-		return totalBlock;
 	}
 
 
 	/**
 	 * Writes a complete memory bank.
-	 * @param bank The bank number.
+	 * @param bankNr The bank number.
 	 * @param block The block to write.
 	 */
-	public writeBank(bank: number, block: Buffer | Uint8Array) {
-		if (block.length != this.bankSize)
-			throw Error("writeBank: Block length " + block.length + " not allowed. Expected " + this.bankSize + ".");
-		const ramAddr = bank * this.bankSize;
-		this.memoryData.set(block, ramAddr);
+	public writeBank(bankNr: number, block: Buffer | Uint8Array) {
+		const bank = this.memoryBanks[bankNr];
+		if (block.length != bank.byteLength)
+			throw Error("writeBank: Block length " + block.length + " not allowed. Expected " + bank.byteLength + ".");
+		bank.set(block);
 	}
 
 
