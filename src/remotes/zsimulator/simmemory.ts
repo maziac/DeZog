@@ -379,7 +379,7 @@ export class SimulatedMemory implements Serializeable {
 		if (data.length - offset < bank.length)
 			size = data.length - offset;
 		// Write
-		bank.set(data.slice(offset, offset+size));
+		bank.set(data.slice(offset, offset + size));
 	}
 
 
@@ -428,7 +428,7 @@ export class SimulatedMemory implements Serializeable {
 			let sizeOffs = rangeSize - offs;
 			if (sizeOffs > size)
 				sizeOffs = size;
-			data.set(bank.slice(offs, sizeOffs), dataOffset);
+			data.set(bank.slice(offs, offs + sizeOffs), dataOffset);
 			// Next
 			dataOffset += sizeOffs;
 			size -= sizeOffs;
@@ -463,7 +463,7 @@ export class SimulatedMemory implements Serializeable {
 			let sizeOffs = rangeSize - offs;
 			if (sizeOffs > size)
 				sizeOffs = size;
-			bank.set(data.slice(dataOffset, sizeOffs), offs);
+			bank.set(data.slice(dataOffset, dataOffset + sizeOffs), offs);
 			// Next
 			dataOffset += sizeOffs;
 			size -= sizeOffs;
