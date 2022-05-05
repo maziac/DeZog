@@ -63,9 +63,10 @@ export class DisassemblyClass extends Disassembler {
 			const bank = Z80Registers.getBankFromAddress(longAddr);
 			// Formatting
 			let addrString = Utility.getHexString(addr64k, 4);
-			if (bank >= 0)
-				addrString += ':' + Remote.memoryModel.getBankName(bank);
-			//addrString += '[' + bank + ']';
+			const shortName = Remote.memoryModel.getBankShortName(bank);
+			if (shortName)
+				addrString += ':' + shortName;
+			//addrString += '[' + shortName + ']';
 			return addrString;
 		};
 

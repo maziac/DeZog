@@ -130,7 +130,7 @@ export class MemoryModel {
 					end: start - 1
 				}
 				const slotIndex = this.slotRanges.length;
-				this.slotAddress64kAssociation.fill(slotIndex, unassignedSlotRange.start, unassignedSlotRange.end+1);
+				this.slotAddress64kAssociation.fill(slotIndex, unassignedSlotRange.start, unassignedSlotRange.end + 1);
 				this.slotRanges.push(unassignedSlotRange);
 				this.initialSlots.push(-1);
 			}
@@ -160,7 +160,7 @@ export class MemoryModel {
 
 			// Associate address range with slot index
 			const slotIndex = this.slotRanges.length;
-			this.slotAddress64kAssociation.fill(slotIndex, start, end+1);
+			this.slotAddress64kAssociation.fill(slotIndex, start, end + 1);
 
 			// Initialize slot with bank
 			this.initialSlots.push(initialBank!);
@@ -224,7 +224,7 @@ export class MemoryModel {
 				};
 				this.banks.push(bankInfo);
 				this.initialSlots[i] = unassignedIndex;
-				this.slotAddress64kAssociation.fill(i, start, end+1);
+				this.slotAddress64kAssociation.fill(i, start, end + 1);
 				// Next
 				unassignedIndex++;
 			}
@@ -277,7 +277,7 @@ export class MemoryModel {
 	protected createBankOrBanks(bank: CustomMemoryBank, size: number, assignShortName: boolean): number {
 		let indexStart: number;
 		let indexOrRange = bank.index;
-		const bankType = BankType.RAM;	// TODO: Need to be user selectable
+		const bankType = (bank.rom == undefined) ? BankType.RAM : BankType.ROM;
 		// Check for bank range
 		if (typeof indexOrRange == 'number') {
 			// Just one bank
@@ -290,8 +290,9 @@ export class MemoryModel {
 				name: this.createBankName(bank.name, indexStart),
 				shortName: (assignShortName) ? this.createBankShortName(bank.shortName, indexStart) : '',
 				size,
-				bankType
-				// TODO: rom?
+				bankType,
+				rom: bank.rom,
+				romOffset: bank.romOffset
 			};
 			this.setBankInfo(indexStart, bankInfo);
 		}
@@ -310,8 +311,9 @@ export class MemoryModel {
 					name: this.createBankName(bank.name, index),
 					shortName: (assignShortName) ? this.createBankShortName(bank.shortName, index) : '',
 					size,
-					bankType
-					// TODO: rom?
+					bankType,
+					rom: bank.rom,
+					romOffset: bank.romOffset
 				};
 				this.setBankInfo(index, bankInfo);
 			}
@@ -413,14 +415,15 @@ export class MemoryModel {
 	 * The non-overridden method simply returns the number as string.
 	 * But overridden methods could also prepend the number with e.g. an
 	 * "R" for ROM.
-	 * @param bank Bank number. Starts at 0.
+	 * @param bankNr Bank number. Starts at 0.
 	 * @returns The bank number as string or an empty string if bank is < 0
 	 * (no bank number).
 	 */
-	public getBankName(bank: number): string {
-		if (bank < 0)
+	public getBankShortName(bankNr: number): string {
+		if (bankNr < 0)
 			return '';
-		return bank.toString();
+		const bank = this.banks[bankNr];
+		return bank.shortName;
 	}
 
 

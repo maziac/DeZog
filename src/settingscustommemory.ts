@@ -79,7 +79,7 @@ export interface CustomMemorySlot {
 	/**
 	 * Optional memory management unit (bank switcher) accessed via single I/O port
 	 */
-	ioMmu?: CustomMemoryMmuInfo;
+	ioMmu?: CustomMemoryIoMmuInfo;
 }
 
 
@@ -124,7 +124,7 @@ export interface CustomMemoryBank {
 /**
  * Description of Memory management unit (bank switcher) accessed via single I/O port
  */
-export interface CustomMemoryMmuInfo {
+export interface CustomMemoryIoMmuInfo {
 	/**
 	 * The I/O port that control the banks (full 16-bit address)
 	 * If an object, `mask` is a 16-bit mask to filter the current address (mask to 1), and `match` is the

@@ -1,5 +1,12 @@
 import {MemBuffer, Serializeable} from '../../misc/membuffer';
 import {BankType, MemoryModel} from '../Paging/memorymodel';
+import * as fs from "fs";
+import * as path from 'path';
+import {UnifiedPath} from "../../misc/unifiedpath";
+import * as intelHex from 'intel-hex';
+import {Z80Ports} from './z80ports';
+import {Z80} from '../../3rdparty/z80.js/Z80';
+import {CustomMemoryIoMmuInfo} from '../../settingscustommemory';
 
 
 
@@ -38,7 +45,7 @@ export class SimulatedMemory implements Serializeable {
 	// Holds only the start address of the slot.
 	protected slotRangesStart: number[];
 
-	// Holds only the
+	// Holds only the size of the slot range.
 	protected slotRangesSize: number[];
 
 	// Holds the slot assignments to the banks.
@@ -88,8 +95,9 @@ export class SimulatedMemory implements Serializeable {
 	 * Constructor.
 	 * Configures the slot and bank count.
 	 * @param memModel The memory model to use. Includes all slots definition and banks.
+	 * @param ports The port instance for registering the IO MMU handlers.
 	 */
-	constructor(memModel: MemoryModel) {
+	constructor(memModel: MemoryModel, ports: Z80Ports) {
 		// Store
 		this.memoryModel = memModel;
 		this.slotAddress64kAssociation = memModel.slotAddress64kAssociation;
@@ -108,18 +116,92 @@ export class SimulatedMemory implements Serializeable {
 		for (let i = 0; i < bankCount; i++) {
 			const bank = memModel.banks[i];
 			if (bank) {
-				this.memoryBanks[i] = new Uint8Array(bank.size);
+				const memBank = new Uint8Array(bank.size);
+				this.memoryBanks[i] = memBank;
 				this.bankTypes[i] = bank.bankType;
+				// Check for rom
+				let rom = bank.rom;
+				if (rom) {
+					// Read file
+					if (typeof rom  === "string") {
+						const filepath = UnifiedPath.getUnifiedPath(rom);
+						rom = this.readRomFile(filepath);
+					}
+					// Use data
+					const offs = bank.romOffset || 0;
+					memBank.set(rom.slice(offs, offs + memBank.length));
+				}
 			}
 		}
 
 		// Associate banks with slots
 		this.slots = [...memModel.initialSlots];	// Copy
 
+		// And install the port handlers
+		this.installIoMmuHandlers(ports);
+
 		// Breakpoints
 		this.clearHit();
 		// Create watchpoint area
 		this.watchPointMemory = Array.from({length: 0x10000}, () => ({read: 0, write: 0}));
+	}
+
+
+	/**
+	 * Registers the IO MMU handlers for switching the banks through writing
+	 * to an IO port.
+	 * @param ports The instance to register the functions.
+	 */
+	protected installIoMmuHandlers(ports: Z80Ports) {
+		for (let i = 0; i < this.slots; i++) {
+			const slotRange = this.memoryModel.slotRanges[i];
+			const ioMmu = slotRange.ioMmu;
+			if (ioMmu) {
+				// Install handler
+
+			}
+		}
+	}
+
+
+	/**
+	 * Creates a function to switch banks for a slot.
+	 * @param ioMMu The information from the custom settings.
+	 * @returns A function.
+	 */
+	protected getMmuHandler(ioMMu: CustomMemoryIoMmuInfo) {
+		let match: number;
+		let mask: number = 0xffff;
+		if (typeof mmu.port === "number" || typeof mmu.port === "string") {
+			match = toNumber(mmu.port);
+		} else {
+			match = toNumber(mmu.port.match);
+			mask = toNumber(mmu.port.mask);
+		}
+		return (port, value) => {
+			if ((port & mask) === match) {
+				// Address decoded. Now decode the data bus bits
+				return decodeBankBits(value, mmu.dataBits);
+			} else {
+				return -1;
+			}
+		};
+	}
+
+
+	/**
+	 * Decodes the bits for switching the banks.
+	 * @param byte The value to decode
+	 */
+	protected decodeBankBits(byte: number, dataBits: number[]): number {
+		let ret = 0;
+		for (let b = 0, val = 1; b < dataBits.length; b++, val <<= 1) {
+			const mask = 1 << dataBits[b];
+			if (byte & mask) {
+				ret += val;
+			}
+		}
+		return ret;
 	}
 
 
@@ -500,5 +582,30 @@ export class SimulatedMemory implements Serializeable {
 		return this.visualMemory;
 	}
 
+
+	/**
+	 * Loads a Intel hex file format.
+	 */
+	protected readHexFromFile(filePath: string): Uint8Array {
+		const {data}: {data: Buffer} = intelHex.parse(fs.readFileSync(filePath));
+		return new Uint8Array(data);
+	}
+
+
+	/**
+	 * Loads a rom file. binary or hex format.
+	 */
+	protected readRomFile(filePath: string): Uint8Array {
+		switch (path.extname(filePath).toLowerCase()) {
+			case ".hex":
+				return this.readHexFromFile(filePath);
+			case ".bin":
+			case ".rom":
+				const romBuffer = fs.readFileSync(filePath);
+				return new Uint8Array(romBuffer.buffer);
+			default:
+				throw new Error(`Unknown ROM extension file: ${filePath}`);
+		}
+	}
 }
 
