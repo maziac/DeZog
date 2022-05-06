@@ -5,7 +5,7 @@ import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {GenericBreakpoint, GenericWatchpoint} from '../../genericwatchpoint';
 import {Opcode, OpcodeFlag} from '../../disassembler/opcode';
-import {Z80Registers} from '../z80registers';
+import {Z80Registers, Z80RegistersClass} from '../z80registers';
 import {SerialPort} from 'serialport';
 
 
@@ -540,7 +540,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	protected checkBreakpoint(addr: number | undefined): string | undefined {
 		if (addr != undefined) {
 			// Check for ROM
-			const bank = Z80Registers.getBankFromAddress(addr);
+			const bank = Z80RegistersClass.getBankFromAddress(addr);
 			if (bank >= 0xFE)	// ROM
 				return "ROM";
 

@@ -527,7 +527,7 @@ export class DzrpRemote extends RemoteBase {
 				continue;
 
 			// Check if wp start address is currently paged in
-			const bank = Z80Registers.getBankFromAddress(addr);
+			const bank = Z80RegistersClass.getBankFromAddress(addr);
 			if (bank >= 0) {
 				const slotNr = Z80Registers.getSlotFromAddress(addr);
 				const slotBank = slots[slotNr];

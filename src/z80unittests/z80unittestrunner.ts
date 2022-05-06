@@ -578,7 +578,7 @@ export class Z80UnitTestRunner {
 		await Remote.writeMemoryDump(this.addrCall & 0xFFFF, callAddr);
 
 		// Set slot/bank to Unit test address
-		const bank = Z80Registers.getBankFromAddress(address);
+		const bank = Z80RegistersClass.getBankFromAddress(address);
 		if (bank >= 0) {
 			const slot = Z80Registers.getSlotFromAddress(address)
 			await Remote.setSlot(slot, bank);

@@ -1,5 +1,5 @@
 import {Utility} from '../misc/utility';
-import {Z80Registers} from '../remotes/z80registers';
+import {Z80RegistersClass} from '../remotes/z80registers';
 import {LabelParserBase} from './labelparserbase';
 
 
@@ -112,7 +112,7 @@ export class ReverseEngineeringParser extends LabelParserBase {
 		workLine = workLine.substring(matchAddr[1].length);
 
 		// Create long address
-	 	const longAddress = Z80Registers.getLongAddressWithBank(addr64k, bank);
+		const longAddress = Z80RegistersClass.getLongAddressWithBank(addr64k, bank);
 
 		// Bytes
 		// E.g. "05 FC ..."

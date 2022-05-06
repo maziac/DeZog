@@ -1054,7 +1054,7 @@ export class ZesaruxRemote extends RemoteBase {
 		if (address >= 0) {
 			condition = 'PC=0' + Utility.getHexString(address & 0xFFFF, 4) + 'h';
 			// Add check for long BP
-			let bank = Z80Registers.getBankFromAddress(address);
+			let bank = Z80RegistersClass.getBankFromAddress(address);
 			if (bank != -1) {
 				// Yes, it's a long address
 				// Check for ZX128K: ZEsarUX uses different wording:

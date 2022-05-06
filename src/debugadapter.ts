@@ -3561,7 +3561,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		// Check if bank is the same
 		const slots = Remote.getSlots();
 		if (slots) {
-			const bank = Z80Registers.getBankFromAddress(addr);
+			const bank = Z80RegistersClass.getBankFromAddress(addr);
 			if (bank >= 0) {
 				const slotIndex = Z80Registers.getSlotFromAddress(addr);
 				if (bank != slots[slotIndex]) {
@@ -3608,7 +3608,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		// Check if bank is the same
 		const slots = Remote.getSlots();
 		if (slots) {
-			const fromBank = Z80Registers.getBankFromAddress(fromAddr);
+			const fromBank = Z80RegistersClass.getBankFromAddress(fromAddr);
 			if (fromBank >= 0) {
 				const slotIndex = Z80Registers.getSlotFromAddress(fromAddr);
 				if (fromBank != slots[slotIndex]) {
@@ -3616,7 +3616,7 @@ E.g. use "-help -view" to put the help text in an own view.
 					return;
 				}
 			}
-			const toBank = Z80Registers.getBankFromAddress(toAddr);
+			const toBank = Z80RegistersClass.getBankFromAddress(toAddr);
 			if (toBank >= 0) {
 				const slotIndex = Z80Registers.getSlotFromAddress(toAddr);
 				if (toBank != slots[slotIndex]) {

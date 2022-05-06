@@ -482,7 +482,7 @@ export class Z80RegistersClass {
 	 * @return The corresponding bank, i.e. (addr>>>16)-1.
 	 * Returns -1 if 'addr' is not a long address.
 	 */
-	public getBankFromAddress(addr: number): number {
+	public static getBankFromAddress(addr: number): number {
 		const bankPart = addr >>> 16;
 		return bankPart - 1;
 	}
@@ -494,7 +494,7 @@ export class Z80RegistersClass {
 	 * @param bank A bank number.
 	 * @return The corresponding long address, i.e. addr+((bank+1)<<16).
 	 */
-	public getLongAddressWithBank(addr: number, bank: number): number {
+	public static getLongAddressWithBank(addr: number, bank: number): number {
 		if (bank < 0)
 			return addr;	// 64k address
 		// Long address:

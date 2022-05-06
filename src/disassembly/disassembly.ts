@@ -2,7 +2,7 @@ import {Opcode, Opcodes} from "../disassembler/opcode";
 import {Disassembler} from "../disassembler/disasm";
 import {Utility} from '../misc/utility';
 import {Settings} from '../settings';
-import {Z80Registers} from "../remotes/z80registers";
+import {Z80Registers, Z80RegistersClass} from "../remotes/z80registers";
 import {Labels} from "../labels/labels";
 import {MemAttribute} from "../disassembler/memory";
 import {Format} from "../disassembler/format";
@@ -60,7 +60,7 @@ export class DisassemblyClass extends Disassembler {
 			const slots = Z80Registers.getSlots();
 			const longAddr = Z80Registers.createLongAddress(addr64k, slots);
 			// Get bank
-			const bank = Z80Registers.getBankFromAddress(longAddr);
+			const bank = Z80RegistersClass.getBankFromAddress(longAddr);
 			// Formatting
 			let addrString = Utility.getHexString(addr64k, 4);
 			const shortName = Remote.memoryModel.getBankShortName(bank);

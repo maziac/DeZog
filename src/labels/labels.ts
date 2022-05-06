@@ -1,7 +1,7 @@
 import {Utility} from '../misc/utility';
 import {MemoryModel} from '../remotes/Paging/memorymodel';
 import {Remote} from '../remotes/remotebase';
-import {Z80Registers} from '../remotes/z80registers';
+import {Z80RegistersClass} from '../remotes/z80registers';
 import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
@@ -837,9 +837,9 @@ export class LabelsClass {
 		}
 		else {
 			// Change banks
-			const origBank = Z80Registers.getBankFromAddress(address);
+			const origBank = Z80RegistersClass.getBankFromAddress(address);
 			const newBank = origBank * this.bankSize / targetBankSize;
-			address = Z80Registers.getLongAddressWithBank(address & 0xFFFF, newBank);
+			address = Z80RegistersClass.getLongAddressWithBank(address & 0xFFFF, newBank);
 		}
 		return address;
 	}

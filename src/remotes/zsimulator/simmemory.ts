@@ -29,7 +29,7 @@ interface SlotName {
 
 	// The name of the slot
 	name: string;
-};
+}
 
 
 /**
