@@ -5,6 +5,7 @@ import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
 import {MemBuffer} from '../src/misc/membuffer';
 import {Settings} from '../src/settings';
 import {SimulatedMemory} from '../src/remotes/zsimulator/simmemory';
+import {MemoryModelAllRam} from '../src/remotes/Paging/predefinedmemorymodels';
 
 
 suite('Z80Cpu', () => {
@@ -46,7 +47,9 @@ suite('Z80Cpu', () => {
 			let memBuffer;
 			let writeSize;
 			{
-				const cpu = new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports(0xFF)) as any;
+				const memModel = new MemoryModelAllRam();
+				const ports = new Z80Ports(0xFF);
+				cpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
 
 				cpu.pc = 0x1020;
 				cpu.sp = 0x1121;
@@ -78,7 +81,9 @@ suite('Z80Cpu', () => {
 			}
 
 			// Create a new object
-			const rCpu = new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports(0xFF)) as any;
+			const memModel = new MemoryModelAllRam();
+			const ports = new Z80Ports(0xFF);
+			const rCpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
 			rCpu.deserialize(memBuffer);
 
 			// Check size
@@ -119,10 +124,11 @@ suite('Z80Cpu', () => {
 
 			setup(() => {
 				Settings.launch = Settings.Init({} as any);
-				cpu = new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports(0xFF)) as any;
+				const memModel = new MemoryModelAllRam();
+				const ports = new Z80Ports(0xFF);
+				cpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
 				z80 = cpu.z80;
 				mem = cpu.memory;
-				const ports = cpu.ports;
 				portAddress = 0;	// Stores the last accessed port address (IN and OUT)
 				portValue = 0;	// For IN: the value returned by IN, for OUT: the value written by OUT
 				// Register ports
@@ -284,12 +290,11 @@ suite('Z80Cpu', () => {
 					}
 				};
 				Settings.launch = Settings.Init(cfg);
-				cpu = new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports(0xFF)) as any;
+				const memModel = new MemoryModelAllRam();
+				const ports = new Z80Ports(0xFF);
+				cpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
 				z80 = cpu.z80;
 				mem = cpu.memory;
-				// Make sure whole memory is RAM
-				for (let i = 0; i < 8; i++)
-					mem.setSlot(i, i);
 			});
 
 

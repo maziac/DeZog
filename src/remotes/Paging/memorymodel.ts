@@ -1,3 +1,4 @@
+import {Utility} from "../../misc/utility";
 import {CustomMemoryBank, CustomMemoryType} from "../../settingscustommemory";
 import {Z80Registers} from "../z80registers";
 
@@ -37,8 +38,8 @@ interface SlotRange {
 	// Z80 end address of page.
 	end: number;
 
-	// The IO configuration for switching the banks
-	ioMmu?: any;	// TODO
+	// The name of the slot. Required for slots that allow bank switching.
+	name?: string;
 }
 
 
@@ -109,6 +110,10 @@ export class MemoryModel {
 	protected bankSwitchingUsed = false;	// TODO: unclear if necessary. I think labels are always tested also on 64k, then this would not be needed.
 
 
+	// The IO configuration for switching the banks
+	public ioMmu: string;
+
+
 	/**
 	 * Constructor.
 	 * @param cfg The custom memory model configuration. From the settings.
@@ -116,8 +121,17 @@ export class MemoryModel {
 	constructor(cfg: CustomMemoryType) {
 		let expectedStart = 0;
 		this.bankSwitchingUsed = false;
+		// Create one string out of ioMmu.
+		if (cfg.ioMmu == undefined)
+			this.ioMmu = '';
+		else {
+			if (typeof cfg.ioMmu == "string")
+				this.ioMmu = cfg.ioMmu;
+			else
+				this.ioMmu = cfg.ioMmu.join('\n');
+		}
 		// Parse the config
-		for (const custMemSlot of cfg) {
+		for (const custMemSlot of cfg.slots) {
 			// Check if block needs to be inserted
 			const start = custMemSlot.range[0];
 			const diff = start - expectedStart;
@@ -140,7 +154,7 @@ export class MemoryModel {
 			if (end < start)
 				throw Error("Range-end lower than range-start.");
 
-			// Initial bak for slot
+			// Initial bank for slot
 			let initialBank = custMemSlot.initialBank;
 
 			// Banks
@@ -169,7 +183,7 @@ export class MemoryModel {
 			const slotRange = {
 				start,
 				end,
-				ioMMu: custMemSlot.ioMmu
+				name: custMemSlot.name
 			}
 			this.slotRanges.push(slotRange);
 
@@ -191,6 +205,8 @@ export class MemoryModel {
 		// Set default names for unnamed banks
 		for (let index = 0; index < this.banks.length; index++) {
 			const bank = this.banks[index];
+			if (!bank)
+				continue;
 			if (bank.name == undefined)
 				bank.name = 'BANK' + index;
 			if (bank.shortName == undefined)
@@ -247,6 +263,13 @@ export class MemoryModel {
 			// Get the bigger of both sizes
 			if (prevInfo.size < bankInfo.size)
 				prevInfo.size = bankInfo.size;
+			// Set name if not yet set
+			if (!prevInfo.name)
+				prevInfo.name = bankInfo.name;
+			if (!prevInfo.shortName)
+				prevInfo.shortName = bankInfo.shortName;
+
+			/*
 			// Check if both names are the same
 			if (prevInfo.name && bankInfo.name) {
 				if (prevInfo.name != bankInfo.name)
@@ -256,6 +279,7 @@ export class MemoryModel {
 				if (prevInfo.shortName != bankInfo.shortName)
 					throw Error("Different short names given for the same bank.");
 			}
+			*/
 		}
 		else {
 			// New entry
@@ -306,6 +330,8 @@ export class MemoryModel {
 				throw Error("Bank index too high.");
 			if (indexStart < 0)
 				throw Error("Bank index < 0.");
+			if (!assignShortName)
+				assignShortName = ((indexEnd - indexStart) > 0);
 			for (let index = indexStart; index <= indexEnd; index++) {
 				const bankInfo: BankInfo = {
 					name: this.createBankName(bank.name, index),
@@ -331,8 +357,9 @@ export class MemoryModel {
 	protected createBankName(name: string | undefined, index: number): string {
 		if (name == undefined)
 			return undefined!;
-		// Use given name
-		return name;	// TODO: evaluate name.
+		// Evaluate given name
+		const result = name.replace(/\${index}/g, index.toString());
+		return result;
 	}
 
 
@@ -344,8 +371,9 @@ export class MemoryModel {
 	protected createBankShortName(shortName: string | undefined, index: number): string {
 		if (shortName == undefined)
 			return undefined!;
-		// Use given name
-		return shortName;	// TODO: evaluate name.
+		// Evaluate given name
+		const result = shortName.replace(/\${index}/g, index.toString());
+		return result;
 	}
 
 

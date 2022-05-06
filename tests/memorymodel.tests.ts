@@ -7,21 +7,49 @@ import {Settings} from '../src/settings';
 
 suite('MemoryModel', () => {
 
+	suite('createBankName', () => {
+		test('normal usage', () => {
+			const mm = new MemoryModel({slots: []}) as any;
+			assert.equal(mm.createBankName(undefined, 1), undefined);
+			assert.equal(mm.createBankName('normal', 1), 'normal');
+		});
+
+		test('evaluate', () => {
+			const mm = new MemoryModel({slots: []}) as any;
+			assert.equal(mm.createBankName('bank${index}', 2), 'bank2');
+		});
+	});
+
+	suite('createBankShortName', () => {
+		test('normal usage', () => {
+			const mm = new MemoryModel({slots: []}) as any;
+			assert.equal(mm.createBankShortName(undefined, 1), undefined);
+			assert.equal(mm.createBankShortName('normal', 1), 'normal');
+		});
+
+		test('evaluate', () => {
+			const mm = new MemoryModel({slots: []}) as any;
+			assert.equal(mm.createBankShortName('bank${index}', 2), 'bank2');
+		});
+	});
+
+
 	suite('slot ranges', () => {
 
 		test('empty slot range', () => {
-			const mm = new MemoryModel([]) as any;
+			const mm = new MemoryModel({slots: []}) as any;
 			assert.equal(mm.slotRanges.length, 1);
 			assert.equal(mm.slotRanges[0].start, 0x0000);
 			assert.equal(mm.slotRanges[0].end, 0xFFFF);
 			assert.equal(mm.slotRanges[0].ioMMu, undefined);
 			assert.equal(mm.initialSlots.length, 1);
-			assert.equal(mm.initialSlots[0], undefined);
-			assert.equal(mm.banks.length, 0);
+			assert.equal(mm.initialSlots[0], 0);
+			assert.equal(mm.banks.length, 1);
 		});
 
 		test('1 slot range', () => {
-			const mm = new MemoryModel([
+			const mm = new MemoryModel({
+				slots: [
 				{
 					range: [0x0000, 0xFFFF],
 					banks: [
@@ -30,7 +58,7 @@ suite('MemoryModel', () => {
 						}
 					]
 				}
-			]) as any;
+			]}) as any;
 			assert.equal(mm.slotRanges.length, 1);
 			assert.equal(mm.slotRanges[0].start, 0x0000);
 			assert.equal(mm.slotRanges[0].end, 0xFFFF);
@@ -41,32 +69,34 @@ suite('MemoryModel', () => {
 		});
 
 		test('3 slot ranges', () => {
-			const mm = new MemoryModel([
-				{
-					range: [0x1000, 0x7FFF],
-					banks: [
-						{
-							index: 0
-						}
-					]
-				},
-				{
-					range: [0xA000, 0xAFFF],
-					banks: [
-						{
-							index: 1
-						}
-					]
-				},
-				{
-					range: [0xB000, 0xEFFF],
-					banks: [
-						{
-							index: 2
-						}
-					]
-				}
-			]) as any;
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x1000, 0x7FFF],
+						banks: [
+							{
+								index: 0
+							}
+						]
+					},
+					{
+						range: [0xA000, 0xAFFF],
+						banks: [
+							{
+								index: 1
+							}
+						]
+					},
+					{
+						range: [0xB000, 0xEFFF],
+						banks: [
+							{
+								index: 2
+							}
+						]
+					}
+				]
+			}) as any;
 			assert.equal(mm.slotRanges.length, 6);
 			assert.equal(mm.slotRanges[0].start, 0x0000);
 			assert.equal(mm.slotRanges[0].end, 0x0FFF);
@@ -88,14 +118,14 @@ suite('MemoryModel', () => {
 			assert.equal(mm.slotRanges[5].ioMMu, undefined);
 
 			assert.equal(mm.initialSlots.length, 6);
-			assert.equal(mm.initialSlots[0], undefined);
+			assert.equal(mm.initialSlots[0], 3);
 			assert.equal(mm.initialSlots[1], 0);
-			assert.equal(mm.initialSlots[2], undefined);
+			assert.equal(mm.initialSlots[2], 4);
 			assert.equal(mm.initialSlots[3], 1);
 			assert.equal(mm.initialSlots[4], 2);
-			assert.equal(mm.initialSlots[5], undefined);
+			assert.equal(mm.initialSlots[5], 5);
 
-			assert.equal(mm.banks.length, 3);
+			assert.equal(mm.banks.length, 6);
 		});
 	});
 
@@ -103,32 +133,34 @@ suite('MemoryModel', () => {
 	suite('slot/address association', () => {
 
 		test('assigned and unassigned', () => {
-			const mm = new MemoryModel([
-			{
-				range: [0x1000, 0x7F11],
-				banks: [
+			const mm = new MemoryModel({
+				slots: [
 					{
-						index: 0
+						range: [0x1000, 0x7F11],
+						banks: [
+							{
+								index: 0
+							}
+						]
+					},
+					{
+						range: [0xA123, 0xAF00],
+						banks: [
+							{
+								index: 1
+							}
+						]
+					},
+					{
+						range: [0xB000, 0xEFFF],
+						banks: [
+							{
+								index: 2
+							}
+						]
 					}
 				]
-			},
-			{
-				range: [0xA123, 0xAF00],
-				banks: [
-					{
-						index: 1
-					}
-				]
-			},
-			{
-				range: [0xB000, 0xEFFF],
-				banks: [
-					{
-						index: 2
-					}
-				]
-			}
-			]) as any;
+			}) as any;
 
 			assert.equal(mm.slotRanges.length, 7);
 			assert.equal(mm.slotAddress64kAssociation[0x0000], 0);	// Slot 0, bank 3, UNUSED
@@ -152,31 +184,30 @@ suite('MemoryModel', () => {
 	suite('banks', () => {
 
 		test('2 banks', () => {
-			const mm = new MemoryModel([
-				{
-					range: [0x0000, 0xFFFF],
-					banks: [
-						{
-							index: 0,
-							name: 'ROM0',
-							shortName: 'R0'
-						},
-						{
-							index: 1,
-							name: 'ROM1',
-							shortName: 'R1',
-						}
-					],
-					ioMmu: {
-						port: 1234,
-						dataBits: [0]
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0xFFFF],
+						name: "slotROM",
+						banks: [
+							{
+								index: 0,
+								name: 'ROM0',
+								shortName: 'R0'
+							},
+							{
+								index: 1,
+								name: 'ROM1',
+								shortName: 'R1',
+							}
+						]
 					}
-				},
-			]) as any;
+				],
+				ioMmu: "slotROM = 0;"
+			}) as any;
 			assert.equal(mm.slotRanges.length, 1);
 			assert.equal(mm.slotRanges[0].start, 0x0000);
 			assert.equal(mm.slotRanges[0].end, 0xFFFF);
-			assert.notEqual(mm.slotRanges[0].ioMMu, undefined);
 			assert.equal(mm.initialSlots.length, 1);
 
 			assert.equal(mm.initialSlots[0], 0);
@@ -186,50 +217,50 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks[0].shortName, "R0");
 			assert.equal(mm.banks[1].name, "ROM1");
 			assert.equal(mm.banks[1].shortName, "R1");
+
+			assert.notEqual(mm.ioMmu, undefined);
 		});
 
 		test('2 banks, default names', () => {
-			const mm = new MemoryModel([
-				{
-					range: [0x0000, 0xFFFF],
-					banks: [
-						{
-							index: 0
-						},
-						{
-							index: 1
-						}
-					],
-					ioMmu: {
-						port: 1234,
-						dataBits: [0]
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0xFFFF],
+						banks: [
+							{
+								index: 0
+							},
+							{
+								index: 1
+							}
+						],
+						initialBank: 1
 					},
-					initialBank: 1
-				},
-			]) as any;
+				],
+				ioMmu: "slotROM = 0;"
+			}) as any;
 
 			assert.equal(mm.initialSlots[0], 1);
 		});
 
 
 		test('initialBank', () => {
-			const mm = new MemoryModel([
-				{
-					range: [0x0000, 0xFFFF],
-					banks: [
-						{
-							index: 0
-						},
-						{
-							index: 1
-						}
-					],
-					ioMmu: {
-						port: 1234,
-						dataBits: [0]
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0xFFFF],
+						banks: [
+							{
+								index: 0
+							},
+							{
+								index: 1
+							}
+						]
 					}
-				},
-			]) as any;
+				],
+				ioMmu: "slotROM = 0;"
+			}) as any;
 
 			assert.equal(mm.banks.length, 2);
 			assert.equal(mm.banks[0].name, "BANK0");
@@ -240,71 +271,76 @@ suite('MemoryModel', () => {
 
 
 		test('bank size', () => {
-			const mm = new MemoryModel([
-				{
-					range: [0x0000, 0x3FFF],
-					banks: [
-						{
-							index: 0
-						}
-					]
-				},
-				{
-					range: [0x8000, 0xFFFF],
-					banks: [
-						{
-							index: 1
-						}
-					]
-				}
-			]) as any;
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0x3FFF],
+						banks: [
+							{
+								index: 0
+							}
+						]
+					},
+					{
+						range: [0x8000, 0xFFFF],
+						banks: [
+							{
+								index: 1
+							}
+						]
+					}
+				]
+			}) as any;
 
-			assert.equal(mm.banks.length, 2);
+			assert.equal(mm.banks.length, 3);
 			assert.equal(mm.banks[0].size, 0x4000);
 			assert.equal(mm.banks[1].size, 0x8000);
+			assert.equal(mm.banks[2].size, 0x4000);	// UNUSED
 		});
 
 
 		test('same bank, 2 sizes', () => {
-			const mm = new MemoryModel([
-				{
-					range: [0x0000, 0x3FFF],
-					banks: [
-						{
-							index: 0
-						}
-					]
-				},
-				{
-					range: [0x8000, 0xFFFF],
-					banks: [
-						{
-							index: 0
-						}
-					]
-				}
-			]) as any;
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0x3FFF],
+						banks: [
+							{
+								index: 0
+							}
+						]
+					},
+					{
+						range: [0x8000, 0xFFFF],
+						banks: [
+							{
+								index: 0
+							}
+						]
+					}
+				]
+			}) as any;
 
-			assert.equal(mm.banks.length, 1);
+			assert.equal(mm.banks.length, 2);
 			assert.equal(mm.banks[0].size, 0x8000);
+			assert.equal(mm.banks[1].size, 0x4000);	// UNUSED
 		});
 
 
 		test('bank range', () => {
-			const mm = new MemoryModel([
-				{
-					range: [0x0000, 0xFFFF],
-					banks: [
-						{
-							index: [0, 19]
-						}
-					],
-					ioMmu: {
-						port: 1234,
-						dataBits: [0]
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0xFFFF],
+						banks: [
+							{
+								index: [0, 19]
+							}
+						]
 					}
-				},
-			]) as any;
+				],
+				ioMmu: "slotROM = 0;"
+			}) as any;
 
 			assert.equal(mm.banks.length, 20);
 			assert.equal(mm.banks[0].name, "BANK0");
@@ -321,122 +357,90 @@ suite('MemoryModel', () => {
 
 		test('Range-start lower or equal than last range-end', () => {
 			assert.throws(() => {
-				new MemoryModel([
-					{
-						range: [0x0000, 0x7FFF],
-						banks: [{index: 0}]
-					},
-					{
-						range: [0x6000, 0xFFFF],
-						banks: [{index: 1}]
-					}
-				]) as any;
+				new MemoryModel({
+					slots: [
+						{
+							range: [0x0000, 0x7FFF],
+							banks: [{index: 0}]
+						},
+						{
+							range: [0x6000, 0xFFFF],
+							banks: [{index: 1}]
+						}
+					]
+				}) as any;
 			},
 				Error("Range-start lower or equal than last range-end."));
 		});
 
 		test('Range-end lower than range-start.', () => {
 			assert.throws(() => {
-				new MemoryModel([
-					{
-						range: [0x8000, 0x7FFF],
-						banks: [{index: 0}]
-					}
-				]) as any;
+				new MemoryModel({
+					slots: [
+						{
+							range: [0x8000, 0x7FFF],
+							banks: [{index: 0}]
+						}
+					]
+				}) as any;
 			},
 				Error("Range-end lower than range-start."));
 		});
 
 		test('No banks specified for range.', () => {
 			assert.throws(() => {
-				new MemoryModel([
-					{
-						range: [0x0000, 0xFFFF],
-						banks: []
-					}
-				]) as any;
+				new MemoryModel({
+					slots: [
+						{
+							range: [0x0000, 0xFFFF],
+							banks: []
+						}
+					]
+				}) as any;
 			},
 				Error("No banks specified for range."));
 		});
 
-		test('Different names given for same the bank.', () => {
-			assert.throws(() => {
-				new MemoryModel([
-					{
-						range: [0x0000, 0x7FFF],
-						banks: [{
-							index: 0,
-							name: "BANK0"
-						}]
-					},
-					{
-						range: [0x8000, 0xFFFF],
-						banks: [{
-							index: 0,
-							name: "ROM0"
-						}]
-					}
-				]) as any;
-			},
-				Error("Different names given for same the bank."));
-		});
-
-		test('Different short names given for the same bank.', () => {
-			assert.throws(() => {
-				new MemoryModel([
-					{
-						range: [0x0000, 0x7FFF],
-						banks: [{
-							index: 0,
-							shortName: "B0"
-						}]
-					},
-					{
-						range: [0x8000, 0xFFFF],
-						banks: [{
-							index: 0,
-							shortName: "R0"
-						}]
-					}
-				]) as any;
-			},
-				Error("Different short names given for the same bank."));
-		});
-
 		test('Bank index < 0.', () => {
 			assert.throws(() => {
-				new MemoryModel([
-					{
-						range: [0x0000, 0xFFFF],
-						banks: [{index: -1}]
-					}
-				]) as any;
+				new MemoryModel({
+					slots: [
+						{
+							range: [0x0000, 0xFFFF],
+							banks: [{index: -1}]
+						}
+					]
+				}) as any;
 			},
 				Error("Bank index < 0."));
 		});
 
 		test('Bank index too high.', () => {
 			assert.throws(() => {
-				new MemoryModel([
-					{
-						range: [0x0000, 0xFFFF],
-						banks: [{index: 1000}]
-					}
-				]) as any;
+				new MemoryModel({
+					slots: [
+						{
+							range: [0x0000, 0xFFFF],
+							banks: [{index: 1000}]
+						}
+					]
+				}) as any;
 			},
 				Error("Bank index too high."));
 		});
 
 		test('Bank range: first index bigger than last index.', () => {
 			assert.throws(() => {
-				new MemoryModel([
-					{
-						range: [0x0000, 0xFFFF],
-						banks: [{
-							index: [5, 3]
-						}]
-					}
-				]) as any;
+				new MemoryModel({
+					slots: [
+						{
+							range: [0x0000, 0xFFFF],
+							banks: [{
+								index: [5, 3]
+							}]
+						}
+					]
+				}) as any;
 			},
 				Error("Bank range: first index bigger than last index."));
 		});
@@ -471,7 +475,7 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks[0].shortName, "");
 			assert.equal(mm.banks[1].shortName, "");
 			assert.equal(mm.banks[2].shortName, "");
-			assert.equal(mm.banks[0].bankType, BankType.RAM);	// TODO: needs to be ROM
+			assert.equal(mm.banks[0].bankType, BankType.ROM);
 			assert.equal(mm.banks[1].bankType, BankType.RAM);
 			assert.equal(mm.banks[2].bankType, BankType.UNUSED);
 
@@ -512,7 +516,7 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks[1].name, "RAM");
 			assert.equal(mm.banks[0].shortName, "");
 			assert.equal(mm.banks[1].shortName, "");
-			assert.equal(mm.banks[0].bankType, BankType.RAM);	// TODO: needs to be ROM
+			assert.equal(mm.banks[0].bankType, BankType.ROM);
 			assert.equal(mm.banks[1].bankType, BankType.RAM);
 
 			const memBanks = mm.getMemoryBanks([0, 1, undefined]);
@@ -601,8 +605,8 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks[5].bankType, BankType.RAM);
 			assert.equal(mm.banks[6].bankType, BankType.RAM);
 			assert.equal(mm.banks[7].bankType, BankType.RAM);
-			assert.equal(mm.banks[8].bankType, BankType.RAM);	// TODO: needs to be ROM
-			assert.equal(mm.banks[9].bankType, BankType.RAM);	// TODO: needs to be ROM
+			assert.equal(mm.banks[8].bankType, BankType.ROM);
+			assert.equal(mm.banks[9].bankType, BankType.ROM);
 
 			const memBanks = mm.getMemoryBanks([9, 7, 6, 5] );
 			assert.equal(memBanks.length, 4);
@@ -674,8 +678,8 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks[0].bankType, BankType.RAM);
 			assert.equal(mm.banks[1].bankType, BankType.RAM);
 			assert.equal(mm.banks[253].bankType, BankType.RAM);
-			assert.equal(mm.banks[254].bankType, BankType.RAM);	// TODO: needs to be ROM
-			assert.equal(mm.banks[255].bankType, BankType.RAM);	// TODO: needs to be ROM
+			assert.equal(mm.banks[254].bankType, BankType.ROM);
+			assert.equal(mm.banks[255].bankType, BankType.ROM);
 
 			const memBanks = mm.getMemoryBanks([254, 255, 6, 5, 3, 0, 251, 6 ]);
 			assert.equal(memBanks.length, 8);

@@ -13,17 +13,19 @@ import {MemoryModel} from "./memorymodel";
  */
 export class MemoryModelUnknown extends MemoryModel {
 	constructor() {
-		super([
-			{
-				range: [0x0000, 0xFFFF],
-				banks: [
-					{
-						index: 0,
-						name: 'UNKNOWN'
-					}
-				]
-			}
-		]);
+		super({
+			slots: [
+				{
+					range: [0x0000, 0xFFFF],
+					banks: [
+						{
+							index: 0,
+							name: 'UNKNOWN'
+						}
+					]
+				}
+			]
+		});
 		this.name = 'UNKNOWN';
 	}
 }
@@ -34,17 +36,19 @@ export class MemoryModelUnknown extends MemoryModel {
  */
 export class MemoryModelAllRam extends MemoryModel {
 	constructor() {
-		super([
-			{
-				range: [0x0000, 0xFFFF],
-				banks: [
-					{
-						index: 0,
-						name: 'RAM'
-					}
-				]
-			}
-		]);
+		super({
+			slots: [
+				{
+					range: [0x0000, 0xFFFF],
+					banks: [
+						{
+							index: 0,
+							name: 'RAM'
+						}
+					]
+				}
+			]
+		});
 		this.name = 'RAM';
 	}
 }
@@ -56,27 +60,29 @@ export class MemoryModelAllRam extends MemoryModel {
  */
 export class MemoryModelZx16k extends MemoryModel {
 	constructor() {
-		super([
-			{
-				range: [0x0000, 0x3FFF],
-				banks: [
-					{
-						index: 0,
-						name: 'ROM',
-						rom: Utility.getExtensionPath() + '/data/48.rom'
-					}
-				]
-			},
-			{
-				range: [0x4000, 0x7FFF],
-				banks: [
-					{
-						index: 1,
-						name: 'RAM'
-					}
-				]
-			},
-		]);
+		super({
+			slots: [
+				{
+					range: [0x0000, 0x3FFF],
+					banks: [
+						{
+							index: 0,
+							name: 'ROM',
+							rom: Utility.getExtensionPath() + '/data/48.rom'
+						}
+					]
+				},
+				{
+					range: [0x4000, 0x7FFF],
+					banks: [
+						{
+							index: 1,
+							name: 'RAM'
+						}
+					]
+				},
+			]
+		});
 		this.name = 'ZX16K';
 	}
 }
@@ -88,27 +94,29 @@ export class MemoryModelZx16k extends MemoryModel {
  */
 export class MemoryModelZx48k extends MemoryModel {
 	constructor() {
-		super([
-			{
-				range: [0x0000, 0x3FFF],
-				banks: [
-					{
-						index: 0,
-						name: 'ROM',
-						rom: Utility.getExtensionPath() + '/data/48.rom'
-					}
-				]
-			},
-			{
-				range: [0x4000, 0xFFFF],
-				banks: [
-					{
-						index: 1,
-						name: 'RAM'
-					}
-				]
-			},
-		]);
+		super({
+			slots: [
+				{
+					range: [0x0000, 0x3FFF],
+					banks: [
+						{
+							index: 0,
+							name: 'ROM',
+							rom: Utility.getExtensionPath() + '/data/48.rom'
+						}
+					]
+				},
+				{
+					range: [0x4000, 0xFFFF],
+					banks: [
+						{
+							index: 1,
+							name: 'RAM'
+						}
+					]
+				},
+			]
+		});
 		this.name = 'ZX48K';
 	}
 }
@@ -121,56 +129,64 @@ export class MemoryModelZx48k extends MemoryModel {
  */
 export class MemoryModelZx128k extends MemoryModel {
 	constructor() {
-		super([
-			{
-				range: [0x0000, 0x3FFF],
-				initialBank: 8,
-				banks: [
-					{
-						index: [0, 7],
-					},
-					{
-						index: 8,
-						name: 'ROM0',
-						shortName: 'R0',
-						rom: Utility.getExtensionPath() + '/data/128.rom' 	// 128k editor
-					},
-					{
-						index: 9,
-						name: 'ROM1',
-						shortName: 'R1',
-						rom: Utility.getExtensionPath() + '/data/48.rom'
-					}
-				]
-			},
-			{
-				range: [0x4000, 0x7FFF],
-				initialBank: 5,
-				banks: [
-					{
-						index: [0, 9],	// All banks are already defined in previous range
-					}
-				]
-			},
-			{
-				range: [0x8000, 0xBFFF],
-				initialBank: 2,
-				banks: [
-					{
-						index: [0, 9],	// All banks are already defined in previous range
-					}
-				]
-			},
-			{
-				range: [0xC000, 0xFFFF],
-				initialBank: 0,
-				banks: [
-					{
-						index: [0, 9],	// All banks are already defined in previous range
-					}
-				]
-			},
-		]);
+		super({
+			slots: [
+				{
+					range: [0x0000, 0x3FFF],
+					name: "slotROM",
+					initialBank: 8,
+					banks: [
+						{
+							index: 8,
+							name: 'ROM0',
+							shortName: 'R0',
+							rom: Utility.getExtensionPath() + '/data/128.rom' 	// 128k editor
+						},
+						{
+							index: 9,
+							name: 'ROM1',
+							shortName: 'R1',
+							rom: Utility.getExtensionPath() + '/data/48.rom'
+						}
+					]
+				},
+				{
+					range: [0x4000, 0x7FFF],
+					banks: [
+						{
+							index: 5
+						}
+					]
+				},
+				{
+					range: [0x8000, 0xBFFF],
+					banks: [
+						{
+							index: 2
+						}
+					]
+				},
+				{
+					range: [0xC000, 0xFFFF],
+					name: "slotC000",
+					initialBank: 0,
+					banks: [
+						{
+							index: [0, 9],	// All banks are already defined in previous range
+						}
+					]
+				}
+
+			],
+			ioMmu: [
+				"var disabled;",
+				"if(portAddress == 0x7FFD && !disabled) {",
+				"  slotC000 = portValue & 0x07; // RAM block select",
+				"  disabled = portValue & 0b0100000; // DIS",
+				"  slotROM = ((portValue & 0b0010000) >>> 4) + 8;",
+				"}"
+			]
+		});
 		this.name = 'ZX128K';
 	}
 }
@@ -190,69 +206,75 @@ export class MemoryModelZx128k extends MemoryModel {
  */
 export class MemoryModelZxNext extends MemoryModel {
 	constructor() {
-		super([
-			{
-				range: [0x0000, 0x1FFF],
-				initialBank: 0,
-				banks: [
-					{
-						index: [0, 253],	// 254  RAM banks
-					},
-					{
-						index: 254,
-						name: 'ROM',
-						shortName: 'R',
-						rom: Utility.getExtensionPath() + '/data/48.rom'
-					},
-					{
-						index: 255,
-						name: 'ROM',
-						shortName: 'R',
-						rom: Utility.getExtensionPath() + '/data/48.rom',
-						romOffset: 0x2000
-					}
-				]
-			},
-			{
-				range: [0x2000, 0x3FFF],
-				initialBank: 1,
-				banks: [
-					{
-						index: [0, 255],	// All banks are already defined in previous range
-					}
-				]
-			},
-			{
-				range: [0x4000, 0x5FFF],
-				initialBank: 2,
-				banks: [{index: [0, 255]}]
-			},
-			{
-				range: [0x6000, 0x7FFF],
-				initialBank: 3,
-				banks: [{index: [0, 255]}]
-			},
-			{
-				range: [0x8000, 0x9FFF],
-				initialBank: 4,
-				banks: [{index: [0, 255]}]
-			},
-			{
-				range: [0xA000, 0xBFFF],
-				initialBank: 5,
-				banks: [{index: [0, 255]}]
-			},
-			{
-				range: [0xC000, 0xDFFF],
-				initialBank: 6,
-				banks: [{index: [0, 255]}]
-			},
-			{
-				range: [0xE000, 0xFFFF],
-				initialBank: 7,
-				banks: [{index: [0, 255]}]
-			}
-		]);
+		super({
+			slots: [
+				{
+					range: [0x0000, 0x1FFF],
+					initialBank: 0,
+					banks: [
+						{
+							index: [0, 253],	// 254  RAM banks
+						},
+						{
+							index: 254,
+							name: 'ROM',
+							shortName: 'R',
+							rom: Utility.getExtensionPath() + '/data/48.rom'
+						},
+						{
+							index: 255,
+							name: 'ROM',
+							shortName: 'R',
+							rom: Utility.getExtensionPath() + '/data/48.rom',
+							romOffset: 0x2000
+						}
+					]
+				},
+				{
+					range: [0x2000, 0x3FFF],
+					initialBank: 1,
+					banks: [
+						{
+							index: [0, 255],	// All banks are already defined in previous range
+						}
+					]
+				},
+				{
+					range: [0x4000, 0x5FFF],
+					initialBank: 2,
+					banks: [{index: [0, 255]}]
+				},
+				{
+					range: [0x6000, 0x7FFF],
+					initialBank: 3,
+					banks: [{index: [0, 255]}]
+				},
+				{
+					range: [0x8000, 0x9FFF],
+					initialBank: 4,
+					banks: [{index: [0, 255]}]
+				},
+				{
+					range: [0xA000, 0xBFFF],
+					initialBank: 5,
+					banks: [{index: [0, 255]}]
+				},
+				{
+					range: [0xC000, 0xDFFF],
+					initialBank: 6,
+					banks: [{index: [0, 255]}]
+				},
+				{
+					range: [0xE000, 0xFFFF],
+					initialBank: 7,
+					banks: [{index: [0, 255]}]
+				}
+			],
+			// ioMmu is undefined because memory management is implemented programmatically.
+			// The writing of the the slot register would be possible to implement here,
+			// but the port also needs to support reading of the register,
+			// what cannot be supported here.
+		});
 		this.name = 'ZXNEXT';
 	}
 }

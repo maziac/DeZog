@@ -5,8 +5,7 @@ import * as path from 'path';
 import {UnifiedPath} from "../../misc/unifiedpath";
 import * as intelHex from 'intel-hex';
 import {Z80Ports} from './z80ports';
-import {Z80} from '../../3rdparty/z80.js/Z80';
-import {CustomMemoryIoMmuInfo} from '../../settingscustommemory';
+import {Utility} from '../../misc/utility';
 
 
 
@@ -20,6 +19,17 @@ interface SimWatchpoint {
 	write: number;
 }
 
+
+/**
+ * Holds the slot name and the corresponding index.
+ */
+interface SlotName {
+	// The index of the slot.
+	index: number;
+
+	// The name of the slot
+	name: string;
+};
 
 
 /**
@@ -91,6 +101,14 @@ export class SimulatedMemory implements Serializeable {
 	protected watchPointMemory: Array<SimWatchpoint>;
 
 
+	// The context used to pass to the ioMmu script.
+	// Note: it is persistent between calls, i.e. it can also be used to store state.
+	protected bankSwitchingContext: any;
+
+	// Holds the slot indices and the names.
+	protected slotNames: SlotName[];
+
+
 	/**
 	 * Constructor.
 	 * Configures the slot and bank count.
@@ -138,6 +156,13 @@ export class SimulatedMemory implements Serializeable {
 		this.slots = [...memModel.initialSlots];	// Copy
 
 		// And install the port handlers
+		this.slotNames = [];
+		for (let i = 0; i < this.memoryModel.slotRanges.length; i++) {
+			const slotRange = this.memoryModel.slotRanges[i];
+			if (slotRange.name)
+				this.slotNames.push({index: i, name: slotRange.name});
+		}
+		this.bankSwitchingContext = {};
 		this.installIoMmuHandlers(ports);
 
 		// Breakpoints
@@ -153,55 +178,60 @@ export class SimulatedMemory implements Serializeable {
 	 * @param ports The instance to register the functions.
 	 */
 	protected installIoMmuHandlers(ports: Z80Ports) {
-		for (let i = 0; i < this.slots; i++) {
-			const slotRange = this.memoryModel.slotRanges[i];
-			const ioMmu = slotRange.ioMmu;
-			if (ioMmu) {
-				// Install handler
+		// Install handler
+		ports.registerGenericOutPortFunction((port: number, value: number) => {
+			this.setSlotsInContext();
+			// Calculate bank
+			this.evaluateIoMmu(this.memoryModel.ioMmu, port, value);
+			this.getSlotsFromContext();
+		});
+	}
 
-			}
+
+	/**
+	 * Sets the named slots into the 'bankSwitchingContext'.
+	 */
+	protected setSlotsInContext() {
+		for (const slotName of this.slotNames) {
+			this.bankSwitchingContext[slotName.name] = this.slots[slotName.index];
 		}
 	}
 
 
 	/**
-	 * Creates a function to switch banks for a slot.
-	 * @param ioMMu The information from the custom settings.
-	 * @returns A function.
+	 * Retrieves the named slots from the 'bankSwitchingContext'.
 	 */
-	protected getMmuHandler(ioMMu: CustomMemoryIoMmuInfo) {
-		let match: number;
-		let mask: number = 0xffff;
-		if (typeof mmu.port === "number" || typeof mmu.port === "string") {
-			match = toNumber(mmu.port);
-		} else {
-			match = toNumber(mmu.port.match);
-			mask = toNumber(mmu.port.mask);
+	protected getSlotsFromContext() {
+		for (const slotName of this.slotNames) {
+			this.slots[slotName.index] = this.bankSwitchingContext[slotName.name];
 		}
-		return (port, value) => {
-			if ((port & mask) === match) {
-				// Address decoded. Now decode the data bus bits
-				return decodeBankBits(value, mmu.dataBits);
-			} else {
-				return -1;
-			}
-		};
 	}
 
 
 	/**
-	 * Decodes the bits for switching the banks.
-	 * @param byte The value to decode
+	 * Calculates the bank number from the 'portValue'.
+	 * @param ioMmu A string that is evaluated with 'eval'.
+	 * It should evaluate 'portValue' and calculate the bank number from it.
+	 * E.g. this could involve masking some bits of 'portValue' and maybe adding
+	 * an offset.
+	 * E.g. 'portValue & 0x07' would mask all other than the last 3 bits
+	 * which form the bank number.
+	 * @param portAddress The port address.
+	 * @param portValue The value that was written to the port.
 	 */
-	protected decodeBankBits(byte: number, dataBits: number[]): number {
-		let ret = 0;
-		for (let b = 0, val = 1; b < dataBits.length; b++, val <<= 1) {
-			const mask = 1 << dataBits[b];
-			if (byte & mask) {
-				ret += val;
-			}
+	protected evaluateIoMmu(ioMmu: string, portAddress: number, portValue: number) {
+		try {
+			// Run with a timeout of 1000ms.
+			this.bankSwitchingContext.portAddress = portAddress;
+			this.bankSwitchingContext.portValue = portValue;
+			Utility.runInContext(ioMmu, this.bankSwitchingContext, 1000);
 		}
-		return ret;
+		catch (e) {
+			// In case of an error try to find where it occurred
+			e.message = this.memoryModel.name + ' Memory Model: ' + e.message;
+			// Re-throw
+			throw e;
+		}
 	}
 
 
@@ -414,6 +444,7 @@ export class SimulatedMemory implements Serializeable {
 	// @returns The value (little endian)
 	public getMemoryValue(addr64k: number, size: number): number {
 		let value = 0;
+		let shift = 1;
 
 		for (let i = size; i > 0; i--) {
 			// Read
@@ -423,9 +454,10 @@ export class SimulatedMemory implements Serializeable {
 			const offs = addr64k - rangeStart;
 			const val8 = this.memoryBanks[bankNr][offs];
 			// Store
-			value = (value << 8) + val8;
+			value += val8 * shift;
 			// Next
 			addr64k = (addr64k + 1) & 0xFFFF;
+			shift *= 256;
 		}
 
 		return value;
@@ -443,7 +475,7 @@ export class SimulatedMemory implements Serializeable {
 	// This is **not** used by the Z80 CPU.
 	// Used to read an opcode which is max. 4 bytes.
 	public getMemory32(addr64k: number): number {
-		return this.getMemoryValue(addr64k, 2);
+		return this.getMemoryValue(addr64k, 4);
 	}
 
 
@@ -481,9 +513,9 @@ export class SimulatedMemory implements Serializeable {
 
 
 	/**
-	 * Returns the slots array, or undefined if not paged.
+	 * Returns the slots array.
 	 */
-	public getSlots(): number[] | undefined {
+	public getSlots(): number[] {
 		return this.slots;
 	}
 

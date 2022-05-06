@@ -1141,11 +1141,13 @@ export class Utility {
 	 * If an error occurs it parses the output for the line number.
 	 * 'line' and 'column' is added to the thrown error.
 	 * @param code The js file as a string.
+	 * @param timeout Specifies the number of milliseconds to execute code before terminating execution. If execution is terminated, an Error will be thrown.
 	 * @param filename Optional filename to use.
+	 * @param lineOffset Used for reporting the line number.
 	 * @throws An Error with an additional property 'position' that contains
 	 * {filename, line, column}.
 	 */
-	public static runInContext(code: string, context: any, filename?: string, lineOffset = 0, timeout?: number): any {
+	public static runInContext(code: string, context: any, timeout?: number, filename?: string, lineOffset = 0): any {
 		try {
 			// Contextify the object.
 			vm.createContext(context);

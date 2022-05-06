@@ -176,7 +176,7 @@ export class CustomCode extends EventEmitter {
 		try {
 			// Run with a timeout of 2000ms. Note: the timeout does not apply if
 			// a function (e.g. readPort) is called later unfortunately.
-			Utility.runInContext(js, context, filename, lineOffset, timeout);
+			Utility.runInContext(js, context, timeout, filename, lineOffset, );
 		}
 		catch (e) {
 			// In case of an error try to find where it occurred

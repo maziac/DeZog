@@ -1,7 +1,10 @@
 
 import * as assert from 'assert';
 import {MemBuffer} from '../src/misc/membuffer';
-import {PagedMemory} from '../src/remotes/zsimulator/pagedmemory';
+import {MemoryModel} from '../src/remotes/Paging/memorymodel';
+import {SimulatedMemory} from '../src/remotes/zsimulator/simmemory';
+import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
+import { CustomMemorySlot} from '../src/settingscustommemory';
 
 // Simply publicly expose protected members
 class MemBufferInt extends MemBuffer {
@@ -10,7 +13,37 @@ class MemBufferInt extends MemBuffer {
 	}
 }
 
-suite('PagedMemory', () => {
+// For testing
+class PagedMemory extends SimulatedMemory {
+	constructor(slotCount: number, bankCount: number) {
+		const slotRanges: CustomMemorySlot[] = [];
+		const slotSize = 0x10000 / slotCount;
+		const banksPerSlot = bankCount / slotCount;
+		let indexStart = 0;
+		let rangeStart = 0;
+		for (let i = 0; i < slotCount; i++) {
+			slotRanges.push({
+				range: [rangeStart, rangeStart + slotSize - 1],
+				initialBank: i,
+				banks: [{
+					index: [indexStart, indexStart + banksPerSlot - 1]
+				}]
+			});
+			// Next
+			indexStart += banksPerSlot;
+			rangeStart += slotSize;
+		}
+		const memModel = new MemoryModel({
+			slots: slotRanges,
+		});
+		const ports = new Z80Ports(0xFF);
+		super(memModel, ports);
+	}
+}
+
+
+suite('SimulatedMemory', () => {
+
 	test('serialize/deserialize', () => {
 		let memBuffer: MemBufferInt;
 		let writeSize: number;
@@ -126,21 +159,21 @@ suite('PagedMemory', () => {
 	test('getMemory', () => {
 		const mem = new PagedMemory(8, 256) as any;
 
-		mem.memoryData[0] = 0x34;
-		mem.memoryData[1] = 0x12;
+		mem.memoryBanks[0][0] = 0x34;
+		mem.memoryBanks[0][1] = 0x12;
 		let result = mem.getMemory16(0x0000);
 		assert.equal(0x1234, result);
 
-		mem.memoryData[0] = 0x34;
-		mem.memoryData[1] = 0x12;
-		mem.memoryData[2] = 0x78;
-		mem.memoryData[3] = 0x56;
+		mem.memoryBanks[0][0] = 0x34;
+		mem.memoryBanks[0][1] = 0x12;
+		mem.memoryBanks[0][2] = 0x78;
+		mem.memoryBanks[0][3] = 0x56;
 		result = mem.getMemory32(0x0000);
 		assert.equal(0x56781234, result);
 
-		mem.memoryData[0xFFFF] = 0x9A;
-		mem.memoryData[0xFFFE] = 0xBC;
-		mem.memoryData[0xFFFD] = 0xDE;
+		mem.memoryBanks[7][0x1FFF] = 0x9A;	// 0xFFFF
+		mem.memoryBanks[7][0x1FFE] = 0xBC;	// 0xFFFE
+		mem.memoryBanks[7][0x1FFD] = 0xDE;	// 0xFFFD
 
 		result = mem.getMemory16(0xFFFF);
 		assert.equal(0x349A, result);
@@ -154,15 +187,14 @@ suite('PagedMemory', () => {
 		result = mem.getMemory32(0xFFFD);
 		assert.equal(0x349ABCDE, result);
 
-		const offs = mem.bankSize;
-		assert.equal(0x10000 / 8, offs);
-		mem.memoryData[offs - 1] = 0xC1;
-		mem.memoryData[offs] = 0xD2;
+		const offs = 0x2000;
+		mem.memoryBanks[0][offs - 1] = 0xC1;
+		mem.memoryBanks[1][0] = 0xD2;
 		result = mem.getMemory16(offs - 1);
 		assert.equal(0xD2C1, result);
 
-		mem.memoryData[offs - 2] = 0xB0;
-		mem.memoryData[offs + 1] = 0xE3;
+		mem.memoryBanks[0][offs - 2] = 0xB0;
+		mem.memoryBanks[1][1] = 0xE3;
 		result = mem.getMemory32(offs - 2);
 		assert.equal(0xE3D2C1B0, result);
 	});

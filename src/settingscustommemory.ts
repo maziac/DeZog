@@ -7,6 +7,7 @@ Example:
 	slots: [
 		{
 			range: [0x0000, 0x3FFF],
+			name: "slotROM",
 			banks: [
 				{
 					index: 0,
@@ -57,17 +58,38 @@ Example:
  * The custom defined memory is used in zsim and in revEng (at least if mame gdbstub
  * cannot return the memory model).
  */
-export type CustomMemoryType = CustomMemorySlot[];
+//export type CustomMemoryType = CustomMemorySlot[];
+export interface CustomMemoryType {
+	// The slots definitions.
+	slots: CustomMemorySlot[];
+
+	/**
+	 * Optional memory management unit (bank switcher) accessed via single I/O port.
+	 * A string that is evaluated with 'eval'.
+	 * It should evaluate 'portValue' and calculate the bank number from it.
+	 * E.g. this could involve masking some bits of 'portValue' and maybe adding
+	 * an offset.
+	 * E.g. "
+	 * if(port == 0x7FFD)
+	 * 		slotC000 = portValue & 0x07
+	 * "
+	 * E.g. 'portValue & 0x07' would mask all other than the last 3 bits
+	 * which form the bank number.
+	 */
+	ioMmu?: string | string[];
+}
+
 
 /**
  * Custom layout of a memory slot.
  */
 export interface CustomMemorySlot {
-	/**
-	 * Array of two elements: first and last address of the slot (inclusive).
-	 * Minimum slot size and granularity is 1Kb. // TODO: really?
-	 */
+	// Array of two elements: first and last address of the slot (inclusive).
 	range: [number, number];
+
+	// The name of the slot. Required in ioMmu to assign a different bank to the slot.
+	// Only required for bank switching slots.
+	name?: string;
 
 	// A list of banks that can be associated with the slot.
 	banks: CustomMemoryBank[];
@@ -75,11 +97,6 @@ export interface CustomMemorySlot {
 	// If several banks are used, the initial paged in bank can be selected.
 	// If empty, the first bank from the list will be used.
 	initialBank?: number;
-
-	/**
-	 * Optional memory management unit (bank switcher) accessed via single I/O port
-	 */
-	ioMmu?: CustomMemoryIoMmuInfo;
 }
 
 
@@ -115,25 +132,6 @@ export interface CustomMemoryBank {
 
 	/**
 	 * Optional offset of the ROM file/content
-	 * TODOQ: Check usage
 	 */
 	romOffset?: number;
-}
-
-
-/**
- * Description of Memory management unit (bank switcher) accessed via single I/O port
- */
-export interface CustomMemoryIoMmuInfo {
-	/**
-	 * The I/O port that control the banks (full 16-bit address)
-	 * If an object, `mask` is a 16-bit mask to filter the current address (mask to 1), and `match` is the
-	 * address match of the result mask.
-	 */
-	port: number | {mask: number, match: number};
-
-	/**
-	 * List of the bit number (b0 to b7) of the port data value to form the selected bank ID.
-	 */
-	dataBits: number[];
 }

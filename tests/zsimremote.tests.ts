@@ -55,7 +55,7 @@ suite('ZSimRemote', () => {
 	});
 
 
-	suite('memoryPagingControl', () => {
+	suite('memoryPagingControl, ZX128K', () => {
 
 		setup(() => {
 			Utility.setExtensionPath('.');
@@ -82,27 +82,40 @@ suite('ZSimRemote', () => {
 			zsim.configureMachine(Settings.launch.zsim);
 		});
 
-		test('Check ROM 0', () => {
+		test('Check ROM 0 / 1', () => {
+			// The editor ROM (0) is enabled by default
+
+			// Check first 2 bytes
+			let value = zsim.memory.read8(0x0000);
+			assert.equal(0xF3, value);
+			value = zsim.memory.read8(0x0001);
+			assert.equal(0x01, value);
+
+			// Check last 2 bytes
+			value = zsim.memory.read8(0x3FFE);
+			assert.equal(0x00, value);
+			value = zsim.memory.read8(0x3FFF);
+			assert.equal(0x01, value);
+
+			// Switch to 48K ROM
+			zsim.ports.write(0x7FFD, 0b010000);
+
+			// Check first 2 bytes
+			value = zsim.memory.read8(0x0000);
+			assert.equal(0xF3, value);
+			value = zsim.memory.read8(0x0001);
+			assert.equal(0xAF, value);
+
+			// Check last 2 bytes
+			value = zsim.memory.read8(0x3FFE);
+			assert.equal(0x42, value);
+			value = zsim.memory.read8(0x3FFF);
+			assert.equal(0x3C, value);
+
 			// Switch to 128k ROM
 			zsim.ports.write(0x7FFD, 0);
 
 			// Check first 2 bytes
-			let value = zsim.memory.read8(0x0000);
-			assert.equal(0xF3, value);
-			value = zsim.memory.read8(0x0001);
-			assert.equal(0x01, value);
-
-			// Check last 2 bytes
-			value = zsim.memory.read8(0x3FFE);
-			assert.equal(0x00, value);
-			value = zsim.memory.read8(0x3FFF);
-			assert.equal(0x01, value);
-
-			// Switch and switch back to 128k ROM
-			zsim.ports.write(0x7FFD, 0b010000);
-			zsim.ports.write(0x7FFD, 0);
-
-			// Check first 2 bytes
 			value = zsim.memory.read8(0x0000);
 			assert.equal(0xF3, value);
 			value = zsim.memory.read8(0x0001);
@@ -115,38 +128,6 @@ suite('ZSimRemote', () => {
 			assert.equal(0x01, value);
 		});
 
-
-		test('Check ROM 1', () => {
-			// In USR0 mode the 48K rom is enabled by default
-
-			// Check first 2 bytes
-			let value = zsim.memory.read8(0x0000);
-			assert.equal(0xF3, value);
-			value = zsim.memory.read8(0x0001);
-			assert.equal(0xAF, value);
-
-			// Check last 2 bytes
-			value = zsim.memory.read8(0x3FFE);
-			assert.equal(0x42, value);
-			value = zsim.memory.read8(0x3FFF);
-			assert.equal(0x3C, value);
-
-			// Switch and switch back to 48K ROM
-			zsim.ports.write(0x7FFD, 0);
-			zsim.ports.write(0x7FFD, 0b010000);
-
-			// Check first 2 bytes
-			value = zsim.memory.read8(0x0000);
-			assert.equal(0xF3, value);
-			value = zsim.memory.read8(0x0001);
-			assert.equal(0xAF, value);
-
-			// Check last 2 bytes
-			value = zsim.memory.read8(0x3FFE);
-			assert.equal(0x42, value);
-			value = zsim.memory.read8(0x3FFF);
-			assert.equal(0x3C, value);
-		});
 
 
 		test('bank switching', () => {

@@ -125,35 +125,20 @@ export class ZSimRemote extends DzrpRemote {
 
 
 	/**
-	 * Switches the memory bank.
+	 * Switches the ula screen.
+	 * Note: Switching the bank is done already by the SimulatedMemory.
 	 * See https://www.worldofspectrum.org/faq/reference/128kreference.htm
 	 * @param port The written port.
 	 * @param value:
-	 *   bit 0-2:  RAM page (0-7) to map into memory at 0xc000.
+	 *   bit 0-2:  RAM page (0-7) to map into memory at 0xC000.
 	 *   bit 3: Select normal(0) or shadow(1) screen to be displayed. The normal screen is in bank 5, whilst the shadow screen is in bank 7. Note that this does not affect the memory between 0x4000 and 0x7fff, which is always bank 5.
 	 *   bit 4: ROM select. ROM 0 is the 128k editor and menu system; ROM 1 contains 48K BASIC.
 	 *   bit 5: If set, memory paging will be disabled and further output to this port will be ignored until the computer is reset.
 	 */
-	protected zx128BankSwitch(port: number, value: number) {
-		// bit 0-2:  RAM page (0-7) to map into memory at 0xc000.
-		const mem = this.memory;
-		const ramBank = value & 0x07;
-		// Change the slots
-		mem.setSlot(3, ramBank);
-
+	protected zx128UlaScreenSwitch(port: number, value: number) {
 		// bit 3: Select normal(0) or shadow(1) screen to be displayed.
 		const shadowScreen = value & 0b01000;
 		this.ulaScreenAddress = (shadowScreen == 0) ? 5 * 0x4000 : 7 * 0x4000;
-
-		// bit 4: ROM select. ROM 0 is the 128k editor and menu system; ROM 1 contains 48K BASIC.
-		const romIndex = (value & 0b010000) ? 1 : 0;
-		this.memory.setSlot(0, 8 + romIndex);
-
-		// bit 5: If set, memory paging will be disabled
-		if (value & 0b0100000) {
-			// Disable further writes to this port
-			this.ports.registerSpecificOutPortFunction(0x7FFD, undefined);
-		}
 	}
 
 
@@ -318,7 +303,7 @@ export class ZSimRemote extends DzrpRemote {
 					// Memory Model
 					this.memoryModel = new MemoryModelZx128k();
 					// Bank switching.
-					this.ports.registerSpecificOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
+					this.ports.registerSpecificOutPortFunction(0x7FFD, this.zx128UlaScreenSwitch.bind(this));
 					// Screen address is initially bank 5
 					this.ulaScreenAddress = 5 * 0x4000;
 				}
@@ -333,7 +318,7 @@ export class ZSimRemote extends DzrpRemote {
 						this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
 						this.tbblueRegisterReadHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsRead.bind(this));
 					}
-					// Connect to port
+					// Connect to port // TODO:
 					this.ports.registerSpecificOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
 					this.ports.registerSpecificOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
 					this.ports.registerSpecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
@@ -352,7 +337,7 @@ export class ZSimRemote extends DzrpRemote {
 		}
 
 		// Create memory
-		this.memory = new SimulatedMemory(this.memoryModel);
+		this.memory = new SimulatedMemory(this.memoryModel, this.ports);
 
 		// Convert labels if necessary.
 		this.memoryModel.init();
