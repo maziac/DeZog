@@ -210,7 +210,7 @@ export class MemoryModelZxNext extends MemoryModel {
 			slots: [
 				{
 					range: [0x0000, 0x1FFF],
-					initialBank: 0,
+					initialBank: 254,
 					banks: [
 						{
 							index: [0, 253],	// 254  RAM banks
@@ -220,6 +220,15 @@ export class MemoryModelZxNext extends MemoryModel {
 							name: 'ROM',
 							shortName: 'R',
 							rom: Utility.getExtensionPath() + '/data/48.rom'
+						},
+					]
+				},
+				{
+					range: [0x2000, 0x3FFF],
+					initialBank: 255,
+					banks: [
+						{
+							index: [0, 253],	// All banks are already defined in previous range
 						},
 						{
 							index: 255,
@@ -231,22 +240,13 @@ export class MemoryModelZxNext extends MemoryModel {
 					]
 				},
 				{
-					range: [0x2000, 0x3FFF],
-					initialBank: 1,
-					banks: [
-						{
-							index: [0, 255],	// All banks are already defined in previous range
-						}
-					]
-				},
-				{
 					range: [0x4000, 0x5FFF],
-					initialBank: 2,
+					initialBank: 10,
 					banks: [{index: [0, 255]}]
 				},
 				{
 					range: [0x6000, 0x7FFF],
-					initialBank: 3,
+					initialBank: 11,
 					banks: [{index: [0, 255]}]
 				},
 				{
@@ -261,12 +261,12 @@ export class MemoryModelZxNext extends MemoryModel {
 				},
 				{
 					range: [0xC000, 0xDFFF],
-					initialBank: 6,
+					initialBank: 0,
 					banks: [{index: [0, 255]}]
 				},
 				{
 					range: [0xE000, 0xFFFF],
-					initialBank: 7,
+					initialBank: 1,
 					banks: [{index: [0, 255]}]
 				}
 			],
