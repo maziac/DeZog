@@ -313,12 +313,12 @@ export class ZSimRemote extends DzrpRemote {
 					// ZX Next
 					// Memory Model
 					this.memoryModel = new MemoryModelZxNext();
-					// Bank switching. // TODO: change
+					// Bank switching.
 					for (let tbblueRegister = 0x50; tbblueRegister <= 0x57; tbblueRegister++) {
 						this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
 						this.tbblueRegisterReadHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsRead.bind(this));
 					}
-					// Connect to port // TODO:
+					// Connect to port
 					this.ports.registerSpecificOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
 					this.ports.registerSpecificOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
 					this.ports.registerSpecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));

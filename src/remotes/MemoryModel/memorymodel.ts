@@ -67,11 +67,10 @@ interface BankInfo {
 	 * File content should be in raw format (i.e. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).
 	 * Array content is flat and it should cover the whole bank span.
 	 */
-	rom?: string | Uint8Array;	// TODO: Do I need this here?
+	rom?: string | Uint8Array;
 
 	/**
 	 * Optional offset of the ROM file/content
-	 * TODOQ: Check usage
 	 */
 	romOffset?: number;
 }
@@ -104,10 +103,6 @@ export class MemoryModel {
 	// quite fast.
 	public slotAddress64kAssociation = new Array<number>(0x10000);
 
-	// Is set to true if the configuration at least contains one slot with
-	// more than one bank.
-	protected bankSwitchingUsed = false;	// TODO: unclear if necessary. I think labels are always tested also on 64k, then this would not be needed.
-
 
 	// The IO configuration for switching the banks
 	public ioMmu: string;
@@ -119,7 +114,6 @@ export class MemoryModel {
 	 */
 	constructor(cfg: CustomMemoryType) {
 		let expectedStart = 0;
-		this.bankSwitchingUsed = false;
 		// Create one string out of ioMmu.
 		if (cfg.ioMmu == undefined)
 			this.ioMmu = '';
@@ -162,8 +156,6 @@ export class MemoryModel {
 			const banksLen = banks.length;
 			if (banksLen == 0)
 				throw Error("No banks specified for range.");
-			if (banksLen > 1)
-				this.bankSwitchingUsed = true;
 			for (const bank of banks) {
 				const indexStart = this.createBankOrBanks(bank, size, (banksLen > 1));
 				// Store initial bank?
@@ -413,11 +405,6 @@ export class MemoryModel {
 	 * Set decoder.
 	 */
 	public init() {
-		/* TODO: Is this required?
-		if (!this.bankSwitchingUsed) {
-			Z80Registers.setSlotsAndBanks(undefined, undefined);
-		}
-		*/
 		Z80Registers.setSlotsAndBanks(
 			// Calculate long address
 			(addr64k: number, slots: number[]) => {
