@@ -1,8 +1,8 @@
 
 import * as assert from 'assert';
 import {MemBuffer} from '../src/misc/membuffer';
-import {MemoryModel} from '../src/remotes/Paging/memorymodel';
-import {SimulatedMemory} from '../src/remotes/zsimulator/simmemory';
+import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
+import {SimulatedMemory} from '../src/remotes/zsimulator/simulatedmemory';
 import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
 import { CustomMemorySlot} from '../src/settingscustommemory';
 

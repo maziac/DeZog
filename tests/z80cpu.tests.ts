@@ -4,8 +4,8 @@ import {Z80Cpu} from '../src/remotes/zsimulator/z80cpu';
 import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
 import {MemBuffer} from '../src/misc/membuffer';
 import {Settings} from '../src/settings';
-import {SimulatedMemory} from '../src/remotes/zsimulator/simmemory';
-import {MemoryModelAllRam} from '../src/remotes/Paging/predefinedmemorymodels';
+import {SimulatedMemory} from '../src/remotes/zsimulator/simulatedmemory';
+import {MemoryModelAllRam} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
 
 suite('Z80Cpu', () => {

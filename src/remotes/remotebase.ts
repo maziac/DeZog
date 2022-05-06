@@ -10,7 +10,7 @@ import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
 import {Disassembly, DisassemblyClass} from '../disassembly/disassembly';
-import {MemoryBank, MemoryModel} from './Paging/memorymodel';
+import {MemoryBank, MemoryModel} from './MemoryModel/memorymodel';
 import {Log} from '../log';
 
 

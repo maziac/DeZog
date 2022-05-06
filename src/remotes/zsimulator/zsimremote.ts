@@ -10,15 +10,15 @@ import {MemBuffer} from '../../misc/membuffer';
 import {CodeCoverageArray} from './codecovarray';
 import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhistory';
 import {ZSimCpuHistory} from './zsimcpuhistory';
-import {MemoryModel} from '../Paging/memorymodel';
-import {SimulatedMemory} from './simmemory';
+import {MemoryModel} from '../MemoryModel/memorymodel';
+import {SimulatedMemory} from './simulatedmemory';
 import {SnaFile} from '../dzrp/snafile';
 import {NexFile} from '../dzrp/nexfile';
 import {CustomCode} from './customcode';
 import {BeeperBuffer, ZxBeeper} from './zxbeeper';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
-import {MemoryModelAllRam, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../Paging/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
 
 
 

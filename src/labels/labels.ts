@@ -1,5 +1,5 @@
 import {Utility} from '../misc/utility';
-import {MemoryModel} from '../remotes/Paging/memorymodel';
+import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {Remote} from '../remotes/remotebase';
 import {Z80RegistersClass} from '../remotes/z80registers';
 import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
@@ -703,6 +703,7 @@ export class LabelsClass {
 
 	/**
 	 * Checks if the target's memory model matches the model used during parsing.
+	 * TODO: Drop this function.
 	 */
 	public convertLabelsTo(memModel: MemoryModel) {
 		// Adjust labels to target model (if necessary at all)

@@ -8,7 +8,7 @@ import {DzrpQeuedRemote} from '../dzrp/dzrpqeuedremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';
 import {Labels} from '../../labels/labels';
 import {BREAK_REASON_NUMBER, Remote} from '../remotebase';
-import {MemoryModelUnknown} from '../Paging/predefinedmemorymodels';
+import {MemoryModelUnknown} from '../MemoryModel/predefinedmemorymodels';
 
 
 

@@ -1,5 +1,5 @@
 import {MemBuffer, Serializeable} from '../../misc/membuffer';
-import {BankType, MemoryModel} from '../Paging/memorymodel';
+import {BankType, MemoryModel} from '../MemoryModel/memorymodel';
 import * as fs from "fs";
 import * as path from 'path';
 import {UnifiedPath} from "../../misc/unifiedpath";

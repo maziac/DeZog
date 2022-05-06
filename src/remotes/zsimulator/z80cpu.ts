@@ -3,7 +3,7 @@ import {Z80RegistersClass} from '../z80registers';
 import {MemBuffer, Serializeable} from '../../misc/membuffer'
 import {Settings} from '../../settings';
 import * as Z80 from '../../3rdparty/z80.js/Z80.js';
-import {SimulatedMemory} from './simmemory';
+import {SimulatedMemory} from './simulatedmemory';
 
 
 
