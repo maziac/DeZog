@@ -202,6 +202,262 @@ b) If not equal e.g. a program assembled for ZX128 (bank size 16k) would not wor
 Solution: Throw exception or change all labels from one model to the other. ZX128 to ZXNext would be possible, vice versa not.
 
 
+##  puml
+
+
+~~~puml
+hide footbox
+title Long Addresses
+participant da as "DebugAdapter"
+participant lbls as "Labels"
+participant Remote
+participant Z80Registers
+participant DecodeRegisterData
+
+
+da -> lbls: readListFiles()
+note over lbls: Determine if\nlong addresses used.
+lbls --> da
+
+...
+note over da, Z80Registers: addAddressesFromPcHistory()\nsetPcToLine\ndisassemblyAtCursor()\ndisassemble()
+da -> Remote: getSlots()
+Remote -> Z80Registers: getSlots()
+Z80Registers -> Z80Registers: decoder.parseSlots\n(RegisterCache)
+Remote <-- Z80Registers
+da <-- Remote
+
+...
+note over da, Z80Registers: dzrpbufferremote
+Remote -> Remote: receivedMsg()
+Remote -> lbls: AreLongAddressesUsed()
+Remote <-- lbls
+note over Remote: Calculate the break address\ndifferently
+
+
+...
+note over da, DecodeRegisterData: addAddressesFromPcHistory()\nDisassembly.funcAssignLabels()\nDisassembly.funcFilterAddresses()\nDisassembly.funcFormatAddress()\ndisassemble()
+lbls <- da: AreLongAddressesUsed()
+lbls --> da
+  alt long addresses used
+  da -> Z80Registers: getSlots()
+  da <-- Z80Registers
+  da -> Z80Registers: createLongAddress()
+  da <-- Z80Registers
+end
+
+...
+note over da, DecodeRegisterData: zesaruxremote
+da -> Remote: stepInto etc.
+Remote -> Remote: handleCodeCoverage()
+Remote -> Z80Registers: getSlots()
+Remote <-- Z80Registers
+Remote -> Z80Registers: createLongAddress()
+Remote <-- Z80Registers
+
+...
+note over da, DecodeRegisterData: zsimremote
+da -> Remote: z80CpuContinue()
+lbls <- Remote: AreLongAddressesUsed()
+lbls --> Remote
+alt long addresses used
+  Remote -> Z80Registers: getSlots()
+  Remote <-- Z80Registers
+  Remote -> Z80Registers: createLongAddress()
+  Remote <-- Z80Registers
+end
+
+...
+note over da, DecodeRegisterData: stepHistory\ncpuHistory
+da -> DecodeRegisterData: parsePCLong()
+lbls <- DecodeRegisterData: AreLongAddressesUsed()
+lbls --> DecodeRegisterData
+Z80Registers <- DecodeRegisterData: createLongAddress
+Z80Registers --> DecodeRegisterData
+da <-- DecodeRegisterData: PC or PCLong
+
+...
+note over da, DecodeRegisterData: zxnextserialremote\n
+Remote -> Remote: sendDzrpCmdContinue()
+
+Remote -> Z80Registers: getSlots()
+Z80Registers -> Z80Registers: decoder.parseSlots\n(RegisterCache)
+Remote <-- Z80Registers
+
+note over Remote: For breakpoints:
+Remote -> Z80Registers: createLongAddress()
+Remote <-- Z80Registers
+
+da <-- DecodeRegisterData: PC or PCLong
+
+...
+note over da, DecodeRegisterData: CallStack\n
+da -> Remote: getCallStackFromEmulator()
+Remote -> Remote: getStackEntryType()
+
+Remote -> lbls: AreLongAddressesUsed()
+Remote <-- lbls
+
+alt long adresses used
+  Remote -> Z80Registers: getSlots()
+  Z80Registers -> Z80Registers: decoder.parseSlots\n(RegisterCache)
+  Remote <-- Z80Registers
+
+  Remote -> Z80Registers: createLongAddress\n(calledAddress)
+  Remote <-- Z80Registers
+end
+
+Remote -> lbls: getLabelsForLongAddress
+Remote <-- lbls
+da <-- Remote: call stack
+~~~
+
+<!--
+~~~puml
+hide footbox
+title zsim
+participant da as "Debug Adapter"
+participant lbls as "Labels"
+participant model as "Memory Model"
+participant remote as "Remote\nzsim"
+participant simmemory as "SimulatedMemory"
+
+da -> remote: Connect
+model -> remote:
+remote -> simmemory:
+note over simmemory: Instantiate banks.\nAlso non-bank-switched.
+remote -> lbls: readListFiles()
+
+da -> remote: Step
+remote -> simmemory
+remote <- simmemory: getSlots
+~~~
+-->
+
+~~~puml
+hide footbox
+title Main Flow
+participant da as "Debug Adapter"
+participant remote as "Remote"
+participant emulator as "Emulator"
+participant lbls as "Labels"
+participant model as "Memory Model"
+
+da -> remote: createRemote
+da -> remote: init()
+activate remote
+remote -> emulator: Connect
+remote -> emulator: read memory model
+remote <-- emulator
+remote -> model
+activate model
+note over model: Instantiate\nMemoryModelXXX
+da <-- remote: emit('initialized')
+da -> remote: readListFiles()
+remote -> lbls: readListFiles(MemoryModelXXX)
+lbls -> model:
+lbls <-- model
+note over lbls: Calculate long address\nwith memory model
+
+
+note over lbls: Write all (long)\nlabels to store
+remote <-- lbls
+
+-> da: Step
+da -> remote: Step
+remote -> emulator: getSlots
+remote <-- emulator:
+note over remote: Calculate long address\nfrom addr64k and slots
+remote -> lbls: Get label for\nlong address
+remote <-- lbls
+~~~
+
+Note: The main order has changed. In Dezog 2.7 the labels (list) files were read and afterwards the emulator has been connected.
+The banking was required to be known before connecting.
+But in fact this is not always the case.
+E.g. a ZX128K could have been used for the sld (list) file but connected is only a ZX48K.
+What makes it even more complicated: each of the list files could have a different bank model in mind.
+
+Now the memory model is read from the emulator prior to reading the labels.
+While reading the labels it can be directly checked if the model allows the banking used in the sld/list file.
+If there are compatible memory models, e.g. the list file is for a ZX48K (no banks) and this is used in a ZX128K memory model, there could also be a conversion from the list file addresses to the memory model addresses.
+Similar to what is done in 'convertLabelsToBankSize'.
+The problem with 'convertLabelsToBankSize' was that it was used after all labels/addresses already have been stored.
+E.g. if a sjasmplus sld file and a z80asm list file would be mixed, same addresses/labels in both files would point to different addresses.
+
+
+The 'slots' returned by the emulator also need conversion.
+E.g. the format is different as in zesarux. But also the numbering could be different.
+Maybe for some memory models no slot information is sent.
+In these cases the Remote has to convert bank numbers or 'invent' the slots.
+
+
+
+
+**"Calculate long address with memory model":**
+Often htis would just check if the same memory model was used for creating the sld/list file as the emulator is using.
+In case of a problem an error would be returned.
+E.g. if the list/sld file uses a bank that does not exist.
+Some combinations might be compatible.
+E.g. a ZX128K list/sld file can be converted into long addresses for a ZXNext memory model.
+Or a ZXNext sld file that uses only certain banks could be converted into a ZX128K memory model.
+
+The z80asm and z88dk list files (which are 64k only) would convert the 64k addresses to (banked) long addresses.
+This would also distinguish them from other EQU which reside only in the 64k area.
+The reverse engineering list file is a mix. It contains 64k addresses (for non bank switched slots) and long (banked) addresses.
+The long addresses are checked if they are the same as the memory model. (They cannot be converted as the new banking number scheme would confuse the user.)
+The 64k addresses are converted to long (banked) addresses according the memory model.
+
+
+## Example Combinations
+
+### sjasmplus, ZXNext, zsim
+
+Combination
+- sjasmplus (sld, long addresses)
+- Memory Model ZXNext
+- zsim
+- Simulated Memory
+
+All capable of long addresses.
+There are only bank switched slots.
+No problem.
+
+### sjasmplus, ZX48K, zsim
+
+Combination
+- sjasmplus (sld, long addresses)
+- Memory Model ZX48K
+- zsim
+- Simulated Memory
+
+sjasmplus uses long addresses.
+Memory Model uses 2 (non-switched) banks.
+The simulated memory uses only 64k since no bank-switched banks are found.
+Is a problem:
+The Memory Model would have no knowledge of banks and could not convert to long addresses.
+3 possible solutions:
+- non-banked slots get a 'special' 'slots' array which contains the non-bank-switched banks.
+These banks would not change so they can be local to the simulated memory.
+- The simulated memory reports 64k address only. On converting long addresses to labels the fallback to 64k addresses is used.
+- Labels.convertLabelsTo() is called to convert long addresses to 64k addresses.
+
+
+### sjasmplus, ZX48K, zesarux
+
+Combination
+- sjasmplus (sld, long addresses)
+- Memory Model ZX48K
+- zesarux
+
+sjasmplus uses long addresses.
+Memory Model uses 2 (non-switched) banks.
+zesarux uses 64k addresses.
+
+Is maybe no problem since Labels.convertLabelsTo() is called to convert long addresses to 64k addresses.
+
+
+
 
 
 

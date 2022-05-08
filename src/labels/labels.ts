@@ -6,7 +6,7 @@ import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
 import * as fs from 'fs';
-import {ReverseEngineeringParser} from './reverseengineeringparser';
+import {ReverseEngineeringLabelParser} from './reverseengineeringlabelparser';
 
 
 /**
@@ -242,7 +242,7 @@ export class LabelsClass {
 
 		// Reverse Engineering List File
 		if (mainConfig.revEng) {
-			const parser = new ReverseEngineeringParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+			const parser = new ReverseEngineeringLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 			for (const config of mainConfig.revEng) {
 				parser.loadAsmListFile(config);
 				// Store path

@@ -39,7 +39,7 @@ import {LabelParserBase} from './labelparserbase';
  * C000@2 3E 05  LD A,5 ; load A with 5
  * MY_CONSTANT:  EQU   50
  */
-export class ReverseEngineeringParser extends LabelParserBase {
+export class ReverseEngineeringLabelParser extends LabelParserBase {
 
 	// Regex to parse the address
 	protected regexEqu = /^\s*([\w_][\w_\d\.]*):\s*EQU\s+([^;]+)/i;	// NOSONAR: sonar wrong

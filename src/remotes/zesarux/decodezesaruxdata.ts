@@ -239,11 +239,11 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 		Utility.assert(mmuIndex>=0);
 		mmuIndex+=4;
 
-		let line=data.substr(mmuIndex);
+		let line=data.substring(mmuIndex);
 		const count=this.countSlots;
 		const slots=new Array<number>(count);
 		for (let i=0; i<count; i++) {
-			const slotPart=line.substr(0, 4);
+			const slotPart=line.substring(0, 4);
 			let value=parseInt(slotPart, 16);
 			// Decode ZEsarUX: Bit 15 stands for ROM.
 			// I.e. $8000 and $8001 are ROM.
@@ -254,7 +254,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 				value=0xFE+(value&0x0003);	// ROM: Works for both ZX128 and ZXNext
 			slots[i]=value;
 			// Next
-			line=line.substr(4);
+			line=line.substring(4);
 		}
 
 		return slots;
