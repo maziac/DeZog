@@ -539,6 +539,9 @@ export class RemoteBase extends EventEmitter {
 	 * @param configuration Contains the list files for the different assemblers
 	 */
 	public readListFiles(configuration: any) {
+		// Init labels
+		Labels.init(Settings.launch.smallValuesMaximum, this.memoryModel);
+		// Read files
 		Labels.readListFiles(configuration);
 
 		// Check for warnings
@@ -1355,7 +1358,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise with an array with the available memory pages. Contains start and end address
 	 * and a name.
 	 */
-	public async getMemoryBanks(): Promise<MemoryBank[]> {
+	public getMemoryBanks(): MemoryBank[] {
 		// Get the slots
 		const slots = this.getSlots();
 		// Convert

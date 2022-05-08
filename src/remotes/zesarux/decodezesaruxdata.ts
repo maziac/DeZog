@@ -55,7 +55,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	constructor(countSlots: number) {
 		super();
 
-		this.countSlots=countSlots;
+		this.countSlots = countSlots;
 		// Indices for first time search.
 		this.pcIndex = -1;
 		this.spIndex = -1;
@@ -70,8 +70,8 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 		this.hl2Index = -1;
 		this.de2Index = -1;
 		this.iIndex = -1;
-		this.rIndex=-1;
-		this.imIndex=-1;
+		this.rIndex = -1;
+		this.imIndex = -1;
 	}
 
 
@@ -82,179 +82,250 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	 */
 	public parsePC(data: RegisterData): number {
 		// Is 2-3 times faster than a regex
-		if (this.pcIndex<0) {
-			this.pcIndex=data.indexOf('PC=');
-			Utility.assert(this.pcIndex>=0);
-			this.pcIndex+=3;
+		if (this.pcIndex < 0) {
+			this.pcIndex = data.indexOf('PC=');
+			Utility.assert(this.pcIndex >= 0);
+			this.pcIndex += 3;
 		}
-		const res=parseInt(data.substr(this.pcIndex, 4), 16);
+		const res = parseInt(data.substr(this.pcIndex, 4), 16);
 		return res;
 	}
 
 	public parseSP(data: RegisterData): number {
-		if(this.spIndex < 0) {
+		if (this.spIndex < 0) {
 			this.spIndex = data.indexOf('SP=');
-			Utility.assert(this.spIndex>=0);
+			Utility.assert(this.spIndex >= 0);
 			this.spIndex += 3;
 		}
-		const res = parseInt(data.substr(this.spIndex,4),16);
+		const res = parseInt(data.substr(this.spIndex, 4), 16);
 		return res;
 	}
 
 	public parseAF(data: RegisterData): number {
-		if(this.afIndex < 0) {
+		if (this.afIndex < 0) {
 			this.afIndex = data.indexOf('AF=');
 			Utility.assert(this.afIndex >= 0);
 			this.afIndex += 3;
 		}
-		const res = parseInt(data.substr(this.afIndex,4),16);
+		const res = parseInt(data.substr(this.afIndex, 4), 16);
 		return res;
 	}
 
 	public parseBC(data: RegisterData): number {
-		if(this.bcIndex < 0) {
+		if (this.bcIndex < 0) {
 			this.bcIndex = data.indexOf('BC=');
 			Utility.assert(this.bcIndex >= 0);
 			this.bcIndex += 3;
 		}
-		const res = parseInt(data.substr(this.bcIndex,4),16);
+		const res = parseInt(data.substr(this.bcIndex, 4), 16);
 		return res;
 	}
 
 	public parseHL(data: RegisterData): number {
-		if(this.hlIndex < 0) {
+		if (this.hlIndex < 0) {
 			this.hlIndex = data.indexOf('HL=');
 			Utility.assert(this.hlIndex >= 0);
 			this.hlIndex += 3;
 		}
-		const res = parseInt(data.substr(this.hlIndex,4),16);
+		const res = parseInt(data.substr(this.hlIndex, 4), 16);
 		return res;
 	}
 
 	public parseDE(data: RegisterData): number {
-		if(this.deIndex < 0) {
+		if (this.deIndex < 0) {
 			this.deIndex = data.indexOf('DE=');
 			Utility.assert(this.deIndex >= 0);
 			this.deIndex += 3;
 		}
-		const res = parseInt(data.substr(this.deIndex,4),16);
+		const res = parseInt(data.substr(this.deIndex, 4), 16);
 		return res;
 	}
 
 	public parseIX(data: RegisterData): number {
-		if(this.ixIndex < 0) {
+		if (this.ixIndex < 0) {
 			this.ixIndex = data.indexOf('IX=');
 			Utility.assert(this.ixIndex >= 0);
 			this.ixIndex += 3;
 		}
-		const res = parseInt(data.substr(this.ixIndex,4),16);
+		const res = parseInt(data.substr(this.ixIndex, 4), 16);
 		return res;
 	}
 
 	public parseIY(data: RegisterData): number {
-		if(this.iyIndex < 0) {
+		if (this.iyIndex < 0) {
 			this.iyIndex = data.indexOf('IY=');
 			Utility.assert(this.iyIndex >= 0);
 			this.iyIndex += 3;
 		}
-		const res = parseInt(data.substr(this.iyIndex,4),16);
+		const res = parseInt(data.substr(this.iyIndex, 4), 16);
 		return res;
 	}
 
 	public parseAF2(data: RegisterData): number {
-		if(this.af2Index < 0) {
+		if (this.af2Index < 0) {
 			this.af2Index = data.indexOf("AF'=");
 			Utility.assert(this.af2Index >= 0);
 			this.af2Index += 4;
 		}
-		const res = parseInt(data.substr(this.af2Index,4),16);
+		const res = parseInt(data.substr(this.af2Index, 4), 16);
 		return res;
 	}
 
 	public parseBC2(data: RegisterData): number {
-		if(this.bc2Index < 0) {
+		if (this.bc2Index < 0) {
 			this.bc2Index = data.indexOf("BC'=");
 			Utility.assert(this.bc2Index >= 0);
 			this.bc2Index += 4;
 		}
-		const res = parseInt(data.substr(this.bc2Index,4),16);
+		const res = parseInt(data.substr(this.bc2Index, 4), 16);
 		return res;
 	}
 
 	public parseHL2(data: RegisterData): number {
-		if(this.hl2Index < 0) {
+		if (this.hl2Index < 0) {
 			this.hl2Index = data.indexOf("HL'=");
 			Utility.assert(this.hl2Index >= 0);
 			this.hl2Index += 4;
 		}
-		const res = parseInt(data.substr(this.hl2Index,4),16);
+		const res = parseInt(data.substr(this.hl2Index, 4), 16);
 		return res;
 	}
 
 	public parseDE2(data: RegisterData): number {
-		if(this.de2Index < 0) {
+		if (this.de2Index < 0) {
 			this.de2Index = data.indexOf("DE'=");
 			Utility.assert(this.de2Index >= 0);
 			this.de2Index += 4;
 		}
-		const res = parseInt(data.substr(this.de2Index,4),16);
+		const res = parseInt(data.substr(this.de2Index, 4), 16);
 		return res;
 	}
 
 	public parseI(data: RegisterData): number {
-		if(this.iIndex < 0) {
+		if (this.iIndex < 0) {
 			this.iIndex = data.indexOf('I=');
 			Utility.assert(this.iIndex >= 0);
 			this.iIndex += 2;
 		}
-		const res = parseInt(data.substr(this.iIndex,2),16);
+		const res = parseInt(data.substr(this.iIndex, 2), 16);
 		return res;
 	}
 
 	public parseR(data: string): number {
-		if (this.rIndex<0) {
-			this.rIndex=data.indexOf('R=');
-			Utility.assert(this.rIndex>=0);
-			this.rIndex+=2;
+		if (this.rIndex < 0) {
+			this.rIndex = data.indexOf('R=');
+			Utility.assert(this.rIndex >= 0);
+			this.rIndex += 2;
 		}
 		const res = parseInt(data.substring(this.rIndex, this.rIndex + 2), 16);
 		return res;
 	}
 
 	public parseIM(data: string): number {
-		if (this.imIndex<0) {
-			this.imIndex=data.indexOf('IM');
-			Utility.assert(this.imIndex>=0);
-			this.imIndex+=2;
+		if (this.imIndex < 0) {
+			this.imIndex = data.indexOf('IM');
+			Utility.assert(this.imIndex >= 0);
+			this.imIndex += 2;
 		}
-		const char=data.codePointAt(this.imIndex) as number;
-		const res: number=char-48;
+		const char = data.codePointAt(this.imIndex) as number;
+		const res: number = char - 48;
 		return res;
 	}
 
 	public parseSlots(data: string): number[] {
 		// Note: the mmuIndex has to be calculated every time because
 		// the position may vary for "normal" lines and "history" lines.
-		let mmuIndex=data.indexOf('MMU=');
-		Utility.assert(mmuIndex>=0);
-		mmuIndex+=4;
+		let mmuIndex = data.indexOf('MMU=');
+		Utility.assert(mmuIndex >= 0);
+		mmuIndex += 4;
 
-		let line=data.substring(mmuIndex);
-		const count=this.countSlots;
-		const slots=new Array<number>(count);
-		for (let i=0; i<count; i++) {
-			const slotPart=line.substring(0, 4);
-			let value=parseInt(slotPart, 16);
+		let line = data.substring(mmuIndex);
+		const count = this.countSlots;
+		const slots = new Array<number>(count);
+		for (let i = 0; i < count; i++) {
+			const slotPart = line.substring(0, 4);
+			let value = parseInt(slotPart, 16);
 			// Decode ZEsarUX: Bit 15 stands for ROM.
 			// I.e. $8000 and $8001 are ROM.
 			// ZXNext: 	ROM0: 0x8000 or 0x8001,	ROM1: 0x8002 or 0x8003
 			// ZX128: 	ROM0: 0x8000, ROM1: 0x8001
 			// Others are simply the bank number.
-			if (value>=0x8000)
-				value=0xFE+(value&0x0003);	// ROM: Works for both ZX128 and ZXNext
-			slots[i]=value;
+			//		if (value>=0x8000)
+			//			value=0xFE+(value&0x0003);	// ROM: Works for both ZX128 and ZXNext
+			slots[i] = value;
 			// Next
-			line=line.substring(4);
+			line = line.substring(4);
+		}
+
+		return slots;
+	}
+}
+
+
+// TODO: Decoder for ZX16k and ZX48K
+
+// Decoder for the ZX128K.
+export class DecodeZesaruxRegistersZx128k extends DecodeZesaruxRegisters {
+	constructor() {
+		super(4);	// 4 slots
+	}
+
+	public parseSlots(data: string): number[] {
+		// Note: the mmuIndex has to be calculated every time because
+		// the position may vary for "normal" lines and "history" lines.
+		let mmuIndex = data.indexOf('MMU=');
+		Utility.assert(mmuIndex >= 0);
+		mmuIndex += 4;
+
+		let line = data.substring(mmuIndex);
+		const count = this.countSlots;
+		const slots = new Array<number>(count);
+		for (let i = 0; i < count; i++) {
+			const slotPart = line.substring(0, 4);
+			let value = parseInt(slotPart, 16);
+			// Decode ZEsarUX: Bit 15 stands for ROM.
+			// I.e. $8000 and $8001 are ROM.
+			// ZX128: 	ROM0: 0x8000, ROM1: 0x8001
+			// Others are simply the bank number.
+			if (value >= 0x8000)
+				value = 8 + (value & 0x0001);	// 8 = ROM0, 9 = ROM1
+			slots[i] = value;
+			// Next
+			line = line.substring(4);
+		}
+
+		return slots;
+	}
+}
+
+
+// Decoder for the ZxNext.
+export class DecodeZesaruxRegistersZxNext extends DecodeZesaruxRegisters {
+	constructor() {
+		super(8);	// 8 slots
+	}
+
+	public parseSlots(data: string): number[] {
+		// Note: the mmuIndex has to be calculated every time because
+		// the position may vary for "normal" lines and "history" lines.
+		let mmuIndex = data.indexOf('MMU=');
+		Utility.assert(mmuIndex >= 0);
+		mmuIndex += 4;
+
+		let line = data.substring(mmuIndex);
+		const count = this.countSlots;
+		const slots = new Array<number>(count);
+		for (let i = 0; i < count; i++) {
+			const slotPart = line.substring(0, 4);
+			let value = parseInt(slotPart, 16);
+			// Decode ZEsarUX: Bit 15 stands for ROM.
+			// ZXNext: 	ROM0: 0x8000 or 0x8001,	ROM1: 0x8002 or 0x8003
+			// Others are simply the bank number.
+			if (value >= 0x8000)
+				value = 0xFC + (value & 0x0003);
+			slots[i] = value;
+			// Next
+			line = line.substring(4);
 		}
 
 		return slots;

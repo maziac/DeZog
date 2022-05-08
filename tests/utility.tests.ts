@@ -7,6 +7,7 @@ import {Remote} from '../src/remotes/remotebase';
 import { Settings } from '../src/settings';
 import {Labels} from '../src/labels/labels';
 import {DecodeZesaruxRegisters} from '../src/remotes/zesarux/decodezesaruxdata';
+import {MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
 
 suite('Utility', () => {
@@ -505,7 +506,8 @@ suite('Utility', () => {
 
 
 		test('Labels', () => {
-			Labels.init(0);
+			const mm = new MemoryModelZxNext();
+			Labels.init(0, mm);
 			(Labels as any).numberForLabel.set("MY_LBLA", 0x208081);
 			(Labels as any).numberForLabel.set("MY_LBLB", 0x304041);
 
@@ -792,7 +794,8 @@ suite('Utility', () => {
 					excludeFiles: []
 				}]
 			};
-			Labels.init(250);
+			const mm = new MemoryModelZxNext();
+			Labels.init(250, mm);
 			Labels.readListFiles(config);
 
 			// Prepare memory

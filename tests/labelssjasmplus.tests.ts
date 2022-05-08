@@ -3,7 +3,8 @@ import * as assert from 'assert';
 import {LabelsClass} from '../src/labels/labels';
 import {readFileSync} from 'fs';
 import {SjasmplusSldLabelParser} from '../src/labels/sjasmplussldlabelparser';
-//import { Settings } from '../src/settings';
+import {MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+
 
 suite('Labels (sjasmplus)', () => {
 
@@ -291,7 +292,8 @@ suite('Labels (sjasmplus)', () => {
 
 
 		test('addressAdd4', () => {
-			const sdlParser = new SjasmplusSldLabelParser(undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any) as any;
+			const mm = new MemoryModelZxNext();
+			const sdlParser = new SjasmplusSldLabelParser(mm, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any) as any;
 
 			// 64k address
 			sdlParser.bankSize = 0x10000;

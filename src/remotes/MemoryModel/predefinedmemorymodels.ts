@@ -203,6 +203,14 @@ export class MemoryModelZx128k extends MemoryModel {
  * A000-BFFF: RAM
  * C000-DFFF: RAM
  * E000-FFFF: RAM
+ * The unexpanded ZXNext has 0-95 8k banks.
+ * The expanded has: 0-223 8k banks.
+ * Banks 0xFC to 0xFF are ROM.
+ * Note: 0xFC, FD, FE are invented, in a ZxNext there is only 0xFF.
+ * ROM0, lower 2k: 0xFC
+ * ROM0, upper 2k: 0xFD
+ * ROM1, lower 2k: 0xFE
+ * ROM1, upper 2k: 0xFF
  */
 export class MemoryModelZxNext extends MemoryModel {
 	constructor() {
@@ -210,15 +218,21 @@ export class MemoryModelZxNext extends MemoryModel {
 			slots: [
 				{
 					range: [0x0000, 0x1FFF],
-					initialBank: 254,
+					initialBank: 0xFE,
 					banks: [
 						{
-							index: [0, 253],	// 254  RAM banks
+							index: [0, 223],	// 254  RAM banks
 						},
 						{
-							index: 254,
-							name: 'ROM',
-							shortName: 'R',
+							index: 0xFC,
+							name: 'ROM0',
+							shortName: 'R0',
+							rom: Utility.getExtensionPath() + '/data/128.rom' 	// 1
+						},
+						{
+							index: 0xFE,
+							name: 'ROM1',
+							shortName: 'R1',
 							rom: Utility.getExtensionPath() + '/data/48.rom'
 						},
 					]
@@ -228,15 +242,22 @@ export class MemoryModelZxNext extends MemoryModel {
 					initialBank: 255,
 					banks: [
 						{
-							index: [0, 253],	// All banks are already defined in previous range
+							index: [0, 223],	// All banks are already defined in previous range
 						},
 						{
-							index: 255,
-							name: 'ROM',
-							shortName: 'R',
+							index: 0xFD,
+							name: 'ROM0',
+							shortName: 'R0',
+							rom: Utility.getExtensionPath() + '/data/128.rom',
+							romOffset: 0x2000
+						},
+						{
+							index: 0xFF,
+							name: 'ROM1',
+							shortName: 'R1',
 							rom: Utility.getExtensionPath() + '/data/48.rom',
 							romOffset: 0x2000
-						}
+						},
 					]
 				},
 				{
@@ -247,27 +268,27 @@ export class MemoryModelZxNext extends MemoryModel {
 				{
 					range: [0x6000, 0x7FFF],
 					initialBank: 11,
-					banks: [{index: [0, 255]}]
+					banks: [{index: [0, 223]}]
 				},
 				{
 					range: [0x8000, 0x9FFF],
 					initialBank: 4,
-					banks: [{index: [0, 255]}]
+					banks: [{index: [0, 223]}]
 				},
 				{
 					range: [0xA000, 0xBFFF],
 					initialBank: 5,
-					banks: [{index: [0, 255]}]
+					banks: [{index: [0, 223]}]
 				},
 				{
 					range: [0xC000, 0xDFFF],
 					initialBank: 0,
-					banks: [{index: [0, 255]}]
+					banks: [{index: [0, 223]}]
 				},
 				{
 					range: [0xE000, 0xFFFF],
 					initialBank: 1,
-					banks: [{index: [0, 255]}]
+					banks: [{index: [0, 223]}]
 				}
 			],
 			// ioMmu is undefined because memory management is implemented programmatically.

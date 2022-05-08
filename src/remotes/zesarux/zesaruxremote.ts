@@ -6,7 +6,7 @@ import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, RemoteBreakpoint} from '../remotebase';
 import {ZesaruxCpuHistory, DecodeZesaruxHistoryInfo} from './zesaruxcpuhistory';
 import {Z80RegistersClass, Z80Registers} from '../z80registers';
-import {DecodeZesaruxRegisters} from './decodezesaruxdata';
+import {DecodeZesaruxRegisters, DecodeZesaruxRegistersZx128k, DecodeZesaruxRegistersZxNext} from './decodezesaruxdata';
 import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
 import {PromiseCallbacks} from '../../misc/promisecallbacks';import {MemoryModelUnknown, MemoryModelZx128k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
 
@@ -207,12 +207,12 @@ export class ZesaruxRemote extends RemoteBase {
 				if (machineType.indexOf("tbblue") >= 0 || machineType.indexOf("zx spectrum next") >= 0) {
 					// "ZX Spectrum Next" since zesarux 9.2.
 					// 8x8k banks
-					Z80Registers.decoder = new DecodeZesaruxRegisters(8);
+					Z80Registers.decoder = new DecodeZesaruxRegistersZxNext();
 					this.memoryModel = new MemoryModelZxNext()
 				}
 				else if (machineType.indexOf("128k") >= 0) {
 					// 4x16k banks
-					Z80Registers.decoder = new DecodeZesaruxRegisters(4);
+					Z80Registers.decoder = new DecodeZesaruxRegistersZx128k();
 					this.memoryModel = new MemoryModelZx128k()
 				}
 					// TODO: also add 16K and 48K

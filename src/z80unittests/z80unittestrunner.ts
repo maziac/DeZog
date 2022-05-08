@@ -310,8 +310,7 @@ export class Z80UnitTestRunner {
 		}
 
 		// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
-		Labels.init(configuration.smallValuesMaximum);
-		Remote.readListFiles(configuration);
+		Remote.readListFiles(configuration);	// TODO: Move after connection successful, like debug adapter
 
 		return new Promise<void>(async (resolve, reject) => {
 			// Events

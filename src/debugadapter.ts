@@ -568,16 +568,6 @@ export class DebugSessionClass extends DebugSession {
 	 * @returns A Promise with an error text or undefined if no error.
 	 */
 	protected async startEmulator(): Promise<string | undefined> {
-		try {
-			// Init labels
-			Labels.init(Settings.launch.smallValuesMaximum);
-		}
-		catch (e) {
-			// Some error occurred
-			Remote.terminate('Labels: ' + e.message);
-			return "Error while initializing labels.";
-		}
-
 		// Reset all decorations
 		Decoration.clearAllDecorations();
 
@@ -617,18 +607,6 @@ export class DebugSessionClass extends DebugSession {
 			CpuHistoryClass.setCpuHistory(new StepHistoryClass());
 		}
 
-		// Load files
-		try {
-			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
-			Remote.readListFiles(Settings.launch);
-		}
-		catch (err) {
-			// Some error occurred during loading, e.g. file not found.
-			//	this.terminate(err.message);
-			this.unitTestsStartCallbacks?.reject(err);
-			return err.message;
-		}
-
 		Remote.on('coverage', coveredAddresses => {
 			// coveredAddresses: Only diff of addresses since last step-command.
 			this.delayedDecorations.push(() => {
@@ -658,6 +636,19 @@ export class DebugSessionClass extends DebugSession {
 				// Print text if available, e.g. "dbg_uart_if initialized".
 				if (text) {
 					this.debugConsoleAppendLine(text);
+				}
+
+				// Load files
+				try {
+					// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
+					Remote.readListFiles(Settings.launch);
+				}
+				catch (err) {
+					// Some error occurred during loading, e.g. file not found.
+					//	this.terminate(err.message);
+					this.unitTestsStartCallbacks?.reject(err);
+					// Some error occurred
+					Remote.terminate('Labels: ' + err.message);	// TODO: is terminate OK or should I throw an exception?
 				}
 
 				// Get initial registers
@@ -1075,7 +1066,7 @@ export class DebugSessionClass extends DebugSession {
 	 * Addresses are in long format.
 	 */
 	protected addAddressesFromPcHistory(addresses: number[]) {
-		const slots = Z80Registers.getSlots();
+		const slots = Remote.getSlots();
 		for (const longAddr of this.longPcAddressesHistory) {
 			// Create 64k address
 			const addr64k = longAddr & 0xFFFF;
@@ -3755,8 +3746,6 @@ E.g. use "-help -view" to put the help text in an own view.
 
 	public reloadLabels() {
 		try {
-			// Init labels
-			Labels.init(Settings.launch.smallValuesMaximum);
 			// Read list files
 			Remote.readListFiles(Settings.launch);
 			// Re-read the watchpoints etc.

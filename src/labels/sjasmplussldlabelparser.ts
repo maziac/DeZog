@@ -1,5 +1,6 @@
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
+import {MemoryModelZx128k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
 import {AsmConfigBase, SjasmplusConfig} from '../settings';
 import {LabelParserBase} from './labelparserbase';
 import {SourceFileEntry} from './labels';
@@ -67,6 +68,39 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	/// Long addresses.
 	protected estimatedFileLineNrs = new Map<number, SourceFileEntry>();
 
+	/// Function to convert bank into different memory model bank.
+	/// At start the target memory model is compared to the sld memory model.
+	/// Some memory models can be converted into each other.
+	/// E.g. ZX128K into ZXNext.
+	// This is done here.
+	protected funcConvertBank: (address: number, bank: number) => number;
+
+	/// The slots used in the sld file.
+	/// Set during parsing.
+	protected slots: number[];
+
+
+	/*
+	// Constructor.
+	public constructor(	// NOSONAR
+		memoryModel: MemoryModel,
+		fileLineNrs: Map<number, SourceFileEntry>,
+		lineArrays: Map<string, Array<number>>,
+		labelsForNumber64k: Array<any>,
+		labelsForLongAddress: Map<number, Array<string>>,
+		numberForLabel: Map<string, number>,
+		labelLocations: Map<string, {file: string, lineNr: number, address: number}>,
+		watchPointLines: Array<{address: number, line: string}>,
+		assertionLines: Array<{address: number, line: string}>,
+		logPointLines: Array<{address: number, line: string}>
+	) {
+		super(memoryModel, fileLineNrs, lineArrays, labelsForNumber64k, labelsForLongAddress, numberForLabel, labelLocations, watchPointLines, assertionLines, logPointLines);
+
+		// Map memory models
+
+	}
+	*/
+
 
 	/**
 	 * Reads the given sld file.
@@ -88,8 +122,10 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		const sldLines = sldLinesFull.map(line => line.trimEnd());
 		this.checkSldVersion(sldLines);
 
-		// Get bank size
+		// Get bank size and slots
 		this.parseForBankSizeAndSldOpt(sldLines);
+		// Check conversion to target memory model
+		this.checkMappingToTargetMemoryModel();
 
 		// Check for setting to ignore the banking
 		if ((config as SjasmplusConfig).disableBanking)
@@ -133,6 +169,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	protected parseForBankSizeAndSldOpt(lines: Array<string>) {
 		let keywords: string[] = [];
 		let bankSize;
+		let slots;
 		for (const line of lines) {
 			// Split the fields, e.g. "main.asm|3||0|-1|-1|Z|pages.size: 16384, pages.count: 8, slots.count: 4, slots.adr: 0, 16384, 32768, 49152"
 			const fields = line.split('|');
@@ -142,10 +179,17 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			if (type == 'Z') {
 				// Parse bank size
 				const data = fields[7];
-				// Delete anything not a number or ,
-				const numberString = data.replace(/[^0-9,]/g, '');
-				// Interprete only the first number
-				bankSize = parseInt(numberString);
+				// Find bank size
+				const matchBankSize = /pages\.size:(\d+)/i.exec(data);
+				if (!matchBankSize)
+					throw Error("No 'pages.size' found in sld file.");
+				bankSize = parseInt(matchBankSize[1]);
+				// Find slots
+				const matchSlots = /slots\.adr:([\d,]+)/i.exec(data);
+				if (!matchSlots)
+					throw Error("No 'slots.adr' found in sld file.");
+				const slotsString = matchSlots[1];
+				slots = slotsString.split(',').map(addrString => parseInt(addrString));
 			}
 
 			// Check for SLD OPT
@@ -163,6 +207,10 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			throw Error("Could not find bank size in SLD file. Did you forget to set the 'DEVICE' in your assembler file? If you use a non ZX Spectrum device you need to choose NOSLOT64K.");
 		}
 		this.bankSize = bankSize;
+		if (slots == undefined) {
+			throw Error("Could not find slots in SLD file. Did you forget to set the 'DEVICE' in your assembler file? If you use a non ZX Spectrum device you need to choose NOSLOT64K.");
+		}
+		this.slots = slots;
 
 		// Check for keywords
 		const kws = ["WPMEM", "LOGPOINT", "ASSERTION"];
@@ -373,6 +421,76 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 
 	/**
+	 * Checks conversion to target memory model.
+	 */
+	protected checkMappingToTargetMemoryModel() {
+		let targetSlotSize;
+		if (this.memoryModel instanceof MemoryModelZxNext) {
+			targetSlotSize = 0x2000;
+		}
+		else if (this.memoryModel instanceof MemoryModelZx128k) {
+			targetSlotSize = 0x4000;
+		}
+		// TODO ZX16k, zx48k
+		if (targetSlotSize != undefined) {
+			// Check that all slots have right size
+			const slotSize = 0x10000 / this.slots.length;
+			// Check that slots are equidistant
+			let addr = 0;
+			for (const slot of this.slots) {
+				if (slot != addr)
+					throw Error("Slots in sld file are not equidistant, so not compatible with the target '" + this.memoryModel.name + "' memory model.");
+				addr += slotSize;
+			}
+			// Different behavior if slotSize is bigger or lower the targetSlotSize
+			if (targetSlotSize == slotSize) {
+				// Same model, simply pass through
+				this.funcConvertBank = (address: number, bank: number) => {
+					return bank;
+				};
+			}
+			else if (targetSlotSize < slotSize) {
+				// E.g. ZX128K -> ZXNEXT or same model
+				const remainder = slotSize % targetSlotSize;
+				if (remainder != 0)
+					throw Error("Slots in sld file are not compatible with the target '" + this.memoryModel.name + "' memory model.");
+				const bankMultiplier = slotSize / targetSlotSize;
+
+				// Create conversion function
+				this.funcConvertBank = (address: number, bank: number) => {
+					let convBank = bankMultiplier * bank;
+					convBank += (address >>> 13) & 0x01;
+					// Note 1: No check for max bank is required since in sld there are
+					// much less than in target.
+					// Note 2: No check for ROM is required since there is no ROM in sld file.
+					return convBank;
+				};
+			}
+			else {
+				// E.g. ZXNEXT -> ZX128K
+				// Check that all slots have right size
+				const remainder = targetSlotSize % slotSize;
+				if (remainder != 0)
+					throw Error("Slots in sld file are not compatible with the target '" + this.memoryModel.name + "' memory model.");
+				const bankDivider = targetSlotSize / slotSize;
+
+				// Create conversion function
+				this.funcConvertBank = (address: number, bank: number) => {
+					let convBank = (bank & 0xFFFE) / bankDivider;
+					// Note 1: No check for max bank is required since in sld there are
+					// much less than in target.
+					// Note 2: No check for ROM is required since there is no ROM in sld file.
+					return convBank;
+				};
+			}
+		}
+		else {
+			throw Error("Could not convert labels to Memory Model: '" + this.memoryModel.name + "'.");
+		}
+	}
+
+
+	/**
 	 * Creates a long address from the address and the page info.
 	 * If page == -1 address is returned unchanged.
 	 * @param address The 64k address, i.e. the upper bits are the slot index.
@@ -381,9 +499,14 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	 * else: address.
 	 */
 	protected createLongAddress(address: number, bank: number) {
+		if (bank < 0)
+			return address;
+		// Check banks
+		const convBank = this.funcConvertBank(address, bank);
+		// Create long address
 		let result = address;
-		if (this.bankSize != 0)
-			result += (bank + 1) << 16;
+	//	if (this.bankSize != 0)
+		result += (convBank + 1) << 16;
 		return result;
 	}
 

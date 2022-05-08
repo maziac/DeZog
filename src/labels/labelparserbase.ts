@@ -4,6 +4,7 @@ import {UnifiedPath} from '../misc/unifiedpath';
 import {SourceFileEntry, ListFileLine} from './labels';
 import {AsmConfigBase} from '../settings';
 import * as minimatch from 'minimatch';
+import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 
 
 
@@ -85,9 +86,14 @@ export class LabelParserBase {
 	// Collects the warnings.
 	protected warnings: string;
 
+	/// The used memory model. E.g. if and how slots are used.
+	/// Set during 'readListFiles'.
+	public memoryModel: MemoryModel;
+
 
 	// Constructor.
 	public constructor(	// NOSONAR
+		memoryModel: MemoryModel,
 		fileLineNrs: Map<number, SourceFileEntry>,
 		lineArrays: Map<string, Array<number>>,
 		labelsForNumber64k: Array<any>,
@@ -99,6 +105,7 @@ export class LabelParserBase {
 		logPointLines: Array<{address: number, line: string}>
 	) {
 		// Store variables
+		this.memoryModel = memoryModel;
 		this.fileLineNrs = fileLineNrs;
 		this.lineArrays = lineArrays;
 		this.labelsForNumber64k = labelsForNumber64k;

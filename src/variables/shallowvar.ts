@@ -167,7 +167,7 @@ export class MemorySlotsVar extends ShallowVarConst {
 		start = start || 0;
 
 		// Get code memory
-		const memoryBanks = await Remote.getMemoryBanks();
+		const memoryBanks =  Remote.getMemoryBanks();
 		count = count || (memoryBanks.length - start);
 		// Convert array
 		let slot = -1;

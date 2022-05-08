@@ -32,7 +32,7 @@ export class DisassemblyClass extends Disassembler {
 		// Use internal labels.
 		Disassembly.funcAssignLabels = (addr64k: number) => {
 			// Convert to long address
-			const slots = Z80Registers.getSlots();	// TODO: Couldn't both accesses to Z80Registers be combined?
+			const slots = Remote.getSlots();	// TODO: Couldn't both accesses to Z80Registers be combined?
 			const longAddr = Z80Registers.createLongAddress(addr64k, slots);
 			// Check if label already known
 			const labels = Labels.getLabelsForLongAddress(longAddr);	// TODO: Test long addresses
