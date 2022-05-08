@@ -217,7 +217,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.rIndex>=0);
 			this.rIndex+=2;
 		}
-		const res=parseInt(data.substr(this.rIndex, 2), 16);
+		const res = parseInt(data.substring(this.rIndex, this.rIndex + 2), 16);
 		return res;
 	}
 
