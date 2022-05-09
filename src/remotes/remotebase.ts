@@ -539,10 +539,8 @@ export class RemoteBase extends EventEmitter {
 	 * @param configuration Contains the list files for the different assemblers
 	 */
 	public readListFiles(configuration: any) {
-		// Init labels
-		Labels.init(Settings.launch.smallValuesMaximum, this.memoryModel);
 		// Read files
-		Labels.readListFiles(configuration);
+		Labels.readListFiles(configuration, this.memoryModel);
 
 		// Check for warnings
 		const warnings = Labels.getWarnings();

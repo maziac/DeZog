@@ -7,6 +7,7 @@ import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
 import * as fs from 'fs';
 import {ReverseEngineeringLabelParser} from './reverseengineeringlabelparser';
+import {SettingsParameters} from '../settings';
 
 
 /**
@@ -149,16 +150,15 @@ export class LabelsClass {
 
 	/// The used memory model. E.g. if and how slots are used.
 	/// Set during 'readListFiles'.
-	public memoryModel: MemoryModel;
+	//public memoryModel: MemoryModel;
 
 
 
 	/**
 	 * Initializes the lists/arrays.
-	 * @param smallValuesMaximum If smaller a label is not reconized as label.
-	 * @param memoryModel The memory model. Used for bank/long address creation.
+	 * @param smallValuesMaximum If smaller a label is not recognized as label.
 	 */
-	public init(smallValuesMaximum: number, memoryModel: MemoryModel) {
+	protected init(smallValuesMaximum: number) {
 		// clear data
 		this.fileLineNrs.clear();
 		this.lineArrays.clear();
@@ -174,7 +174,6 @@ export class LabelsClass {
 		this.smallValuesMaximum = smallValuesMaximum;
 		this.bankSize = 0;
 		this.warnings = undefined as any;
-		this.memoryModel = memoryModel;
 	}
 
 
@@ -207,16 +206,20 @@ export class LabelsClass {
 	 * @param mainConfig Is a part of Settings. It contains e.g. the properties "sjasmplus",
 	 * "z80asm" and "z88dk".
 	 * Each property is an object which contains the specific parameters.
-	 * Especially it contains the path to the list file.
+	 * Especially it contains the paths to the list files.
+	 * @param memoryModel The memory model. Used for bank/long address creation.
 	 */
-	public readListFiles(mainConfig: any) {
+	public readListFiles(mainConfig: SettingsParameters, memoryModel: MemoryModel) {
 		this.warnings = '';
+
+		// Clear some fields
+		this.init(mainConfig.smallValuesMaximum);
 
 		// sjasmplus
 		if (mainConfig.sjasmplus) {
 			for (const config of mainConfig.sjasmplus) {
 				// Parse SLD file
-				const parser = new SjasmplusSldLabelParser(this.memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+				const parser = new SjasmplusSldLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 				parser.loadAsmListFile(config);
 				this.bankSize = parser.bankSize;
 				// Warnings
@@ -230,7 +233,7 @@ export class LabelsClass {
 
 		// z80asm
 		if (mainConfig.z80asm) {
-			const parser = new Z80asmLabelParser(this.memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+			const parser = new Z80asmLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 			for (const config of mainConfig.z80asm) {
 				parser.loadAsmListFile(config);
 				// Store path
@@ -240,7 +243,7 @@ export class LabelsClass {
 
 		// z88dk
 		if (mainConfig.z88dk) {
-			const parser = new Z88dkLabelParser(this.memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+			const parser = new Z88dkLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 			for (const config of mainConfig.z88dk) {
 				parser.loadAsmListFile(config);
 				// Store path
@@ -250,7 +253,7 @@ export class LabelsClass {
 
 		// Reverse Engineering List File
 		if (mainConfig.revEng) {
-			const parser = new ReverseEngineeringLabelParser(this.memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+			const parser = new ReverseEngineeringLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 			for (const config of mainConfig.revEng) {
 				parser.loadAsmListFile(config);
 				// Store path

@@ -105,7 +105,7 @@ export class LabelParserBase {
 		logPointLines: Array<{address: number, line: string}>
 	) {
 		// Store variables
-		this.memoryModel = memoryModel;
+		this.memoryModel=memoryModel;
 		this.fileLineNrs = fileLineNrs;
 		this.lineArrays = lineArrays;
 		this.labelsForNumber64k = labelsForNumber64k;

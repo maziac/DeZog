@@ -1,6 +1,8 @@
 import {Utility} from '../misc/utility';
 import {Z80RegistersClass} from '../remotes/z80registers';
+import {AsmConfigBase, ListConfigBase} from '../settings';
 import {LabelParserBase} from './labelparserbase';
+import {ListFileLine} from './labels';
 
 
 /**
@@ -53,6 +55,29 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	// Regex to parse the label
 
 	protected regexLabel = /^\s*((\.?)[\w_][\w_\d\.]*):/;	// NOSONAR: sonar wrong
+
+
+	/**
+	 * Reads the given file (an assembler .list file) and extracts all PC
+	 * values (the first 4 digits), so that each line can be associated with a
+	 * PC value.
+	 */
+	public loadAsmListFile(config: ListConfigBase) {
+		this.config = config as AsmConfigBase;
+		// Init (in case of several list files)
+		this.excludedFileStackIndex = -1;
+		this.includeFileStack = new Array<{fileName: string, lineNr: number}>();
+		this.listFile = new Array<ListFileLine>();
+		this.modulePrefixStack = new Array<string>();
+		this.modulePrefix = undefined as any;
+		this.lastLabel = undefined as any;
+
+		// Phase 1: Parse for labels and addresses
+		this.parseAllLabelsAndAddresses();
+
+		// Listfile-Mode (no other mode possible)
+		this.listFileModeFinish();
+	}
 
 
 	/**

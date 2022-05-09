@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import {LabelsClass} from '../src/labels/labels';
 import {readFileSync} from 'fs';
 import {SjasmplusSldLabelParser} from '../src/labels/sjasmplussldlabelparser';
-import {MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelUnknown, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
 
 suite('Labels (sjasmplus)', () => {
@@ -15,7 +15,7 @@ suite('Labels (sjasmplus)', () => {
 			const labelsFile = readFileSync('./tests/data/labels/projects/sjasmplus/general/general.labels').toString().split('\n');
 
 			// Read the list file
-			const config = {
+			const config: any = {
 				sjasmplus: [{
 					path: './tests/data/labels/projects/sjasmplus/general/general.sld', srcDirs: [""],	// Sources mode
 					excludeFiles: [],
@@ -23,9 +23,10 @@ suite('Labels (sjasmplus)', () => {
 				}]
 			};
 			const lbls = new LabelsClass();
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelUnknown());
 
 			// Compare all labels
+			// Note: All NOSLOT64K labels are now mapped to 1 bank internally
 			for (const labelLine of labelsFile) {
 				if (labelLine == '')
 					continue;
@@ -36,13 +37,13 @@ suite('Labels (sjasmplus)', () => {
 				const value = parseInt(match[2], 16);
 				// Check
 				const res = lbls.getNumberForLabel(label);
-				assert.equal(value, res!);
+				assert.equal(value, res!, label);
 			}
 		});
 
 		test('IF 0 Labels', () => {
 			// Read the list file
-			const config = {
+			const config: any = {
 				sjasmplus: [{
 					path: './tests/data/labels/projects/sjasmplus/general/general.sld',
 					srcDirs: [""],	// Sources mode
@@ -50,9 +51,9 @@ suite('Labels (sjasmplus)', () => {
 				}]
 			};
 			const lbls = new LabelsClass();
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelUnknown());
 
-			// Test the a label under an IF 0/ENDIF is not defined
+			// Test that a label under an IF 0/ENDIF is not defined
 			const res = lbls.getNumberForLabel('label5');
 			assert.equal(undefined, res);
 		});
@@ -62,7 +63,7 @@ suite('Labels (sjasmplus)', () => {
 
 			test('Labels location', () => {
 				// Read the list file
-				const config = {
+				const config: any = {
 					sjasmplus: [{
 						path: './tests/data/labels/projects/sjasmplus/general/general.sld',
 						srcDirs: [""],	// Sources mode
@@ -70,7 +71,7 @@ suite('Labels (sjasmplus)', () => {
 					}]
 				};
 				const lbls = new LabelsClass();
-				lbls.readListFiles(config);
+				lbls.readListFiles(config, new MemoryModelUnknown());
 
 				// Test
 				let res = lbls.getLocationOfLabel('label1')!;
@@ -122,7 +123,7 @@ suite('Labels (sjasmplus)', () => {
 
 			test('address -> file/line', () => {
 				// Read the list file
-				const config = {
+				const config: any = {
 					sjasmplus: [{
 						path: './tests/data/labels/projects/sjasmplus/general/general.sld',
 						srcDirs: [""],	// Sources mode
@@ -130,7 +131,7 @@ suite('Labels (sjasmplus)', () => {
 					}]
 				};
 				const lbls = new LabelsClass();
-				lbls.readListFiles(config);
+				lbls.readListFiles(config, new MemoryModelUnknown());
 
 				// Tests
 				let res = lbls.getFileAndLineForAddress(0x10000 + 0x8000);
@@ -153,14 +154,14 @@ suite('Labels (sjasmplus)', () => {
 
 			test('file/line -> address', () => {
 				// Read the list file
-				const config = {
+				const config: any = {
 					sjasmplus: [{
 						path: './tests/data/labels/projects/sjasmplus/general/general.sld', srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
 				};
 				const lbls = new LabelsClass();
-				lbls.readListFiles(config);
+				lbls.readListFiles(config, new MemoryModelUnknown());
 
 				// Tests
 				let address = lbls.getAddrForFileAndLine('main.asm', 19 - 1);
@@ -183,14 +184,14 @@ suite('Labels (sjasmplus)', () => {
 
 	test('Occurrence of WPMEM, ASSERTION, LOGPOINT', () => {
 		// Read the list file
-		const config = {
+		const config: any = {
 			sjasmplus: [{
 				path: './tests/data/labels/projects/sjasmplus/general/general.sld', srcDirs: [""],	// Sources mode
 				excludeFiles: []
 			}]
 		};
 		const lbls = new LabelsClass();
-		lbls.readListFiles(config);
+		lbls.readListFiles(config, new MemoryModelUnknown());
 
 		// Test WPMEM
 		const wpLines = lbls.getWatchPointLines();
@@ -217,15 +218,15 @@ suite('Labels (sjasmplus)', () => {
 
 		setup(() => {
 			// Read the list file
-			const config = {
+			const config: any = {
 				sjasmplus: [{
 					path: './tests/data/labels/projects/sjasmplus/sld_self_modifying_code/main.sld', srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
 			};
 			lbls = new LabelsClass();
-			lbls.readListFiles(config);
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelUnknown());
+			//lbls.readListFiles(config, new MemoryModelUnknown());
 		});
 
 		test('Start addresses found', () => {

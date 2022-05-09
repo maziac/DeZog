@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import {LabelsClass} from '../src/labels/labels';
+import {MemoryModelUnknown} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
 suite('Labels (revEng)', () => {
 
@@ -11,14 +12,14 @@ suite('Labels (revEng)', () => {
 
 	suite('Labels', () => {
 
-		const config = {
+		const config: any = {
 			revEng: [{
 				path: 'tests/data/labels/projects/revEng/main.list'
 			}]
 		};
 
 		test('labels equ', () => {
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelUnknown());
 
 			// Check
 			let res = lbls.getNumberForLabel("label_equ1");
@@ -29,7 +30,7 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('labels location', () => {
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelUnknown());
 			const fname = config.revEng[0].path;
 
 			// Test
@@ -55,7 +56,7 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('local labels', () => {
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelUnknown());
 
 			let addr = lbls.getNumberForLabel('label2')!;
 			assert.equal(addr, 1);
@@ -71,7 +72,7 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('address -> file/line', () => {
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelUnknown());
 			const fname = config.revEng[0].path;
 
 			// label2
@@ -145,7 +146,7 @@ suite('Labels (revEng)', () => {
 
 
 		test('file/line -> address', () => {
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelUnknown());
 			const fname = config.revEng[0].path;
 
 			// label2
@@ -181,12 +182,12 @@ suite('Labels (revEng)', () => {
 	suite('Warnings', () => {
 
 		test('expression wrong in equ', () => {
-			const config = {
+			const config: any = {
 				revEng: [{
 					path: 'tests/data/labels/projects/revEng/wrong1.list'
 				}]
 			};
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelUnknown());
 
 			// Check
 			const warnings = lbls.getWarnings();
@@ -196,12 +197,12 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('line ignored', () => {
-			const config = {
+			const config: any = {
 				revEng: [{
 					path: 'tests/data/labels/projects/revEng/wrong2.list'
 				}]
 			};
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelUnknown());
 
 			// Check
 			const warnings = lbls.getWarnings();
@@ -211,12 +212,12 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('no warning', () => {
-			const config = {
+			const config: any = {
 				revEng: [{
 					path: 'tests/data/labels/projects/revEng/main.list'
 				}]
 			};
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelUnknown());
 
 			// Check
 			const warnings = lbls.getWarnings();
@@ -224,12 +225,12 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('same label used twice', () => {
-			const config = {
+			const config: any = {
 				revEng: [{
 					path: 'tests/data/labels/projects/revEng/samelabel.list'
 				}]
 			};
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelUnknown());
 
 			// Check
 			const warnings = lbls.getWarnings();
@@ -239,12 +240,12 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('same label used twice (local)', () => {
-			const config = {
+			const config: any = {
 				revEng: [{
 					path: 'tests/data/labels/projects/revEng/samelabellocal.list'
 				}]
 			};
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelUnknown());
 
 			// Check
 			const warnings = lbls.getWarnings();
@@ -256,12 +257,12 @@ suite('Labels (revEng)', () => {
 
 
 	test('Occurrence of WPMEM, ASSERTION, LOGPOINT', () => {
-		const config = {
+		const config: any = {
 			revEng: [{
 				path: 'tests/data/labels/projects/revEng/wpmemetc.list'
 			}]
 		};
-		lbls.readListFiles(config);
+		lbls.readListFiles(config, new MemoryModelUnknown());
 
 		// Test WPMEM
 		const wpLines = lbls.getWatchPointLines();

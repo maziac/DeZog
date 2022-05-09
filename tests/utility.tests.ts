@@ -1,10 +1,10 @@
 
 import * as assert from 'assert';
-import { Utility } from '../src/misc/utility';
+import {Utility} from '../src/misc/utility';
 import {Z80RegistersClass, Z80Registers} from '../src/remotes/z80registers';
 import {RemoteFactory} from '../src/remotes/remotefactory';
 import {Remote} from '../src/remotes/remotebase';
-import { Settings } from '../src/settings';
+import {Settings, SettingsParameters} from '../src/settings';
 import {Labels} from '../src/labels/labels';
 import {DecodeZesaruxRegisters} from '../src/remotes/zesarux/decodezesaruxdata';
 import {MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
@@ -16,64 +16,64 @@ suite('Utility', () => {
 
 		test('no tabs', () => {
 			const res = Utility.calculateTabSizes('1234567890', 1);
-			assert.equal( res, null, "should result in null");
+			assert.equal(res, null, "should result in null");
 		});
 
 		test('1 tab', () => {
 			const res = Utility.calculateTabSizes('1234567\t890', 1);
-			assert.equal( res.length, 2, "should be 2 strings");
-			assert.equal( res[0].length, 7, "length should be 7");
-			assert.equal( res[1].length, 3, "length should be 3");
+			assert.equal(res.length, 2, "should be 2 strings");
+			assert.equal(res[0].length, 7, "length should be 7");
+			assert.equal(res[1].length, 3, "length should be 3");
 		});
 
 		test('tab all formats, size 1', () => {
 			const res = Utility.calculateTabSizes('${hex}\t1${signed}\t${unsigned}2\t1${char}2\t${bits}\t${flags}', 1);
-			assert.equal( res.length, 6, "should be 6 strings");
-			assert.equal( res[0].length, 2, "${hex} length wrong");
-			assert.equal( res[1].length, 1+4, "${signed} length wrong");
-			assert.equal( res[2].length, 3+1, "${unsigned} length wrong");
-			assert.equal( res[3].length, 1+1+1, "${char} length wrong");
-			assert.equal( res[4].length, 8, "${bits} length wrong");
-			assert.equal( res[5].length, 6, "${flags} length wrong");
+			assert.equal(res.length, 6, "should be 6 strings");
+			assert.equal(res[0].length, 2, "${hex} length wrong");
+			assert.equal(res[1].length, 1 + 4, "${signed} length wrong");
+			assert.equal(res[2].length, 3 + 1, "${unsigned} length wrong");
+			assert.equal(res[3].length, 1 + 1 + 1, "${char} length wrong");
+			assert.equal(res[4].length, 8, "${bits} length wrong");
+			assert.equal(res[5].length, 6, "${flags} length wrong");
 		});
 
 		test('tab all formats, size 2', () => {
 			const res = Utility.calculateTabSizes('${hex}\t1${signed}\t${unsigned}2\t1${char}2\t${bits}\t${flags}', 2);
-			assert.equal( res.length, 6, "should be 6 strings");
-			assert.equal( res[0].length, 4, "${hex} length wrong");
-			assert.equal( res[1].length, 1+6, "${signed} length wrong");
-			assert.equal( res[2].length, 5+1, "${unsigned} length wrong");
-			assert.equal( res[3].length, 1+1+1, "${char} length wrong");
-			assert.equal( res[4].length, 16, "${bits} length wrong");
-			assert.equal( res[5].length, 6, "${flags} length wrong");
+			assert.equal(res.length, 6, "should be 6 strings");
+			assert.equal(res[0].length, 4, "${hex} length wrong");
+			assert.equal(res[1].length, 1 + 6, "${signed} length wrong");
+			assert.equal(res[2].length, 5 + 1, "${unsigned} length wrong");
+			assert.equal(res[3].length, 1 + 1 + 1, "${char} length wrong");
+			assert.equal(res[4].length, 16, "${bits} length wrong");
+			assert.equal(res[5].length, 6, "${flags} length wrong");
 		});
 
 		test('tab name, label format', () => {
 			const res = Utility.calculateTabSizes('${name}\t1${labels}', 1);
-			assert.equal( res.length, 2, "should be 2 strings");
-			assert.notEqual( res[0].length, 0, "${name} length wrong");
-			assert.notEqual( res[1].length, 0, "${labels} length wrong");
+			assert.equal(res.length, 2, "should be 2 strings");
+			assert.notEqual(res[0].length, 0, "${name} length wrong");
+			assert.notEqual(res[1].length, 0, "${labels} length wrong");
 		});
 
 		test('start with tab', () => {
 			const res = Utility.calculateTabSizes('\t${hex}\t${signed}\t${unsigned}', 1);
-			assert.equal( res.length, 4, "should be 4 strings");
-			assert.equal( res[0].length, 0, "first string len wrong");
-			assert.equal( res[1].length, 2, "${hex} length wrong");
+			assert.equal(res.length, 4, "should be 4 strings");
+			assert.equal(res[0].length, 0, "first string len wrong");
+			assert.equal(res[1].length, 2, "${hex} length wrong");
 		});
 
 		test('end with tab', () => {
 			const res = Utility.calculateTabSizes('${hex}\t${signed}\t${unsigned}\t', 1);
-			assert.equal( res.length, 4, "should be 4 strings");
-			assert.equal( res[3].length, 0, "last string len wrong");
-			assert.equal( res[0].length, 2, "${hex} length wrong");
+			assert.equal(res.length, 4, "should be 4 strings");
+			assert.equal(res[3].length, 0, "last string len wrong");
+			assert.equal(res[0].length, 2, "${hex} length wrong");
 		});
 
 		test('double tab', () => {
 			const res = Utility.calculateTabSizes('${hex}\t\t${signed}\t${unsigned}', 1);
-			assert.equal( res.length, 4, "should be 4 strings");
-			assert.equal( res[0].length, 2, "${hex} length wrong");
-			assert.equal( res[1].length, 0, "tab length wrong");
+			assert.equal(res.length, 4, "should be 4 strings");
+			assert.equal(res[0].length, 2, "${hex} length wrong");
+			assert.equal(res[1].length, 0, "tab length wrong");
 		});
 
 	});
@@ -96,20 +96,20 @@ suite('Utility', () => {
 			test('formats, size 1', async () => {
 				const format = '${name},${hex},${signed},${unsigned},${bits},${char},${flags}';
 				const res = await Utility.numberFormatted('myname', 255, 1, format, undefined);
-				assert.equal( res, 'myname,FF,-1,255,11111111,.,SZ1H1PNC', "Unexpected formatting");
+				assert.equal(res, 'myname,FF,-1,255,11111111,.,SZ1H1PNC', "Unexpected formatting");
 			});
 
 			test('formats, size 2', async () => {
-				const format='${name},${hex},${signed},${unsigned},${bits},${char},${flags}';
-				const res=await Utility.numberFormatted('myname', 9999, 2, format, undefined);
+				const format = '${name},${hex},${signed},${unsigned},${bits},${char},${flags}';
+				const res = await Utility.numberFormatted('myname', 9999, 2, format, undefined);
 				// Note: value of flags doesn't matter
-				let b=res.startsWith('myname,270F,9999,9999,0010011100001111,.,');
+				let b = res.startsWith('myname,270F,9999,9999,0010011100001111,.,');
 				assert.ok(b, "Unexpected formatting");
 			});
 
 			test('formats, size 2 negative', async () => {
-				const format='${signed},${unsigned}';
-				const res=await Utility.numberFormatted('myname', 32768, 2, format, undefined);
+				const format = '${signed},${unsigned}';
+				const res = await Utility.numberFormatted('myname', 32768, 2, format, undefined);
 				assert.equal(res, '-32768,32768', "Unexpected formatting");
 			});
 		});
@@ -134,14 +134,14 @@ suite('Utility', () => {
 				const format = '${name},\t${hex},\t${signed},\t${unsigned},\t${bits},\t${char},\t${flags}';
 				const predefined = '1234567\t12345678\t123456789\t1234567890\t12345678901\t123456789012\t1234567890123'
 				const predefArr = predefined.split('\t');
-				const res=await Utility.numberFormatted('myname', 65, 1, format, predefArr);
+				const res = await Utility.numberFormatted('myname', 65, 1, format, predefArr);
 				const arr = res.split(',');
-				assert.equal( arr[0].length+1, 'myname,'.length, "Unexpected formatting");
+				assert.equal(arr[0].length + 1, 'myname,'.length, "Unexpected formatting");
 				let i;
-				for(i=1; i<arr.length-1; i++) {
-					assert.equal( arr[i].length, predefArr[i].length, "Unexpected formatting");
+				for (i = 1; i < arr.length - 1; i++) {
+					assert.equal(arr[i].length, predefArr[i].length, "Unexpected formatting");
 				}
-				assert.equal( arr[i].length-2, predefArr[i].length, "Unexpected formatting");
+				assert.equal(arr[i].length - 2, predefArr[i].length, "Unexpected formatting");
 			});
 
 			test('wrong predefined array', async () => {
@@ -156,14 +156,14 @@ suite('Utility', () => {
 				const format = "${b#:hex}h\t${b#:unsigned}u\t${b#:signed}i\t'${char}'\t${b#:bits}b";
 				const tabSizeArr = Utility.calculateTabSizes(format, 1);
 				const res = await Utility.numberFormatted('', 65, 1, format, tabSizeArr);
-				assert.equal( res, "41h  65u   65i 'A' 01000001b ", "Unexpected tab formatting");
+				assert.equal(res, "41h  65u   65i 'A' 01000001b ", "Unexpected tab formatting");
 			});
 
 			test('special test 2', async () => {
 				const format = "${b#:signed}i\t'${char}'\t${b#:bits}b";
 				const tabSizeArr = Utility.calculateTabSizes(format, 1);
 				const res = await Utility.numberFormatted('', 255, 1, format, tabSizeArr);
-				assert.equal( res, "  -1i '.' 11111111b ", "Unexpected tab formatting");
+				assert.equal(res, "  -1i '.' 11111111b ", "Unexpected tab formatting");
 			});
 
 		});
@@ -187,80 +187,80 @@ suite('Utility', () => {
 
 	suite('parseValue', () => {
 
-        test('decimal', () => {
-            const res = Utility.parseValue('65301');
-            assert.equal(res, 65301, "Wrong parsing result");
+		test('decimal', () => {
+			const res = Utility.parseValue('65301');
+			assert.equal(res, 65301, "Wrong parsing result");
 		});
 
 		test('decimal negative', () => {
-            const res = Utility.parseValue('-32768');
-            assert.equal(res, -32768, "Wrong parsing result");
+			const res = Utility.parseValue('-32768');
+			assert.equal(res, -32768, "Wrong parsing result");
 		});
 
 		test('0x, hex value', () => {
-            const res = Utility.parseValue('0x1abf');
-            assert.equal(res, 0x1ABF, "Wrong parsing result");
+			const res = Utility.parseValue('0x1abf');
+			assert.equal(res, 0x1ABF, "Wrong parsing result");
 		});
 
 		test('0x0000, hex value', () => {
-            const res = Utility.parseValue('0x0000');
-            assert.equal(res, 0, "Wrong parsing result");
+			const res = Utility.parseValue('0x0000');
+			assert.equal(res, 0, "Wrong parsing result");
 		});
 
 		test('0x, invalid negative input 1', () => {
-            const res = Utility.parseValue('0x-1abf');
-            assert.ok(isNaN(res), "Wrong parsing result");
-		 });
+			const res = Utility.parseValue('0x-1abf');
+			assert.ok(isNaN(res), "Wrong parsing result");
+		});
 
-		 test('0x, invalid negative input 2', () => {
-            const res = Utility.parseValue('-0x1abf');
-            assert.ok(isNaN(res), "Wrong parsing result");
-		 });
+		test('0x, invalid negative input 2', () => {
+			const res = Utility.parseValue('-0x1abf');
+			assert.ok(isNaN(res), "Wrong parsing result");
+		});
 
 		test('$, hex value', () => {
-            const res = Utility.parseValue('$1abf');
-         assert.equal(res, 0x1ABF, "Wrong parsing result");
- 		});
+			const res = Utility.parseValue('$1abf');
+			assert.equal(res, 0x1ABF, "Wrong parsing result");
+		});
 
 		test('h, hex value', () => {
-            const res = Utility.parseValue('1abfh');
-            assert.equal(res, 0x1ABF, "Wrong parsing result");
+			const res = Utility.parseValue('1abfh');
+			assert.equal(res, 0x1ABF, "Wrong parsing result");
 		});
 
 		test('H uppercase', () => {
-            const res = Utility.parseValue('1ABFH');
-            assert.equal(res, 0x1ABF, "Wrong parsing result");
+			const res = Utility.parseValue('1ABFH');
+			assert.equal(res, 0x1ABF, "Wrong parsing result");
 		});
 
 		test('b, bit value', () => {
-            const res = Utility.parseValue('10010001b');
-            assert.equal(res, 0x91, "Wrong parsing result");
+			const res = Utility.parseValue('10010001b');
+			assert.equal(res, 0x91, "Wrong parsing result");
 		});
 
 		test('_, status flags', () => {
-            const res = Utility.parseValue('_SZHPNC');
-            assert.equal(res, 0xD7, "Wrong parsing result");
+			const res = Utility.parseValue('_SZHPNC');
+			assert.equal(res, 0xD7, "Wrong parsing result");
 		});
 
 		test('invalid input 1', () => {
-            const res = Utility.parseValue('1abf');
-            assert.ok(isNaN(res), "Wrong parsing result");
-		 });
+			const res = Utility.parseValue('1abf');
+			assert.ok(isNaN(res), "Wrong parsing result");
+		});
 
-		 test('invalid input 2', () => {
-            const res = Utility.parseValue('0x5gbf');
-            assert.ok(isNaN(res), "Wrong parsing result");
-		 });
+		test('invalid input 2', () => {
+			const res = Utility.parseValue('0x5gbf');
+			assert.ok(isNaN(res), "Wrong parsing result");
+		});
 
-		 test('invalid input 3', () => {
-            const res = Utility.parseValue('dabf');
-            assert.ok(isNaN(res), "Wrong parsing result");
-		 });
+		test('invalid input 3', () => {
+			const res = Utility.parseValue('dabf');
+			assert.ok(isNaN(res), "Wrong parsing result");
+		});
 
-		 test('invalid input 4', () => {
-            const res = Utility.parseValue('10410010b');
-            assert.ok(isNaN(res), "Wrong parsing result");
-		 });
+		test('invalid input 4', () => {
+			const res = Utility.parseValue('10410010b');
+			assert.ok(isNaN(res), "Wrong parsing result");
+		});
 
 	});
 
@@ -317,7 +317,8 @@ suite('Utility', () => {
 			Z80RegistersClass.createRegisters();
 			RemoteFactory.createRemote(cfg.remoteType);
 			Z80Registers.setCache("PC=1110 SP=2120 AF=3130 BC=4140 HL=5150 DE=6160 IX=A1A0 IY=B1B0 AF'=3332 BC'=4342 HL'=5352 DE'=6362 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
-			Z80Registers.decoder = new DecodeZesaruxRegisters(8);		});
+			Z80Registers.decoder = new DecodeZesaruxRegisters(8);
+		});
 
 		test('No labels, no registers', () => {
 			let res = Utility.replaceVarsWithValues('');
@@ -506,8 +507,7 @@ suite('Utility', () => {
 
 
 		test('Labels', () => {
-			const mm = new MemoryModelZxNext();
-			Labels.init(0, mm);
+			(Labels as any).init(0);
 			(Labels as any).numberForLabel.set("MY_LBLA", 0x208081);
 			(Labels as any).numberForLabel.set("MY_LBLB", 0x304041);
 
@@ -548,38 +548,38 @@ suite('Utility', () => {
 			assert.equal(7, res, "Wrong eval result");
 		});
 
-        test('shift <<', () => {
-            let res = Utility.evalExpression('0<<3');
+		test('shift <<', () => {
+			let res = Utility.evalExpression('0<<3');
 			assert.equal(0, res, "Wrong eval result");
 
-            res = Utility.evalExpression('2<<3');
-            assert.equal(2<<3, res, "Wrong eval result");
+			res = Utility.evalExpression('2<<3');
+			assert.equal(2 << 3, res, "Wrong eval result");
 
-            res = Utility.evalExpression('2 <<3');
-            assert.equal(2<<3, res, "Wrong eval result");
+			res = Utility.evalExpression('2 <<3');
+			assert.equal(2 << 3, res, "Wrong eval result");
 
 			res = Utility.evalExpression('2<< 3');
-			assert.equal(2<<3, res, "Wrong eval result");
+			assert.equal(2 << 3, res, "Wrong eval result");
 
 			res = Utility.evalExpression('2 << 3');
-            assert.equal(2<<3, res, "Wrong eval result");
+			assert.equal(2 << 3, res, "Wrong eval result");
 		});
 
 		test('shift >>>', () => {
-            let res = Utility.evalExpression('0>>>3');
+			let res = Utility.evalExpression('0>>>3');
 			assert.equal(0, res, "Wrong eval result");
 
-            res = Utility.evalExpression('0x0F>>>3');
-            assert.equal(0x0F>>>3, res, "Wrong eval result");
+			res = Utility.evalExpression('0x0F>>>3');
+			assert.equal(0x0F >>> 3, res, "Wrong eval result");
 
-            res = Utility.evalExpression('0x0F >>>3');
-            assert.equal(0x0F>>>3, res, "Wrong eval result");
+			res = Utility.evalExpression('0x0F >>>3');
+			assert.equal(0x0F >>> 3, res, "Wrong eval result");
 
 			res = Utility.evalExpression('0x0F>>> 3');
-			assert.equal(0x0F>>>3, res, "Wrong eval result");
+			assert.equal(0x0F >>> 3, res, "Wrong eval result");
 
 			res = Utility.evalExpression('0x0F >>> 3');
-            assert.equal(0x0F>>>3, res, "Wrong eval result");
+			assert.equal(0x0F >>> 3, res, "Wrong eval result");
 		});
 
 
@@ -589,7 +589,7 @@ suite('Utility', () => {
 				const cfg = {remoteType: 'zrcp'} as any;
 				Settings.launch = Settings.Init(cfg);
 				Z80RegistersClass.createRegisters();
-				Z80Registers.decoder=new DecodeZesaruxRegisters(0);
+				Z80Registers.decoder = new DecodeZesaruxRegisters(0);
 				RemoteFactory.createRemote(cfg.remoteType);
 			});
 
@@ -660,7 +660,7 @@ suite('Utility', () => {
 
 				// It is not supported to retrieve memory locations.
 				// Therefore a test is done on an exception.
-				assert.throws( () => {
+				assert.throws(() => {
 					Utility.evalExpression('b@(1000) == 50', true);
 				}, "Expected an exception");
 			});
@@ -672,12 +672,12 @@ suite('Utility', () => {
 	suite('evalLogString', () => {
 
 		setup(() => {
-			const cfg: any={
+			const cfg: SettingsParameters = {
 				remoteType: 'zsim',
 				zsim: {
 					memoryModel: "RAM"
 				}
-			};
+			} as any;
 			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
 			RemoteFactory.createRemote(cfg.remoteType);
@@ -685,31 +685,31 @@ suite('Utility', () => {
 		});
 
 		test('Register', async () => {
-			const remote=Remote as any;
-			const cpu=remote.z80Cpu;
-			cpu.a=129;
-			cpu.de=0xABCD;
-			const regs=cpu.getRegisterData();
+			const remote = Remote as any;
+			const cpu = remote.z80Cpu;
+			cpu.a = 129;
+			cpu.de = 0xABCD;
+			const regs = cpu.getRegisterData();
 			Z80Registers.setCache(regs);
 
-			let log='${A}';
-			let evalString=await Utility.evalLogString(log);
+			let log = '${A}';
+			let evalString = await Utility.evalLogString(log);
 			assert.equal('129', evalString);
 
-			log=' start ${A} end ';
-			evalString=await Utility.evalLogString(log);
+			log = ' start ${A} end ';
+			evalString = await Utility.evalLogString(log);
 			assert.equal(' start 129 end ', evalString);
 
-			log='${DE:hex}';
-			evalString=await Utility.evalLogString(log);
+			log = '${DE:hex}';
+			evalString = await Utility.evalLogString(log);
 			assert.equal('ABCD', evalString);
 
-			log='${de:hex}';
-			evalString=await Utility.evalLogString(log);
+			log = '${de:hex}';
+			evalString = await Utility.evalLogString(log);
 			assert.equal('ABCD', evalString);
 
-			log=' start A=${A:signed} DE=${DE:unsigned} end ';
-			evalString=await Utility.evalLogString(log);
+			log = ' start A=${A:signed} DE=${DE:unsigned} end ';
+			evalString = await Utility.evalLogString(log);
 			assert.equal(' start A=-127 DE=43981 end ', evalString);
 
 		});
@@ -723,86 +723,85 @@ suite('Utility', () => {
 
 
 		test('Memory', async () => {
-			const remote=Remote as any;
-			const cpu=remote.z80Cpu;
-			cpu.hl=0x8000;
+			const remote = Remote as any;
+			const cpu = remote.z80Cpu;
+			cpu.hl = 0x8000;
 			Remote.writeMemoryDump(0x8000, new Uint8Array([0xFF, 0x5B]));
-			const regs=cpu.getRegisterData();
+			const regs = cpu.getRegisterData();
 			Z80Registers.setCache(regs);
 
-			let log='${(8000h)}';
-			let evalString=await Utility.evalLogString(log);
+			let log = '${(8000h)}';
+			let evalString = await Utility.evalLogString(log);
 			assert.equal('255', evalString);
 
-			log='${(0x8000):signed}';
-			evalString=await Utility.evalLogString(log);
+			log = '${(0x8000):signed}';
+			evalString = await Utility.evalLogString(log);
 			assert.equal('-1', evalString);
 
-			log='${(32768):hex}';
-			evalString=await Utility.evalLogString(log);
+			log = '${(32768):hex}';
+			evalString = await Utility.evalLogString(log);
 			assert.equal('FF', evalString);
 
-			log='${b@(32768):hex}';
-			evalString=await Utility.evalLogString(log);
+			log = '${b@(32768):hex}';
+			evalString = await Utility.evalLogString(log);
 			assert.equal('FF', evalString);
 
-			log='${w@(hl):hex}';
-			evalString=await Utility.evalLogString(log);
+			log = '${w@(hl):hex}';
+			evalString = await Utility.evalLogString(log);
 			assert.equal('5BFF', evalString);
 		});
 
 
 		test('Register relative memory', async () => {
-			const remote=Remote as any;
-			const cpu=remote.z80Cpu;
-			let bc=0x8000;
-			cpu.bc=bc;
-			let regs=cpu.getRegisterData();
+			const remote = Remote as any;
+			const cpu = remote.z80Cpu;
+			let bc = 0x8000;
+			cpu.bc = bc;
+			let regs = cpu.getRegisterData();
 			Z80Registers.setCache(regs);
 			Remote.writeMemoryDump(0x8000, new Uint8Array([212]));
 
-			let log='${(BC)}';
-			let evalString=await Utility.evalLogString(log);
+			let log = '${(BC)}';
+			let evalString = await Utility.evalLogString(log);
 			assert.equal('212', evalString);
 
-			log='${(BC+0)}';
-			evalString=await Utility.evalLogString(log);
+			log = '${(BC+0)}';
+			evalString = await Utility.evalLogString(log);
 			assert.equal('212', evalString);
 
-			bc-=1000;
-			cpu.bc=bc;
-			regs=cpu.getRegisterData();
+			bc -= 1000;
+			cpu.bc = bc;
+			regs = cpu.getRegisterData();
 			Z80Registers.setCache(regs);
-			log='${(BC+1000)}';
-			evalString=await Utility.evalLogString(log);
+			log = '${(BC+1000)}';
+			evalString = await Utility.evalLogString(log);
 			assert.equal('212', evalString);
 
-			bc+=1000+2345;
-			cpu.bc=bc;
-			regs=cpu.getRegisterData();
+			bc += 1000 + 2345;
+			cpu.bc = bc;
+			regs = cpu.getRegisterData();
 			Z80Registers.setCache(regs);
-			log='${(BC-2345)}';
-			evalString=await Utility.evalLogString(log);
+			log = '${(BC-2345)}';
+			evalString = await Utility.evalLogString(log);
 			assert.equal('212', evalString);
 		});
 
 
 		test('Label', async () => {
-			const config = {
+			const config: any = {
 				z80asm: [{
 					path: './tests/data/labels/z80asm.list', srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
 			};
 			const mm = new MemoryModelZxNext();
-			Labels.init(250, mm);
-			Labels.readListFiles(config);
+			Labels.readListFiles(config, mm);
 
 			// Prepare memory
 			Remote.writeMemoryDump(0x7015, new Uint8Array([0xFE]));
 
-			let log ='${b@(check_score_for_new_ship):signed}';
-			let evalString=await Utility.evalLogString(log);
+			let log = '${b@(check_score_for_new_ship):signed}';
+			let evalString = await Utility.evalLogString(log);
 			assert.equal('-2', evalString);
 		});
 
@@ -869,7 +868,7 @@ suite('Utility', () => {
 
 				for (let i = 0; i < values.length - 1; i++) {
 					const val = Utility.getUintFromMemory(mem, i, 2, false);
-					const compVal = values[i+1] + values[i] * 256;
+					const compVal = values[i + 1] + values[i] * 256;
 					assert.equal(val, compVal);
 				}
 			});

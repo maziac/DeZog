@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import {LabelsClass} from '../src/labels/labels';
-import {MemoryModelZx128k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelUnknown, MemoryModelZx128k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 import {Z80RegistersClass} from '../src/remotes/z80registers';
 import {Settings} from '../src/settings';
 
@@ -11,7 +11,7 @@ suite('Labels', () => {
 		suite('z80asm', () => {
 
 			test('getFileAndLineForAddress', () => {
-				const config = {
+				const config: any = {
 					z80asm: [{
 						path: './tests/data/labels/test1.list',
 						srcDirs: [""],	// Sources mode
@@ -19,7 +19,7 @@ suite('Labels', () => {
 					}]
 				};
 				const lbls = new LabelsClass();
-				lbls.readListFiles(config);
+				lbls.readListFiles(config, new MemoryModelUnknown());
 
 				// Checks
 				let res = lbls.getFileAndLineForAddress(0x7700);
@@ -78,7 +78,7 @@ suite('Labels', () => {
 
 
 			test('getAddrForFileAndLine', () => {
-				const config = {
+				const config: any = {
 					z80asm: [{
 						path: './tests/data/labels/test1.list',
 						srcDirs: [""],	// Sources mode
@@ -86,7 +86,7 @@ suite('Labels', () => {
 					}]
 				};
 				const labels = new LabelsClass();
-				labels.readListFiles(config);
+				labels.readListFiles(config, new MemoryModelUnknown());
 
 				// main.asm
 				let addr = labels.getAddrForFileAndLine('main.asm', 0);
@@ -118,7 +118,7 @@ suite('Labels', () => {
 
 
 			test('get label values from list file', () => {
-				const config = {
+				const config: any = {
 					z80asm: [{
 						path: './tests/data/labels/test2.list',
 						srcDirs: [""],	// Sources mode
@@ -126,7 +126,7 @@ suite('Labels', () => {
 					}]
 				};
 				const labels = new LabelsClass();
-				labels.readListFiles(config);
+				labels.readListFiles(config, new MemoryModelUnknown());
 
 				let value = labels.getNumberForLabel('screen_top');
 				assert.equal(value, 0x6000, "Expected address wrong.");
@@ -153,7 +153,7 @@ suite('Labels', () => {
 
 
 			test('get labels for a value from list file', () => {
-				const config = {
+				const config: any = {
 					z80asm: [{
 						path: './tests/data/labels/test2.list',
 						srcDirs: [""],	// Sources mode
@@ -161,7 +161,7 @@ suite('Labels', () => {
 					}]
 				};
 				const lbls = new LabelsClass();
-				lbls.readListFiles(config);
+				lbls.readListFiles(config, new MemoryModelUnknown());
 
 				let labels = lbls.getLabelsForNumber64k(0x6000);
 				assert.equal(labels[0], 'screen_top', "Expected label wrong.");
@@ -185,14 +185,14 @@ suite('Labels', () => {
 		suite('z80asm', () => {
 
 			test('z80asm.list', () => {
-				const config = {
+				const config: any = {
 					z80asm: [{
 						path: './tests/data/labels/z80asm.list', srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
 				};
 				const labels = new LabelsClass();
-				labels.readListFiles(config);
+				labels.readListFiles(config, new MemoryModelUnknown());
 
 				// Checks
 				let res = labels.getNumberForLabel("check_score_for_new_ship");
@@ -209,9 +209,9 @@ suite('Labels', () => {
 			});
 
 			test('rom.list', () => {
-				const config = {z80asm: [{path: './tests/data/labels/rom.list', srcDirs: []}]};
+				const config: any = {z80asm: [{path: './tests/data/labels/rom.list', srcDirs: []}]};
 				const labels = new LabelsClass();
-				labels.readListFiles(config);
+				labels.readListFiles(config, new MemoryModelUnknown());
 
 				// Checks
 				let res = labels.getNumberForLabel("L0055");
@@ -226,7 +226,7 @@ suite('Labels', () => {
 		suite('z88dk', () => {
 
 			test('z88dk.lis', () => {
-				const config = {
+				const config: any = {
 					z88dk: [{
 						path: './tests/data/labels/z88dk.lis',
 						mapFile: './tests/data/labels/z88dk_empty.map',
@@ -235,7 +235,7 @@ suite('Labels', () => {
 					}]
 				};
 				const labels = new LabelsClass();
-				labels.readListFiles(config);
+				labels.readListFiles(config, new MemoryModelUnknown());
 
 				// Checks
 				let res = labels.getNumberForLabel("ct_ui_first_table");
@@ -258,7 +258,7 @@ suite('Labels', () => {
 
 
 			test('z88dk map file (currah)', () => {
-				const config = {
+				const config: any = {
 					z88dk: [{
 						path: './tests/data/labels/currah_uspeech_tests.lis', mapFile: './tests/data/labels/currah_uspeech_tests.map',
 						srcDirs: [""],	// Sources mode
@@ -266,7 +266,7 @@ suite('Labels', () => {
 					}]
 				};
 				const labels = new LabelsClass();
-				labels.readListFiles(config);
+				labels.readListFiles(config, new MemoryModelUnknown());
 
 				// Checks
 				let res = labels.getNumberForLabel("ct_input_l2");

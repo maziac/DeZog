@@ -1,6 +1,6 @@
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
-import {MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
 import {AsmConfigBase, SjasmplusConfig} from '../settings';
 import {LabelParserBase} from './labelparserbase';
 import {SourceFileEntry} from './labels';
@@ -429,6 +429,15 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	 * NOSLOT64K: pages.size:65536,pages.count:32,slots.count:1,slots.adr:0
 	 */
 	protected checkMappingToTargetMemoryModel() {
+		// Check for unknown, also used by the unit tests to just find the labels.
+		if (this.memoryModel instanceof MemoryModelUnknown) {
+			// Just pass through
+			this.funcConvertBank = (address: number, bank: number) => {
+				return bank;
+			};
+			return;
+		}
+
 		// Check for sjasmplus ZX48K
 		if (this.slots.length == 4 && this.bankSize == 0x4000) {
 			// sjasmplus was compiled for ZX48K

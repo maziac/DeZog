@@ -5,6 +5,7 @@ import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
 import * as path from 'path';
 import {FileWatcher} from '../misc/filewatcher';
+import {MemoryModelUnknown} from '../remotes/MemoryModel/predefinedmemorymodels';
 
 
 /**
@@ -491,7 +492,7 @@ export class UnitTestSuiteConfig extends UnitTestSuite {
 		const labels = new LabelsClass();
 		Utility.setRootPath(this.wsFolder);
 		try {
-			labels.readListFiles(this.config);
+			labels.readListFiles(this.config, new MemoryModelUnknown());
 		}
 		catch (e) {
 			console.log(e);
