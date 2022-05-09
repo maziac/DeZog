@@ -172,7 +172,7 @@ export class MemoryModelZx128k extends MemoryModel {
 					initialBank: 0,
 					banks: [
 						{
-							index: [0, 9],	// All banks are already defined in previous range
+							index: [0, 7],	// All banks are already defined in previous range
 						}
 					]
 				}

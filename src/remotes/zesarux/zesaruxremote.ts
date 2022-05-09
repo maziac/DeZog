@@ -6,9 +6,9 @@ import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, RemoteBreakpoint} from '../remotebase';
 import {ZesaruxCpuHistory, DecodeZesaruxHistoryInfo} from './zesaruxcpuhistory';
 import {Z80RegistersClass, Z80Registers} from '../z80registers';
-import {DecodeZesaruxRegisters, DecodeZesaruxRegistersZx128k, DecodeZesaruxRegistersZxNext} from './decodezesaruxdata';
+import {DecodeZesaruxRegisters, DecodeZesaruxRegistersZx128k, DecodeZesaruxRegistersZx16k, DecodeZesaruxRegistersZx48k, DecodeZesaruxRegistersZxNext} from './decodezesaruxdata';
 import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
-import {PromiseCallbacks} from '../../misc/promisecallbacks';import {MemoryModelUnknown, MemoryModelZx128k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
+import {PromiseCallbacks} from '../../misc/promisecallbacks';import {MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
 
 
 
@@ -215,7 +215,16 @@ export class ZesaruxRemote extends RemoteBase {
 					Z80Registers.decoder = new DecodeZesaruxRegistersZx128k();
 					this.memoryModel = new MemoryModelZx128k()
 				}
-					// TODO: also add 16K and 48K
+				else if (machineType.indexOf("48k") >= 0) {
+					// 4x16k banks
+					Z80Registers.decoder = new DecodeZesaruxRegistersZx48k();
+					this.memoryModel = new MemoryModelZx48k()
+				}
+				else if (machineType.indexOf("16k") >= 0) {
+					// 4x16k banks
+					Z80Registers.decoder = new DecodeZesaruxRegistersZx16k();
+					this.memoryModel = new MemoryModelZx16k()
+				}
 				else {
 					// For all others:
 					Z80Registers.decoder = new DecodeZesaruxRegisters(0);

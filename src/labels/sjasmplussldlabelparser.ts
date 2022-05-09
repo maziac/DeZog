@@ -1,6 +1,6 @@
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
-import {MemoryModelZx128k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
 import {AsmConfigBase, SjasmplusConfig} from '../settings';
 import {LabelParserBase} from './labelparserbase';
 import {SourceFileEntry} from './labels';
@@ -422,70 +422,114 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 	/**
 	 * Checks conversion to target memory model.
+	 * ZXNEXT: pages.size:8192,pages.count:224,slots.count:8,slots.adr:0,8192,16384,24576,32768,40960,49152,57344
+	 * ZX128K: pages.size:16384,pages.count:8,slots.count:4,slots.adr:0,16384,32768,49152
+	 * ZX48K:  pages.size:16384,pages.count:4,slots.count:4,slots.adr:0,16384,32768,49152
+	 * ZX16K:  -
+	 * NOSLOT64K: pages.size:65536,pages.count:32,slots.count:1,slots.adr:0
 	 */
 	protected checkMappingToTargetMemoryModel() {
+		// Check for sjasmplus ZX48K
+		if (this.slots.length == 4 && this.bankSize == 0x4000) {
+			// sjasmplus was compiled for ZX48K
+			if (this.memoryModel instanceof MemoryModelZxNext) {
+				const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];	// TODO: Before loading nex into a ZXNext the memory slots need to be initialized this way.
+				this.funcConvertBank = (address: number, bank: number) => {
+					let index = 2 * bank;
+					index += (address >>> 13) & 0x01;
+					return permutNext[index];	// No conversion
+				};
+				return;
+			}
+			if (this.memoryModel instanceof MemoryModelZx128k) {
+				const permut128k = [9, 5, 2, 0];	// TODO: Before loading sna into a 128K the memory slots need to be initialized this way.
+				this.funcConvertBank = (address: number, bank: number) => {
+					return permut128k[bank];	// No conversion
+				};
+				return;
+			}
+			if (this.memoryModel instanceof MemoryModelZx48k) {
+				this.funcConvertBank = (address: number, bank: number) => {
+					if (address < 0x4000)
+						return 0; // ROM
+					return 1;	// RAM
+				};
+				return;
+			}
+			throw Error("Could not convert labels to Memory Model: '" + this.memoryModel.name + "' .");
+		}
+
+
 		let targetSlotSize;
 		if (this.memoryModel instanceof MemoryModelZxNext) {
 			targetSlotSize = 0x2000;
 		}
-		else if (this.memoryModel instanceof MemoryModelZx128k) {
+		else if (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZx48k) {
 			targetSlotSize = 0x4000;
-		}
-		// TODO ZX16k, zx48k
-		if (targetSlotSize != undefined) {
-			// Check that all slots have right size
-			const slotSize = 0x10000 / this.slots.length;
-			// Check that slots are equidistant
-			let addr = 0;
-			for (const slot of this.slots) {
-				if (slot != addr)
-					throw Error("Slots in sld file are not equidistant, so not compatible with the target '" + this.memoryModel.name + "' memory model.");
-				addr += slotSize;
-			}
-			// Different behavior if slotSize is bigger or lower the targetSlotSize
-			if (targetSlotSize == slotSize) {
-				// Same model, simply pass through
-				this.funcConvertBank = (address: number, bank: number) => {
-					return bank;
-				};
-			}
-			else if (targetSlotSize < slotSize) {
-				// E.g. ZX128K -> ZXNEXT or same model
-				const remainder = slotSize % targetSlotSize;
-				if (remainder != 0)
-					throw Error("Slots in sld file are not compatible with the target '" + this.memoryModel.name + "' memory model.");
-				const bankMultiplier = slotSize / targetSlotSize;
-
-				// Create conversion function
-				this.funcConvertBank = (address: number, bank: number) => {
-					let convBank = bankMultiplier * bank;
-					convBank += (address >>> 13) & 0x01;
-					// Note 1: No check for max bank is required since in sld there are
-					// much less than in target.
-					// Note 2: No check for ROM is required since there is no ROM in sld file.
-					return convBank;
-				};
-			}
-			else {
-				// E.g. ZXNEXT -> ZX128K
-				// Check that all slots have right size
-				const remainder = targetSlotSize % slotSize;
-				if (remainder != 0)
-					throw Error("Slots in sld file are not compatible with the target '" + this.memoryModel.name + "' memory model.");
-				const bankDivider = targetSlotSize / slotSize;
-
-				// Create conversion function
-				this.funcConvertBank = (address: number, bank: number) => {
-					let convBank = (bank & 0xFFFE) / bankDivider;
-					// Note 1: No check for max bank is required since in sld there are
-					// much less than in target.
-					// Note 2: No check for ROM is required since there is no ROM in sld file.
-					return convBank;
-				};
-			}
 		}
 		else {
 			throw Error("Could not convert labels to Memory Model: '" + this.memoryModel.name + "'.");
+		/*	this.funcConvertBank = (address: number, bank: number) => {
+				return bank;
+			}; */
+		}
+
+		// Convert into Next or 128K.
+		// Note: Zx256 and above are not taken into account yet.
+
+		// Check that all slots have right size
+		const slotSize = 0x10000 / this.slots.length;
+		// Check that slots are equidistant
+		let addr = 0;
+		for (const slot of this.slots) {
+			if (slot != addr)
+				throw Error("Slots in sld file are not equidistant, so not compatible with the target '" + this.memoryModel.name + "' memory model.");
+			addr += slotSize;
+		}
+		// Different behavior if slotSize is bigger or lower the targetSlotSize
+		if (targetSlotSize == slotSize) {
+			// Same model, simply pass through
+			this.funcConvertBank = (address: number, bank: number) => {
+				return bank;
+			};
+		}
+		else if (targetSlotSize < slotSize) {
+			// E.g. ZX128K -> ZXNEXT or same model
+			const remainder = slotSize % targetSlotSize;
+			if (remainder != 0)
+				throw Error("Slots in sld file are not compatible with the target '" + this.memoryModel.name + "' memory model.");
+			const bankMultiplier = slotSize / targetSlotSize;
+
+			// Create conversion function
+			this.funcConvertBank = (address: number, bank: number) => {
+				let convBank = bankMultiplier * bank;
+				convBank += (address >>> 13) & 0x01;
+				// Note 1: No check for max bank is required since in sld there are
+				// much less than in target.
+				// Note 2: No check for ROM is required since there is no ROM in sld file.
+				return convBank;
+			};
+		}
+		else {
+			// E.g. ZXNEXT -> ZX128K
+			// Check that all slots have right size
+			const remainder = targetSlotSize % slotSize;
+			if (remainder != 0)
+				throw Error("Slots in sld file are not compatible with the target '" + this.memoryModel.name + "' memory model.");
+			const bankDivider = targetSlotSize / slotSize;
+
+			// Create conversion function
+			this.funcConvertBank = (address: number, bank: number) => {
+				let convBank = (bank & 0xFFFE) / bankDivider;
+				if (convBank > 7) {
+					// Bank does not exist in ZX128K
+					throw Error("Banks cannot be converted to target '" + this.memoryModel.name + "' memory model.");
+				}
+				// Note 1: No check for max bank is required since in sld there are
+				// much less than in target.
+				// Note 2: No check for ROM is required since there is no ROM in sld file.
+				return convBank;
+			};
 		}
 	}
 

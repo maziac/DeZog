@@ -232,37 +232,20 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 		return res;
 	}
 
+	// Override this function.
+	// Decode ZEsarUX MMU info:
+	// Bit 15 stands for ROM.
+	// I.e. $8000 and $8001 are ROM.
+	// ZXNext: "MMU=8002 8003 000a 000b 0004 0005 0000 0001", 	ROM0: 0x8000 or 0x8001,	ROM1: 0x8002 or 0x8003
+	// ZX128:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001",	ROM0: 0x8000, ROM1: 0x8001
+	// ZX48K:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001"
+	// ZX16K:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001"
+	// Others are simply the bank number.
 	public parseSlots(data: string): number[] {
-		// Note: the mmuIndex has to be calculated every time because
-		// the position may vary for "normal" lines and "history" lines.
-		let mmuIndex = data.indexOf('MMU=');
-		Utility.assert(mmuIndex >= 0);
-		mmuIndex += 4;
-
-		let line = data.substring(mmuIndex);
-		const count = this.countSlots;
-		const slots = new Array<number>(count);
-		for (let i = 0; i < count; i++) {
-			const slotPart = line.substring(0, 4);
-			let value = parseInt(slotPart, 16);
-			// Decode ZEsarUX: Bit 15 stands for ROM.
-			// I.e. $8000 and $8001 are ROM.
-			// ZXNext: 	ROM0: 0x8000 or 0x8001,	ROM1: 0x8002 or 0x8003
-			// ZX128: 	ROM0: 0x8000, ROM1: 0x8001
-			// Others are simply the bank number.
-			//		if (value>=0x8000)
-			//			value=0xFE+(value&0x0003);	// ROM: Works for both ZX128 and ZXNext
-			slots[i] = value;
-			// Next
-			line = line.substring(4);
-		}
-
-		return slots;
+		return [];
 	}
 }
 
-
-// TODO: Decoder for ZX16k and ZX48K
 
 // Decoder for the ZX128K.
 export class DecodeZesaruxRegistersZx128k extends DecodeZesaruxRegisters {
@@ -329,5 +312,41 @@ export class DecodeZesaruxRegistersZxNext extends DecodeZesaruxRegisters {
 		}
 
 		return slots;
+	}
+}
+
+
+// Decoder for the Zx48K.
+export class DecodeZesaruxRegistersZx48k extends DecodeZesaruxRegisters {
+	constructor() {
+		super(2);	// 2 slots: ROM, RAM
+	}
+
+	public parseSlots(data: string): number[] {
+		// For ZX16K and ZX48K the slots are always fixed.
+		// Zesarux returns this fixed set:
+		// Only the first 4 slots are valid.
+		// ZX48K:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001"
+		// ZX16K:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001"
+		// But because it is fixed, it can be ignored.
+		return [0, 1];
+	}
+}
+
+
+// Decoder for the Zx16K.
+export class DecodeZesaruxRegistersZx16k extends DecodeZesaruxRegisters {
+	constructor() {
+		super(3);	// 3 slots: ROM, RAM, UNASSIGNED
+	}
+
+	public parseSlots(data: string): number[] {
+		// For ZX16K and ZX48K the slots are always fixed.
+		// Zesarux returns this fixed set:
+		// Only the first 4 slots are valid.
+		// ZX48K:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001"
+		// ZX16K:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001"
+		// But because it is fixed, it can be ignored.
+		return [0, 1, 2];
 	}
 }
