@@ -9,6 +9,8 @@ import {RefList} from '../src/misc/reflist';
 import {CallStackFrame} from '../src/callstackframe';
 import {RemoteFactory} from '../src/remotes/remotefactory';
 import {CpuHistory} from '../src/remotes/cpuhistory';
+import {Labels} from '../src/labels/labels';
+import {MemoryModelUnknown} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
 
 
@@ -33,6 +35,7 @@ suite('ZesaruxCpuHistory', () => {
 		};
 		Settings.launch = Settings.Init(cfg);
 		Z80RegistersClass.createRegisters();
+		Labels.readListFiles(cfg, new MemoryModelUnknown());	// To reset the labels
 	});
 
 	function createCpuHistory(): ZesaruxCpuHistory {

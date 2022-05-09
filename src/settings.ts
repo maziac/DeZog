@@ -41,7 +41,7 @@ export interface SjasmplusConfig extends AsmConfigBase {
 	// Note: In sjasmplus the 'path' can be used either for a list file or for a sld file.
 
 	// SLD files work with addresses+bank information. If this is set all addresses are turned into simple 64k addresses as with list files.
-	disableBanking: boolean;
+	disableBanking: boolean;	// TODO: REMOVE
 }
 
 

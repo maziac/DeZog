@@ -1,6 +1,6 @@
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
-import {MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
 import {AsmConfigBase, SjasmplusConfig} from '../settings';
 import {LabelParserBase} from './labelparserbase';
 import {SourceFileEntry} from './labels';
@@ -434,6 +434,15 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			// Just pass through
 			this.funcConvertBank = (address: number, bank: number) => {
 				return bank;
+			};
+			return;
+		}
+
+		// Check for AllRam
+		if (this.memoryModel instanceof MemoryModelAllRam) {
+			// Just pass through
+			this.funcConvertBank = (address: number, bank: number) => {
+				return 0;
 			};
 			return;
 		}

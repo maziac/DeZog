@@ -514,7 +514,7 @@
 										},
 										"disableBanking": {
 											"type": "boolean",
-											"description": "SLD files bank information to the addresses. If this is set all addresses are turned into simple 64k addresses as with list files.",
+											"description": "TODO: REMOVE. SLD files bank information to the addresses. If this is set all addresses are turned into simple 64k addresses as with list files.",
 											"default": false
 										}
 									}
