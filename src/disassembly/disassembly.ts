@@ -35,7 +35,7 @@ export class DisassemblyClass extends Disassembler {
 			const slots = Remote.getSlots();	// TODO: Couldn't both accesses to Z80Registers be combined?
 			const longAddr = Z80Registers.createLongAddress(addr64k, slots);
 			// Check if label already known
-			const labels = Labels.getLabelsForLongAddress(longAddr);	// TODO: Test long addresses
+			const labels = Labels.getLabelsForLongAddress(longAddr);
 			if (labels && labels.length > 0) {
 				return labels.join(' or ');
 			}
@@ -49,7 +49,7 @@ export class DisassemblyClass extends Disassembler {
 			const slots = Z80Registers.getSlots();
 			const longAddr = Z80Registers.createLongAddress(addr64k, slots);
 			// Check if label has a file associated
-			const entry = Labels.getSourceFileEntryForAddress(longAddr);	// TODO: test banking
+			const entry = Labels.getSourceFileEntryForAddress(longAddr);
 			return (entry == undefined || entry.size == 0);	// Filter only non-existing addresses or addresses with no code
 		};
 

@@ -239,7 +239,7 @@ export class MemoryModelZxNext extends MemoryModel {
 				},
 				{
 					range: [0x2000, 0x3FFF],
-					initialBank: 255,
+					initialBank: 0xFF,
 					banks: [
 						{
 							index: [0, 223],	// All banks are already defined in previous range
