@@ -7,6 +7,21 @@ import {SourceFileEntry} from './labels';
 
 
 /**
+ * The different memory models used by sjasmplus.
+ * Exported for unit tests.
+ */
+export enum SjasmplusMemoryModel {
+	NONE = 0, // Nothing found in sld file (e.g. also ZX48K). Could also be NONE selected in sjasmplus file.
+	NOSLOT64K,
+	//ZX16K,	// not used, no sld file is generated in this mode
+	ZX48K,
+	ZX128K,
+	ZXNEXT,
+	// All others are not used at the moment.
+};
+
+
+/**
  * This class parses sjasmplus sld file.
  * SLD stands for Source Level Debugging.
  * 'SLD data are extra "tracing" data produced during assembling for debuggers and IDEs,
@@ -49,6 +64,9 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	/// Typical value: 0, 8192 or 16384.
 	public bankSize: number = 0;
 
+	// The number from the pages.count from the sld file.
+	// Used for checks (in mapping).
+	protected bankCount: number = 0;
 
 	/// Regex to skip a commented SLDOPT, i.e. "; SLDOPT"
 	protected regexSkipSldOptComment = /^;\s*sldopt/i;
@@ -184,6 +202,11 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				if (!matchBankSize)
 					throw Error("No 'pages.size' found in sld file.");
 				bankSize = parseInt(matchBankSize[1]);
+				// Find bank count
+				const matchBankCount = /pages\.count:(\d+)/i.exec(data);
+				if (!matchBankCount)
+					throw Error("No 'pages.count' found in sld file.");
+				this.bankCount = parseInt(matchBankCount[1]);
 				// Find slots
 				const matchSlots = /slots\.adr:([\d,]+)/i.exec(data);
 				if (!matchSlots)
@@ -421,6 +444,22 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 
 	/**
+	 * Get sjasmplus memory model.
+	 */
+	protected sourceMemoryModel(): SjasmplusMemoryModel {
+		if (this.slots.length == 1 && this.bankSize == 0x10000 && this.bankCount == 32)
+			return SjasmplusMemoryModel.NOSLOT64K;
+		if (this.slots.length == 4 && this.bankSize == 0x4000 && this.bankCount == 4)
+			return SjasmplusMemoryModel.ZX48K;
+		if (this.slots.length == 4 && this.bankSize == 0x4000 && this.bankCount == 8)
+			return SjasmplusMemoryModel.ZX128K;
+		if (this.slots.length == 8 && this.bankSize == 0x2000 && this.bankCount >= 100)
+			return SjasmplusMemoryModel.ZXNEXT;
+		return SjasmplusMemoryModel.NONE;
+	}
+
+
+	/**
 	 * Checks conversion to target memory model.
 	 * ZXNEXT: pages.size:8192,pages.count:224,slots.count:8,slots.adr:0,8192,16384,24576,32768,40960,49152,57344
 	 * ZX128K: pages.size:16384,pages.count:8,slots.count:4,slots.adr:0,16384,32768,49152
@@ -429,6 +468,9 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	 * NOSLOT64K: pages.size:65536,pages.count:32,slots.count:1,slots.adr:0
 	 */
 	protected checkMappingToTargetMemoryModel() {
+		// Get type
+		const srcMemModel = this.sourceMemoryModel();
+
 		// Check for unknown, also used by the unit tests to just find the labels.
 		if (this.memoryModel instanceof MemoryModelUnknown) {
 			// Just pass through
@@ -447,8 +489,39 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			return;
 		}
 
+		// Check for unbanked modes: sjasmplus NOSLOT64K0 and ZX48K
+		if (srcMemModel == SjasmplusMemoryModel.NOSLOT64K
+			|| srcMemModel == SjasmplusMemoryModel.ZX48K) {
+			if (this.memoryModel instanceof MemoryModelZx128k) {
+				const permut128k = [9, 5, 2, 0];	// TODO: Before loading sna into a 128K the memory slots need to be initialized this way.
+				this.funcConvertBank = (address: number, bank: number) => {
+					const slot = address >>> 14;
+					return permut128k[slot];
+				};
+				return;
+			}
+			if (this.memoryModel instanceof MemoryModelZxNext) {
+				const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];	// TODO: Before loading nex into a ZXNext the memory slots need to be initialized this way.
+				this.funcConvertBank = (address: number, bank: number) => {
+					const index = (address >>> 13);
+					return permutNext[index];	// No conversion
+				};
+				return;
+			}
+		}
+
+		// Check for ZX48K
+		if (this.memoryModel instanceof MemoryModelZx48k) {
+			this.funcConvertBank = (address: number, bank: number) => {
+				if (address < 0x4000)
+					return 0; // ROM
+				return 1;	// RAM
+			};
+			return;
+		}
+
 		// Check for sjasmplus ZX48K
-		if (this.slots.length == 4 && this.bankSize == 0x4000) {
+		if (srcMemModel == SjasmplusMemoryModel.ZX48K) {
 			// sjasmplus was compiled for ZX48K
 			if (this.memoryModel instanceof MemoryModelZxNext) {
 				const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];	// TODO: Before loading nex into a ZXNext the memory slots need to be initialized this way.
@@ -466,11 +539,25 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				};
 				return;
 			}
-			if (this.memoryModel instanceof MemoryModelZx48k) {
+			throw Error("Could not convert labels to Memory Model: '" + this.memoryModel.name + "' .");
+		}
+
+		// Check for sjasmplus ZX128K
+		if (srcMemModel == SjasmplusMemoryModel.ZX128K) {
+			// sjasmplus was compiled for ZX128K
+			if (this.memoryModel instanceof MemoryModelZxNext) {
 				this.funcConvertBank = (address: number, bank: number) => {
-					if (address < 0x4000)
-						return 0; // ROM
-					return 1;	// RAM
+					let convBank = 2 * bank;
+					if (bank >= this.memoryModel.banks.length)
+						throw Error("Bank " + bank + " of ZXNext memory model cannot be converted to target ZX128K memor model.");
+					convBank += (address >>> 13) & 0x01;
+					return convBank;
+				};
+				return;
+			}
+			if (this.memoryModel instanceof MemoryModelZx128k) {
+				this.funcConvertBank = (address: number, bank: number) => {
+					return bank;	// No conversion
 				};
 				return;
 			}
@@ -492,7 +579,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			}; */
 		}
 
-		// Convert into Next or 128K.
+		// Convert into Next or 128K or 48K.
 		// Note: Zx256 and above are not taken into account yet.
 
 		// Check that all slots have right size
@@ -517,11 +604,25 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			if (remainder != 0)
 				throw Error("Slots in sld file are not compatible with the target '" + this.memoryModel.name + "' memory model.");
 			const bankMultiplier = slotSize / targetSlotSize;
-
+			// Calculate mask
+			let mult = bankMultiplier;
+			let mask = 0;
+			while (mult > 1) {
+				mask = (mask << 1) | 0x01;
+				mult /= 2;
+			}
+			// Calculate shifts
+			let len = this.slots.length;	// e.g. 8
+			let shift = 16;
+			while (len > 1) {
+				shift--;
+				len /= 2;
+			}
 			// Create conversion function
 			this.funcConvertBank = (address: number, bank: number) => {
 				let convBank = bankMultiplier * bank;
-				convBank += (address >>> 13) & 0x01;
+			//	convBank += (address >>> 13) & 0x01;
+				convBank += (address >>> shift) & mask;
 				// Note 1: No check for max bank is required since in sld there are
 				// much less than in target.
 				// Note 2: No check for ROM is required since there is no ROM in sld file.
@@ -573,5 +674,3 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	}
 
 }
-
-

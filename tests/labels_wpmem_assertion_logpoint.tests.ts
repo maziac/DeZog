@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 import {LabelsClass} from '../src/labels/labels';
-import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
 
