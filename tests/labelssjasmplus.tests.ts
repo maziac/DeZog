@@ -8,8 +8,6 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
-import {LabelParserBase} from '../src/labels/labelparserbase';
-import {parse} from 'path';
 
 
 suite('Labels (sjasmplus)', () => {
@@ -358,6 +356,27 @@ suite('Labels (sjasmplus)', () => {
 		// Cleanup
 		teardown(() => {
 			fs.unlinkSync(tmpFile);
+		});
+
+
+		suite('sjasmplus: unsupported', () => {
+			// DEVICE NONE
+
+			setup(() => {
+				// Prepare sld file:
+				sldText =	// A ZXSPECTRUM256 for example is not supported
+					`|SLD.data.version|1
+||K|KEYWORDS|WPMEM,LOGPOINT,ASSERTION
+main.asm|12||0|-1|-1|Z|pages.size:16384,pages.count:16,slots.count:4,slots.adr:0,16384,32768,49152
+`;
+			});
+
+			test('sourceMemoryModel', () => {
+				const mm = new MemoryModelUnknown();
+				assert.throws(() => {
+					createSldFile(mm);
+				}, Error("Unsupported sjasmplus memory model (DEVICE)."));
+			});
 		});
 
 
