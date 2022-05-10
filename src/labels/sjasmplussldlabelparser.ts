@@ -86,13 +86,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	/// Long addresses.
 	protected estimatedFileLineNrs = new Map<number, SourceFileEntry>();
 
-	/// Function to convert bank into different memory model bank.
-	/// At start the target memory model is compared to the sld memory model.
-	/// Some memory models can be converted into each other.
-	/// E.g. ZX128K into ZXNext.
-	// This is done here.
-	protected funcConvertBank: (address: number, bank: number) => number;
-
 	/// The slots used in the sld file.
 	/// Set during parsing.
 	protected slots: number[];
@@ -484,7 +477,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 		// Check for AllRam
 		if (this.memoryModel instanceof MemoryModelAllRam) {
-			// Just pass through
+			// Just 1 bank
 			this.funcConvertBank = (address: number, bank: number) => {
 				return 0;
 			};
@@ -593,26 +586,4 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Not a known memory model
 		throw Error("Unsupported memory model mapping, sjasmplus to target: " + SjasmplusMemoryModel[srcMemModel] + " to " + this.memoryModel.name + ".");
 	}
-
-
-	/**
-	 * Creates a long address from the address and the page info.
-	 * If page == -1 address is returned unchanged.
-	 * @param address The 64k address, i.e. the upper bits are the slot index.
-	 * @param bank The bank the address is associated with.
-	 * @returns if bankSize: address+((page+1)<<16)
-	 * else: address.
-	 */
-	protected createLongAddress(address: number, bank: number) {
-		if (bank < 0)
-			return address;
-		// Check banks
-		const convBank = this.funcConvertBank(address, bank);
-		// Create long address
-		let result = address;
-	//	if (this.bankSize != 0)
-		result += (convBank + 1) << 16;
-		return result;
-	}
-
 }

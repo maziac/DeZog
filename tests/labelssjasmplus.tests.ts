@@ -4,10 +4,10 @@ import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {readFileSync} from 'fs';
 import {SjasmplusMemoryModel, SjasmplusSldLabelParser} from '../src/labels/sjasmplussldlabelparser';
 import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 
 
 suite('Labels (sjasmplus)', () => {
@@ -507,7 +507,7 @@ main.asm|12||0|-1|-1|Z|pages.size:16384,pages.count:4,slots.count:4,slots.adr:0,
 				assert.equal(parser.sourceMemoryModel(), SjasmplusMemoryModel.ZX48K);
 			});
 
-			test('Target: MemoryModelUnknown', () => {
+			test('Target: MemoryModelUnknown', () => {	// NOSONAR
 				const mm = new MemoryModelUnknown();
 				createSldFile(mm);
 
@@ -521,7 +521,7 @@ main.asm|12||0|-1|-1|Z|pages.size:16384,pages.count:4,slots.count:4,slots.adr:0,
 				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 			});
 
-			test('Target: MemoryModelAll', () => {
+			test('Target: MemoryModelAll', () => {	// NOSONAR
 				const mm = new MemoryModelAllRam();
 				createSldFile(mm);
 
@@ -535,7 +535,7 @@ main.asm|12||0|-1|-1|Z|pages.size:16384,pages.count:4,slots.count:4,slots.adr:0,
 				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 			});
 
-			test('Target: MemoryModelZx48k', () => {
+			test('Target: MemoryModelZx48k', () => {	// NOSONAR
 				const mm = new MemoryModelZx48k();
 				createSldFile(mm);
 
@@ -549,7 +549,7 @@ main.asm|12||0|-1|-1|Z|pages.size:16384,pages.count:4,slots.count:4,slots.adr:0,
 				assert.equal(parser.createLongAddress(0xE000, 0), 0x2E000);
 			});
 
-			test('Target: MemoryModelZx128k', () => {
+			test('Target: MemoryModelZx128k', () => {	// NOSONAR
 				const mm = new MemoryModelZx128k();
 				createSldFile(mm);
 
@@ -563,7 +563,7 @@ main.asm|12||0|-1|-1|Z|pages.size:16384,pages.count:4,slots.count:4,slots.adr:0,
 				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 			});
 
-			test('Target: MemoryModelZxNext', () => {
+			test('Target: MemoryModelZxNext', () => {	// NOSONAR
 				const mm = new MemoryModelZxNext();
 				createSldFile(mm);
 
@@ -596,7 +596,7 @@ main.asm|11||0|-1|-1|Z|pages.size:16384,pages.count:8,slots.count:4,slots.adr:0,
 				assert.equal(parser.sourceMemoryModel(), SjasmplusMemoryModel.ZX128K);
 			});
 
-			test('Target: MemoryModelUnknown', () => {
+			test('Target: MemoryModelUnknown', () => {	// NOSONAR
 				const mm = new MemoryModelUnknown();
 				createSldFile(mm);
 
@@ -610,7 +610,7 @@ main.asm|11||0|-1|-1|Z|pages.size:16384,pages.count:8,slots.count:4,slots.adr:0,
 				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 			});
 
-			test('Target: MemoryModelAll', () => {
+			test('Target: MemoryModelAll', () => {	// NOSONAR
 				const mm = new MemoryModelAllRam();
 				createSldFile(mm);
 
@@ -624,7 +624,7 @@ main.asm|11||0|-1|-1|Z|pages.size:16384,pages.count:8,slots.count:4,slots.adr:0,
 				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 			});
 
-			test('Target: MemoryModelZx48k', () => {
+			test('Target: MemoryModelZx48k', () => {	// NOSONAR
 				const mm = new MemoryModelZx48k();
 				createSldFile(mm);
 
@@ -638,7 +638,7 @@ main.asm|11||0|-1|-1|Z|pages.size:16384,pages.count:8,slots.count:4,slots.adr:0,
 				assert.equal(parser.createLongAddress(0xE000, 0), 0x2E000);
 			});
 
-			test('Target: MemoryModelZx128k', () => {
+			test('Target: MemoryModelZx128k', () => {	// NOSONAR
 				const mm = new MemoryModelZx128k();
 				createSldFile(mm);
 
@@ -726,7 +726,7 @@ main.asm|14||0|-1|-1|Z|pages.size:8192,pages.count:224,slots.count:8,slots.adr:0
 				assert.equal(parser.sourceMemoryModel(), SjasmplusMemoryModel.ZXNEXT);
 			});
 
-			test('Target: MemoryModelUnknown', () => {
+			test('Target: MemoryModelUnknown', () => {	// NOSONAR
 				const mm = new MemoryModelUnknown();
 				createSldFile(mm);
 
@@ -740,7 +740,7 @@ main.asm|14||0|-1|-1|Z|pages.size:8192,pages.count:224,slots.count:8,slots.adr:0
 				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 			});
 
-			test('Target: MemoryModelAll', () => {
+			test('Target: MemoryModelAll', () => {	// NOSONAR
 				const mm = new MemoryModelAllRam();
 				createSldFile(mm);
 
@@ -754,7 +754,7 @@ main.asm|14||0|-1|-1|Z|pages.size:8192,pages.count:224,slots.count:8,slots.adr:0
 				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 			});
 
-			test('Target: MemoryModelZx48k', () => {
+			test('Target: MemoryModelZx48k', () => {	// NOSONAR
 				const mm = new MemoryModelZx48k();
 				createSldFile(mm);
 
@@ -822,6 +822,13 @@ main.asm|14||0|-1|-1|Z|pages.size:8192,pages.count:224,slots.count:8,slots.adr:0
 					}
 				}
 			});
+
+
+			test('Target: MemoryModelCustom', () => {
+				//const mm = new MemoryModelCustom();
+				assert.ok(false);	// Need to be implemented
+			});
+
 		});
 	});
 });

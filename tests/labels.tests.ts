@@ -1,8 +1,14 @@
 import * as assert from 'assert';
-import {LabelsClass} from '../src/labels/labels';
-import {MemoryModelUnknown, MemoryModelZx128k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
+import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 import {Z80RegistersClass} from '../src/remotes/z80registers';
 import {Settings} from '../src/settings';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import {LabelParserBase} from '../src/labels/labelparserbase';
+import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
+
 
 suite('Labels', () => {
 
@@ -19,7 +25,7 @@ suite('Labels', () => {
 					}]
 				};
 				const lbls = new LabelsClass();
-				lbls.readListFiles(config, new MemoryModelUnknown());
+				lbls.readListFiles(config, new MemoryModelAllRam());
 
 				// Checks
 				let res = lbls.getFileAndLineForAddress(0x7700);
@@ -86,7 +92,7 @@ suite('Labels', () => {
 					}]
 				};
 				const labels = new LabelsClass();
-				labels.readListFiles(config, new MemoryModelUnknown());
+				labels.readListFiles(config, new MemoryModelAllRam());
 
 				// main.asm
 				let addr = labels.getAddrForFileAndLine('main.asm', 0);
@@ -126,19 +132,19 @@ suite('Labels', () => {
 					}]
 				};
 				const labels = new LabelsClass();
-				labels.readListFiles(config, new MemoryModelUnknown());
+				labels.readListFiles(config, new MemoryModelAllRam());
 
 				let value = labels.getNumberForLabel('screen_top');
-				assert.equal(value, 0x6000, "Expected address wrong.");
+				assert.equal(value, 0x16000, "Expected address wrong.");
 
 				value = labels.getNumberForLabel('PAUSE_TIME');
 				assert.equal(value, 5000, "Expected value wrong.");
 
 				value = labels.getNumberForLabel('pause_loop_l2');
-				assert.equal(value, 0x6004, "Expected address wrong.");
+				assert.equal(value, 0x16004, "Expected address wrong.");
 
 				value = labels.getNumberForLabel('pause_loop_l1');
-				assert.equal(value, 0x6006, "Expected address wrong.");
+				assert.equal(value, 0x16006, "Expected address wrong.");
 
 				value = labels.getNumberForLabel('BCKG_LINE_SIZE');
 				assert.equal(value, 32, "Expected value wrong.");
@@ -161,7 +167,7 @@ suite('Labels', () => {
 					}]
 				};
 				const lbls = new LabelsClass();
-				lbls.readListFiles(config, new MemoryModelUnknown());
+				lbls.readListFiles(config, new MemoryModelAllRam());
 
 				let labels = lbls.getLabelsForNumber64k(0x6000);
 				assert.equal(labels[0], 'screen_top', "Expected label wrong.");
@@ -192,17 +198,17 @@ suite('Labels', () => {
 					}]
 				};
 				const labels = new LabelsClass();
-				labels.readListFiles(config, new MemoryModelUnknown());
+				labels.readListFiles(config, new MemoryModelAllRam());
 
 				// Checks
 				let res = labels.getNumberForLabel("check_score_for_new_ship");
-				assert.equal(0x7015, res, "Label wrong.");
+				assert.equal(0x17015, res, "Label wrong.");
 
 				res = labels.getNumberForLabel("ltest1");
-				assert.equal(0x701C, res, "Label wrong.");
+				assert.equal(0x1701C, res, "Label wrong.");
 
 				res = labels.getNumberForLabel("SCREEN_COLOR");
-				assert.equal(0x5800, res, "Label wrong.");
+				assert.equal(0x15800, res, "Label wrong.");
 
 				res = labels.getNumberForLabel("SCREEN_SIZE");
 				assert.equal(0x1800, res, "Label wrong.");
@@ -211,14 +217,14 @@ suite('Labels', () => {
 			test('rom.list', () => {
 				const config: any = {z80asm: [{path: './tests/data/labels/rom.list', srcDirs: []}]};
 				const labels = new LabelsClass();
-				labels.readListFiles(config, new MemoryModelUnknown());
+				labels.readListFiles(config, new MemoryModelAllRam());
 
 				// Checks
 				let res = labels.getNumberForLabel("L0055");
-				assert.equal(0x0055, res, "Label wrong.");
+				assert.equal(0x10055, res, "Label wrong.");
 
 				res = labels.getNumberForLabel("L022C");
-				assert.equal(0x022C, res, "Label wrong.");
+				assert.equal(0x1022C, res, "Label wrong.");
 			});
 		});
 
@@ -235,17 +241,17 @@ suite('Labels', () => {
 					}]
 				};
 				const labels = new LabelsClass();
-				labels.readListFiles(config, new MemoryModelUnknown());
+				labels.readListFiles(config, new MemoryModelAllRam());
 
 				// Checks
 				let res = labels.getNumberForLabel("ct_ui_first_table");
-				assert.equal(0x000B, res, "Label wrong.");
+				assert.equal(0x1000B, res, "Label wrong.");
 
 				res = labels.getNumberForLabel("display_hor_zero_markers");
-				assert.equal(0x09A7, res, "Label wrong.");
+				assert.equal(0x109A7, res, "Label wrong.");
 
 				res = labels.getNumberForLabel("display_hor_a_address");
-				assert.equal(0x09A1, res, "Label wrong.");
+				assert.equal(0x109A1, res, "Label wrong.");
 
 				// defc (=equ) is not supported
 				res = labels.getNumberForLabel("MAGENTA");
@@ -266,14 +272,14 @@ suite('Labels', () => {
 					}]
 				};
 				const labels = new LabelsClass();
-				labels.readListFiles(config, new MemoryModelUnknown());
+				labels.readListFiles(config, new MemoryModelAllRam());
 
 				// Checks
 				let res = labels.getNumberForLabel("ct_input_l2");
-				assert.equal(0x80A6, res, "Label wrong.");
+				assert.equal(0x180A6, res, "Label wrong.");
 
 				res = labels.getNumberForLabel("main");
-				assert.equal(0x8000, res, "Label wrong.");
+				assert.equal(0x18000, res, "Label wrong.");
 
 				// defc (=equ) is not supported
 				res = labels.getNumberForLabel("print_number_address");
@@ -517,6 +523,126 @@ suite('Labels', () => {
 
 		});
 
+	});
+
+
+	suite('checkMappingToTargetMemoryModel', () => {
+		class MockLabelParserBase extends LabelParserBase {
+			protected parseLabelAndAddress(line: string) {
+				//
+			}
+			protected parseFileAndLineNumber(line: string) {
+				//
+			}
+		}
+
+		let tmpFile;
+		let parser: any;
+
+		setup(() => {
+			// File path for a temporary file.
+			tmpFile = path.join(os.tmpdir(), 'dezog_labels_test_empty.list');
+			// Write empty file. We just need n empty file no labels.
+			fs.writeFileSync(tmpFile, "");
+		});
+
+		function createParser(mm: MemoryModel) {
+			// Read the empty list file
+			const config: any = {
+				path: tmpFile,
+				srcDirs: [""],	// Sources mode
+				excludeFiles: []
+			};
+			parser = new MockLabelParserBase(
+				mm,
+				new Map<number, SourceFileEntry>(),
+				new Map<string, Array<number>>(),
+				new Array<any>(),
+				new Map<number, Array<string>>(),
+				new Map<string, number>(),
+				new Map<string, {file: string, lineNr: number, address: number}>(),
+				new Array<{address: number, line: string}>(),
+				new Array<{address: number, line: string}>(),
+				new Array<{address: number, line: string}>());
+			parser.loadAsmListFile(config);
+		}
+
+		// Cleanup
+		teardown(() => {
+			fs.unlinkSync(tmpFile);
+		});
+
+
+		test('Target: MemoryModelUnknown', () => {
+			const mm = new MemoryModelUnknown();
+			createParser(mm);
+
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
+			assert.equal(parser.createLongAddress(0x4000, 0), 0x14000);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x16000);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x18000);
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x1A000);
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x1C000);
+			assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
+		});
+
+		test('Target: MemoryModelAll', () => {
+			const mm = new MemoryModelAllRam();
+			createParser(mm);
+
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
+			assert.equal(parser.createLongAddress(0x4000, 0), 0x14000);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x16000);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x18000);
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x1A000);
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x1C000);
+			assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
+		});
+
+		test('Target: MemoryModelZx48k', () => {
+			const mm = new MemoryModelZx48k();
+			createParser(mm);
+
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
+			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x26000);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x28000);
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x2A000);
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x2C000);
+			assert.equal(parser.createLongAddress(0xE000, 0), 0x2E000);
+		});
+
+
+		test('Target: MemoryModelZx128k', () => {
+			const mm = new MemoryModelZx128k();
+			createParser(mm);
+
+			assert.equal(parser.createLongAddress(0x0000, 0), 0xA0000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0xA2000);
+			assert.equal(parser.createLongAddress(0x4000, 0), 0x64000);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x66000);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x38000);
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x3A000);
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x1C000);
+			assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
+		});
+
+		test('Target: MemoryModelZxNext', () => {
+			const mm = new MemoryModelZxNext();
+			createParser(mm);
+
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x0FF0000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x1002000);
+			assert.equal(parser.createLongAddress(0x4000, 0), 0x00B4000);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x00C6000);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x0058000);
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x006A000);
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x001C000);
+			assert.equal(parser.createLongAddress(0xE000, 0), 0x002E000);
+		});
 	});
 
 });

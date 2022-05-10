@@ -126,8 +126,10 @@ export class Z88dkLabelParser extends LabelParserBase {
 						this.z88dkMapOffset=realAddress-readAddress;
 						address=realAddress;
 					}
+					// Create long address
+					const longAddr = this.createLongAddress(address, 0);
 					// Add label
-					this.addLabelForNumber(address, label);
+					this.addLabelForNumber(longAddr, label);
 				}
 			}
 

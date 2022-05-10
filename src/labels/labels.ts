@@ -740,12 +740,13 @@ export class LabelsClass {
 		Solution: Throw exception or change all labels from one model to the other. ZX128 to ZXNext would be possible, vice versa not.
 		=> Change all labels.
 		*/
-
+/*
 
 		// Note: If bank size is 0 no banking is used and labels are converted to 64k.
 		//const targetBankSize = memModel.getBankSize();	// TODO: need to do something here. Banksize is no longer fixed.
 		const targetBankSize = 0;
 		this.convertLabelsToBankSize(targetBankSize);
+		*/
 	}
 
 

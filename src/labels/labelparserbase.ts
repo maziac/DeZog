@@ -5,6 +5,7 @@ import {SourceFileEntry, ListFileLine} from './labels';
 import {AsmConfigBase} from '../settings';
 import * as minimatch from 'minimatch';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
+import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
 
 
 
@@ -90,6 +91,13 @@ export class LabelParserBase {
 	/// Set during 'readListFiles'.
 	public memoryModel: MemoryModel;
 
+	/// Function to convert bank into different memory model bank.
+	/// At start the target memory model is compared to the sld memory model.
+	/// Some memory models can be converted into each other.
+	/// E.g. ZX128K into ZXNext.
+	// This is done here.
+	protected funcConvertBank: (address: number, bank: number) => number;
+
 
 	// Constructor.
 	public constructor(	// NOSONAR
@@ -105,7 +113,7 @@ export class LabelParserBase {
 		logPointLines: Array<{address: number, line: string}>
 	) {
 		// Store variables
-		this.memoryModel=memoryModel;
+		this.memoryModel = memoryModel;
 		this.fileLineNrs = fileLineNrs;
 		this.lineArrays = lineArrays;
 		this.labelsForNumber64k = labelsForNumber64k;
@@ -133,6 +141,10 @@ export class LabelParserBase {
 		this.modulePrefixStack=new Array<string>();
 		this.modulePrefix=undefined as any;
 		this.lastLabel=undefined as any;
+
+		// Check conversion to target memory model: This is done before parsing if the list file
+		// does not contain any memory model.
+		this.checkMappingToTargetMemoryModel();
 
 		// Phase 1: Parse for labels and addresses
 		this.parseAllLabelsAndAddresses();
@@ -622,15 +634,86 @@ export class LabelParserBase {
 
 
 	/**
+	 * Checks conversion to target memory model.
+	 * This implements a conversion from a 64k model with no banking into
+	 * one of the defined memory models.
+	 * E.g. ZX48, ZX128, ZXNext or Custom.
+	 * Overwrite for parsers (assemblers) that support banking.
+	 */
+	protected checkMappingToTargetMemoryModel() {
+		// Check for unknown, also used by the unit tests to just find the labels.
+		if (this.memoryModel instanceof MemoryModelUnknown) {
+			// Just pass through
+			this.funcConvertBank = (address: number, bank: number) => {
+				return bank;
+			};
+			return;
+		}
+
+		// Check for AllRam
+		if (this.memoryModel instanceof MemoryModelAllRam) {
+			// Just 1 bank
+			this.funcConvertBank = (address: number, bank: number) => {
+				return 0;
+			};
+			return;
+		}
+
+		// Check for ZX48K
+		if (this.memoryModel instanceof MemoryModelZx48k) {
+			this.funcConvertBank = (address: number, bank: number) => {
+				if (address < 0x4000)
+					return 0; // ROM
+				return 1;	// RAM
+			};
+			return;
+		}
+
+		// Check for ZX128K
+		if (this.memoryModel instanceof MemoryModelZx128k) {
+			const permut128k = [9, 5, 2, 0];	// TODO: Before loading sna into a 128K the memory slots need to be initialized this way.
+			this.funcConvertBank = (address: number, bank: number) => {
+				const index = address >>> 14;
+				return permut128k[index];	// No conversion
+			};
+			return;
+		}
+
+		// Check for ZXNext
+		if (this.memoryModel instanceof MemoryModelZxNext) {
+			const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];	// TODO: Before loading nex into a ZXNext the memory slots need to be initialized this way.
+			this.funcConvertBank = (address: number, bank: number) => {
+				const index = address >>> 13;
+				return permutNext[index];	// No conversion
+			};
+			return;
+		}
+
+		//Unsupported target memory model
+		throw Error("Unsupported target memory model: " + this.memoryModel.name + ".");
+	}
+
+
+	/**
 	 * Creates a long address from the address and the page info.
-	 * This is overwritten by parsers that use it, e.g. sjasmplussdllabelparser.
+	 * If page == -1 address is returned unchanged.
+	 * It calls 'funcConvertBank' to convert the bank into the target memory model bank.
+	 * This is setup at the beginning in 'checkMappingToTargetMemoryModel'.
 	 * @param address The 64k address, i.e. the upper bits are the slot index.
 	 * @param bank The bank the address is associated with.
 	 * @returns if bankSize: address+((page+1)<<16)
 	 * else: address.
 	 */
 	protected createLongAddress(address: number, bank: number) {
-		return address;
+		if (bank < 0)
+			return address;
+		// Check banks
+		const convBank = this.funcConvertBank(address, bank);
+		// Create long address
+		let result = address;
+		//	if (this.bankSize != 0)
+		result += (convBank + 1) << 16;
+		return result;
 	}
 
 

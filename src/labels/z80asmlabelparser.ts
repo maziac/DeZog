@@ -77,8 +77,10 @@ export class Z80asmLabelParser extends LabelParserBase {
 					}
 				}
 				else {
+					// Create long address
+					const longAddr = this.createLongAddress(address, 0);
 					// Add label
-					this.addLabelForNumber(address, label);
+					this.addLabelForNumber(longAddr, label);
 				}
 			}
 

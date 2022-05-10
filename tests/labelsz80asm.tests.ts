@@ -1,8 +1,12 @@
-
 import * as assert from 'assert';
-import {LabelsClass} from '../src/labels/labels';
-import {readFileSync} from 'fs';
-//import { Settings } from '../src/settings';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
+import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
+import {MemoryModelAllRam, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {Z80asmLabelParser} from '../src/labels/z80asmlabelparser';
+
 
 suite('Labels (z80asm)', () => {
 
@@ -16,7 +20,7 @@ suite('Labels (z80asm)', () => {
 
 		test('Labels', () => {
 			// Read result data (labels)
-			const labelsFile = readFileSync('./tests/data/labels/projects/z80asm/general/general.labels').toString().split('\n');
+			const labelsFile = fs.readFileSync('./tests/data/labels/projects/z80asm/general/general.labels').toString().split('\n');
 
 			// Read the list file
 			const config = {
@@ -26,7 +30,7 @@ suite('Labels (z80asm)', () => {
 					excludeFiles: []
 				}]
 			};
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelAllRam());
 
 			// Compare all labels
 			for (const labelLine of labelsFile) {
@@ -36,7 +40,11 @@ suite('Labels (z80asm)', () => {
 				const match = /(.*):\s+equ\s+\$(.*)/i.exec(labelLine)!;
 				assert.notEqual(undefined, match);	// Check that line is parsed correctly
 				const label = match[1];
-				const value = parseInt(match[2], 16);
+				let value = parseInt(match[2], 16);
+				if (label.indexOf('equ') < 0)
+					value += 0x10000;	// +0x10000 to make log label out of it.
+				else
+					console.log();
 				// Check
 				const res = lbls.getNumberForLabel(label);
 				assert.equal(value, res);
@@ -52,13 +60,13 @@ suite('Labels (z80asm)', () => {
 					excludeFiles: []
 				}]
 			};
-			lbls.readListFiles(config);
+			lbls.readListFiles(config, new MemoryModelAllRam());
 
 			// Test that a label under an IF 0/ENDIF is not defined => not easily possible with
 			// z80asm, so simply allow it.
 			const res = lbls.getNumberForLabel('label5');
 			//assert.equal(undefined, res); // This would be correct, but is not easily possible with z80asm
-			assert.equal(0x8012, res);
+			assert.equal(res, 0x018012);
 		});
 
 
@@ -68,7 +76,7 @@ suite('Labels (z80asm)', () => {
 				// Read the list file
 				const fname = './tests/data/labels/projects/z80asm/general/general.list';
 				const config = {z80asm: [{path: fname, srcDirs: []}]};	// ListFile-Mode
-				lbls.readListFiles(config);
+				lbls.readListFiles(config, new MemoryModelAllRam());
 
 				// Test
 				let res = lbls.getLocationOfLabel('label1')!;
@@ -89,11 +97,11 @@ suite('Labels (z80asm)', () => {
 
 			test('address -> file/line', () => {
 				// Read the list file as result data (addresses)
-				const listFile = readFileSync('./tests/data/labels/projects/z80asm/general/general.list').toString().split('\n');
+				const listFile = fs.readFileSync('./tests/data/labels/projects/z80asm/general/general.list').toString().split('\n');
 
 				// Read the list file
 				const config = {z80asm: [{path: './tests/data/labels/projects/z80asm/general/general.list', srcDirs: []}]};	// ListFile-Mode
-				lbls.readListFiles(config);
+				lbls.readListFiles(config, new MemoryModelAllRam());
 
 				// Compare all addresses
 				const count = listFile.length;
@@ -116,11 +124,11 @@ suite('Labels (z80asm)', () => {
 			test('file/line -> address', () => {
 				// Read the list file as result data (addresses)
 				const filename = './tests/data/labels/projects/z80asm/general/general.list';
-				const listFile = readFileSync(filename).toString().split('\n');
+				const listFile = fs.readFileSync(filename).toString().split('\n');
 
 				// Read the list file
 				const config = {z80asm: [{path: filename, srcDirs: []}]};	// Sources-Mode
-				lbls.readListFiles(config);
+				lbls.readListFiles(config, new MemoryModelAllRam());
 
 				// Compare all addresses
 				const count = listFile.length;
@@ -153,7 +161,7 @@ suite('Labels (z80asm)', () => {
 					}]
 				};
 
-				lbls.readListFiles(config);
+				lbls.readListFiles(config, new MemoryModelAllRam());
 
 				// Test
 				let res = lbls.getLocationOfLabel('label1')!;
@@ -183,7 +191,7 @@ suite('Labels (z80asm)', () => {
 					}]
 				};
 
-				lbls.readListFiles(config);
+				lbls.readListFiles(config, new MemoryModelAllRam());
 
 				// Tests
 				let res = lbls.getFileAndLineForAddress(0x8000);
@@ -214,7 +222,7 @@ suite('Labels (z80asm)', () => {
 					}]
 				};
 
-				lbls.readListFiles(config);
+				lbls.readListFiles(config, new MemoryModelAllRam());
 
 				// Tests
 				let address = lbls.getAddrForFileAndLine('main.asm', 16 - 1);
@@ -245,7 +253,7 @@ suite('Labels (z80asm)', () => {
 			}]
 		};
 
-		lbls.readListFiles(config);
+		lbls.readListFiles(config, new MemoryModelAllRam());
 
 		// Test WPMEM
 		const wpLines = lbls.getWatchPointLines();
@@ -264,6 +272,70 @@ suite('Labels (z80asm)', () => {
 		assert.equal(lpLines.length, 1);
 		assert.equal(lpLines[0].address, 0x800F);
 		assert.equal(lpLines[0].line, "LOGPOINT");
+	});
+
+
+	suite('checkMappingToTargetMemoryModel', () => {
+		let tmpFile;
+		let parser: any;
+
+		setup(() => {
+			// File path for a temporary file.
+			tmpFile = path.join(os.tmpdir(), 'dezog_labels_z80asm.list');
+			// Write file.
+			fs.writeFileSync(tmpFile,
+`0000           label0000:
+2000           label2000:
+4000           label4000:
+6000           label6000:
+8000           label8000:
+A000           labelA000:
+C000           labelC000:
+E000           labelE000:
+`);
+		});
+
+		function createParser(mm: MemoryModel) {
+			// Read the empty list file
+			const config: any = {
+				path: tmpFile,
+				srcDirs: [],
+				excludeFiles: []
+			};
+			parser = new Z80asmLabelParser(
+				mm,
+				new Map<number, SourceFileEntry>(),
+				new Map<string, Array<number>>(),
+				new Array<any>(),
+				new Map<number, Array<string>>(),
+				new Map<string, number>(),
+				new Map<string, {file: string, lineNr: number, address: number}>(),
+				new Array<{address: number, line: string}>(),
+				new Array<{address: number, line: string}>(),
+				new Array<{address: number, line: string}>());
+			parser.loadAsmListFile(config);
+		}
+
+		// Cleanup
+		teardown(() => {
+			fs.unlinkSync(tmpFile);
+		});
+
+
+		test('createLongAddress', () => {
+			const mm = new MemoryModelZxNext();
+			createParser(mm);
+
+			assert.equal(parser.numberForLabel.get('label0000'), 0x0FF0000);
+			assert.equal(parser.numberForLabel.get('label2000'), 0x1002000);
+			assert.equal(parser.numberForLabel.get('label4000'), 0x00B4000);
+			assert.equal(parser.numberForLabel.get('label6000'), 0x00C6000);
+			assert.equal(parser.numberForLabel.get('label8000'), 0x0058000);
+			assert.equal(parser.numberForLabel.get('labelA000'), 0x006A000);
+			assert.equal(parser.numberForLabel.get('labelC000'), 0x001C000);
+			assert.equal(parser.numberForLabel.get('labelE000'), 0x002E000);
+		});
+
 	});
 
 });
