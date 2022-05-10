@@ -1,13 +1,12 @@
 
 import * as assert from 'assert';
-import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
-import {readFileSync} from 'fs';
-import {SjasmplusMemoryModel, SjasmplusSldLabelParser} from '../src/labels/sjasmplussldlabelparser';
-import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
-import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
+import {SjasmplusMemoryModel, SjasmplusSldLabelParser} from '../src/labels/sjasmplussldlabelparser';
+import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 
 
 suite('Labels (sjasmplus)', () => {
@@ -16,7 +15,7 @@ suite('Labels (sjasmplus)', () => {
 
 		test('Labels', () => {
 			// Read result data (labels)
-			const labelsFile = readFileSync('./tests/data/labels/projects/sjasmplus/general/general.labels').toString().split('\n');
+			const labelsFile = fs.readFileSync('./tests/data/labels/projects/sjasmplus/general/general.labels').toString().split('\n');
 
 			// Read the list file
 			const config: any = {
@@ -336,7 +335,7 @@ suite('Labels (sjasmplus)', () => {
 			// Read the list file
 			const config: any = {
 				path: tmpFile,
-				srcDirs: [""],	// Sources mode
+				srcDirs: [],
 				excludeFiles: []
 			};
 			parser = new SjasmplusSldLabelParser(

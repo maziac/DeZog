@@ -1,6 +1,11 @@
 import * as assert from 'assert';
-import {LabelsClass} from '../src/labels/labels';
-import {MemoryModelUnknown} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
+import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
+import {ReverseEngineeringLabelParser} from '../src/labels/reverseengineeringlabelparser';
 
 suite('Labels (revEng)', () => {
 
@@ -287,6 +292,195 @@ suite('Labels (revEng)', () => {
 		assert.equal(lpLines.length, 1);
 		assert.equal(lpLines[0].address, 0x8006);
 		assert.equal(lpLines[0].line, "LOGPOINT");
+	});
+
+
+
+	suite('bank mapping', () => {
+		let tmpFile;
+		let parser: any;
+		let listText;
+
+		setup(() => {
+			// File path for a temporary file.
+			tmpFile = path.join(os.tmpdir(), 'dezog_labels_test.sld');
+		});
+
+		function createSldFile(mm: MemoryModel) {
+			// Prepare sld file:
+			fs.writeFileSync(tmpFile, listText);
+			// Read the list file
+			const config: any = {
+				path: tmpFile
+			};
+			parser = new ReverseEngineeringLabelParser(
+				mm,
+				new Map<number, SourceFileEntry>(),
+				new Map<string, Array<number>>(),
+				new Array<any>(),
+				new Map<number, Array<string>>(),
+				new Map<string, number>(),
+				new Map<string, {file: string, lineNr: number, address: number}>(),
+				new Array<{address: number, line: string}>(),
+				new Array<{address: number, line: string}>(),
+				new Array<{address: number, line: string}>());
+			parser.loadAsmListFile(config);
+		}
+
+		// Cleanup
+		teardown(() => {
+			fs.unlinkSync(tmpFile);
+		});
+
+
+
+		suite('shortName parsing', () => {
+
+
+			test('Target: MemoryModelUnknown', () => {	// NOSONAR
+				assert.ok(false);
+				// Test that a shortname in a label like 0000:R1 is correctly parsed.
+			});
+
+		});
+
+
+		suite('checkMappingToTargetMemoryModel', () => {
+
+			setup(() => {
+				// Prepare sld file:
+				listText =
+					`
+0000 null:
+
+11CB    L11CB:
+11CB    47           LD   B,A
+
+8011:2	 subnop:
+8011:2    00            NOP
+;8012:2    00            NOP
+8013:2    00            NOP
+
+;8010	; WPMEMx
+
+
+
+;8011	; LOGPOINTx
+;8012	; WPMEM
+;8013	; LOGPOINTx
+
+;8014    C9            RET
+
+80DB
+80DD
+80DF	stack_top:`;
+			});
+
+
+			test('Target: MemoryModelUnknown', () => {	// NOSONAR
+				const mm = new MemoryModelUnknown();
+				createSldFile(mm);
+
+				assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+				assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
+				assert.equal(parser.createLongAddress(0x4000, 0), 0x14000);
+				assert.equal(parser.createLongAddress(0x6000, 0), 0x16000);
+				assert.equal(parser.createLongAddress(0x8000, 0), 0x18000);
+				assert.equal(parser.createLongAddress(0xA000, 0), 0x1A000);
+				assert.equal(parser.createLongAddress(0xC000, 0), 0x1C000);
+				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
+			});
+
+			test('Target: MemoryModelAll', () => {	// NOSONAR
+				const mm = new MemoryModelAllRam();
+				createSldFile(mm);
+
+				assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+				assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
+				assert.equal(parser.createLongAddress(0x4000, 0), 0x14000);
+				assert.equal(parser.createLongAddress(0x6000, 0), 0x16000);
+				assert.equal(parser.createLongAddress(0x8000, 0), 0x18000);
+				assert.equal(parser.createLongAddress(0xA000, 0), 0x1A000);
+				assert.equal(parser.createLongAddress(0xC000, 0), 0x1C000);
+				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
+			});
+
+			test('Target: MemoryModelZx48k', () => {	// NOSONAR
+				const mm = new MemoryModelZx48k();
+				createSldFile(mm);
+
+				assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+				assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
+				assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
+				assert.equal(parser.createLongAddress(0x6000, 0), 0x26000);
+				assert.equal(parser.createLongAddress(0x8000, 0), 0x28000);
+				assert.equal(parser.createLongAddress(0xA000, 0), 0x2A000);
+				assert.equal(parser.createLongAddress(0xC000, 0), 0x2C000);
+				assert.equal(parser.createLongAddress(0xE000, 0), 0x2E000);
+			});
+
+			test('Target: MemoryModelZx128k', () => {
+				const mm = new MemoryModelZx128k();
+				createSldFile(mm);
+
+				//assert.equal(parser.createLongAddress(0x0000, 0), 0xA0000);
+				//assert.equal(parser.createLongAddress(0x2000, 0), 0xA2000);
+				assert.equal(parser.createLongAddress(0x4000, 10), 0x64000);
+				assert.equal(parser.createLongAddress(0x6000, 11), 0x66000);
+				assert.equal(parser.createLongAddress(0x8000, 4), 0x38000);
+				assert.equal(parser.createLongAddress(0xA000, 5), 0x3A000);
+				assert.equal(parser.createLongAddress(0xC000, 0), 0x1C000);
+				assert.equal(parser.createLongAddress(0xE000, 1), 0x1E000);
+
+				assert.equal(parser.createLongAddress(0xC000, 2), 0x2C000);
+				assert.equal(parser.createLongAddress(0xE000, 3), 0x2E000);
+
+				assert.equal(parser.createLongAddress(0xC000, 4), 0x3C000);
+				assert.equal(parser.createLongAddress(0xE000, 5), 0x3E000);
+
+				assert.equal(parser.createLongAddress(0xC000, 6), 0x4C000);
+				assert.equal(parser.createLongAddress(0xE000, 7), 0x4E000);
+
+				assert.equal(parser.createLongAddress(0xC000, 8), 0x5C000);
+				assert.equal(parser.createLongAddress(0xE000, 9), 0x5E000);
+
+				assert.equal(parser.createLongAddress(0xC000, 10), 0x6C000);
+				assert.equal(parser.createLongAddress(0xE000, 11), 0x6E000);
+
+				assert.equal(parser.createLongAddress(0xC000, 12), 0x7C000);
+				assert.equal(parser.createLongAddress(0xE000, 13), 0x7E000);
+
+				assert.equal(parser.createLongAddress(0xC000, 14), 0x8C000);
+				assert.equal(parser.createLongAddress(0xE000, 15), 0x8E000);
+
+				// These banks cannot be converted and should result in an exception
+				assert.throws(() => {
+					parser.createLongAddress(0xC000, 16);
+				}, Error);
+				assert.throws(() => {
+					parser.createLongAddress(0xE000, 223);
+				}, Error);
+			});
+
+			test('Target: MemoryModelZxNext', () => {
+				const mm = new MemoryModelZxNext();
+				createSldFile(mm);
+
+				for (let bank = 0; bank < 224; bank++) {
+					for (let address = 0; address < 0x10000; address += 0x2000) {
+						const expected = ((bank + 1) << 16) + address;
+						assert.equal(parser.createLongAddress(address, bank), expected);
+					}
+				}
+			});
+
+
+			test('Target: MemoryModelCustom', () => {
+				//const mm = new MemoryModelCustom();
+				assert.ok(false);	// Need to be implemented
+			});
+
+		});
 	});
 
 });
