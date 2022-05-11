@@ -1,5 +1,5 @@
 import {Utility} from '../misc/utility';
-import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx48k} from '../remotes/MemoryModel/predefinedmemorymodels';
 import {Z80RegistersClass} from '../remotes/z80registers';
 import {AsmConfigBase, ListConfigBase} from '../settings';
 import {LabelParserBase} from './labelparserbase';
@@ -21,7 +21,7 @@ import {ListFileLine} from './labels';
  * - EQU
  *
  * If an address is inside a banked area it is shown as
- * C000@0 or C000@1.
+ * C000.0 or C000.1.
  * Unbanked addresses are simply e.g. 8000.
  *
  * Comments start with ;
@@ -39,23 +39,25 @@ import {ListFileLine} from './labels';
  * Comments are parsed for WPMEM, LOGPOINTs and ASSERTIONs by the parent class.
  *
  * E.g.:
- * C000@2 3E 05  LD A,5 ; load A with 5
+ * C000.2 3E 05  LD A,5 ; load A with 5
  * MY_CONSTANT:  EQU   50
  */
 export class ReverseEngineeringLabelParser extends LabelParserBase {
+	// The separator used to separate address and bank info.
+	public static bankSeparator = '.';	// Note: need to be changed in regexAddr as well
 
 	// Regex to parse the address
-	protected regexEqu = /^\s*([\w_][\w_\d\.]*):\s*EQU\s+([^;]+)/i;	// NOSONAR: sonar wrong
+	protected regexEqu = /^\s*([a-z_][\w\.]*):\s*EQU\s+([^;]+)/i;	
 
 	// Regex to parse the address
-	protected regexAddr = /^(([\da-f]+)(:\d+)?\s*)/i;
+	protected regexAddr = /^(([\da-f]+)(\.(\w+))?\s*)/i;
 
 	// Regex to parse the bytes after the address
 	protected regexByte = /^([\da-f][\da-f]\s)/i;
 
 	// Regex to parse the label
 
-	protected regexLabel = /^\s*((\.?)[\w_][\w_\d\.]*):/;	// NOSONAR: sonar wrong
+	protected regexLabel = /^\s*((\.?)[a-z_][\w\.]*):/i;
 
 
 	/**
@@ -135,7 +137,8 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 		const addr64kStr = matchAddr[2];
 		const addr64k = parseInt(addr64kStr, 16);
 		let bank = -1;	// 0 = no bank
-		const bankStr = matchAddr[3];
+		const bankStr = matchAddr[4];
+		bank = this.memoryModel.parseBank(addr64k, bankStr);
 		if (bankStr)
 			bank = parseInt(bankStr.substring(1));
 		workLine = workLine.substring(matchAddr[1].length);
@@ -256,44 +259,5 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 				throw Error("Bank " + bank + " not available in '" + this.memoryModel.name + "'.");
 			return bank;	// No conversion
 		};
-
-		/*
-		// Check for ZX128K
-		if (this.memoryModel instanceof MemoryModelZx128k) {
-			this.funcConvertBank = (address: number, bank: number) => {
-				if (bank >= this.memoryModel.banks.length)
-					throw Error("Bank " + bank + " not available in '" + this.memoryModel.name + "'.");
-				return bank;	// No conversion
-			};
-			return;
-		}
-
-		// Check for ZXNext
-		if (this.memoryModel instanceof MemoryModelZxNext) {
-			this.funcConvertBank = (address: number, bank: number) => {
-				if (bank >= this.memoryModel.banks.length &&
-					(bank != 0xFC && bank != 0xFD		// ROM
-						&& bank != 0xFE && bank != 0xFF))
-					throw Error("Bank " + bank + " not available in '" + this.memoryModel.name + "'.");
-				return bank;	// No conversion
-			};
-			return;
-		}
-
-		// Check for Custom Memory Model
-		if (this.memoryModel instanceof MemoryModelCustom) {
-			this.funcConvertBank = (address: number, bank: number) => {
-				// Check bank
-				if(this.memoryModel.bank[bank] == undefined)
-					throw Error("Bank " + bank + " not available in '" + this.memoryModel.name + "'.");
-				return bank;	// No conversion
-			};
-			return;
-		}
-
-		//Unsupported target memory model
-		throw Error("Unsupported target memory model: " + this.memoryModel.name + ".");
-		*/
 	}
-
 }

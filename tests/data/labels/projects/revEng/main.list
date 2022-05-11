@@ -33,11 +33,11 @@ label_equ1:		equ 100
 0014  00          	nop
 0015
 
-C1AA:3 00		long_label1:
+C1AA.3 00		long_label1:
 
-C1AB:44	00 		long_label2:
+C1AB.44	00 		long_label2:
 
-C1AC:3 FA
+C1AC.3 FA
 
 0020 01 02 IM 2 ; Byte list ends with unrecognized number (IM)
 

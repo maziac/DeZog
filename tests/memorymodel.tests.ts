@@ -50,15 +50,16 @@ suite('MemoryModel', () => {
 		test('1 slot range', () => {
 			const mm = new MemoryModel({
 				slots: [
-				{
-					range: [0x0000, 0xFFFF],
-					banks: [
-						{
-							index: 7
-						}
-					]
-				}
-			]}) as any;
+					{
+						range: [0x0000, 0xFFFF],
+						banks: [
+							{
+								index: 7
+							}
+						]
+					}
+				]
+			}) as any;
 			assert.equal(mm.slotRanges.length, 1);
 			assert.equal(mm.slotRanges[0].start, 0x0000);
 			assert.equal(mm.slotRanges[0].end, 0xFFFF);
@@ -126,6 +127,22 @@ suite('MemoryModel', () => {
 			assert.equal(mm.initialSlots[5], 5);
 
 			assert.equal(mm.banks.length, 6);
+		});
+	});
+
+
+
+	suite('slot banks', () => {
+
+		test('empty slot range', () => {
+			const mm = new MemoryModel({slots: []}) as any;
+			assert.equal(mm.slotRanges.length, 1);
+			assert.equal(mm.slotRanges[0].banks.size, 0);
+		});
+
+		test('1 slot range', () => { // TODO
+			const mm = new MemoryModel({slots: []}) as any;
+			assert.equal(mm.banks.length, 8);
 		});
 	});
 

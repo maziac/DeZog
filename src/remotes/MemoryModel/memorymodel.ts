@@ -1,3 +1,4 @@
+import {Utility} from "../../misc/utility";
 import {CustomMemoryBank, CustomMemoryType} from "../../settingscustommemory";
 import {Z80Registers} from "../z80registers";
 
@@ -15,7 +16,7 @@ export enum BankType {
 
 
 // Definition of one memory bank, i.e. memory slot/bank relationship.
-export interface MemoryBank {
+export interface MemoryBank {	// TODO: use SlotRange instead
 	// Z80 start address of page.
 	start: number;
 
@@ -39,6 +40,9 @@ interface SlotRange {
 
 	// The name of the slot. Required for slots that allow bank switching.
 	name?: string;
+
+	// The bank numbers that are allowed for this slot.
+	banks: Set<number>;
 }
 
 
@@ -103,7 +107,6 @@ export class MemoryModel {
 	// quite fast.
 	public slotAddress64kAssociation = new Array<number>(0x10000);
 
-
 	// The IO configuration for switching the banks
 	public ioMmu: string;
 
@@ -134,7 +137,8 @@ export class MemoryModel {
 				// Unassigned area between slots
 				const unassignedSlotRange = {
 					start: expectedStart,
-					end: start - 1
+					end: start - 1,
+					banks: new Set<number>()
 				}
 				const slotIndex = this.slotRanges.length;
 				this.slotAddress64kAssociation.fill(slotIndex, unassignedSlotRange.start, unassignedSlotRange.end + 1);
@@ -151,16 +155,19 @@ export class MemoryModel {
 			let initialBank = custMemSlot.initialBank;
 
 			// Banks
+			const slotBanks = new Set<number>();
 			const size = end + 1 - start;
 			const banks = custMemSlot.banks;
 			const banksLen = banks.length;
 			if (banksLen == 0)
 				throw Error("No banks specified for range.");
 			for (const bank of banks) {
-				const indexStart = this.createBankOrBanks(bank, size, (banksLen > 1));
+				const bankNumbers = this.createBankOrBanks(bank, size, (banksLen > 1));
 				// Store initial bank?
 				if (initialBank == undefined)
-					initialBank = indexStart;
+					initialBank = bankNumbers[0];
+				// Store all banks for the slot
+				bankNumbers.forEach(bankNr => slotBanks.add(bankNr));
 			}
 
 			// Associate address range with slot index
@@ -174,7 +181,8 @@ export class MemoryModel {
 			const slotRange = {
 				start,
 				end,
-				name: custMemSlot.name
+				name: custMemSlot.name,
+				banks: slotBanks
 			}
 			this.slotRanges.push(slotRange);
 
@@ -187,7 +195,8 @@ export class MemoryModel {
 			// Unassigned area at the end
 			const unassignedSlotRange = {
 				start: expectedStart,
-				end: 0xFFFF
+				end: 0xFFFF,
+				banks: new Set<number>()
 			}
 			this.slotRanges.push(unassignedSlotRange);
 			this.initialSlots.push(-1);
@@ -287,9 +296,10 @@ export class MemoryModel {
 	 * @param bank The configuration from the settings.
 	 * @param size The size of the bank.
 	 * @param assignShortName If false then short name will be set to ''.
-	 * @returns The index of the (first) bank created.
+	 * @returns An ordered array with the created bank numbers.
 	 */
-	protected createBankOrBanks(bank: CustomMemoryBank, size: number, assignShortName: boolean): number {
+	protected createBankOrBanks(bank: CustomMemoryBank, size: number, assignShortName: boolean): number[] {
+		const bankNumbers: number[] = [];
 		let indexStart: number;
 		let indexOrRange = bank.index;
 		const bankType = (bank.rom == undefined) ? BankType.RAM : BankType.ROM;
@@ -310,6 +320,7 @@ export class MemoryModel {
 				romOffset: bank.romOffset
 			};
 			this.setBankInfo(indexStart, bankInfo);
+			bankNumbers.push(indexStart);
 		}
 		else {
 			// A bank range
@@ -333,10 +344,11 @@ export class MemoryModel {
 					romOffset: bank.romOffset
 				};
 				this.setBankInfo(index, bankInfo);
+				bankNumbers.push(index);
 			}
 		}
 		// Return
-		return indexStart;
+		return bankNumbers;
 	}
 
 
@@ -430,7 +442,7 @@ export class MemoryModel {
 	 * But overridden methods could also prepend the number with e.g. an
 	 * "R" for ROM.
 	 * @param bankNr Bank number. Starts at 0.
-	 * @returns The bank number as string or an empty string if bank is < 0
+	 * @returns The bank number as string (e.g. "R0") or an empty string if bank is < 0
 	 * (no bank number).
 	 */
 	public getBankShortName(bankNr: number): string {
@@ -446,6 +458,63 @@ export class MemoryModel {
 	 * @returns 0 in this case = no banks used.
 	 */
 	public getBankSize() {
+		return 0;
+	}
+
+
+	/**
+	 * Parses the short bank name from the given string.
+	 * E.g. for a passed "R0" the correspondent bank number is returned.
+	 * In case the slot is not banked the bank number is derived from the address.
+	 * Also if the address does not fit to the bank an exception is thrown.
+	 * @param addr64k A 64k address.
+	 * @param bankString The string representing the short bank name. Used by the rev--eng parser.
+	 * @returns The bank number.
+	 */
+	public parseBank(addr64k: number, bankString: string): number {
+		if (bankString) {
+			// Parse bank
+			const bank = this.parseShortNameForBank(bankString);
+			if (bank == undefined)
+				throw Error("Bank '" + bankString + "' does not exist in memory model '" + this.name + "'.");
+			const banks = this.getBanksFor(addr64k);
+			if (!banks.has(bank))
+				throw Error("Bank '" + bankString + "' is not reachable from address " + Utility.getHexString(addr64k, 4) + ".");
+			return bank;
+		}
+		else {
+			// No bank given, check if it is a banked slot
+			const banks = this.getBanksFor(addr64k);
+			if (banks.size == 0)
+				throw Error("Address " + Utility.getHexString(addr64k, 4) + " has no mapped bank.");
+			if (banks.size > 1)
+				throw Error("Address " + Utility.getHexString(addr64k, 4) + " is in an area with banked memory but lacks bank information.");
+			return banks[0];
+		}
+	}
+
+
+	/**
+	 * Returns all banks (numbers) that are mapped to a given address.
+	 * @param addr64k The address.
+	 * @returns A set of bank numbers or an empty set for unassigned addresses.
+	 */
+	protected getBanksFor(addr64k: number): Set<number> {
+		// Get slot for address
+		const slot = this.slotAddress64kAssociation[addr64k];
+		// Get banks
+		const banks = this.slotRanges[slot].banks;
+		return banks;
+	}
+
+
+	/**
+	 * Parses the 'shortName' and returns the corresponding bank number for it.
+	 * If none exists an exception is thrown.
+	 * @param shortName E.g. "R1"
+	 * @returns The associated bank number, e.g. 9.
+	 */
+	protected parseShortNameForBank(shortName: string): number {
 		return 0;
 	}
 }

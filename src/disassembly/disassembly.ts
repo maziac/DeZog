@@ -7,6 +7,7 @@ import {Labels} from "../labels/labels";
 import {MemAttribute} from "../disassembler/memory";
 import {Format} from "../disassembler/format";
 import {Remote} from "../remotes/remotebase";
+import {ReverseEngineeringLabelParser} from "../labels/reverseengineeringlabelparser";
 
 
 
@@ -65,7 +66,7 @@ export class DisassemblyClass extends Disassembler {
 			let addrString = Utility.getHexString(addr64k, 4);
 			const shortName = Remote.memoryModel.getBankShortName(bank);
 			if (shortName)
-				addrString += ':' + shortName;
+				addrString += ReverseEngineeringLabelParser.bankSeparator + shortName;
 			//addrString += '[' + shortName + ']';
 			return addrString;
 		};

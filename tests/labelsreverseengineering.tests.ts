@@ -327,10 +327,63 @@ suite('Labels (revEng)', () => {
 
 		suite('shortName parsing', () => {
 
+			// Test that a shortname in a label like 0000:R1 is correctly parsed.
+			test('Target: MemoryModelUnknown', () => {
+				// Custom memory model
+				const mm = new MemoryModel({
+					slots: [
+						{
+							range: [0x0000, 0x3FFF],
+							name: "slotROM",
+							banks: [
+								{
+									index: 0,
+									name: 'ROM0',
+									shortName: 'R0'
+								},
+								{
+									index: 1,
+									name: 'ROM1',
+									shortName: 'R1'
+								}
+							]
+						},
+						{
+							range: [0x4000, 0x7FFF],
+							banks: [
+								{
+									index: 3
+								}
+							]
+						},
+						{
+							range: [0x8000, 0xBFFF],
+							name: "bankedSlot",
+							banks: [
+								{
+									index: 2,
+									name: 'RAM${index}',
+									shortName: 'B${index}'
+								},
+								{
+									index: [4, 7],
+									name: 'RAM${index}',
+									shortName: 'B${index}'
+								}
+							]
+						},
+						{
+							range: [0xC000, 0xFFFF],
+							banks: [
+								{
+									index: 8
+								}
+							]
+						}
+					]
+				});
+				createSldFile(mm);
 
-			test('Target: MemoryModelUnknown', () => {	// NOSONAR
-				assert.ok(false);
-				// Test that a shortname in a label like 0000:R1 is correctly parsed.
 			});
 
 		});
@@ -472,9 +525,70 @@ suite('Labels (revEng)', () => {
 			});
 
 
-			test('Target: MemoryModelCustom', () => {
-				//const mm = new MemoryModelCustom();
-				assert.ok(false);	// Need to be implemented
+			test('Target: custom MemoryModel', () => {
+				// Custom memory model
+				const mm = new MemoryModel({
+					slots: [
+						{
+							range: [0x0000, 0x3FFF],
+							name: "slotROM",
+							banks: [
+								{
+									index: 0,
+									name: 'ROM0',
+									shortName: 'R0'
+								},
+								{
+									index: 1,
+									name: 'ROM1',
+									shortName: 'R1'
+								}
+							]
+						},
+						{
+							range: [0x4000, 0x7FFF],
+							banks: [
+								{
+									index: 3
+								}
+							]
+						},
+						{
+							range: [0x8000, 0xBFFF],
+							name: "bankedSlot",
+							banks: [
+								{
+									index: 2
+								},
+								{
+									index: [4, 7],
+								}
+							]
+						},
+						{
+							range: [0xC000, 0xFFFF],
+							banks: [
+								{
+									index: 8
+								}
+							]
+						}
+					]
+				});
+				createSldFile(mm);
+
+				assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+				assert.equal(parser.createLongAddress(0x0000, 1), 0x20000);
+
+				assert.equal(parser.createLongAddress(0x4000, 3), 0x44000);
+
+				assert.equal(parser.createLongAddress(0x8000, 2), 0x38000);
+				assert.equal(parser.createLongAddress(0x8000, 4), 0x58000);
+				assert.equal(parser.createLongAddress(0x8000, 5), 0x68000);
+				assert.equal(parser.createLongAddress(0x8000, 6), 0x78000);
+				assert.equal(parser.createLongAddress(0x8000, 7), 0x88000);
+
+				assert.equal(parser.createLongAddress(0xC000, 8), 0x9C000);
 			});
 
 		});
