@@ -297,16 +297,12 @@ suite('Labels (revEng)', () => {
 
 
 	suite('bank mapping', () => {
-		let tmpFile;
 		let parser: any;
 		let listText;
 
-		setup(() => {
-			// File path for a temporary file.
-			tmpFile = path.join(os.tmpdir(), 'dezog_labels_test.sld');
-		});
-
 		function createSldFile(mm: MemoryModel) {
+			// File path for a temporary file.
+			const tmpFile = path.join(os.tmpdir(), 'dezog_labels_test.sld');
 			// Prepare sld file:
 			fs.writeFileSync(tmpFile, listText);
 			// Read the list file
@@ -325,13 +321,8 @@ suite('Labels (revEng)', () => {
 				new Array<{address: number, line: string}>(),
 				new Array<{address: number, line: string}>());
 			parser.loadAsmListFile(config);
-		}
-
-		// Cleanup
-		teardown(() => {
 			fs.unlinkSync(tmpFile);
-		});
-
+		}
 
 
 		suite('shortName parsing', () => {
@@ -382,13 +373,13 @@ suite('Labels (revEng)', () => {
 				createSldFile(mm);
 
 				assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
-				assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
-				assert.equal(parser.createLongAddress(0x4000, 0), 0x14000);
-				assert.equal(parser.createLongAddress(0x6000, 0), 0x16000);
-				assert.equal(parser.createLongAddress(0x8000, 0), 0x18000);
-				assert.equal(parser.createLongAddress(0xA000, 0), 0x1A000);
-				assert.equal(parser.createLongAddress(0xC000, 0), 0x1C000);
-				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
+				assert.equal(parser.createLongAddress(0x2000, 1), 0x22000);
+				assert.equal(parser.createLongAddress(0x4000, 2), 0x34000);
+				assert.equal(parser.createLongAddress(0x6000, 3), 0x46000);
+				assert.equal(parser.createLongAddress(0x8000, 4), 0x58000);
+				assert.equal(parser.createLongAddress(0xA000, 5), 0x6A000);
+				assert.equal(parser.createLongAddress(0xC000, 6), 0x7C000);
+				assert.equal(parser.createLongAddress(0xE000, 7), 0x8E000);
 			});
 
 			test('Target: MemoryModelAll', () => {	// NOSONAR
@@ -396,13 +387,13 @@ suite('Labels (revEng)', () => {
 				createSldFile(mm);
 
 				assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
-				assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
-				assert.equal(parser.createLongAddress(0x4000, 0), 0x14000);
-				assert.equal(parser.createLongAddress(0x6000, 0), 0x16000);
-				assert.equal(parser.createLongAddress(0x8000, 0), 0x18000);
-				assert.equal(parser.createLongAddress(0xA000, 0), 0x1A000);
-				assert.equal(parser.createLongAddress(0xC000, 0), 0x1C000);
-				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
+				assert.equal(parser.createLongAddress(0x2000, 1), 0x12000);
+				assert.equal(parser.createLongAddress(0x4000, 2), 0x14000);
+				assert.equal(parser.createLongAddress(0x6000, 3), 0x16000);
+				assert.equal(parser.createLongAddress(0x8000, 4), 0x18000);
+				assert.equal(parser.createLongAddress(0xA000, 5), 0x1A000);
+				assert.equal(parser.createLongAddress(0xC000, 6), 0x1C000);
+				assert.equal(parser.createLongAddress(0xE000, 7), 0x1E000);
 			});
 
 			test('Target: MemoryModelZx48k', () => {	// NOSONAR
@@ -410,68 +401,74 @@ suite('Labels (revEng)', () => {
 				createSldFile(mm);
 
 				assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
-				assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
-				assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
-				assert.equal(parser.createLongAddress(0x6000, 0), 0x26000);
-				assert.equal(parser.createLongAddress(0x8000, 0), 0x28000);
-				assert.equal(parser.createLongAddress(0xA000, 0), 0x2A000);
-				assert.equal(parser.createLongAddress(0xC000, 0), 0x2C000);
-				assert.equal(parser.createLongAddress(0xE000, 0), 0x2E000);
+				assert.equal(parser.createLongAddress(0x2000, 1), 0x12000);
+				assert.equal(parser.createLongAddress(0x4000, 2), 0x24000);
+				assert.equal(parser.createLongAddress(0x6000, 3), 0x26000);
+				assert.equal(parser.createLongAddress(0x8000, 4), 0x28000);
+				assert.equal(parser.createLongAddress(0xA000, 5), 0x2A000);
+				assert.equal(parser.createLongAddress(0xC000, 6), 0x2C000);
+				assert.equal(parser.createLongAddress(0xE000, 7), 0x2E000);
 			});
 
 			test('Target: MemoryModelZx128k', () => {
 				const mm = new MemoryModelZx128k();
 				createSldFile(mm);
 
-				//assert.equal(parser.createLongAddress(0x0000, 0), 0xA0000);
-				//assert.equal(parser.createLongAddress(0x2000, 0), 0xA2000);
-				assert.equal(parser.createLongAddress(0x4000, 10), 0x64000);
-				assert.equal(parser.createLongAddress(0x6000, 11), 0x66000);
-				assert.equal(parser.createLongAddress(0x8000, 4), 0x38000);
-				assert.equal(parser.createLongAddress(0xA000, 5), 0x3A000);
+				assert.equal(parser.createLongAddress(0x0000, 8), 0x90000);
+				assert.equal(parser.createLongAddress(0x2000, 9), 0xA2000);
+				assert.equal(parser.createLongAddress(0x4000, 5), 0x64000);
+				assert.equal(parser.createLongAddress(0x6000, 5), 0x66000);
+				assert.equal(parser.createLongAddress(0x8000, 2), 0x38000);
+				assert.equal(parser.createLongAddress(0xA000, 2), 0x3A000);
 				assert.equal(parser.createLongAddress(0xC000, 0), 0x1C000);
-				assert.equal(parser.createLongAddress(0xE000, 1), 0x1E000);
+				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 
-				assert.equal(parser.createLongAddress(0xC000, 2), 0x2C000);
-				assert.equal(parser.createLongAddress(0xE000, 3), 0x2E000);
+				assert.equal(parser.createLongAddress(0xC000, 1), 0x2C000);
+				assert.equal(parser.createLongAddress(0xE000, 1), 0x2E000);
 
-				assert.equal(parser.createLongAddress(0xC000, 4), 0x3C000);
-				assert.equal(parser.createLongAddress(0xE000, 5), 0x3E000);
+				assert.equal(parser.createLongAddress(0xC000, 2), 0x3C000);
+				assert.equal(parser.createLongAddress(0xE000, 2), 0x3E000);
 
-				assert.equal(parser.createLongAddress(0xC000, 6), 0x4C000);
-				assert.equal(parser.createLongAddress(0xE000, 7), 0x4E000);
+				assert.equal(parser.createLongAddress(0xC000, 3), 0x4C000);
+				assert.equal(parser.createLongAddress(0xE000, 3), 0x4E000);
 
-				assert.equal(parser.createLongAddress(0xC000, 8), 0x5C000);
-				assert.equal(parser.createLongAddress(0xE000, 9), 0x5E000);
+				assert.equal(parser.createLongAddress(0xC000, 4), 0x5C000);
+				assert.equal(parser.createLongAddress(0xE000, 4), 0x5E000);
 
-				assert.equal(parser.createLongAddress(0xC000, 10), 0x6C000);
-				assert.equal(parser.createLongAddress(0xE000, 11), 0x6E000);
+				assert.equal(parser.createLongAddress(0xC000, 5), 0x6C000);
+				assert.equal(parser.createLongAddress(0xE000, 5), 0x6E000);
 
-				assert.equal(parser.createLongAddress(0xC000, 12), 0x7C000);
-				assert.equal(parser.createLongAddress(0xE000, 13), 0x7E000);
+				assert.equal(parser.createLongAddress(0xC000, 6), 0x7C000);
+				assert.equal(parser.createLongAddress(0xE000, 6), 0x7E000);
 
-				assert.equal(parser.createLongAddress(0xC000, 14), 0x8C000);
-				assert.equal(parser.createLongAddress(0xE000, 15), 0x8E000);
+				assert.equal(parser.createLongAddress(0xC000, 7), 0x8C000);
+				assert.equal(parser.createLongAddress(0xE000, 7), 0x8E000);
 
-				// These banks cannot be converted and should result in an exception
+				// This bank cannot be converted and should result in an exception
 				assert.throws(() => {
-					parser.createLongAddress(0xC000, 16);
-				}, Error);
-				assert.throws(() => {
-					parser.createLongAddress(0xE000, 223);
+					parser.createLongAddress(0xC000, 10);
 				}, Error);
 			});
+
 
 			test('Target: MemoryModelZxNext', () => {
 				const mm = new MemoryModelZxNext();
 				createSldFile(mm);
 
+				// RAM
 				for (let bank = 0; bank < 224; bank++) {
 					for (let address = 0; address < 0x10000; address += 0x2000) {
 						const expected = ((bank + 1) << 16) + address;
 						assert.equal(parser.createLongAddress(address, bank), expected);
 					}
 				}
+
+				// ROM
+				assert.equal(parser.createLongAddress(0x0000, 0xFC), 0x0FD0000);
+				assert.equal(parser.createLongAddress(0x2000, 0xFD), 0x0FE2000);
+				assert.equal(parser.createLongAddress(0x0000, 0xFE), 0x0FF0000);
+				assert.equal(parser.createLongAddress(0x2000, 0xFF), 0x1002000);
+
 			});
 
 

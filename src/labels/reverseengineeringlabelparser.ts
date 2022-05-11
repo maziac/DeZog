@@ -1,4 +1,5 @@
 import {Utility} from '../misc/utility';
+import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
 import {Z80RegistersClass} from '../remotes/z80registers';
 import {AsmConfigBase, ListConfigBase} from '../settings';
 import {LabelParserBase} from './labelparserbase';
@@ -71,6 +72,9 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 		this.modulePrefixStack = new Array<string>();
 		this.modulePrefix = undefined as any;
 		this.lastLabel = undefined as any;
+
+		// Check conversion to target memory model.
+		this.checkMappingToTargetMemoryModel();
 
 		// Phase 1: Parse for labels and addresses
 		this.parseAllLabelsAndAddresses();
@@ -201,6 +205,95 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 
 		// Otherwise the same
 		super.addLabelForNumberRaw(value, label);
+	}
+
+
+
+
+	/**
+	 * Checks conversion to target memory model.
+	 * This implements a conversion from a rev-eng memory model with banking into
+	 * one of the defined memory models.
+	 * E.g. ZX48, ZX128, ZXNext or Custom.
+	 * The rev-eng does not assume any particular memory model.
+	 * In fact it assumes that the right target memory model is chosen.
+	 * Nevertheless it can happen that certain bank are not available in the target
+	 * which produces an error.
+	 */
+	protected checkMappingToTargetMemoryModel() {
+		// Check for unknown, also used by the unit tests to just find the labels.
+		if (this.memoryModel instanceof MemoryModelUnknown) {
+			// Just pass through
+			this.funcConvertBank = (address: number, bank: number) => {
+				return bank;
+			};
+			return;
+		}
+
+		// Check for AllRam
+		if (this.memoryModel instanceof MemoryModelAllRam) {
+			// Just 1 bank
+			this.funcConvertBank = (address: number, bank: number) => {
+				return 0;
+			};
+			return;
+		}
+
+		// Check for ZX48K
+		if (this.memoryModel instanceof MemoryModelZx48k) {
+			this.funcConvertBank = (address: number, bank: number) => {
+				if (address < 0x4000)
+					return 0; // ROM
+				return 1;	// RAM
+			};
+			return;
+		}
+
+		// All others, e.g. ZX128K, ZXNext, Custom
+		this.funcConvertBank = (address: number, bank: number) => {
+			// Check bank
+			if (this.memoryModel.banks[bank] == undefined)
+				throw Error("Bank " + bank + " not available in '" + this.memoryModel.name + "'.");
+			return bank;	// No conversion
+		};
+
+		/*
+		// Check for ZX128K
+		if (this.memoryModel instanceof MemoryModelZx128k) {
+			this.funcConvertBank = (address: number, bank: number) => {
+				if (bank >= this.memoryModel.banks.length)
+					throw Error("Bank " + bank + " not available in '" + this.memoryModel.name + "'.");
+				return bank;	// No conversion
+			};
+			return;
+		}
+
+		// Check for ZXNext
+		if (this.memoryModel instanceof MemoryModelZxNext) {
+			this.funcConvertBank = (address: number, bank: number) => {
+				if (bank >= this.memoryModel.banks.length &&
+					(bank != 0xFC && bank != 0xFD		// ROM
+						&& bank != 0xFE && bank != 0xFF))
+					throw Error("Bank " + bank + " not available in '" + this.memoryModel.name + "'.");
+				return bank;	// No conversion
+			};
+			return;
+		}
+
+		// Check for Custom Memory Model
+		if (this.memoryModel instanceof MemoryModelCustom) {
+			this.funcConvertBank = (address: number, bank: number) => {
+				// Check bank
+				if(this.memoryModel.bank[bank] == undefined)
+					throw Error("Bank " + bank + " not available in '" + this.memoryModel.name + "'.");
+				return bank;	// No conversion
+			};
+			return;
+		}
+
+		//Unsupported target memory model
+		throw Error("Unsupported target memory model: " + this.memoryModel.name + ".");
+		*/
 	}
 
 }
