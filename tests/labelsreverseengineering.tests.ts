@@ -23,7 +23,7 @@ suite('Labels (revEng)', () => {
 				path: 'tests/data/labels/projects/revEng/main.list'
 			}]
 		};
-		const mm = new MemoryModel({
+		const testMm = new MemoryModel({
 			slots: [
 				{
 					range: [0x0000, 0xBFFF],
@@ -49,7 +49,7 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('labels equ', () => {
-			lbls.readListFiles(config, mm);
+			lbls.readListFiles(config, testMm);
 
 			// Check
 			let res = lbls.getNumberForLabel("label_equ1");
@@ -60,7 +60,7 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('labels location', () => {
-			lbls.readListFiles(config, mm);
+			lbls.readListFiles(config, testMm);
 			const fname = config.revEng[0].path;
 
 			// Test
@@ -86,7 +86,7 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('local labels', () => {
-			lbls.readListFiles(config, mm);
+			lbls.readListFiles(config, testMm);
 
 			let addr = lbls.getNumberForLabel('label2')!;
 			assert.equal(addr, 0x10001);
@@ -102,7 +102,7 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('address -> file/line', () => {
-			lbls.readListFiles(config, mm);
+			lbls.readListFiles(config, testMm);
 			const fname = config.revEng[0].path;
 
 			// label2
@@ -176,7 +176,7 @@ suite('Labels (revEng)', () => {
 
 
 		test('file/line -> address', () => {
-			lbls.readListFiles(config, mm);
+			lbls.readListFiles(config, testMm);
 			const fname = config.revEng[0].path;
 
 			// label2
@@ -211,13 +211,38 @@ suite('Labels (revEng)', () => {
 
 	suite('Warnings', () => {
 
+		const testMm = new MemoryModel({
+			slots: [
+				{
+					range: [0x0000, 0xBFFF],
+					banks: [
+						{
+							index: 0,
+							shortName: 'R0'	// Not used because only one bank
+						}
+					]
+				},
+				{
+					range: [0xC000, 0xFFFF],
+					banks: [
+						{
+							index: 3
+						},
+						{
+							index: 44
+						}
+					]
+				}
+			]
+		});
+
 		test('expression wrong in equ', () => {
 			const config: any = {
 				revEng: [{
 					path: 'tests/data/labels/projects/revEng/wrong1.list'
 				}]
 			};
-			lbls.readListFiles(config, new MemoryModelUnknown());
+			lbls.readListFiles(config, testMm);
 
 			// Check
 			const warnings = lbls.getWarnings();
@@ -232,7 +257,7 @@ suite('Labels (revEng)', () => {
 					path: 'tests/data/labels/projects/revEng/wrong2.list'
 				}]
 			};
-			lbls.readListFiles(config, new MemoryModelUnknown());
+			lbls.readListFiles(config, testMm);
 
 			// Check
 			const warnings = lbls.getWarnings();
@@ -247,7 +272,7 @@ suite('Labels (revEng)', () => {
 					path: 'tests/data/labels/projects/revEng/main.list'
 				}]
 			};
-			lbls.readListFiles(config, new MemoryModelUnknown());
+			lbls.readListFiles(config, testMm);
 
 			// Check
 			const warnings = lbls.getWarnings();
@@ -260,7 +285,7 @@ suite('Labels (revEng)', () => {
 					path: 'tests/data/labels/projects/revEng/samelabel.list'
 				}]
 			};
-			lbls.readListFiles(config, new MemoryModelUnknown());
+			lbls.readListFiles(config, testMm);
 
 			// Check
 			const warnings = lbls.getWarnings();
@@ -275,7 +300,7 @@ suite('Labels (revEng)', () => {
 					path: 'tests/data/labels/projects/revEng/samelabellocal.list'
 				}]
 			};
-			lbls.readListFiles(config, new MemoryModelUnknown());
+			lbls.readListFiles(config, testMm);
 
 			// Check
 			const warnings = lbls.getWarnings();
@@ -297,25 +322,25 @@ suite('Labels (revEng)', () => {
 		// Test WPMEM
 		const wpLines = lbls.getWatchPointLines();
 		assert.equal(wpLines.length, 3);
-		assert.equal(wpLines[0].address, 6);
+		assert.equal(wpLines[0].address, 0x10006);
 		assert.equal(wpLines[0].line, "WPMEM");
-		assert.equal(wpLines[1].address, 0x0007);
+		assert.equal(wpLines[1].address, 0x10007);
 		assert.equal(wpLines[1].line, "WPMEM");
-		assert.equal(wpLines[2].address, 0x0008);
+		assert.equal(wpLines[2].address, 0x10008);
 		assert.equal(wpLines[2].line, "WPMEM");
 
 		// Test ASSERTION
 		const assertionLines = lbls.getAssertionLines();
 		assert.equal(assertionLines.length, 2);
-		assert.equal(assertionLines[0].address, 0x8005);
+		assert.equal(assertionLines[0].address, 0x18005);
 		assert.equal(assertionLines[0].line, "ASSERTION");
-		assert.equal(assertionLines[1].address, 0x8006);
+		assert.equal(assertionLines[1].address, 0x18006);
 		assert.equal(assertionLines[0].line, "ASSERTION");
 
 		// Test LOGPOINT
 		const lpLines = lbls.getLogPointLines();
 		assert.equal(lpLines.length, 1);
-		assert.equal(lpLines[0].address, 0x8006);
+		assert.equal(lpLines[0].address, 0x18006);
 		assert.equal(lpLines[0].line, "LOGPOINT");
 	});
 

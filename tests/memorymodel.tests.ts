@@ -506,7 +506,7 @@ suite('MemoryModel', () => {
 			}) as any;
 
 			assert.equal(mm.banks.length, 4);
-			assert.equal(mm.banks[0].shortName, "");
+			assert.equal(mm.banks[0].shortName, "MYSHORTBANK");
 			assert.equal(mm.banks[1].shortName, "M1");
 			assert.equal(mm.banks[2].shortName, "M2");
 		});
@@ -720,8 +720,8 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks[0].name, "ROM");
 			assert.equal(mm.banks[1].name, "RAM");
 			assert.equal(mm.banks[2].name, "UNUSED");
-			assert.equal(mm.banks[0].shortName, "");
-			assert.equal(mm.banks[1].shortName, "");
+			assert.equal(mm.banks[0].shortName, "0");
+			assert.equal(mm.banks[1].shortName, "1");
 			assert.equal(mm.banks[2].shortName, "");
 			assert.equal(mm.banks[0].bankType, BankType.ROM);
 			assert.equal(mm.banks[1].bankType, BankType.RAM);
@@ -762,8 +762,8 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks.length, 2);
 			assert.equal(mm.banks[0].name, "ROM");
 			assert.equal(mm.banks[1].name, "RAM");
-			assert.equal(mm.banks[0].shortName, "");
-			assert.equal(mm.banks[1].shortName, "");
+			assert.equal(mm.banks[0].shortName, "0");
+			assert.equal(mm.banks[1].shortName, "1");
 			assert.equal(mm.banks[0].bankType, BankType.ROM);
 			assert.equal(mm.banks[1].bankType, BankType.RAM);
 
