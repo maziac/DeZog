@@ -341,7 +341,6 @@ export class ZSimRemote extends DzrpRemote {
 
 		// Convert labels if necessary.
 		this.memoryModel.init();
-		Labels.convertLabelsTo(this.memoryModel);	// TODO: still needed?
 
 		// Create a Z80 CPU to emulate Z80 behavior
 		this.z80Cpu = new Z80Cpu(this.memory, this.ports, () => {

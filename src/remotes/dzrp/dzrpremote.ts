@@ -219,7 +219,6 @@ export class DzrpRemote extends RemoteBase {
 					throw Error("Unknown machine type " + resp.machineType + " received.");
 			}
 			this.memoryModel.init();
-			Labels.convertLabelsTo(this.memoryModel);
 
 			// Set Program Counter to execAddress
 			await Remote.setLaunchExecAddress();

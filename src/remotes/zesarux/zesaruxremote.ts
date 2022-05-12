@@ -233,10 +233,6 @@ export class ZesaruxRemote extends RemoteBase {
 				// Init
 				this.memoryModel.init();
 
-				// If the target memory model is different to the oen used for the labels
-				// then the file <-> address association needs to be changed.
-				Labels.convertLabelsTo(this.memoryModel);
-
 				// Set Program Counter to execAddress
 				this.setLaunchExecAddress();
 

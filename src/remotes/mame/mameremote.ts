@@ -6,7 +6,6 @@ import {Settings} from '../../settings';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {DzrpQeuedRemote} from '../dzrp/dzrpqeuedremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';
-import {Labels} from '../../labels/labels';
 import {BREAK_REASON_NUMBER, Remote} from '../remotebase';
 import {MemoryModelUnknown} from '../MemoryModel/predefinedmemorymodels';
 
@@ -123,7 +122,6 @@ export class MameRemote extends DzrpQeuedRemote {
 			// 64k ROM
 			this.memoryModel = new MemoryModelUnknown()
 			this.memoryModel.init();
-			Labels.convertLabelsTo(this.memoryModel);
 
 			// Set Program Counter to execAddress
 			await Remote.setLaunchExecAddress();
