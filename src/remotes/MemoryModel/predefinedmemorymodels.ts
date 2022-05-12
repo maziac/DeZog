@@ -128,7 +128,7 @@ export class MemoryModelZx48k extends MemoryModel {
  * 2 ROMs
  */
 export class MemoryModelZx128k extends MemoryModel {
-	constructor() {
+	constructor(ramBanks = 8) {
 		super({
 			slots: [
 				{
@@ -172,15 +172,14 @@ export class MemoryModelZx128k extends MemoryModel {
 					initialBank: 0,
 					banks: [
 						{
-							index: [0, 7],	// All banks are already defined in previous range
+							index: [0, ramBanks-1],
 						}
 					]
 				}
-
 			],
 			ioMmu: [
 				"var disabled;",
-				"if(portAddress == 0x7FFD && !disabled) {",
+				"if((portAddress | 0x7FFD) == 0x7FFD && !disabled) {",
 				"  slotC000 = portValue & 0x07; // RAM block select",
 				"  disabled = portValue & 0b0100000; // DIS",
 				"  slotROM = ((portValue & 0b0010000) >>> 4) + 8;",
@@ -190,6 +189,31 @@ export class MemoryModelZx128k extends MemoryModel {
 		this.name = 'ZX128K';
 	}
 }
+
+
+/**
+ * ZX256K
+ * 16 RAM banks a 16k.
+ * 2 ROMs
+ */
+/*
+Too many clones: https://zx-pk.ru/threads/11490-paging-ports-of-zx-clones.html?langid=1
+I think I leave it with the ZX128K.
+export class MemoryModelZx256k extends MemoryModelZx128k {
+	constructor() {
+		super(16);	// 16 RAM banks
+		this.name = 'ZX256K';
+		this.ioMmu = [
+			"var disabled;",
+			"if((portAddress | 0x7FFD) == 0x7FFD && !disabled) {",
+			"  slotC000 = portValue & 0x07; // RAM block select",
+			"  disabled = portValue & 0b0100000; // DIS",
+			"  slotROM = ((portValue & 0b0010000) >>> 4) + 8;",
+			"}"
+		].join('\n');
+	}
+}
+*/
 
 
 /**

@@ -172,7 +172,7 @@ export class LabelsClass {
 		this.filePaths.length = 0;
 		this.smallValuesMaximum = smallValuesMaximum;
 		this.bankSize = 0;
-		this.warnings = undefined as any;
+		this.warnings = '';
 	}
 
 
@@ -209,8 +209,6 @@ export class LabelsClass {
 	 * @param memoryModel The memory model. Used for bank/long address creation.
 	 */
 	public readListFiles(mainConfig: SettingsParameters, memoryModel: MemoryModel) {
-		this.warnings = '';
-
 		// Clear some fields
 		this.init(mainConfig.smallValuesMaximum);
 
@@ -224,7 +222,7 @@ export class LabelsClass {
 				// Warnings
 				const warnings = parser.getWarnings();
 				if (warnings)
-					this.warnings += 'sjasmplus sld parser warnings (' + config.path + '):\n' + warnings;
+					this.warnings += '"sjasmplus" sld parser warnings (' + config.path + '):\n' + warnings;
 				// Store path
 				this.filePaths.push(config.path);
 			}
@@ -260,7 +258,7 @@ export class LabelsClass {
 				// Warnings
 				const warnings = parser.getWarnings();
 				if (warnings)
-					this.warnings += 'revEng parser warnings (' + config.path + '):\n' + warnings;
+					this.warnings += '"revEng" parser warnings (' + config.path + '):\n' + warnings;
 			}
 			this.bankSize = 0x4000;	// TODO: need to be read from somewhere
 		}
