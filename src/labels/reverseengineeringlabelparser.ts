@@ -47,7 +47,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	public static bankSeparator = '.';	// Note: need to be changed in regexAddr as well
 
 	// Regex to parse the address
-	protected regexEqu = /^\s*([a-z_][\w\.]*):\s*EQU\s+([^;]+)/i;	
+	protected regexEqu = /^\s*([a-z_][\w\.]*):\s*EQU\s+([^;]+)/i;
 
 	// Regex to parse the address
 	protected regexAddr = /^(([\da-f]+)(\.(\w+))?\s*)/i;
@@ -139,8 +139,6 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 		let bank = -1;	// 0 = no bank
 		const bankStr = matchAddr[4];
 		bank = this.memoryModel.parseBank(addr64k, bankStr);
-		if (bankStr)
-			bank = parseInt(bankStr.substring(1));
 		workLine = workLine.substring(matchAddr[1].length);
 
 		// Create long address

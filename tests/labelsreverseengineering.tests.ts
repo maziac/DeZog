@@ -6,6 +6,7 @@ import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {ReverseEngineeringLabelParser} from '../src/labels/reverseengineeringlabelparser';
+import {parse} from 'path';
 
 suite('Labels (revEng)', () => {
 
@@ -327,8 +328,25 @@ suite('Labels (revEng)', () => {
 
 		suite('shortName parsing', () => {
 
+			setup(() => {
+				listText = `
+0000.R0		LR0:
+0100.R1		LR1:
+
+4000		L4000:
+4001.3		L4001:	; Not necessary but allowed
+
+8000.MB2	LMB2:
+8000.MB4	LMB4:
+8000.MB5	LMB5:
+8000.6		L6:
+8000.7		L7:
+`;
+
+			});
+
 			// Test that a shortname in a label like 0000:R1 is correctly parsed.
-			test('Target: MemoryModelUnknown', () => {
+			test('correct parsing', () => {
 				// Custom memory model
 				const mm = new MemoryModel({
 					slots: [
@@ -338,12 +356,10 @@ suite('Labels (revEng)', () => {
 							banks: [
 								{
 									index: 0,
-									name: 'ROM0',
 									shortName: 'R0'
 								},
 								{
 									index: 1,
-									name: 'ROM1',
 									shortName: 'R1'
 								}
 							]
@@ -362,13 +378,14 @@ suite('Labels (revEng)', () => {
 							banks: [
 								{
 									index: 2,
-									name: 'RAM${index}',
-									shortName: 'B${index}'
+									shortName: 'MB${index}'
 								},
 								{
-									index: [4, 7],
-									name: 'RAM${index}',
-									shortName: 'B${index}'
+									index: [4, 5],
+									shortName: 'MB${index}'
+								},
+								{
+									index: [6, 7],
 								}
 							]
 						},
@@ -382,8 +399,93 @@ suite('Labels (revEng)', () => {
 						}
 					]
 				});
+				// Is parsed without error:
 				createSldFile(mm);
 
+				// Check labels
+				assert.equal(parser.numberForLabel.get('LR0'), 0x010000);
+				assert.equal(parser.numberForLabel.get('LR1'), 0x020100);
+
+				assert.equal(parser.numberForLabel.get('L4000'), 0x044000);
+				assert.equal(parser.numberForLabel.get('L4001'), 0x044001);
+
+				assert.equal(parser.numberForLabel.get('LMB2'), 0x038000);
+				assert.equal(parser.numberForLabel.get('LMB4'), 0x058000);
+				assert.equal(parser.numberForLabel.get('LMB5'), 0x068000);
+				assert.equal(parser.numberForLabel.get('L6'), 0x078000);
+				assert.equal(parser.numberForLabel.get('L7'), 0x088000);
+			});
+
+
+			// Test that a shortname in a label like 0000:R1 is correctly parsed.
+			test('errors during parsing', () => {
+				// Custom memory model
+				const mm = new MemoryModel({
+					slots: [
+						{
+							range: [0x0000, 0x3FFF],
+							name: "slotROM",
+							banks: [
+								{
+									index: 0,
+									shortName: 'R0'
+								},
+								{
+									index: 1,
+									shortName: 'R1'
+								}
+							]
+						},
+						{
+							range: [0x4000, 0x7FFF],
+							banks: [
+								{
+									index: 3
+								}
+							]
+						},
+						{
+							range: [0x8000, 0xBFFF],
+							name: "bankedSlot",
+							banks: [
+								{
+									index: 2,
+									shortName: 'MB${index}'
+								},
+								{
+									index: [4, 5],
+									shortName: 'MB${index}'
+								},
+								{
+									index: [6, 7],
+								}
+							]
+						},
+						{
+							range: [0xC000, 0xFFFF],
+							banks: [
+								{
+									index: 8
+								}
+							]
+						}
+					]
+				});
+
+				assert.throws(() => {
+					listText = "0000.R2";
+					createSldFile(mm);
+				}, Error);
+
+				assert.throws(() => {
+					listText = "8000.R0";
+					createSldFile(mm);
+				}, Error);
+
+				assert.throws(() => {
+					listText = "4000.4";
+					createSldFile(mm);
+				}, Error);
 			});
 
 		});
@@ -393,31 +495,7 @@ suite('Labels (revEng)', () => {
 
 			setup(() => {
 				// Prepare sld file:
-				listText =
-					`
-0000 null:
-
-11CB    L11CB:
-11CB    47           LD   B,A
-
-8011:2	 subnop:
-8011:2    00            NOP
-;8012:2    00            NOP
-8013:2    00            NOP
-
-;8010	; WPMEMx
-
-
-
-;8011	; LOGPOINTx
-;8012	; WPMEM
-;8013	; LOGPOINTx
-
-;8014    C9            RET
-
-80DB
-80DD
-80DF	stack_top:`;
+				listText = "";
 			});
 
 

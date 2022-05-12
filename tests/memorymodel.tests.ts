@@ -138,13 +138,84 @@ suite('MemoryModel', () => {
 			const mm = new MemoryModel({slots: []}) as any;
 			assert.equal(mm.slotRanges.length, 1);
 			assert.equal(mm.slotRanges[0].banks.size, 0);
+			assert.equal(mm.getBanksFor(0x1000).size, 0);
 		});
 
-		test('1 slot range', () => { // TODO
-			const mm = new MemoryModel({slots: []}) as any;
-			assert.equal(mm.banks.length, 8);
+		test('A few banks', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0xFFFF],
+						banks: [
+							{
+								index: 0
+							},
+							{
+								index: 1
+							},
+							{
+								index: [2, 9]
+							}
+						]
+					}
+				]
+			}) as any;
+			assert.equal(mm.slotRanges.length, 1);
+			assert.equal(mm.slotRanges[0].banks.size, 10);
+
+			const banks = mm.getBanksFor(0xFFFF);
+			assert.equal(banks.size, 10);
+			for (let i = 0; i < banks.size; i++)
+				assert.ok(banks.has(i));
+		});
+
+
+		test('Mixed', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x1000, 0x7FFF],
+						banks: [
+							{
+								index: 0
+							},
+							{
+								index: 5
+							}
+						]
+					},
+					{
+						range: [0xA000, 0xBFFF],
+						banks: [
+							{
+								index: [10, 20]
+							}
+						]
+					}
+				]
+			}) as any;
+
+			assert.equal(mm.slotRanges.length, 5);
+
+			assert.equal(mm.slotRanges[0].banks.size, 0);
+			assert.equal(mm.slotRanges[1].banks.size, 2);
+			assert.equal(mm.slotRanges[2].banks.size, 0);
+			assert.equal(mm.slotRanges[3].banks.size, 11);
+			assert.equal(mm.slotRanges[4].banks.size, 0);
+
+			assert.equal(mm.getBanksFor(0x0000).size, 0);
+			assert.equal(mm.getBanksFor(0x0FFF).size, 0);
+			assert.equal(mm.getBanksFor(0x1000).size, 2);
+			assert.equal(mm.getBanksFor(0x7FFF).size, 2);
+			assert.equal(mm.getBanksFor(0x8000).size, 0);
+			assert.equal(mm.getBanksFor(0x9FFF).size, 0);
+			assert.equal(mm.getBanksFor(0xA000).size, 11);
+			assert.equal(mm.getBanksFor(0xBFFF).size, 11);
+			assert.equal(mm.getBanksFor(0xC000).size, 0);
+			assert.equal(mm.getBanksFor(0xFFFF).size, 0);
 		});
 	});
+
 
 
 	suite('slot/address association', () => {
@@ -341,6 +412,166 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks.length, 2);
 			assert.equal(mm.banks[0].size, 0x8000);
 			assert.equal(mm.banks[1].size, 0x4000);	// UNUSED
+		});
+
+
+		test('same bank, 2 different names', () => {
+			// First name is used, second name is ignored
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0x3FFF],
+						banks: [
+							{
+								index: 0,
+								name: "MYBANK"
+							}
+						]
+					},
+					{
+						range: [0x8000, 0xFFFF],
+						banks: [
+							{
+								index: 0,
+								name: "MYOTHERNAMEDBANK"
+							}
+						]
+					}
+				]
+			}) as any;
+
+			assert.equal(mm.banks.length, 2);
+			assert.equal(mm.banks[0].name, "MYBANK");
+		});
+
+
+		test('same bank, 2 different short names', () => {
+			// First name is used, second name is ignored
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0x3FFF],
+						banks: [
+							{
+								index: 0,
+								shortName: "MYSHORTBANK"
+							},
+							{
+								index: 1
+							}
+						]
+					},
+					{
+						range: [0x8000, 0xFFFF],
+						banks: [
+							{
+								index: 0,
+								shortName: "MYSHORTOTHERNAMEDBANK"
+							},
+							{
+								index: 1
+							}
+						]
+					}
+				]
+			}) as any;
+
+			assert.equal(mm.banks.length, 3);
+			assert.equal(mm.banks[0].shortName, "MYSHORTBANK");
+		});
+
+		test('short names, unused', () => {
+			// shortNames are unused if there is only one bank in one slot.
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0x3FFF],
+						banks: [
+							{
+								index: 0,
+								shortName: "MYSHORTBANK"
+							}
+						]
+					},
+					{
+						range: [0x8000, 0xFFFF],
+						banks: [
+							{
+								index: [1, 2],
+								shortName: "M${index}"
+							}
+						]
+					}
+				]
+			}) as any;
+
+			assert.equal(mm.banks.length, 4);
+			assert.equal(mm.banks[0].shortName, "");
+			assert.equal(mm.banks[1].shortName, "M1");
+			assert.equal(mm.banks[2].shortName, "M2");
+		});
+
+		test('different banks, same names', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0x3FFF],
+						banks: [
+							{
+								index: 0,
+								name: "MYBANK"
+							}
+						]
+					},
+					{
+						range: [0x8000, 0xFFFF],
+						banks: [
+							{
+								index: 2,
+								name: "MYBANK"
+							}
+						]
+					}
+				]
+			}) as any;
+
+			assert.equal(mm.banks.length, 4);
+			assert.equal(mm.banks[0].name, "MYBANK");
+			assert.equal(mm.banks[2].name, "MYBANK");	// Makes no sense but is allowed
+		});
+
+
+		test('different banks, same short names', () => {
+			assert.throws(() => {
+				new MemoryModel({	// NOSONAR
+					slots: [
+						{
+							range: [0x0000, 0x3FFF],
+							banks: [
+								{
+									index: 0,
+									shortName: "MYSHORTBANK"
+								},
+								{
+									index: 3
+								}
+							]
+						},
+						{
+							range: [0x8000, 0xFFFF],
+							banks: [
+								{
+									index: 2,
+									shortName: "MYSHORTBANK"
+								},
+								{
+									index: 4
+								}
+							]
+						}
+					]
+				});
+			}, Error);
 		});
 
 
@@ -691,10 +922,10 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks[0].shortName, "0");
 			assert.equal(mm.banks[1].shortName, "1");
 			assert.equal(mm.banks[223].shortName, "223");
-			assert.equal(mm.banks[252].shortName, "R0");
-			assert.equal(mm.banks[253].shortName, "R0");
-			assert.equal(mm.banks[254].shortName, "R1");
-			assert.equal(mm.banks[255].shortName, "R1");
+			assert.equal(mm.banks[252].shortName, "R0a");
+			assert.equal(mm.banks[253].shortName, "R0b");
+			assert.equal(mm.banks[254].shortName, "R1a");
+			assert.equal(mm.banks[255].shortName, "R1b");
 
 			assert.equal(mm.banks[0].bankType, BankType.RAM);
 			assert.equal(mm.banks[1].bankType, BankType.RAM);
@@ -840,6 +1071,173 @@ suite('MemoryModel', () => {
 			assert.equal(Z80Registers.getSlotFromAddress(0xA000), 5);
 			assert.equal(Z80Registers.getSlotFromAddress(0xC000), 6);
 			assert.equal(Z80Registers.getSlotFromAddress(0xE000), 7);
+		});
+	});
+
+
+
+	suite('parse', () => {
+
+		test('empty slot range', () => {
+			const mm = new MemoryModel({slots: []}) as any;
+
+			assert.throws(() => {
+				mm.parseBank(0x0000, '0');
+			}, Error);
+
+			assert.throws(() => {
+				mm.parseBank(0x0000, '');
+			}, Error);
+		});
+
+		test('different banks', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0x7FFF],
+						banks: [
+							{
+								index: 0,
+								shortName: 'R0'
+							},
+							{
+								index: 1,
+								shortName: 'R1',
+							}
+						]
+					},
+					{
+						range: [0x8000, 0xFFFF],
+						banks: [
+							{
+								index: 2,
+								shortName: 'CUSTOMNAME${index}'
+							},
+							{
+								index: 3,
+								shortName: 'CUSTOMNAME_B'
+							},
+							{
+								index: [10, 15],
+								shortName: 'BANK${index}',
+							}
+						]
+					},
+				]
+			}) as any;
+			assert.equal(mm.slotRanges.length, 2);
+			assert.equal(mm.slotRanges[0].banks.size, 2);
+			assert.equal(mm.slotRanges[1].banks.size, 8);
+
+			let banks = mm.getBanksFor(0x0000);
+			assert.equal(banks.size, 2);
+			assert.ok(banks.has(0));
+			assert.ok(banks.has(1));
+
+			banks = mm.getBanksFor(0xFFFF);
+			assert.equal(banks.size, 8);
+			for (let b = 2; b <= 3; b++) {
+				assert.ok(banks.has(b), b.toString());
+			}
+			for (let b = 10; b <= 15; b++) {
+				assert.ok(banks.has(b), b.toString());
+			}
+
+			assert.equal(mm.parseShortNameForBank('R0'), 0);
+			assert.equal(mm.parseShortNameForBank('R1'), 1);
+			assert.equal(mm.parseShortNameForBank('CUSTOMNAME2'), 2);
+			assert.equal(mm.parseShortNameForBank('CUSTOMNAME_B'), 3);
+
+			for (let b = 10; b <= 15; b++) {
+				assert.equal(mm.parseShortNameForBank('BANK' + b), b);
+			}
+		});
+
+
+		test('no switched banks', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0x7FFF],
+						banks: [
+							{
+								index: 0,
+							}
+						]
+					},
+				]
+			});
+
+			// No bank info required
+			assert.equal(mm.parseBank(0x0000, ''), 0);
+		});
+
+
+		test('errors', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0x3FFF],
+						banks: [
+							{
+								index: 0,
+								shortName: 'R0'
+							},
+							{
+								index: 1,
+								shortName: 'R1',
+							}
+						]
+					},
+					{
+						range: [0x8000, 0xFFFF],
+						banks: [
+							{
+								index: 2,
+								shortName: 'CUSTOMNAME${index}'
+							},
+							{
+								index: 3,
+								shortName: 'CUSTOMNAME_B'
+							},
+							{
+								index: [10, 15],
+								shortName: 'BANK${index}',
+							}
+						]
+					},
+				]
+			}) as any;
+
+			assert.throws(() => {
+				// "Bank with shortName does not exist ..."
+				mm.parseShortNameForBank('R0xxx');
+			}, Error);
+
+			assert.throws(() => {
+				// "Bank with shortName does not exist ..."
+				mm.parseBank(0x0000, 'R0xxx');
+			}, Error);
+
+			assert.throws(() => {
+				// "Bank is not reachable ..."
+				mm.parseBank(0x8000, 'R0');
+			}, Error);
+
+			assert.throws(() => {
+				// "Address has no mapped bank ..."
+				mm.parseBank(0x4000, '');
+			}, Error);
+
+			assert.throws(() => {
+				// "... lacks bank info ..."
+				mm.parseBank(0x8000, '');
+			}, Error);
+
+			assert.throws(() => {
+				// "Bank with shortName does not exist ..."
+				mm.parseBank(0x0000, 'R0xxx');
+			}, Error);
 		});
 	});
 });

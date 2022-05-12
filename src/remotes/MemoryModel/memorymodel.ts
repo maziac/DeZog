@@ -1,3 +1,4 @@
+import {unwatchFile} from "fs";
 import {Utility} from "../../misc/utility";
 import {CustomMemoryBank, CustomMemoryType} from "../../settingscustommemory";
 import {Z80Registers} from "../z80registers";
@@ -110,6 +111,9 @@ export class MemoryModel {
 	// The IO configuration for switching the banks
 	public ioMmu: string;
 
+	// Associates shortNames of the banks with their bank number.
+	protected shortNameBankNr = new Map<string, number>();
+
 
 	/**
 	 * Constructor.
@@ -207,10 +211,17 @@ export class MemoryModel {
 			const bank = this.banks[index];
 			if (!bank)
 				continue;
-			if (bank.name == undefined)
+			if (bank.name == undefined) {
 				bank.name = 'BANK' + index;
-			if (bank.shortName == undefined)
-				bank.shortName = index.toString();
+			}
+			if (bank.shortName == undefined) {
+				let shortName = index.toString();
+				while (this.shortNameBankNr.get(shortName) != undefined) {
+					shortName += '_';	// try a slightly different name
+				}
+				bank.shortName = shortName;
+				this.shortNameBankNr.set(shortName, index);
+			}
 		}
 
 		// Assign unused memory
@@ -268,22 +279,21 @@ export class MemoryModel {
 				prevInfo.name = bankInfo.name;
 			if (!prevInfo.shortName)
 				prevInfo.shortName = bankInfo.shortName;
-
-			/*
-			// Check if both names are the same
-			if (prevInfo.name && bankInfo.name) {
-				if (prevInfo.name != bankInfo.name)
-					throw Error("Different names given for same the bank.");
-			}
-			if (prevInfo.shortName && bankInfo.shortName) {
-				if (prevInfo.shortName != bankInfo.shortName)
-					throw Error("Different short names given for the same bank.");
-			}
-			*/
 		}
 		else {
 			// New entry
 			this.banks[index] = bankInfo;
+		}
+
+		// Associate short name with bank number
+		const shortName = this.banks[index].shortName;
+		if (shortName) {
+			const bankNr = this.shortNameBankNr.get(shortName);
+			if (bankNr != undefined && bankNr != index) {
+				// Name already exists
+				throw Error("Bank shortName '" + shortName + "' used more than once for different banks.");
+			}
+			this.shortNameBankNr.set(shortName, index);
 		}
 	}
 
@@ -457,7 +467,7 @@ export class MemoryModel {
 	 * Returns the bank size.
 	 * @returns 0 in this case = no banks used.
 	 */
-	public getBankSize() {
+	public getBankSize() {	// TODO: Remove?
 		return 0;
 	}
 
@@ -468,15 +478,13 @@ export class MemoryModel {
 	 * In case the slot is not banked the bank number is derived from the address.
 	 * Also if the address does not fit to the bank an exception is thrown.
 	 * @param addr64k A 64k address.
-	 * @param bankString The string representing the short bank name. Used by the rev--eng parser.
+	 * @param bankString The string representing the short bank name. Used by the rev-eng parser.
 	 * @returns The bank number.
 	 */
 	public parseBank(addr64k: number, bankString: string): number {
 		if (bankString) {
 			// Parse bank
 			const bank = this.parseShortNameForBank(bankString);
-			if (bank == undefined)
-				throw Error("Bank '" + bankString + "' does not exist in memory model '" + this.name + "'.");
 			const banks = this.getBanksFor(addr64k);
 			if (!banks.has(bank))
 				throw Error("Bank '" + bankString + "' is not reachable from address " + Utility.getHexString(addr64k, 4) + ".");
@@ -488,8 +496,10 @@ export class MemoryModel {
 			if (banks.size == 0)
 				throw Error("Address " + Utility.getHexString(addr64k, 4) + " has no mapped bank.");
 			if (banks.size > 1)
-				throw Error("Address " + Utility.getHexString(addr64k, 4) + " is in an area with banked memory but lacks bank information.");
-			return banks[0];
+				throw Error("Address " + Utility.getHexString(addr64k, 4) + " is in an address range with banked memory but lacks bank information.");
+			const values = banks.values().next();
+			const value = values.value;
+			return value;
 		}
 	}
 
@@ -515,6 +525,9 @@ export class MemoryModel {
 	 * @returns The associated bank number, e.g. 9.
 	 */
 	protected parseShortNameForBank(shortName: string): number {
-		return 0;
+		const bankNr = this.shortNameBankNr.get(shortName);
+		if (bankNr == undefined)
+			throw Error("Bank with shortName '" + shortName + "' does not exist in memory model '" + this.name + "'.");
+		return bankNr;
 	}
 }

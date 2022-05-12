@@ -226,13 +226,13 @@ export class MemoryModelZxNext extends MemoryModel {
 						{
 							index: 0xFC,
 							name: 'ROM0',
-							shortName: 'R0',
+							shortName: 'R0a',
 							rom: Utility.getExtensionPath() + '/data/128.rom' 	// 1
 						},
 						{
 							index: 0xFE,
 							name: 'ROM1',
-							shortName: 'R1',
+							shortName: 'R1a',
 							rom: Utility.getExtensionPath() + '/data/48.rom'
 						},
 					]
@@ -247,14 +247,14 @@ export class MemoryModelZxNext extends MemoryModel {
 						{
 							index: 0xFD,
 							name: 'ROM0',
-							shortName: 'R0',
+							shortName: 'R0b',
 							rom: Utility.getExtensionPath() + '/data/128.rom',
 							romOffset: 0x2000
 						},
 						{
 							index: 0xFF,
 							name: 'ROM1',
-							shortName: 'R1',
+							shortName: 'R1b',
 							rom: Utility.getExtensionPath() + '/data/48.rom',
 							romOffset: 0x2000
 						},
