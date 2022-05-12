@@ -18,7 +18,7 @@ import {CustomCode} from './customcode';
 import {BeeperBuffer, ZxBeeper} from './zxbeeper';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
-import {MemoryModelAllRam, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext, MemoryModelZxSpectrumBase} from '../MemoryModel/predefinedmemorymodels';
 
 
 
@@ -75,11 +75,6 @@ export class ZSimRemote extends DzrpRemote {
 	// Is set/reset by the ZSimulatorView to request processing time.
 	protected timeoutRequest: boolean;
 
-	// The address used to display the ULA screen.
-	// This is normally bank 5 but could be changed to bank7 in ZX128.
-	// I.e. normally 0x4000, but could be 7*16=0x1C000 for ZX128.
-	protected ulaScreenAddress: number;
-
 	// ZX Beeper simulation
 	public zxBeeper: ZxBeeper;
 
@@ -91,7 +86,6 @@ export class ZSimRemote extends DzrpRemote {
 	constructor() {
 		super();
 		// Init
-		this.ulaScreenAddress = 0x4000;
 		this.timeoutRequest = false;
 		this.previouslyStoredPCHistory = -1;
 		this.tbblueRegisterSelectValue = 0;
@@ -137,8 +131,8 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected zx128UlaScreenSwitch(port: number, value: number) {
 		// bit 3: Select normal(0) or shadow(1) screen to be displayed.
-		const shadowScreen = value & 0b01000;
-		this.ulaScreenAddress = (shadowScreen == 0) ? 5 * 0x4000 : 7 * 0x4000;
+		const shadowScreen = ((value & 0b01000) != 0);
+		(this.memoryModel as MemoryModelZxSpectrumBase).switchUlaBank(shadowScreen);
 	}
 
 
@@ -302,10 +296,8 @@ export class ZSimRemote extends DzrpRemote {
 					// ZX 128K
 					// Memory Model
 					this.memoryModel = new MemoryModelZx128k();
-					// Bank switching.
-					this.ports.registerSpecificOutPortFunction(0x7FFD, this.zx128UlaScreenSwitch.bind(this));
-					// Screen address is initially bank 5
-					this.ulaScreenAddress = 5 * 0x4000;
+					// ULA Bank switching.
+					this.ports.registerSpecificOutPortFunction(0x7FFD, this.zx128UlaScreenSwitch.bind(this));	// TODO: In fact this is not a specific address but a bit mask for the port.
 				}
 				break;
 			case "ZXNEXT":
@@ -322,8 +314,8 @@ export class ZSimRemote extends DzrpRemote {
 					this.ports.registerSpecificOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
 					this.ports.registerSpecificOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
 					this.ports.registerSpecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
-					// Initially bank 10
-					this.ulaScreenAddress = 10 * 0x2000;
+					// Use ZX128K ULA Bank switching.
+					this.ports.registerSpecificOutPortFunction(0x7FFD, this.zx128UlaScreenSwitch.bind(this));
 				}
 				break;
 			case "CUSTOM":
@@ -924,21 +916,12 @@ export class ZSimRemote extends DzrpRemote {
 	 * @returns The screen as a UInt8Array.
 	 */
 	public getUlaScreen(): Uint8Array {
-		if (this.memoryModel instanceof MemoryModelZx16k || this.memoryModel instanceof MemoryModelZx48k) {
-			const bank = this.memory.getBankMemory(1);
-			return bank.slice(0, 0x1B00);
-		}
-
-		if (this.memoryModel instanceof MemoryModelZx128k) {
-			// TODO: check bit 3 of port $7FFD: 0 = bank 5, 1= bank 7
-			const bank = this.memory.getBankMemory(5);
-			return bank.slice(0, 0x1B00);
-		}
-
-		if (this.memoryModel instanceof MemoryModelZxNext) {
-			// TODO: check bit 3 of port $7FFD: 0 = bank 5, 1= bank 7
-			const bank = this.memory.getBankMemory(2*5);
-			return bank.slice(0, 0x1B00);
+		if (this.memoryModel instanceof MemoryModelZxSpectrumBase) {
+			const ulaBank = this.memoryModel.ulaBank;
+			if (ulaBank != undefined) {
+				const bank = this.memory.getBankMemory(ulaBank);
+				return bank.slice(0, 0x1B00);
+			}
 		}
 
 		// Otherwise return empty screen

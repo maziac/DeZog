@@ -55,10 +55,24 @@ export class MemoryModelAllRam extends MemoryModel {
 
 
 /**
+ * ZX Spectrum base definition.
+ */
+export class MemoryModelZxSpectrumBase extends MemoryModel {
+	// Bank used for the ULA output.
+	public ulaBank: number;
+
+	// Switches the bank for the ULA screen.
+	public switchUlaBank(shadowBank: boolean) {
+		// Overwrite.
+	}
+}
+
+
+/**
  * ZX16K
  * ROM + RAM, above 0x8000 unassigned.
  */
-export class MemoryModelZx16k extends MemoryModel {
+export class MemoryModelZx16k extends MemoryModelZxSpectrumBase {
 	constructor() {
 		super({
 			slots: [
@@ -84,6 +98,7 @@ export class MemoryModelZx16k extends MemoryModel {
 			]
 		});
 		this.name = 'ZX16K';
+		this.ulaBank = 1;
 	}
 }
 
@@ -92,7 +107,7 @@ export class MemoryModelZx16k extends MemoryModel {
  * ZX48K
  * 16K ROM + 48K RAM
  */
-export class MemoryModelZx48k extends MemoryModel {
+export class MemoryModelZx48k extends MemoryModelZxSpectrumBase {
 	constructor() {
 		super({
 			slots: [
@@ -118,6 +133,7 @@ export class MemoryModelZx48k extends MemoryModel {
 			]
 		});
 		this.name = 'ZX48K';
+		this.ulaBank = 1;
 	}
 }
 
@@ -127,7 +143,7 @@ export class MemoryModelZx48k extends MemoryModel {
  * 8 RAM banks a 16k.
  * 2 ROMs
  */
-export class MemoryModelZx128k extends MemoryModel {
+export class MemoryModelZx128k extends MemoryModelZxSpectrumBase {
 	constructor(ramBanks = 8) {
 		super({
 			slots: [
@@ -187,7 +203,15 @@ export class MemoryModelZx128k extends MemoryModel {
 			]
 		});
 		this.name = 'ZX128K';
+		this.switchUlaBank(false);
 	}
+
+
+	// Switches the bank for the ULA screen.
+	public switchUlaBank(shadowBank: boolean) {
+		this.ulaBank = (shadowBank) ? 7 : 5;
+	}
+
 }
 
 
@@ -236,7 +260,7 @@ export class MemoryModelZx256k extends MemoryModelZx128k {
  * ROM1, lower 2k: 0xFE
  * ROM1, upper 2k: 0xFF
  */
-export class MemoryModelZxNext extends MemoryModel {
+export class MemoryModelZxNext extends MemoryModelZxSpectrumBase {
 	constructor() {
 		super({
 			slots: [
@@ -321,5 +345,12 @@ export class MemoryModelZxNext extends MemoryModel {
 			// what cannot be supported here.
 		});
 		this.name = 'ZXNEXT';
+		this.switchUlaBank(false);
+	}
+
+
+	// Switches the bank for the ULA screen.
+	public switchUlaBank(shadowBank: boolean) {
+		this.ulaBank = (shadowBank) ? 2*7 : 2*5;
 	}
 }
