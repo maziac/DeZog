@@ -6,7 +6,7 @@ import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {ReverseEngineeringLabelParser} from '../src/labels/reverseengineeringlabelparser';
-import {parse} from 'path';
+
 
 suite('Labels (revEng)', () => {
 
@@ -23,9 +23,33 @@ suite('Labels (revEng)', () => {
 				path: 'tests/data/labels/projects/revEng/main.list'
 			}]
 		};
+		const mm = new MemoryModel({
+			slots: [
+				{
+					range: [0x0000, 0xBFFF],
+					banks: [
+						{
+							index: 0,
+							shortName: 'R0'	// Not used because only one bank
+						}
+					]
+				},
+				{
+					range: [0xC000, 0xFFFF],
+					banks: [
+						{
+							index: 3
+						},
+						{
+							index: 44
+						}
+					]
+				}
+			]
+		});
 
 		test('labels equ', () => {
-			lbls.readListFiles(config, new MemoryModelUnknown());
+			lbls.readListFiles(config, mm);
 
 			// Check
 			let res = lbls.getNumberForLabel("label_equ1");
@@ -36,17 +60,17 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('labels location', () => {
-			lbls.readListFiles(config, new MemoryModelUnknown());
+			lbls.readListFiles(config, mm);
 			const fname = config.revEng[0].path;
 
 			// Test
 			let res = lbls.getLocationOfLabel('label1')!;
-			assert.equal(res.address, 0);
+			assert.equal(res.address, 0x010000);
 			assert.equal(res.file, fname);
 			assert.equal(res.lineNr, 3);	// line number starts at 0
 
 			res = lbls.getLocationOfLabel('label2')!;
-			assert.equal(res.address, 1);
+			assert.equal(res.address, 0x010001);
 			assert.equal(res.file, fname);
 			assert.equal(res.lineNr, 6);	// line number starts at 0
 
@@ -62,51 +86,51 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('local labels', () => {
-			lbls.readListFiles(config, new MemoryModelUnknown());
+			lbls.readListFiles(config, mm);
 
 			let addr = lbls.getNumberForLabel('label2')!;
-			assert.equal(addr, 1);
+			assert.equal(addr, 0x10001);
 
 			addr = lbls.getNumberForLabel('label2.locala')!;
-			assert.equal(addr, 3);
+			assert.equal(addr, 0x10003);
 
 			addr = lbls.getNumberForLabel('label2.localb')!;
-			assert.equal(addr, 5);
+			assert.equal(addr, 0x10005);
 
 			addr = lbls.getNumberForLabel('label6.locala')!;
-			assert.equal(addr, 7);
+			assert.equal(addr, 0x10007);
 		});
 
 		test('address -> file/line', () => {
-			lbls.readListFiles(config, new MemoryModelUnknown());
+			lbls.readListFiles(config, mm);
 			const fname = config.revEng[0].path;
 
 			// label2
-			let res = lbls.getFileAndLineForAddress(0x0001);
+			let res = lbls.getFileAndLineForAddress(0x10001);
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 6);
-			res = lbls.getFileAndLineForAddress(0x0002);
+			res = lbls.getFileAndLineForAddress(0x10002);
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 6);
 
 			// label2.locala
-			res = lbls.getFileAndLineForAddress(0x0003);
+			res = lbls.getFileAndLineForAddress(0x10003);
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 8);
-			res = lbls.getFileAndLineForAddress(0x0004);
+			res = lbls.getFileAndLineForAddress(0x10004);
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 8);
 
 			// label2.localb
-			res = lbls.getFileAndLineForAddress(0x0003);
+			res = lbls.getFileAndLineForAddress(0x10003);
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 8);
-			res = lbls.getFileAndLineForAddress(0x0004);
+			res = lbls.getFileAndLineForAddress(0x10004);
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 8);
 
 			// no bytes -> file association, but size == 0
-			res = lbls.getFileAndLineForAddress(0x0015);
+			res = lbls.getFileAndLineForAddress(0x10015);
 			//assert.equal(res.fileName, '');
 			assert.equal(res.fileName, 'tests/data/labels/projects/revEng/main.list');
 			assert.equal(res.size, 0);
@@ -117,66 +141,66 @@ suite('Labels (revEng)', () => {
 			assert.equal(res.lineNr, 39);
 
 			// IM 2: bytes stopped by 2 character instruction
-			res = lbls.getFileAndLineForAddress(0x0020);
+			res = lbls.getFileAndLineForAddress(0x10020);
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 41);
-			res = lbls.getFileAndLineForAddress(0x00021);
+			res = lbls.getFileAndLineForAddress(0x10021);
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 41);
-			res = lbls.getFileAndLineForAddress(0x00022);
+			res = lbls.getFileAndLineForAddress(0x10022);
 			assert.equal(res.fileName, '');
 
 			// 01 02  03  ; Byte separated with 2 spaces does not belong to bytes
-			res = lbls.getFileAndLineForAddress(0x0030);
+			res = lbls.getFileAndLineForAddress(0x10030);
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 43);
-			res = lbls.getFileAndLineForAddress(0x00031);
+			res = lbls.getFileAndLineForAddress(0x10031);
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 43);
-			res = lbls.getFileAndLineForAddress(0x00032);
+			res = lbls.getFileAndLineForAddress(0x10032);
 			assert.equal(res.fileName, '');
 
 			// 01 02 03  , empty line after bytes
-			res = lbls.getFileAndLineForAddress(0x0040);
+			res = lbls.getFileAndLineForAddress(0x10040);
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 44);
-			res = lbls.getFileAndLineForAddress(0x00041);
+			res = lbls.getFileAndLineForAddress(0x10041);
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 44);
-			res = lbls.getFileAndLineForAddress(0x00042);
+			res = lbls.getFileAndLineForAddress(0x10042);
 			assert.equal(res.fileName, fname);
 			assert.equal(res.lineNr, 44);
-			res = lbls.getFileAndLineForAddress(0x00043);
+			res = lbls.getFileAndLineForAddress(0x10043);
 			assert.equal(res.fileName, '');
 		});
 
 
 		test('file/line -> address', () => {
-			lbls.readListFiles(config, new MemoryModelUnknown());
+			lbls.readListFiles(config, mm);
 			const fname = config.revEng[0].path;
 
 			// label2
 			let addr = lbls.getAddrForFileAndLine(fname, 6);
-			assert.equal(addr, 0x0001);
+			assert.equal(addr, 0x10001);
 			addr = lbls.getAddrForFileAndLine(fname, 7);
 			assert.equal(addr, -1);
 
 			// label2.locala
 			addr = lbls.getAddrForFileAndLine(fname, 8);
-			assert.equal(addr, 0x003);
+			assert.equal(addr, 0x10003);
 
 			// label2.localb
 			addr = lbls.getAddrForFileAndLine(fname, 9);
 			//assert.equal(addr, -1);
-			assert.equal(addr, 5);
+			assert.equal(addr, 0x10005);
 
 			// label4
 			addr = lbls.getAddrForFileAndLine(fname, 14);
-			assert.equal(addr, 0x006);
+			assert.equal(addr, 0x10006);
 			addr = lbls.getAddrForFileAndLine(fname, 15);
-			assert.equal(addr, 0x006);
+			assert.equal(addr, 0x10006);
 			addr = lbls.getAddrForFileAndLine(fname, 16);
-			assert.equal(addr, 0x006);
+			assert.equal(addr, 0x10006);
 
 			// long address
 			addr = lbls.getAddrForFileAndLine(fname, 39);

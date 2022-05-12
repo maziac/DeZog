@@ -1,4 +1,3 @@
-import {unwatchFile} from "fs";
 import {Utility} from "../../misc/utility";
 import {CustomMemoryBank, CustomMemoryType} from "../../settingscustommemory";
 import {Z80Registers} from "../z80registers";
@@ -166,7 +165,7 @@ export class MemoryModel {
 			if (banksLen == 0)
 				throw Error("No banks specified for range.");
 			for (const bank of banks) {
-				const bankNumbers = this.createBankOrBanks(bank, size, (banksLen > 1));
+				const bankNumbers = this.createBankOrBanks(bank, size, true); //(banksLen > 1));
 				// Store initial bank?
 				if (initialBank == undefined)
 					initialBank = bankNumbers[0];
@@ -446,18 +445,21 @@ export class MemoryModel {
 
 
 	/**
-	 * Returns the name of a bank.
-	 * Used e.g. for the long address display in the disassembly.
-	 * The non-overridden method simply returns the number as string.
-	 * But overridden methods could also prepend the number with e.g. an
-	 * "R" for ROM.
-	 * @param bankNr Bank number. Starts at 0.
-	 * @returns The bank number as string (e.g. "R0") or an empty string if bank is < 0
-	 * (no bank number).
+	 * Returns the short name of a bank.
+	 * @param longAddress The long address.
+	 * @returns The bank number as string (e.g. "R0") or an empty string: if longAddress is < 0x10000 or if there are no switched banks at the given address.
 	 */
-	public getBankShortName(bankNr: number): string {
+	public getBankShortNameForAddress(longAddress: number): string {
+		// Check for long address
+		const bankNr = (longAddress >>> 16) - 1;
 		if (bankNr < 0)
 			return '';
+		// Check for switched banks
+		const addr64k = longAddress & 0xFFFF;
+		const banks = this.getBanksFor(addr64k);
+		if (banks.size == 1)
+			return '';	// Just 1 bank
+		// Get name for bank number
 		const bank = this.banks[bankNr];
 		return bank.shortName;
 	}
