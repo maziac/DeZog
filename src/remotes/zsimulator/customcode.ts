@@ -136,7 +136,7 @@ export class CustomCodeAPI extends EventEmitter {
 export class CustomCode extends EventEmitter {
 
 	// Function used to add an error to the diagnostics.
-	public static addDiagnosticsErrorFunc: ((message: string, filepath: string, line: number, column: number) => void) | undefined;
+	public static addDiagnosticsErrorFunc: ((message: string, severity: 'error' | 'warning', filepath: string, line: number, column: number) => void) | undefined;
 
 
 	/**
@@ -183,7 +183,7 @@ export class CustomCode extends EventEmitter {
 			e.message = 'Custom Code: ' + e.message;
 			// Add diagnostics message
 			if (this.addDiagnosticsErrorFunc && e.position) {
-				this.addDiagnosticsErrorFunc(e.message, e.position.filename, e.position.line, e.position.column);
+				this.addDiagnosticsErrorFunc(e.message, 'error', e.position.filename, e.position.line, e.position.column);
 			}
 			// Re-throw
 			throw e;

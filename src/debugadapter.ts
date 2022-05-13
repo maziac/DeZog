@@ -3746,6 +3746,9 @@ E.g. use "-help -view" to put the help text in an own view.
 
 	public reloadLabels() {
 		try {
+			// Clear diagnostics
+			DiagnosticsHandler.clear();
+			
 			// Read list files
 			Remote.readListFiles(Settings.launch);
 			// Re-read the watchpoints etc.

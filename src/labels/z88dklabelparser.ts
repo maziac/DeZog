@@ -7,7 +7,9 @@ import {AsmConfigBase, Z88dkConfig} from '../settings';
  * This class parses z88dk asm list files.
  */
 export class Z88dkLabelParser extends LabelParserBase {
-
+	// Overwrite parser name (for errors).
+	protected parserName = "z88dk";
+	
 	/// Map with the z88dk labels/symbols.
 	protected z88dkMappings=new Map<string, number>();
 

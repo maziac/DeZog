@@ -42,6 +42,8 @@ export enum SjasmplusMemoryModel {
  *
  */
 export class SjasmplusSldLabelParser extends LabelParserBase {
+	// Overwrite parser name (for errors).
+	protected parserName = "sjasmplus";
 
 	// <source file>|<src line>|<definition file>|<def line>|<page>|<value>|<type>|<data>
 	// Format example:
@@ -116,6 +118,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	/**
 	 * Reads the given sld file.
 	 * As the SLD file is easy to read only one pass is required.
+	 * @param config The assembler configuration.
 	 */
 	public loadAsmListFile(config: AsmConfigBase) {
 		this.config = config;
@@ -123,7 +126,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 		// Check that excludeFiles and srcDirs is not used.
 		if (sldConfig.excludeFiles.length > 0)
-			throw Error("You cannot use 'excludeFiles' in a sjasmplus configuration.");
+			throw Error("You cannot use 'excludeFiles' in a sjasmplus configuration.");	// TODO: to problems pane
 
 		// Init (in case of several sld files)
 		this.lastLabel = undefined as any;
@@ -162,7 +165,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	protected checkSldVersion(lines: Array<string>) {
 		// Check only first line
 		if (lines.length < 1)
-			throw Error("'" + this.config.path + "' is empty.");
+			this.setError("'" + this.config.path + "' is empty.");	// throws
 		// First line
 		const fields = lines[0].split('|');
 		if (fields[1] != 'SLD.data.version')
@@ -237,7 +240,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		}
 		if (missing.length > 0) {
 			const missingStr = missing.join(', ');
-			this.warnings += "The assembler file is missing the 'SLDOPT COMMENT " + missingStr + "' statement. Use of " + missingStr + " is not possible.";
+			this.setWarning("The assembler file is missing the 'SLDOPT COMMENT " + missingStr + "' statement. Use of " + missingStr + " is not possible.");
 		}
 	}
 

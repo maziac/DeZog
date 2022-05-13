@@ -297,7 +297,7 @@ suite('Labels (sjasmplus)', () => {
 
 		test('addressAdd4', () => {
 			const mm = new MemoryModelZxNext();
-			const sdlParser = new SjasmplusSldLabelParser(mm, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any) as any;
+			const sdlParser = new SjasmplusSldLabelParser(mm, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, (issue) => {}) as any;	// NOSONAR
 
 			// 64k address
 			sdlParser.bankSize = 0x10000;
@@ -348,7 +348,8 @@ suite('Labels (sjasmplus)', () => {
 				new Map<string, {file: string, lineNr: number, address: number}>(),
 				new Array<{address: number, line: string}>(),
 				new Array<{address: number, line: string}>(),
-				new Array<{address: number, line: string}>());
+				new Array<{address: number, line: string}>(),
+				(issue) => {});	// NOSONAR
 			parser.loadAsmListFile(config);
 		}
 

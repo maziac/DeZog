@@ -8,11 +8,41 @@ import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
 
 
+/**
+ * An issue is an error or warning generated while parsing the list file.
+ * As list files are computer generated this normally does not happen, except
+ * for warnings.
+ * But for the manually created reverse engineering list file errors can happen
+ * quite easily.
+ */
+export interface Issue {
+	// The parser human readable name
+	parser: string;
+
+	// The absolute file path where the problem occurred.
+	filepath: string;
+
+	// The line number, 0-based.
+	lineNr: number;
+
+	// The severity:
+	severity: 'error' | 'warning';
+
+	// The error or warning text.
+	message: string;
+}
+
 
 /**
  * This class is the base class for the assembler list file parsers.
  */
 export class LabelParserBase {
+	// Overwrite with parser name (for errors) in derived classes.
+	protected parserName: string;
+
+	// Mainly for error reporting.
+	public currentLineNr: number = 0;
+
 	/// Map that associates memory addresses (PC values) with line numbers
 	/// and files.
 	/// Long addresses.
@@ -83,10 +113,6 @@ export class LabelParserBase {
 	/// Used to determine if current (included) files are used or excluded in the addr <-> file search.
 	protected excludedFileStackIndex: number;
 
-
-	// Collects the warnings.
-	protected warnings: string;
-
 	/// The used memory model. E.g. if and how slots are used.
 	/// Set during 'readListFiles'.
 	public memoryModel: MemoryModel;
@@ -98,8 +124,14 @@ export class LabelParserBase {
 	// This is done here.
 	protected funcConvertBank: (address: number, bank: number) => number;
 
+	/// This function gets called when a problem arises, an error or warning.
+	protected issueHandler: (issue: Issue) => void;
 
-	// Constructor.
+
+	/**
+	 *  Constructor.
+	 * @param issueHandler Gets called when an error or problem is found in the file.
+	 */
 	public constructor(	// NOSONAR
 		memoryModel: MemoryModel,
 		fileLineNrs: Map<number, SourceFileEntry>,
@@ -110,7 +142,8 @@ export class LabelParserBase {
 		labelLocations: Map<string, {file: string, lineNr: number, address: number}>,
 		watchPointLines: Array<{address: number, line: string}>,
 		assertionLines: Array<{address: number, line: string}>,
-		logPointLines: Array<{address: number, line: string}>
+		logPointLines: Array<{address: number, line: string}>,
+		issueHandler: (issue: Issue) => void
 	) {
 		// Store variables
 		this.memoryModel = memoryModel;
@@ -123,7 +156,7 @@ export class LabelParserBase {
 		this.watchPointLines = watchPointLines;
 		this.assertionLines = assertionLines;
 		this.logPointLines = logPointLines;
-		this.warnings = '';
+		this.issueHandler = issueHandler;
 	}
 
 
@@ -131,16 +164,17 @@ export class LabelParserBase {
 	 * Reads the given file (an assembler .list file) and extracts all PC
 	 * values (the first 4 digits), so that each line can be associated with a
 	 * PC value.
+	 * @param config The assembler configuration.
 	 */
 	public loadAsmListFile(config: AsmConfigBase) {
-		this.config=config;
+		this.config = config;
 		// Init (in case of several list files)
-		this.excludedFileStackIndex=-1;
-		this.includeFileStack=new Array<{fileName: string, lineNr: number}>();
-		this.listFile=new Array<ListFileLine>();
-		this.modulePrefixStack=new Array<string>();
-		this.modulePrefix=undefined as any;
-		this.lastLabel=undefined as any;
+		this.excludedFileStackIndex = -1;
+		this.includeFileStack = new Array<{fileName: string, lineNr: number}>();
+		this.listFile = new Array<ListFileLine>();
+		this.modulePrefixStack = new Array<string>();
+		this.modulePrefix = undefined as any;
+		this.lastLabel = undefined as any;
 
 		// Check conversion to target memory model: This is done before parsing if the list file
 		// does not contain any memory model.
@@ -170,25 +204,25 @@ export class LabelParserBase {
 	 */
 	protected parseAllLabelsAndAddresses() {
 		// Loop through all lines
-		const fileName=Utility.getRelFilePath(this.config.path);
+		const fileName = Utility.getRelFilePath(this.config.path);
 		const listLinesFull = readFileSync(this.config.path).toString().split('\n');
 		// Strip away windows line endings
 		const listLines = listLinesFull.map(line => line.trimEnd());
-		let lineNr=0;
+		this.currentLineNr = 0;
 		for (let line of listLines) {
 			// Prepare an entry
-			this.currentFileEntry={fileName, lineNr, addr: undefined, size: 0, line, modulePrefix: this.modulePrefix, lastLabel: this.lastLabel};
+			this.currentFileEntry = {fileName, lineNr: this.currentLineNr, addr: undefined, size: 0, line, modulePrefix: this.modulePrefix, lastLabel: this.lastLabel};
 			this.listFile.push(this.currentFileEntry);
 
 			// Parse
 			this.parseLabelAndAddress(line);
 
 			// Check for WPMEM, ASSERTION and LOGPOINT
-			const address=this.currentFileEntry.addr;
+			const address = this.currentFileEntry.addr;
 			this.findWpmemAssertionLogpoint(address, line);
 
 			// Next
-			lineNr++;
+			this.currentLineNr++;
 		}
 	}
 
@@ -201,20 +235,20 @@ export class LabelParserBase {
 	 */
 	protected parseAllFilesAndLineNumbers(startLineNr = 0) {
 		// Loop all lines
-		const count=this.listFile.length;
-		for (let listFileNumber=startLineNr; listFileNumber<count; listFileNumber++) {
-			const entry=this.listFile[listFileNumber];
-			const line=entry.line;
-			if (line.length==0)
+		const count = this.listFile.length;
+		for (let listFileNumber = startLineNr; listFileNumber < count; listFileNumber++) {
+			const entry = this.listFile[listFileNumber];
+			const line = entry.line;
+			if (line.length == 0)
 				continue;
 			// Let it parse
-			this.currentFileEntry=entry;
+			this.currentFileEntry = entry;
 			this.parseFileAndLineNumber(line);
 			// Associate with right file
-			const index=this.includeFileStack.length-1;
-			if (index<0)
+			const index = this.includeFileStack.length - 1;
+			if (index < 0)
 				continue;	// No main file found so far
-				//throw Error("File parsing error: no main file.");
+			//throw Error("File parsing error: no main file.");
 			// Associate with right file
 			this.associateSourceFileName();
 		}
@@ -228,12 +262,12 @@ export class LabelParserBase {
 	 * @param address The address that correspondents to the line.
 	 * @param fullLine The line of the list file as string.
 	 */
-	protected findWpmemAssertionLogpoint(address: number|undefined, fullLine: string) {
+	protected findWpmemAssertionLogpoint(address: number | undefined, fullLine: string) {
 		// Extract just comment
-		const comment=this.getComment(fullLine);
+		const comment = this.getComment(fullLine);
 
 		// WPMEM
-		let match=/.*(\bWPMEM([\s,]|$).*)/.exec(comment);
+		let match = /.*(\bWPMEM([\s,]|$).*)/.exec(comment);
 		if (match) {
 			// Add watchpoint at this address
 			/*
@@ -244,18 +278,18 @@ export class LabelParserBase {
 			this.watchPointLines.push({address: address!, line: match[1]});
 		}
 
-		if (address==undefined)
+		if (address == undefined)
 			return;
 
 		// ASSERTION
-		match =/.*(\bASSERTION([\s,]|$).*)/.exec(comment);
+		match = /.*(\bASSERTION([\s,]|$).*)/.exec(comment);
 		if (match) {
 			// Add ASSERTION at this address
 			this.assertionLines.push({address, line: match[1]});
 		}
 
 		// LOGPOINT
-		match =/.*(\bLOGPOINT([\s,]|$).*)/.exec(comment);
+		match = /.*(\bLOGPOINT([\s,]|$).*)/.exec(comment);
 		if (match) {
 			// Add logpoint at this address
 			this.logPointLines.push({address, line: match[1]});
@@ -270,10 +304,10 @@ export class LabelParserBase {
 	 * @returns Just the comment, e.g. the text after ";". E.g. " WPMEM, 5, w"
 	 */
 	protected getComment(line: string): string {
-		const i=line.indexOf(";");
-		if (i<0)
+		const i = line.indexOf(";");
+		if (i < 0)
 			return "";	// No comment
-		const comment=line.substring(i+1);
+		const comment = line.substring(i + 1);
 		return comment;
 	}
 
@@ -284,14 +318,14 @@ export class LabelParserBase {
 	 * is "" and will be ignored.
 	 */
 	protected associateSourceFileName() {
-		let fName="";
-		if (this.excludedFileStackIndex==-1) {
+		let fName = "";
+		if (this.excludedFileStackIndex == -1) {
 			// Not excluded
-			const index=this.includeFileStack.length-1;
-			if(index>=0)	// safety check
-				fName=this.includeFileStack[index].fileName;
+			const index = this.includeFileStack.length - 1;
+			if (index >= 0)	// safety check
+				fName = this.includeFileStack[index].fileName;
 		}
-		this.currentFileEntry.fileName=fName;
+		this.currentFileEntry.fileName = fName;
 	}
 
 
@@ -302,15 +336,15 @@ export class LabelParserBase {
 	 */
 	protected listFileModeFinish() {
 		// Use list file directly instead of real filenames.
-		const lineArray=new Array<number>();
-		const fileName=Utility.getRelFilePath(this.config.path);
+		const lineArray = new Array<number>();
+		const fileName = Utility.getRelFilePath(this.config.path);
 		this.lineArrays.set(fileName, lineArray);
 		for (const entry of this.listFile) {
 			// Create label -> file location association
-			const lastLabel=entry.lastLabel;
+			const lastLabel = entry.lastLabel;
 			if (lastLabel) {
-				const fullLabel=this.getFullLabel(entry.modulePrefix, lastLabel);
-				let fileLoc=this.labelLocations.get(fullLabel);
+				const fullLabel = this.getFullLabel(entry.modulePrefix, lastLabel);
+				let fileLoc = this.labelLocations.get(fullLabel);
 				if (!fileLoc) {
 					// Add new file location
 					const address: number = entry.addr!;
@@ -350,7 +384,7 @@ export class LabelParserBase {
 
 			// Set address
 			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
-//				if(entry.size > 0)	// Only real code gets an address, e.g. not just a label without opcode
+				//				if(entry.size > 0)	// Only real code gets an address, e.g. not just a label without opcode
 				lineArray[entry.lineNr] = entry.addr;
 				//console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));
 			}
@@ -365,18 +399,18 @@ export class LabelParserBase {
 	 */
 	protected sourcesModeFinish() {
 		for (const entry of this.listFile) {
-			if (entry.fileName.length==0)
+			if (entry.fileName.length == 0)
 				continue;	// Skip lines with no filename (e.g. '# End of file')
 
 			// Create label -> file location association
-			const lastLabel=entry.lastLabel;
+			const lastLabel = entry.lastLabel;
 			if (lastLabel) {
-				const fullLabel=this.getFullLabel(entry.modulePrefix, lastLabel);
-				let fileLoc=this.labelLocations.get(fullLabel);
+				const fullLabel = this.getFullLabel(entry.modulePrefix, lastLabel);
+				let fileLoc = this.labelLocations.get(fullLabel);
 				if (!fileLoc) {
 					// Add new file location
 					const address: number = entry.addr!;
-					fileLoc={file: entry.fileName, lineNr: entry.lineNr, address};
+					fileLoc = {file: entry.fileName, lineNr: entry.lineNr, address};
 					this.labelLocations.set(fullLabel, fileLoc);
 				}
 			}
@@ -386,24 +420,25 @@ export class LabelParserBase {
 				continue;
 
 			// last address entry wins:
-			for (let i=0; i<entry.size; i++) {
-				const addr=(i==0) ? entry.addr : (entry.addr+i)&0xFFFF;	// Don't mask entry addr if size is 1, i.e. for sjasmplus sld allow higher addresses
-				this.fileLineNrs.set(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: entry.size
-});
+			for (let i = 0; i < entry.size; i++) {
+				const addr = (i == 0) ? entry.addr : (entry.addr + i) & 0xFFFF;	// Don't mask entry addr if size is 1, i.e. for sjasmplus sld allow higher addresses
+				this.fileLineNrs.set(addr, {
+					fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: entry.size
+				});
 			}
 
 
-		// Check if a new array need to be created
+			// Check if a new array need to be created
 			if (!this.lineArrays.get(entry.fileName)) {
 				this.lineArrays.set(entry.fileName, new Array<number>());
 			}
 
 			// Get array
-			const lineArray=this.lineArrays.get(entry.fileName)!;
+			const lineArray = this.lineArrays.get(entry.fileName)!;
 
 			// Set address
 			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
-				lineArray[entry.lineNr]=entry.addr;
+				lineArray[entry.lineNr] = entry.addr;
 			}
 		}
 	}
@@ -446,11 +481,11 @@ export class LabelParserBase {
 	 */
 	protected moduleStart(moduleName: string) {
 		this.modulePrefixStack.push(moduleName);
-		this.modulePrefix=this.modulePrefixStack.join(this.labelSeparator)+this.labelSeparator;
-		this.currentFileEntry.modulePrefix=this.modulePrefix;
+		this.modulePrefix = this.modulePrefixStack.join(this.labelSeparator) + this.labelSeparator;
+		this.currentFileEntry.modulePrefix = this.modulePrefix;
 		// Init last label
-		this.lastLabel=undefined as any;
-		this.currentFileEntry.lastLabel=this.lastLabel;
+		this.lastLabel = undefined as any;
+		this.currentFileEntry.lastLabel = this.lastLabel;
 	}
 
 
@@ -460,14 +495,14 @@ export class LabelParserBase {
 	protected moduleEnd() {
 		// Remove last prefix
 		this.modulePrefixStack.pop();
-		if (this.modulePrefixStack.length>0)
-			this.modulePrefix=this.modulePrefixStack.join(this.labelSeparator)+this.labelSeparator;
+		if (this.modulePrefixStack.length > 0)
+			this.modulePrefix = this.modulePrefixStack.join(this.labelSeparator) + this.labelSeparator;
 		else
-			this.modulePrefix=undefined as any;
-		this.currentFileEntry.modulePrefix=this.modulePrefix;
+			this.modulePrefix = undefined as any;
+		this.currentFileEntry.modulePrefix = this.modulePrefix;
 		// Forget last label
-		this.lastLabel=undefined as any;
-		this.currentFileEntry.lastLabel=this.lastLabel;
+		this.lastLabel = undefined as any;
+		this.currentFileEntry.lastLabel = this.lastLabel;
 	}
 
 
@@ -548,8 +583,8 @@ export class LabelParserBase {
 	 * Has to be 1 if address is undefined.
 	 */
 	protected addAddressLine(address: number, size: number) {
-		this.currentFileEntry.addr=address;
-		this.currentFileEntry.size=size;
+		this.currentFileEntry.addr = address;
+		this.currentFileEntry.size = size;
 	}
 
 
@@ -558,11 +593,11 @@ export class LabelParserBase {
 	 * @param modulePrefix The first part of the label, e.g. "math."
 	 * @param label The last part of the label, e.g. "udiv_c_d"
 	 */
-	protected getFullLabel(modulePrefix: string|undefined, label: string) {
-		let result=modulePrefix||'';
-		if (result.length==0)
+	protected getFullLabel(modulePrefix: string | undefined, label: string) {
+		let result = modulePrefix || '';
+		if (result.length == 0)
 			return label;
-		result+=label;
+		result += label;
 		return result;
 	}
 
@@ -573,29 +608,29 @@ export class LabelParserBase {
 	 * @param includeFileName The name of the include file.
 	 */
 	protected includeStart(includeFileName: string) {
-		includeFileName=UnifiedPath.getUnifiedPath(includeFileName);
-		const index=this.includeFileStack.length-1;
+		includeFileName = UnifiedPath.getUnifiedPath(includeFileName);
+		const index = this.includeFileStack.length - 1;
 		let fileName;
-		if (index>=0) {
+		if (index >= 0) {
 			// Include the parent file dir in search
-			const parentFileName=this.includeFileStack[this.includeFileStack.length-1].fileName;
-			const dirName=UnifiedPath.dirname(parentFileName);
-			fileName=Utility.getRelSourceFilePath(includeFileName, [dirName, ...this.config.srcDirs]);
+			const parentFileName = this.includeFileStack[this.includeFileStack.length - 1].fileName;
+			const dirName = UnifiedPath.dirname(parentFileName);
+			fileName = Utility.getRelSourceFilePath(includeFileName, [dirName, ...this.config.srcDirs]);
 		}
 		else {
 			// Main file
-			fileName=Utility.getRelSourceFilePath(includeFileName, this.config.srcDirs);
+			fileName = Utility.getRelSourceFilePath(includeFileName, this.config.srcDirs);
 		}
 
 		this.includeFileStack.push({fileName, lineNr: 0});
 
 		// Now check if we need to exclude it from file/line <-> address relationship.
-		if (this.excludedFileStackIndex==-1) {
+		if (this.excludedFileStackIndex == -1) {
 			// Check if filename is one of the excluded file names.
 			for (const exclGlob of this.config.excludeFiles) {
-				const found=minimatch(fileName, exclGlob);
+				const found = minimatch(fileName, exclGlob);
 				if (found) {
-					this.excludedFileStackIndex=index+1;
+					this.excludedFileStackIndex = index + 1;
 					break;
 				}
 			}
@@ -607,16 +642,16 @@ export class LabelParserBase {
 	 * Called by the parser if the end of an include file is found.
 	 */
 	protected includeEnd() {
-		if (this.includeFileStack.length==0)
+		if (this.includeFileStack.length == 0)
 			throw Error("File parsing error: include file stacking.");
 		// Remove last include file
 		this.includeFileStack.pop();
 
 		// Check if excluding files ended
-		const index=this.includeFileStack.length;
-		if (this.excludedFileStackIndex==index) {
+		const index = this.includeFileStack.length;
+		if (this.excludedFileStackIndex == index) {
 			// Stop excluding
-			this.excludedFileStackIndex=-1;
+			this.excludedFileStackIndex = -1;
 		}
 	}
 
@@ -629,7 +664,7 @@ export class LabelParserBase {
 	 * @param lineNr The parsed line number. Note this line number has to start at 0.
 	 */
 	protected setLineNumber(lineNr: number) {
-		this.currentFileEntry.lineNr=lineNr;
+		this.currentFileEntry.lineNr = lineNr;
 	}
 
 
@@ -718,11 +753,33 @@ export class LabelParserBase {
 
 
 	/**
-	 * Returns the collected warnings.
-	 * undefined if no warnings.
+	 * Sends an warning to the Labels class to print out a PROBLEM.
+	 * @param message The text to print.
 	 */
-	public getWarnings() {
-		return this.warnings;
+	protected setWarning(message: string, severity: "error" | "warning" = "warning", filepath?: string, lineNr?: number) {
+		if (filepath == undefined)
+			filepath = this.config.path;
+		if (lineNr == undefined)
+			lineNr = this.currentLineNr;
+		const issue: Issue = {
+			parser: this.parserName,
+			severity,
+			filepath,
+			lineNr,
+			message
+		};
+		this.issueHandler(issue);
+	}
+
+
+	/**
+	 * Sends a warning to the Labels class to print out a PROBLEM.
+	 * @param message The text to print.
+	 */
+	protected setError(message: string) {
+		this.setWarning(message, "error");
+		// And throw an exception to stop
+		throw Error("Label parser error.");
 	}
 }
 

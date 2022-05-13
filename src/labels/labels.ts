@@ -6,7 +6,9 @@ import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
 import * as fs from 'fs';
 import {ReverseEngineeringLabelParser} from './reverseengineeringlabelparser';
-import {SettingsParameters} from '../settings';
+import {AsmConfigBase, SettingsParameters} from '../settings';
+import {Issue, LabelParserBase} from './labelparserbase';
+import {DiagnosticsHandler} from '../diagnosticshandler';
 
 
 /**
@@ -141,11 +143,14 @@ export class LabelsClass {
 	/// Is used to tell if the Labels are long or not and for internal
 	/// conversion if target has a different memory model.
 	/// Typical value: 0, 8192 or 16384.
-	protected bankSize: number;
+	protected bankSize: number;	// TODO: still required?
 
 
 	// Collects the warnings from the different parsers.
 	protected warnings: string;
+
+	// Remembers if an error happened.
+	protected errorHappened: boolean;
 
 	/// The used memory model. E.g. if and how slots are used.
 	/// Set during 'readListFiles'.
@@ -173,6 +178,7 @@ export class LabelsClass {
 		this.smallValuesMaximum = smallValuesMaximum;
 		this.bankSize = 0;
 		this.warnings = '';
+		this.errorHappened = true;
 	}
 
 
@@ -180,7 +186,7 @@ export class LabelsClass {
 	 * Returns true if long addresses have been used.
 	 * I.e. if bankSize != 0.
 	 */
-	public AreLongAddressesUsed() {
+	public AreLongAddressesUsed() {	// TODO: still required?
 		return this.bankSize != 0;
 	}
 
@@ -210,19 +216,21 @@ export class LabelsClass {
 	 */
 	public readListFiles(mainConfig: SettingsParameters, memoryModel: MemoryModel) {
 		// Clear some fields
+		// TODO: instead of init: create new arras etc. Use this arrays for reading. Then, only on success, copy them to the real arrays.
 		this.init(mainConfig.smallValuesMaximum);
+
+		// Prepare callback to issue handler
+		const issueHandler = (issue) => {
+			this.handleIssue(issue);
+		}
 
 		// sjasmplus
 		if (mainConfig.sjasmplus) {
 			for (const config of mainConfig.sjasmplus) {
 				// Parse SLD file
-				const parser = new SjasmplusSldLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
-				parser.loadAsmListFile(config);
+				const parser = new SjasmplusSldLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
+				this.loadAsmListFile(parser, config);
 				this.bankSize = parser.bankSize;
-				// Warnings
-				const warnings = parser.getWarnings();
-				if (warnings)
-					this.warnings += '"sjasmplus" sld parser warnings (' + config.path + '):\n' + warnings;
 				// Store path
 				this.filePaths.push(config.path);
 			}
@@ -230,9 +238,9 @@ export class LabelsClass {
 
 		// z80asm
 		if (mainConfig.z80asm) {
-			const parser = new Z80asmLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+			const parser = new Z80asmLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
 			for (const config of mainConfig.z80asm) {
-				parser.loadAsmListFile(config);
+				this.loadAsmListFile(parser, config);
 				// Store path
 				this.filePaths.push(config.path);
 			}
@@ -240,9 +248,9 @@ export class LabelsClass {
 
 		// z88dk
 		if (mainConfig.z88dk) {
-			const parser = new Z88dkLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+			const parser = new Z88dkLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
 			for (const config of mainConfig.z88dk) {
-				parser.loadAsmListFile(config);
+				this.loadAsmListFile(parser, config);
 				// Store path
 				this.filePaths.push(config.path);
 			}
@@ -250,27 +258,40 @@ export class LabelsClass {
 
 		// Reverse Engineering List File
 		if (mainConfig.revEng) {
-			const parser = new ReverseEngineeringLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+			const parser = new ReverseEngineeringLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
 			for (const config of mainConfig.revEng) {
-				parser.loadAsmListFile(config);
+				this.loadAsmListFile(parser, config as AsmConfigBase);
 				// Store path
 				this.filePaths.push(config.path);
-				// Warnings
-				const warnings = parser.getWarnings();
-				if (warnings)
-					this.warnings += '"revEng" parser warnings (' + config.path + '):\n' + warnings;
 			}
-			this.bankSize = 0x4000;	// TODO: need to be read from somewhere
+			this.bankSize = 0x4000;	// TODO: need to be read from somewhere. Still required?
 		}
 
 		// Add new assemblers here ...
 
 
-		// Check warnings
-		if (this.warnings == '')
-			this.warnings = undefined as any;
+		// Check errors
+		if (this.errorHappened)
+			throw Error("Error during parsing of the list/sld file(s).");
+
 		// Finish
 		this.finish();
+	}
+
+
+	/**
+	 * Calls loadAsmFile while catching exceptions.
+	 * @param parser The parser to call.
+	 * @param config The configuration.
+	 */
+	protected loadAsmListFile(parser: LabelParserBase, config: AsmConfigBase) {
+		try {
+			parser.loadAsmListFile(config);
+		}
+		catch (e) {
+			// Just remember that an exception happened
+			this.errorHappened = true;
+		}
 	}
 
 
@@ -706,6 +727,16 @@ export class LabelsClass {
 				addr = -1;
 		}
 		return addr;
+	}
+
+
+	/**
+	 * Handles an issue (error, warning) reported by a parser.
+	 * Shows the problem in the PROBLEMs pane, i.e. in the diagnostics.
+	 * @param issue The issue reported. Contains file and line number.
+	 */
+	protected handleIssue(issue: Issue) {
+		DiagnosticsHandler.add(issue.message, issue.severity, issue.filepath, issue.lineNr);
 	}
 }
 

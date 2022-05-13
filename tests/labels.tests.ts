@@ -563,7 +563,8 @@ suite('Labels', () => {
 				new Map<string, {file: string, lineNr: number, address: number}>(),
 				new Array<{address: number, line: string}>(),
 				new Array<{address: number, line: string}>(),
-				new Array<{address: number, line: string}>());
+				new Array<{address: number, line: string}>(),
+				(issue) => {});	// NOSONAR
 			parser.loadAsmListFile(config);
 		}
 

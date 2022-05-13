@@ -6,7 +6,8 @@ import {LabelParserBase} from './labelparserbase';
  * This class parses z80asm list files.
  */
 export class Z80asmLabelParser extends LabelParserBase {
-
+	// Overwrite parser name (for errors).
+	protected parserName = "z80asm";
 
 	// Regex to find labels
 	// Allow labels without ":"

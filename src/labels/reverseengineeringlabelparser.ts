@@ -43,6 +43,9 @@ import {ListFileLine} from './labels';
  * MY_CONSTANT:  EQU   50
  */
 export class ReverseEngineeringLabelParser extends LabelParserBase {
+	// Overwrite parser name (for errors).
+	protected parserName = "revEng";
+
 	// The separator used to separate address and bank info.
 	public static bankSeparator = '.';	// Note: need to be changed in regexAddr as well
 
@@ -115,7 +118,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 			}
 			catch {
 				// Show a warning but go on
-				this.warnings += "Could not evaluate expression '" + valueString + "' in line: '" + line + "'\n";
+				this.setWarning("Could not evaluate expression '" + valueString + "' in line: '" + line + "'");
 			}
 			return;
 		}
@@ -130,7 +133,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 			if (trimmed && !trimmed.startsWith(';')) {
 				// Line contains something and it is not a comment:
 				// Add a warning
-				this.warnings += "Line ignored: '" + line + "'\n";
+				this.setWarning("Line ignored: '" + line + "'");
 			}
 			return;
 		}
@@ -200,7 +203,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 		// Check if label already exists
 		if (this.numberForLabel.get(label) != undefined) {
 			// Yes, warn
-			this.warnings += "Label '" + label + "' defined more than once.\n";
+			this.setWarning("Label '" + label + "' defined more than once.");
 			return;
 		}
 
