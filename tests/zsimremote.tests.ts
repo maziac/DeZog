@@ -54,6 +54,9 @@ suite('ZSimRemote', () => {
 
 
 		test('ula bank', () => {
+			// @ts-ignore: protected access
+			zsim.configureMachine(Settings.launch.zsim);
+			
 			let ulaBank = zsim.zxUlaScreen.ulaBank;
 			assert.equal(1, ulaBank);
 			// Should not switch
