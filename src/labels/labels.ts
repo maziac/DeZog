@@ -266,8 +266,8 @@ export class LabelsClass {
 
 
 		// Check errors
-	//	if (this.errorHappened)
-	//		throw Error("Error during parsing of the list/sld file(s).");
+		if (this.errorHappened)
+			throw Error("Error during parsing of the list/sld file(s).");
 
 		// Finish
 		this.finish();

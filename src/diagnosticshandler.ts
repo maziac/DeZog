@@ -43,7 +43,7 @@ export class DiagnosticsHandler {
 	 */
 	public static add(message: string, severity: 'error'|'warning', filepath: string, line: number, column = 0) {
 		const uri = vscode.Uri.file(filepath);
-		const range = new vscode.Range(line, column, line, 10000);
+		const range = new vscode.Range(line, column, line, Number.MAX_VALUE);
 		const diagSeverity = (severity == 'error') ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning;
 		const diagnostic = new vscode.Diagnostic(range, message, diagSeverity);
 		diagnostic.source = 'DeZog';

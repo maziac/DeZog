@@ -252,8 +252,7 @@ suite('Labels (revEng)', () => {
 
 			// Check
 			assert.notEqual(warnings, undefined);
-			const warning = warnings.split('\n')[1];
-			assert.ok(warning.startsWith('Could not evaluate expression'));
+			assert.ok(warnings.startsWith('Could not evaluate expression'));
 		});
 
 		test('line ignored', () => {
@@ -267,8 +266,7 @@ suite('Labels (revEng)', () => {
 
 			// Check
 			assert.notEqual(warnings, undefined);
-			const warning = warnings.split('\n')[1];
-			assert.ok(warning.startsWith('Line ignored'));
+			assert.ok(warnings.startsWith('Line ignored'));
 		});
 
 		test('no warning', () => {
@@ -281,7 +279,7 @@ suite('Labels (revEng)', () => {
 			lbls.readListFiles(config, testMm);
 
 			// Check
-			assert.equal(warnings, undefined);
+			assert.equal(warnings, '');
 		});
 
 		test('same label used twice', () => {
@@ -295,8 +293,7 @@ suite('Labels (revEng)', () => {
 
 			// Check
 			assert.notEqual(warnings, undefined);
-			const warning = warnings.split('\n')[1];
-			assert.ok(warning.endsWith('defined more than once.'));
+			assert.ok(warnings.endsWith('defined more than once.\n'));
 		});
 
 		test('same label used twice (local)', () => {
@@ -310,8 +307,7 @@ suite('Labels (revEng)', () => {
 
 			// Check
 			assert.notEqual(warnings, undefined);
-			const warning = warnings.split('\n')[1];
-			assert.ok(warning.endsWith('defined more than once.'));
+			assert.ok(warnings.endsWith('defined more than once.\n'));
 		});
 	});
 

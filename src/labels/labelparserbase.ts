@@ -785,7 +785,8 @@ export class LabelParserBase {
 	protected throwError(message: string) {
 		this.sendWarning(message, "error");
 		// And throw an exception to stop
-		throw Error("Label parser error.");
+		//throw Error("Label parser error.");
+		throw Error(message);
 	}
 }
 
