@@ -18,7 +18,8 @@ import {CustomCode} from './customcode';
 import {BeeperBuffer, ZxBeeper} from './zxbeeper';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
-import {MemoryModelAllRam, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext, MemoryModelZxSpectrumBase} from '../MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
+import {ZxUlaScreen} from './zxulascreen';
 
 
 
@@ -32,6 +33,9 @@ export class ZSimRemote extends DzrpRemote {
 	public z80Cpu: Z80Cpu;
 	public memory: SimulatedMemory;
 	public ports: Z80Ports;
+
+	// The ULA screen simulation.
+	public zxUlaScreen: ZxUlaScreen;
 
 	// Stores the code coverage.
 	protected codeCoverage: CodeCoverageArray;
@@ -115,24 +119,6 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	public setTimeoutRequest(on: boolean) {
 		this.timeoutRequest = on;
-	}
-
-
-	/**
-	 * Switches the ula screen.
-	 * Note: Switching the bank is done already by the SimulatedMemory.
-	 * See https://www.worldofspectrum.org/faq/reference/128kreference.htm
-	 * @param port The written port.
-	 * @param value:
-	 *   bit 0-2:  RAM page (0-7) to map into memory at 0xC000.
-	 *   bit 3: Select normal(0) or shadow(1) screen to be displayed. The normal screen is in bank 5, whilst the shadow screen is in bank 7. Note that this does not affect the memory between 0x4000 and 0x7fff, which is always bank 5.
-	 *   bit 4: ROM select. ROM 0 is the 128k editor and menu system; ROM 1 contains 48K BASIC.
-	 *   bit 5: If set, memory paging will be disabled and further output to this port will be ignored until the computer is reset.
-	 */
-	protected zx128UlaScreenSwitch(port: number, value: number) {
-		// bit 3: Select normal(0) or shadow(1) screen to be displayed.
-		const shadowScreen = ((value & 0b01000) != 0);
-		(this.memoryModel as MemoryModelZxSpectrumBase).switchUlaBank(shadowScreen);
 	}
 
 
@@ -235,6 +221,11 @@ export class ZSimRemote extends DzrpRemote {
 	 * - "CUSTOM": User defined memory.
 	 */
 	protected configureMachine(zsim: ZSimType) {
+		// For restoring the state
+		this.serializeObjects = [
+			this.z80Cpu
+		];
+
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();	// Required for the memory model.
 
 		// Create ports for paging
@@ -243,10 +234,11 @@ export class ZSimRemote extends DzrpRemote {
 		// Check for beeper and border (both use the same port)
 		const zxBeeperEnabled = zsim.zxBeeper;
 		const zxBorderWidth = zsim.zxBorderWidth;	// 0 = no border
-		// Create the beeper simulation object (create always because of serialization)
-		this.zxBeeper = new ZxBeeper(zsim.cpuFrequency, zsim.audioSampleRate, Settings.launch.zsim.updateFrequency);
 		// Check if beeper enabled
 		if (zxBeeperEnabled || zxBorderWidth > 0) {
+			// Create the beeper simulation object
+			this.zxBeeper = new ZxBeeper(zsim.cpuFrequency, zsim.audioSampleRate, Settings.launch.zsim.updateFrequency);
+			this.serializeObjects.push(this.zxBeeper);
 			// Add the port only if enabled
 			this.ports.registerGenericOutPortFunction((port: number, value: number) => {
 				// The port 0xFE. Every even port address will do.
@@ -296,8 +288,6 @@ export class ZSimRemote extends DzrpRemote {
 					// ZX 128K
 					// Memory Model
 					this.memoryModel = new MemoryModelZx128k();
-					// ULA Bank switching.
-					this.ports.registerSpecificOutPortFunction(0x7FFD, this.zx128UlaScreenSwitch.bind(this));	// TODO: In fact this is not a specific address but a bit mask for the port.
 				}
 				break;
 			case "ZXNEXT":
@@ -314,8 +304,6 @@ export class ZSimRemote extends DzrpRemote {
 					this.ports.registerSpecificOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
 					this.ports.registerSpecificOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
 					this.ports.registerSpecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
-					// Use ZX128K ULA Bank switching.
-					this.ports.registerSpecificOutPortFunction(0x7FFD, this.zx128UlaScreenSwitch.bind(this));
 				}
 				break;
 			case "CUSTOM":
@@ -330,22 +318,22 @@ export class ZSimRemote extends DzrpRemote {
 
 		// Create memory
 		this.memory = new SimulatedMemory(this.memoryModel, this.ports);
+		this.serializeObjects.push(this.memory);
 
-		// Convert labels if necessary.
+		// Set slot and bank function.
 		this.memoryModel.init();
+
+		// Check if ULA screen is enabled
+		const zxUlaScreenEnabled = zsim.ulaScreen;
+		if (zxUlaScreenEnabled) {
+			this.zxUlaScreen = new ZxUlaScreen(this.memoryModel, this.ports);
+			this.serializeObjects.push(this.zxUlaScreen);
+		}
 
 		// Create a Z80 CPU to emulate Z80 behavior
 		this.z80Cpu = new Z80Cpu(this.memory, this.ports, () => {
 			this.emit('vertSync');
 		});
-
-		// For restoring the state
-		this.serializeObjects = [
-			this.z80Cpu,
-			this.memory,
-			this.zxBeeper,
-			// this.ports // Note: ports are not serialized anymore. Since customCode.
-		];
 	}
 
 
@@ -916,17 +904,11 @@ export class ZSimRemote extends DzrpRemote {
 	 * @returns The screen as a UInt8Array.
 	 */
 	public getUlaScreen(): Uint8Array {
-		if (this.memoryModel instanceof MemoryModelZxSpectrumBase) {
-			const ulaBank = this.memoryModel.ulaBank;
-			if (ulaBank != undefined) {
-				const bank = this.memory.getBankMemory(ulaBank);
-				return bank.slice(0, 0x1B00);
-			}
-		}
+		Utility.assert(this.zxUlaScreen);
 
-		// Otherwise return empty screen
-		// TODO: error to the user?
-		return new Uint8Array(0x1B00);
+		const ulaBank = this.zxUlaScreen.ulaBank;
+		const bank = this.memory.getBankMemory(ulaBank);
+		return bank.slice(0, 0x1B00);
 	}
 
 
@@ -965,37 +947,37 @@ export class ZSimRemote extends DzrpRemote {
 		const snaFile = new SnaFile();
 		snaFile.readFile(filePath);
 
-		// Set the border
-		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
+		// 16K
+		if (this.memoryModel instanceof MemoryModelZx16k)
+			throw Error("Loading SNA file not supported for memory model '" + this.memoryModel.name + "'.");
 
-		// Write banks
-		if (snaFile.is128kSnaFile) {
-			// ZX128K SNA file
-			if (!(this.memoryModel instanceof MemoryModelZx128k))
-				throw Error("A 128k SNA file can't be loaded into a '"+this.memoryModel.name+"' memory model.");
-			for (const memBank of snaFile.memBanks) {
-				this.memory.writeMemoryData(memBank.bank, memBank.data);
+		// 48K
+		if (this.memoryModel instanceof MemoryModelZx48k) {
+			if (snaFile.is128kSnaFile)
+				throw Error("A 128K SNA file can't be loaded into a '" + this.memoryModel.name + "' memory model.");
+			for (let i = 0; i < 3; i++) {
+				const addr64k = (i + 1) * 0x4000;
+				const slots = this.memoryModel.initialSlots;
+				const {bank, offset} = this.memory.getBankAndOffsetForAddress(addr64k, slots);
+				const snaMemBank = snaFile.memBanks[i];
+				this.memory.writeMemoryData(bank, snaMemBank.data, offset);
 			}
 		}
 		else {
-			// ZX48K SNA file
-			if (!(this.memoryModel instanceof MemoryModelZx48k || this.memoryModel instanceof MemoryModelZx128k))
-				throw Error("A 48k SNA file can't be loaded into a '" + this.memoryModel.name + "' memory model.");
-			// 48K
-			if (this.memoryModel instanceof MemoryModelZx48k) {
-				for (let i = 0; i < 3; i++) {
-					const memBank = snaFile.memBanks[i];
-					this.memory.writeMemoryData(memBank.bank, memBank.data, i * 0x4000);
+			// Write banks
+			try {
+				for (const memBank of snaFile.memBanks) {
+					this.memory.writeMemoryData(memBank.bank, memBank.data);
 				}
 			}
-			// 128K
-			if (this.memoryModel instanceof MemoryModelZx48k) {
-				for (let i = 0; i < 3; i++) {
-					const memBank = snaFile.memBanks[i];
-					this.memory.writeMemoryData(memBank.bank, memBank.data, i * 0x4000);
-				}
+			catch (e) {
+				const sna128String = (snaFile.is128kSnaFile) ? '128K ' : '';
+				throw Error("A " + sna128String + "SNA file can't be loaded into a '" + this.memoryModel.name + "' memory model.");
 			}
 		}
+
+		// Set the border
+		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
 
 		// Set the registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, snaFile.pc);

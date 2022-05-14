@@ -373,7 +373,7 @@
 									},
 									"memoryModel": {
 										"type": "string",
-										"description": "Chooses the right memory model. I.e. how the memory maps to ROM and RAM and if and how paging is done.\nPossible values:\n- 'RAM': One memory area of 64K, no banks.\n- 'ZX16K': ROM and RAM as of the ZX Spectrum 16K.\n- 'ZX48K': ROM and RAM as of the ZX Spectrum 48K.\n- 'ZX128K': Banked memory as of the ZX Spectrum 48K (16k slots/banks).\n- 'ZXNEXT': Banked memory as of the ZX Next (8k slots/banks).\n- 'CUSTOM': A customizable memory model. You define the memory in the 'customMemory' property.",
+										"description": "Chooses the right memory model. I.e. how the memory maps to ROM and RAM and if and how paging is done.\nPossible values:\n- 'RAM': One memory area of 64K, 1 bank.\n- 'ZX16K': ROM and RAM as of the ZX Spectrum 16K, 1 ROM, 1 RAM bank.\n- 'ZX48K': ROM and RAM as of the ZX Spectrum 48K, 1 ROM, 1 RAM bank.\n- 'ZX128K': Banked memory, 16k slots, 8 RAM banks, 2 ROM banks .\n- 'ZXNEXT': Banked memory as of the ZX Next (8k slots/banks).\n- 'CUSTOM': A customizable memory model. You define the memory in the 'customMemory' property.",
 										"default": "RAM"
 									},
 									"customMemory": {
@@ -393,7 +393,7 @@
 										},
 										"ulaScreen": {
 											"type": "boolean",
-											"description": "If enabled it shows the contents of the ZX Spectrum screen.",
+											"description": "If enabled it shows the contents of the ZX Spectrum screen. It supports also the ZX128K screen switching.",
 											"default": true
 										},
 										"zxBorderWidth": {

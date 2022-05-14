@@ -216,7 +216,6 @@ export class ZxBeeper implements Serializeable {
 	}
 
 
-
 	/**
 	 * Returns the size the serialized object would consume.
 	 */

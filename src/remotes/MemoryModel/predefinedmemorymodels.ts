@@ -58,13 +58,6 @@ export class MemoryModelAllRam extends MemoryModel {
  * ZX Spectrum base definition.
  */
 export class MemoryModelZxSpectrumBase extends MemoryModel {
-	// Bank used for the ULA output.
-	public ulaBank: number;
-
-	// Switches the bank for the ULA screen.
-	public switchUlaBank(shadowBank: boolean) {
-		// Overwrite.
-	}
 }
 
 
@@ -98,7 +91,6 @@ export class MemoryModelZx16k extends MemoryModelZxSpectrumBase {
 			]
 		});
 		this.name = 'ZX16K';
-		this.ulaBank = 1;
 	}
 }
 
@@ -133,7 +125,6 @@ export class MemoryModelZx48k extends MemoryModelZxSpectrumBase {
 			]
 		});
 		this.name = 'ZX48K';
-		this.ulaBank = 1;
 	}
 }
 
@@ -203,15 +194,7 @@ export class MemoryModelZx128k extends MemoryModelZxSpectrumBase {
 			]
 		});
 		this.name = 'ZX128K';
-		this.switchUlaBank(false);
 	}
-
-
-	// Switches the bank for the ULA screen.
-	public switchUlaBank(shadowBank: boolean) {
-		this.ulaBank = (shadowBank) ? 7 : 5;
-	}
-
 }
 
 
@@ -345,12 +328,5 @@ export class MemoryModelZxNext extends MemoryModelZxSpectrumBase {
 			// what cannot be supported here.
 		});
 		this.name = 'ZXNEXT';
-		this.switchUlaBank(false);
-	}
-
-
-	// Switches the bank for the ULA screen.
-	public switchUlaBank(shadowBank: boolean) {
-		this.ulaBank = (shadowBank) ? 2*7 : 2*5;
 	}
 }

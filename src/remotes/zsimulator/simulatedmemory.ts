@@ -488,12 +488,23 @@ export class SimulatedMemory implements Serializeable {
 	 */
 	public writeMemoryData(bankNr: number, data: Uint8Array, offset = 0) {
 		const bank = this.memoryBanks[bankNr];
-		// Check size
-		let size = bank.length;
-		if (data.length - offset < bank.length)
-			size = data.length - offset;
 		// Write
-		bank.set(data.slice(offset, offset + size));
+		bank.set(data, offset);
+	}
+
+
+	/**
+	 * Returns the bank and offset into the bank for a given address and slots configuration.
+	 * @param addr64k The 64k address.
+	 * @param slots The (current) slot configuration.
+	 * @returns {bank, offset}
+	 */
+	public getBankAndOffsetForAddress(addr64k: number, slots: number[]): {bank: number, offset: number} {
+		const slot = this.memoryModel.slotAddress64kAssociation[addr64k];
+		const bank = slots[slot];
+		const startAddr = this.memoryModel.slotRanges[slot].start;
+		const offset = addr64k - startAddr;
+		return {bank, offset};
 	}
 
 

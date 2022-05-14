@@ -5,6 +5,12 @@
 	- Improved disassembly
 	- Reload list file during debug session
 	- Disassembly into list file format also for data
+- Parsing errors/warnings (list/sld files) now reported in PROBLEM pane.
+- Refactored:
+	- zsim ulaScreen simulation
+	- memory models
+	- labels parsings
+
 # 2.7.1
 - Fixed disassembly of instructions: INC (IX+n), DEC (IX+n), INC (IY+n) and DEC (IY+n).
 
