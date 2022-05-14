@@ -126,7 +126,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 		// Check that excludeFiles and srcDirs is not used.
 		if (sldConfig.excludeFiles.length > 0)
-			throw Error("You cannot use 'excludeFiles' in a sjasmplus configuration.");	// TODO: to problems pane
+			this.throwError("You cannot use 'excludeFiles' in a sjasmplus configuration.");
 
 		// Init (in case of several sld files)
 		this.lastLabel = undefined as any;
@@ -165,15 +165,15 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	protected checkSldVersion(lines: Array<string>) {
 		// Check only first line
 		if (lines.length < 1)
-			this.setError("'" + this.config.path + "' is empty.");	// throws
+			this.throwError("'" + this.config.path + "' is empty.");	// throws
 		// First line
 		const fields = lines[0].split('|');
 		if (fields[1] != 'SLD.data.version')
-			throw Error("'" + this.config.path + "': SLD data version not found.");
+			this.throwError("'" + this.config.path + "': SLD data version not found.");
 		const version = fields[2] || '0';
 		const requiredVersion = 1;
 		if (parseInt(version) < requiredVersion)
-			throw Error("'" + this.config.path + "': SLD data version " + version + " is too old. Need SLD version " + requiredVersion + ". Please update sjasmplus to at least version 1.18.0.");
+			this.throwError("'" + this.config.path + "': SLD data version " + version + " is too old. Need SLD version " + requiredVersion + ". Please update sjasmplus to at least version 1.18.0.");
 	}
 
 
@@ -196,18 +196,18 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				// Find bank size
 				const matchBankSize = /pages\.size:(\d+)/i.exec(data);
 				if (!matchBankSize)
-					throw Error("No 'pages.size' found in sld file.");
-				bankSize = parseInt(matchBankSize[1]);
+					this.throwError("No 'pages.size' found in sld file.");
+				bankSize = parseInt(matchBankSize![1]);
 				// Find bank count
 				const matchBankCount = /pages\.count:(\d+)/i.exec(data);
 				if (!matchBankCount)
-					throw Error("No 'pages.count' found in sld file.");
-				this.bankCount = parseInt(matchBankCount[1]);
+					this.throwError("No 'pages.count' found in sld file.");
+				this.bankCount = parseInt(matchBankCount![1]);
 				// Find slots
 				const matchSlots = /slots\.adr:([\d,]+)/i.exec(data);
 				if (!matchSlots)
-					throw Error("No 'slots.adr' found in sld file.");
-				const slotsString = matchSlots[1];
+					this.throwError("No 'slots.adr' found in sld file.");
+				const slotsString = matchSlots![1];
 				slots = slotsString.split(',').map(addrString => parseInt(addrString));
 			}
 
@@ -223,11 +223,11 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 		// Check
 		if (bankSize == undefined) {
-			throw Error("Could not find bank size in SLD file. Did you forget to set the 'DEVICE' in your assembler file? If you use a non ZX Spectrum device you need to choose NOSLOT64K.");
+			this.throwError("Could not find bank size in SLD file. Did you forget to set the 'DEVICE' in your assembler file? If you use a non ZX Spectrum device you need to choose NOSLOT64K.");
 		}
 		this.bankSize = bankSize;
 		if (slots == undefined) {
-			throw Error("Could not find slots in SLD file. Did you forget to set the 'DEVICE' in your assembler file? If you use a non ZX Spectrum device you need to choose NOSLOT64K.");
+			this.throwError("Could not find slots in SLD file. Did you forget to set the 'DEVICE' in your assembler file? If you use a non ZX Spectrum device you need to choose NOSLOT64K.");
 		}
 		this.slots = slots;
 
@@ -240,7 +240,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		}
 		if (missing.length > 0) {
 			const missingStr = missing.join(', ');
-			this.setWarning("The assembler file is missing the 'SLDOPT COMMENT " + missingStr + "' statement. Use of " + missingStr + " is not possible.");
+			this.sendWarning("The assembler file is missing the 'SLDOPT COMMENT " + missingStr + "' statement. Use of " + missingStr + " is not possible.");
 		}
 	}
 
@@ -467,7 +467,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Get type
 		const srcMemModel = this.sourceMemoryModel();
 		if (srcMemModel == SjasmplusMemoryModel.NONE)
-			throw Error("Unsupported sjasmplus memory model (DEVICE).");
+			this.throwError("Unsupported sjasmplus memory model (DEVICE).");
 
 		// Check for unknown, also used by the unit tests to just find the labels.
 		if (this.memoryModel instanceof MemoryModelUnknown) {
@@ -537,7 +537,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				};
 				return;
 			}
-			throw Error("Could not convert labels to Memory Model: '" + this.memoryModel.name + "' .");
+			this.throwError("Could not convert labels to Memory Model: '" + this.memoryModel.name + "' .");
 		}
 
 		// Check for sjasmplus ZX128K
@@ -546,7 +546,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			if (this.memoryModel instanceof MemoryModelZxNext) {
 				this.funcConvertBank = (address: number, bank: number) => {
 					if (bank > 7)
-						throw Error("Bank " + bank + " of ZXNext memory model cannot be converted to target ZX128K memory model.");
+						this.throwError("Bank " + bank + " of ZXNext memory model cannot be converted to target ZX128K memory model.");
 					let convBank = 2 * bank;
 					convBank += (address >>> 13) & 0x01;
 					return convBank;
@@ -559,7 +559,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				};
 				return;
 			}
-			throw Error("Could not convert labels to Memory Model: '" + this.memoryModel.name + "' .");
+			this.throwError("Could not convert labels to Memory Model: '" + this.memoryModel.name + "' .");
 		}
 
 		// Check for sjasmplus ZXNEXT
@@ -578,15 +578,15 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					if ((bank & 0x01) != ((address >>> 13) & 0x01))
 						error = true;
 					if(error)
-						throw Error("Bank " + bank + " of ZXNext memory model cannot be converted to target ZX128K memory model.");
+						this.throwError("Bank " + bank + " of ZXNext memory model cannot be converted to target ZX128K memory model.");
 					return convBank;
 				};
 				return;
 			}
-			throw Error("Could not convert labels to Memory Model: '" + this.memoryModel.name + "' .");
+			this.throwError("Could not convert labels to Memory Model: '" + this.memoryModel.name + "' .");
 		}
 
 		// Not a known memory model
-		throw Error("Unsupported memory model mapping, sjasmplus to target: " + SjasmplusMemoryModel[srcMemModel] + " to " + this.memoryModel.name + ".");
+		this.throwError("Unsupported memory model mapping, sjasmplus to target: " + SjasmplusMemoryModel[srcMemModel] + " to " + this.memoryModel.name + ".");
 	}
 }

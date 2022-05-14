@@ -11,9 +11,14 @@ import {ReverseEngineeringLabelParser} from '../src/labels/reverseengineeringlab
 suite('Labels (revEng)', () => {
 
 	let lbls: LabelsClass;
+	let warnings: string;
 
 	setup(() => {
 		lbls = new LabelsClass();
+		warnings = '';
+		LabelsClass.addDiagnosticsErrorFunc = (message: string) => {
+			warnings += message + "\n";
+		}
 	});
 
 	suite('Labels', () => {
@@ -242,10 +247,10 @@ suite('Labels (revEng)', () => {
 					path: 'tests/data/labels/projects/revEng/wrong1.list'
 				}]
 			};
+			warnings = '';
 			lbls.readListFiles(config, testMm);
 
 			// Check
-			const warnings = lbls.getWarnings();
 			assert.notEqual(warnings, undefined);
 			const warning = warnings.split('\n')[1];
 			assert.ok(warning.startsWith('Could not evaluate expression'));
@@ -257,10 +262,10 @@ suite('Labels (revEng)', () => {
 					path: 'tests/data/labels/projects/revEng/wrong2.list'
 				}]
 			};
+			warnings = '';
 			lbls.readListFiles(config, testMm);
 
 			// Check
-			const warnings = lbls.getWarnings();
 			assert.notEqual(warnings, undefined);
 			const warning = warnings.split('\n')[1];
 			assert.ok(warning.startsWith('Line ignored'));
@@ -272,10 +277,10 @@ suite('Labels (revEng)', () => {
 					path: 'tests/data/labels/projects/revEng/main.list'
 				}]
 			};
+			warnings = '';
 			lbls.readListFiles(config, testMm);
 
 			// Check
-			const warnings = lbls.getWarnings();
 			assert.equal(warnings, undefined);
 		});
 
@@ -285,10 +290,10 @@ suite('Labels (revEng)', () => {
 					path: 'tests/data/labels/projects/revEng/samelabel.list'
 				}]
 			};
+			warnings = '';
 			lbls.readListFiles(config, testMm);
 
 			// Check
-			const warnings = lbls.getWarnings();
 			assert.notEqual(warnings, undefined);
 			const warning = warnings.split('\n')[1];
 			assert.ok(warning.endsWith('defined more than once.'));
@@ -300,10 +305,10 @@ suite('Labels (revEng)', () => {
 					path: 'tests/data/labels/projects/revEng/samelabellocal.list'
 				}]
 			};
+			warnings = '';
 			lbls.readListFiles(config, testMm);
 
 			// Check
-			const warnings = lbls.getWarnings();
 			assert.notEqual(warnings, undefined);
 			const warning = warnings.split('\n')[1];
 			assert.ok(warning.endsWith('defined more than once.'));

@@ -8,8 +8,6 @@ import * as fs from 'fs';
 import {ReverseEngineeringLabelParser} from './reverseengineeringlabelparser';
 import {AsmConfigBase, SettingsParameters} from '../settings';
 import {Issue, LabelParserBase} from './labelparserbase';
-import {DiagnosticsHandler} from '../diagnosticshandler';
-
 
 /**
  * For the association of the addresses to the files.
@@ -63,6 +61,8 @@ export interface NextLabelDistance {
  *
  */
 export class LabelsClass {
+	// Function used to add an error to the diagnostics.
+	public static addDiagnosticsErrorFunc: ((message: string, severity: 'error' | 'warning', filepath: string, line: number, column: number) => void) | undefined;
 
 	/// The files (stored only for lastModifiedDate.)
 	protected filePaths = new Array<string>();
@@ -145,10 +145,6 @@ export class LabelsClass {
 	/// Typical value: 0, 8192 or 16384.
 	protected bankSize: number;	// TODO: still required?
 
-
-	// Collects the warnings from the different parsers.
-	protected warnings: string;
-
 	// Remembers if an error happened.
 	protected errorHappened: boolean;
 
@@ -177,8 +173,7 @@ export class LabelsClass {
 		this.filePaths.length = 0;
 		this.smallValuesMaximum = smallValuesMaximum;
 		this.bankSize = 0;
-		this.warnings = '';
-		this.errorHappened = true;
+		this.errorHappened = false;
 	}
 
 
@@ -271,8 +266,8 @@ export class LabelsClass {
 
 
 		// Check errors
-		if (this.errorHappened)
-			throw Error("Error during parsing of the list/sld file(s).");
+	//	if (this.errorHappened)
+	//		throw Error("Error during parsing of the list/sld file(s).");
 
 		// Finish
 		this.finish();
@@ -307,15 +302,6 @@ export class LabelsClass {
 		const fileDate = new Date(stats.mtimeMs);
 		const youngestDate = (date < fileDate) ? fileDate : date;
 		return youngestDate;
-	}
-
-
-	/**
-	 * Returns the warnings.
-	 * undefined if no warnings.
-	 */
-	public getWarnings() {
-		return this.warnings;
 	}
 
 
@@ -736,7 +722,8 @@ export class LabelsClass {
 	 * @param issue The issue reported. Contains file and line number.
 	 */
 	protected handleIssue(issue: Issue) {
-		DiagnosticsHandler.add(issue.message, issue.severity, issue.filepath, issue.lineNr);
+		if(LabelsClass.addDiagnosticsErrorFunc)
+			LabelsClass.addDiagnosticsErrorFunc(issue.message, issue.severity, issue.filepath, issue.lineNr, 0);
 	}
 }
 

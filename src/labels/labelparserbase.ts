@@ -167,34 +167,39 @@ export class LabelParserBase {
 	 * @param config The assembler configuration.
 	 */
 	public loadAsmListFile(config: AsmConfigBase) {
-		this.config = config;
-		// Init (in case of several list files)
-		this.excludedFileStackIndex = -1;
-		this.includeFileStack = new Array<{fileName: string, lineNr: number}>();
-		this.listFile = new Array<ListFileLine>();
-		this.modulePrefixStack = new Array<string>();
-		this.modulePrefix = undefined as any;
-		this.lastLabel = undefined as any;
+		try {
+			this.config = config;
+			// Init (in case of several list files)
+			this.excludedFileStackIndex = -1;
+			this.includeFileStack = new Array<{fileName: string, lineNr: number}>();
+			this.listFile = new Array<ListFileLine>();
+			this.modulePrefixStack = new Array<string>();
+			this.modulePrefix = undefined as any;
+			this.lastLabel = undefined as any;
 
-		// Check conversion to target memory model: This is done before parsing if the list file
-		// does not contain any memory model.
-		this.checkMappingToTargetMemoryModel();
+			// Check conversion to target memory model: This is done before parsing if the list file
+			// does not contain any memory model.
+			this.checkMappingToTargetMemoryModel();
 
-		// Phase 1: Parse for labels and addresses
-		this.parseAllLabelsAndAddresses();
+			// Phase 1: Parse for labels and addresses
+			this.parseAllLabelsAndAddresses();
 
-		// Check if Listfile-Mode
-		if (config.srcDirs == undefined || config.srcDirs.length == 0) {
-			// Listfile-Mode
-			this.listFileModeFinish();
-			return;
+			// Check if Listfile-Mode
+			if (config.srcDirs == undefined || config.srcDirs.length == 0) {
+				// Listfile-Mode
+				this.listFileModeFinish();
+				return;
+			}
+
+			// Phase 2: Parse for source files
+			this.parseAllFilesAndLineNumbers();
+
+			// Finish: Create fileLineNrs, lineArrays and labelLocations
+			this.sourcesModeFinish();
 		}
-
-		// Phase 2: Parse for source files
-		this.parseAllFilesAndLineNumbers();
-
-		// Finish: Create fileLineNrs, lineArrays and labelLocations
-		this.sourcesModeFinish();
+		catch (e) {
+			this.throwError(e.message);
+		}
 	}
 
 
@@ -756,7 +761,7 @@ export class LabelParserBase {
 	 * Sends an warning to the Labels class to print out a PROBLEM.
 	 * @param message The text to print.
 	 */
-	protected setWarning(message: string, severity: "error" | "warning" = "warning", filepath?: string, lineNr?: number) {
+	protected sendWarning(message: string, severity: "error" | "warning" = "warning", filepath?: string, lineNr?: number) {
 		if (filepath == undefined)
 			filepath = this.config.path;
 		if (lineNr == undefined)
@@ -774,10 +779,11 @@ export class LabelParserBase {
 
 	/**
 	 * Sends a warning to the Labels class to print out a PROBLEM.
+	 * Throws an exception.
 	 * @param message The text to print.
 	 */
-	protected setError(message: string) {
-		this.setWarning(message, "error");
+	protected throwError(message: string) {
+		this.sendWarning(message, "error");
 		// And throw an exception to stop
 		throw Error("Label parser error.");
 	}

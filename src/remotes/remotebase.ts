@@ -542,11 +542,6 @@ export class RemoteBase extends EventEmitter {
 		// Read files
 		Labels.readListFiles(configuration, this.memoryModel);
 
-		// Check for warnings
-		const warnings = Labels.getWarnings();
-		if (warnings)
-			this.emit('warning', warnings);
-
 		// Calculate top of stack
 		this.topOfStack = Labels.getNumberFromString64k(Settings.launch.topOfStack);
 		if (isNaN(this.topOfStack))

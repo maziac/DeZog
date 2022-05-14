@@ -69,23 +69,28 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	 * PC value.
 	 */
 	public loadAsmListFile(config: ListConfigBase) {
-		this.config = config as AsmConfigBase;
-		// Init (in case of several list files)
-		this.excludedFileStackIndex = -1;
-		this.includeFileStack = new Array<{fileName: string, lineNr: number}>();
-		this.listFile = new Array<ListFileLine>();
-		this.modulePrefixStack = new Array<string>();
-		this.modulePrefix = undefined as any;
-		this.lastLabel = undefined as any;
+		try {
+			this.config = config as AsmConfigBase;
+			// Init (in case of several list files)
+			this.excludedFileStackIndex = -1;
+			this.includeFileStack = new Array<{fileName: string, lineNr: number}>();
+			this.listFile = new Array<ListFileLine>();
+			this.modulePrefixStack = new Array<string>();
+			this.modulePrefix = undefined as any;
+			this.lastLabel = undefined as any;
 
-		// Check conversion to target memory model.
-		this.checkMappingToTargetMemoryModel();
+			// Check conversion to target memory model.
+			this.checkMappingToTargetMemoryModel();
 
-		// Phase 1: Parse for labels and addresses
-		this.parseAllLabelsAndAddresses();
+			// Phase 1: Parse for labels and addresses
+			this.parseAllLabelsAndAddresses();
 
-		// Listfile-Mode (no other mode possible)
-		this.listFileModeFinish();
+			// Listfile-Mode (no other mode possible)
+			this.listFileModeFinish();
+		}
+		catch (e) {
+			this.throwError(e.message);
+		}
 	}
 
 
@@ -118,7 +123,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 			}
 			catch {
 				// Show a warning but go on
-				this.setWarning("Could not evaluate expression '" + valueString + "' in line: '" + line + "'");
+				this.sendWarning("Could not evaluate expression '" + valueString + "' in line: '" + line + "'");
 			}
 			return;
 		}
@@ -133,7 +138,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 			if (trimmed && !trimmed.startsWith(';')) {
 				// Line contains something and it is not a comment:
 				// Add a warning
-				this.setWarning("Line ignored: '" + line + "'");
+				this.sendWarning("Line ignored: '" + line + "'");
 			}
 			return;
 		}
@@ -203,7 +208,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 		// Check if label already exists
 		if (this.numberForLabel.get(label) != undefined) {
 			// Yes, warn
-			this.setWarning("Label '" + label + "' defined more than once.");
+			this.sendWarning("Label '" + label + "' defined more than once.");
 			return;
 		}
 
@@ -257,7 +262,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 		this.funcConvertBank = (address: number, bank: number) => {
 			// Check bank
 			if (this.memoryModel.banks[bank] == undefined)
-				throw Error("Bank " + bank + " not available in '" + this.memoryModel.name + "'.");
+				this.throwError("Bank " + bank + " not available in '" + this.memoryModel.name + "'.");
 			return bank;	// No conversion
 		};
 	}

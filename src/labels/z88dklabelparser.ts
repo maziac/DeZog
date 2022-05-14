@@ -9,7 +9,7 @@ import {AsmConfigBase, Z88dkConfig} from '../settings';
 export class Z88dkLabelParser extends LabelParserBase {
 	// Overwrite parser name (for errors).
 	protected parserName = "z88dk";
-	
+
 	/// Map with the z88dk labels/symbols.
 	protected z88dkMappings=new Map<string, number>();
 
@@ -44,9 +44,14 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 * PC value.
 	 */
 	public loadAsmListFile(config: AsmConfigBase) {
-		const mapFile: string=(config as Z88dkConfig).mapFile;
-		this.readmapFile(mapFile);
-		super.loadAsmListFile(config);
+		try {
+			const mapFile: string = (config as Z88dkConfig).mapFile;
+			this.readmapFile(mapFile);
+			super.loadAsmListFile(config);
+		}
+		catch (e) {
+			this.throwError(e.message);
+		}
 	}
 
 

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import {LabelsClass} from './labels/labels';
 import {CustomCode} from './remotes/zsimulator/customcode';
 
 
@@ -16,9 +17,10 @@ export class DiagnosticsHandler {
 	 * Subscribes the diagnostics.
 	 */
 	public static Init(context: vscode.ExtensionContext) {
-		this.diagnosticsCollection = vscode.languages.createDiagnosticCollection("DeZog");
-		context.subscriptions.push(this.diagnosticsCollection);
-		CustomCode.addDiagnosticsErrorFunc = this.add;
+		DiagnosticsHandler.diagnosticsCollection = vscode.languages.createDiagnosticCollection("DeZog");
+		context.subscriptions.push(DiagnosticsHandler.diagnosticsCollection);
+		CustomCode.addDiagnosticsErrorFunc = DiagnosticsHandler.add;
+		LabelsClass.addDiagnosticsErrorFunc = DiagnosticsHandler.add;
 	}
 
 	/**
@@ -27,7 +29,7 @@ export class DiagnosticsHandler {
 	 * debug session.
 	 */
 	public static clear() {
-		this.diagnosticsCollection.clear();
+		DiagnosticsHandler.diagnosticsCollection.clear();
 	}
 
 
@@ -41,11 +43,11 @@ export class DiagnosticsHandler {
 	 */
 	public static add(message: string, severity: 'error'|'warning', filepath: string, line: number, column = 0) {
 		const uri = vscode.Uri.file(filepath);
-		const range = new vscode.Range(line, column, line, column);
+		const range = new vscode.Range(line, column, line, 10000);
 		const diagSeverity = (severity == 'error') ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning;
 		const diagnostic = new vscode.Diagnostic(range, message, diagSeverity);
 		diagnostic.source = 'DeZog';
-		this.diagnosticsCollection.set(uri, [diagnostic]);
+		DiagnosticsHandler.diagnosticsCollection.set(uri, [diagnostic]);
 	}
 }
 
