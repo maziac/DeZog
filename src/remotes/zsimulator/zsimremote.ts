@@ -222,9 +222,7 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected configureMachine(zsim: ZSimType) {
 		// For restoring the state
-		this.serializeObjects = [
-			this.z80Cpu
-		];
+		this.serializeObjects = [];
 
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();	// Required for the memory model.
 
@@ -334,6 +332,7 @@ export class ZSimRemote extends DzrpRemote {
 		this.z80Cpu = new Z80Cpu(this.memory, this.ports, () => {
 			this.emit('vertSync');
 		});
+		this.serializeObjects.push(this.z80Cpu);
 	}
 
 

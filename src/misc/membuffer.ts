@@ -143,8 +143,9 @@ export class MemBuffer {
 	 * @param s The string to write.
 	 */
 	public writeString(s: string) {
-		const buffer = Buffer.from(s, "utf8");
-		this.writeArrayBuffer(buffer.buffer);
+		const enc = new TextEncoder();
+		const buffer = enc.encode(s);
+		this.writeArrayBuffer(buffer);
 	}
 
 
@@ -225,8 +226,8 @@ export class MemBuffer {
 	 */
 	public readString(): string {
 		const array = this.readArrayBuffer();
-		const buffer = Buffer.from(array);
-		const s = buffer.toString("utf8");
+		const dec = new TextDecoder();
+		const s = dec.decode(array);
 		return s;
 	}
 
