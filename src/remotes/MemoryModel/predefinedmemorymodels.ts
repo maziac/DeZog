@@ -325,7 +325,19 @@ export class MemoryModelZxNext extends MemoryModelZxSpectrumBase {
 			// ioMmu is undefined because memory management is implemented programmatically.
 			// The writing of the the slot register would be possible to implement here,
 			// but the port also needs to support reading of the register,
-			// what cannot be supported here.
+			// what cannot be supported here.,
+			ioMmu: [
+				"var disabled;",
+				"if((portAddress | 0x7FFD) == 0x7FFD && !disabled) {",
+				"  bank = 2*(portValue & 0x07); // RAM block select",
+				"  slots[6] = bank;",
+				"  slots[7] = bank+1;",
+				"  romBank = 0xFC + 2*((portValue & 0b0010000) >>> 4);",
+				"  slots[0] = romBank;",
+				"  slots[1] = romBank+1;",
+				"  disabled = portValue & 0b0100000; // DIS",
+				"}"
+			]
 		});
 		this.name = 'ZXNEXT';
 	}

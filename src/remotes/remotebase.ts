@@ -747,7 +747,6 @@ export class RemoteBase extends EventEmitter {
 		if (Labels.AreLongAddressesUsed()) {
 			const slots = this.getSlots();
 			callerAddr = Z80Registers.createLongAddress(callerAddr, slots);
-			calledAddr = Z80Registers.createLongAddress(calledAddr, slots);
 		}
 
 		// Found: get label

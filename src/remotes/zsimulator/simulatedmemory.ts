@@ -224,6 +224,7 @@ export class SimulatedMemory implements Serializeable {
 			// Run with a timeout of 1000ms.
 			this.bankSwitchingContext.portAddress = portAddress;
 			this.bankSwitchingContext.portValue = portValue;
+			this.bankSwitchingContext.slots = this.slots;	// Note: slots can be either changed by name or by index.
 			Utility.runInContext(ioMmu, this.bankSwitchingContext, 1000);
 		}
 		catch (e) {
@@ -272,8 +273,8 @@ export class SimulatedMemory implements Serializeable {
 		for(const bank of this.memoryBanks)
 			memBuffer.writeArrayBuffer(bank);
 
-		// Get the bank switching context
-		const contextString = JSON.stringify(this.bankSwitchingContext);
+		// Write the bank switching context
+		const contextString = JSON.stringify(this.bankSwitchingContext);	// TODO: Also read/write customCode context
 		memBuffer.writeString(contextString);
 	}
 
@@ -295,6 +296,10 @@ export class SimulatedMemory implements Serializeable {
 				throw Error("Can't read data. Loaded format is different.");
 			bank.set(buffer);
 		}
+
+		// Get the bank switching context
+		const contextString = memBuffer.readString();
+		this.bankSwitchingContext = JSON.parse(contextString);
 
 		// Clear visual memory
 		this.clearVisualMemory();
@@ -493,7 +498,7 @@ export class SimulatedMemory implements Serializeable {
 	public writeMemoryData(bankNr: number, data: Uint8Array, offset = 0) {
 		const bank = this.memoryBanks[bankNr];
 		// Write
-		bank.set(data, offset);
+		bank.set(data.slice(offset, offset + bank.length));;
 	}
 
 
