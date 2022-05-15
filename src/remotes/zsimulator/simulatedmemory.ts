@@ -271,6 +271,10 @@ export class SimulatedMemory implements Serializeable {
 		// Store banks
 		for(const bank of this.memoryBanks)
 			memBuffer.writeArrayBuffer(bank);
+
+		// Get the bank switching context
+		const contextString = JSON.stringify(this.bankSwitchingContext);
+		memBuffer.writeString(contextString);
 	}
 
 
