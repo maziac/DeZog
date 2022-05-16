@@ -44,8 +44,6 @@ suite('CustomCode', () => {
 	test('in/receiveMessage', () => {
 		const custom = new CustomCode(jsPath);
 		custom.execute();
-		// @ts-ignore: protected access
-		const context=custom.context;
 
 		let result=custom.readPort(0x7000);
 		assert.equal(undefined, result);
@@ -70,8 +68,6 @@ suite('CustomCode', () => {
 	test('tick', () => {
 		const custom = new CustomCode(jsPath);
 		custom.execute();
-		// @ts-ignore: protected access
-		const context=custom.context;
 
 		let result=custom.readPort(0x9000);
 		assert.equal(90, result);
@@ -97,8 +93,6 @@ suite('CustomCode', () => {
 	test('interrupt', () => {
 		const custom = new CustomCode(jsPath);
 		custom.execute();
-		// @ts-ignore: protected access
-		const context = custom.context;
 
 		// Catch interrupt
 		let interruptNon_maskable: boolean;

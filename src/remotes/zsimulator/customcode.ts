@@ -2,6 +2,7 @@ import {EventEmitter} from 'events';
 import {LogCustomCode} from '../../log';
 import {Utility} from '../../misc/utility';
 import {readFileSync} from 'fs';
+import {MemBuffer, Serializeable} from '../../misc/membuffer';
 
 
 
@@ -133,31 +134,10 @@ export class CustomCodeAPI extends EventEmitter {
  * And it also received messages from the ZSimulationview and
  * as well can send messages to the ZSimulationView.
  */
-export class CustomCode extends EventEmitter {
+export class CustomCode extends EventEmitter implements Serializeable {
 
 	// Function used to add an error to the diagnostics.
 	public static addDiagnosticsErrorFunc: ((message: string, severity: 'error' | 'warning', filepath: string, line: number, column: number) => void) | undefined;
-
-
-	/**
-	 * Static method that calls 'eval' with a context.
-	 * Not used anymore, see runInContext.
-	 */
-	protected static evalInContext(js, context) {
-		// Return the results of the in-line anonymous function we call with the passed context
-		return function () {
-			try {
-				return eval(js);
-			}
-			catch (e) {
-				// In case of an error try to find where it occurred
-				e.message = 'Custom Code: ' + e.message;
-				// Re-throw
-				throw e;
-			}
-		}
-			.call(context);
-	}
 
 
 	/**
@@ -403,5 +383,43 @@ API.log('-------------------------------------\\n');`
 	protected throwError(errorMessage: string) {
 		LogCustomCode.log(errorMessage);
 		throw Error(errorMessage);
+	}
+
+
+	/**
+	 * Returns the size the serialized object would consume.
+	 */
+	public getSerializedSize(): number {
+		// Create a MemBuffer to calculate the size.
+		const memBuffer = new MemBuffer();
+		// Serialize object to obtain size
+		this.serialize(memBuffer);
+		// Get size
+		const size = memBuffer.getSize();
+		return size;
+	}
+
+
+	/**
+	 * Serializes the object.
+	 */
+	public serialize(memBuffer: MemBuffer) {
+		// Write the custom code context (without tmpAPI)
+		const contextString = JSON.stringify(this.context);
+		console.log('serialize:', contextString);
+		memBuffer.writeString(contextString);
+	}
+
+
+	/**
+	 * Deserializes the object.
+	 */
+	public deserialize(memBuffer: MemBuffer) {
+		// Get the  custom code context (without touching the tmpAPI)
+		const contextString = memBuffer.readString();
+		console.log('deserialize:', contextString);
+		const savedContext = JSON.parse(contextString);
+		// Put into used context
+		Utility.deepCopyContext(savedContext, this.context);
 	}
 }
