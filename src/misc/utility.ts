@@ -1487,6 +1487,27 @@ export class Utility {
 
 
 	/**
+	 * Deep copies the the src object to the target.
+	 * Of course, only properties, o functions.
+	 * @param src Source object.
+	 * @param dest Destination object.
+	 */
+	public static deepCopyContext(src: Object, dest: Object) {
+		Object.keys(src).forEach(key => {
+			const value = src[key];
+			console.log(`key: ${key}, value: ${value}`)
+			if (typeof value === 'object') {
+				Utility.deepCopyContext(value, dest[key]);
+			}
+			else {
+				// Copy primitive
+				dest[key] = value;
+			}
+		});
+	}
+
+
+	/**
 	 * Own assert function that additionally does a log
 	 * in case of a wrong assumption.
 	 */
