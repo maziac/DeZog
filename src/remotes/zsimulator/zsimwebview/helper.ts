@@ -103,8 +103,8 @@ class UiBit extends HTMLElement {
 			this.style.width = "1em";
 		if (!this.style.height)
 			this.style.height = "1em";
-		if (!this.style.webkitUserSelect)
-			this.style.webkitUserSelect = "none";
+		if (!this.style.userSelect)
+			this.style.userSelect = "none";
 
 		// Init undefined
 		if ((this as any).bitvalue == undefined)
