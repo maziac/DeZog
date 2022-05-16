@@ -402,7 +402,7 @@ export class Settings {
 		let rootFolder = launchCfg.rootFolder || '';	// Will be checked in the CheckSettings.
 		// Change to a true-case-path (E.g. the user might have given "/volumes..." but the real path is "/Volumes...")
 		try {
-			const result = fs.realpathSync.native(rootFolder); // TODO: test drive letter on windows
+			const result = fs.realpathSync.native(rootFolder); // On windows this returns a capital drive letter
 			// console.log("fs.realpathSync(" + rootFolder + ") = " + result);
 			// If no exception occurs the path is valid:
 			rootFolder = result;

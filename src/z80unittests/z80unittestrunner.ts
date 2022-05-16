@@ -309,13 +309,13 @@ export class Z80UnitTestRunner {
 			StepHistory.decoder = Z80Registers.decoder;
 		}
 
-		// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
-		Remote.readListFiles(configuration);	// TODO: Move after connection successful, like debug adapter
-
 		return new Promise<void>(async (resolve, reject) => {
 			// Events
 			Remote.once('initialized', async () => {
 				try {
+					// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
+					Remote.readListFiles(configuration);
+
 					// Initialize Cpu- or StepHistory.
 					StepHistory.init();  // might call the socket
 
