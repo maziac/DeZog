@@ -877,7 +877,7 @@ export class DebugSessionClass extends DebugSession {
 		// Check if the complete call stack and the
 
 		// Filter addresses by current banking
-		console.log('longPcAddressesHistory=', this.longPcAddressesHistory);
+		//console.log('longPcAddressesHistory=', this.longPcAddressesHistory);
 		const disassembleMemory = (longFetchAddresses.length > 0);
 		//this.forceDisassembly = true;
 		if (disassembleMemory)	// Disassembly only if PC or call stack is unknown
@@ -3748,7 +3748,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		try {
 			// Clear diagnostics
 			DiagnosticsHandler.clear();
-			
+
 			// Read list files
 			Remote.readListFiles(Settings.launch);
 			// Re-read the watchpoints etc.

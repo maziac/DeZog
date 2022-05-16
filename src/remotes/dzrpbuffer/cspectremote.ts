@@ -168,7 +168,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 
 
 	/**
-	 * Returns a better error in case of CSpect plugin incompability.
+	 * Returns a better error in case of CSpect plugin incompatibility.
 	 * @returns The error, program name (incl. version), dzrp version and the machine type.
 	 * error is 0 on success. 0xFF if version numbers not match.
 	 * Other numbers indicate an error on remote side.
@@ -176,7 +176,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
 		const result = await super.sendDzrpCmdInit();
 		if (result.error) {
-			// An error occured. Add some help.
+			// An error occurred. Add some help.
 			result.error += "\nTry updating the DeZog (CSpect) Plugin (https://github.com/maziac/DeZogPlugin/releases)."
 		}
 		return result;

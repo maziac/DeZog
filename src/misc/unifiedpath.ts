@@ -73,7 +73,7 @@ export class UnifiedPath {
 
 	/**
 	 * Same as getUnifiedPath but works on an array of strings.
-	 * @param fpaths Array of path strings.
+	 * @param fpaths Array of relative path strings.
 	 * @return An array of path strings but all '\' converted to '/'.
 	 * May return undefined if fpaths is undefined.
 	 */

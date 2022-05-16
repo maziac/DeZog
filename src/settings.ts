@@ -399,7 +399,17 @@ export class Settings {
 		}
 
 		// Check rootFolder
-		const rootFolder = launchCfg.rootFolder || '';	// Will be checked in the CheckSettings.
+		let rootFolder = launchCfg.rootFolder || '';	// Will be checked in the CheckSettings.
+		// Change to a true-case-path (E.g. the user might have given "/volumes..." but the real path is "/Volumes...")
+		try {
+			const result = fs.realpathSync.native(rootFolder); // TODO: test drive letter on windows
+			// console.log("fs.realpathSync(" + rootFolder + ") = " + result);
+			// If no exception occurs the path is valid:
+			rootFolder = result;
+		}
+		catch {}
+		// Also use for the launch config.
+		launchCfg.rootFolder = rootFolder;
 
 		// Check for default values (for some reasons the default values from the package.json are not used)
 		if (launchCfg.unitTests == undefined)

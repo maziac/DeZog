@@ -154,7 +154,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		for (let [address, entry] of this.estimatedFileLineNrs) {
 			if (!this.fileLineNrs.get(address)) {
 				// Only if address not yet exists
-				this.fileLineNrs.set(address, entry);
+				this.setFileLineNrForAddress(address, entry);
 			}
 		}
 	}
@@ -331,7 +331,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					const lineNr = parseInt(fields[1]) - 1;
 
 					// Store values to associate address with line number and (last) label.
-					this.fileLineNrs.set(address, {
+					this.setFileLineNrForAddress(address, {
 						fileName: sourceFile,
 						lineNr: lineNr,
 						modulePrefix: this.modulePrefix,

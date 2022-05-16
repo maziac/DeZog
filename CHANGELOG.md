@@ -10,6 +10,7 @@
 	- zsim ulaScreen simulation
 	- memory models
 	- labels parsings
+- "rootFolder" does allow now for 'wrong' capitalization (breakpoint problem)pec
 
 # 2.7.1
 - Fixed disassembly of instructions: INC (IX+n), DEC (IX+n), INC (IY+n) and DEC (IY+n).

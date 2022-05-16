@@ -1,4 +1,4 @@
-import {readFileSync} from 'fs';
+import * as fs from 'fs';
 import {Utility} from '../misc/utility';
 import {UnifiedPath} from '../misc/unifiedpath';
 import {SourceFileEntry, ListFileLine} from './labels';
@@ -210,7 +210,7 @@ export class LabelParserBase {
 	protected parseAllLabelsAndAddresses() {
 		// Loop through all lines
 		const fileName = Utility.getRelFilePath(this.config.path);
-		const listLinesFull = readFileSync(this.config.path).toString().split('\n');
+		const listLinesFull = fs.readFileSync(this.config.path).toString().split('\n');
 		// Strip away windows line endings
 		const listLines = listLinesFull.map(line => line.trimEnd());
 		this.currentLineNr = 0;
@@ -362,14 +362,6 @@ export class LabelParserBase {
 			if (entry.addr == undefined)
 				continue;
 
-			/*
-			const prevFileLine = this.fileLineNrs.get(entry.addr);
-			if (!prevFileLine || entry.size > 0) {
-				// write new value
-				this.fileLineNrs.set(entry.addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
-			}
-			*/
-
 			const countBytes = entry.size;
 			if (countBytes > 0) {
 				for (let i = 0; i < entry.size; i++) { // TODO: long addresses?
@@ -377,14 +369,14 @@ export class LabelParserBase {
 					//const prevFileLine = this.fileLineNrs.get(addr);
 					//if (!prevFileLine)
 					{
-						this.fileLineNrs.set(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: 1});
+						this.setFileLineNrForAddress(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: 1});
 					}
 				}
 			}
 			else {
 				// Just for reverse engineering: to be able to define a breakpoint at a label with no associated bytes.
 				const addr = entry.addr;
-				this.fileLineNrs.set(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: 0});
+				this.setFileLineNrForAddress(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: 0});
 			}
 
 			// Set address
@@ -394,6 +386,20 @@ export class LabelParserBase {
 				//console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));
 			}
 		}
+	}
+
+
+	/**
+	 * Associates the structure with file and lineNr to the address.
+	 * Additionally uses the true-case-path for this.
+	 * I.e. on windows and macos a path could have been used with a different capitalization.
+	 * But for storage the correct path is used.
+	 * This in turn also checks if the file is available at all.
+	 * @param address Long address
+	 * @param entry Contains (relative) file name, lineNr, etc.
+	 */
+	protected setFileLineNrForAddress(address: number, entry: SourceFileEntry) {
+		this.fileLineNrs.set(address, entry);
 	}
 
 
@@ -427,7 +433,7 @@ export class LabelParserBase {
 			// last address entry wins:
 			for (let i = 0; i < entry.size; i++) {
 				const addr = (i == 0) ? entry.addr : (entry.addr + i) & 0xFFFF;	// Don't mask entry addr if size is 1, i.e. for sjasmplus sld allow higher addresses
-				this.fileLineNrs.set(addr, {
+				this.setFileLineNrForAddress(addr, {
 					fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: entry.size
 				});
 			}

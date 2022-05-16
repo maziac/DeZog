@@ -498,7 +498,7 @@ export class SimulatedMemory implements Serializeable {
 	public writeMemoryData(bankNr: number, data: Uint8Array, offset = 0) {
 		const bank = this.memoryBanks[bankNr];
 		// Write
-		bank.set(data.slice(offset, offset + bank.length));;
+		bank.set(data.slice(offset, offset + bank.length));
 	}
 
 
