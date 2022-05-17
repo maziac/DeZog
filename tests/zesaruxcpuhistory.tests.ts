@@ -1,8 +1,8 @@
 
 import * as assert from 'assert';
-import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from '../src/remotes/zesarux/zesaruxcpuhistory';
-import { Z80RegistersClass, Z80Registers } from '../src/remotes/z80registers';
-import {DecodeZesaruxRegisters} from '../src/remotes/zesarux/decodezesaruxdata';
+import {ZesaruxCpuHistory, DecodeZesaruxHistoryInfo} from '../src/remotes/zesarux/zesaruxcpuhistory';
+import {Z80RegistersClass, Z80Registers} from '../src/remotes/z80registers';
+import {DecodeZesaruxRegisters, DecodeZesaruxRegistersZx128k, DecodeZesaruxRegistersZx48k, DecodeZesaruxRegistersZxNext} from '../src/remotes/zesarux/decodezesaruxdata';
 import {Settings} from '../src/settings/settings';
 import {ZesaruxSocket, zSocket} from '../src/remotes/zesarux/zesaruxsocket';
 import {RefList} from '../src/misc/reflist';
@@ -10,16 +10,16 @@ import {CallStackFrame} from '../src/callstackframe';
 import {RemoteFactory} from '../src/remotes/remotefactory';
 import {CpuHistory} from '../src/remotes/cpuhistory';
 import {Labels} from '../src/labels/labels';
-import {MemoryModelUnknown} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelUnknown, MemoryModelZx48k} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
 
 
 // Mock for the socket.
 class MockZesaruxSocket extends ZesaruxSocket {
-	public dataArray: Array<string>=[];
-	public send(command: string, handler: {(data)}=(data) => {}, suppressErrorHandling=false, /*, timeout = -1*/) {	// NOSONAR
+	public dataArray: Array<string> = [];
+	public send(command: string, handler: {(data)} = (data) => {}, suppressErrorHandling = false, /*, timeout = -1*/) {	// NOSONAR
 		// Calls the handler directly
-		const data=this.dataArray.shift();
+		const data = this.dataArray.shift();
 		assert.notEqual(data, undefined);
 		handler(data);
 	}
@@ -30,7 +30,7 @@ class MockZesaruxSocket extends ZesaruxSocket {
 suite('ZesaruxCpuHistory', () => {
 
 	setup(() => {
-		const cfg: any={
+		const cfg: any = {
 			remoteType: 'zrcp'
 		};
 		Settings.launch = Settings.Init(cfg);
@@ -39,9 +39,10 @@ suite('ZesaruxCpuHistory', () => {
 	});
 
 	function createCpuHistory(): ZesaruxCpuHistory {
-		const decoder=new DecodeZesaruxRegisters(8);
-		Z80Registers.decoder=decoder;
-		const hist=new ZesaruxCpuHistory();
+		//const decoder = new DecodeZesaruxRegisters(8);
+		const decoder = new DecodeZesaruxRegistersZxNext();
+		Z80Registers.decoder = decoder;
+		const hist = new ZesaruxCpuHistory();
 		hist.decoder = new DecodeZesaruxHistoryInfo();
 		return hist;
 	}
@@ -93,7 +94,7 @@ suite('ZesaruxCpuHistory', () => {
 			let expSp = hist.calcDirectSpChanges(0xcdab31, 100, "");
 			assert.equal(0xcdab, expSp);
 
-		    // INC SP
+			// INC SP
 			expSp = hist.calcDirectSpChanges(0x33, 100, "");
 			assert.equal(101, expSp);
 
@@ -120,25 +121,25 @@ suite('ZesaruxCpuHistory', () => {
 
 
 		test('getOpcodes', () => {
-			const hist=createCpuHistory();
+			const hist = createCpuHistory();
 
-			let result=hist.decoder.getOpcodes("PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=01020304");
+			let result = hist.decoder.getOpcodes("PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=01020304");
 			assert.equal(0x04030201, result);
 
-			result=hist.decoder.getOpcodes("PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=FFFEFDFC");
+			result = hist.decoder.getOpcodes("PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=FFFEFDFC");
 			assert.equal(0xFCFDFEFF, result);
 
-			result=hist.decoder.getOpcodes("PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c");
+			result = hist.decoder.getOpcodes("PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c");
 			assert.equal(0x5c782ae5, result);
 
-			result=hist.decoder.getOpcodes("PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=00123456");
+			result = hist.decoder.getOpcodes("PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=00123456");
 			assert.equal(0x56341200, result);
 		});
 
 		test('getInstruction 1-4 bytes', () => {
 			const hist = createCpuHistory();
 
-			const resultn=hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
+			const resultn = hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal(0xe5, resultn);
 
 			let result = hist.getInstruction("PC=0039 ... (PC)=e5000000");
@@ -171,7 +172,7 @@ suite('ZesaruxCpuHistory', () => {
 		test('getInstruction RST', () => {
 			const hist = createCpuHistory();
 
-			const resultn=hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
+			const resultn = hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal(0xe5, resultn);
 
 			let result = hist.getInstruction("PC=0039 ... (PC)=cf000000");
@@ -191,7 +192,7 @@ suite('ZesaruxCpuHistory', () => {
 		test('getInstruction CALL cc', () => {
 			const hist = createCpuHistory();
 
-			const resultn=hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
+			const resultn = hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal(0xe5, resultn);
 
 			let result = hist.getInstruction("PC=0039 ... (PC)=CD214300");
@@ -226,7 +227,7 @@ suite('ZesaruxCpuHistory', () => {
 		test('getInstruction RET, RETI, RETN', () => {
 			const hist = createCpuHistory();
 
-			const resultn=hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
+			const resultn = hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal(0xe5, resultn);
 
 			let result = hist.getInstruction("PC=0039 ... (PC)=c9000000");
@@ -243,7 +244,7 @@ suite('ZesaruxCpuHistory', () => {
 		test('getInstruction RET cc', () => {
 			const hist = createCpuHistory();
 
-			const resultn=hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
+			const resultn = hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal(0xe5, resultn);
 
 			let result = hist.getInstruction("PC=0039 ... (PC)=c0000000");
@@ -277,15 +278,15 @@ suite('ZesaruxCpuHistory', () => {
 	suite('isCallOpcode', () => {
 
 		test('is CALL', () => {
-			const hist=createCpuHistory();
+			const hist = createCpuHistory();
 			// Test
-			const opcode0=0xCD;	// Extended code like in PUSH nn
+			const opcode0 = 0xCD;	// Extended code like in PUSH nn
 			assert.ok(hist.isCallOpcode(opcode0));
 		});
 
 
 		test('is CALL cc', () => {
-			const hist=createCpuHistory();
+			const hist = createCpuHistory();
 			// Test
 			assert.ok(hist.isCallOpcode(0xC4));
 			assert.ok(hist.isCallOpcode(0xD4));
@@ -299,9 +300,9 @@ suite('ZesaruxCpuHistory', () => {
 		});
 
 		test('is not CALL', () => {
-			const hist=createCpuHistory();
+			const hist = createCpuHistory();
 			// Test
-			const opcode0=0xED;	// Extended code like in PUSH nn
+			const opcode0 = 0xED;	// Extended code like in PUSH nn
 			assert.ok(!hist.isCallOpcode(opcode0));
 		});
 	});
@@ -310,7 +311,7 @@ suite('ZesaruxCpuHistory', () => {
 	suite('isRstOpcode', () => {
 
 		test('is RST', () => {
-			const hist=createCpuHistory();
+			const hist = createCpuHistory();
 			// Test
 			assert.ok(hist.isRstOpcode(0xC7));
 			assert.ok(hist.isRstOpcode(0xD7));
@@ -324,9 +325,9 @@ suite('ZesaruxCpuHistory', () => {
 		});
 
 		test('is not RST', () => {
-			const hist=createCpuHistory();
+			const hist = createCpuHistory();
 			// Test
-			const opcode0=0xED;	// Extended code like in PUSH nn
+			const opcode0 = 0xED;	// Extended code like in PUSH nn
 			assert.ok(!hist.isRstOpcode(opcode0));
 		});
 	});
@@ -339,7 +340,7 @@ suite('ZesaruxCpuHistory', () => {
 			const testRetConditional = (opcode1: number, opcode2: number, flags: number) => {
 				// opcode1, flag=0
 				let hist = createCpuHistory();
-				let opcodes=opcode1;
+				let opcodes = opcode1;
 				let result = hist.isRetAndExecuted(opcodes, ~flags);
 				assert.equal(true, result);
 
@@ -363,11 +364,11 @@ suite('ZesaruxCpuHistory', () => {
 
 			test('isRetAndExecuted unconditional', () => {
 				let hist = createCpuHistory();
-				let result=hist.isRetAndExecuted(0x000000c9, 0);
+				let result = hist.isRetAndExecuted(0x000000c9, 0);
 				assert.equal(true, result);
 
 				hist = createCpuHistory();
-				result=hist.isRetAndExecuted(0x00000001, 0);
+				result = hist.isRetAndExecuted(0x00000001, 0);
 				assert.equal(false, result);
 
 				hist = createCpuHistory();
@@ -452,11 +453,11 @@ suite('ZesaruxCpuHistory', () => {
 
 			test('isCallAndExecuted unconditional', () => {
 				let hist = createCpuHistory();
-				let result=hist.isCallAndExecuted(0x000000cd, 0);
+				let result = hist.isCallAndExecuted(0x000000cd, 0);
 				assert.equal(true, result);
 
 				hist = createCpuHistory();
-				result=hist.isCallAndExecuted(0x00000001, 0);
+				result = hist.isCallAndExecuted(0x00000001, 0);
 				assert.equal(false, result);
 			});
 
@@ -549,23 +550,26 @@ suite('ZesaruxCpuHistory', () => {
 			Z80RegistersClass.Init();
 			Z80RegistersClass.createRegisters();
 			RemoteFactory.createRemote('zrcp');
-			Z80Registers.decoder=new DecodeZesaruxRegisters(0);
+			//Z80Registers.decoder = new DecodeZesaruxRegisters(0);
+			Z80Registers.decoder = new DecodeZesaruxRegistersZx48k();
+			const mm = new MemoryModelZx48k();
+			mm.init(); // Required for setting the funcCreateLongAddress and funcGetSlotFromAddress
 			//Remote.init();
-			history=CpuHistory;
-			history.decoder=new DecodeZesaruxHistoryInfo();
-			mockSocket=new MockZesaruxSocket();
-			(<any>zSocket)=mockSocket;
-			(zSocket as any).queue=new Array<any>();
+			history = CpuHistory;
+			history.decoder = new DecodeZesaruxHistoryInfo();
+			mockSocket = new MockZesaruxSocket();
+			(<any>zSocket) = mockSocket;
+			(zSocket as any).queue = new Array<any>();
 			// Push one frame on the stack
-			history.reverseDbgStack=new RefList();
+			history.reverseDbgStack = new RefList();
 			history.reverseDbgStack.push(new CallStackFrame(0, 0, "__TEST_MAIN__"));
 		});
 
 		test('simple step back first history instruction', async () => {
 			//  80D5 LD B,03h
-			const currentLine="PC=80d5 SP=83fb AF=0208 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0e IM0 IFF12 (PC)=06030e04 (SP)=80f5 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80d5 SP=83fb AF=0208 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0e IM0 IFF12 (PC)=06030e04 (SP)=80f5 MMU=00001111222233334444555566667777";
 			// 80D7 LD C,04h (not from history)
-			const prevLine="PC=80d7 SP=83fb AF=0208 BC=0300 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0f  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=80d7 SP=83fb AF=0208 BC=0300 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0f  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0 MMU=00001111222233334444555566667777";
 
 			// Handle step back
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
@@ -575,49 +579,49 @@ suite('ZesaruxCpuHistory', () => {
 
 		test('simple step back inside history', async () => {
 			//  80D3 LD A,02h
-			const currentLine="PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5 MMU=00001111222233334444555566667777";
 			// 80D5 LD B,03h (from history)
-			const prevLine="PC=80d5 SP=83fb AF=0208 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0e IM0 IFF12 MMU=00001111222233334444555566667777"; //(PC)=06030e04 (SP)=80f5";
+			const prevLine = "PC=80d5 SP=83fb AF=0208 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0e IM0 IFF12 MMU=00001111222233334444555566667777"; //(PC)=06030e04 (SP)=80f5";
 
 			// Handle step back
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
 			// Nothing has been pushed on the stack
 			assert.equal(1, history.reverseDbgStack.length);
-			const frame=history.reverseDbgStack[0];
+			const frame = history.reverseDbgStack[0];
 			assert.equal(0, frame.stack.length);
 		});
 
 
 		test('step back PUSH', async () => {
 			// Push something on the stack
-			let frame=history.reverseDbgStack[0];
+			let frame = history.reverseDbgStack[0];
 			frame.stack.push(0x2F01);
 			// 80ED PUSH 2F01h
 			// 80E9 PUSH CA00h
-			const currentLine="PC=80e9 SP=8401 AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=43 IM0 IFF12 (PC)=ed8a00ca (SP)=0065 MMU=00001111222233334444555566667777";
-			const prevLine="PC=80ed SP=83ff AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=45 IM0 IFF12 MMU=00001111222233334444555566667777"; //(PC)=ed8a012f (SP)=00ca";
+			const currentLine = "PC=80e9 SP=8401 AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=43 IM0 IFF12 (PC)=ed8a00ca (SP)=0065 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=80ed SP=83ff AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=45 IM0 IFF12 MMU=00001111222233334444555566667777"; //(PC)=ed8a012f (SP)=00ca";
 
 			// Handle step back
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
 			// Value has been removed from the stack
 			assert.equal(1, history.reverseDbgStack.length);
-			frame=history.reverseDbgStack[0];
-			assert.equal(0x80e9, frame.addr);
+			frame = history.reverseDbgStack[0];
+			assert.equal(0x280e9, frame.addr);
 			assert.equal(0, frame.stack.length);  // Nothing on the function stack
 		});
 
 		test('step back POP', async () => {
 			//   80F6 POP DE
 			//   80F7 POP HL (not executed)
-			const currentLine="PC=80f6 SP=83ff AF=0208 BC=0303 HL=4000 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=4a IM0 IFF12 (PC)=d1e100c9 (SP)=0202 MMU=00001111222233334444555566667777";
-			const prevLine="PC=80f7 SP=8401 AF=0208 BC=0303 HL=4000 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=4b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80f6 SP=83ff AF=0208 BC=0303 HL=4000 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=4a IM0 IFF12 (PC)=d1e100c9 (SP)=0202 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=80f7 SP=8401 AF=0208 BC=0303 HL=4000 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=4b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0 MMU=00001111222233334444555566667777";
 
 			// Handle step back
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
 			// Value has been pushed to the stack
 			assert.equal(1, history.reverseDbgStack.length);
-			const frame=history.reverseDbgStack[0];
-			assert.equal(0x80f6, frame.addr);
+			const frame = history.reverseDbgStack[0];
+			assert.equal(0x280f6, frame.addr);
 			assert.equal(1, frame.stack.length);  // 1 item on the function stack
 			assert.equal(0x0202, frame.stack[0]);
 		});
@@ -628,8 +632,8 @@ suite('ZesaruxCpuHistory', () => {
 
 			// 80D3 LD A,02h
 			// 80F2 CALL 80D3h
-			const currentLine="PC=80f2 SP=83fd AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=3b IM0 IFF12 (PC)=cdd380c1 (SP)=0303 MMU=00001111222233334444555566667777";
-			const prevLine="PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=3c IM0 IFF12 (PC)=3e020603 (SP)=80f5 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80f2 SP=83fd AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=3b IM0 IFF12 (PC)=cdd380c1 (SP)=0303 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=3c IM0 IFF12 (PC)=3e020603 (SP)=80f5 MMU=00001111222233334444555566667777";
 
 			// Handle step back
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
@@ -643,8 +647,8 @@ suite('ZesaruxCpuHistory', () => {
 
 			// 80D3 LD A,02h
 			// 80F2 RST 18h
-			const currentLine="PC=80f2 SP=83fd AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=3b IM0 IFF12 (PC)=dfd380c1 (SP)=0303 MMU=00001111222233334444555566667777";
-			const prevLine="PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=3c IM0 IFF12 (PC)=3e020603 (SP)=80f5 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80f2 SP=83fd AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=3b IM0 IFF12 (PC)=dfd380c1 (SP)=0303 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=3c IM0 IFF12 (PC)=3e020603 (SP)=80f5 MMU=00001111222233334444555566667777";
 
 			// Handle step back
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
@@ -655,8 +659,8 @@ suite('ZesaruxCpuHistory', () => {
 		test('step back RET', async () => {
 			// 80F5 POP BC
 			// 80E4 RET
-			const currentLine="PC=80e4 SP=83fb AF=0208 BC=0304 HL=4000 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=48 IM0 IFF12 (PC)=c9ed8a01 (SP)=80f5 MMU=00001111222233334444555566667777";
-			const prevLine="PC=80f5 SP=83fd AF=0208 BC=0304 HL=4000 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=49 IM0 IFF12 MMU=00001111222233334444555566667777"; //(PC)=c1d1e100 (SP)=0303";
+			const currentLine = "PC=80e4 SP=83fb AF=0208 BC=0304 HL=4000 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=48 IM0 IFF12 (PC)=c9ed8a01 (SP)=80f5 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=80f5 SP=83fd AF=0208 BC=0304 HL=4000 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=49 IM0 IFF12 MMU=00001111222233334444555566667777"; //(PC)=c1d1e100 (SP)=0303";
 
 			// Caller
 			mockSocket.dataArray.push("CD3412");	// memory content at CALL nnnn
@@ -665,8 +669,8 @@ suite('ZesaruxCpuHistory', () => {
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
 			// Value has been pushed to the callstack
 			assert.equal(2, history.reverseDbgStack.length);
-			const frame=history.reverseDbgStack.last();
-			assert.equal(0x80e4, frame.addr);
+			const frame = history.reverseDbgStack.last();
+			assert.equal(0x280e4, frame.addr);
 			assert.equal("1234h", frame.name);
 		});
 
@@ -676,8 +680,8 @@ suite('ZesaruxCpuHistory', () => {
 
 			// 0038 DI
 			// 80D3 LD A,02h
-			const currentLine="PC=80d3 SP=83fb AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=34 IM0 IFF12 (PC)=3e020603 (SP)=80f5 MMU=00001111222233334444555566667777";
-			const prevLine="PC=0038 SP=83f9 AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=36 IM0 IFF-- MMU=00001111222233334444555566667777"; //(PC)=f3dde5e5 (SP)=80d5";
+			const currentLine = "PC=80d3 SP=83fb AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=34 IM0 IFF12 (PC)=3e020603 (SP)=80f5 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=0038 SP=83f9 AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=36 IM0 IFF-- MMU=00001111222233334444555566667777"; //(PC)=f3dde5e5 (SP)=80d5";
 
 			// Handle step back
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
@@ -692,8 +696,8 @@ suite('ZesaruxCpuHistory', () => {
 
 			// 0038 DI
 			// 80E5 PUSH 0101h
-			const currentLine="PC=80e5 SP=8403 AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=5f IM0 IFF12 (PC)=ed8a0101 (SP)=8148 MMU=00001111222233334444555566667777";
-			const prevLine="PC=0038 SP=83ff AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=62 IM0 IFF-- MMU=00001111222233334444555566667777"; //(PC)=f3dde5e5 (SP)=80e9";
+			const currentLine = "PC=80e5 SP=8403 AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=5f IM0 IFF12 (PC)=ed8a0101 (SP)=8148 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=0038 SP=83ff AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=62 IM0 IFF-- MMU=00001111222233334444555566667777"; //(PC)=f3dde5e5 (SP)=80e9";
 
 			// Handle step back
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
@@ -707,8 +711,8 @@ suite('ZesaruxCpuHistory', () => {
 
 			// 0038 DI
 			// 80F6 POP BC
-			const currentLine="PC=80f6 SP=83fb AF=02c9 BC=0304 HL=0101 DE=0202 IX=0cda IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=70 IM0 IFF12 (PC)=c1d1e100 (SP)=0303 MMU=00001111222233334444555566667777";
-			const prevLine="PC=0038 SP=83fb AF=02c9 BC=0303 HL=0101 DE=0202 IX=0cda IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=72 IM0 IFF-- MMU=00001111222233334444555566667777"; // (PC)=f3dde5e5 (SP)=80f7";
+			const currentLine = "PC=80f6 SP=83fb AF=02c9 BC=0304 HL=0101 DE=0202 IX=0cda IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=70 IM0 IFF12 (PC)=c1d1e100 (SP)=0303 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=0038 SP=83fb AF=02c9 BC=0303 HL=0101 DE=0202 IX=0cda IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=72 IM0 IFF-- MMU=00001111222233334444555566667777"; // (PC)=f3dde5e5 (SP)=80f7";
 
 			// Handle step back
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
@@ -716,7 +720,7 @@ suite('ZesaruxCpuHistory', () => {
 			// The interrupt must be removed from the callstack,
 			// but the POP must have been pushed to the frame stack.
 			assert.equal(1, history.reverseDbgStack.length);
-			let frame=history.reverseDbgStack[0];
+			let frame = history.reverseDbgStack[0];
 			assert.equal("__TEST_MAIN__", frame.name);
 			assert.equal(1, frame.stack.length);
 			assert.equal(0x0303, frame.stack[0]);
@@ -731,8 +735,8 @@ suite('ZesaruxCpuHistory', () => {
 
 			// 0038 DI
 			// 80E5 RET
-			const currentLine="PC=80e5 SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=24 IM0 IFF12 (PC)=c900ed8a (SP)=8147 MMU=00001111222233334444555566667777";
-			const prevLine="PC=0038 SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=26  F=SZ--3--C F'=-Z---P-- MEMPTR=0000 IM0 IFF-- VPS: 0 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80e5 SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=24 IM0 IFF12 (PC)=c900ed8a (SP)=8147 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=0038 SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=26  F=SZ--3--C F'=-Z---P-- MEMPTR=0000 IM0 IFF-- VPS: 0 MMU=00001111222233334444555566667777";
 
 			// Handle step back
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
@@ -740,9 +744,9 @@ suite('ZesaruxCpuHistory', () => {
 			// The interrupt must be removed from the callstack,
 			// but the RET must have been pushed to the call stack.
 			assert.equal(2, history.reverseDbgStack.length);
-			let frame=history.reverseDbgStack[0];
+			let frame = history.reverseDbgStack[0];
 			assert.equal("__TEST_MAIN__", frame.name);
-			frame=history.reverseDbgStack[1];
+			frame = history.reverseDbgStack[1];
 			assert.equal("80E5h", frame.name);
 			assert.equal(0, frame.stack.length);
 		});
@@ -751,8 +755,8 @@ suite('ZesaruxCpuHistory', () => {
 		test('step back into isr', async () => {
 			// 80E9 PUSH 0202h
 			// 0049 RET
-			const currentLine="PC=0049 SP=83ff AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=7a IM0 IFF12 (PC)=c90608af (SP)=80e9 MMU=00001111222233334444555566667777";
-			const prevLine="PC=80e9 SP=8401 AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=7b IM0 IFF12 MMU=00001111222233334444555566667777"; //(PC)=ed8a0202 (SP)=0101";
+			const currentLine = "PC=0049 SP=83ff AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=7a IM0 IFF12 (PC)=c90608af (SP)=80e9 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=80e9 SP=8401 AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=7b IM0 IFF12 MMU=00001111222233334444555566667777"; //(PC)=ed8a0202 (SP)=0101";
 
 			// There is no caller, but some memory must be returned
 			mockSocket.dataArray.push("AA3412");
@@ -761,8 +765,8 @@ suite('ZesaruxCpuHistory', () => {
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
 			// Value has been pushed to the callstack
 			assert.equal(2, history.reverseDbgStack.length);
-			const frame=history.reverseDbgStack.last();
-			assert.equal(0x0049, frame.addr);
+			const frame = history.reverseDbgStack.last();
+			assert.equal(0x10049, frame.addr);
 			assert.equal("__UNKNOWN__", frame.name);	// Most probably an interrupt, but we don't know
 		});
 
@@ -771,8 +775,8 @@ suite('ZesaruxCpuHistory', () => {
 
 			// 80E9 ...
 			// 8123 RET
-			const currentLine="PC=0049 SP=83ff AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=7a IM0 IFF12 (PC)=c90608af (SP)=80e9 MMU=00001111222233334444555566667777";
-			const prevLine="PC=80e9 SP=8401 AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=7b IM0 IFF12 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=0049 SP=83ff AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=7a IM0 IFF12 (PC)=c90608af (SP)=80e9 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=80e9 SP=8401 AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=7b IM0 IFF12 MMU=00001111222233334444555566667777";
 
 			// There is no caller, but some memory must be returned
 			mockSocket.dataArray.push("AA3412");
@@ -781,27 +785,27 @@ suite('ZesaruxCpuHistory', () => {
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
 			// Value has been pushed to the callstack
 			assert.equal(2, history.reverseDbgStack.length);
-			let frame=history.reverseDbgStack[1];
+			let frame = history.reverseDbgStack[1];
 			assert.equal("__UNKNOWN__", frame.name);	// Could as well have been an interrupt
-			frame=history.reverseDbgStack[0];
+			frame = history.reverseDbgStack[0];
 			assert.equal("__TEST_MAIN__", frame.name);
 		});
 
 		test('LD SP bigger', async () => {
 			// Put 1 value on frame stack
-			let frame=history.reverseDbgStack[0];
+			let frame = history.reverseDbgStack[0];
 			frame.stack.push(0x0201);
 
 			// 80F7 NOP						// SP=8402
 			// 80F6 LD SP,HL // HL = SP+4,	   SP=83FE, removes 2 items from the stack
-			const currentLine="PC=80f6 SP=83fe AF=01c0 BC=0000 HL=8402 DE=2000 IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=00 R=1f IM0 IFF12 (PC)=f900cdd3 (SP)=0303 MMU=00001111222233334444555566667777";
-			const prevLine="PC=80f7 SP=8402 AF=01c0 BC=0000 HL=8402 DE=2000 IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=00 R=20 IM0 IFF12 MMU=00001111222233334444555566667777";	// (PC)=00cdd380 (SP)=0101;
+			const currentLine = "PC=80f6 SP=83fe AF=01c0 BC=0000 HL=8402 DE=2000 IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=00 R=1f IM0 IFF12 (PC)=f900cdd3 (SP)=0303 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=80f7 SP=8402 AF=01c0 BC=0000 HL=8402 DE=2000 IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=00 R=20 IM0 IFF12 MMU=00001111222233334444555566667777";	// (PC)=00cdd380 (SP)=0101;
 
 			// Handle step back
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
 			// 2 undefined values have been added.
 			assert.equal(1, history.reverseDbgStack.length);
-			frame=history.reverseDbgStack[0];
+			frame = history.reverseDbgStack[0];
 			assert.equal(3, frame.stack.length);
 			assert.equal(0x0201, frame.stack[0]);
 			assert.equal(undefined, frame.stack[1]);
@@ -811,21 +815,21 @@ suite('ZesaruxCpuHistory', () => {
 
 		test('LD SP smaller', async () => {
 			// Put 3 values on frame stack
-			let frame=history.reverseDbgStack[0];
+			let frame = history.reverseDbgStack[0];
 			frame.stack.push(0x0201);
 			frame.stack.push(0x0302);
 			frame.stack.push(0x0403);
 
 			// 80F7 NOP						// SP=83FA
 			// 80F6 LD SP,HL // HL = SP-4,	   SP=83FE, pushes 2 items to the stack
-			const currentLine="PC=80f6 SP=83fe AF=01d1 BC=0000 HL=83fa DE=2000 IX=003c IY=5c3a AF'=2420 BC'=174b HL'=107f DE'=0006 I=00 R=6e IM0 IFF12 (PC)=f900cdd3 (SP)=0303 MMU=00001111222233334444555566667777";
-			const prevLine="PC=80f7 SP=83fa AF=01d1 BC=0000 HL=83fa DE=2000 IX=003c IY=5c3a AF'=2420 BC'=174b HL'=107f DE'=0006 I=00 R=6f IM0 IFF12 MMU=00001111222233334444555566667777";	// (PC)=00cdd380 (SP)=0000"
+			const currentLine = "PC=80f6 SP=83fe AF=01d1 BC=0000 HL=83fa DE=2000 IX=003c IY=5c3a AF'=2420 BC'=174b HL'=107f DE'=0006 I=00 R=6e IM0 IFF12 (PC)=f900cdd3 (SP)=0303 MMU=00001111222233334444555566667777";
+			const prevLine = "PC=80f7 SP=83fa AF=01d1 BC=0000 HL=83fa DE=2000 IX=003c IY=5c3a AF'=2420 BC'=174b HL'=107f DE'=0006 I=00 R=6f IM0 IFF12 MMU=00001111222233334444555566667777";	// (PC)=00cdd380 (SP)=0000"
 
 			// Handle step back
 			await history.handleReverseDebugStackBack(currentLine, prevLine);
 			// 2 values have been pushed to the frame stack
 			assert.equal(1, history.reverseDbgStack.length);
-			frame=history.reverseDbgStack[0];
+			frame = history.reverseDbgStack[0];
 			assert.equal(1, frame.stack.length);
 			assert.equal(0x0201, frame.stack[0]);
 		});
@@ -841,65 +845,68 @@ suite('ZesaruxCpuHistory', () => {
 		setup(() => {
 			Z80RegistersClass.Init();
 			Z80RegistersClass.createRegisters();
-			Z80Registers.decoder=new DecodeZesaruxRegisters(0);
+			//Z80Registers.decoder = new DecodeZesaruxRegisters(0);
+			Z80Registers.decoder = new DecodeZesaruxRegistersZx48k();
+			const mm = new MemoryModelZx48k();
+			mm.init(); // Required for setting the funcCreateLongAddress and funcGetSlotFromAddress
 			RemoteFactory.createRemote('zrcp');
 			//Remote.init();
-			history=CpuHistory;
-			history.decoder=new DecodeZesaruxHistoryInfo();
-			mockSocket=new MockZesaruxSocket();
-			(<any>zSocket)=mockSocket;
-			(zSocket as any).queue=new Array<any>();
+			history = CpuHistory;
+			history.decoder = new DecodeZesaruxHistoryInfo();
+			mockSocket = new MockZesaruxSocket();
+			(<any>zSocket) = mockSocket;
+			(zSocket as any).queue = new Array<any>();
 			// Push one frame on the stack
-			history.reverseDbgStack=new RefList();
+			history.reverseDbgStack = new RefList();
 			history.reverseDbgStack.push(new CallStackFrame(0, 0, "__TEST_MAIN__"));
 		});
 
 		test('simple step forward inside history', async () => {
 			//  80D3 LD A,02h
-			const currentLine="PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5 MMU=00001111222233334444555566667777";
 			// 80D5 LD B,03h (from history)
-			const nextLine="PC=80d5 SP=83fb AF=0208 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0e IM0 IFF12 MMU=00001111222233334444555566667777"; //(PC)=06030e04 (SP)=80f5";
+			const nextLine = "PC=80d5 SP=83fb AF=0208 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0e IM0 IFF12 MMU=00001111222233334444555566667777"; //(PC)=06030e04 (SP)=80f5";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
 			// Nothing has been pushed on the stack
 			assert.equal(1, history.reverseDbgStack.length);
-			const frame=history.reverseDbgStack[0];
+			const frame = history.reverseDbgStack[0];
 			assert.equal(0, frame.stack.length);
 		});
 
 
 		test('step forward POP', async () => {
 			// Prepare stack
-			let frame=history.reverseDbgStack[0];
+			let frame = history.reverseDbgStack[0];
 			frame.stack.push(0x2F01);	// push something on the stack
 
 			// 80FC POP DE
 			// 80FD POP HL
-			const currentLine="PC=80fc SP=83fc AF=02d1 BC=0000 HL=83fa DE=0202 IX=03d4 IY=5c3a AF'=0044 BC'=0002 HL'=0303 DE'=00d0 I=00 R=65 IM0 IFF12 (PC)=d1e100c9 (SP)=0000 MMU=00001111222233334444555566667777";
-			const nextLine="PC=80fd SP=83fe AF=02d1 BC=0000 HL=83fa DE=0000 IX=03d4 IY=5c3a AF'=0044 BC'=0002 HL'=0303 DE'=00d0 I=00 R=66 IM0 IFF12 (PC)=e100c900 (SP)=0303 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80fc SP=83fc AF=02d1 BC=0000 HL=83fa DE=0202 IX=03d4 IY=5c3a AF'=0044 BC'=0002 HL'=0303 DE'=00d0 I=00 R=65 IM0 IFF12 (PC)=d1e100c9 (SP)=0000 MMU=00001111222233334444555566667777";
+			const nextLine = "PC=80fd SP=83fe AF=02d1 BC=0000 HL=83fa DE=0000 IX=03d4 IY=5c3a AF'=0044 BC'=0002 HL'=0303 DE'=00d0 I=00 R=66 IM0 IFF12 (PC)=e100c900 (SP)=0303 MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
 			// Value has been removed from the stack
 			assert.equal(1, history.reverseDbgStack.length);
-			frame=history.reverseDbgStack[0];
-			assert.equal(0x80fd, frame.addr);
+			frame = history.reverseDbgStack[0];
+			assert.equal(0x280fd, frame.addr);
 			assert.equal(0, frame.stack.length);  // Nothing on the function stack
 		});
 
 		test('step forward PUSH', async () => {
 			// 80EA PUSH 0402h
 			// 80EE PUSH 0303h
-			const currentLine="PC=80ea SP=8402 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=4e IM0 IFF12 (PC)=ed8a0402 (SP)=0101 MMU=00001111222233334444555566667777";
-			const nextLine="PC=80ee SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=50 IM0 IFF12 (PC)=ed8a0303 (SP)=0202 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80ea SP=8402 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=4e IM0 IFF12 (PC)=ed8a0402 (SP)=0101 MMU=00001111222233334444555566667777";
+			const nextLine = "PC=80ee SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=50 IM0 IFF12 (PC)=ed8a0303 (SP)=0202 MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
 			// Value has been pushed to the stack
 			assert.equal(1, history.reverseDbgStack.length);
-			const frame=history.reverseDbgStack[0];
-			assert.equal(0x80EE, frame.addr);
+			const frame = history.reverseDbgStack[0];
+			assert.equal(0x280EE, frame.addr);
 			assert.equal(1, frame.stack.length);  // 1 item on the function stack
 			assert.equal(0x0402, frame.stack[0]);
 		});
@@ -910,8 +917,8 @@ suite('ZesaruxCpuHistory', () => {
 
 			// 80FA RET
 			// 8146 JR 8143h
-			const currentLine="PC=80fa SP=83ff AF=02c9 BC=0303 HL=0101 DE=0202 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=62 IM0 IFF12 (PC)=c900e123 (SP)=8146 MMU=00001111222233334444555566667777";
-			const nextLine="PC=8146 SP=8401 AF=02c9 BC=0303 HL=0101 DE=0202 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=63 IM0 IFF12 (PC)=18fb2150 (SP)=0000 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80fa SP=83ff AF=02c9 BC=0303 HL=0101 DE=0202 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=62 IM0 IFF12 (PC)=c900e123 (SP)=8146 MMU=00001111222233334444555566667777";
+			const nextLine = "PC=8146 SP=8401 AF=02c9 BC=0303 HL=0101 DE=0202 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=63 IM0 IFF12 (PC)=18fb2150 (SP)=0000 MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
@@ -922,30 +929,30 @@ suite('ZesaruxCpuHistory', () => {
 		test('step forward CALL', async () => {
 			// 8143 CALL 80F0h
 			// 80E5 NOP
-			const currentLine="PC=8143 SP=8401 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=59 IM0 IFF12 (PC)=cdf08018 (SP)=0000 MMU=00001111222233334444555566667777";
-			const nextLine="PC=80e5 SP=83ff AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=5a IM0 IFF12 (PC)=00ed8a01 (SP)=8146 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=8143 SP=8401 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=59 IM0 IFF12 (PC)=cdf08018 (SP)=0000 MMU=00001111222233334444555566667777";
+			const nextLine = "PC=80e5 SP=83ff AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=5a IM0 IFF12 (PC)=00ed8a01 (SP)=8146 MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
 			// Value has been pushed to the callstack
 			assert.equal(2, history.reverseDbgStack.length);
-			const frame=history.reverseDbgStack[1];
-			assert.equal(0x80E5, frame.addr);
+			const frame = history.reverseDbgStack[1];
+			assert.equal(0x280E5, frame.addr);
 			assert.equal("80F0h", frame.name);
 		});
 
 		test('step forward RST', async () => {
 			// 8143 RST 18h
 			// 80E5 NOP
-			const currentLine="PC=8143 SP=8401 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=59 IM0 IFF12 (PC)=dfe58018 (SP)=0000 MMU=00001111222233334444555566667777";
-			const nextLine="PC=80e5 SP=83ff AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=5a IM0 IFF12 (PC)=00ed8a01 (SP)=8146 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=8143 SP=8401 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=59 IM0 IFF12 (PC)=dfe58018 (SP)=0000 MMU=00001111222233334444555566667777";
+			const nextLine = "PC=80e5 SP=83ff AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=5a IM0 IFF12 (PC)=00ed8a01 (SP)=8146 MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
 			// Value has been pushed to the callstack
 			assert.equal(2, history.reverseDbgStack.length);
-			const frame=history.reverseDbgStack[1];
-			assert.equal(0x80E5, frame.addr);
+			const frame = history.reverseDbgStack[1];
+			assert.equal(0x280E5, frame.addr);
 			assert.equal("0018h", frame.name);
 		});
 
@@ -955,8 +962,8 @@ suite('ZesaruxCpuHistory', () => {
 
 			// 0049 RET (from ISR)
 			// 80D3 80D9 PUSH BC
-			const currentLine="PC=0049 SP=83f5 AF=02c9 BC=0303 HL=0101 DE=0202 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=35 IM0 IFF12 (PC)=c90608af (SP)=80d7 MMU=00001111222233334444555566667777";
-			const nextLine="PC=80d7 SP=83f7 AF=02c9 BC=0303 HL=0101 DE=0202 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=36 IM0 IFF12 (PC)=0e04c5f5 (SP)=80f6 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=0049 SP=83f5 AF=02c9 BC=0303 HL=0101 DE=0202 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=35 IM0 IFF12 (PC)=c90608af (SP)=80d7 MMU=00001111222233334444555566667777";
+			const nextLine = "PC=80d7 SP=83f7 AF=02c9 BC=0303 HL=0101 DE=0202 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=36 IM0 IFF12 (PC)=0e04c5f5 (SP)=80f6 MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
@@ -967,17 +974,17 @@ suite('ZesaruxCpuHistory', () => {
 		test('step forward from PUSH to isr', async () => {
 			// 80E9 PUSH 0302h
 			// 0038 DI
-			const currentLine="PC=80e9 SP=83f7 AF=01c9 BC=0403 HL=0201 DE=0302 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=3e IM0 IFF12 (PC)=ed8a0302 (SP)=0201 MMU=00001111222233334444555566667777";
-			const nextLine="PC=0038 SP=83f3 AF=01c9 BC=0403 HL=0201 DE=0302 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=41 IM0 IFF-- (PC)=f3dde5e5 (SP)=80ed MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80e9 SP=83f7 AF=01c9 BC=0403 HL=0201 DE=0302 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=3e IM0 IFF12 (PC)=ed8a0302 (SP)=0201 MMU=00001111222233334444555566667777";
+			const nextLine = "PC=0038 SP=83f3 AF=01c9 BC=0403 HL=0201 DE=0302 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=41 IM0 IFF-- (PC)=f3dde5e5 (SP)=80ed MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
 			// Value and isr have been pushed to the stack
 			assert.equal(2, history.reverseDbgStack.length);
-			let frame=history.reverseDbgStack[1];
+			let frame = history.reverseDbgStack[1];
 			assert.equal("__INTERRUPT__", frame.name);
 			assert.equal(0, frame.stack.length);
-			frame=history.reverseDbgStack[0];
+			frame = history.reverseDbgStack[0];
 			assert.equal("__TEST_MAIN__", frame.name);
 			assert.equal(1, frame.stack.length);
 			assert.equal(0x0302, frame.stack[0]);
@@ -986,20 +993,20 @@ suite('ZesaruxCpuHistory', () => {
 		test('step forward from CALL to isr', async () => {
 			// 813E CALL 80E5h
 			// 0038 DI
-			const currentLine="PC=813e SP=83fc AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=55 IM0 IFF12 (PC)=cde58018 (SP)=0000 MMU=00001111222233334444555566667777";
-			const nextLine="PC=0038 SP=83f8 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=57 IM0 IFF-- (PC)=f3dde5e5 (SP)=80e5 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=813e SP=83fc AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=55 IM0 IFF12 (PC)=cde58018 (SP)=0000 MMU=00001111222233334444555566667777";
+			const nextLine = "PC=0038 SP=83f8 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=57 IM0 IFF-- (PC)=f3dde5e5 (SP)=80e5 MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
 			// Value and isr have been pushed to the stack
 			assert.equal(3, history.reverseDbgStack.length);
-			let frame=history.reverseDbgStack[2];
+			let frame = history.reverseDbgStack[2];
 			assert.equal("__INTERRUPT__", frame.name);
 			assert.equal(0, frame.stack.length);
-			frame=history.reverseDbgStack[1];
+			frame = history.reverseDbgStack[1];
 			assert.equal("80E5h", frame.name);
 			assert.equal(0, frame.stack.length);
-			frame=history.reverseDbgStack[0];
+			frame = history.reverseDbgStack[0];
 			assert.equal("__TEST_MAIN__", frame.name);
 			assert.equal(0, frame.stack.length);
 		});
@@ -1007,44 +1014,44 @@ suite('ZesaruxCpuHistory', () => {
 		test('step forward from RST to isr', async () => {
 			// 813E RST 18h
 			// 0038 DI
-			const currentLine="PC=813e SP=83fc AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=55 IM0 IFF12 (PC)=dfe58018 (SP)=0000 MMU=00001111222233334444555566667777";
-			const nextLine="PC=0038 SP=83f8 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=57 IM0 IFF-- (PC)=f3dde5e5 (SP)=80e5 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=813e SP=83fc AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=55 IM0 IFF12 (PC)=dfe58018 (SP)=0000 MMU=00001111222233334444555566667777";
+			const nextLine = "PC=0038 SP=83f8 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=57 IM0 IFF-- (PC)=f3dde5e5 (SP)=80e5 MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
 			// Value and isr have been pushed to the stack
 			assert.equal(3, history.reverseDbgStack.length);
-			let frame=history.reverseDbgStack[2];
+			let frame = history.reverseDbgStack[2];
 			assert.equal("__INTERRUPT__", frame.name);
 			assert.equal(0, frame.stack.length);
-			frame=history.reverseDbgStack[1];
+			frame = history.reverseDbgStack[1];
 			assert.equal("0018h", frame.name);
 			assert.equal(0, frame.stack.length);
-			frame=history.reverseDbgStack[0];
+			frame = history.reverseDbgStack[0];
 			assert.equal("__TEST_MAIN__", frame.name);
 			assert.equal(0, frame.stack.length);
 		});
 
 		test('step back from POP to isr', async () => {
 			// Push something on the stack
-			let frame=history.reverseDbgStack[0];
+			let frame = history.reverseDbgStack[0];
 			frame.stack.push(0x2F01);
 
 			//	80F1 POP BC
 			//  0038 DI
-			const currentLine="PC=80f1 SP=83f3 AF=01c9 BC=0403 HL=0201 DE=0302 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=05 IM0 IFF12 (PC)=c1d1e1c9 (SP)=0403 MMU=00001111222233334444555566667777";
-			const nextLine="PC=0038 SP=83f3 AF=01c9 BC=0403 HL=0201 DE=0302 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=07 IM0 IFF-- (PC)=f3dde5e5 (SP)=80f2 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80f1 SP=83f3 AF=01c9 BC=0403 HL=0201 DE=0302 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=05 IM0 IFF12 (PC)=c1d1e1c9 (SP)=0403 MMU=00001111222233334444555566667777";
+			const nextLine = "PC=0038 SP=83f3 AF=01c9 BC=0403 HL=0201 DE=0302 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=07 IM0 IFF-- (PC)=f3dde5e5 (SP)=80f2 MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
 
 			// The interrupt must have been pushed to the call stack.
 			assert.equal(2, history.reverseDbgStack.length);
-			frame=history.reverseDbgStack[1];
+			frame = history.reverseDbgStack[1];
 			assert.equal("__INTERRUPT__", frame.name);
 			assert.equal(0, frame.stack.length);
 			// The POP must have been pushed to the frame stack.
-			frame=history.reverseDbgStack[0];
+			frame = history.reverseDbgStack[0];
 			assert.equal("__TEST_MAIN__", frame.name);
 			assert.equal(0, frame.stack.length);
 		});
@@ -1057,8 +1064,8 @@ suite('ZesaruxCpuHistory', () => {
 
 			//  80E5 RET
 			//  0038 DI
-			const currentLine="PC=80e5 SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=29 IM0 IFF12 (PC)=c900ed8a (SP)=8147 MMU=00001111222233334444555566667777";
-			const nextLine="PC=0038 SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=2b IM0 IFF-- (PC)=f3dde5e5 (SP)=8147 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80e5 SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=29 IM0 IFF12 (PC)=c900ed8a (SP)=8147 MMU=00001111222233334444555566667777";
+			const nextLine = "PC=0038 SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=2b IM0 IFF-- (PC)=f3dde5e5 (SP)=8147 MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
@@ -1066,9 +1073,9 @@ suite('ZesaruxCpuHistory', () => {
 			// The RET must have been removed from the callstack,
 			// but the ISR must have been pushed to the call stack.
 			assert.equal(2, history.reverseDbgStack.length);
-			let frame=history.reverseDbgStack[0];
+			let frame = history.reverseDbgStack[0];
 			assert.equal("__TEST_MAIN__", frame.name);
-			frame=history.reverseDbgStack[1];
+			frame = history.reverseDbgStack[1];
 			assert.equal("__INTERRUPT__", frame.name);
 			assert.equal(0, frame.stack.length);
 		});
@@ -1077,34 +1084,34 @@ suite('ZesaruxCpuHistory', () => {
 		test('step forward into isr', async () => {
 			// 80EE NOP
 			// 0038 DI
-			const currentLine="PC=80ee SP=8404 AF=01c9 BC=0403 HL=0201 DE=0302 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=63 IM0 IFF12 (PC)=0000ed8a (SP)=814b MMU=00001111222233334444555566667777";
-			const nextLine="PC=0038 SP=8402 AF=01c9 BC=0403 HL=0201 DE=0302 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=65 IM0 IFF-- (PC)=f3dde5e5 (SP)=80ef MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80ee SP=8404 AF=01c9 BC=0403 HL=0201 DE=0302 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=63 IM0 IFF12 (PC)=0000ed8a (SP)=814b MMU=00001111222233334444555566667777";
+			const nextLine = "PC=0038 SP=8402 AF=01c9 BC=0403 HL=0201 DE=0302 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=65 IM0 IFF-- (PC)=f3dde5e5 (SP)=80ef MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
 			// ISR has been pushed to the callstack
 			assert.equal(2, history.reverseDbgStack.length);
-			const frame=history.reverseDbgStack[1];
-			assert.equal(0x0038, frame.addr);
+			const frame = history.reverseDbgStack[1];
+			assert.equal(0x10038, frame.addr);
 			assert.equal("__INTERRUPT__", frame.name);
 			assert.equal(0, frame.stack.length);
 		});
 
 		test('LD SP smaller', async () => {
 			// Put 1 value on frame stack
-			let frame=history.reverseDbgStack[0];
+			let frame = history.reverseDbgStack[0];
 			frame.stack.push(0x0201);
 
 			// 80F5 LD SP,HL // HL = SP-4,	   SP=83F8, adds 2 items to the stack
 			// 80F6 POP BC					// SP=83F4
-			const currentLine="PC=80f5 SP=83f8 AF=01d1 BC=0000 HL=83f4 DE=2000 IX=0300 IY=5c3a AF'=3320 BC'=174b HL'=107f DE'=0006 I=00 R=7f IM0 IFF12 (PC)=f9c1d1e1 (SP)=0403 MMU=00001111222233334444555566667777";
-			const nextLine="PC=80f6 SP=83f4 AF=01d1 BC=0000 HL=83f4 DE=2000 IX=0300 IY=5c3a AF'=3320 BC'=174b HL'=107f DE'=0006 I=00 R=00 IM0 IFF12 (PC)=c1d1e1c9 (SP)=0000 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80f5 SP=83f8 AF=01d1 BC=0000 HL=83f4 DE=2000 IX=0300 IY=5c3a AF'=3320 BC'=174b HL'=107f DE'=0006 I=00 R=7f IM0 IFF12 (PC)=f9c1d1e1 (SP)=0403 MMU=00001111222233334444555566667777";
+			const nextLine = "PC=80f6 SP=83f4 AF=01d1 BC=0000 HL=83f4 DE=2000 IX=0300 IY=5c3a AF'=3320 BC'=174b HL'=107f DE'=0006 I=00 R=00 IM0 IFF12 (PC)=c1d1e1c9 (SP)=0000 MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
 			// 2 undefined values have been added.
 			assert.equal(1, history.reverseDbgStack.length);
-			frame=history.reverseDbgStack[0];
+			frame = history.reverseDbgStack[0];
 			assert.equal(3, frame.stack.length);
 			assert.equal(0x0201, frame.stack[0]);
 			assert.equal(undefined, frame.stack[1]);
@@ -1114,21 +1121,21 @@ suite('ZesaruxCpuHistory', () => {
 
 		test('LD SP bigger', async () => {
 			// Put 3 values on frame stack
-			let frame=history.reverseDbgStack[0];
+			let frame = history.reverseDbgStack[0];
 			frame.stack.push(0x0201);
 			frame.stack.push(0x0302);
 			frame.stack.push(0x0403);
 
 			// 80F5 LD SP,HL // HL = SP+4,	   SP=83F8, adds 2 items to the stack
 			// 80F6 POP BC					// SP=83F4
-			const currentLine="PC=80f5 SP=83f8 AF=01c0 BC=0000 HL=83fc DE=2000 IX=0300 IY=5c3a AF'=3320 BC'=174b HL'=107f DE'=0006 I=00 R=62 IM0 IFF12 (PC)=f9c1d1e1 (SP)=0403 MMU=00001111222233334444555566667777";
-			const nextLine="PC=80f6 SP=83fc AF=01c0 BC=0000 HL=83fc DE=2000 IX=0300 IY=5c3a AF'=3320 BC'=174b HL'=107f DE'=0006 I=00 R=63  F=SZ------ F'=--5----- MEMPTR=0000 IM0 IFF12 VPS: 0 MMU=00001111222233334444555566667777";
+			const currentLine = "PC=80f5 SP=83f8 AF=01c0 BC=0000 HL=83fc DE=2000 IX=0300 IY=5c3a AF'=3320 BC'=174b HL'=107f DE'=0006 I=00 R=62 IM0 IFF12 (PC)=f9c1d1e1 (SP)=0403 MMU=00001111222233334444555566667777";
+			const nextLine = "PC=80f6 SP=83fc AF=01c0 BC=0000 HL=83fc DE=2000 IX=0300 IY=5c3a AF'=3320 BC'=174b HL'=107f DE'=0006 I=00 R=63  F=SZ------ F'=--5----- MEMPTR=0000 IM0 IFF12 VPS: 0 MMU=00001111222233334444555566667777";
 
 			// Handle step forward
 			await history.handleReverseDebugStackForward(currentLine, nextLine);
 			// 2 values have been pushed to the frame stack
 			assert.equal(1, history.reverseDbgStack.length);
-			frame=history.reverseDbgStack[0];
+			frame = history.reverseDbgStack[0];
 			assert.equal(1, frame.stack.length);
 			assert.equal(0x0201, frame.stack[0]);
 		});

@@ -28,10 +28,10 @@ export class DecodeStandardHistoryInfo extends DecodeHistoryInfo {
 		// 6 bytes at the end contain the additional info:
 		// 4 bytes: opcodes
 		// 2 bytes: SP contents
-		const data=line as Uint16Array;
-		const index=data.length-3;
+		const data = line as Uint16Array;
+		const index = data.length - 3;
 		let opcodes = data[index];
-		opcodes|=data[index+1]<<16;
+		opcodes |= data[index + 1] << 16;
 		return opcodes;
 	}
 
@@ -45,9 +45,9 @@ export class DecodeStandardHistoryInfo extends DecodeHistoryInfo {
 		// 6 bytes at the end contain the additional info:
 		// 4 bytes: opcodes
 		// 2 bytes: SP contents
-		const data=line as Uint16Array;
-		const index=data.length-1;
-		let spContents=data[index];
+		const data = line as Uint16Array;
+		const index = data.length - 1;
+		let spContents = data[index];
 		return spContents;
 	}
 }
@@ -73,11 +73,11 @@ export class CpuHistoryClass extends StepHistoryClass {
 	/**
 	 * Sets the static CpuHistory singleton.
 	 */
-	public static setCpuHistory(cpuHistory: CpuHistoryClass|StepHistoryClass|undefined) {
-		StepHistory=cpuHistory as any;
-		CpuHistory=undefined as any;
+	public static setCpuHistory(cpuHistory: CpuHistoryClass | StepHistoryClass | undefined) {
+		StepHistory = cpuHistory as any;
+		CpuHistory = undefined as any;
 		if (cpuHistory instanceof CpuHistoryClass)
-			CpuHistory=cpuHistory;
+			CpuHistory = cpuHistory;
 	}
 
 
@@ -94,7 +94,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 */
 	public init() {
 		super.init();
-		this.reverseDbgStack=new RefList<CallStackFrame>();
+		this.reverseDbgStack = new RefList<CallStackFrame>();
 	}
 
 
@@ -133,7 +133,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * @returns A string with the registers.
 	 */
 	// REMARK: Maybe change to use index AND length to obtain several items at once.
-	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo|undefined> {
+	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo | undefined> {
 		Utility.assert(false);
 		return undefined;
 	}
@@ -193,11 +193,11 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 */
 	public async getHistorySpotFromRemote(): Promise<void> {
 		Utility.assert(!this.isInStepBackMode());
-		let count=this.spotCount;
-		this.history.length=0;	// clear buffer
-		for (let i=0; i<count; i++) {
+		let count = this.spotCount;
+		this.history.length = 0;	// clear buffer
+		for (let i = 0; i < count; i++) {
 			// Get new history item from remote
-			const line=await this.getRemoteHistoryIndex(i);
+			const line = await this.getRemoteHistoryIndex(i);
 			if (!line)
 				break;
 			this.history.push(line);
@@ -210,32 +210,32 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * Is async. If data is not available in buffer it is retrieved from the remote.
 	 * @returns Data with the registers or undefined if at the end of the history.
 	 */
-	public async getPrevRegistersAsync(): Promise<HistoryInstructionInfo|undefined> {
+	public async getPrevRegistersAsync(): Promise<HistoryInstructionInfo | undefined> {
 		// Check if, for the history spot, it is necessary to acquire more items
-		let count=this.spotCount;
-		if (count<1)
-			count=1;	// Get at least one item
-		const index=this.historyIndex+1;
-		if (index>=this.maxSize)
+		let count = this.spotCount;
+		if (count < 1)
+			count = 1;	// Get at least one item
+		const index = this.historyIndex + 1;
+		if (index >= this.maxSize)
 			return undefined;
-		let endIndex=index+count;
-		if (endIndex>this.maxSize)
-			endIndex=this.maxSize;
-		for (let i=this.history.length; i<endIndex; i++) {
+		let endIndex = index + count;
+		if (endIndex > this.maxSize)
+			endIndex = this.maxSize;
+		for (let i = this.history.length; i < endIndex; i++) {
 			// Get new history item from remote
-			const line=await this.getRemoteHistoryIndex(i);
+			const line = await this.getRemoteHistoryIndex(i);
 			if (!line)
 				break;
 			this.history.push(line);
 		}
 
 		// Check if item available
-		if (index>=this.history.length)
+		if (index >= this.history.length)
 			return undefined;
 
 		// Return an item
-		const currentLine=this.history[index];
-		this.historyIndex=index;
+		const currentLine = this.history[index];
+		this.historyIndex = index;
 		return currentLine;
 	}
 
@@ -249,20 +249,20 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 */
 	public isRetAndExecuted(opcodes: number, flags: number): boolean {
 		// Check for RET
-		const opcode0=opcodes&0xFF;
-		if(0xC9 == opcode0)
+		const opcode0 = opcodes & 0xFF;
+		if (0xC9 == opcode0)
 			return true;
 
 		// Check for RETI or RETN
-		if(0xED == opcode0) {
-			const opcode1=(opcodes>>>8)&0xFF;
-			if(0x4D == opcode1 || 0x45 == opcode1)
+		if (0xED == opcode0) {
+			const opcode1 = (opcodes >>> 8) & 0xFF;
+			if (0x4D == opcode1 || 0x45 == opcode1)
 				return true;
 		}
 
 		// Now check for RET cc
 		const mask = 0b11000111;
-		if((opcode0 & mask) == 0b11000000) {
+		if ((opcode0 & mask) == 0b11000000) {
 			// RET cc, get cc
 			const cc = (opcode0 & ~mask) >>> 3;
 			// Check condition
@@ -284,13 +284,13 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 */
 	public isCallAndExecuted(opcodes: number, flags: number): boolean {
 		// Check for CALL
-		const opcode0=opcodes&0xFF;
-		if(0xCD == opcode0)
+		const opcode0 = opcodes & 0xFF;
+		if (0xCD == opcode0)
 			return true;
 
 		// Now check for CALL cc
 		const mask = 0b11000111;
-		if((opcode0 & mask) == 0b11000100) {
+		if ((opcode0 & mask) == 0b11000100) {
 			// RET cc, get cc
 			const cc = (opcode0 & ~mask) >>> 3;
 			// Check condition
@@ -311,7 +311,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 */
 	public isRst(opcodes: number): boolean {
 		// Check for RST
-		const opcode0=opcodes&0xFF;
+		const opcode0 = opcodes & 0xFF;
 		return this.isRstOpcode(opcode0);
 	}
 
@@ -322,7 +322,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * @returns E.g. 0x48.
 	 */
 	public getRstAddress(opcodes: number): number {
-		const opcode0=opcodes&0xFF;
+		const opcode0 = opcodes & 0xFF;
 		const mask = ~0b11000111;
 		const address = (opcode0 & mask);
 		return address;
@@ -370,17 +370,17 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 */
 	public isPop(opcodes: number): boolean {
 		// Check for POP
-		const opcode0=opcodes&0xFF;
+		const opcode0 = opcodes & 0xFF;
 
 		// POP qq
 		const mask = 0b11001111;
-		if((opcode0 & mask) == 0b11000001)
+		if ((opcode0 & mask) == 0b11000001)
 			return true;
 
 		// POP IX or IY
-		if(opcode0 == 0xDD || opcode0 == 0xFD) {
-			const opcode1=(opcodes>>>8)&0xFF;
-			if(opcode1 == 0xE1)
+		if (opcode0 == 0xDD || opcode0 == 0xFD) {
+			const opcode1 = (opcodes >>> 8) & 0xFF;
+			if (opcode1 == 0xE1)
 				return true;
 		}
 
@@ -397,10 +397,10 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 */
 	public getPushedValue(opcodes: number, line: HistoryInstructionInfo): number {
 		// Check for PUSH
-		const opcode0=opcodes&0xFF;
+		const opcode0 = opcodes & 0xFF;
 
 		let value;
-		switch(opcode0) {
+		switch (opcode0) {
 			case 0xC5:	// PUSH BC
 				value = Z80Registers.decoder.parseBC(line);
 				break;
@@ -417,9 +417,9 @@ export class CpuHistoryClass extends StepHistoryClass {
 			case 0xDD:
 			case 0xFD:
 				{
-					const opcode1=(opcodes>>>8)&0xFF;
-					if(opcode1 == 0xE5) {
-						if(opcode0 == 0xDD)
+					const opcode1 = (opcodes >>> 8) & 0xFF;
+					if (opcode1 == 0xE5) {
+						if (opcode0 == 0xDD)
 							value = Z80Registers.decoder.parseIX(line);	// PUSH IX
 						else
 							value = Z80Registers.decoder.parseIY(line);	// PUSH IY
@@ -429,11 +429,11 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 			case 0xED:
 				{
-					const opcode1=(opcodes>>>8)&0xFF;
-					if (opcode1==0x8A) {
+					const opcode1 = (opcodes >>> 8) & 0xFF;
+					if (opcode1 == 0x8A) {
 						// PUSH nn, big endian
-						value=(opcodes>>>8)&0xFF00;
-						value|=(opcodes>>>24)&0xFF;
+						value = (opcodes >>> 8) & 0xFF00;
+						value |= (opcodes >>> 24) & 0xFF;
 					}
 				}
 				break;
@@ -452,21 +452,21 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * @param line One line of history.
 	 * @return The previous SP value or undefined if unknown.
 	 */
-	public calcDirectSpChanges(opcodes: number, sp: number, line: string): number|undefined {
-		let expectedSp: number|undefined=sp;
-		const opcode0=opcodes&0xFF;
+	public calcDirectSpChanges(opcodes: number, sp: number, line: string): number | undefined {
+		let expectedSp: number | undefined = sp;
+		const opcode0 = opcodes & 0xFF;
 
-		switch(opcode0) {
+		switch (opcode0) {
 			case 0x31:	// LD SP,nnnn
-				expectedSp=(opcodes>>>8)&0xFFFF;
+				expectedSp = (opcodes >>> 8) & 0xFFFF;
 				break;
 
 			case 0x33:	// INC SP
-				expectedSp ++;
+				expectedSp++;
 				break;
 
 			case 0x3B:	// DEC SP
-				expectedSp --;
+				expectedSp--;
 				break;
 
 			case 0xF9:	// LD SP,HL
@@ -477,8 +477,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 			case 0xED:
 				{
-					const opcode1=(opcodes>>>8)&0xFF;
-					if(opcode1 == 0x7B) {
+					const opcode1 = (opcodes >>> 8) & 0xFF;
+					if (opcode1 == 0x7B) {
 						// LD SP,(nnnn)
 						expectedSp = undefined;
 					}
@@ -487,8 +487,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 			case 0xDD:
 				{
-					const opcode1=(opcodes>>>8)&0xFF;
-					if(opcode1 == 0xF9) {
+					const opcode1 = (opcodes >>> 8) & 0xFF;
+					if (opcode1 == 0xF9) {
 						// LD SP,IX
 						const ix = Z80Registers.decoder.parseIX(line);
 						expectedSp = ix;
@@ -498,8 +498,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 			case 0xFD:
 				{
-					const opcode1=(opcodes>>>8)&0xFF;
-					if(opcode1 == 0xF9) {
+					const opcode1 = (opcodes >>> 8) & 0xFF;
+					if (opcode1 == 0xF9) {
 						// LD SP,IY
 						const iy = Z80Registers.decoder.parseIY(line);
 						expectedSp = iy;
@@ -519,12 +519,12 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 */
 	public isCallOpcode(opcode0: number): boolean {
 		// Check for CALL
-		if (0xCD==opcode0)
+		if (0xCD == opcode0)
 			return true;
 
 		// Now check for CALL cc
-		const mask=0b11000111;
-		if ((opcode0&mask)==0b11000100)
+		const mask = 0b11000111;
+		if ((opcode0 & mask) == 0b11000100)
 			return true;
 
 		// No CALL
@@ -538,8 +538,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * @returns true if "RST".
 	 */
 	public isRstOpcode(opcode0: number): boolean {
-		const mask=0b11000111;
-		if ((opcode0&mask)==0b11000111)
+		const mask = 0b11000111;
+		if ((opcode0 & mask) == 0b11000111)
 			return true;
 
 		// No RST
@@ -555,7 +555,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	protected async prepareReverseDbgStack(): Promise<void> {
 		if (!this.isInStepBackMode()) {
 			// Prefill array with current stack
-			this.reverseDbgStack=await Remote.getCallStackCache();
+			this.reverseDbgStack = await Remote.getCallStackCache();
 		}
 	}
 
@@ -585,68 +585,68 @@ export class CpuHistoryClass extends StepHistoryClass {
 		Utility.assert(currentLine);
 
 		// Get some values
-		let sp=Z80Registers.decoder.parseSP(currentLine);
-		const opcodes=this.decoder.getOpcodes(currentLine);
-		const flags=Z80Registers.decoder.parseAF(currentLine);
+		let sp = Z80Registers.decoder.parseSP(currentLine);
+		const opcodes = this.decoder.getOpcodes(currentLine);
+		const flags = Z80Registers.decoder.parseAF(currentLine);
 
 		// Check if there is at least one frame
-		let frame=this.reverseDbgStack.last();
+		let frame = this.reverseDbgStack.last();
 		if (!frame) {
 			// Create new stack entry if none exists
 			// (could happen in errorneous situations if there are more RETs then CALLs)
-			frame=new CallStackFrame(0, sp, Remote.getMainName(sp));
+			frame = new CallStackFrame(0, sp, Remote.getMainName(sp));
 			this.reverseDbgStack.push(frame);
 		}
 
 		// Check for RET (RET cc and RETI/N)
 		if (this.isRetAndExecuted(opcodes, flags)) {
 			// Get return address
-			const retAddr=this.decoder.getSPContent(currentLine);
+			const retAddr = this.decoder.getSPContent(currentLine);
 			// Get memory at return address
 			// REMARK: Maybe I should do: Would need to read banked memory (also for ZEsarUX)
-			const data=await Remote.readMemoryDump((retAddr-3)&0xFFFF, 3);
+			const data = await Remote.readMemoryDump((retAddr - 3) & 0xFFFF, 3);
 			// Check for CALL and RST
-			const firstByte=data[0];
+			const firstByte = data[0];
 			let callAddr;
 			if (this.isCallOpcode(firstByte)) {
 				// Is a CALL or CALL cc, get called address
 				// Get low byte
-				const lowByte=data[1];
+				const lowByte = data[1];
 				// Get high byte
-				const highByte=data[2];
+				const highByte = data[2];
 				// Calculate address
-				callAddr=(highByte<<8)+lowByte;
+				callAddr = (highByte << 8) + lowByte;
 			}
 			else if (this.isRstOpcode(firstByte)) {
 				// Is a Rst, get p
-				callAddr=firstByte&0b00111000;
+				callAddr = firstByte & 0b00111000;
 			}
 			// If no calledAddr then we don't know.
 			// Possibly it is an interrupt, but it could be also an erroneous situation, e.g. too many RETs
 			let labelCallAddr;
-			if (callAddr==undefined) {
+			if (callAddr == undefined) {
 				// Unknown
-				labelCallAddr="__UNKNOWN__";
+				labelCallAddr = "__UNKNOWN__";
 			}
 			else {
 				// Now find label for this address
 				// REMARK: Maybe I should check if I could lookup a long address here
-				const labelCallAddrArr=Labels.getLabelsForNumber64k(callAddr);
-				labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
+				const labelCallAddrArr = Labels.getLabelsForNumber64k(callAddr);
+				labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr, 4) + 'h';
 			}
 
 			// Check if there also was an interrupt in previous line
-			const expectedPrevSP=sp+2;
-			const prevSP=Z80Registers.decoder.parseSP(prevLine);
-			if (expectedPrevSP!=prevSP) {
+			const expectedPrevSP = sp + 2;
+			const prevSP = Z80Registers.decoder.parseSP(prevLine);
+			if (expectedPrevSP != prevSP) {
 				// We came from an interrupt. Remove interrupt address from call stack.
 				this.reverseDbgStack.pop();
 			}
 
 			// And push to stack
 			//const pc=Z80Registers.decoder.parsePC(currentLine);
-			const pc=Z80Registers.decoder.parsePCLong(currentLine);
-			const frame=new CallStackFrame(pc, sp, labelCallAddr);
+			const pc = Z80Registers.decoder.parsePCLong(currentLine);
+			const frame = new CallStackFrame(pc, sp, labelCallAddr);
 			this.reverseDbgStack.push(frame);
 
 			// End
@@ -657,42 +657,42 @@ export class CpuHistoryClass extends StepHistoryClass {
 		let pushedValue;
 		if (this.isPop(opcodes)) {
 			// Remember to push to stack
-			pushedValue=this.decoder.getSPContent(currentLine);
+			pushedValue = this.decoder.getSPContent(currentLine);
 			// Correct stack (this strange behavior is done to cope with an interrupt)
-			sp+=2;
+			sp += 2;
 		}
 
 		// Check if SP has decreased (CALL/PUSH/Interrupt) or increased
-		const spPrev=Z80Registers.decoder.parseSP(prevLine);
-		let count=sp-spPrev;
-		if (count>0) {
+		const spPrev = Z80Registers.decoder.parseSP(prevLine);
+		let count = sp - spPrev;
+		if (count > 0) {
 			// Decreased (CALL/PUSH/Interrupt)
-			while (count>1&&this.reverseDbgStack.length>0) {
+			while (count > 1 && this.reverseDbgStack.length > 0) {
 				// First remove the data stack
-				while (count>1&&frame.stack.length>0) {
+				while (count > 1 && frame.stack.length > 0) {
 					// Pop from stack
 					frame.stack.pop();
-					count-=2;
+					count -= 2;
 				}
 				// Now remove callstack
-				if (count>1) {
+				if (count > 1) {
 					// Stop if last item on stack
-					if (this.reverseDbgStack.length<=1)
+					if (this.reverseDbgStack.length <= 1)
 						break;
 					this.reverseDbgStack.pop();
-					count-=2;
+					count -= 2;
 					// get next frame if countRemove still > 0
-					frame=this.reverseDbgStack.last();
+					frame = this.reverseDbgStack.last();
 					//Utility.assert(frame, 'back last');
 				}
 			}
 		}
 		else {
 			// Increased. Put something on the stack
-			while (count<-1) {
+			while (count < -1) {
 				// Push something unknown to the stack
 				frame.stack.push(undefined);
-				count+=2;
+				count += 2;
 			}
 		}
 
@@ -700,16 +700,16 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Create new stack entry if none exists
 		if (!frame) {
 			// (could happen if SP has been increased)
-			frame=new CallStackFrame(0, sp, Remote.getMainName(sp));
+			frame = new CallStackFrame(0, sp, Remote.getMainName(sp));
 			this.reverseDbgStack.push(frame);
 		}
 
 		// Adjust PC within frame
-		const pc=Z80Registers.decoder.parsePCLong(currentLine);
-		frame.addr=pc;
+		const pc = Z80Registers.decoder.parsePCLong(currentLine);
+		frame.addr = pc;
 
 		// Add a possibly pushed value
-		if (pushedValue!=undefined)
+		if (pushedValue != undefined)
 			frame.stack.push(pushedValue);
 	}
 
@@ -718,24 +718,24 @@ export class CpuHistoryClass extends StepHistoryClass {
 	  * 'step backwards' the program execution in the debugger.
 	  * @returns A Promise with a string with the break reason. Or undefined, if no break reason.
 	  */
-	public async stepBack(): Promise<string|undefined> {
+	public async stepBack(): Promise<string | undefined> {
 		// Make sure the call stack exists
 		await this.prepareReverseDbgStack();
 		let breakReasonString;
 		try {
 			// Remember previous line
-			let prevLine=Z80Registers.getCache();
+			let prevLine = Z80Registers.getCache();
 			Utility.assert(prevLine);
-			const currentLine=await this.revDbgPrev();
+			const currentLine = await this.revDbgPrev();
 			if (currentLine) {
 				// Stack handling:
 				await this.handleReverseDebugStackBack(currentLine, prevLine);
 			}
 			else
-				breakReasonString='Break: Reached end of instruction history.';
+				breakReasonString = 'Break: Reached end of instruction history.';
 		}
 		catch (e) {
-			breakReasonString=e.message;
+			breakReasonString = e.message;
 		}
 
 		// Call handler
@@ -773,139 +773,139 @@ export class CpuHistoryClass extends StepHistoryClass {
 		Utility.assert(nextLine);
 
 		// Get some values
-		let sp=Z80Registers.decoder.parseSP(currentLine);
-		let expectedSP: number|undefined=sp;
+		let sp = Z80Registers.decoder.parseSP(currentLine);
+		let expectedSP: number | undefined = sp;
 		let expectedPC;
-		const opcodes=this.decoder.getOpcodes(currentLine);
-		const flags=Z80Registers.decoder.parseAF(currentLine);
-		const nextSP=Z80Registers.decoder.parseSP(nextLine);
+		const opcodes = this.decoder.getOpcodes(currentLine);
+		const flags = Z80Registers.decoder.parseAF(currentLine);
+		const nextSP = Z80Registers.decoder.parseSP(nextLine);
 
 		// Check if there is at least one frame
-		let frame=this.reverseDbgStack.last();
+		let frame = this.reverseDbgStack.last();
 		if (!frame) {
 			// Create new stack entry if none exists
 			// (could happen in erroneous situations if there are more RETs then CALLs)
-			frame=new CallStackFrame(0, sp, Remote.getMainName(sp));
+			frame = new CallStackFrame(0, sp, Remote.getMainName(sp));
 			this.reverseDbgStack.push(frame);
 		}
 
 		// Check for CALL (CALL cc)
 		if (this.isCallAndExecuted(opcodes, flags)) {
-			sp-=2;	// CALL pushes to the stack
-			expectedSP=sp;
+			sp -= 2;	// CALL pushes to the stack
+			expectedSP = sp;
 			// Now find label for this address
 			const callAddr = (opcodes >>> 8) & 0xFFFF;
 			// REMARK: Maybe I should check if I could lookup a long address here
-			const labelCallAddrArr=Labels.getLabelsForNumber64k(callAddr);
-			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
-			const name=labelCallAddr;
-			frame=new CallStackFrame(0, nextSP-2, name);	// pc is set later anyway
+			const labelCallAddrArr = Labels.getLabelsForNumber64k(callAddr);
+			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr, 4) + 'h';
+			const name = labelCallAddr;
+			frame = new CallStackFrame(0, nextSP - 2, name);	// pc is set later anyway
 			this.reverseDbgStack.push(frame);
 		}
 		// Check for RST
 		else if (this.isRst(opcodes)) {
-			sp-=2;	// RST pushes to the stack
-			expectedSP=sp;
+			sp -= 2;	// RST pushes to the stack
+			expectedSP = sp;
 			// Now find label for this address
 			const callAddr = this.getRstAddress(opcodes);
 			// REMARK: Maybe I should check if I could lookup a long address here
-			const labelCallAddrArr=Labels.getLabelsForNumber64k(callAddr);
-			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
-			const name=labelCallAddr;
-			frame=new CallStackFrame(0, nextSP-2, name);	// pc is set later anyway
+			const labelCallAddrArr = Labels.getLabelsForNumber64k(callAddr);
+			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr, 4) + 'h';
+			const name = labelCallAddr;
+			frame = new CallStackFrame(0, nextSP - 2, name);	// pc is set later anyway
 			this.reverseDbgStack.push(frame);
 		}
 		else {
 			// Check for PUSH
-			const pushedValue=this.getPushedValue(opcodes, currentLine);
-			if (pushedValue!=undefined) {	// Is undefined if not a PUSH
+			const pushedValue = this.getPushedValue(opcodes, currentLine);
+			if (pushedValue != undefined) {	// Is undefined if not a PUSH
 				// Push to frame stack
 				frame.stack.unshift(pushedValue);
-				sp-=2;	// PUSH pushes to the stack
-				expectedSP=sp;
+				sp -= 2;	// PUSH pushes to the stack
+				expectedSP = sp;
 			}
 			// Check for POP
 			else if (this.isPop(opcodes)
-				||this.isRetAndExecuted(opcodes, flags)) {
-				expectedSP+=2;	// Pop from the stack
+				|| this.isRetAndExecuted(opcodes, flags)) {
+				expectedSP += 2;	// Pop from the stack
 			}
 			// Otherwise calculate the expected SP
 			else {
-				expectedSP=this.calcDirectSpChanges(opcodes, sp, currentLine);
-				if (expectedSP==undefined) {
+				expectedSP = this.calcDirectSpChanges(opcodes, sp, currentLine);
+				if (expectedSP == undefined) {
 					// This means: Opcode was LD SP,(nnnn).
 					// So use PC instead to check.
-					const pc=Z80Registers.decoder.parsePC(currentLine);
-					expectedPC=pc+4;	// 4 = size of instruction
+					const pc = Z80Registers.decoder.parsePC(currentLine);
+					expectedPC = pc + 4;	// 4 = size of instruction
 				}
 			}
 		}
 
 		// Check for interrupt. Either use SP or use PC to check.
-		let interruptFound=false;
+		let interruptFound = false;
 		//const nextPC=Z80Registers.decoder.parsePC(nextLine);
-		const nextPC=Z80Registers.decoder.parsePCLong(nextLine);
-		if (expectedSP!=undefined) {
+		const nextPC = Z80Registers.decoder.parsePCLong(nextLine);
+		if (expectedSP != undefined) {
 			// Use SP for checking
-			if (nextSP==expectedSP-2)
-				interruptFound=true;
+			if (nextSP == expectedSP - 2)
+				interruptFound = true;
 		}
 		else {
 			// Use PC for checking
 			Utility.assert(expectedPC);
-			if (nextPC!=expectedPC)
-				interruptFound=true;
+			if (nextPC != expectedPC)
+				interruptFound = true;
 		}
 
 		// Check if SP has increased (POP/RET)
-		let usedSP=expectedSP;
+		let usedSP = expectedSP;
 		if (!usedSP)
-			usedSP=Z80Registers.decoder.parseSP(nextLine);
-		let count=usedSP-sp;
-		if (count>0) {
-			while (count>1&&this.reverseDbgStack.length>0) {
+			usedSP = Z80Registers.decoder.parseSP(nextLine);
+		let count = usedSP - sp;
+		if (count > 0) {
+			while (count > 1 && this.reverseDbgStack.length > 0) {
 				// First remove the data stack
-				while (count>1&&frame.stack.length>0) {
+				while (count > 1 && frame.stack.length > 0) {
 					// Pop from stack
 					frame.stack.pop();
-					count-=2;
+					count -= 2;
 				}
 				// Now remove callstack
-				if (count>1) {
+				if (count > 1) {
 					this.reverseDbgStack.pop();
-					count-=2;
+					count -= 2;
 					// get next frame if countRemove still > 0
-					frame=this.reverseDbgStack.last();
+					frame = this.reverseDbgStack.last();
 					//Utility.assert(frame, 'fwrd last');
 				}
 			}
 		}
 		else {
 			// Decreased. Put something on the stack
-			while (count<-1) {
+			while (count < -1) {
 				// Push something unknown to the stack
 				frame.stack.push(undefined);
-				count+=2;
+				count += 2;
 			}
 		}
 
 		// Interrupt
 		if (interruptFound) {
 			// Put nextPC on callstack
-			const name=Remote.getInterruptName();
-			frame=new CallStackFrame(0, nextSP, name);	// pc is set later anyway
+			const name = Remote.getInterruptName();
+			frame = new CallStackFrame(0, nextSP, name);	// pc is set later anyway
 			this.reverseDbgStack.push(frame);
 		}
 
 		// Create new stack entry if none exists
 		if (!frame) {
 			// (could happen if SP has been increased)
-			frame=new CallStackFrame(0, sp, Remote.getMainName(sp));
+			frame = new CallStackFrame(0, sp, Remote.getMainName(sp));
 			this.reverseDbgStack.push(frame);
 		}
 
 		// Adjust PC within frame
-		frame.addr=nextPC;
+		frame.addr = nextPC;
 	}
 
 
@@ -915,8 +915,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * or the start of the instruction is encountered.
 	 * @returns breakReason=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
 	 */
-	public async continue(): Promise<string|undefined> {
-		this.running=true;
+	public async continue(): Promise<string | undefined> {
+		this.running = true;
 		// Continue in reverse debugging
 		// Will run until after the first of the instruction history
 		// or until a breakpoint condition is true.
@@ -928,15 +928,15 @@ export class CpuHistoryClass extends StepHistoryClass {
 			//this.state = RemoteState.IDLE;
 
 			// Get current line
-			let currentLine: string=Z80Registers.getCache();
+			let currentLine: string = Z80Registers.getCache();
 			Utility.assert(currentLine);
 
 			// Loop over all lines
 			while (this.running) {
 				// Handle stack
-				nextLine=this.revDbgNext();
+				nextLine = this.revDbgNext();
 				if (!nextLine) {
-					breakReasonString='Break: Reached start of instruction history.'
+					breakReasonString = 'Break: Reached start of instruction history.'
 					break;	// At end of reverse debugging. Simply get the real call stack.
 				}
 
@@ -944,18 +944,18 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 				// Check for breakpoint
 				Z80Registers.setCache(nextLine);
-				const condition=this.checkPcBreakpoints();
-				if (condition!=undefined) {
-					breakReasonString=condition;
+				const condition = this.checkPcBreakpoints();
+				if (condition != undefined) {
+					breakReasonString = condition;
 					break;	// BP hit and condition met.
 				}
 
 				// Next
-				currentLine=nextLine;
+				currentLine = nextLine;
 			}
 		}
 		catch (e) {
-			breakReasonString='Error occurred: '+e.message;
+			breakReasonString = 'Error occurred: ' + e.message;
 		}
 
 		// Get real registers if we reached the end.
@@ -975,23 +975,23 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * @returns A string with the break reason. (Never undefined)
 	 */
 	public async reverseContinue(): Promise<string> {
-		this.running=true;
+		this.running = true;
 		// Make sure the call stack exists
 		await this.prepareReverseDbgStack();
 		let breakReason;
 		try {
 			// Loop over all lines, reverse
-			let prevLine=Z80Registers.getCache();
+			let prevLine = Z80Registers.getCache();
 			Utility.assert(prevLine);
-			const pause=new TimeWait(100, 1000, 10);
+			const pause = new TimeWait(100, 1000, 10);
 			while (this.running) {
 				// Give vscode a little time
 				await pause.waitAtInterval();
 
 				// Get line
-				const currentLine=await this.revDbgPrev();
+				const currentLine = await this.revDbgPrev();
 				if (!currentLine) {
-					breakReason='Break: Reached end of instruction history.';
+					breakReason = 'Break: Reached end of instruction history.';
 					break;
 				}
 
@@ -1000,19 +1000,19 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 				// Check for breakpoint
 				Z80Registers.setCache(currentLine);
-				const condition=this.checkPcBreakpoints();
-				if (condition!=undefined) {
-					breakReason=condition;
+				const condition = this.checkPcBreakpoints();
+				if (condition != undefined) {
+					breakReason = condition;
 					break;	// BP hit and condition met.
 				}
 
 				// Next
-				prevLine=currentLine;
+				prevLine = currentLine;
 			}
 
 		}
 		catch (e) {
-			breakReason='Break: Error occurred: '+e.message;
+			breakReason = 'Break: Error occurred: ' + e.message;
 		}
 
 		// Return
@@ -1025,12 +1025,12 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * For the Lite StepHistory always returns undefined.
 	 * @returns undefined.
 	 */
-	public getCurrentInstruction(): string|undefined {
+	public getCurrentInstruction(): string | undefined {
 		// Get current line
-		let currentLine=Z80Registers.getCache();
+		let currentLine = Z80Registers.getCache();
 		Utility.assert(currentLine);
 		// Get instruction
-		const instruction=this.getInstruction(currentLine);
+		const instruction = this.getInstruction(currentLine);
 		return instruction;
 	}
 
@@ -1039,27 +1039,27 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * Steps over an instruction.
 	 * @returns A possibly break reason (e.g. 'Reached start of instruction history') or undefined if no break.
 	 */
-	public async stepOver(): Promise<string|undefined> {
-		this.running=true;
+	public async stepOver(): Promise<string | undefined> {
+		this.running = true;
 		// Get current line
-		let currentLine=Z80Registers.getCache();
+		let currentLine = Z80Registers.getCache();
 		Utility.assert(currentLine);
 		let nextLine;
 
 		// Check for CALL/RST. If not do a normal step-into.
 		// If YES stop if pc reaches the next instruction.
-		const opcodes=this.decoder.getOpcodes(currentLine);
-		const opcode0=opcodes&0xFF;
-		let pc=Z80Registers.decoder.parsePC(currentLine);
+		const opcodes = this.decoder.getOpcodes(currentLine);
+		const opcode0 = opcodes & 0xFF;
+		let pc = Z80Registers.decoder.parsePC(currentLine);
 		let nextPC0;
 		let nextPC1;
 		if (this.isCallOpcode(opcode0)) {
-			nextPC0=pc+3;
-			nextPC1=nextPC0;
+			nextPC0 = pc + 3;
+			nextPC1 = nextPC0;
 		}
 		else if (this.isRstOpcode(opcode0)) {
-			nextPC0=pc+1;
-			nextPC1=nextPC0+1;	// If return address is adjusted
+			nextPC0 = pc + 1;
+			nextPC1 = nextPC0 + 1;	// If return address is adjusted
 		}
 
 		let breakReasonString;
@@ -1067,9 +1067,9 @@ export class CpuHistoryClass extends StepHistoryClass {
 			// Find next line with same SP
 			while (this.running) {
 				// Get next line
-				nextLine=this.revDbgNext();
+				nextLine = this.revDbgNext();
 				if (!nextLine) {
-					breakReasonString='Break: Reached start of instruction history.'
+					breakReasonString = 'Break: Reached start of instruction history.'
 					break;	// At end of reverse debugging. Simply get the real call stack.
 				}
 
@@ -1077,29 +1077,29 @@ export class CpuHistoryClass extends StepHistoryClass {
 				this.handleReverseDebugStackForward(currentLine, nextLine);
 
 				// Check if next instruction is required
-				if (nextPC0==undefined)
+				if (nextPC0 == undefined)
 					break;	// A simple step-into
 
 				// Get PC
-				pc=Z80Registers.decoder.parsePC(nextLine);
+				pc = Z80Registers.decoder.parsePC(nextLine);
 				// Check for "breakpoint"
-				if (pc==nextPC0||pc==nextPC1)
+				if (pc == nextPC0 || pc == nextPC1)
 					break;
 
 				// Check for "real" breakpoint
 				Z80Registers.setCache(nextLine);
-				const condition=this.checkPcBreakpoints();
-				if (condition!=undefined) {
-					breakReasonString=condition;
+				const condition = this.checkPcBreakpoints();
+				if (condition != undefined) {
+					breakReasonString = condition;
 					break;	// BP hit and condition met.
 				}
 
 				// Next
-				currentLine=nextLine as string;
+				currentLine = nextLine as string;
 			}
 		}
 		catch (e) {
-			breakReasonString=e.message;
+			breakReasonString = e.message;
 		}
 
 		// Get real registers if we reached the end.
@@ -1119,16 +1119,16 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * Works like the StepOver in StepHistory.
 	 * @returns The break reason e.g. 'End of history reached' or undefined if no reason.
 	 */
-	public async stepInto(): Promise<string|undefined> {		// Check for reverse breakReasonString.
+	public async stepInto(): Promise<string | undefined> {		// Check for reverse breakReasonString.
 		// Get current line
-		let currentLine=Z80Registers.getCache();
+		let currentLine = Z80Registers.getCache();
 		Utility.assert(currentLine);
 		let nextLine;
 
 		let breakReasonString;
 		try {
 			// Get next line
-			nextLine=this.revDbgNext();
+			nextLine = this.revDbgNext();
 			if (nextLine) {
 				// Handle reverse stack
 				this.handleReverseDebugStackForward(currentLine, nextLine);
@@ -1136,7 +1136,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		}
 		catch (e) {
 			// E.g. "End of history reached"
-			breakReasonString=e.message;
+			breakReasonString = e.message;
 		}
 
 		// Get real registers if we reached the end.
@@ -1155,21 +1155,21 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * Is not implemented for StepHistory, only for CpuHistory.
 	 * @returns breakReason='Not supported in lite reverse debugging.'.
 	 */
-	public async stepOut(): Promise<string|undefined> {
-		this.running=true;
+	public async stepOut(): Promise<string | undefined> {
+		this.running = true;
 		// Get current line
-		let currentLine=Z80Registers.getCache();
+		let currentLine = Z80Registers.getCache();
 		Utility.assert(currentLine);
 		let nextLine;
-		const startSP=Z80Registers.getSP();
+		const startSP = Z80Registers.getSP();
 		let breakReason;
 		try {
 			// Find next line with same SP
 			while (this.running) {
 				// Get next line
-				nextLine=this.revDbgNext();
+				nextLine = this.revDbgNext();
 				if (!nextLine) {
-					breakReason='Break: Reached start of instruction history.';
+					breakReason = 'Break: Reached start of instruction history.';
 					break;	// At end of reverse debugging. Simply get the real call stack.
 				}
 
@@ -1177,31 +1177,31 @@ export class CpuHistoryClass extends StepHistoryClass {
 				this.handleReverseDebugStackForward(currentLine, nextLine);
 
 				// Check for RET(I/N)
-				const flags=Z80Registers.decoder.parseAF(currentLine);
-				const opcodes=CpuHistory.decoder.getOpcodes(currentLine);
+				const flags = Z80Registers.decoder.parseAF(currentLine);
+				const opcodes = CpuHistory.decoder.getOpcodes(currentLine);
 				if (CpuHistory.isRetAndExecuted(opcodes, flags)) {
 					// Read SP
-					const sp=Z80Registers.decoder.parseSP(nextLine);
+					const sp = Z80Registers.decoder.parseSP(nextLine);
 					// Check SP
-					if (sp>startSP) {
+					if (sp > startSP) {
 						break;
 					}
 				}
 
 				// Check for breakpoint
 				Z80Registers.setCache(nextLine);
-				const condition=this.checkPcBreakpoints();
-				if (condition!=undefined) {
-					breakReason=condition;
+				const condition = this.checkPcBreakpoints();
+				if (condition != undefined) {
+					breakReason = condition;
 					break;	// BP hit and condition met.
 				}
 
 				// Next
-				currentLine=nextLine as string;
+				currentLine = nextLine as string;
 			}
 		}
 		catch (e) {
-			breakReason=e.message;
+			breakReason = e.message;
 		}
 
 		// Get real registers if we reached the end.

@@ -94,11 +94,6 @@ export class MemoryModel {
 	// Holds all slot ranges.
 	public slotRanges: SlotRange[] = [];
 
-	// Holds the initial bank association for a slot.
-	// Item is undefined if no memory is assigned.
-	// TODO: This is not needed for the MemoryModel but for the SimulatedMemory only. Move it?
-	public initialSlots: number[] = [];
-
 	// Holds the complete bank info.
 	public banks: BankInfo[] = [];
 
@@ -107,11 +102,17 @@ export class MemoryModel {
 	// quite fast.
 	public slotAddress64kAssociation = new Array<number>(0x10000);
 
-	// The IO configuration for switching the banks
-	public ioMmu: string;
-
 	// Associates shortNames of the banks with their bank number.
 	protected shortNameBankNr = new Map<string, number>();
+
+	// Holds the initial bank association for a slot.
+	// Item is undefined if no memory is assigned.
+	// Only required for the zsim memory.
+	public initialSlots: number[] = [];
+
+	// The IO configuration for switching the banks.
+	// Also only required for the zsim memory.
+	public ioMmu: string;
 
 
 	/**

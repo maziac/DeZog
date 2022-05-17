@@ -6,7 +6,7 @@ import {RemoteFactory} from '../src/remotes/remotefactory';
 import {Remote} from '../src/remotes/remotebase';
 import {Settings, SettingsParameters} from '../src/settings/settings';
 import {Labels} from '../src/labels/labels';
-import {DecodeZesaruxRegisters} from '../src/remotes/zesarux/decodezesaruxdata';
+import {DecodeZesaruxRegisters, DecodeZesaruxRegistersZx128k} from '../src/remotes/zesarux/decodezesaruxdata';
 import {MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
 
@@ -531,7 +531,9 @@ suite('Utility', () => {
 		setup(() => {
 			Settings.launch = Settings.Init({remoteType: 'zrcp'} as any);
 			Z80RegistersClass.createRegisters();
-			Z80Registers.decoder = new DecodeZesaruxRegisters(0);
+			Z80Registers.decoder = new DecodeZesaruxRegistersZx128k()
+			const mm = new MemoryModelZxNext();
+			mm.init();
 		});
 
 		test('plus', () => {
@@ -589,7 +591,9 @@ suite('Utility', () => {
 				const cfg = {remoteType: 'zrcp'} as any;
 				Settings.launch = Settings.Init(cfg);
 				Z80RegistersClass.createRegisters();
-				Z80Registers.decoder = new DecodeZesaruxRegisters(0);
+				Z80Registers.decoder = new DecodeZesaruxRegistersZx128k()
+				const mm = new MemoryModelZxNext();
+				mm.init();
 				RemoteFactory.createRemote(cfg.remoteType);
 			});
 

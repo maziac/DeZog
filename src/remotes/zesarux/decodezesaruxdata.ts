@@ -54,6 +54,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	 */
 	constructor(countSlots: number) {
 		super();
+		Utility.assert(countSlots);	// 0 is not allowed
 
 		this.countSlots = countSlots;
 		// Indices for first time search.

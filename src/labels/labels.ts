@@ -182,7 +182,8 @@ export class LabelsClass {
 	 * I.e. if bankSize != 0.
 	 */
 	public AreLongAddressesUsed() {	// TODO: still required?
-		return this.bankSize != 0;
+		//return this.bankSize != 0;
+		return true;
 	}
 
 

@@ -230,21 +230,15 @@ da <-- Remote
 ...
 note over da, Z80Registers: dzrpbufferremote
 Remote -> Remote: receivedMsg()
-Remote -> lbls: AreLongAddressesUsed()
-Remote <-- lbls
 note over Remote: Calculate the break address\ndifferently
 
 
 ...
 note over da, DecodeRegisterData: addAddressesFromPcHistory()\nDisassembly.funcAssignLabels()\nDisassembly.funcFilterAddresses()\nDisassembly.funcFormatAddress()\ndisassemble()
-lbls <- da: AreLongAddressesUsed()
-lbls --> da
-  alt long addresses used
-  da -> Z80Registers: getSlots()
-  da <-- Z80Registers
-  da -> Z80Registers: createLongAddress()
-  da <-- Z80Registers
-end
+da -> Z80Registers: getSlots()
+da <-- Z80Registers
+da -> Z80Registers: createLongAddress()
+da <-- Z80Registers
 
 ...
 note over da, DecodeRegisterData: zesaruxremote
@@ -258,20 +252,14 @@ Remote <-- Z80Registers
 ...
 note over da, DecodeRegisterData: zsimremote
 da -> Remote: z80CpuContinue()
-lbls <- Remote: AreLongAddressesUsed()
-lbls --> Remote
-alt long addresses used
-  Remote -> Z80Registers: getSlots()
-  Remote <-- Z80Registers
-  Remote -> Z80Registers: createLongAddress()
-  Remote <-- Z80Registers
-end
+Remote -> Z80Registers: getSlots()
+Remote <-- Z80Registers
+Remote -> Z80Registers: createLongAddress()
+Remote <-- Z80Registers
 
 ...
 note over da, DecodeRegisterData: stepHistory\ncpuHistory
 da -> DecodeRegisterData: parsePCLong()
-lbls <- DecodeRegisterData: AreLongAddressesUsed()
-lbls --> DecodeRegisterData
 Z80Registers <- DecodeRegisterData: createLongAddress
 Z80Registers --> DecodeRegisterData
 da <-- DecodeRegisterData: PC or PCLong
@@ -295,17 +283,12 @@ note over da, DecodeRegisterData: CallStack\n
 da -> Remote: getCallStackFromEmulator()
 Remote -> Remote: getStackEntryType()
 
-Remote -> lbls: AreLongAddressesUsed()
-Remote <-- lbls
+Remote -> Z80Registers: getSlots()
+Z80Registers -> Z80Registers: decoder.parseSlots\n(RegisterCache)
+Remote <-- Z80Registers
 
-alt long adresses used
-  Remote -> Z80Registers: getSlots()
-  Z80Registers -> Z80Registers: decoder.parseSlots\n(RegisterCache)
-  Remote <-- Z80Registers
-
-  Remote -> Z80Registers: createLongAddress\n(calledAddress)
-  Remote <-- Z80Registers
-end
+Remote -> Z80Registers: createLongAddress\n(calledAddress)
+Remote <-- Z80Registers
 
 Remote -> lbls: getLabelsForLongAddress
 Remote <-- lbls

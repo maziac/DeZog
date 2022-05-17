@@ -692,8 +692,7 @@ export class RemoteBase extends EventEmitter {
 	 * if there was a CALL or RST
 	 * - name: The label name or the hex string of the called address
 	 * - callerAddr: The caller address of the subroutine.
-	 *   Could be a long address.
-	 *   Otherwise undefined.
+	 *   A long address.
 	 */
 	protected async getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number} | undefined> {
 		// Get the 3 bytes before address.
@@ -792,6 +791,7 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Retrieves the stack from the emulator and filters all CALL addresses.
+	 * The callStackFrame.addr is a long address whereas the values on the callStackFrame.stack are 64k.
 	 */
 	public async getCallStackFromEmulator(): Promise<void> {
 		const callStack = new RefList<CallStackFrame>();
