@@ -5,7 +5,7 @@ import {Z80RegistersClass, Z80_REG, Z80Registers} from '../z80registers';
 import {MemBank16k} from './membank16k';
 import {SnaFile} from './snafile';
 import {NexFile} from './nexfile';
-import {Settings} from '../../settings';
+import {Settings} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import * as path from 'path';
 import {Labels} from '../../labels/labels';

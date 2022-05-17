@@ -1,7 +1,7 @@
 import {zSocket, ZesaruxSocket} from './zesaruxsocket';
 import {Utility} from '../../misc/utility';
 import {Labels} from '../../labels/labels';
-import {Settings} from '../../settings';
+import {Settings} from '../../settings/settings';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, RemoteBreakpoint} from '../remotebase';
 import {ZesaruxCpuHistory, DecodeZesaruxHistoryInfo} from './zesaruxcpuhistory';

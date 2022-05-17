@@ -8,7 +8,7 @@ import {Log} from './log';
 import {Remote, RemoteBreakpoint} from './remotes/remotebase';
 import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
-import {Settings, SettingsParameters} from './settings';
+import {Settings, SettingsParameters} from './settings/settings';
 import {DisassemblyVar, ShallowVar, MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ImmediateMemoryValue} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegistersClass, Z80Registers, } from './remotes/z80registers';
@@ -128,9 +128,6 @@ export class DebugSessionClass extends DebugSession {
 
 	/// Is true if a dezog debug session is running.
 	public running = false;
-
-	/// Used to force a renew of the disassembly.
-	protected forceDisassembly = false;
 
 	/// An array of a limited amount of last PC addresses (long).
 	/// Used for disassembly.
@@ -647,8 +644,6 @@ export class DebugSessionClass extends DebugSession {
 					// Some error occurred during loading, e.g. file not found.
 					//	this.terminate(err.message);
 					this.unitTestsStartCallbacks?.reject(err);
-					// Some error occurred
-					Remote.terminate('Labels: ' + err.message);	// TODO: is terminate OK or should I throw an exception?
 				}
 
 				// Get initial registers
@@ -882,8 +877,6 @@ export class DebugSessionClass extends DebugSession {
 		//this.forceDisassembly = true;
 		if (disassembleMemory)	// Disassembly only if PC or call stack is unknown
 		{
-			this.forceDisassembly = false;	// TODO: REMOVE
-
 			// Add addresses from PC history.
 			this.addAddressesFromPcHistory(longFetchAddresses);
 
@@ -1049,8 +1042,8 @@ export class DebugSessionClass extends DebugSession {
 			if (!sf.source) {
 				// Get line number for stack address from disassembly
 				const addr = sf.longAddress;
-				const lineNr = Disassembly.getLineForAddress(addr) || -1;	// TODO: is this able to handle banking?
-				if (lineNr >= 0) {	// -1 should not happen
+				const lineNr = Disassembly.getLineForAddress(addr);
+				if (lineNr != undefined) {
 					// Store
 					sf.source = this.createSource(DisassemblyClass.getAbsFilePath());
 					sf.line = this.convertDebuggerLineToClient(lineNr);
@@ -1066,7 +1059,7 @@ export class DebugSessionClass extends DebugSession {
 	 * Addresses are in long format.
 	 */
 	protected addAddressesFromPcHistory(addresses: number[]) {
-		const slots = Remote.getSlots();
+		const slots = Z80Registers.getSlots();
 		for (const longAddr of this.longPcAddressesHistory) {
 			// Create 64k address
 			const addr64k = longAddr & 0xFFFF;
@@ -1218,8 +1211,8 @@ export class DebugSessionClass extends DebugSession {
 		let {fileName, lineNr} = Labels.getFileAndLineForAddress(addr);
 		if (!fileName) {
 			// Check disassembly
-			lineNr = Disassembly.getLineForAddress(addr) || -1;	// TODO: is this able to handle banking?
-			if (lineNr >= 0) {
+			lineNr = Disassembly.getLineForAddress(addr) as number;
+			if (lineNr!= undefined) {
 				// Found
 				fileName = DisassemblyClass.getAbsFilePath();
 			}
@@ -3759,7 +3752,6 @@ E.g. use "-help -view" to put the help text in an own view.
 			StepHistory.init();	// Is only cleared because coverage is cleared (otherwise it looks inconsistent)
 
 			// Do disassembly anew
-			this.forceDisassembly = true;
 			this.sendEvent(new StoppedEvent("Labels reloaded", DebugSessionClass.THREAD_ID));
 		}
 		catch (e) {

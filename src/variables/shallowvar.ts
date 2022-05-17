@@ -1,7 +1,7 @@
 //import { Log } from './log';
 import {Labels} from '../labels/labels';
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
-import {Settings} from '../settings'
+import {Settings} from '../settings/settings'
 import {Utility} from '../misc/utility';
 import {RefList} from '../misc/reflist';
 import {Remote} from '../remotes/remotebase';

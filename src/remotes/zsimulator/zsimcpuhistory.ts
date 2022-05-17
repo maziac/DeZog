@@ -1,6 +1,6 @@
 import {CpuHistoryClass} from '../cpuhistory';
 import {HistoryInstructionInfo} from '../decodehistinfo';
-import {Settings} from '../../settings';
+import {Settings} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 
 

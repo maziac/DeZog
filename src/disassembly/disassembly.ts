@@ -1,7 +1,7 @@
 import {Opcode, Opcodes} from "../disassembler/opcode";
 import {Disassembler} from "../disassembler/disasm";
 import {Utility} from '../misc/utility';
-import {Settings} from '../settings';
+import {Settings} from '../settings/settings';
 import {Z80Registers} from "../remotes/z80registers";
 import {Labels} from "../labels/labels";
 import {MemAttribute} from "../disassembler/memory";
@@ -33,8 +33,7 @@ export class DisassemblyClass extends Disassembler {
 		// Use internal labels.
 		Disassembly.funcAssignLabels = (addr64k: number) => {
 			// Convert to long address
-			const slots = Remote.getSlots();	// TODO: Couldn't both accesses to Z80Registers be combined?
-			const longAddr = Z80Registers.createLongAddress(addr64k, slots);
+			const longAddr = Z80Registers.createLongAddress(addr64k);
 			// Check if label already known
 			const labels = Labels.getLabelsForLongAddress(longAddr);
 			if (labels && labels.length > 0) {
@@ -47,8 +46,7 @@ export class DisassemblyClass extends Disassembler {
 		// Filter any address that is already present in the list file(s).
 		Disassembly.funcFilterAddresses = (addr64k: number) => {
 			// Convert to long address
-			const slots = Z80Registers.getSlots();
-			const longAddr = Z80Registers.createLongAddress(addr64k, slots);
+			const longAddr = Z80Registers.createLongAddress(addr64k);
 			// Check if label has a file associated
 			const entry = Labels.getSourceFileEntryForAddress(longAddr);
 			return (entry == undefined || entry.size == 0);	// Filter only non-existing addresses or addresses with no code
@@ -58,8 +56,7 @@ export class DisassemblyClass extends Disassembler {
 		// Add bank info to the address.
 		Disassembly.funcFormatAddress = (addr64k: number) => {
 			// Convert to long address
-			const slots = Z80Registers.getSlots();
-			const longAddr = Z80Registers.createLongAddress(addr64k, slots);
+			const longAddr = Z80Registers.createLongAddress(addr64k);
 			// Formatting
 			let addrString = Utility.getHexString(addr64k, 4);
 			const shortName = Remote.memoryModel.getBankShortNameForAddress(longAddr);
@@ -107,7 +104,7 @@ export class DisassemblyClass extends Disassembler {
 	}
 
 
-	// Map with the address to line number relationship and vice versa.
+	// Map with the long address to line number relationship and vice versa.
 	protected addrLineMap = new Map<number, number>();
 	protected lineAddrArray = new Array<number | undefined>();
 
@@ -180,7 +177,7 @@ export class DisassemblyClass extends Disassembler {
 
 	/**
 	 * Returns the line number for a given address.
-	 * @param address The address.
+	 * @param address The long address.
 	 * @returns The corresponding line number (beginning at 0) or undefined if no such line exists.
 	 */
 	public getLineForAddress(address: number): number | undefined {

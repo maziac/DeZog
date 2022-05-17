@@ -4,7 +4,7 @@ import {MemBuffer} from '../src/misc/membuffer';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {SimulatedMemory} from '../src/remotes/zsimulator/simulatedmemory';
 import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
-import { CustomMemorySlot} from '../src/settingscustommemory';
+import { CustomMemorySlot} from '../src/settings/settingscustommemory';
 
 // Simply publicly expose protected members
 class MemBufferInt extends MemBuffer {

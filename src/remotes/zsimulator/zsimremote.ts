@@ -2,7 +2,7 @@ import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80_REG, Z80Registers} from '../z80registers';
 import {Z80Ports} from './z80ports';
 import {Z80Cpu} from './z80cpu';
-import {Settings, ZSimType} from '../../settings';
+import {Settings, ZSimType} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {Labels} from '../../labels/labels';
@@ -569,10 +569,7 @@ export class ZSimRemote extends DzrpRemote {
 			let breakNumber = BREAK_REASON_NUMBER.NO_REASON;
 			//let bp;
 			let breakAddress;
-			let slots;
-			const longAddressesUsed = Labels.AreLongAddressesUsed();
-			if (longAddressesUsed)
-				slots = this.memory.getSlots();
+			let slots = this.memory.getSlots();	// Z80 Registers may not be filled yet.
 			let pcLong = Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
 			const leaveAtTstates = this.passedTstates + 5000 * 4;	// Break from loop at least after 2000 instructions (on average). This is to break in case of a halt.
 			try {
@@ -617,8 +614,7 @@ export class ZSimRemote extends DzrpRemote {
 					// Check if any real breakpoint is hit
 					// Note: Because of step-out this needs to be done before the other check.
 					// Convert to long address
-					if (longAddressesUsed)
-						slots = this.memory.getSlots();
+					slots = this.memory.getSlots();
 					pcLong = Z80Registers.createLongAddress(pc, slots);
 					const bpInner = this.tmpBreakpoints.get(pcLong);
 					if (bpInner) {

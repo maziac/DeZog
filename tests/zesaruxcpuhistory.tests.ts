@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from '../src/remotes/zesarux/zesaruxcpuhistory';
 import { Z80RegistersClass, Z80Registers } from '../src/remotes/z80registers';
 import {DecodeZesaruxRegisters} from '../src/remotes/zesarux/decodezesaruxdata';
-import {Settings} from '../src/settings';
+import {Settings} from '../src/settings/settings';
 import {ZesaruxSocket, zSocket} from '../src/remotes/zesarux/zesaruxsocket';
 import {RefList} from '../src/misc/reflist';
 import {CallStackFrame} from '../src/callstackframe';

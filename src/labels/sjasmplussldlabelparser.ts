@@ -1,7 +1,7 @@
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
 import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
-import {AsmConfigBase, SjasmplusConfig} from '../settings';
+import {AsmConfigBase, SjasmplusConfig} from '../settings/settings';
 import {LabelParserBase} from './labelparserbase';
 import {SourceFileEntry} from './labels';
 

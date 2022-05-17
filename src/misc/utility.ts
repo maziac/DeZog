@@ -1,5 +1,5 @@
 import {Labels} from '../labels/labels';
-import {Settings} from '../settings';
+import {Settings} from '../settings/settings';
 import {Z80RegistersClass} from '../remotes/z80registers';
 import {Remote} from '../remotes/remotebase';
 import * as fs from 'fs';

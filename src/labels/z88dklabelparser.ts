@@ -1,7 +1,7 @@
 import {LabelParserBase} from './labelparserbase';
 import {Utility} from '../misc/utility';
 import {readFileSync} from 'fs';
-import {AsmConfigBase, Z88dkConfig} from '../settings';
+import {AsmConfigBase, Z88dkConfig} from '../settings/settings';
 
 /**
  * This class parses z88dk asm list files.

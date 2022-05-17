@@ -3,7 +3,7 @@ import {DebugSessionClass} from '../debugadapter';
 import {RemoteFactory} from '../remotes/remotefactory';
 import {Remote, RemoteBreakpoint} from '../remotes/remotebase';
 import {Labels, SourceFileEntry} from '../labels/labels';
-import {Settings} from '../settings';
+import {Settings} from '../settings/settings';
 import {Utility} from '../misc/utility';
 import {Decoration} from '../decoration';
 import {StepHistory, CpuHistory, CpuHistoryClass} from '../remotes/cpuhistory';

@@ -1,5 +1,5 @@
 import {Utility} from "../../misc/utility";
-import {CustomMemoryBank, CustomMemoryType} from "../../settingscustommemory";
+import {CustomMemoryBank, CustomMemoryType} from "../../settings/settingscustommemory";
 import {Z80Registers} from "../z80registers";
 
 

@@ -1,6 +1,6 @@
 import {LogTransport} from '../../log';
 import {DzrpBufferRemote} from './dzrpbufferremote';
-import {Settings} from '../../settings';
+import {Settings} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {GenericBreakpoint, GenericWatchpoint} from '../../genericwatchpoint';
@@ -391,7 +391,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		// Get long addresses
 		let longBp1Address = bp1Address;
 		let longBp2Address = bp2Address;
-		const slots = this.getSlots();
+		const slots = Z80Registers.getSlots();
 		if (bp1Address != undefined)
 			longBp1Address = Z80Registers.createLongAddress(bp1Address, slots);
 		if (bp2Address != undefined)

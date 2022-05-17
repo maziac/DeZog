@@ -7,7 +7,7 @@ import {CallStackFrame} from '../callstackframe';
 import {RefList} from '../misc/reflist';
 import {Remote} from '../remotes/remotebase';
 import {Utility} from '../misc/utility';
-import {Settings} from '../settings';
+import {Settings} from '../settings/settings';
 
 
 /**

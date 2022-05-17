@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import {LabelsClass} from '../labels/labels';
-import {Settings, SettingsParameters} from '../settings';
+import {Settings, SettingsParameters} from '../settings/settings';
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
 import * as path from 'path';

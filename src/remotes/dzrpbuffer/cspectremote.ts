@@ -1,7 +1,7 @@
 import {LogTransport} from '../../log';
 import {DzrpBufferRemote, CONNECTION_TIMEOUT} from './dzrpbufferremote';
 import {Socket} from 'net';
-import {Settings} from '../../settings';
+import {Settings} from '../../settings/settings';
 import {DzrpMachineType} from '../dzrp/dzrpremote';
 import {GenericWatchpoint} from '../../genericwatchpoint';
 //import {Utility} from '../../misc/utility';

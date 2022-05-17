@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import {BaseView} from '../../views/baseview';
 import {ZSimRemote} from './zsimremote';
-import {Settings} from '../../settings';
+import {Settings} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {LogCustomCode} from '../../log';
 import {GlobalStorage} from '../../globalstorage';

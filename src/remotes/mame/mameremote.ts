@@ -2,7 +2,7 @@ import {GenericBreakpoint} from '../../genericwatchpoint';
 import {LogTransport} from '../../log';
 import {Socket} from 'net';
 import {Utility} from '../../misc/utility';
-import {Settings} from '../../settings';
+import {Settings} from '../../settings/settings';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {DzrpQeuedRemote} from '../dzrp/dzrpqeuedremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';

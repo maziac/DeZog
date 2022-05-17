@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import {BankType, MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 import {Z80Registers, Z80RegistersClass} from '../src/remotes/z80registers';
-import {Settings} from '../src/settings';
+import {Settings} from '../src/settings/settings';
 
 suite('MemoryModel', () => {
 

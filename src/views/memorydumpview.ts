@@ -4,7 +4,7 @@ import * as util from 'util';
 import {Utility} from '../misc/utility';
 import {Labels} from '../labels/labels';
 import {MetaBlock, MemoryDump} from '../misc/memorydump';
-import {Settings} from '../settings';
+import {Settings} from '../settings/settings';
 import {Z80RegistersClass} from '../remotes/z80registers';
 import {BaseView} from './baseview';
 

@@ -3,7 +3,7 @@ import * as util from 'util';
 import {Utility} from '../misc/utility';
 import {Labels} from '../labels/labels';
 import {MetaBlock} from '../misc/memorydump';
-import {Settings} from '../settings';
+import {Settings} from '../settings/settings';
 import {MemoryDumpView} from './memorydumpview';
 import {BaseView} from './baseview';
 
@@ -200,7 +200,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				firstAddress = addr64k2;
 				secondAddress = addr64k;
 			}
-			valueText = '<span address="' + secondAddress + '">' + valueText.substring(0, 2) + '</span><span address="' + firstAddress + '">' + valueText.substr(2, 2) + '</span>';
+			valueText = '<span address="' + secondAddress + '">' + valueText.substring(0, 2) + '</span><span address="' + firstAddress + '">' + valueText.substring(2, 2+2) + '</span>';
 
 			// Check if in address range
 			if(metaBlock.isInRange(address))

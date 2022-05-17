@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { Settings } from '../src/settings';
+import { Settings } from '../src/settings/settings';
 
 suite('Settings', () => {
 

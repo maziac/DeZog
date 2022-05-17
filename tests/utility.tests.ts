@@ -4,7 +4,7 @@ import {Utility} from '../src/misc/utility';
 import {Z80RegistersClass, Z80Registers} from '../src/remotes/z80registers';
 import {RemoteFactory} from '../src/remotes/remotefactory';
 import {Remote} from '../src/remotes/remotebase';
-import {Settings, SettingsParameters} from '../src/settings';
+import {Settings, SettingsParameters} from '../src/settings/settings';
 import {Labels} from '../src/labels/labels';
 import {DecodeZesaruxRegisters} from '../src/remotes/zesarux/decodezesaruxdata';
 import {MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';

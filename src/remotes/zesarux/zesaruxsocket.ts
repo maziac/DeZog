@@ -1,6 +1,6 @@
 import { Log, LogTransport } from '../../log';
 import { Socket } from 'net';
-import { Settings } from '../../settings';
+import { Settings } from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 
 

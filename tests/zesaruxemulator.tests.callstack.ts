@@ -2,7 +2,7 @@
 import * as assert from 'assert';
 import { ZesaruxRemote } from '../src/remotes/zesarux/zesaruxremote';
 import { Z80RegistersClass } from '../src/remotes/z80registers';
-import {Settings} from '../src/settings';
+import {Settings} from '../src/settings/settings';
 
 
 suite('ZesaruxEmulator', () => {

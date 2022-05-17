@@ -5,7 +5,7 @@ import {CallStackFrame} from '../callstackframe';
 import {EventEmitter} from 'events';
 import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
 import {Labels, SourceFileEntry} from '../labels/labels';
-import {Settings/*, ListFile*/} from '../settings';
+import {Settings/*, ListFile*/} from '../settings/settings';
 import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
@@ -745,8 +745,7 @@ export class RemoteBase extends EventEmitter {
 
 		// Convert to long address if necessary
 		if (Labels.AreLongAddressesUsed()) {
-			const slots = this.getSlots();
-			callerAddr = Z80Registers.createLongAddress(callerAddr, slots);
+			callerAddr = Z80Registers.createLongAddress(callerAddr);
 		}
 
 		// Found: get label
@@ -1363,9 +1362,9 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Reads the slots/banks association.
-	 * @returns A Promise with a slot array containing the referenced banks or undefined if no slots are used.
+	 * @returns A slot array containing the referenced banks.
 	 */
-	public getSlots(): number[] | undefined {
+	public getSlots(): number[] {
 		return Z80Registers.getSlots();
 	}
 

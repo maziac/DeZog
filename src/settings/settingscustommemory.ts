@@ -65,7 +65,7 @@ export interface CustomMemoryType {
 
 	/**
 	 * Optional memory management unit (bank switcher) accessed via single I/O port.
-	 * A string that is evaluated with 'eval'.
+	 * A string that contains js code.
 	 * It should evaluate 'portValue' and calculate the bank number from it.
 	 * E.g. this could involve masking some bits of 'portValue' and maybe adding
 	 * an offset.
@@ -75,6 +75,7 @@ export interface CustomMemoryType {
 	 * "
 	 * E.g. 'portValue & 0x07' would mask all other than the last 3 bits
 	 * which form the bank number.
+	 * This is for sole use in zsim.
 	 */
 	ioMmu?: string | string[];
 }

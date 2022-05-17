@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 import {Z80RegistersClass} from '../src/remotes/z80registers';
-import {Settings} from '../src/settings';
+import {Settings} from '../src/settings/settings';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';

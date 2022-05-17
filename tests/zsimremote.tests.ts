@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import {ZSimRemote} from '../src/remotes/zsimulator/zsimremote';
-import {Settings} from '../src/settings';
+import {Settings} from '../src/settings/settings';
 import {Utility} from '../src/misc/utility';
 import {Z80RegistersClass} from '../src/remotes/z80registers';
 
@@ -56,7 +56,7 @@ suite('ZSimRemote', () => {
 		test('ula bank', () => {
 			// @ts-ignore: protected access
 			zsim.configureMachine(Settings.launch.zsim);
-			
+
 			let ulaBank = zsim.zxUlaScreen.ulaBank;
 			assert.equal(1, ulaBank);
 			// Should not switch

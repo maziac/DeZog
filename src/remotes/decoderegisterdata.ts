@@ -6,7 +6,7 @@ import {Z80Registers} from './z80registers';
 
 /// Used for the data received fom the remote.
 // I.e. holds any data.
-export type RegisterData=any;
+export type RegisterData = any;
 
 
 /**
@@ -16,7 +16,7 @@ export class DecodeRegisterData {
 
 	/// All values of the registers are provided in a map.
 	/// Together with a function to retrieve the value from the data string.
-	protected regMap=new Map<string, {(data: string): number}>();
+	protected regMap = new Map<string, {(data: string): number}>();
 
 
 	/**
@@ -68,10 +68,10 @@ export class DecodeRegisterData {
 	 * @returns The value of the register.
 	 */
 	public getRegValueByName(regName: string, data: RegisterData): number {
-		let handler=this.regMap.get(regName.toUpperCase())||(data => 0);
-		Utility.assert(handler!=undefined, 'Register '+regName+' does not exist.');
+		let handler = this.regMap.get(regName.toUpperCase()) || (data => 0);
+		Utility.assert(handler != undefined, 'Register ' + regName + ' does not exist.');
 		Utility.assert(data);
-		let value=handler(data);
+		let value = handler(data);
 		return value;
 	}
 
@@ -174,87 +174,85 @@ export class DecodeRegisterData {
 
 	public parsePCLong(data: RegisterData): number {
 		// Get PC
-		const pc=this.parsePC(data);
+		const pc = this.parsePC(data);
 		if (!Labels.AreLongAddressesUsed())
 			return pc;
 		// Get slots
-		const slots=this.parseSlots(data);
-		if (slots.length==0)
-			return pc;
+		const slots = this.parseSlots(data);
 		// Convert
-		const pcLong=Z80Registers.createLongAddress(pc, slots);
+		const pcLong = Z80Registers.createLongAddress(pc, slots);
 		return pcLong;
 	}
 
 
 	// Note: Normally no need to override the 1 byte register access functions.
 	public parseA(data: RegisterData): number {
-		const res=this.parseAF(data)>>>8;
+		const res = this.parseAF(data) >>> 8;
 		return res;
 	}
 
 	public parseF(data: RegisterData): number {
-		const res=this.parseAF(data)&0xFF;
+		const res = this.parseAF(data) & 0xFF;
 		return res;
 	}
 
 	public parseB(data: RegisterData): number {
-		const res=this.parseBC(data)>>>8;
+		const res = this.parseBC(data) >>> 8;
 		return res;
 	}
 
 	public parseC(data: RegisterData): number {
-		const res=this.parseBC(data)&0xFF;
+		const res = this.parseBC(data) & 0xFF;
 		return res;
 	}
 
 	public parseD(data: RegisterData): number {
-		const res=this.parseDE(data)>>>8;
+		const res = this.parseDE(data) >>> 8;
 		return res;
 	}
 
 	public parseE(data: RegisterData): number {
-		const res=this.parseDE(data)&0xFF;
+		const res = this.parseDE(data) & 0xFF;
 		return res;
 	}
 
 	public parseH(data: RegisterData): number {
-		const res=this.parseHL(data)>>>8;
+		const res = this.parseHL(data) >>> 8;
 		return res;
 	}
 
 	public parseL(data: RegisterData): number {
-		const res=this.parseHL(data)&0xFF;
+		const res = this.parseHL(data) & 0xFF;
 		return res;
 	}
 
 	public parseA2(data: RegisterData): number {
-		const res=this.parseAF2(data)>>>8;
+		const res = this.parseAF2(data) >>> 8;
 		return res;
 	}
 
 	public parseF2(data: RegisterData): number {
-		const res=this.parseAF2(data)&0xFF;
+		const res = this.parseAF2(data) & 0xFF;
 		return res;
 	}
 
 	public parseIXL(data: RegisterData): number {
-		const res=this.parseIX(data)&0xFF;
+		const res = this.parseIX(data) & 0xFF;
 		return res;
 	}
 
 	public parseIXH(data: RegisterData): number {
-		const res=this.parseIX(data)>>>8;
+		const res = this.parseIX(data) >>> 8;
 		return res;
 	}
 
 	public parseIYL(data: RegisterData): number {
-		const res=this.parseIY(data)&0xFF;
+		const res = this.parseIY(data) & 0xFF;
 		return res;
 	}
 
 	public parseIYH(data: RegisterData): number {
-		const res=this.parseIY(data)>>>8;
+		const res = this.parseIY(data) >>> 8;
 		return res;
 	}
 

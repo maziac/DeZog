@@ -6,7 +6,7 @@ import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
 import * as fs from 'fs';
 import {ReverseEngineeringLabelParser} from './reverseengineeringlabelparser';
-import {AsmConfigBase, SettingsParameters} from '../settings';
+import {AsmConfigBase, SettingsParameters} from '../settings/settings';
 import {Issue, LabelParserBase} from './labelparserbase';
 
 /**

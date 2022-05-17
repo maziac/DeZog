@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
 import {RemoteBase} from '../src/remotes/remotebase';
-import {Settings} from '../src/settings';
+import {Settings} from '../src/settings/settings';
 import {Z80RegistersClass, Z80Registers} from '../src/remotes/z80registers';
 import {Opcodes, Opcode} from '../src/disassembler/opcode';
 import {GenericBreakpoint, GenericWatchpoint} from '../src/genericwatchpoint';
