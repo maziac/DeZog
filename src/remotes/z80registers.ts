@@ -1,6 +1,6 @@
 import {Labels} from '../labels/labels';
 import {Utility} from '../misc/utility';
-import {Settings} from '../settings';
+import {Settings} from '../settings/settings';
 import {DecodeRegisterData, RegisterData} from './decoderegisterdata';
 
 
@@ -413,16 +413,13 @@ export class Z80RegistersClass {
 
 
 	/**
-	 * @returns An array with the slots or undefined if no slots are used (e.g. ZX48K)
+	 * @returns An array with the slots
 	 */
-	public getSlots(): number[] | undefined {
+	public getSlots(): number[] {
+		Utility.assert(this.funcCreateLongAddress)
 		// Use slots if a function exist to convert to long address.
-		if (this.funcCreateLongAddress != undefined) {
-			const slots = this.decoder.parseSlots(this.RegisterCache);
-			return slots;
-		}
-		// Otherwise, don't return slots
-		return undefined;
+		const slots = this.decoder.parseSlots(this.RegisterCache);
+		return slots;
 	}
 
 
@@ -432,31 +429,34 @@ export class Z80RegistersClass {
 	 */
 	public getPCLong(): number {
 		const pc = this.getPC();
-		const slots = this.getSlots();
-		const pcLong = this.createLongAddress(pc, slots);
+		const pcLong = this.createLongAddress(pc);
 		return pcLong;
 	}
 
 
 	/**
 	 * Creates a long address from the address and slots.
-	 * @param address The 64k address.
-	 * @param slots An array with the slots or undefined if no paging is used.
-	 * @returns If slots defined: address+slots[address>>bits_bank_size]+1.
-	 * If undefined: address.
-	 * I.e. a long address is always > 0xFFFF
-	 * a normal address is always <= 0xFFFF
+	 * @param addr64k The 64k address.
+	 * @param slots For normal access this can be left undefined. Then
+	 * the slots are decoded from the register cache.
+	 * If several addresses need to be decoded the slots can be obtained
+	 * separately and passed here. Increases the performance a little
+	 * bit.
+	 * Or if required different slots could be parsed here.
+	 * @returns E.g. address+slots[address>>13]+1.
 	 */
-	public createLongAddress(address: number, slots: number[] | undefined): number {
-		// Check for normal address
-		if (!slots)
-			return address;
-		if (!Labels.AreLongAddressesUsed())
-			return address;
-		// Calculate long address
+	public createLongAddress(addr64k: number, slots?: number[]): number {
 		if (this.funcCreateLongAddress == undefined)
 			throw Error("Internal error: Maybe the memory model is wrong.");
-		const result = this.funcCreateLongAddress(address, slots);
+		// Check for normal address
+		if (!slots)
+			slots = this.decoder.parseSlots(this.RegisterCache);
+
+		if (!Labels.AreLongAddressesUsed())
+			return addr64k;
+
+		// Calculate long address
+		const result = this.funcCreateLongAddress(addr64k, slots);
 		return result;
 	}
 
