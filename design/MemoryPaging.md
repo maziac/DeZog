@@ -364,10 +364,6 @@ What makes it even more complicated: each of the list files could have a differe
 Now the memory model is read from the emulator prior to reading the labels.
 While reading the labels it can be directly checked if the model allows the banking used in the sld/list file.
 If there are compatible memory models, e.g. the list file is for a ZX48K (no banks) and this is used in a ZX128K memory model, there could also be a conversion from the list file addresses to the memory model addresses.
-Similar to what is done in 'convertLabelsToBankSize'.
-The problem with 'convertLabelsToBankSize' was that it was used after all labels/addresses already have been stored.
-E.g. if a sjasmplus sld file and a z80asm list file would be mixed, same addresses/labels in both files would point to different addresses.
-
 
 The 'slots' returned by the emulator also need conversion.
 E.g. the format is different as in zesarux. But also the numbering could be different.
@@ -376,9 +372,8 @@ In these cases the Remote has to convert bank numbers or 'invent' the slots.
 
 
 
-
 **"Calculate long address with memory model":**
-Often htis would just check if the same memory model was used for creating the sld/list file as the emulator is using.
+Often this would just check if the same memory model was used for creating the sld/list file as the emulator is using.
 In case of a problem an error would be returned.
 E.g. if the list/sld file uses a bank that does not exist.
 Some combinations might be compatible.

@@ -467,15 +467,6 @@ export class MemoryModel {
 
 
 	/**
-	 * Returns the bank size.
-	 * @returns 0 in this case = no banks used.
-	 */
-	public getBankSize() {	// TODO: Remove?
-		return 0;
-	}
-
-
-	/**
 	 * Parses the short bank name from the given string.
 	 * E.g. for a passed "R0" the correspondent bank number is returned.
 	 * In case the slot is not banked the bank number is derived from the address.
