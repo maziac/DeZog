@@ -57,11 +57,11 @@ suite('ZSimRemote', () => {
 			// @ts-ignore: protected access
 			zsim.configureMachine(Settings.launch.zsim);
 
-			let ulaBank = zsim.zxUlaScreen.ulaBank;
+			let ulaBank = zsim.zxUlaScreen.currentUlaBank;
 			assert.equal(1, ulaBank);
 			// Should not switch
 			zsim.ports.write(0x7FFD, 0b01000);
-			ulaBank = zsim.zxUlaScreen.ulaBank;
+			ulaBank = zsim.zxUlaScreen.currentUlaBank;
 			assert.equal(1, ulaBank);
 		});
 	});
@@ -170,17 +170,17 @@ suite('ZSimRemote', () => {
 
 
 		test('ula switching', () => {
-			let ulaBank = zsim.zxUlaScreen.ulaBank;
+			let ulaBank = zsim.zxUlaScreen.currentUlaBank;
 			assert.equal(5, ulaBank);
 
 			// Shadow ULA, Bank 7
 			zsim.ports.write(0x7FFD, 0b01000);
-			ulaBank = zsim.zxUlaScreen.ulaBank;
+			ulaBank = zsim.zxUlaScreen.currentUlaBank;
 			assert.equal(7, ulaBank);
 
 			// Normal ULA, Bank 5
 			zsim.ports.write(0x7FFD, 0);
-			ulaBank = zsim.zxUlaScreen.ulaBank;
+			ulaBank = zsim.zxUlaScreen.currentUlaBank;
 			assert.equal(5, ulaBank);
 		});
 

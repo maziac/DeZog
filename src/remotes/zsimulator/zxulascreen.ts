@@ -1,6 +1,7 @@
 
 import {Serializeable, MemBuffer} from "../../misc/membuffer";
 import {MemoryModel} from "../MemoryModel/memorymodel";
+import {MemoryModelZxNext} from "../MemoryModel/predefinedmemorymodels";
 import {Z80Ports} from "./z80ports";
 
 
@@ -9,7 +10,14 @@ import {Z80Ports} from "./z80ports";
  */
 export class ZxUlaScreen implements Serializeable {
 	// The bank used to show. ZX16K/48K bank 1. Others: (i.e. ZX128K) bank 5 or 7.
-	public ulaBank: number;
+	public currentUlaBank: number;
+
+	// The "normal" ula bank (e.g. bank 5)
+	protected normalUlaBank: number;
+
+	// The "shadow" ula bank (e.g. bank 7)
+	protected shadowUlaBank: number;
+
 
 	/**
 	 * Constructor.
@@ -19,13 +27,21 @@ export class ZxUlaScreen implements Serializeable {
 		const bankCount = memoryModel.banks.length;
 		if (bankCount > 7) {
 			// ZX128K, i.e. bank 5 and 7 are used
-			this.ulaBank = 5;
+			this.normalUlaBank = 5;
+			this.shadowUlaBank = 7;
+			// Check for ZXNext
+			if (memoryModel instanceof MemoryModelZxNext) {
+				this.normalUlaBank *= 2;
+				this.shadowUlaBank *= 2;
+			}
+
 			// Use ZX128K ULA Bank switching.
+			this.currentUlaBank = this.normalUlaBank;
 			ports.registerSpecificOutPortFunction(0x7FFD, this.zx128UlaScreenSwitch.bind(this));	// TODO: use generic function. In fact this is not a specific address but a bit mask for the port.
 		}
 		else if (bankCount > 1) {
 			// ZX16/48: use bank 1
-			this.ulaBank = 1;
+			this.currentUlaBank = 1;
 		}
 		else {
 			// Only one bank
@@ -48,7 +64,7 @@ export class ZxUlaScreen implements Serializeable {
 	public zx128UlaScreenSwitch(port: number, value: number) {
 		// bit 3: Select normal(0) or shadow(1) screen to be displayed.
 		const useShadowBank = ((value & 0b01000) != 0);
-		this.ulaBank = (useShadowBank) ? 7 : 5;
+		this.currentUlaBank = (useShadowBank) ? this.shadowUlaBank : this.normalUlaBank;
 	}
 
 
@@ -72,7 +88,7 @@ export class ZxUlaScreen implements Serializeable {
 	 */
 	public serialize(memBuffer: MemBuffer) {
 		// Write slot/bank mapping
-		memBuffer.writeNumber(this.ulaBank);
+		memBuffer.writeNumber(this.currentUlaBank);
 	}
 
 
@@ -81,6 +97,6 @@ export class ZxUlaScreen implements Serializeable {
 	 */
 	public deserialize(memBuffer: MemBuffer) {
 		// Write last t-states
-		this.ulaBank = memBuffer.readNumber();
+		this.currentUlaBank = memBuffer.readNumber();
 	}
 }

@@ -901,7 +901,7 @@ export class ZSimRemote extends DzrpRemote {
 	public getUlaScreen(): Uint8Array {
 		Utility.assert(this.zxUlaScreen);
 
-		const ulaBank = this.zxUlaScreen.ulaBank;
+		const ulaBank = this.zxUlaScreen.currentUlaBank;
 		const bank = this.memory.getBankMemory(ulaBank);
 		return bank.slice(0, 0x1B00);
 	}
