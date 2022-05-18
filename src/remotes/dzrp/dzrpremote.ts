@@ -1368,9 +1368,10 @@ export class DzrpRemote extends RemoteBase {
 			await this.sendDzrpCmdWriteBank(bank8 + 1, memBank.data.slice(MemBank16k.BANK16K_SIZE / 2));
 		}
 
-		// Set the default slot/bank association
+		// Set the default slot/bank association.
+		// Note: slot 0 and 1 is set to ROM. It is not set which ROM, 0 or 1.
 		const  entryBank8 = 2 * nexFile.entryBank;	// Convert 16k bank into 8k
-		const slotBanks = [254, 255, 10, 11, 4, 5, entryBank8, entryBank8+1];	// ROM, 5, 2, custom
+		const slotBanks = [255, 255, 10, 11, 4, 5, entryBank8, entryBank8+1];	// ROM, 5, 2, custom
 		for (let slot = 0; slot < 8; slot++) {
 			const bank8 = slotBanks[slot];
 			await this.sendDzrpCmdSetSlot(slot, bank8);

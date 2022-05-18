@@ -1257,6 +1257,13 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * @returns A Promise with an error=0 (no error).
 	  */
 	public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
+		// Special handling for ROM:
+		// The bank number here is 0xFF no matter if it is lower or upper part.
+		// This is "fixed" here.
+		// (Note: it is not taken care of ROM1 or ROM0)
+		if (bank == 0xFF) {
+			bank = (bank & 0xFE) + (slot & 1);
+		}
 		this.memory.setSlot(slot, bank);
 		return 0;
 	}
