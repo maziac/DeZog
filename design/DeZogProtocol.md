@@ -423,9 +423,9 @@ Command:
 | 1     | 1    | 0-223, 0xFE, 0xFF | The 8k bank to use. |
 
 Note:
-- ROM0 = 254
-- ROM1 = 255
-On real HW this is the same, 0xFE and 0xFF will both be interpreted as 0xFF.
+- ROM = 0xFF (255)
+Note: If 0xFE is used on slot 0 this is interpreted as 0xFF.
+Upto DeZog 2.7.x this was used. Later only 0xFF was sent.
 
 
 Response (Length=2):
