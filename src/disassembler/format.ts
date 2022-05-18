@@ -123,7 +123,7 @@ export class Format {
 		if (clmnsAddress > 0) {
 			if (!addrString)
 				addrString = Format.getHexString(address);
-			line = addrString.padEnd(clmnsAddress);
+			line = addrString.padEnd(clmnsAddress - 1) + ' ';
 		}
 
 		// Add bytes of opcode?

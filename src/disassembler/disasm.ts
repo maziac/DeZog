@@ -2230,7 +2230,7 @@ export class Disassembler extends EventEmitter {
 							addrString = this.funcFormatAddress(address);
 						else
 							addrString = Format.getHexString(address);
-						labelLine = addrString.padEnd(this.clmnsAddress) + labelLine;
+						labelLine = addrString.padEnd(this.clmnsAddress-1) + ' ' + labelLine;
 						if (this.DBG_ADD_DEC_ADDRESS) {
 							labelLine = address.toString().padEnd(5) + ' ' + labelLine;
 						}
