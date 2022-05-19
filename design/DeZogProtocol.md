@@ -425,7 +425,7 @@ Command:
 Note:
 - ROM = 0xFF (255)
 Note: If 0xFE is used on slot 0 this is interpreted as 0xFF.
-Upto DeZog 2.7.x this was used. Later only 0xFF was sent.
+Upto DeZog 2.7.x 0xFE was used. Later only 0xFF was sent.
 
 
 Response (Length=2):

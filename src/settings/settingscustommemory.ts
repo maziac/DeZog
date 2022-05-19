@@ -60,6 +60,8 @@ Example:
  */
 //export type CustomMemoryType = CustomMemorySlot[];
 export interface CustomMemoryType {
+	// TODO: name?
+
 	// The slots definitions.
 	slots: CustomMemorySlot[];
 
@@ -85,12 +87,12 @@ export interface CustomMemoryType {
  * Custom layout of a memory slot.
  */
 export interface CustomMemorySlot {
-	// Array of two elements: first and last address of the slot (inclusive).
-	range: [number, number];
-
 	// The name of the slot. Required in ioMmu to assign a different bank to the slot.
 	// Only required for bank switching slots.
 	name?: string;
+
+	// Array of two elements: first and last address of the slot (inclusive).
+	range: [number, number];
 
 	// A list of banks that can be associated with the slot.
 	banks: CustomMemoryBank[];
@@ -105,13 +107,6 @@ export interface CustomMemorySlot {
  * Custom layout of a bank.
  */
 export interface CustomMemoryBank {
-
-	/**
-	 * Either one number = index number of the bank or
-	 * array of two elements: first and last index of the banks (inclusive).
-	 */
-	index: number | [number, number];
-
 	// The name of the bank, can include the index variable.
 	// Used in the VARIABLE pane. E.g. "ROM0"
 	// E.g. 'BANK3' or 'ROM0'.
@@ -122,6 +117,12 @@ export interface CustomMemoryBank {
 	// Used in the disassembly. E.g. '3' or 'R0'.
 	// If not given the default is n e.g. "3".
 	shortName?: string;
+
+	/**
+	 * Either one number = index number of the bank or
+	 * array of two elements: first and last index of the banks (inclusive).
+	 */
+	index: number | [number, number];
 
 	/**
 	 * Optional. If specified, set the slot as ROM.

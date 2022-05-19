@@ -7,7 +7,6 @@ import {CustomMemoryType} from './settingscustommemory';
 //import {BankType} from './remotes/Paging/memorymodel';
 
 
-// TODO: Move settings in own folder.
 
 ///  The absolute minimum base for all assembler configurations.
 export interface ListConfigBase {
