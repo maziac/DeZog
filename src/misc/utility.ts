@@ -8,6 +8,7 @@ import {Log} from '../log';
 import * as requireFromString from 'require-from-string';
 import * as vm from 'vm';
 import * as jsonc from 'jsonc-parser';
+import {HexNumber} from '../settings/settingscustommemory';
 
 
 
@@ -1381,6 +1382,26 @@ export class Utility {
 				arr.push(val);
 		}
 		return arr;
+	}
+
+
+	/**
+	 * Converts a HexNumber into a number.
+	 * A HexNumber can either be a number already or it is a (hex) string,
+	 * like "0xFFFF" or "123Dh", but also decimal is allowed, e.g. "436".
+	 * If it is a string it is converted.
+	 * @param hexNumber "number" or "string". E.g. "123Dh". Or undefined: in that case undefined is also returned.
+	 * @returns A number e.g. 65535.
+	 */
+	public static convertHexNumber(hexNumber: HexNumber | undefined): number | undefined{
+		if (hexNumber == undefined)
+			return undefined;
+		if (typeof hexNumber == "string") {
+			// Convert hex into number
+			hexNumber = Utility.parseValue(hexNumber);
+		}
+		Utility.assert(typeof hexNumber == "number");
+		return hexNumber;
 	}
 
 

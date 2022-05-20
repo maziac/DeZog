@@ -4,7 +4,6 @@ import {Z80Registers} from "../z80registers";
 
 
 
-
 /**
  * The memory in the banks can be ROM, RAM or completely unused.
  */
@@ -67,11 +66,10 @@ interface BankInfo {
 
 	/**
 	 * Optional. If specified, set the slot as ROM.
-	 * The content is the buffer content, or the path of the ROM content.
-	 * File content should be in raw format (i.e. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).
-	 * Array content is flat and it should cover the whole bank span.
+	 * The path of the ROM content.
+	 * File content should be in raw format (e.g. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).
 	 */
-	rom?: string | Uint8Array;
+	rom?: string;
 
 	/**
 	 * Optional offset of the ROM file/content
@@ -133,7 +131,7 @@ export class MemoryModel {
 		// Parse the config
 		for (const custMemSlot of cfg.slots) {
 			// Check if block needs to be inserted
-			const start = custMemSlot.range[0];
+			const start = custMemSlot.range[0] as number;
 			const diff = start - expectedStart;
 			if (diff < 0)
 				throw Error("Range-start lower or equal than last range-end.");
@@ -151,7 +149,7 @@ export class MemoryModel {
 			}
 
 			// Add slot
-			const end = custMemSlot.range[1];
+			const end = custMemSlot.range[1] as number;
 			if (end < start)
 				throw Error("Range-end lower than range-start.");
 
@@ -327,7 +325,7 @@ export class MemoryModel {
 				size,
 				bankType,
 				rom: bank.rom,
-				romOffset: bank.romOffset
+				romOffset: bank.romOffset as number
 			};
 			this.setBankInfo(indexStart, bankInfo);
 			bankNumbers.push(indexStart);
@@ -351,7 +349,7 @@ export class MemoryModel {
 					size,
 					bankType,
 					rom: bank.rom,
-					romOffset: bank.romOffset
+					romOffset: bank.romOffset as number
 				};
 				this.setBankInfo(index, bankInfo);
 				bankNumbers.push(index);

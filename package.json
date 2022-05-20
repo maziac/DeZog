@@ -398,10 +398,10 @@
 														},
 														"range": {
 															"type": "array",
-															"description": "Array with first and last (inclusive) address of the slot.",
+															"description": "Array with first and last (inclusive) address of the slot.\nEither use a decimal number or a hex string.",
 															"default": [],
 															"items": {
-																"type": "number"
+																"type": [ "number", "string" ]
 															}
 														},
 														"banks": {
@@ -436,8 +436,11 @@
 																		"default": ""
 																	},
 																	"romOffset": {
-																		"type": "number",
-																		"description": "Optional offset of the ROM file/content.",
+																		"type":[
+																			"number",
+																			"string"
+																		],
+																		"description": "Optional offset of the ROM file/content.\nEither use a decimal number or a hex string.",
 																		"default": 0
 																	}
 																}
