@@ -894,4 +894,22 @@ suite('Utility', () => {
 		});
 	});
 
+
+
+	suite('convertHexNumber', () => {
+
+		test('number', () => {
+			assert.equal(Utility.convertHexNumber(6), 6);
+			assert.equal(Utility.convertHexNumber(0), 0);
+			assert.equal(Utility.convertHexNumber(-5), -5);
+			assert.equal(Utility.convertHexNumber(65536), 65536);
+		});
+
+		test('string', () => {
+			assert.equal(Utility.convertHexNumber("67"), 67);
+			assert.equal(Utility.convertHexNumber("5Fh"), 0x5F);
+			assert.equal(Utility.convertHexNumber("$1234"), 4660);
+			assert.equal(Utility.convertHexNumber("0x10000"), 65536);
+		});
+	});
 });

@@ -44,12 +44,13 @@ Example:
 		// Rest (0x8000-0xFFFF is unassigned
 	}
 }
-
-
-
-
-
 */
+
+
+/**
+ * In JSON config numbers can be decimal or hex strings (NNNNh or 0xNNNN format).
+ */
+export type HexNumber = number | string;
 
 
 /**
@@ -58,7 +59,6 @@ Example:
  * The custom defined memory is used in zsim and in revEng (at least if mame gdbstub
  * cannot return the memory model).
  */
-//export type CustomMemoryType = CustomMemorySlot[];
 export interface CustomMemoryType {
 	// TODO: name?
 
@@ -92,7 +92,7 @@ export interface CustomMemorySlot {
 	name?: string;
 
 	// Array of two elements: first and last address of the slot (inclusive).
-	range: [number, number];
+	range: [HexNumber, HexNumber];
 
 	// A list of banks that can be associated with the slot.
 	banks: CustomMemoryBank[];
@@ -126,14 +126,13 @@ export interface CustomMemoryBank {
 
 	/**
 	 * Optional. If specified, set the slot as ROM.
-	 * The content is the buffer content, or the path of the ROM content.
+	 * The content is the path of the ROM content.
 	 * File content should be in raw format (i.e. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).
-	 * Array content is flat and it should cover the whole bank span.
 	 */
-	rom?: string | Uint8Array;
+	rom?: string;
 
 	/**
 	 * Optional offset of the ROM file/content
 	 */
-	romOffset?: number;
+	romOffset?: HexNumber;
 }

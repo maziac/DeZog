@@ -199,5 +199,27 @@ suite('SimulatedMemory', () => {
 		assert.equal(0xE3D2C1B0, result);
 	});
 
+
+	test('read raw ROM file', () => {
+		const mm = new MemoryModel({slots: []});
+		const ports = new Z80Ports(0xFF);
+		const mem = new SimulatedMemory(mm, ports) as any;
+		const path = './data/48.rom';
+		const data = mem.readRomFile(path);
+		assert.equal(data[0], 243);
+		assert.equal(data[0x3FFF], 60);
+	});
+
+
+	test('readHexFromFile', () => {
+		const mm = new MemoryModel({slots: []});
+		const ports = new Z80Ports(0xFF);
+		const mem = new SimulatedMemory(mm, ports) as any;
+		const path = './tests/data/.....hex';
+		const data = mem.readRomFile(path);
+		assert.equal(data[0], 0xF3);
+		assert.equal(data[0x3FFF], 0xF3);
+	});
+
 });
 

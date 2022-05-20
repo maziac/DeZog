@@ -2,7 +2,6 @@ import {MemBuffer, Serializeable} from '../../misc/membuffer';
 import {BankType, MemoryModel} from '../MemoryModel/memorymodel';
 import * as fs from "fs";
 import * as path from 'path';
-import {UnifiedPath} from "../../misc/unifiedpath";
 import * as intelHex from 'intel-hex';
 import {Z80Ports} from './z80ports';
 import {Utility} from '../../misc/utility';
@@ -141,13 +140,10 @@ export class SimulatedMemory implements Serializeable {
 				let rom = bank.rom;
 				if (rom) {
 					// Read file
-					if (typeof rom  === "string") {
-						const filepath = UnifiedPath.getUnifiedPath(rom);
-						rom = this.readRomFile(filepath);
-					}
+					const romData = this.readRomFile(rom);	// Note: is already a unified path
 					// Use data
 					const offs = bank.romOffset || 0;
-					memBank.set(rom.slice(offs, offs + memBank.length));
+					memBank.set(romData.slice(offs, offs + memBank.length));
 				}
 			}
 		}
@@ -636,7 +632,9 @@ export class SimulatedMemory implements Serializeable {
 
 
 	/**
-	 * Loads a Intel hex file format.
+	 * Reads a file in Intel hex file format.
+	 * @param filePath Absolute path to the *.hex file.
+	 * @returns An Uint8Array with the data.
 	 */
 	protected readHexFromFile(filePath: string): Uint8Array {
 		const {data}: {data: Buffer} = intelHex.parse(fs.readFileSync(filePath));
@@ -645,18 +643,17 @@ export class SimulatedMemory implements Serializeable {
 
 
 	/**
-	 * Loads a rom file. binary or hex format.
+	 * Reads a ROM file.
+	 * @param filePath Absolute path to the *.hex file or a raw data file.
+	 * @returns An Uint8Array with the data.
 	 */
 	protected readRomFile(filePath: string): Uint8Array {
 		switch (path.extname(filePath).toLowerCase()) {
 			case ".hex":
 				return this.readHexFromFile(filePath);
-			case ".bin":
-			case ".rom":
+			default:
 				const romBuffer = fs.readFileSync(filePath);
 				return new Uint8Array(romBuffer.buffer);
-			default:
-				throw new Error(`Unknown ROM extension file: ${filePath}`);
 		}
 	}
 }

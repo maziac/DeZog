@@ -4,8 +4,6 @@ import * as fs from 'fs';
 import {UnifiedPath} from '../misc/unifiedpath';
 //import * as hjoin from '@bartificer/human-join';
 import {CustomMemoryType} from './settingscustommemory';
-//import {BankType} from './remotes/Paging/memorymodel';
-
 
 
 ///  The absolute minimum base for all assembler configurations.
@@ -516,6 +514,36 @@ export class Settings {
 			// In fact: never call tick()
 			launchCfg.zsim.customCode.timeStep = Number.MAX_SAFE_INTEGER;
 		}
+
+		// zsim custom memory
+		const custMem = launchCfg.zsim.customMemory;
+		if (custMem != undefined) {
+			// io MMU concatenate
+			if (custMem.ioMmu != undefined) {
+				if (typeof custMem.ioMmu != "string")
+					custMem.ioMmu = custMem.ioMmu.join("\n");
+			}
+			// Slots
+			for (const slotRange of custMem.slots) {
+				// Convert slot ranges from hex-string to number
+				const len = slotRange.range.length;
+				for (let i = 0; i < len; i++) {
+					// Convert hex into number
+					slotRange.range[i] = Utility.convertHexNumber(slotRange.range[i])!;
+				}
+				// Banks
+				for (const bank of slotRange.banks) {
+					// Create abs paths
+					if (bank.rom != undefined) {
+						const path = UnifiedPath.getUnifiedPath(bank.rom);
+						bank.rom = Utility.getAbsFilePath(path, rootFolder);
+					}
+					// Convert rom offset from hex-string to number
+					bank.romOffset = Utility.convertHexNumber(bank.romOffset);
+				}
+			}
+		}
+
 
 		// zxnext
 		if (!launchCfg.zxnext)
