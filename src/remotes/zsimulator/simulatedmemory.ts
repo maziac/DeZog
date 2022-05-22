@@ -1,3 +1,4 @@
+import {Settings} from './../../settings/settings';
 import {MemBuffer, Serializeable} from '../../misc/membuffer';
 import {BankType, MemoryModel} from '../MemoryModel/memorymodel';
 import * as fs from "fs";
@@ -259,7 +260,8 @@ export class SimulatedMemory implements Serializeable {
 			ioMmu = "for (portAddress = 0; portAddress < 0x10000; portAddress++) {\n"
 				+ ioMmu + "}\n";
 			// Run with a timeout of 1000ms.
-			Utility.runInContext(ioMmu, this.bankSwitchingContext, 1000, "ioMmu");
+			const filename = Utility.getlaunchJsonPath(Utility.getRootPath());
+			Utility.runInContext(ioMmu, this.bankSwitchingContext, 1000, filename, -1);
 		}
 		catch (e) {
 			// In case of an error try to find where it occurred
@@ -273,7 +275,13 @@ export class SimulatedMemory implements Serializeable {
 			}
 			// Add diagnostics message
 			if (SimulatedMemory.addDiagnosticsErrorFunc && e.position) {
-				SimulatedMemory.addDiagnosticsErrorFunc(e.message, 'error', e.position.filename, e.position.line, e.position.column);
+				// Improve message. E.g. ".../.vscode/launch.json:4" will become ".../.vscode/launch.json:'Internal simulator'.zsim.customMemory.ioMmu:4"
+				const match = /(.*launch.json:)(\d+.*)/.exec(e.message);
+				if (match) {
+					const configName = (Settings.launch as any).name;
+					e.message = match[1] + "'" + configName + "'.zsim.customMemory.ioMmu: line " + match[2];
+				}
+				SimulatedMemory.addDiagnosticsErrorFunc(e.message, 'error', e.position.filename, 0, 0);
 			}
 			// Re-throw
 			throw e;

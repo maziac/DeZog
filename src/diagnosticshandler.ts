@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import {LabelsClass} from './labels/labels';
 import {CustomCode} from './remotes/zsimulator/customcode';
+import {SimulatedMemory} from './remotes/zsimulator/simulatedmemory';
 
 
 /**
@@ -21,6 +22,7 @@ export class DiagnosticsHandler {
 		context.subscriptions.push(DiagnosticsHandler.diagnosticsCollection);
 		CustomCode.addDiagnosticsErrorFunc = DiagnosticsHandler.add;
 		LabelsClass.addDiagnosticsErrorFunc = DiagnosticsHandler.add;
+		SimulatedMemory.addDiagnosticsErrorFunc = DiagnosticsHandler.add;
 	}
 
 	/**

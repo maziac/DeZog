@@ -350,7 +350,10 @@ export class Settings {
 	// Maximum number for history spot count.
 	protected static MAX_HISTORY_SPOT_COUNT = 20;
 
-	/// the representation of the launch.json
+	// Remembers the name of the launch.json config being used
+	public static configName = 'undefined';
+
+	/// The representation of the launch.json
 	public static launch: SettingsParameters;
 
 
