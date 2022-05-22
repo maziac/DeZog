@@ -211,7 +211,7 @@ suite('SimulatedMemory', () => {
 	});
 
 
-	test('readHexFromFile', () => {
+	test('readIntelHexFromFile', () => {
 		const mm = new MemoryModel({slots: []});
 		const ports = new Z80Ports(0xFF);
 		const mem = new SimulatedMemory(mm, ports) as any;
@@ -219,6 +219,51 @@ suite('SimulatedMemory', () => {
 		const data = mem.readRomFile(path);
 		assert.equal(data[0], 0xF3);
 		assert.equal(data[0x3FFF], 0xF3);
+	});
+
+
+	test('read bank from ROM file', () => {
+		const mm = new MemoryModel({
+			slots: [
+				{
+					range: [0x0000, 0x1FFF],
+					banks: [
+						{
+							index: 0,
+							rom: "./data/48.rom"
+						}
+					]
+				}
+			]
+		});
+		const ports = new Z80Ports(0xFF);
+		const mem = new SimulatedMemory(mm, ports) as any;
+		const data = mem.memoryBanks[0];
+		assert.equal(data[0], 243);
+		assert.equal(data[0x0FFF], 24);
+	});
+
+
+	test('read bank from ROM file with offset', () => {
+		const mm = new MemoryModel({
+			slots: [
+				{
+					range: [0x2000, 0x3FFF],
+					banks: [
+						{
+							index: 1,
+							rom: "./data/48.rom",
+							romOffset: 0x1000
+						}
+					]
+				}
+			]
+		});
+		const ports = new Z80Ports(0xFF);
+		const mem = new SimulatedMemory(mm, ports) as any;
+		const data = mem.memoryBanks[1];
+		assert.equal(data[0], 109);
+		assert.equal(data[0x0FFF], 32);
 	});
 
 });
