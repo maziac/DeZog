@@ -200,71 +200,98 @@ suite('SimulatedMemory', () => {
 	});
 
 
-	test('read raw ROM file', () => {
-		const mm = new MemoryModel({slots: []});
-		const ports = new Z80Ports(0xFF);
-		const mem = new SimulatedMemory(mm, ports) as any;
-		const path = './data/48.rom';
-		const data = mem.readRomFile(path);
-		assert.equal(data[0], 243);
-		assert.equal(data[0x3FFF], 60);
-	});
-
-
-	test('readIntelHexFromFile', () => {
-		const mm = new MemoryModel({slots: []});
-		const ports = new Z80Ports(0xFF);
-		const mem = new SimulatedMemory(mm, ports) as any;
-		const path = './tests/data/.....hex';
-		const data = mem.readRomFile(path);
-		assert.equal(data[0], 0xF3);
-		assert.equal(data[0x3FFF], 0xF3);
-	});
-
-
-	test('read bank from ROM file', () => {
-		const mm = new MemoryModel({
-			slots: [
-				{
-					range: [0x0000, 0x1FFF],
-					banks: [
-						{
-							index: 0,
-							rom: "./data/48.rom"
-						}
-					]
-				}
-			]
+	suite('rom file', () => {
+		test('read raw ROM file', () => {
+			const mm = new MemoryModel({slots: []});
+			const ports = new Z80Ports(0xFF);
+			const mem = new SimulatedMemory(mm, ports) as any;
+			const path = './data/48.rom';
+			const data = mem.readRomFile(path);
+			assert.equal(data[0], 243);
+			assert.equal(data[0x3FFF], 60);
 		});
-		const ports = new Z80Ports(0xFF);
-		const mem = new SimulatedMemory(mm, ports) as any;
-		const data = mem.memoryBanks[0];
-		assert.equal(data[0], 243);
-		assert.equal(data[0x0FFF], 24);
-	});
 
 
-	test('read bank from ROM file with offset', () => {
-		const mm = new MemoryModel({
-			slots: [
-				{
-					range: [0x2000, 0x3FFF],
-					banks: [
-						{
-							index: 1,
-							rom: "./data/48.rom",
-							romOffset: 0x1000
-						}
-					]
-				}
-			]
+		test('readIntelHexFromFile', () => {
+			const mm = new MemoryModel({slots: []});
+			const ports = new Z80Ports(0xFF);
+			const mem = new SimulatedMemory(mm, ports) as any;
+			const path = './tests/data/intelhex/PLU10.HEX';
+			const data = mem.readRomFile(path);
+			assert.equal(data[16384], 243);
+			assert.equal(data[31100], 205);
 		});
-		const ports = new Z80Ports(0xFF);
-		const mem = new SimulatedMemory(mm, ports) as any;
-		const data = mem.memoryBanks[1];
-		assert.equal(data[0], 109);
-		assert.equal(data[0x0FFF], 32);
+
+
+		test('read bank from ROM file', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0x1FFF],
+						banks: [
+							{
+								index: 0,
+								rom: "./data/48.rom"
+							}
+						]
+					}
+				]
+			});
+			const ports = new Z80Ports(0xFF);
+			const mem = new SimulatedMemory(mm, ports) as any;
+			const data = mem.memoryBanks[0];
+			assert.equal(data[0], 243);
+			assert.equal(data[0x0FFF], 24);
+		});
+
+
+		test('read bank from ROM file with offset', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x2000, 0x3FFF],
+						banks: [
+							{
+								index: 1,
+								rom: "./data/48.rom",
+								romOffset: 0x1000
+							}
+						]
+					}
+				]
+			});
+			const ports = new Z80Ports(0xFF);
+			const mem = new SimulatedMemory(mm, ports) as any;
+			const data = mem.memoryBanks[1];
+			assert.equal(data[0], 109);
+			assert.equal(data[0x0FFF], 32);
+		});
 	});
 
+
+
+	suite('check ioMmu', () => {
+		test('no ioMmu', () => {
+			const mm = new MemoryModel({slots: []});
+			const ports = new Z80Ports(0xFF);
+			new SimulatedMemory(mm, ports) as any;	// Should not throw anything
+		});
+
+		test('correct ioMmu', () => {
+			const mm = new MemoryModel({
+				slots: [],
+				ioMmu: [
+					"var disabled;",
+					"if((portAddress | 0x7FFD) == 0x7FFD && !disabled) {",
+					"  slotC000 = port Value & 0x07; // RAM block select",
+					"  disabled = portValue & 0b0100000; // DIS",
+					"  slotROM = ((portValue & 0b0010000) >>> 4) + 8;",
+					"}"
+				]
+			});
+			const ports = new Z80Ports(0xFF);
+			new SimulatedMemory(mm, ports) as any;	// Should not throw anything
+		});
+	});
 });
 
