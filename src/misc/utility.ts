@@ -1165,7 +1165,8 @@ export class Utility {
 				let errorText = '';
 				for (const stackLine of stack) {
 					// Search for "at "
-					if (stackLine.startsWith('\tat ')) {
+//					if (stackLine.startsWith('\tat ')) {
+					if(/\s*at\s/.exec(stackLine)) {
 						// Check if this line is e.g. '/Volumes/.../ports.js:93:1'
 						const regex = new RegExp(filename + ':(\\d+):(\\d+)');
 						const match = regex.exec(stackLine);

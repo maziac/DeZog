@@ -1,4 +1,3 @@
-
 import * as assert from 'assert';
 import {MemBuffer} from '../src/misc/membuffer';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
@@ -283,7 +282,7 @@ suite('SimulatedMemory', () => {
 				ioMmu: [
 					"var disabled;",
 					"if((portAddress | 0x7FFD) == 0x7FFD && !disabled) {",
-					"  slotC000 = port Value & 0x07; // RAM block select",
+					"  slotC000 = portValue & 0x07; // RAM block select",
 					"  disabled = portValue & 0b0100000; // DIS",
 					"  slotROM = ((portValue & 0b0010000) >>> 4) + 8;",
 					"}"
@@ -291,6 +290,51 @@ suite('SimulatedMemory', () => {
 			});
 			const ports = new Z80Ports(0xFF);
 			new SimulatedMemory(mm, ports) as any;	// Should not throw anything
+		});
+
+
+		test('wrong ioMmu (direct)', () => {
+			const mm = new MemoryModel({
+				slots: [],
+				ioMmu: [
+					"var disabled;",
+					"if((portAddress | 0x7FFD) == 0x7FFD && !disabled) {",
+					"  slotC000 = port Value & 0x07; // RAM block select",
+					"  disabled = portValue & 0b0100000; // DIS",
+					"  slotROM = ((portValue & 0b0010000) >>> 4) + 8;",
+					"}"
+				]
+			});
+			const ports = new Z80Ports(0xFF);
+			try {
+				new SimulatedMemory(mm, ports) as any;	// Should throw
+				// Should not reach here:
+				assert.fail("Expected an exception.");
+			}
+			catch (e) {
+				assert.ok(!e.message.includes("port address"));
+			}
+		});
+
+
+		test('wrong ioMmu (inside)', () => {
+			const mm = new MemoryModel({
+				slots: [],
+				ioMmu: [
+					"if(portAddress == 0x7FFD) {",
+					"  obj.vars = 5;	// Should create an error as obj is undefined",
+					"}"
+				]
+			});
+			const ports = new Z80Ports(0xFF);
+			try {
+				new SimulatedMemory(mm, ports) as any;	// Should throw
+				// Should not reach here:
+				assert.fail("Expected an exception.");
+			}
+			catch (e) {
+				assert.ok(e.message.includes("port address"));
+			}
 		});
 	});
 });

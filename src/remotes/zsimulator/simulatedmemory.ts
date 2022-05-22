@@ -41,6 +41,10 @@ interface SlotName {
  * But for configuration (what is ROM/RAM) it is required.
  */
 export class SimulatedMemory implements Serializeable {
+	// Function used to add an error to the diagnostics.
+	public static addDiagnosticsErrorFunc: ((message: string, severity: 'error' | 'warning', filepath: string, line: number, column: number) => void) | undefined;
+
+
 	// The memory separated in banks.
 	protected memoryBanks: Uint8Array[];
 
@@ -161,6 +165,9 @@ export class SimulatedMemory implements Serializeable {
 		this.bankSwitchingContext = {};
 		this.installIoMmuHandlers(ports);
 
+		// Check the ioMmu
+		this.checkIoMmu();
+
 		// Breakpoints
 		this.clearHit();
 		// Create watchpoint area
@@ -226,6 +233,48 @@ export class SimulatedMemory implements Serializeable {
 		catch (e) {
 			// In case of an error try to find where it occurred
 			e.message = this.memoryModel.name + ' Memory Model: ' + e.message;
+			// Re-throw
+			throw e;
+		}
+	}
+
+
+	/**
+	 * Check if ioMmu is a valid js script.
+	 * throws if ioMmu is wrong.
+	 * @param ioMmu The java script in a string.
+	 */
+	protected checkIoMmu() {
+		let ioMmu = this.memoryModel.ioMmu;
+		if (!ioMmu)
+			return;
+
+		try {
+			// Set slots etc.
+			this.setSlotsInContext();
+			this.bankSwitchingContext.portAddress = -1;
+			this.bankSwitchingContext.portValue = 0xFF;
+			this.bankSwitchingContext.slots = this.slots;	// Note: slots can be either changed by name or by index.
+			// For performance reasons the loop is run inside the vm
+			ioMmu = "for (portAddress = 0; portAddress < 0x10000; portAddress++) {\n"
+				+ ioMmu + "}\n";
+			// Run with a timeout of 1000ms.
+			Utility.runInContext(ioMmu, this.bankSwitchingContext, 1000, "ioMmu");
+		}
+		catch (e) {
+			// In case of an error try to find where it occurred
+			const portAddress = this.bankSwitchingContext.portAddress;
+			if (portAddress >= 0) {
+				const hexPort = Utility.getHexString(portAddress, 4);
+				e.message = this.memoryModel.name + ' Memory Model problem at port address 0x' + hexPort + ': ' + e.message;
+			}
+			else {
+				e.message = this.memoryModel.name + ' Memory Model: ' + e.message;
+			}
+			// Add diagnostics message
+			if (SimulatedMemory.addDiagnosticsErrorFunc && e.position) {
+				SimulatedMemory.addDiagnosticsErrorFunc(e.message, 'error', e.position.filename, e.position.line, e.position.column);
+			}
 			// Re-throw
 			throw e;
 		}

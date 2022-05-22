@@ -852,41 +852,12 @@ export class Settings {
 				throw Error("'path': File '" + path + "' does not exist.");
 		}
 
-		// Custom memory model
-		const customMemory = Settings.launch.zsim.customMemory;
-		if (customMemory) {
-			/*
-			TODO: needs a new check:
-			// Number of banks should be a power of 2
-			const nob = customMemory.numberOfBanks;
-			if (nob == undefined)
-				throw Error("In 'customMemory' you need to define 'numberOfBanks'.");
-			if ((nob <= 0) || (nob & (nob - 1)))
-				throw Error("'numberOfBanks' needs to be bigger than 0 and a power of 2.");
-			// Test the bank names
-			const banks = customMemory.banks;
-			if (banks == undefined)
-				throw Error("In 'customMemory' you need to define 'banks'.");
-			for (const bank in banks) {
-				const name = banks[bank];
-				const bankNr = Utility.parseValue(bank);
-				if (isNaN(bankNr))
-					throw Error("Cannot parse '" + bank + "' in 'customMemory'");
-				if (!Number.isInteger(bankNr) || bankNr < 0 || bankNr >= nob)
-					throw Error("The bank number in 'customMemory' has to be a non-negative integer which is smaller than the numberOfBanks, but it is set to '" + bank + "'.");
-				// Name should be "ROM", "RAM" or "UNUSED"
-				const bankType = (BankType as any)[name];
-				if (bankType == undefined) {
-					const arr = Utility.getEnumKeys(BankType);
-					const joined = hjoin.or.q.join(arr);
-					throw Error("Don't understand '" + name + "' in 'customMemory.banks'. Should be " + joined + ".");
-				}
-			}
-			*/
-		}
+		// Custom memory model: The checks are too complex.
+		// I.e. they are done when the SimulatedMemory is constructed.
 
 		// Check if customMemory is defined if it was chosen.
 		if (Settings.launch.zsim.memoryModel == 'CUSTOM') {
+			const customMemory = Settings.launch.zsim.customMemory;
 			if (customMemory == undefined)
 				throw Error("If 'memoryModel' is set to 'CUSTOM', you need to define 'customMemory'.");
 		}
@@ -926,5 +897,6 @@ export class Settings {
 				throw Error("'loadObj.start': You must specify a 'start' address for '" + path + "'.");
 		}
 	}
+
 }
 
