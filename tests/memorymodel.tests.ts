@@ -617,8 +617,7 @@ suite('MemoryModel', () => {
 						}
 					]
 				}) as any;
-			},
-				Error("Range-start lower or equal than last range-end."));
+			});
 		});
 
 		test('Range-end lower than range-start.', () => {
@@ -631,8 +630,7 @@ suite('MemoryModel', () => {
 						}
 					]
 				}) as any;
-			},
-				Error("Range-end lower than range-start."));
+			});
 		});
 
 		test('No banks specified for range.', () => {

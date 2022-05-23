@@ -1,3 +1,4 @@
+import { CustomMemoryType } from './../src/settings/settingscustommemory';
 
 import * as assert from 'assert';
 import * as fs from 'fs';
@@ -487,6 +488,50 @@ main.asm|12||0|-1|-1|Z|pages.size:65536,pages.count:32,slots.count:1,slots.adr:0
 				assert.equal(parser.createLongAddress(0xC000, 0), 0x001C000);
 				assert.equal(parser.createLongAddress(0xE000, 0), 0x002E000);
 			});
+
+
+			test('Target: MemoryModelCustom', () => {
+				const cfg: CustomMemoryType = {
+					"slots": [
+						{
+							"range": [ 0x0000, 0x7FFF ],
+							"banks": [
+								{
+									"index": 0
+								}
+							]
+						},
+						{
+							"range": [ 0x8000, 0xBFFF ],
+							"banks": [
+								{
+									"index": [5, 9]
+								}
+							],
+						},
+						{
+							"range": [ 0xC000, 0xFFFF ],
+							"banks": [
+								{
+									"index": [1, 4]
+								}
+							],
+							"initialBank": 3
+						},
+					]
+				};
+				const mm = new MemoryModel(cfg);
+				createSldFile(mm);
+
+				assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+				assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
+				assert.equal(parser.createLongAddress(0x4000, 0), 0x14000);
+				assert.equal(parser.createLongAddress(0x6000, 0), 0x16000);
+				assert.equal(parser.createLongAddress(0x8000, 0), 0x68000);
+				assert.equal(parser.createLongAddress(0xA000, 0), 0x6A000);
+				assert.equal(parser.createLongAddress(0xC000, 0), 0x4C000);
+				assert.equal(parser.createLongAddress(0xE000, 0), 0x4E000);
+			});
 		});
 
 
@@ -575,6 +620,50 @@ main.asm|12||0|-1|-1|Z|pages.size:16384,pages.count:4,slots.count:4,slots.adr:0,
 				assert.equal(parser.createLongAddress(0xA000, 0), 0x006A000);
 				assert.equal(parser.createLongAddress(0xC000, 0), 0x001C000);
 				assert.equal(parser.createLongAddress(0xE000, 0), 0x002E000);
+			});
+
+
+			test('Target: MemoryModelCustom', () => {
+				const cfg: CustomMemoryType = {
+					"slots": [
+						{
+							"range": [ 0x0000, 0x7FFF ],
+							"banks": [
+								{
+									"index": 0
+								}
+							]
+						},
+						{
+							"range": [ 0x8000, 0xBFFF ],
+							"banks": [
+								{
+									"index": [5, 9]
+								}
+							],
+						},
+						{
+							"range": [ 0xC000, 0xFFFF ],
+							"banks": [
+								{
+									"index": [1, 4]
+								}
+							],
+							"initialBank": 3
+						},
+					]
+				};
+				const mm = new MemoryModel(cfg);
+				createSldFile(mm);
+
+				assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+				assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
+				assert.equal(parser.createLongAddress(0x4000, 0), 0x14000);
+				assert.equal(parser.createLongAddress(0x6000, 0), 0x16000);
+				assert.equal(parser.createLongAddress(0x8000, 0), 0x68000);
+				assert.equal(parser.createLongAddress(0xA000, 0), 0x6A000);
+				assert.equal(parser.createLongAddress(0xC000, 0), 0x4C000);
+				assert.equal(parser.createLongAddress(0xE000, 0), 0x4E000);
 			});
 		});
 
@@ -705,6 +794,50 @@ main.asm|11||0|-1|-1|Z|pages.size:16384,pages.count:8,slots.count:4,slots.adr:0,
 				assert.equal(parser.createLongAddress(0xC000, 7), 0xFC000);
 				assert.equal(parser.createLongAddress(0xE000, 7), 0x10E000);
 			});
+
+
+			test('Target: MemoryModelCustom', () => {
+				const cfg: CustomMemoryType = {
+					"slots": [
+						{
+							"range": [ 0x0000, 0x7FFF ],
+							"banks": [
+								{
+									"index": 0
+								}
+							]
+						},
+						{
+							"range": [ 0x8000, 0xBFFF ],
+							"banks": [
+								{
+									"index": [5, 9]
+								}
+							],
+						},
+						{
+							"range": [ 0xC000, 0xFFFF ],
+							"banks": [
+								{
+									"index": [1, 4]
+								}
+							],
+							"initialBank": 3
+						},
+					]
+				};
+				const mm = new MemoryModel(cfg);
+				createSldFile(mm);
+
+				assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+				assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
+				assert.equal(parser.createLongAddress(0x4000, 0), 0x14000);
+				assert.equal(parser.createLongAddress(0x6000, 0), 0x16000);
+				assert.equal(parser.createLongAddress(0x8000, 0), 0x68000);
+				assert.equal(parser.createLongAddress(0xA000, 0), 0x6A000);
+				assert.equal(parser.createLongAddress(0xC000, 0), 0x4C000);
+				assert.equal(parser.createLongAddress(0xE000, 0), 0x4E000);
+			});
 		});
 
 
@@ -825,10 +958,47 @@ main.asm|14||0|-1|-1|Z|pages.size:8192,pages.count:224,slots.count:8,slots.adr:0
 
 
 			test('Target: MemoryModelCustom', () => {
-				//const mm = new MemoryModelCustom();
-				assert.ok(false);	// Need to be implemented
-			});
+				const cfg: CustomMemoryType = {
+					"slots": [
+						{
+							"range": [ 0x0000, 0x7FFF ],
+							"banks": [
+								{
+									"index": 0
+								}
+							]
+						},
+						{
+							"range": [ 0x8000, 0xBFFF ],
+							"banks": [
+								{
+									"index": [5, 9]
+								}
+							],
+						},
+						{
+							"range": [ 0xC000, 0xFFFF ],
+							"banks": [
+								{
+									"index": [1, 4]
+								}
+							],
+							"initialBank": 3
+						},
+					]
+				};
+				const mm = new MemoryModel(cfg);
+				createSldFile(mm);
 
+				assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+				assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
+				assert.equal(parser.createLongAddress(0x4000, 0), 0x14000);
+				assert.equal(parser.createLongAddress(0x6000, 0), 0x16000);
+				assert.equal(parser.createLongAddress(0x8000, 0), 0x68000);
+				assert.equal(parser.createLongAddress(0xA000, 0), 0x6A000);
+				assert.equal(parser.createLongAddress(0xC000, 0), 0x4C000);
+				assert.equal(parser.createLongAddress(0xE000, 0), 0x4E000);
+			});
 		});
 	});
 });

@@ -134,7 +134,7 @@ export class MemoryModel {
 			const start = custMemSlot.range[0] as number;
 			const diff = start - expectedStart;
 			if (diff < 0)
-				throw Error("Range-start lower or equal than last range-end.");
+				throw Error("Slot range-start (" + start + ") lower or equal than last range-end (" + (expectedStart - 1) + ".");
 			if (diff > 0) {
 				// Unassigned area between slots
 				const unassignedSlotRange = {
