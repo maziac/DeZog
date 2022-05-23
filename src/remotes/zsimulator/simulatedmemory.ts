@@ -276,12 +276,41 @@ export class SimulatedMemory implements Serializeable {
 			// Add diagnostics message
 			if (SimulatedMemory.addDiagnosticsErrorFunc && e.position) {
 				// Improve message. E.g. ".../.vscode/launch.json:4" will become ".../.vscode/launch.json:'Internal simulator'.zsim.customMemory.ioMmu:4"
-				const match = /(.*launch.json:)(\d+.*)/.exec(e.message);
-				if (match) {
+				const find = 'launch.json:';
+				let msg: string = e.message;
+				let k = msg.indexOf(find);
+				if (k >= 0) {
+					k += find.length;
 					const configName = (Settings.launch as any).name;
-					e.message = match[1] + "'" + configName + "'.zsim.customMemory.ioMmu: line " + match[2];
+					msg = msg.substring(0, k) + "'" + configName + "'.zsim.customMemory.ioMmu: line " + msg.substring(k);
 				}
-				SimulatedMemory.addDiagnosticsErrorFunc(e.message, 'error', e.position.filename, 0, 0);
+				// Remove the "^^^^^^" Error location. The diagnostics anyhow remove all spaces.
+				// I.e. it would point to the wrong location.
+				const msgs = msg.split('\n');
+				for (let i = 1; i < msgs.length; i++) {
+					const line = msgs[i];
+					if (/^\s*\^/.exec(line)) {
+						/*
+						// Get number of spaces in previous line
+						const prevLine = msgs[i - 1];
+						const match = /^(\s*)\S/.exec(prevLine);
+						if (match) {
+							const len = match[1].length;
+							// Remove leading spaces
+							msgs[i - 1] = prevLine.substring(len);
+							msgs[i] = line.substring(len);
+							// Substitute spaces in ^^^^ string, so that they are not removed by diagnostics
+							msgs[i] = msgs[i].replace(/\s/g, '.');
+						}
+						*/
+						// Simply remove line
+						msgs.splice(i, 1);
+						break;
+					}
+				}
+				msg = msgs.join('\n');
+				// Send to diagnostics
+				SimulatedMemory.addDiagnosticsErrorFunc(msg, 'error', e.position.filename, 0, 0);
 			}
 			// Re-throw
 			throw e;
