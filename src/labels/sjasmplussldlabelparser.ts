@@ -470,7 +470,8 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			this.throwError("Unsupported sjasmplus memory model (DEVICE).");
 
 		// Check for unknown, also used by the unit tests to just find the labels.
-		if (this.memoryModel instanceof MemoryModelUnknown) {
+		const destMemModel = this.memoryModel;
+		if (destMemModel instanceof MemoryModelUnknown) {
 			// Just pass through
 			this.funcConvertBank = (address: number, bank: number) => {
 				return bank;
@@ -479,7 +480,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		}
 
 		// Check for AllRam
-		if (this.memoryModel instanceof MemoryModelAllRam) {
+		if (destMemModel instanceof MemoryModelAllRam) {
 			// Just 1 bank
 			this.funcConvertBank = (address: number, bank: number) => {
 				return 0;
@@ -487,10 +488,10 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			return;
 		}
 
-		// Check for unbanked modes: sjasmplus NOSLOT64K0 and ZX48K
+		// Check for unbanked modes: sjasmplus NOSLOT64K and ZX48K
 		if (srcMemModel == SjasmplusMemoryModel.NOSLOT64K
 			|| srcMemModel == SjasmplusMemoryModel.ZX48K) {
-			if (this.memoryModel instanceof MemoryModelZx128k) {
+			if (destMemModel instanceof MemoryModelZx128k) {
 				const permut128k = [9, 5, 2, 0];	// TODO: Before loading sna into a 128K the memory slots need to be initialized this way.
 				this.funcConvertBank = (address: number, bank: number) => {
 					const slot = address >>> 14;
@@ -498,7 +499,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				};
 				return;
 			}
-			if (this.memoryModel instanceof MemoryModelZxNext) {
+			if (destMemModel instanceof MemoryModelZxNext) {
 				const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];	// TODO: Before loading nex into a ZXNext the memory slots need to be initialized this way.
 				this.funcConvertBank = (address: number, bank: number) => {
 					const index = (address >>> 13);
@@ -509,7 +510,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		}
 
 		// Check for ZX48K
-		if (this.memoryModel instanceof MemoryModelZx48k) {
+		if (destMemModel instanceof MemoryModelZx48k) {
 			this.funcConvertBank = (address: number, bank: number) => {
 				if (address < 0x4000)
 					return 0; // ROM
@@ -521,7 +522,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Check for sjasmplus ZX48K
 		if (srcMemModel == SjasmplusMemoryModel.ZX48K) {
 			// sjasmplus was compiled for ZX48K
-			if (this.memoryModel instanceof MemoryModelZxNext) {
+			if (destMemModel instanceof MemoryModelZxNext) {
 				const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];	// TODO: Before loading nex into a ZXNext the memory slots need to be initialized this way.
 				this.funcConvertBank = (address: number, bank: number) => {
 					let index = 2 * bank;
@@ -530,20 +531,20 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				};
 				return;
 			}
-			if (this.memoryModel instanceof MemoryModelZx128k) {
+			if (destMemModel instanceof MemoryModelZx128k) {
 				const permut128k = [9, 5, 2, 0];	// TODO: Before loading sna into a 128K the memory slots need to be initialized this way.
 				this.funcConvertBank = (address: number, bank: number) => {
 					return permut128k[bank];	// No conversion
 				};
 				return;
 			}
-			this.throwError("Could not convert labels to Memory Model: '" + this.memoryModel.name + "' .");
+			this.throwError("Could not convert labels to Memory Model: '" + destMemModel.name + "' .");
 		}
 
 		// Check for sjasmplus ZX128K
 		if (srcMemModel == SjasmplusMemoryModel.ZX128K) {
 			// sjasmplus was compiled for ZX128K
-			if (this.memoryModel instanceof MemoryModelZxNext) {
+			if (destMemModel instanceof MemoryModelZxNext) {
 				this.funcConvertBank = (address: number, bank: number) => {
 					if (bank > 7)
 						this.throwError("Bank " + bank + " of ZXNext memory model cannot be converted to target ZX128K memory model.");
@@ -553,25 +554,25 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				};
 				return;
 			}
-			if (this.memoryModel instanceof MemoryModelZx128k) {
+			if (destMemModel instanceof MemoryModelZx128k) {
 				this.funcConvertBank = (address: number, bank: number) => {
 					return bank;	// No conversion
 				};
 				return;
 			}
-			this.throwError("Could not convert labels to Memory Model: '" + this.memoryModel.name + "' .");
+			this.throwError("Could not convert labels to Memory Model: '" + destMemModel.name + "' .");
 		}
 
 		// Check for sjasmplus ZXNEXT
 		if (srcMemModel == SjasmplusMemoryModel.ZXNEXT) {
 			// sjasmplus was compiled for ZXNEXT
-			if (this.memoryModel instanceof MemoryModelZxNext) {
+			if (destMemModel instanceof MemoryModelZxNext) {
 				this.funcConvertBank = (address: number, bank: number) => {
 					return bank;	// No conversion
 				};
 				return;
 			}
-			if (this.memoryModel instanceof MemoryModelZx128k) {
+			if (destMemModel instanceof MemoryModelZx128k) {
 				this.funcConvertBank = (address: number, bank: number) => {
 					let error = (bank > 15);
 					const convBank = bank >>> 1;
@@ -586,7 +587,15 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			this.throwError("Could not convert labels to Memory Model: '" + this.memoryModel.name + "' .");
 		}
 
-		// Not a known memory model
-		this.throwError("Unsupported memory model mapping, sjasmplus to target: " + SjasmplusMemoryModel[srcMemModel] + " to " + this.memoryModel.name + ".");
+		// Not a known memory model conversion
+		this.sendWarning("Unsupported memory model mapping, sjasmplus '" + SjasmplusMemoryModel[srcMemModel] + "' to target '" + destMemModel.name + "'. slots/banks might not be associated correctly.");
+		// Simply map all addresses (regardless of the bank) of the assembler onto the
+		// initial banks of the memory model.
+		this.funcConvertBank = (address: number /*, bank: number*/) => {
+			// Get slot
+			const slot = destMemModel.slotAddress64kAssociation[address];
+			const bank = destMemModel.initialSlots[slot];
+			return bank;
+		};
 	}
 }

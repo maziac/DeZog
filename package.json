@@ -380,11 +380,6 @@
 										"description": "Only evaluated if 'memoryModel' is set to 'CUSTOM'. Chooses the banks and their memory types. Please refer to the documentation.",
 										"type": "object",
 										"properties": {
-											"name": {
-												"type": "string",
-												"description": "The name of the model.",
-												"default": ""
-											},
 											"slots": {
 												"type": "array",
 												"description": "An array with the slot definitions.",
