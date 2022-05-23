@@ -296,22 +296,25 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 	 * I.e. each window has a separate environment.
 	 */
 	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
-		return new Promise<DebugConfiguration | undefined>(async resolve => {
+		return new Promise<DebugConfiguration | undefined>(async (resolve, reject) => {
 
 			// Remove current debug session
 			const session = DebugSessionClass.singleton();
 			if (session.running) {
-				// Already running, show warning and return.
+				// Note: this point is not reached on a "normal" restart, instead
+				// a) if a restart is done and at the same time the launch.json was also changed.
+				// b) a different launch.json should be started.
+				// Show warning and return.
 				const result = await vscode.window.showWarningMessage('DeZog is already active.', 'Terminate current session', 'Cancel');
 				// Check user selection
 				if (result?.toLowerCase().startsWith('terminate')) {
 					// Terminate current session and start a new one
-					await session.terminateRemote();
+					await session.terminateRemote();	// TODO: Can lead to a 'cannot find session', see https://github.com/maziac/DeZog/issues/91
+					// Because of this we will stop here simply (reject)
 				}
-				else {
-					// Cancel. If undefined returned no popup will appear.
-					resolve(undefined);
-				}
+				// Stop here.
+				reject();
+				return;
 			}
 
 			// Check if (DeZog) already running
@@ -327,6 +330,7 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 			const addrInfo = this._server.address() as Net.AddressInfo;
 			Utility.assert(typeof addrInfo != 'string');
 			config.debugServer = addrInfo.port;
+
 			resolve(config);
 		});
 	}
