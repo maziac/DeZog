@@ -153,8 +153,6 @@ export class MemoryModel {
 			if (end < start)
 				throw Error("Range-end lower than range-start.");
 
-			// Initial bank for slot
-			let initialBank = custMemSlot.initialBank;
 
 			// Banks
 			const slotBanks = new Set<number>();
@@ -165,9 +163,6 @@ export class MemoryModel {
 				throw Error("No banks specified for range.");
 			for (const bank of banks) {
 				const bankNumbers = this.createBankOrBanks(bank, size, true); //(banksLen > 1));
-				// Store initial bank?
-				if (initialBank == undefined)
-					initialBank = bankNumbers[0];
 				// Store all banks for the slot
 				bankNumbers.forEach(bankNr => slotBanks.add(bankNr));
 			}
@@ -176,8 +171,20 @@ export class MemoryModel {
 			const slotIndex = this.slotRanges.length;
 			this.slotAddress64kAssociation.fill(slotIndex, start, end + 1);
 
+			// Check if an initial bank was given
+			let initialBank = custMemSlot.initialBank;
+			if (initialBank == undefined) {
+				// Use first bank
+				[initialBank] = slotBanks;
+			}
+			else {
+				// Check if given bank is available
+				if (!slotBanks.has(initialBank))
+					throw Error("'initialBank=" + initialBank + "' does not exist in slot.");
+			}
+
 			// Initialize slot with bank
-			this.initialSlots.push(initialBank!);
+			this.initialSlots.push(initialBank);
 
 			// Slot ranges
 			const slotRange = {

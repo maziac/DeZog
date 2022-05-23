@@ -88,30 +88,30 @@ suite('Z80Cpu', () => {
 
 			// Check size
 			const readSize = memBuffer.readOffset;
-			assert.equal(writeSize, readSize);
+			assert.equal(readSize, writeSize);
 
 			// And test
 			const regs = rCpu.getAllRegisters();
-			assert.equal(0x1020, regs.pc);
-			assert.equal(0x1121, regs.sp);
-			assert.equal(0x1222, regs.af);
-			assert.equal(0x1323, regs.bc);
-			assert.equal(0x1424, regs.de);
-			assert.equal(0x1525, regs.hl);
-			assert.equal(0x1626, regs.ix);
-			assert.equal(0x1727, regs.iy);
-			assert.equal(0x1828, regs.af2);
-			assert.equal(0x1929, regs.bc2);
-			assert.equal(0x1A2A, regs.de2);
-			assert.equal(0x1B2B, regs.hl2);
+			assert.equal(regs.pc, 0x1020);
+			assert.equal(regs.sp, 0x1121);
+			assert.equal(regs.af, 0x1222);
+			assert.equal(regs.bc, 0x1323);
+			assert.equal(regs.de, 0x1424);
+			assert.equal(regs.hl, 0x1525);
+			assert.equal(regs.ix, 0x1626);
+			assert.equal(regs.iy, 0x1727);
+			assert.equal(regs.af2, 0x1828);
+			assert.equal(regs.bc2, 0x1929);
+			assert.equal(regs.de2, 0x1A2A);
+			assert.equal(regs.hl2, 0x1B2B);
 
-			assert.equal(0xC0, regs.i);
-			assert.equal(0xC1, regs.r);
-			assert.equal(2, regs.im);
-			assert.equal(1, regs.iff1);
-			assert.equal(3, regs.iff2);
+			assert.equal(regs.i, 0xC0);
+			assert.equal(regs.r, 0xC1);
+			assert.equal(regs.im, 2);
+			assert.equal(regs.iff1, 1);
+			assert.equal(regs.iff2, 3);
 
-			assert.equal(65536 + 12, rCpu.remainingInterruptTstates);
+			assert.equal(rCpu.remainingInterruptTstates, 65536 + 12);
 		});
 	});
 
@@ -140,9 +140,6 @@ suite('Z80Cpu', () => {
 					portAddress = port;
 					portValue = value;
 				});
-				// Make sure whole memory is RAM
-				for (let i = 0; i < 8; i++)
-					mem.setSlot(i, i);
 			});
 
 
@@ -161,21 +158,21 @@ suite('Z80Cpu', () => {
 				portAddress = 0;
 				const tStates = z80.run_instruction();
 				let r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0002, r.pc);
-				assert.equal(0x1001, r.hl);
-				assert.equal(0x2000, r.de);	// unchanged
-				assert.equal(0x01AA, r.bc);
-				assert.equal(0x20, r.af >>> 8);	// unchanged
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0002);
+				assert.equal(r.hl, 0x1001);
+				assert.equal(r.de, 0x2000);	// unchanged
+				assert.equal(r.bc, 0x01AA);
+				assert.equal(r.af >>> 8, 0x20);	// unchanged
 				assert.ok(!getFlagZ(r));	// Z not set
-				assert.equal(0xC2, mem.read8(0x1000));	// The value of port IN
-				assert.equal(0x02AA, portAddress);	// The used port address for IN
+				assert.equal(mem.read8(0x1000), 0xC2);	// The value of port IN
+				assert.equal(portAddress, 0x02AA);	// The used port address for IN
 
 				cpu.pc = 0x0000;
 				z80.run_instruction();	// Dec B
 				r = cpu.getAllRegisters();
-				assert.equal(0x00AA, r.bc);
-				assert.equal(0x01AA, portAddress);	// The used port address for IN
+				assert.equal(r.bc, 0x00AA);
+				assert.equal(portAddress, 0x01AA);	// The used port address for IN
 				assert.ok(getFlagZ(r));	// Z set
 			});
 
@@ -195,21 +192,21 @@ suite('Z80Cpu', () => {
 				portAddress = 0;
 				const tStates = z80.run_instruction();
 				let r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0002, r.pc);
-				assert.equal(0x0FFF, r.hl);
-				assert.equal(0x2000, r.de);	// unchanged
-				assert.equal(0x01AA, r.bc);
-				assert.equal(0x20, r.af >>> 8);	// unchanged
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0002);
+				assert.equal(r.hl, 0x0FFF);
+				assert.equal(r.de, 0x2000);	// unchanged
+				assert.equal(r.bc, 0x01AA);
+				assert.equal(r.af >>> 8, 0x20);	// unchanged
 				assert.ok(!getFlagZ(r));	// Z not set
-				assert.equal(0xC2, mem.read8(0x1000));	// The value of port IN
-				assert.equal(0x02AA, portAddress);	// The used port address for IN
+				assert.equal(mem.read8(0x1000), 0xC2);	// The value of port IN
+				assert.equal(portAddress, 0x02AA);	// The used port address for IN
 
 				cpu.pc = 0x0000;
 				z80.run_instruction();	// Dec B
 				r = cpu.getAllRegisters();
-				assert.equal(0x00AA, r.bc);
-				assert.equal(0x01AA, portAddress);	// The used port address for IN
+				assert.equal(r.bc, 0x00AA);
+				assert.equal(portAddress, 0x01AA);	// The used port address for IN
 				assert.ok(getFlagZ(r));	// Z set
 			});
 
@@ -229,20 +226,20 @@ suite('Z80Cpu', () => {
 				portValue = 0;
 				const tStates = z80.run_instruction();
 				let r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0002, r.pc);
-				assert.equal(0x1001, r.hl);
-				assert.equal(0x2000, r.de);	// unchanged
-				assert.equal(0x01AA, r.bc);
-				assert.equal(0x20, r.af >>> 8);	// unchanged
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0002);
+				assert.equal(r.hl, 0x1001);
+				assert.equal(r.de, 0x2000);	// unchanged
+				assert.equal(r.bc, 0x01AA);
+				assert.equal(r.af >>> 8, 0x20);	// unchanged
 				assert.ok(!getFlagZ(r));	// Z not set
-				assert.equal(0x01AA, portAddress);
-				assert.equal(0xE1, portValue);
+				assert.equal(portAddress, 0x01AA);
+				assert.equal(portValue, 0xE1);
 
 				cpu.pc = 0x0000;
 				z80.run_instruction();	// Dec B
 				r = cpu.getAllRegisters();
-				assert.equal(0x00AA, r.bc);
+				assert.equal(r.bc, 0x00AA);
 				assert.ok(getFlagZ(r));	// Z set
 			});
 
@@ -262,20 +259,20 @@ suite('Z80Cpu', () => {
 				portValue = 0;
 				const tStates = z80.run_instruction();
 				let r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0002, r.pc);
-				assert.equal(0x0FFF, r.hl);
-				assert.equal(0x2000, r.de);	// unchanged
-				assert.equal(0x01AA, r.bc);
-				assert.equal(0x20, r.af >>> 8);	// unchanged
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0002);
+				assert.equal(r.hl, 0x0FFF);
+				assert.equal(r.de, 0x2000);	// unchanged
+				assert.equal(r.bc, 0x01AA);
+				assert.equal(r.af >>> 8, 0x20);	// unchanged
 				assert.ok(!getFlagZ(r));	// Z not set
-				assert.equal(0x01AA, portAddress);
-				assert.equal(0xE1, portValue);
+				assert.equal(portAddress, 0x01AA);
+				assert.equal(portValue, 0xE1);
 
 				cpu.pc = 0x0000;
 				z80.run_instruction();	// Dec B
 				r = cpu.getAllRegisters();
-				assert.equal(0x00AA, r.bc);
+				assert.equal(r.bc, 0x00AA);
 				assert.ok(getFlagZ(r));	// Z set
 			});
 		});
@@ -313,12 +310,12 @@ suite('Z80Cpu', () => {
 				const tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0x1001, r.hl);
-				assert.equal(0x2001, r.de);
-				assert.equal(0x7FFF, r.bc);
-				assert.equal(0x10, mem.read8(0x2000));
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.hl, 0x1001);
+				assert.equal(r.de, 0x2001);
+				assert.equal(r.bc, 0x7FFF);
+				assert.equal(mem.read8(0x2000), 0x10);
 
 				// A not equal, hl overflow
 				cpu.pc = 0x0000;
@@ -334,11 +331,11 @@ suite('Z80Cpu', () => {
 				z80.run_instruction();
 
 				r = cpu.getAllRegisters();
-				assert.equal(0x0002, r.pc);
-				assert.equal(0x0000, r.hl);
-				assert.equal(0x1001, r.de);
-				assert.equal(0xFFFF, r.bc);
-				assert.equal(0x11, mem.read8(0x1000));
+				assert.equal(r.pc, 0x0002);
+				assert.equal(r.hl, 0x0000);
+				assert.equal(r.de, 0x1001);
+				assert.equal(r.bc, 0xFFFF);
+				assert.equal(mem.read8(0x1000), 0x11);
 
 				// A not equal, de overflow
 				cpu.pc = 0x0000;
@@ -353,10 +350,10 @@ suite('Z80Cpu', () => {
 				z80.run_instruction();
 
 				r = cpu.getAllRegisters();
-				assert.equal(0x0002, r.pc);
-				assert.equal(0x1001, r.hl);
-				assert.equal(0x0000, r.de);
-				assert.equal(0x12, mem.read8(0xFFFF));
+				assert.equal(r.pc, 0x0002);
+				assert.equal(r.hl, 0x1001);
+				assert.equal(r.de, 0x0000);
+				assert.equal(mem.read8(0xFFFF), 0x12);
 
 				// A equal
 				cpu.pc = 0x0000;
@@ -371,10 +368,10 @@ suite('Z80Cpu', () => {
 				z80.run_instruction();
 
 				r = cpu.getAllRegisters();
-				assert.equal(0x0002, r.pc);
-				assert.equal(0x1001, r.hl);
-				assert.equal(0x2001, r.de);
-				assert.equal(0x00, mem.read8(0x2000));
+				assert.equal(r.pc, 0x0002);
+				assert.equal(r.hl, 0x1001);
+				assert.equal(r.de, 0x2001);
+				assert.equal(mem.read8(0x2000), 0x00);
 			});
 
 			test('LDWS', () => {
@@ -390,11 +387,11 @@ suite('Z80Cpu', () => {
 				const tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(14, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0x1000, r.hl);
-				assert.equal(0x0000, r.de);
-				assert.equal(0x30, mem.read8(0xFF00));
+				assert.equal(tStates, 14);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.hl, 0x1000);
+				assert.equal(r.de, 0x0000);
+				assert.equal(mem.read8(0xFF00), 0x30);
 			});
 
 
@@ -413,12 +410,12 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0x1001, r.hl);
-				assert.equal(0x2001, r.de);
-				assert.equal(0, r.bc);
-				assert.equal(0x10, mem.read8(0x2000));
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.hl, 0x1001);
+				assert.equal(r.de, 0x2001);
+				assert.equal(r.bc, 0);
+				assert.equal(mem.read8(0x2000), 0x10);
 
 				// BC != 0, PC overflow
 				cpu.pc = 0xFFFF;
@@ -434,12 +431,12 @@ suite('Z80Cpu', () => {
 				tStates = z80.run_instruction();
 
 				r = cpu.getAllRegisters();
-				assert.equal(21, tStates);
-				assert.equal(0xFFFF, r.pc);
-				assert.equal(0x1001, r.hl);
-				assert.equal(0x2001, r.de);
-				assert.equal(0x0200, r.bc);
-				assert.equal(0x10, mem.read8(0x2000));
+				assert.equal(tStates, 21);
+				assert.equal(r.pc, 0xFFFF);
+				assert.equal(r.hl, 0x1001);
+				assert.equal(r.de, 0x2001);
+				assert.equal(r.bc, 0x0200);
+				assert.equal(mem.read8(0x2000), 0x10);
 
 				// BC != 0, HL overflow
 				cpu.pc = 0x0000;
@@ -455,12 +452,12 @@ suite('Z80Cpu', () => {
 				tStates = z80.run_instruction();
 
 				r = cpu.getAllRegisters();
-				assert.equal(21, tStates);
-				assert.equal(0x0000, r.pc);
-				assert.equal(0x0000, r.hl);
-				assert.equal(0x1001, r.de);
-				assert.equal(1, r.bc);
-				assert.equal(0x00, mem.read8(0x1000));
+				assert.equal(tStates, 21);
+				assert.equal(r.pc, 0x0000);
+				assert.equal(r.hl, 0x0000);
+				assert.equal(r.de, 0x1001);
+				assert.equal(r.bc, 1);
+				assert.equal(mem.read8(0x1000), 0x00);
 			});
 
 
@@ -479,12 +476,12 @@ suite('Z80Cpu', () => {
 				const tStates = z80.run_instruction();
 
 				const r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0002, r.pc);
-				assert.equal(0x0FFF, r.hl);
-				assert.equal(0x0000, r.de);
-				assert.equal(5, r.bc);
-				assert.equal(0x12, mem.read8(0xFFFF));
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0002);
+				assert.equal(r.hl, 0x0FFF);
+				assert.equal(r.de, 0x0000);
+				assert.equal(r.bc, 5);
+				assert.equal(mem.read8(0xFFFF), 0x12);
 			});
 
 
@@ -503,12 +500,12 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0x0FFF, r.hl);
-				assert.equal(0x2001, r.de);
-				assert.equal(0, r.bc);
-				assert.equal(0x10, mem.read8(0x2000));
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.hl, 0x0FFF);
+				assert.equal(r.de, 0x2001);
+				assert.equal(r.bc, 0);
+				assert.equal(mem.read8(0x2000), 0x10);
 
 				// BC != 0, PC overflow
 				cpu.pc = 0xFFFF;
@@ -524,12 +521,12 @@ suite('Z80Cpu', () => {
 				tStates = z80.run_instruction();
 
 				r = cpu.getAllRegisters();
-				assert.equal(21, tStates);
-				assert.equal(0xFFFF, r.pc);
-				assert.equal(0x0FFF, r.hl);
-				assert.equal(0x2001, r.de);
-				assert.equal(0x0200, r.bc);
-				assert.equal(0x10, mem.read8(0x2000));
+				assert.equal(tStates, 21);
+				assert.equal(r.pc, 0xFFFF);
+				assert.equal(r.hl, 0x0FFF);
+				assert.equal(r.de, 0x2001);
+				assert.equal(r.bc, 0x0200);
+				assert.equal(mem.read8(0x2000), 0x10);
 
 				// BC != 0, HL overflow
 				cpu.pc = 0x0010;
@@ -545,12 +542,12 @@ suite('Z80Cpu', () => {
 				tStates = z80.run_instruction();
 
 				r = cpu.getAllRegisters();
-				assert.equal(21, tStates);
-				assert.equal(0x0010, r.pc);
-				assert.equal(0xFFFF, r.hl);
-				assert.equal(0x1001, r.de);
-				assert.equal(1, r.bc);
-				assert.equal(0x00, mem.read8(0x1000));
+				assert.equal(tStates, 21);
+				assert.equal(r.pc, 0x0010);
+				assert.equal(r.hl, 0xFFFF);
+				assert.equal(r.de, 0x1001);
+				assert.equal(r.bc, 1);
+				assert.equal(mem.read8(0x1000), 0x00);
 			});
 
 
@@ -569,12 +566,12 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0002, r.pc);
-				assert.equal(0x1000, r.hl);
-				assert.equal(0x2100, r.de);
-				assert.equal(0, r.bc);
-				assert.equal(0x10, mem.read8(0x20FF));
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0002);
+				assert.equal(r.hl, 0x1000);
+				assert.equal(r.de, 0x2100);
+				assert.equal(r.bc, 0);
+				assert.equal(mem.read8(0x20FF), 0x10);
 
 				// BC == 0, A not equal
 				cpu.pc = 0x0000;
@@ -590,12 +587,12 @@ suite('Z80Cpu', () => {
 				tStates = z80.run_instruction();
 
 				r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0002, r.pc);
-				assert.equal(0xFFFF, r.hl);
-				assert.equal(0x20F9, r.de);
-				assert.equal(0, r.bc);
-				assert.equal(0x11, mem.read8(0x20F8));
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0002);
+				assert.equal(r.hl, 0xFFFF);
+				assert.equal(r.de, 0x20F9);
+				assert.equal(r.bc, 0);
+				assert.equal(mem.read8(0x20F8), 0x11);
 
 				// BC != 0, A equal
 				cpu.pc = 0x8000;
@@ -611,12 +608,12 @@ suite('Z80Cpu', () => {
 				tStates = z80.run_instruction();
 
 				r = cpu.getAllRegisters();
-				assert.equal(21, tStates);
-				assert.equal(0x8000, r.pc);
-				assert.equal(0x0000, r.hl);
-				assert.equal(0x1002, r.de);
-				assert.equal(1, r.bc);
-				assert.equal(0x01, mem.read8(0x1001));
+				assert.equal(tStates, 21);
+				assert.equal(r.pc, 0x8000);
+				assert.equal(r.hl, 0x0000);
+				assert.equal(r.de, 0x1002);
+				assert.equal(r.bc, 1);
+				assert.equal(mem.read8(0x1001), 0x01);
 			});
 
 
@@ -637,10 +634,10 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0002, r.pc);
-				assert.equal(0x0000, r.hl);
-				assert.equal(0xAA, outValue);
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0002);
+				assert.equal(r.hl, 0x0000);
+				assert.equal(outValue, 0xAA);
 			});
 
 			test('MUL D,E', () => {
@@ -653,44 +650,44 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0, r.de);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.de, 0);
 
 				cpu.pc = 0xFFFF;
 				cpu.d = 5;
 				cpu.e = 0;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0, r.de);
+				assert.equal(r.de, 0);
 
 				cpu.pc = 0xFFFF;
 				cpu.d = 5;
 				cpu.e = 0;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0, r.de);
+				assert.equal(r.de, 0);
 
 				cpu.pc = 0xFFFF;
 				cpu.d = 0;
 				cpu.e = 6;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0, r.de);
+				assert.equal(r.de, 0);
 
 				cpu.pc = 0xFFFF;
 				cpu.d = 5;
 				cpu.e = 7;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(35, r.de);
+				assert.equal(r.de, 35);
 
 				cpu.pc = 0xFFFF;
 				cpu.d = 255;
 				cpu.e = 255;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(65025, r.de);
+				assert.equal(r.de, 65025);
 			});
 
 
@@ -704,9 +701,9 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0x00EF, r.hl);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.hl, 0x00EF);
 			});
 
 			test('ADD DE,A', () => {
@@ -719,9 +716,9 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0x00EF, r.de);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.de, 0x00EF);
 			});
 
 			test('ADD BC,A', () => {
@@ -734,9 +731,9 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0x00EF, r.bc);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.bc, 0x00EF);
 			});
 
 
@@ -751,9 +748,9 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0003, r.pc);
-				assert.equal(0x0234, r.hl);
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0003);
+				assert.equal(r.hl, 0x0234);
 			});
 
 			test('ADD DE,nn', () => {
@@ -767,9 +764,9 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0003, r.pc);
-				assert.equal(0x0234, r.de);
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0003);
+				assert.equal(r.de, 0x0234);
 			});
 
 			test('ADD BC,nn', () => {
@@ -783,9 +780,9 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(16, tStates);
-				assert.equal(0x0003, r.pc);
-				assert.equal(0x0234, r.bc);
+				assert.equal(tStates, 16);
+				assert.equal(r.pc, 0x0003);
+				assert.equal(r.bc, 0x0234);
 			});
 
 
@@ -798,9 +795,9 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0x5A, r.af >>> 8);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.af >>> 8, 0x5A);
 			});
 
 			test('MIRROR', () => {
@@ -812,9 +809,9 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0b01000001, r.af >>> 8);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.af >>> 8, 0b01000001);
 
 				let val = 0b1000_0000;
 				let expected = 0b0000_0001;
@@ -823,7 +820,7 @@ suite('Z80Cpu', () => {
 					cpu.a = val;
 					z80.run_instruction();
 					r = cpu.getAllRegisters();
-					assert.equal(expected, r.af >>> 8);
+					assert.equal(r.af >>> 8, expected);
 					// Next
 					val >>>= 1;
 					expected <<= 1;
@@ -836,7 +833,7 @@ suite('Z80Cpu', () => {
 					cpu.a = val & 0xFF;
 					z80.run_instruction();
 					r = cpu.getAllRegisters();
-					assert.equal(expected, r.af >>> 8);
+					assert.equal(r.af >>> 8, expected);
 					// Next
 					val >>>= 1;
 					expected <<= 1;
@@ -857,10 +854,10 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(23, tStates);
-				assert.equal(0x0003, r.pc);
-				assert.equal(0x7FFE, r.sp);
-				assert.equal(0x1234, mem.getMemory16(0x7FFE));
+				assert.equal(tStates, 23);
+				assert.equal(r.pc, 0x0003);
+				assert.equal(r.sp, 0x7FFE);
+				assert.equal(mem.getMemory16(0x7FFE), 0x1234);
 
 				cpu.pc = 0x1000;
 				cpu.sp = 0x0001;
@@ -872,9 +869,9 @@ suite('Z80Cpu', () => {
 				z80.run_instruction();
 
 				r = cpu.getAllRegisters();
-				assert.equal(0x1004, r.pc);
-				assert.equal(0xFFFF, r.sp);
-				assert.equal(0x1234, mem.getMemory16(0xFFFF));
+				assert.equal(r.pc, 0x1004);
+				assert.equal(r.sp, 0xFFFF);
+				assert.equal(mem.getMemory16(0xFFFF), 0x1234);
 			});
 
 
@@ -901,10 +898,10 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(20, tStates);
-				assert.equal(0x0003, r.pc);
-				assert.equal(0xAA, outSelectValue);
-				assert.equal(0x55, outAccessValue);
+				assert.equal(tStates, 20);
+				assert.equal(r.pc, 0x0003);
+				assert.equal(outSelectValue, 0xAA);
+				assert.equal(outAccessValue, 0x55);
 			});
 
 			test('NEXTREG r,A', () => {
@@ -930,10 +927,10 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(17, tStates);
-				assert.equal(0x0002, r.pc);
-				assert.equal(0xAA, outSelectValue);
-				assert.equal(0xF5, outAccessValue);
+				assert.equal(tStates, 17);
+				assert.equal(r.pc, 0x0002);
+				assert.equal(outSelectValue, 0xAA);
+				assert.equal(outAccessValue, 0xF5);
 			});
 
 
@@ -946,21 +943,21 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0xFFFF, r.hl);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.hl, 0xFFFF);
 
 				cpu.pc = 0xFFFF;
 				cpu.hl = 0xFF7F;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0xF87F + 0x20, r.hl);
+				assert.equal(r.hl, 0xF87F + 0x20);
 
 				cpu.pc = 0xFFFF;
 				cpu.hl = 0xFFFF;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0x001F, r.hl);
+				assert.equal(r.hl, 0x001F);
 			});
 
 			test('PIXELAD', () => {
@@ -972,16 +969,16 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0x4000, r.hl);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.hl, 0x4000);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0xFFFF;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0x5F1F + 0xE0, r.hl);
-				assert.equal(0xFFFF, r.de);
+				assert.equal(r.hl, 0x5F1F + 0xE0);
+				assert.equal(r.de, 0xFFFF);
 			});
 
 			test('SETAE', () => {
@@ -993,27 +990,27 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0b1000_0000, r.af >>> 8);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.af >>> 8, 0b1000_0000);
 
 				cpu.pc = 0xFFFF;
 				cpu.e = 0x01;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0b0100_0000, r.af >>> 8);
+				assert.equal(r.af >>> 8, 0b0100_0000);
 
 				cpu.pc = 0xFFFF;
 				cpu.e = 0x07;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0b0000_0001, r.af >>> 8);
+				assert.equal(r.af >>> 8, 0b0000_0001);
 
 				cpu.pc = 0xFFFF;
 				cpu.e = 0xFA;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0b0010_0000, r.af >>> 8);
+				assert.equal(r.af >>> 8, 0b0010_0000);
 			});
 
 
@@ -1028,9 +1025,9 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(11, tStates);
-				assert.equal(0x0002, r.pc);
-				assert.equal(0b1000_0000, r.af & 0xFF);
+				assert.equal(tStates, 11);
+				assert.equal(r.pc, 0x0002);
+				assert.equal(r.af & 0xFF, 0b1000_0000);
 
 				cpu.pc = 0xFFFF;
 				cpu.a = 0xA5;
@@ -1041,7 +1038,7 @@ suite('Z80Cpu', () => {
 					0x0001, 0x5A]);
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0b0100_0000, r.af & 0xFF);
+				assert.equal(r.af & 0xFF, 0b0100_0000);
 
 				cpu.pc = 0xFFFF;
 				cpu.a = 0x75;
@@ -1052,7 +1049,7 @@ suite('Z80Cpu', () => {
 					0x0001, 0xFF]);
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0b0000_0000, r.af & 0xFF);
+				assert.equal(r.af & 0xFF, 0b0000_0000);
 			});
 
 
@@ -1066,23 +1063,23 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0b1000_0101_0000_0010, r.de);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.de, 0b1000_0101_0000_0010);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0b1100_0010_1000_0001;
 				cpu.b = 3;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0b001_0100_0000_1000, r.de);
+				assert.equal(r.de, 0b001_0100_0000_1000);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0b1100_0010_1000_0001;
 				cpu.b = 16;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0, r.de);
+				assert.equal(r.de, 0);
 			});
 
 			test('BSRA DE,B', () => {
@@ -1095,30 +1092,30 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0b1110000101000000, r.de);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.de, 0b1110000101000000);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0b0100001010000001;
 				cpu.b = 3;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0b0000100001010000, r.de);
+				assert.equal(r.de, 0b0000100001010000);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0b1100001010000001;
 				cpu.b = 16;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0xFFFF, r.de);
+				assert.equal(r.de, 0xFFFF);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0b0100001010000001;
 				cpu.b = 16;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0, r.de);
+				assert.equal(r.de, 0);
 			});
 
 			test('BSRL DE,B', () => {
@@ -1131,23 +1128,23 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0b0110000101000000, r.de);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.de, 0b0110000101000000);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0b0100001010000001;
 				cpu.b = 3;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0b0000100001010000, r.de);
+				assert.equal(r.de, 0b0000100001010000);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0b1100001010000001;
 				cpu.b = 16;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0, r.de);
+				assert.equal(r.de, 0);
 			});
 
 			test('BSRF DE,B', () => {
@@ -1160,30 +1157,30 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0b1110000101000000, r.de);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.de, 0b1110000101000000);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0b0100001010000001;
 				cpu.b = 3;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0b1110100001010000, r.de);
+				assert.equal(r.de, 0b1110100001010000);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0b1100001010000001;
 				cpu.b = 16;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0xFFFF, r.de);
+				assert.equal(r.de, 0xFFFF);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0b0100001010000001;
 				cpu.b = 16;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0xFFFF, r.de);
+				assert.equal(r.de, 0xFFFF);
 			});
 
 			test('BRLC DE,B', () => {
@@ -1196,30 +1193,30 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(8, tStates);
-				assert.equal(0x0001, r.pc);
-				assert.equal(0b1000010100000011, r.de);
+				assert.equal(tStates, 8);
+				assert.equal(r.pc, 0x0001);
+				assert.equal(r.de, 0b1000010100000011);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0b1100001010000001;
 				cpu.b = 3;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0b0001010000001110, r.de);
+				assert.equal(r.de, 0b0001010000001110);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0b1100001010000001;
 				cpu.b = 16;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0b1100001010000001, r.de);
+				assert.equal(r.de, 0b1100001010000001);
 
 				cpu.pc = 0xFFFF;
 				cpu.de = 0b0100001010000001;
 				cpu.b = 31;
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0b1010000101000000, r.de);
+				assert.equal(r.de, 0b1010000101000000);
 			});
 
 
@@ -1237,8 +1234,8 @@ suite('Z80Cpu', () => {
 				let tStates = z80.run_instruction();
 
 				let r = cpu.getAllRegisters();
-				assert.equal(13, tStates);
-				assert.equal(0b0011_1111_1100_0000, r.pc);
+				assert.equal(tStates, 13);
+				assert.equal(r.pc, 0b0011_1111_1100_0000);
 
 				cpu.pc = 0xC00F;
 				setMem([
@@ -1252,7 +1249,7 @@ suite('Z80Cpu', () => {
 
 				z80.run_instruction();
 				r = cpu.getAllRegisters();
-				assert.equal(0b1111_1000_1100_0000, r.pc);
+				assert.equal(r.pc, 0b1111_1000_1100_0000);
 			});
 
 		});

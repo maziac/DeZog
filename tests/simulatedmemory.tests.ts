@@ -24,7 +24,7 @@ class PagedMemory extends SimulatedMemory {
 		for (let i = 0; i < slotCount; i++) {
 			slotRanges.push({
 				range: [rangeStart, rangeStart + slotSize - 1],
-				initialBank: i,
+				initialBank: indexStart,
 				banks: [{
 					index: [indexStart, indexStart + banksPerSlot - 1]
 				}]
@@ -87,31 +87,31 @@ suite('SimulatedMemory', () => {
 
 		// Check size
 		const readSize = memBuffer.getReadOffset();
-		assert.equal(writeSize, readSize);
+		assert.equal(readSize, writeSize);
 
 		// Test the slots/banks
 		const slots = rMem.getSlots();
-		assert.equal(253, slots[0]);
-		assert.equal(200, slots[1]);
-		assert.equal(150, slots[2]);
-		assert.equal(100, slots[3]);
-		assert.equal(80, slots[4]);
-		assert.equal(60, slots[5]);
-		assert.equal(30, slots[6]);
-		assert.equal(5, slots[7]);
+		assert.equal(slots[0], 253);
+		assert.equal(slots[1], 200);
+		assert.equal(slots[2], 150);
+		assert.equal(slots[3], 100);
+		assert.equal(slots[4], 80);
+		assert.equal(slots[5], 60);
+		assert.equal(slots[6], 30);
+		assert.equal(slots[7], 5);
 
 		// Test the memory
-		assert.equal(10, rMem.read8(0x0000));
-		assert.equal(11, rMem.read8(0x0010));
-		assert.equal(12, rMem.read8(0x1FFF));
-		assert.equal(13, rMem.read8(0x2000));
-		assert.equal(14, rMem.read8(0x4000));
-		assert.equal(15, rMem.read8(0x6000));
-		assert.equal(16, rMem.read8(0x8000));
-		assert.equal(17, rMem.read8(0xA000));
-		assert.equal(18, rMem.read8(0xC000));
-		assert.equal(19, rMem.read8(0xE000));
-		assert.equal(20, rMem.read8(0xFFFF));
+		assert.equal(rMem.read8(0x0000), 10);
+		assert.equal(rMem.read8(0x0010), 11);
+		assert.equal(rMem.read8(0x1FFF), 12);
+		assert.equal(rMem.read8(0x2000), 13);
+		assert.equal(rMem.read8(0x4000), 14);
+		assert.equal(rMem.read8(0x6000), 15);
+		assert.equal(rMem.read8(0x8000), 16);
+		assert.equal(rMem.read8(0xA000), 17);
+		assert.equal(rMem.read8(0xC000), 18);
+		assert.equal(rMem.read8(0xE000), 19);
+		assert.equal(rMem.read8(0xFFFF), 20);
 	});
 
 
@@ -120,39 +120,39 @@ suite('SimulatedMemory', () => {
 
 		mem.writeBlock(0x0000, new Uint8Array([0xAB]));
 		let result = mem.readBlock(0x0000, 2);
-		assert.equal(0xAB, result[0]);
-		assert.equal(0, result[1]);
+		assert.equal(result[0], 0xAB);
+		assert.equal(result[1], 0);
 
 		mem.writeBlock(0x1000, new Uint8Array([0xAB, 0x12, 0x13, 0x14, 0x15]));
 		result = mem.readBlock(0x1000, 5);
-		assert.equal(0xAB, result[0]);
-		assert.equal(0x12, result[1]);
-		assert.equal(0x13, result[2]);
-		assert.equal(0x14, result[3]);
-		assert.equal(0x15, result[4]);
+		assert.equal(result[0], 0xAB);
+		assert.equal(result[1], 0x12);
+		assert.equal(result[2], 0x13);
+		assert.equal(result[3], 0x14);
+		assert.equal(result[4], 0x15);
 
 		mem.writeBlock(0xFFFF, new Uint8Array([0xC0]));
 		result = mem.readBlock(0xFFFF, 1);
-		assert.equal(0xC0, result[0]);
+		assert.equal(result[0], 0xC0);
 		result = mem.readBlock(0x0000, 1);
-		assert.equal(0xAB, result[0]);
+		assert.equal(result[0], 0xAB);
 
 		mem.writeBlock(0xFFFF, new Uint8Array([0xD1, 0xD2]));
 		result = mem.readBlock(0xFFFF, 2);
-		assert.equal(0xD1, result[0]);
-		assert.equal(0xD2, result[1]);
+		assert.equal(result[0], 0xD1);
+		assert.equal(result[1], 0xD2);
 
 		mem.writeBlock(0xFFFF, Buffer.from([0xE1, 0xE2]));
 		result = mem.readBlock(0xFFFF, 2);
-		assert.equal(0xE1, result[0]);
-		assert.equal(0xE2, result[1]);
+		assert.equal(result[0], 0xE1);
+		assert.equal(result[1], 0xE2);
 
 		mem.writeBlock(0x3FFE, Buffer.from([0xF1, 0xF2, 0xF3, 0xF4]));
 		result = mem.readBlock(0x3FFE, 4);
-		assert.equal(0xF1, result[0]);
-		assert.equal(0xF2, result[1]);
-		assert.equal(0xF3, result[2]);
-		assert.equal(0xF4, result[3]);
+		assert.equal(result[0], 0xF1);
+		assert.equal(result[1], 0xF2);
+		assert.equal(result[2], 0xF3);
+		assert.equal(result[3], 0xF4);
 	});
 
 
@@ -162,41 +162,41 @@ suite('SimulatedMemory', () => {
 		mem.memoryBanks[0][0] = 0x34;
 		mem.memoryBanks[0][1] = 0x12;
 		let result = mem.getMemory16(0x0000);
-		assert.equal(0x1234, result);
+		assert.equal(result, 0x1234);
 
 		mem.memoryBanks[0][0] = 0x34;
 		mem.memoryBanks[0][1] = 0x12;
 		mem.memoryBanks[0][2] = 0x78;
 		mem.memoryBanks[0][3] = 0x56;
 		result = mem.getMemory32(0x0000);
-		assert.equal(0x56781234, result);
+		assert.equal(result, 0x56781234);
 
-		mem.memoryBanks[7][0x1FFF] = 0x9A;	// 0xFFFF
-		mem.memoryBanks[7][0x1FFE] = 0xBC;	// 0xFFFE
-		mem.memoryBanks[7][0x1FFD] = 0xDE;	// 0xFFFD
+		mem.memoryBanks[7*32][0x1FFF] = 0x9A;	// 0xFFFF
+		mem.memoryBanks[7*32][0x1FFE] = 0xBC;	// 0xFFFE
+		mem.memoryBanks[7*32][0x1FFD] = 0xDE;	// 0xFFFD
 
 		result = mem.getMemory16(0xFFFF);
-		assert.equal(0x349A, result);
+		assert.equal(result, 0x349A);
 
 		result = mem.getMemory32(0xFFFF);
-		assert.equal(0x7812349A, result);
+		assert.equal(result, 0x7812349A);
 
 		result = mem.getMemory32(0xFFFE);
-		assert.equal(0x12349ABC, result);
+		assert.equal(result, 0x12349ABC);
 
 		result = mem.getMemory32(0xFFFD);
-		assert.equal(0x349ABCDE, result);
+		assert.equal(result, 0x349ABCDE);
 
 		const offs = 0x2000;
 		mem.memoryBanks[0][offs - 1] = 0xC1;
-		mem.memoryBanks[1][0] = 0xD2;
+		mem.memoryBanks[1*32][0] = 0xD2;
 		result = mem.getMemory16(offs - 1);
-		assert.equal(0xD2C1, result);
+		assert.equal(result, 0xD2C1);
 
 		mem.memoryBanks[0][offs - 2] = 0xB0;
-		mem.memoryBanks[1][1] = 0xE3;
+		mem.memoryBanks[1*32][1] = 0xE3;
 		result = mem.getMemory32(offs - 2);
-		assert.equal(0xE3D2C1B0, result);
+		assert.equal(result, 0xE3D2C1B0);
 	});
 
 
