@@ -540,6 +540,7 @@ It allows to test programs that does not make use of special HW features like th
 - The ports of the keyboard
 - The ZX128 memory banks
 - Loading of (48 and 128) .sna and .nex files
+- Custom memory models
 
 It specifically does not support:
 - ZX Next HW (other than memory bank switching)
@@ -632,7 +633,7 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
 	- "ZX48K": ROM and RAM as of the ZX Spectrum 48K.
 	- "ZX128K": Paged memory as of the ZX Spectrum 128K (16k slots/banks).
 	- "ZXNEXT": Paged memory as of the ZX Next (8k slots/banks).
-    - "CUSTOM": For a custom memory layout. See 'customMemory'.
+    - "CUSTOM": For a custom memory layout. See [customMemory](#custommemory).
 - "ulaScreen": true/false. Defaults to false. If enabled it shows the contents of the ZX Spectrum screen.
 ![](images/zsim_ula_screen.jpg)
 Note: The simulated ULA screen supports flashing of color attributes (bit 7 of color attribute). But this is stopped as long as you pause execution.
@@ -651,19 +652,76 @@ The status for the audio is experimental. It may or may not work for you.
 - "limitSpeed": If enabled the simulated CPU performance is throttled to fit the given CPU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.
 - "updateFrequency": The update frequency of the simulator view in Hz. Defaults to 10Hz. Possible range is 5 to 100 Hz.
 - "customCode": This enables the custom code to run inside the simulator, e.g. to simulate additional ports. See [zsimPeripherals.md](https://github.com/maziac/DeZog/blob/master/documentation/zsimPeripherals.md) for more details.
-- "customMemory": Only evaluated if 'memoryModel' is set to 'CUSTOM'. Chooses the banks and their memory types. E.g.
-    ~~~
-    "customMemory": {
-        "numberOfBanks": 4,
-        "banks": {
-            "0": "ROM",
-            "1": "RAM",
-            "2": "RAM"
-    }
-    ~~~
-    - 'numberOfBanks': The number of banks to use for the 64k address space. Each bank is of the same size (64k/numberOfBanks).
-    - 'banks': Bank number/memory type pairs. E.g. \"0\": \"ROM\". Allowed for the memory type are 'ROM', 'RAM' and 'UNUSED'. Any not mentioned bank will automatically get the 'UNUSED' type. (In the example above bank number 4.) Reading from UNUSED memory areas will return 0xFF.
-    - Note: 'customMemory' can only model memory layouts without paging.
+- "customMemory": see [customMemory](#custommemory)
+
+
+#### customMemory
+
+Only evaluated if 'memoryModel' is set to 'CUSTOM'. Chooses the banks and their memory types. E.g.
+
+~~~json
+	"customMemory": {
+		"slots": [
+			{
+				"range": [ "0x0000", "0xBFFF"
+				],
+				"banks": [
+					{
+						"index": 0
+					}
+				]
+			},
+			{
+				"name": "slotC000",
+				"range": [
+					"0xC000",
+					"0xFFFF"
+				],
+				"banks": [
+					{
+						"index": [
+							1,
+							4
+						],
+                        "name": "RAM${index}",
+                        "shortName": "R${index}"
+					}
+				],
+                "initialBank": 3
+			},
+		],
+		"ioMmu": [
+			"if(portAddress == 0x100) {",
+			"  bank = portValue;",
+			"  slotC000 = bank;",
+			"}"
+		]
+	}
+~~~
+
+- 'slots': An array with slots. A slot describes an address range for a bank.
+If more than one bank is defined for a slot then the banks are switchable.
+    - "name": An optional name for the slot.
+    - "range": An array with 2 numbers or hex strings that define the start and teh end address of the slot.
+    - "banks": An array with 1 or more bank definitions.
+        - "index": A single number to define one bank (with that index) or a range of start and end index to define a couple of banks.
+        - "name": The name of the bank as seen in the "Memory Banks" section in the VARIABLE's pane.
+        - "shortName": The short name of the bank. This is important for Reverse Engineering and used in disassemblies, i.e. in the disasm.list file, to distinguish addresses from different banks.
+    - "initialBank": The bank that is seen at start of 'zsim'. If not given the first defined bank is used.
+- "ioMmu": A string or an array of strings with javascript code. The code is evaluated on each OUT Z80 instruction and is to be used to switch banks. It is an optional property. In case your memory model does not require any bank switching you don't have to set it.
+Whe the code is executed the variables 'portAddress' and 'portValue' are set with the values from the OUT instruction. E.g. for
+~~~asm
+    LD BC,0x1234
+    ld A,0xEB
+    OUT (C),A
+~~~
+
+'portAddress' would be 0x1234 and 'portValue' would be 0xEB.
+
+
+Notes:
+- Banks with same indexes could be used in different slots. 'name' and 'shortname' need to be defined only once.
+- Address ranges without any bank association can be left unassigned.
 
 
 ### ZEsarUX

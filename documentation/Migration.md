@@ -1,5 +1,33 @@
 This guide will provide some info what to do to update your projects from an earlier version.
 
+
+# Migrate from DeZog 2.7 to DeZog 3.0
+
+A lot of internals have been changed especially to the use of banks and long addresses.
+All labels are now internally represented as long addresses.
+Prior to 3.0 there was a mix of 64k and long addresses.
+However, this is internally, for the user there should be no visible change.
+
+Also the internal memory models for ZX48, ZX128 etc. have been reworked to use the same base as the new customMemory model.
+
+The definition of a 'customMemory' model was changed in the launch.json.
+Please refer to the new structure in the [Usage.md](Usage.md).
+The old structure cannot be used anymore and need to be changed.
+
+The new 'customMemory' allows ou to define arbitrary slot ranges and bank switching.
+
+This was all done to allow reverse engineering together with bank switching.
+
+As this is a new feature you don't have to adjust any of your programs.
+
+Please read about it in the [ReverseEngineeringUsage.md](ReverseEngineeringUsage.md'.
+
+
+
+# Migrate from DeZog 2.6 to DeZog 2.7
+
+No required updates.
+
 # Migrate from DeZog 2.5 to DeZog 2.6
 
 Major change is the integration of the serial port into DeZog.
