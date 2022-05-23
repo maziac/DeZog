@@ -8,11 +8,8 @@ export class Z80Ports {
 	// The default value returned if no peripheral is attached.
 	protected defaultPortIn;
 
-	// Holds the ports for reading.
-	//protected ports: Uint8Array;
-
-	protected genericOutPortFunc: ((port: number, value: number) => void)|undefined;
-	protected genericInPortFunc: ((port: number) => number|undefined)|undefined;
+	protected genericOutPortFuncs: Array<(port: number, value: number) => void>;
+	protected genericInPortFuncs: Array<(port: number) => (number|undefined)>;
 
 	// It is possible to add behavior when writing to a specific port.
 	// This map maps port addresses to functions that are executed on a port write.
@@ -30,8 +27,10 @@ export class Z80Ports {
 	 */
 	constructor(defaultPortIn: number) {
 		this.defaultPortIn = defaultPortIn;
-		this.outPortMap=new Map<number, (port: number, value: number) => void>();
-		this.inPortMap=new Map<number, (port: number) => number>();
+		this.genericOutPortFuncs = [];
+		this.genericInPortFuncs = [];
+		this.outPortMap = new Map<number, (port: number, value: number) => void>();
+		this.inPortMap = new Map<number, (port: number) => number>();
 	}
 
 
@@ -41,8 +40,8 @@ export class Z80Ports {
 	 * @param func The function to execute if the port is written. If undefined the
 	 * current function is deregistered.
 	 */
-	public registerGenericOutPortFunction(func: ((port: number, value: number) => void)|undefined) {
-		this.genericOutPortFunc=func;
+	public registerGenericOutPortFunction(func: (port: number, value: number) => void) {
+		this.genericOutPortFuncs.push(func);
 	}
 
 
@@ -52,8 +51,8 @@ export class Z80Ports {
 	 * @param func The function to execute if the port is read. If undefined the
 	 * current function is deregistered.
 	 */
-	public registerGenericInPortFunction(func: ((port: number) => number|undefined)|undefined) {
-		this.genericInPortFunc=func;
+	public registerGenericInPortFunction(func: (port: number) => (number|undefined)) {
+		this.genericInPortFuncs.push(func);
 	}
 
 
@@ -91,8 +90,11 @@ export class Z80Ports {
 
 		// Check for general read function.
 		// Is done at first, so it can "override" other functions
-		if (this.genericInPortFunc)
-			value = this.genericInPortFunc(port);
+		for (const func of this.genericInPortFuncs) {
+			value = func(port);
+			if (value != undefined)
+				break;
+		}
 
 		// Check for specific read function
 		if (value == undefined) {
@@ -116,12 +118,12 @@ export class Z80Ports {
 		// Note: more than one function could be executed.
 
 		// Check for a generic write function
-		if (this.genericOutPortFunc) {
-			this.genericOutPortFunc(port, data);
+		for (const func of this.genericOutPortFuncs) {
+			func(port, data);
 		}
 
 		// Check for specific write function
-		const writefunc=this.outPortMap.get(port);
+		const writefunc = this.outPortMap.get(port);
 		if (writefunc) {
 			writefunc(port, data);
 		}

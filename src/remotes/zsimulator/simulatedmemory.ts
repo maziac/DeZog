@@ -163,11 +163,12 @@ export class SimulatedMemory implements Serializeable {
 			if (slotRange.name)
 				this.slotNames.push({index: i, name: slotRange.name});
 		}
-		this.bankSwitchingContext = {};
 		this.installIoMmuHandlers(ports);
 
 		// Check the ioMmu
+		this.bankSwitchingContext = {};
 		this.checkIoMmu();
+		this.bankSwitchingContext = {};
 
 		// Breakpoints
 		this.clearHit();

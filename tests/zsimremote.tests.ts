@@ -89,6 +89,7 @@ suite('ZSimRemote', () => {
 			};
 			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
+			Utility.setRootPath('/');	// Does not matter but must be set.
 			zsim = new ZSimRemote();
 			// @ts-ignore: protected access
 			zsim.configureMachine(Settings.launch.zsim);
@@ -225,6 +226,7 @@ suite('ZSimRemote', () => {
 			};
 			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
+			Utility.setRootPath('/');	// Does not matter but must be set.
 			zsim = new ZSimRemote();
 			// @ts-ignore
 			zsim.configureMachine(Settings.launch.zsim);

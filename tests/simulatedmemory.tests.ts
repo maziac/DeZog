@@ -1,3 +1,4 @@
+import { Utility } from './../src/misc/utility';
 import * as assert from 'assert';
 import {MemBuffer} from '../src/misc/membuffer';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
@@ -273,6 +274,7 @@ suite('SimulatedMemory', () => {
 		test('no ioMmu', () => {
 			const mm = new MemoryModel({slots: []});
 			const ports = new Z80Ports(0xFF);
+			Utility.setRootPath('/');	// Does not matter but must be set.
 			new SimulatedMemory(mm, ports) as any;	// Should not throw anything
 		});
 
@@ -289,6 +291,7 @@ suite('SimulatedMemory', () => {
 				]
 			});
 			const ports = new Z80Ports(0xFF);
+			Utility.setRootPath('/');	// Does not matter but must be set.
 			new SimulatedMemory(mm, ports) as any;	// Should not throw anything
 		});
 
@@ -306,6 +309,7 @@ suite('SimulatedMemory', () => {
 				]
 			});
 			const ports = new Z80Ports(0xFF);
+			Utility.setRootPath('/');	// Does not matter but must be set.
 			try {
 				new SimulatedMemory(mm, ports) as any;	// Should throw
 				// Should not reach here:
@@ -327,6 +331,7 @@ suite('SimulatedMemory', () => {
 				]
 			});
 			const ports = new Z80Ports(0xFF);
+			Utility.setRootPath('/');	// Does not matter but must be set.
 			try {
 				new SimulatedMemory(mm, ports) as any;	// Should throw
 				// Should not reach here:
