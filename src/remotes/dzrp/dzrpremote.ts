@@ -847,7 +847,7 @@ export class DzrpRemote extends RemoteBase {
 			// Flow through
 
 			default:
-				// Another reason, e.g. manual break
+				// Another reason, e.g. manual break or CPU error
 				condition = '';	// Do a break.
 		}
 

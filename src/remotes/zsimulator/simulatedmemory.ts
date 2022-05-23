@@ -185,10 +185,22 @@ export class SimulatedMemory implements Serializeable {
 	protected installIoMmuHandlers(ports: Z80Ports) {
 		// Install handler
 		ports.registerGenericOutPortFunction((port: number, value: number) => {
+			const prevSlots = [...this.slots];
 			this.setSlotsInContext();
 			// Calculate bank
 			this.evaluateIoMmu(this.memoryModel.ioMmu, port, value);
 			this.getSlotsFromContext();
+			// Check for error
+			try {
+				this.checkSlots();
+			}
+			catch (e) {
+				// Restore previous slots
+				this.slots = [...prevSlots];
+				// Adjust message
+				e.message = "ioMmu: " + e.message;
+				throw e;
+			}
 		});
 	}
 
@@ -209,6 +221,17 @@ export class SimulatedMemory implements Serializeable {
 	protected getSlotsFromContext() {
 		for (const slotName of this.slotNames) {
 			this.slots[slotName.index] = this.bankSwitchingContext[slotName.name];
+		}
+	}
+
+
+	/**
+	 * Checks that all slots are pointing to valid banks.
+	 */
+	protected checkSlots() {
+		for (const bankNr of this.slots) {
+			if (!this.memoryBanks[bankNr])
+				throw Error("Trying to switch to non-existing bank " + bankNr + ".");
 		}
 	}
 
@@ -640,6 +663,8 @@ export class SimulatedMemory implements Serializeable {
 			const rangeStart = this.slotRangesStart[slotIndex];
 			const offs = startAddr64k - rangeStart;
 			const bank = this.memoryBanks[bankNr];
+			if (!bank)
+				break;	// A switch to a non existing bank happened.
 			const rangeSize = this.slotRangesSize[slotIndex];
 			// Copy
 			let sizeOffs = rangeSize - offs;
@@ -675,6 +700,8 @@ export class SimulatedMemory implements Serializeable {
 			const rangeStart = this.slotRangesStart[slotIndex];
 			const offs = startAddr64k - rangeStart;
 			const bank = this.memoryBanks[bankNr];
+			if (!bank)
+				break;	// A switch to a non existing bank happened.
 			const rangeSize = this.slotRangesSize[slotIndex];
 			// Copy
 			let sizeOffs = rangeSize - offs;

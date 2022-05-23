@@ -603,7 +603,7 @@ export class ZSimRemote extends DzrpRemote {
 
 					// Check if some CPU error occurred
 					if (this.z80Cpu.error != undefined) {
-						// E.g. an error in the custom code
+						// E.g. an error in the custom code or in the memory model ioMmu
 						breakNumber = BREAK_REASON_NUMBER.CPU_ERROR;
 						breakReasonString = "CPU error: " + this.z80Cpu.error;
 						break;
