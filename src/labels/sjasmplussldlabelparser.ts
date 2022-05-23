@@ -538,11 +538,10 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				};
 				return;
 			}
-			this.throwError("Could not convert labels to Memory Model: '" + destMemModel.name + "' .");
 		}
 
 		// Check for sjasmplus ZX128K
-		if (srcMemModel == SjasmplusMemoryModel.ZX128K) {
+		else if (srcMemModel == SjasmplusMemoryModel.ZX128K) {
 			// sjasmplus was compiled for ZX128K
 			if (destMemModel instanceof MemoryModelZxNext) {
 				this.funcConvertBank = (address: number, bank: number) => {
@@ -560,11 +559,10 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				};
 				return;
 			}
-			this.throwError("Could not convert labels to Memory Model: '" + destMemModel.name + "' .");
 		}
 
 		// Check for sjasmplus ZXNEXT
-		if (srcMemModel == SjasmplusMemoryModel.ZXNEXT) {
+		else if (srcMemModel == SjasmplusMemoryModel.ZXNEXT) {
 			// sjasmplus was compiled for ZXNEXT
 			if (destMemModel instanceof MemoryModelZxNext) {
 				this.funcConvertBank = (address: number, bank: number) => {
@@ -584,7 +582,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				};
 				return;
 			}
-			this.throwError("Could not convert labels to Memory Model: '" + this.memoryModel.name + "' .");
 		}
 
 		// Not a known memory model conversion
