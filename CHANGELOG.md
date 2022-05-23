@@ -12,6 +12,7 @@
 	- labels parsings
 - "rootFolder" does allow now for 'wrong' capitalization (breakpoint problem)
 - Restart behavior changed because of issue #91. A restart **with a new or changed configuration** will now terminate the current session without restarting.
+- Break decoration color changed to red.
 
 # 2.7.1
 - Fixed disassembly of instructions: INC (IX+n), DEC (IX+n), INC (IY+n) and DEC (IY+n).

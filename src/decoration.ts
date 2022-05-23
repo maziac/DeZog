@@ -161,12 +161,12 @@ export class DecorationClass {
 			gutterIconSize: 'auto',
 			light: {
 				after: {
-					color: "black",
+					color: "#FF4040",
 				}
 			},
 			dark: {
 				after: {
-					color: "#808080",
+					color: "#FF8080",
 				}
 
 			}
