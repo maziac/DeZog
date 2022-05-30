@@ -1,10 +1,9 @@
 # Reverse Engineering with DeZog
 
-DeZog's primary goal is to develop new Z80 SW and debug it.
+Up to version 2.x DeZog's primary goal was to develop **new** Z80 SW and debug it.
 
-But another way to use DeZog is for reverse engineering of existing SW.
+Beginning with version 3 another way to use DeZog is for reverse engineering of existing SW.
 
-The process is shown here with MAME as an example.
 
 When reverse engineering existing SW the whole object code already exists whereas the source code, i.e. the commented assembler sources normally do not exist.
 The goal of reverse engineering is to discover the purpose of the binary code by disassembling and debugging it.
@@ -15,7 +14,14 @@ These commented disassembly is reloaded and taken as source for the further step
 The more of the binary is understood the more complete the list file becomes until at the end hopefully all code is commented and understood.
 
 
+To make it more clear: there are 2 main differences to developing a new program with an assembler.
+- Instead of running the assembler on your .asm file(s) you have to write the reverse engineered assembler file, **a list file**, yourself. DeZog supports you b providing a disassembly of the source code portion that you are currently investigating. This disassembly can be copied to your list file together with comments and renamed labels to make it human readable.
+- While the debug session is running you can re-read the list file and it's labels. I.e. as soon as you have commented the disassembly or renamed labels they are immediately taken into use. This improves the turn-around cycle a lot.
+
+
 # Exemplary Process
+
+The process is shown here with MAME as an example.
 
 This example assumes that MAME is started manually or in a while loop with a ROM (pacman in this case).
 ~~~bash
@@ -70,18 +76,11 @@ Note: The re-load of the list file takes place while the debug session is still 
 
 # Disassembly
 
-The disassembly shows only part of the code.
-I.e. the disassembly around the current PC and also disassembly from the addresses on the call stack.
+The disassembly shows only part of the code: I.e. the disassembly around the current PC and also disassembly from the addresses on the call stack.
 
 If one of these addresses is not associated with a file (either a list file or an asm source) then a disassembly is done.
 
-The disassembly contains only of the addresses where no association to another file exists.
-
-If no address needs to be disassembled then no disassembly takes place.
-However the "old" disassembly file (disasm.list) is not removed.
-It stays but it is shown in _italic_ to visualize that the contents is outdated.
-(Of course, in 99% of the cases the disassembly contents will still be correct. It would be incorrect only if data in the area of the disassembly would have been written or if banking had happened.)
-Anyhow, if the disassembly is shown regularly (not _italic_) you are assured that the disassembly up-to-date.
+The disassembly contains only the addresses where no association to another file exists.
 
 
 # Breakpoints

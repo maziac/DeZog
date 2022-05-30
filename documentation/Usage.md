@@ -37,7 +37,14 @@ Futhermore, if you like to use the [fasmg](https://flatassembler.net) assembler,
 
 ## General Usage
 
-A typical debug session with DeZog looks as follows:
+Beginning with version DeZog 3.0 there are 2 basic usage scenarios:
+- Developing a new assembler program, e.g. a game, or
+- Reverse Engineer an existing machine code program.
+
+
+## Develop a new Program
+
+A typical debug session with DeZog will look like:
 1. Create a binary of your assembler program together with a list or SLD file for DeZog
 2. Start DeZog (therefore you need a working launch.json config file)
 3. Debug, i.e. set breakpoints, run, step through your code, evaluate registers and memory
@@ -68,6 +75,17 @@ I.e. your workflow is as follows:
 7. Loop to 3
 
 You normally need to re-start the emulator only if it behaves weird, does not connect to DeZog anymore or crashes.
+
+
+## Reverse Engineer an Existing Machine Code Program
+
+While reverse engineering you will normally not use an assembler but instead DeZog will provide a disassembly that can be used as a starting point to create a list file manually.
+
+The whole process is described is an own [Reverse Engineering](ReverseEngineeringUsage.md) document.
+
+Reverse engineering can be generally be done with all remotes although for the ZX Spectrum the internal 'zsim' is probably the best choice.
+
+For Z80 arcade games MAME can be used.
 
 
 ## Main Areas
@@ -256,7 +274,7 @@ Depending on your assembler you use a different configuration names:
 - 'z80asm' for the Savannah-z80asm
 - 'z88dk' for z88dk-z80asm
 
-You basically define which listfile is used (or several listfiles) and depending on the assembler you may need to add certain parameters.
+You basically define which listfile is used (or several list files) and depending on the assembler you may need to add certain parameters.
 
 
 #### z80asm vs. z80asm
@@ -1199,16 +1217,16 @@ There is a big difference in using MAME compared to the other emulators:
 Using MAME the program is loaded when starting MAME. I.e. it is not transmitted by DeZog into MAME.
 The primary use case here is not to develop new SW with an assembler but to reverse-engineer old SW.
 
-Please see [Reverse Engineering with DeZog](ReverseEngineeringusage.md).
+Please see [Reverse Engineering with DeZog](ReverseEngineeringUsage.md).
 
 
 #### Memory Banks / Paging
 
 At the moment the MAME gdbstub does not deliver any information about the used memory banks.
 I.e. as soon as there is a memory area that is shared between 2 or more banks DeZog cannot distinguish the addresses anymore.
-You would once the disassembly of bank X and, when it is switched, the disassembly of bank Y for the same addresses.
+You would see once the disassembly of bank X and, when it is switched, the disassembly of bank Y for the same addresses.
 
-So meaningful reverse engineering will work only for systems without memory banks / paging.
+So, meaningful reverse engineering with MAME will work only for systems without memory banks / paging.
 
 
 ## Usage
@@ -1434,7 +1452,7 @@ Caveats:
     - Imagine you have set a watchpoint WPMEM at address 4000h.
 If a byte is written to 4000h, e.g. with "LD (4000h),A" the break will occur, no problem.
 But if a word (i.e. 2 bytes) is written to 4000h like in "LD (4000h),HL" the lower address is not checked. I.e. a break will not happen. Only the upper address is checked. If the word would be written to 3FFFh e.g. with "LD (3FFFh),HL" then a break would happen.
-    - You need to make sure that the debug settings for the memory breakpoints are set to "Settings->Debug->Breakp. behaviour" to "On Change". Otherwise a break will be done on every instructions following the memory access until another different memory access happens.
+    - You need to make sure that the debug settings for the memory breakpoints are set to "Settings->Debug->Breakp. behavior" to "On Change". Otherwise a break will be done on every instructions following the memory access until another different memory access happens.
     But even if set to "On Change" it's problematic. If afterwards another access to the same address happens no break will occur.
 
 Notes:

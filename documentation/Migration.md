@@ -248,7 +248,7 @@ sjasmplus includes special enhancements for DeZog. With the SLD format it is pos
 ~~~
 
 To create such a file you need at least sjasmplus version 1.18.0.
-The commandline is:
+The command line is:
 ~~~
 sjasmplus --sld=your-sld-file.sld --fullpath your-source.asm
 ~~~
