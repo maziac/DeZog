@@ -30,7 +30,7 @@ export interface MemoryBank {	// TODO: use SlotRange instead
 /**
  * For storing the slot ranges.
  */
-interface SlotRange {
+export interface SlotRange {
 	// Z80 start address of slot.
 	start: number;
 

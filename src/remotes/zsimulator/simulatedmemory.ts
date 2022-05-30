@@ -1,6 +1,6 @@
 import {Settings} from './../../settings/settings';
-import {MemBuffer, Serializeable} from '../../misc/membuffer';
-import {BankType, MemoryModel} from '../MemoryModel/memorymodel';
+import {MemBuffer, Serializable} from '../../misc/membuffer';
+import {BankType, MemoryModel, SlotRange} from '../MemoryModel/memorymodel';
 import * as fs from "fs";
 import * as path from 'path';
 import * as intelHex from 'intel-hex';
@@ -41,7 +41,7 @@ interface SlotName {
  * To the outside is does not show any of these slots.
  * But for configuration (what is ROM/RAM) it is required.
  */
-export class SimulatedMemory implements Serializeable {
+export class SimulatedMemory implements Serializable {
 	// Function used to add an error to the diagnostics.
 	public static addDiagnosticsErrorFunc: ((message: string, severity: 'error' | 'warning', filepath: string, line: number, column: number) => void) | undefined;
 
@@ -57,10 +57,14 @@ export class SimulatedMemory implements Serializeable {
 
 	// Derived from this.memoryModel.slotAddress64kAssociation.
 	// Holds only the start address of the slot.
-	protected slotRangesStart: number[];
+	//protected slotRangesStart: number[];
 
 	// Holds only the size of the slot range.
-	protected slotRangesSize: number[];
+	//protected slotRangesSize: number[];
+
+	// Holds all slot ranges.
+	public slotRanges: SlotRange[] = [];
+
 
 	// Holds the slot assignments to the banks.
 	protected slots: number[];
@@ -123,8 +127,9 @@ export class SimulatedMemory implements Serializeable {
 		// Store
 		this.memoryModel = memModel;
 		this.slotAddress64kAssociation = memModel.slotAddress64kAssociation;
-		this.slotRangesStart = memModel.slotRanges.map(slotRange => slotRange.start);
-		this.slotRangesSize = memModel.slotRanges.map(slotRange => slotRange.end + 1 - slotRange.start);
+		//this.slotRangesStart = memModel.slotRanges.map(slotRange => slotRange.start);
+		//this.slotRangesSize = memModel.slotRanges.map(slotRange => slotRange.end + 1 - slotRange.start);
+		this.slotRanges = memModel.slotRanges;
 
 		// Create visual memory
 		this.visualMemory = new Array<number>(1 << (16 - this.VISUAL_MEM_SIZE_SHIFT));	// E.g. 256
@@ -229,9 +234,18 @@ export class SimulatedMemory implements Serializeable {
 	 * Checks that all slots are pointing to valid banks.
 	 */
 	protected checkSlots() {
-		for (const bankNr of this.slots) {
+		const len = this.slots.length;
+		for (let i = 0; i < len; i++) {
+			const bankNr = this.slots[i];
+			// Check if bank exists at all
 			if (!this.memoryBanks[bankNr])
 				throw Error("Trying to switch to non-existing bank " + bankNr + ".");
+			// Check if bank belongs to slot
+			const banks = this.slotRanges[i].banks;
+			if (!banks.has(bankNr)) {
+				const slotName = this.slotRanges[i].name || i.toString;
+				throw Error("Trying to switch to bank " + bankNr + " which is not available for slot " + slotName + ".");
+			}
 		}
 	}
 
@@ -284,7 +298,7 @@ export class SimulatedMemory implements Serializeable {
 			ioMmu = "for (portAddress = 0; portAddress < 0x10000; portAddress++) {\n"
 				+ ioMmu + "}\n";
 			// Run with a timeout of 1000ms.
-			const filename = Utility.getlaunchJsonPath(Utility.getRootPath());
+			const filename = Utility.getLaunchJsonPath(Utility.getRootPath());
 			Utility.runInContext(ioMmu, this.bankSwitchingContext, 1000, filename, -1);
 		}
 		catch (e) {
@@ -481,7 +495,7 @@ export class SimulatedMemory implements Serializeable {
 		// Read
 		const slotIndex = this.slotAddress64kAssociation[addr64k];
 		const bankNr = this.slots[slotIndex];
-		const rangeStart = this.slotRangesStart[slotIndex];
+		const rangeStart = this.slotRanges[slotIndex].start;
 		const offs = addr64k - rangeStart;
 		const value = this.memoryBanks[bankNr][offs];
 
@@ -520,7 +534,7 @@ export class SimulatedMemory implements Serializeable {
 
 		// Don't write if non-writable, e.g. ROM or UNUSED
 		if (this.bankTypes[bankNr] == BankType.RAM) {
-			const rangeStart = this.slotRangesStart[slotIndex];
+			const rangeStart = this.slotRanges[slotIndex].start;
 			const offs = addr64k - rangeStart;
 			// Write
 			this.memoryBanks[bankNr][offs] = val;
@@ -565,7 +579,7 @@ export class SimulatedMemory implements Serializeable {
 			// Read
 			const slotIndex = this.slotAddress64kAssociation[addr64k];
 			const bankNr = this.slots[slotIndex];
-			const rangeStart = this.slotRangesStart[slotIndex];
+			const rangeStart = this.slotRanges[slotIndex].start;
 			const offs = addr64k - rangeStart;
 			const val8 = this.memoryBanks[bankNr][offs];
 			// Store
@@ -660,12 +674,12 @@ export class SimulatedMemory implements Serializeable {
 			// Get start address and bank
 			const slotIndex = this.slotAddress64kAssociation[startAddr64k];
 			const bankNr = this.slots[slotIndex];
-			const rangeStart = this.slotRangesStart[slotIndex];
+			const rangeStart = this.slotRanges[slotIndex].start;
 			const offs = startAddr64k - rangeStart;
 			const bank = this.memoryBanks[bankNr];
 			if (!bank)
 				break;	// A switch to a non existing bank happened.
-			const rangeSize = this.slotRangesSize[slotIndex];
+			const rangeSize = this.slotRanges[slotIndex].end + 1 - rangeStart;
 			// Copy
 			let sizeOffs = rangeSize - offs;
 			if (sizeOffs > size)
@@ -697,12 +711,12 @@ export class SimulatedMemory implements Serializeable {
 			// Get start address and bank
 			const slotIndex = this.slotAddress64kAssociation[startAddr64k];
 			const bankNr = this.slots[slotIndex];
-			const rangeStart = this.slotRangesStart[slotIndex];
+			const rangeStart = this.slotRanges[slotIndex].start;
 			const offs = startAddr64k - rangeStart;
 			const bank = this.memoryBanks[bankNr];
 			if (!bank)
 				break;	// A switch to a non existing bank happened.
-			const rangeSize = this.slotRangesSize[slotIndex];
+			const rangeSize = this.slotRanges[slotIndex].end + 1 - rangeStart;
 			// Copy
 			let sizeOffs = rangeSize - offs;
 			if (sizeOffs > size)

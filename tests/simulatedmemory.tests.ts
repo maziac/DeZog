@@ -341,6 +341,115 @@ suite('SimulatedMemory', () => {
 				assert.ok(e.message.includes("port address"));
 			}
 		});
+
+
+		test('correct indexed slot', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						"range": [0x0000, 0x3FFF],
+						"banks": [{"index": [0, 4]}]
+					},
+					{
+						"range": [0x4000, 0xFFFF],
+						"banks": [{"index": [5, 10]}]
+					},
+
+
+				],
+				ioMmu: [
+					"slots[0] = 3;",
+					"slots[1] = 7;"
+				]
+			});
+			const ports = new Z80Ports(0xFF);
+			Utility.setRootPath('/');	// Does not matter but must be set.
+			const mem = new SimulatedMemory(mm, ports) as any;
+			mem.checkIoMmu();	// Should not throw anything
+		});
 	});
+
+
+
+	suite('checkSlots', () => {
+		test('correct bank', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						"range": [0x0000, 0x3FFF],
+						"banks": [{"index": [0, 4]}]
+					},
+					{
+						"range": [0x4000, 0xFFFF],
+						"banks": [{"index": [5, 10]}]
+					},
+
+
+				]
+			});
+			const ports = new Z80Ports(0xFF);
+			Utility.setRootPath('/');	// Does not matter but must be set.
+			const mem = new SimulatedMemory(mm, ports) as any;
+
+			// Set correct slots
+			mem.slots[0] = 0;
+			mem.slots[1] = 10;
+			mem.checkSlots();	// Should not throw
+		});
+
+
+		test('wrong bank', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						"range": [0x0000, 0x3FFF],
+						"banks": [{"index": [0, 4]}]
+					},
+					{
+						"range": [0x4000, 0xFFFF],
+						"banks": [{"index": [5, 10]}]
+					},
+
+
+				]
+			});
+			const ports = new Z80Ports(0xFF);
+			Utility.setRootPath('/');	// Does not matter but must be set.
+			const mem = new SimulatedMemory(mm, ports) as any;
+
+			// Set incorrect slot
+			mem.slots[1] = 11;
+			assert.throws(() => {
+				mem.checkSlots();
+			});
+		});
+
+
+		test('wrong bank for slot', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						"range": [0x0000, 0x3FFF],
+						"banks": [{"index": [0, 4]}]
+					},
+					{
+						"range": [0x4000, 0xFFFF],
+						"banks": [{"index": [5, 10]}]
+					},
+
+
+				]
+			});
+			const ports = new Z80Ports(0xFF);
+			Utility.setRootPath('/');	// Does not matter but must be set.
+			const mem = new SimulatedMemory(mm, ports) as any;
+
+			// Set incorrect slot
+			mem.slots[1] = 4;
+			assert.throws(() => {
+				mem.checkSlots();
+			});
+		});
+	})
 });
 

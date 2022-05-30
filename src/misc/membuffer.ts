@@ -2,7 +2,7 @@
 /**
  *
  */
-export interface Serializeable {
+export interface Serializable {
 
 	/**
 	 * Returns the size the serialized object would consume.
