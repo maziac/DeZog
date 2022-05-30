@@ -1,13 +1,13 @@
 import {Z80Ports} from './z80ports';
 import {Z80RegistersClass} from '../z80registers';
-import {MemBuffer, Serializeable} from '../../misc/membuffer'
+import {MemBuffer, Serializable} from '../../misc/membuffer'
 import {Settings} from '../../settings/settings';
 import * as Z80 from '../../3rdparty/z80.js/Z80.js';
 import {SimulatedMemory} from './simulatedmemory';
 
 
 
-export class Z80Cpu implements Serializeable {
+export class Z80Cpu implements Serializable {
 	// Pointer to the Z80.js (Z80.ts) simulator
 	protected z80: any;
 

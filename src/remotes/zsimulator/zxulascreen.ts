@@ -1,5 +1,5 @@
 
-import {Serializeable, MemBuffer} from "../../misc/membuffer";
+import {Serializable, MemBuffer} from "../../misc/membuffer";
 import {MemoryModel} from "../MemoryModel/memorymodel";
 import {MemoryModelZxNext} from "../MemoryModel/predefinedmemorymodels";
 import {Z80Ports} from "./z80ports";
@@ -8,7 +8,7 @@ import {Z80Ports} from "./z80ports";
 /**
  * Holds the bank used for the ULA screen and does the bank switching.
  */
-export class ZxUlaScreen implements Serializeable {
+export class ZxUlaScreen implements Serializable {
 	// The bank used to show. ZX16K/48K bank 1. Others: (i.e. ZX128K) bank 5 or 7.
 	public currentUlaBank: number;
 

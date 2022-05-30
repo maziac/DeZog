@@ -2,7 +2,7 @@ import {EventEmitter} from 'events';
 import {LogCustomCode} from '../../log';
 import {Utility} from '../../misc/utility';
 import {readFileSync} from 'fs';
-import {MemBuffer, Serializeable} from '../../misc/membuffer';
+import {MemBuffer, Serializable} from '../../misc/membuffer';
 
 
 
@@ -134,7 +134,7 @@ export class CustomCodeAPI extends EventEmitter {
  * And it also received messages from the ZSimulationview and
  * as well can send messages to the ZSimulationView.
  */
-export class CustomCode extends EventEmitter implements Serializeable {
+export class CustomCode extends EventEmitter implements Serializable {
 
 	// Function used to add an error to the diagnostics.
 	public static addDiagnosticsErrorFunc: ((message: string, severity: 'error' | 'warning', filepath: string, line: number, column: number) => void) | undefined;

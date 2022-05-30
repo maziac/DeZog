@@ -1,5 +1,5 @@
 import {Log} from "../../log";
-import {Serializeable, MemBuffer} from "../../misc/membuffer";
+import {Serializable, MemBuffer} from "../../misc/membuffer";
 
 /**
  * The buffer exchanged with the zsim simulator webview.
@@ -16,7 +16,7 @@ export interface BeeperBuffer {
 /**
  * ZX beeper audio simulation.
  */
-export class ZxBeeper implements Serializeable {
+export class ZxBeeper implements Serializable {
 
 	// Stores the last set beeper value.
 	protected lastBeeperValue = true;

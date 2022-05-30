@@ -248,7 +248,7 @@ export class RootTestSuite extends UnitTestSuite {
 			const wsFolder = ws.uri.fsPath;
 
 			// The test id is at the same time the file name (if test item is a file)
-			const filePath = Utility.getlaunchJsonPath(wsFolder);
+			const filePath = Utility.getLaunchJsonPath(wsFolder);
 			const fileWatcher = new FileWatcher(filePath);
 			this.wsFwMap.set(wsFolder, fileWatcher)!;
 			let wsSuite: UnitTestSuiteLaunchJson;
@@ -311,7 +311,7 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 	 */
 
 	constructor(wsFolder: string, label: string) {
-		super(Utility.getlaunchJsonPath(wsFolder), label, undefined as any, Utility.getlaunchJsonPath(wsFolder));
+		super(Utility.getLaunchJsonPath(wsFolder), label, undefined as any, Utility.getLaunchJsonPath(wsFolder));
 		this.testItem.description = 'workspace';
 		this.wsFolder = wsFolder;
 		this.fileChanged();
@@ -414,7 +414,7 @@ export class UnitTestSuiteConfig extends UnitTestSuite {
 	 * @param config launch.json configuration.
 	 */
 	constructor(wsFolder: string, config: any) {
-		super(wsFolder + '#' + config.name, config.name, undefined as any, Utility.getlaunchJsonPath(wsFolder));
+		super(wsFolder + '#' + config.name, config.name, undefined as any, Utility.getLaunchJsonPath(wsFolder));
 		this.testItem.description = 'config';
 		this.wsFolder = wsFolder;
 		this.config = Settings.Init(config);

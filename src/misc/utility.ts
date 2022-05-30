@@ -1434,7 +1434,7 @@ export class Utility {
 	 * @param wsFolder Path to the workspace folder.
 	 * @returns The complete path, adding '.vscode/launch.json'.
 	 */
-	public static getlaunchJsonPath(wsFolder: string): string {
+	public static getLaunchJsonPath(wsFolder: string): string {
 		return UnifiedPath.join(wsFolder, '.vscode', 'launch.json');
 	}
 
