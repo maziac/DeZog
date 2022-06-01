@@ -333,17 +333,12 @@ export class DebugSessionClass extends DebugSession {
 	 * socket has been disconnected.
 	 */
 	protected async terminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments): Promise<void> {
-		console.log('terminateRequest');
-		// Send response
-		this.sendResponse(response);
-
-		await Utility.timeout(1000);
-
+		console.log('terminateRequest');	// TODO: REMOVE
 		// Disconnect Remote etc.
 		await this.disconnectAll();
 
 		// Send response after disconnect
-		//this.sendResponse(response);
+		this.sendResponse(response);
 		// When all is done proceed to disconnectRequest
 		this.sendEvent(new TerminatedEvent());
 	}
@@ -358,7 +353,7 @@ export class DebugSessionClass extends DebugSession {
 	 * - If user presses circled arrow/restart
 	 */
 	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, _args: DebugProtocol.DisconnectArguments): Promise<void> {
-		console.log('disconnectRequest');
+		console.log('disconnectRequest');	// TODO: REMOVE
 		// Disconnect Remote etc.
 		await this.disconnectAll();	// Just in case ... Should have been done already in terminateRequest
 		// Send response
@@ -374,10 +369,12 @@ export class DebugSessionClass extends DebugSession {
 	 * - when the ZEsarUX socket connection is terminated
 	 */
 	protected async disconnectAll(): Promise<void> {
+		console.log('disconnectAll, this.running=', this.running);	// TODO: REMOVE
 		// Test if running
 		if (!this.running)
 			return;
 		this.running = false;
+		console.log('disconnectAll started');	// TODO: REMOVE
 
 		try {
 			// Close views, e.g. register memory view
@@ -386,13 +383,13 @@ export class DebugSessionClass extends DebugSession {
 			// Stop machine
 			this.removeAllListeners();	// Don't react on events anymore
 			// Disconnect
-			if (Remote)
+			if (Remote) {
+				Remote.removeAllListeners();
 				await Remote.disconnect();
-
-			//await Utility.timeout(2500);
-
+			}
 		}
-		catch(e) {
+		catch (e) {
+			// In case of a disconnect failure.
 			console.log('exception', e);
 		}
 
@@ -427,11 +424,12 @@ export class DebugSessionClass extends DebugSession {
 				Decoration?.clearAllDecorations();
 			}
 			this.state = DbgAdapterState.NORMAL;
-			this.running = false;	// The onDidTerminat
+			this.running = false;
 		}
 		catch(e) {
 			console.log('exception', e);
 		}
+		console.log('disconnectAll ended');	// TODO: REMOVE
 	}
 
 
@@ -524,6 +522,7 @@ export class DebugSessionClass extends DebugSession {
 	protected scopes: Array<Scope>;
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 		try {
+			console.log('launchRequest');	// TODO: REMOVE
 			this.running = true;
 
 			// Clear any diagnostics

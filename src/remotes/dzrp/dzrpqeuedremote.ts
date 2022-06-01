@@ -149,15 +149,21 @@ export class DzrpQeuedRemote extends DzrpRemote {
 			await this.sendBuffer(msg.buffer);
 			// If no response timeout is set/i.e. no response is expected,
 			// then resolve is called immediately.
-			if (this.cmdRespTimeoutTime == 0)
+			if (this.cmdRespTimeoutTime == 0) {
+				// Queue next message
+				this.messageQueue.shift();
+				this.sendNextMessage();
 				msg.resolve([]);
+			}
 		}
 		catch (error) {
 			LogTransport.log("SENT ERROR.");
 			console.log("SENT ERROR.");
-			this.emit('error', error);
-			// Error already reported. Treat normally:
-			msg.resolve([]);
+			msg.reject(error);
+			// Error will be reported by emit. Treat normally:
+		//	msg.resolve([]);
+			// Emit
+		//	this.emit('error', error);
 		}
 	}
 

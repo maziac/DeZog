@@ -27,9 +27,6 @@ export class MameRemote extends DzrpQeuedRemote {
 	// The socket connection.
 	public socket: Socket;
 
-	// Set to true if disconnecting. Used to suppress errors.
-	public socketDisconnecting: boolean;
-
 	// Timeout between sending command and receiving response.
 	protected cmdRespTimeout?: NodeJS.Timeout;
 
@@ -57,7 +54,6 @@ export class MameRemote extends DzrpQeuedRemote {
 		// Init socket
 		this.socket = new Socket();
 		this.socket.unref();
-		this.socketDisconnecting = false;
 
 		// React on-open
 		this.socket.on('connect', async () => {
@@ -76,29 +72,23 @@ export class MameRemote extends DzrpQeuedRemote {
 		// Handle disconnect
 		this.socket.on('close', hadError => {
 			//console.log('Close.');
-			if (!this.socketDisconnecting) {
-				LogTransport.log('MameRemote: MAME terminated the connection: ' + hadError);
-				// Error
-				const err = new Error('MameRemote: MAME terminated the connection!');
-				this.emit('error', err);
-			}
+			LogTransport.log('MameRemote: MAME terminated the connection: ' + hadError);
+			// Error
+			const err = new Error('MameRemote: MAME terminated the connection!');
+			this.emit('error', err);
 		});
 
 		// Handle errors
 		this.socket.on('error', err => {
 			//console.log('Error: ', err);
-			if (!this.socketDisconnecting) {
-				LogTransport.log('MameRemote: Error: ' + err);
-				// Error
-				this.emit('error', err);
-			}
+			LogTransport.log('MameRemote: Error: ' + err);
+			// Error
+			this.emit('error', err);
 		});
 
 		// Receive data
 		this.socket.on('data', data => {
-			if (!this.socketDisconnecting) {
-				this.dataReceived(data.toString());
-			}
+			this.dataReceived(data.toString());
 		});
 
 		// Start socket connection
@@ -158,14 +148,15 @@ export class MameRemote extends DzrpQeuedRemote {
 		this.socket.removeAllListeners();
 
 		// Send a k(ill) command
-		this.socketDisconnecting = true;
 		// TODO: Remove once MAME issue 9578 (https://github.com/mamedev/mame/issues/9578) 	is clarified:
 		this.cmdRespTimeoutTime = 0;	// No response expected for kill command.
+		this.socket.removeAllListeners();
 		try {
 			await this.sendPacketData('k');	// REMOVE with kill command
 		}
 		catch (e) {
-			console.log('exception', e);
+			// E.g. if socket could not be connected.
+			//console.log('exception', e);
 		}
 
 		return new Promise<void>(resolve => {
@@ -464,17 +455,12 @@ export class MameRemote extends DzrpQeuedRemote {
 	 */
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
-			try {
-				this.socket.write(buffer, err => {
-					if (err)
-						reject(err);
-					else
-						resolve();
-				});
-			}
-			catch (e) {
-				reject(e);
-			}
+			this.socket.write(buffer, err => {
+				if (err)
+					reject(err);
+				else
+					resolve();
+			});
 		});
 	}
 
