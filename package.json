@@ -546,6 +546,25 @@
 									}
 								}
 							},
+							"mame": {
+								"description": "The configuration for debugging with the mame gdbstub.",
+								"type": "object",
+								"properties": {
+									"hostname": {
+										"type": "string",
+										"description": "The hostname/IP address of the MAME socket.",
+										"default": "localhost"
+									},
+									"port": {
+										"type": "number",
+										"description": "The port of the CSpect socket."
+									},
+									"socketTimeout": {
+										"type": "number",
+										"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
+									}
+								}
+							},
 							"unitTests": {
 								"description": "Whether the configuration contains the unit tests or not. Default: false.",
 								"type": "boolean"
@@ -649,6 +668,22 @@
 											"type": "string",
 											"description": "Is required only for z88dk. The map file is required to correctly parse the label values and to get correct file/line to address associations.",
 											"default": 0
+										}
+									}
+								}
+							},
+							"revEng": {
+								"description": "List here all manually edited list files.",
+								"type": "array",
+								"items": {
+									"type": "object",
+									"required": [
+										"path"
+									],
+									"properties": {
+										"path": {
+											"type": "string",
+											"description": "Path to the .list file."
 										}
 									}
 								}
