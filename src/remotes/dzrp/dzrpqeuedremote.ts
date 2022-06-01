@@ -80,19 +80,21 @@ export class DzrpQeuedRemote extends DzrpRemote {
 	 */
 	protected startCmdRespTimeout(respTimeoutTime: number) {
 		this.stopCmdRespTimeout();
-		this.cmdRespTimeout = setTimeout(() => {
-			this.stopCmdRespTimeout();
-			const err = new Error('No response received from remote.');
-			// Log
-			LogTransport.log('Warning: ' + err.message);
-			// Show warning
-			this.emit('warning', err.message);
-			// Remove message / Queue next message
-			const msg = this.messageQueue.shift()!;
-			this.sendNextMessage();
-			// Pass error data to right consumer
-			msg.reject(err);
-		}, respTimeoutTime);
+		if (respTimeoutTime > 0) {
+			this.cmdRespTimeout = setTimeout(() => {
+				this.stopCmdRespTimeout();
+				const err = new Error('No response received from remote.');
+				// Log
+				LogTransport.log('Warning: ' + err.message);
+				// Show warning
+				this.emit('warning', err.message);
+				// Remove message / Queue next message
+				const msg = this.messageQueue.shift()!;
+				this.sendNextMessage();
+				// Pass error data to right consumer
+				msg.reject(err);
+			}, respTimeoutTime);
+		}
 	}
 
 
@@ -116,17 +118,6 @@ export class DzrpQeuedRemote extends DzrpRemote {
 	 * @returns A Promise. The resolve/reject functions are stored in the messageQueue.
 	 */
 	protected putIntoQueue(buffer: Buffer, respTimeoutTime: number, resolve: (buffer) => void, reject: (error) => void): MessageBuffer {
-
-		// TODO: REMOVE
-		/*
-		const l = this.messageQueue.length;
-		if (l > 0) {
-			const prevMsg = this.messageQueue[l - 1];
-			if (prevMsg[5] == DZRP.CMD_CONTINUE)
-				console.log();
-		}
-		*/
-
 		// Create new buffer entry
 		const entry = new MessageBuffer();
 		entry.buffer = buffer;
@@ -156,11 +147,17 @@ export class DzrpQeuedRemote extends DzrpRemote {
 		try {
 			this.startCmdRespTimeout(msg.respTimeoutTime);
 			await this.sendBuffer(msg.buffer);
+			// If no response timeout is set/i.e. no response is expected,
+			// then resolve is called immediately.
+			if (this.cmdRespTimeoutTime == 0)
+				msg.resolve([]);
 		}
 		catch (error) {
 			LogTransport.log("SENT ERROR.");
 			console.log("SENT ERROR.");
 			this.emit('error', error);
+			// Error already reported. Treat normally:
+			msg.resolve([]);
 		}
 	}
 

@@ -160,12 +160,19 @@ export class MameRemote extends DzrpQeuedRemote {
 		// Send a k(ill) command
 		this.socketDisconnecting = true;
 		// TODO: Remove once MAME issue 9578 (https://github.com/mamedev/mame/issues/9578) 	is clarified:
-		this.stopCmdRespTimeout();
-		await this.sendPacketData('k');	// REMOVE with kill command
+		this.cmdRespTimeoutTime = 0;	// No response expected for kill command.
+		try {
+			await this.sendPacketData('k');	// REMOVE with kill command
+		}
+		catch (e) {
+			console.log('exception', e);
+		}
 
 		return new Promise<void>(resolve => {
-			if (!this.socket)
+			if (!this.socket) {
+				resolve();
 				return;
+			}
 			// Timeout is required because socket.end() does not call the
 			// callback if it is already closed and the state cannot
 			// reliable be determined.
@@ -174,10 +181,10 @@ export class MameRemote extends DzrpQeuedRemote {
 					resolve();
 				}
 			}, 1000);	// 1 sec
-			this.socket?.end(() => {
+			this.socket.end(() => {
 				if (resolve) {
-					resolve();
 					clearTimeout(timeout);
+					resolve();
 				}
 			});
 			this.socket = undefined as any;
@@ -256,7 +263,7 @@ export class MameRemote extends DzrpQeuedRemote {
 
 			// For some commands (c, s) the '+' is treated as response
 			// and the actual stop reply as a notification.
-			// I.e. the 'c'(ontinue) command will return after the '+ is received.
+			// I.e. the 'c'(ontinue) command will return after the '+' is received.
 			const msg = this.messageQueue[0];
 			if (msg?.customData.noReply) {
 				// E.g. c(ontinue)
@@ -456,10 +463,18 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * Writes the buffer to the socket.
 	 */
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
-		return new Promise<void>(resolve => {
-			this.socket.write(buffer, () => {
-				resolve();
-			});
+		return new Promise<void>((resolve, reject) => {
+			try {
+				this.socket.write(buffer, err => {
+					if (err)
+						reject(err);
+					else
+						resolve();
+				});
+			}
+			catch (e) {
+				reject(e);
+			}
 		});
 	}
 

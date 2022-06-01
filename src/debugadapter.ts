@@ -158,6 +158,7 @@ export class DebugSessionClass extends DebugSession {
 		// Init line numbering
 		this.setDebuggerLinesStartAt1(false);
 		this.setDebuggerColumnsStartAt1(false);
+		/*
 		// Register for start/stop events
 		vscode.debug.onDidStartDebugSession(session => {
 			// Check if started
@@ -171,7 +172,7 @@ export class DebugSessionClass extends DebugSession {
 			if (session.configuration.type == 'dezog')
 				this.running = false;
 		});
-
+		*/
 		vscode.debug.onDidChangeActiveDebugSession(dbgSession => {
 			if (dbgSession?.configuration.type == 'dezog') {
 				vscode.debug.activeDebugConsole.append(this.debugConsoleSavedText);
@@ -324,6 +325,31 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
+	 * The terminateRequest is sent before the disconnectRequest to allow the debugger
+	 * to terminate grace fully.
+	 * After 2 secs vscode will show a notification that termination was not successfully.
+	 * If the user presses the stop again the next time the disconnectRequest is called.
+	 * The debugger has to send the terminateEvent for proper handling after e.g. the
+	 * socket has been disconnected.
+	 */
+	protected async terminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments): Promise<void> {
+		console.log('terminateRequest');
+		// Send response
+		this.sendResponse(response);
+
+		await Utility.timeout(1000);
+
+		// Disconnect Remote etc.
+		await this.disconnectAll();
+
+		// Send response after disconnect
+		//this.sendResponse(response);
+		// When all is done proceed to disconnectRequest
+		this.sendEvent(new TerminatedEvent());
+	}
+
+
+	/**
 	 * DebugAdapter disconnects.
 	 * End forcefully.
 	 * Is called
@@ -332,8 +358,9 @@ export class DebugSessionClass extends DebugSession {
 	 * - If user presses circled arrow/restart
 	 */
 	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, _args: DebugProtocol.DisconnectArguments): Promise<void> {
+		console.log('disconnectRequest');
 		// Disconnect Remote etc.
-		await this.disconnectAll();
+		await this.disconnectAll();	// Just in case ... Should have been done already in terminateRequest
 		// Send response
 		this.sendResponse(response);
 	}
@@ -347,44 +374,64 @@ export class DebugSessionClass extends DebugSession {
 	 * - when the ZEsarUX socket connection is terminated
 	 */
 	protected async disconnectAll(): Promise<void> {
-		// Close views, e.g. register memory view
-		BaseView.staticCloseAll();
-		this.removeListener('update', BaseView.staticCallUpdateFunctions);
-		// Stop machine
-		this.removeAllListeners();	// Don't react on events anymore
-		// Disconnect
-		if (Remote)
-			await Remote.disconnect();
-		// Clear the history instance
-		CpuHistoryClass.removeCpuHistory();
-		// Clear Remote
-		RemoteFactory.removeRemote(); // Also disposes
-		// Disassembly: Remove all breakpoints
-		const disasmBps = this.getDisassemblyBreakpoints();
-		// Remove BPs temporary
-		const removeBps = disasmBps.map(sbpAddr => sbpAddr.sbp);
-		vscode.debug.removeBreakpoints(removeBps);
-		/*
-		// Remove disassembly text editor. vscode does not support closing directly, thus this hack:
-		if (this.disasmTextDoc) {	// TODO: Maybe I should leave it open.
-			vscode.window.showTextDocument(this.disasmTextDoc.uri, {preview: true, preserveFocus: false})
-				.then(() => {
-					return vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-				});
-		}
-		*/
+		// Test if running
+		if (!this.running)
+			return;
+		this.running = false;
 
-		// Clear all decorations
-		if (this.state == DbgAdapterState.UNITTEST) {
-			// Cancel unit tests
-			await Z80UnitTestRunner.cancelUnitTests();
-			// Clear decoration
-			Decoration?.clearAllButCodeCoverageDecorations();
+		try {
+			// Close views, e.g. register memory view
+			BaseView.staticCloseAll();
+			this.removeListener('update', BaseView.staticCallUpdateFunctions);
+			// Stop machine
+			this.removeAllListeners();	// Don't react on events anymore
+			// Disconnect
+			if (Remote)
+				await Remote.disconnect();
+
+			//await Utility.timeout(2500);
+
 		}
-		else {
-			Decoration?.clearAllDecorations();
+		catch(e) {
+			console.log('exception', e);
 		}
-		this.state = DbgAdapterState.NORMAL;
+
+		try {
+			// Clear the history instance
+			CpuHistoryClass.removeCpuHistory();
+			// Clear Remote
+			RemoteFactory.removeRemote(); // Also disposes
+			// Disassembly: Remove all breakpoints
+			const disasmBps = this.getDisassemblyBreakpoints();
+			// Remove BPs temporary
+			const removeBps = disasmBps.map(sbpAddr => sbpAddr.sbp);
+			vscode.debug.removeBreakpoints(removeBps);
+			/*
+			// Remove disassembly text editor. vscode does not support closing directly, thus this hack:
+			if (this.disasmTextDoc) {	// TODO: Maybe I should leave it open.
+				vscode.window.showTextDocument(this.disasmTextDoc.uri, {preview: true, preserveFocus: false})
+					.then(() => {
+						return vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+					});
+			}
+			*/
+
+			// Clear all decorations
+			if (this.state == DbgAdapterState.UNITTEST) {
+				// Cancel unit tests
+				await Z80UnitTestRunner.cancelUnitTests();
+				// Clear decoration
+				Decoration?.clearAllButCodeCoverageDecorations();
+			}
+			else {
+				Decoration?.clearAllDecorations();
+			}
+			this.state = DbgAdapterState.NORMAL;
+			this.running = false;	// The onDidTerminat
+		}
+		catch(e) {
+			console.log('exception', e);
+		}
 	}
 
 
@@ -395,7 +442,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async initializeRequest(response: DebugProtocol.InitializeResponse, _args: DebugProtocol.InitializeRequestArguments): Promise<void> {
 
 		// Check if DeZog is already running
-		if (!response.success) {
+		if (!response.success) {	// TODO: Remove this
 			response.success = false;
 			response.message = 'DeZog is already active. Only 1 instance is allowed.';
 			this.sendResponse(response);
@@ -412,8 +459,11 @@ export class DebugSessionClass extends DebugSession {
 		// Is done in launchRequest:
 		//response.body.supportsStepBack = true;
 
-		// Maybe terminated on error
-		response.body.supportTerminateDebuggee = true;
+		//response.body.supportTerminateDebuggee = true;
+		response.body.supportTerminateDebuggee = false;
+
+		// Get terminateRequest before disconnectRequest
+		response.body.supportsTerminateRequest = true;
 
 		// The PC value might be changed.
 		//response.body.supportsGotoTargetsRequest = true;
@@ -474,6 +524,8 @@ export class DebugSessionClass extends DebugSession {
 	protected scopes: Array<Scope>;
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 		try {
+			this.running = true;
+
 			// Clear any diagnostics
 			DiagnosticsHandler.clear();
 
@@ -3716,11 +3768,6 @@ E.g. use "-help -view" to put the help text in an own view.
 		this.sendEvent(new StoppedEvent('restore', DebugSessionClass.THREAD_ID));
 	}
 
-
-	/*
-	protected async terminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments): Promise<void> {
-	}
-	*/
 
 	/**
 	 * Output indented text to the console.
