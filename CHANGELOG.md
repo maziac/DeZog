@@ -1,6 +1,6 @@
 # Changelog
 
-# 2.8.0
+# 3.0.0
 - Better reverse engineering support
 	- Improved disassembly
 	- Reload list file during debug session
