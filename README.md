@@ -133,7 +133,7 @@ For more demanding projects you have the choice to install a real emulator.
 
 These are the options:
 
-- the [CSpect](http://www.cspect.org) emulator (known to be interoperable with DeZog: version 2.15.2)
+- the [CSpect](http://www.cspect.org) emulator (known to be interoperable with DeZog: version 2.16.5)
 - the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable with DeZog: version 10.0)
 - [MAME](https://www.mamedev.org/release.html) (experimental)
 
@@ -224,8 +224,8 @@ I would like to thank a few people for their support
 - [Molly Howell/DrGoldfire](https://bitbucket.org/DrGoldfire/z80.js/src/master/) for the Z80 CPU simulation code.
 - [Kris Borowinski](https://github.com/kborowinski) for his tireless efforts testing DeZog.
 - [Peter Ped Helcmanovsky](https://github.com/ped7g) for his support to get the display of the relative-sprites correct and for the changes he implemented for DeZog in sjasmplus in the SLD format.
-- Cesar Wagener Moriana, [Dean Belfield](https://github.com/breakintoprogram), [Daren May](https://github.com/darenm) and [Patricia Curtis](https://luckyredfish.com/who-am-i/) for writing tutorials.
-- [Luciano Martorella](https://github.com/lmartorella) for his contribution of the 'ZX16K' memory model.
+- Cesar Wagener Moriana, [Dean Belfield](https://github.com/breakintoprogram), [Daren May](https://github.com/darenm), [Patricia Curtis](https://luckyredfish.com/who-am-i/) and [A MAN IN HIS TECHNO SHED](https://amaninhistechnoshed.com/a-man-in-his-technoshed/) for writing tutorials.
+- [Luciano Martorella](https://github.com/lmartorella) for his contribution of the custom memory model.
 
 
 # Tutorials
@@ -241,7 +241,7 @@ The tutorials that I'm aware of are listed here by date.
 
 Date: Apr-2022, DeZog 2.7, ZX Next
 
-The most recent and only tutorial[tutorial](https://amaninhistechnoshed.com/a-man-in-his-technoshed/coding) for DeZog 2.x by [A MAN IN HIS TECHNO SHED](https://amaninhistechnoshed.com/a-man-in-his-technoshed/).
+The most recent and only tutorial[tutorial](https://amaninhistechnoshed.com/a-man-in-his-technoshed/coding) for DeZog 2.x, by [A MAN IN HIS TECHNO SHED](https://amaninhistechnoshed.com/a-man-in-his-technoshed/).
 It shows debugging with a ZX Next and DeZog.
 
 
