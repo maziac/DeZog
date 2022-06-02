@@ -242,7 +242,7 @@ I listed the tutorials here by date.
 
 Date: Apr-2022, DeZog 2.7, ZX Next
 
-The most recent [tutorial](https://amaninhistechnoshed.com/a-man-in-his-technoshed/coding) b [A MAN IN HIS TECHNO SHED](https://amaninhistechnoshed.com/a-man-in-his-technoshed/).
+The most recent [tutorial](https://amaninhistechnoshed.com/a-man-in-his-technoshed/coding) by [A MAN IN HIS TECHNO SHED](https://amaninhistechnoshed.com/a-man-in-his-technoshed/).
 It shows debugging with a ZX Next and DeZog.
 
 
