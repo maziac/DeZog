@@ -559,6 +559,7 @@ export class RemoteBase extends EventEmitter {
 	 * Very much like 'terminate' but does not send the 'terminated' event.
 	 */
 	public async disconnect(): Promise<void> {
+		this.removeAllListeners('error');
 		// please override.
 	}
 

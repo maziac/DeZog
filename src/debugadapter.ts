@@ -384,7 +384,6 @@ export class DebugSessionClass extends DebugSession {
 			this.removeAllListeners();	// Don't react on events anymore
 			// Disconnect
 			if (Remote) {
-				Remote.removeAllListeners();
 				await Remote.disconnect();
 			}
 		}

@@ -143,6 +143,7 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * Called e.g. when vscode sends a disconnectRequest
 	 */
 	public async disconnect(): Promise<void> {
+		await super.disconnect();
 		if (!this.socket)
 			return;
 		this.socket.removeAllListeners();

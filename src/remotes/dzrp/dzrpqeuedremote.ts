@@ -62,6 +62,7 @@ export class DzrpQeuedRemote extends DzrpRemote {
 	 * Called e.g. when vscode sends a disconnectRequest
 	 */
 	public async disconnect(): Promise<void> {
+		await super.disconnect();
 		try {
 			await this.sendDzrpCmdClose();
 		}

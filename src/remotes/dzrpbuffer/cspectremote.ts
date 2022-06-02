@@ -89,6 +89,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	 * This will disconnect the socket.
 	 */
 	public async disconnect(): Promise<void> {
+		await super.disconnect();
 		if (!this.socket)
 			return;
 

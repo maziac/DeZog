@@ -142,6 +142,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	 * This will disconnect the serial.
 	 */
 	public async disconnect(): Promise<void> {
+		await super.disconnect();
 		return new Promise<void>(async resolve => {
 			if (!this.serialPort) {
 				resolve();

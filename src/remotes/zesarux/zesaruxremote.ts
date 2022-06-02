@@ -93,6 +93,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
+		await super.disconnect();
 		if (!zSocket)
 			return;
 		return new Promise<void>(resolve => {

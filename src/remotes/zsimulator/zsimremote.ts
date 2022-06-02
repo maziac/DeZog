@@ -404,6 +404,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
+		await super.disconnect();
 		// Stop running cpu
 		this.stopCpu = true;
 		this.emit('closed')
