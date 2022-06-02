@@ -233,16 +233,15 @@ I would like to thank a few people for their support
 Please note that the tutorials listed here are normally not updated when a new DeZog version arrives.
 Especially for changes in the 'launch.json' it might happen that some properties (names) have changed/removed/added.
 
-Unfortunately all tutorials are a little bit outdated, i.e. there is none for Dezog v2.x yet only for the former 1.x versions. **Any contributions are very welcome.**
+If you are writing a tutorial please let me know, I'm happy to list it here. **Any contributions are very welcome.**
 
-I listed the tutorials here by date.
-
+The tutorials that I'm aware of are listed here by date.
 
 ## A Man in his Techno Shed
 
 Date: Apr-2022, DeZog 2.7, ZX Next
 
-The most recent [tutorial](https://amaninhistechnoshed.com/a-man-in-his-technoshed/coding) by [A MAN IN HIS TECHNO SHED](https://amaninhistechnoshed.com/a-man-in-his-technoshed/).
+The most recent and only tutorial[tutorial](https://amaninhistechnoshed.com/a-man-in-his-technoshed/coding) for DeZog 2.x by [A MAN IN HIS TECHNO SHED](https://amaninhistechnoshed.com/a-man-in-his-technoshed/).
 It shows debugging with a ZX Next and DeZog.
 
 
