@@ -20,7 +20,7 @@ This was all done to allow reverse engineering together with bank switching.
 
 As this is a new feature you don't have to adjust any of your programs.
 
-Please read about it in the [ReverseEngineeringUsage.md](ReverseEngineeringUsage.md'.
+Please read about it in the [ReverseEngineeringUsage.md](ReverseEngineeringUsage.md).
 
 
 
