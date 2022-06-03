@@ -148,9 +148,6 @@ export class RemoteBase extends EventEmitter {
 	public async init(): Promise<void> {
 		// Call custom initialization
 		await this.doInitialization();
-
-		// This needs to be done after the initialization to get the labels converted correctly:
-		await this.initWpmemAssertionLogpoints();
 	}
 
 

@@ -534,19 +534,20 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 
 	/**
 	 * Checks for an allowed breakpoint address.
+	 * @param longAddr Log address or undefined.
 	 * @returns If allowed: undefined
 	 * If not allowed: a string with the address range that can be used for
 	 * error output.
 	 */
-	protected checkBreakpoint(addr: number | undefined): string | undefined {
-		if (addr != undefined) {
+	protected checkBreakpoint(longAddr: number | undefined): string | undefined {
+		if (longAddr != undefined) {
 			// Check for ROM
-			const bank = Z80RegistersClass.getBankFromAddress(addr);
+			const bank = Z80RegistersClass.getBankFromAddress(longAddr);
 			if (bank >= 0xFE)	// ROM
 				return "ROM";
 
 			// Check for special area
-			const addr64k = addr & 0xFFFF;
+			const addr64k = longAddr & 0xFFFF;
 			if ((addr64k >= 0 && addr64k <= 0x07)
 				|| (addr64k >= 0x66 && addr64k <= 0x73))
 				return "addresses 0x0000-0x0007 and 0x0066-0x0073";

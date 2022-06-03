@@ -29,6 +29,8 @@ export interface AsmConfigBase extends ListConfigBase {
 
 /// Reverse Engineering
 export interface ReverseEngineeringConfig extends ListConfigBase {
+	// If true the list files are re-loaded automatically if this file has been saved.
+	reloadOnSave: boolean;
 }
 
 
@@ -619,8 +621,9 @@ export class Settings {
 			launchCfg.revEng = launchCfg.revEng.map(fp => {
 				// ListFile structure
 				const fpPath = UnifiedPath.getUnifiedPath(fp.path);
-				const file = {
-					path: undefined as any
+				const file: ReverseEngineeringConfig = {
+					path: undefined as any,
+					reloadOnSave: fp.reloadOnSave || false
 				};
 				if (fpPath)
 					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
