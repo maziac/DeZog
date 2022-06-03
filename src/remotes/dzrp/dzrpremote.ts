@@ -1531,10 +1531,10 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * Sends the command to continue ('run') the program.
-	 * @param bp1Address The 64k address (not long address) of breakpoint 1 or undefined if not used.
-	 * @param bp2Address The 64k address (not long address) of breakpoint 2 or undefined if not used.
+	 * @param bp1Addr64k The 64k address (not long address) of breakpoint 1 or undefined if not used.
+	 * @param bp2Addr64k The 64k address (not long address) of breakpoint 2 or undefined if not used.
 	 */
-	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
+	protected async sendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
 		Utility.assert(false);
 	}
 

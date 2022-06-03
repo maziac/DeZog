@@ -613,18 +613,18 @@ export class MameRemote extends DzrpQeuedRemote {
 
 	/**
 	 * Sends the command to continue ('run') the program.
-	 * @param bp1 The address of breakpoint 1 or undefined if not used.
-	 * @param bp2 The address of breakpoint 2 or undefined if not used.
+	 * @param bp1Addr64k The 64k address of breakpoint 1 or undefined if not used.
+	 * @param bp2Addr64k The 64k address of breakpoint 2 or undefined if not used.
 	 */
-	public async sendDzrpCmdContinue(bp1?: number, bp2?: number): Promise<void> {
+	public async sendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
 		try {
 			// Set temporary breakpoints
-			if (bp1 != undefined) {
-				const bp1String = 'Z1,' + bp1.toString(16) + ',0';
+			if (bp1Addr64k != undefined) {
+				const bp1String = 'Z1,' + bp1Addr64k.toString(16) + ',0';
 				await this.sendPacketDataOk(bp1String);
 			}
-			if (bp2 != undefined) {
-				const bp2String = 'Z1,' + bp2.toString(16) + ',0';
+			if (bp2Addr64k != undefined) {
+				const bp2String = 'Z1,' + bp2Addr64k.toString(16) + ',0';
 				await this.sendPacketDataOk(bp2String);
 			}
 
@@ -633,7 +633,7 @@ export class MameRemote extends DzrpQeuedRemote {
 			const originalFuncContinueResolve = this.funcContinueResolve!;
 			const funcIntermediateContinueResolve = async ({breakNumber, breakAddress, breakReasonString, pc}) => {
 				// Handle temporary breakpoints
-				const tmpBpHit = await this.checkTmpBreakpoints(pc, bp1, bp2);
+				const tmpBpHit = await this.checkTmpBreakpoints(pc, bp1Addr64k, bp2Addr64k);
 				if (tmpBpHit) {
 					breakNumber = BREAK_REASON_NUMBER.NO_REASON;
 				}

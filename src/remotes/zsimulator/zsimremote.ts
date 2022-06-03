@@ -1149,17 +1149,17 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 
 	/**
 	 * Sends the command to continue ('run') the program.
-	 * @param bp1Address The address of breakpoint 1 or undefined if not used.
-	 * @param bp2Address The address of breakpoint 2 or undefined if not used.
+	 * @param bp1Addr64k The 64k address of breakpoint 1 or undefined if not used.
+	 * @param bp2Addr64k The 64k address of breakpoint 2 or undefined if not used.
 	 */
-	public async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
-		if (bp1Address == undefined) bp1Address = -1;	// unreachable
-		if (bp2Address == undefined) bp2Address = -1;	// unreachable
+	public async sendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
+		if (bp1Addr64k == undefined) bp1Addr64k = -1;	// unreachable
+		if (bp2Addr64k == undefined) bp2Addr64k = -1;	// unreachable
 		// Set the temporary breakpoints array
 		// Run the Z80-CPU in a loop
 		this.stopCpu = false;
 		this.memory.clearHit();
-		await this.z80CpuContinue(bp1Address, bp2Address);
+		await this.z80CpuContinue(bp1Addr64k, bp2Addr64k);
 	}
 
 

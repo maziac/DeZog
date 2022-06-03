@@ -465,23 +465,23 @@ export class DzrpBufferRemote extends DzrpQeuedRemote {
 
 	/**
 	 * Sends the command to continue ('run') the program.
-	 * @param bp1Address The address of breakpoint 1 or undefined if not used.
-	 * @param bp2Address The address of breakpoint 2 or undefined if not used.
+	 * @param bp1Addr64k The 64k address of breakpoint 1 or undefined if not used.
+	 * @param bp2Addr64k The 64k address of breakpoint 2 or undefined if not used.
 	 */
-	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
+	protected async sendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
 		let bp1Enabled = 1;
 		let bp2Enabled = 1;
-		if (bp1Address == undefined) {
+		if (bp1Addr64k == undefined) {
 			bp1Enabled = 0;
-			bp1Address = 0;
+			bp1Addr64k = 0;
 		}
-		if (bp2Address == undefined) {
+		if (bp2Addr64k == undefined) {
 			bp2Enabled = 0;
-			bp2Address = 0;
+			bp2Addr64k = 0;
 		}
 		await this.sendDzrpCmd(DZRP.CMD_CONTINUE, [
-			bp1Enabled, bp1Address & 0xFF, bp1Address >>> 8,
-			bp2Enabled, bp2Address & 0xFF, bp2Address >>> 8,
+			bp1Enabled, bp1Addr64k & 0xFF, bp1Addr64k >>> 8,
+			bp2Enabled, bp2Addr64k & 0xFF, bp2Addr64k >>> 8,
 			AlternateCommand.CONTINUE,
 			0 /*unused*/, 0 /*unused*/,
 			0 /*unused*/, 0 /*unused*/

@@ -326,12 +326,12 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	 * On continue it is necessary to restore the opcode first.
 	 *
 	 * Sends the command to continue ('run') the program.
-	 * @param bp1Address The address of breakpoint 1 or undefined if not used.
-	 * @param bp2Address The address of breakpoint 2 or undefined if not used.
+	 * @param bp1Addr64k The 64k address of breakpoint 1 or undefined if not used.
+	 * @param bp2Addr64k The 64k address of breakpoint 2 or undefined if not used.
 	 */
-	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
+	protected async sendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
 		// Check breakpoints
-		if (this.checkBreakpoint(bp1Address) || this.checkBreakpoint(bp2Address)) {
+		if (this.checkBreakpoint(bp1Addr64k) || this.checkBreakpoint(bp2Addr64k)) {
 			const breakAddress = this.getPC();
 			const breakReasonString = "Cannot step at address " + Utility.getHexString(breakAddress, 4) + "h.";
 			this.emit('warning', breakReasonString);
@@ -390,13 +390,13 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		}
 
 		// Get long addresses
-		let longBp1Address = bp1Address;
-		let longBp2Address = bp2Address;
+		let longBp1Address = bp1Addr64k;
+		let longBp2Address = bp2Addr64k;
 		const slots = Z80Registers.getSlots();
-		if (bp1Address != undefined)
-			longBp1Address = Z80Registers.createLongAddress(bp1Address, slots);
-		if (bp2Address != undefined)
-			longBp2Address = Z80Registers.createLongAddress(bp2Address, slots);
+		if (bp1Addr64k != undefined)
+			longBp1Address = Z80Registers.createLongAddress(bp1Addr64k, slots);
+		if (bp2Addr64k != undefined)
+			longBp2Address = Z80Registers.createLongAddress(bp2Addr64k, slots);
 
 		// Handle different states
 		const oldBreakedAddress = this.breakedAddress;
@@ -407,7 +407,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 			Utility.assert(this.funcContinueResolve);
 			this.funcContinueResolve = resolveWithBp;
 			this.lastCmdContinueTime = Date.now();
-			await super.sendDzrpCmdContinue(bp1Address, bp2Address);
+			await super.sendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
 		}
 		else {
 			// Continuing from a breakpoint.
@@ -420,7 +420,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 
 				// Check if 2nd continue is necessary
 				if ((breakAddress != undefined &&
-					(breakAddress == bp1Address || breakAddress == bp2Address))
+					(breakAddress == bp1Addr64k || breakAddress == bp2Addr64k))
 					|| breakNumber == BREAK_REASON_NUMBER.BREAKPOINT_HIT) {
 					// Either a "real" breakpoint was hit or one of the original temporary breakpoints.
 					// In any case we don't need to continue here.
@@ -433,7 +433,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 					oldOpcode = await this.sendDzrpCmdSetBreakpoints([oldBreakedAddress]);
 					// Continue
 					this.lastCmdContinueTime = Date.now();
-					await super.sendDzrpCmdContinue(bp1Address, bp2Address);
+					await super.sendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
 				}
 			};
 
