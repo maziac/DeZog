@@ -108,8 +108,8 @@ export class Z80RegistersMameDecoder extends Z80RegistersStandardDecoder {
 	}
 
 	public parseSlots(data: RegisterData): number[] {
-		// TODO: Do I use this ? What about parsePCLong?
-		return [];
+		// At the moment no banking is supported with the MAME gdbstub:
+		return [0];
 	}
 
 }
