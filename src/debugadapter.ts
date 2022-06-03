@@ -605,6 +605,13 @@ export class DebugSessionClass extends DebugSession {
 				this.sendEvent(new CapabilitiesEvent({supportsStepBack: true}));
 			}
 		}
+
+		// Establish watch
+		Labels.on('reload', () => {
+			this.reloadLabels();
+		});
+
+		// Return
 		this.sendResponse(response);
 	}
 
@@ -689,6 +696,8 @@ export class DebugSessionClass extends DebugSession {
 				try {
 					// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
 					Remote.readListFiles(Settings.launch);
+					// This needs to be done after the labels have been read
+					await Remote.initWpmemAssertionLogpoints();
 				}
 				catch (err) {
 					// Some error occurred during loading, e.g. file not found.
@@ -2374,7 +2383,7 @@ export class DebugSessionClass extends DebugSession {
 			// Try to get the distance to the next label:
 			// Note: Does not work for structs as the next label would
 			// be inside the struct.
-			elemCount = Labels.getDistanceToNextLabel(distAddr!) || 1;
+			elemCount = Labels.getDistanceToNextLabel(distAddr as number) || 1;
 			// Check special case
 			if (!lblType && elemCount == 2) {
 				// Special case: 1 word. Exchange size and count
@@ -3782,7 +3791,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * Only the list files are reloaded, not the launch.json, nor the binary (loadObjs).
 	 */
 
-	public reloadLabels() {
+	public async reloadLabels(): Promise<void> {
 		try {
 			// Clear diagnostics
 			DiagnosticsHandler.clear();
@@ -3790,7 +3799,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			// Read list files
 			Remote.readListFiles(Settings.launch);
 			// Re-read the watchpoints etc.
-			Remote.initWpmemAssertionLogpoints();
+			await Remote.initWpmemAssertionLogpoints();
 
 			// Reset a few things
 			Decoration.clearAllDecorations();
@@ -3802,9 +3811,8 @@ E.g. use "-help -view" to put the help text in an own view.
 		catch (e) {
 			// Some error occurred
 			Remote.terminate('Labels: ' + e.message);
-			return "Error while initializing labels.";
+			//this.showError("Error while initializing labels.");
 		}
-
 	}
 }
 

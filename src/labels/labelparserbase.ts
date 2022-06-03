@@ -1,8 +1,8 @@
+import { ListConfigBase, AsmConfigBase } from './../settings/settings';
 import * as fs from 'fs';
 import {Utility} from '../misc/utility';
 import {UnifiedPath} from '../misc/unifiedpath';
 import {SourceFileEntry, ListFileLine} from './labels';
-import {AsmConfigBase} from '../settings/settings';
 import * as minimatch from 'minimatch';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
@@ -89,7 +89,7 @@ export class LabelParserBase {
 
 
 	/// The config structure is stored here.
-	protected config: AsmConfigBase;
+	protected config: ListConfigBase;
 
 	/// Array used temporary. Holds the converted list file.
 	protected listFile: Array<ListFileLine>;
@@ -166,8 +166,9 @@ export class LabelParserBase {
 	 * PC value.
 	 * @param config The assembler configuration.
 	 */
-	public loadAsmListFile(config: AsmConfigBase) {
+	public loadAsmListFile(cfg: ListConfigBase) {
 		try {
+			const config = cfg as AsmConfigBase;
 			this.config = config;
 			// Init (in case of several list files)
 			this.excludedFileStackIndex = -1;
@@ -619,6 +620,9 @@ export class LabelParserBase {
 	 * @param includeFileName The name of the include file.
 	 */
 	protected includeStart(includeFileName: string) {
+		const config = this.config as AsmConfigBase;
+		Utility.assert(config.srcDirs);	// Check that config is not a ListConfigBase
+		Utility.assert(config.excludeFiles);
 		includeFileName = UnifiedPath.getUnifiedPath(includeFileName);
 		const index = this.includeFileStack.length - 1;
 		let fileName;
@@ -626,11 +630,11 @@ export class LabelParserBase {
 			// Include the parent file dir in search
 			const parentFileName = this.includeFileStack[this.includeFileStack.length - 1].fileName;
 			const dirName = UnifiedPath.dirname(parentFileName);
-			fileName = Utility.getRelSourceFilePath(includeFileName, [dirName, ...this.config.srcDirs]);
+			fileName = Utility.getRelSourceFilePath(includeFileName, [dirName, ...config.srcDirs]);
 		}
 		else {
 			// Main file
-			fileName = Utility.getRelSourceFilePath(includeFileName, this.config.srcDirs);
+			fileName = Utility.getRelSourceFilePath(includeFileName, config.srcDirs);
 		}
 
 		this.includeFileStack.push({fileName, lineNr: 0});
@@ -638,7 +642,7 @@ export class LabelParserBase {
 		// Now check if we need to exclude it from file/line <-> address relationship.
 		if (this.excludedFileStackIndex == -1) {
 			// Check if filename is one of the excluded file names.
-			for (const exclGlob of this.config.excludeFiles) {
+			for (const exclGlob of config.excludeFiles) {
 				const found = minimatch(fileName, exclGlob);
 				if (found) {
 					this.excludedFileStackIndex = index + 1;

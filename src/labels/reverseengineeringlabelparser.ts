@@ -1,7 +1,7 @@
 import {Utility} from '../misc/utility';
 import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx48k} from '../remotes/MemoryModel/predefinedmemorymodels';
 import {Z80RegistersClass} from '../remotes/z80registers';
-import {AsmConfigBase, ListConfigBase} from '../settings/settings';
+import {ListConfigBase} from '../settings/settings';
 import {LabelParserBase} from './labelparserbase';
 import {ListFileLine} from './labels';
 
@@ -70,7 +70,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	 */
 	public loadAsmListFile(config: ListConfigBase) {
 		try {
-			this.config = config as AsmConfigBase;
+			this.config = config;
 			// Init (in case of several list files)
 			this.excludedFileStackIndex = -1;
 			this.includeFileStack = new Array<{fileName: string, lineNr: number}>();

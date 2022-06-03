@@ -1,3 +1,6 @@
+import { FileWatcher } from './../misc/filewatcher';
+import { EventEmitter } from 'events';
+import {ListConfigBase} from './../settings/settings';
 import {Utility} from '../misc/utility';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {Remote} from '../remotes/remotebase';
@@ -6,7 +9,7 @@ import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
 import * as fs from 'fs';
 import {ReverseEngineeringLabelParser} from './reverseengineeringlabelparser';
-import {AsmConfigBase, SettingsParameters} from '../settings/settings';
+import {SettingsParameters} from '../settings/settings';
 import {Issue, LabelParserBase} from './labelparserbase';
 
 /**
@@ -59,13 +62,13 @@ export interface NextLabelDistance {
  * in a special format.
  * Please look at SjasmplusSldLabelParser as an example.
  *
+ * LabelsClass is derived from EventEmitter to emit 'reload' events.
+ * This is used for the ReverseEngineeringLabelParser to reload labels on the fly
+ * if the list file was updated by the user.
  */
-export class LabelsClass {
+export class LabelsClass extends EventEmitter {
 	// Function used to add an error to the diagnostics.
 	public static addDiagnosticsErrorFunc: ((message: string, severity: 'error' | 'warning', filepath: string, line: number, column: number) => void) | undefined;
-
-	/// The files (stored only for lastModifiedDate.)
-	protected filePaths = new Array<string>();
 
 	/// Map that associates memory addresses (PC values) with line numbers
 	/// and files.
@@ -152,6 +155,8 @@ export class LabelsClass {
 	/// Set during 'readListFiles'.
 	//public memoryModel: MemoryModel;
 
+	// Contains the watched files. For reverse engineering auto re-load.
+	protected watchedFiles: Array<FileWatcher> = [];
 
 
 	/**
@@ -170,10 +175,10 @@ export class LabelsClass {
 		this.watchPointLines.length = 0;
 		this.assertionLines.length = 0;
 		this.logPointLines.length = 0;
-		this.filePaths.length = 0;
 		this.smallValuesMaximum = smallValuesMaximum;
 		this.bankSize = 0;
 		this.errorHappened = false;
+		this.clearWatchedFiles();
 	}
 
 
@@ -227,8 +232,6 @@ export class LabelsClass {
 				const parser = new SjasmplusSldLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
 				this.loadAsmListFile(parser, config);
 				this.bankSize = parser.bankSize;
-				// Store path
-				this.filePaths.push(config.path);
 			}
 		}
 
@@ -237,8 +240,6 @@ export class LabelsClass {
 			const parser = new Z80asmLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
 			for (const config of mainConfig.z80asm) {
 				this.loadAsmListFile(parser, config);
-				// Store path
-				this.filePaths.push(config.path);
 			}
 		}
 
@@ -247,8 +248,6 @@ export class LabelsClass {
 			const parser = new Z88dkLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
 			for (const config of mainConfig.z88dk) {
 				this.loadAsmListFile(parser, config);
-				// Store path
-				this.filePaths.push(config.path);
 			}
 		}
 
@@ -256,9 +255,12 @@ export class LabelsClass {
 		if (mainConfig.revEng) {
 			const parser = new ReverseEngineeringLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
 			for (const config of mainConfig.revEng) {
-				this.loadAsmListFile(parser, config as AsmConfigBase);
-				// Store path
-				this.filePaths.push(config.path);
+				this.loadAsmListFile(parser, config);
+				// Check if files need to be watched
+				if (config.reloadOnSave) {
+					// Watch file for save
+					this.watchFile(config.path);
+				}
 			}
 			this.bankSize = 0x4000;	// TODO: need to be read from somewhere. Still required?
 		}
@@ -280,7 +282,7 @@ export class LabelsClass {
 	 * @param parser The parser to call.
 	 * @param config The configuration.
 	 */
-	protected loadAsmListFile(parser: LabelParserBase, config: AsmConfigBase) {
+	protected loadAsmListFile(parser: LabelParserBase, config: ListConfigBase) {
 		try {
 			parser.loadAsmListFile(config);
 		}
@@ -725,6 +727,45 @@ export class LabelsClass {
 	protected handleIssue(issue: Issue) {
 		if(LabelsClass.addDiagnosticsErrorFunc)
 			LabelsClass.addDiagnosticsErrorFunc(issue.message, issue.severity, issue.filepath, issue.lineNr, 0);
+	}
+
+
+	/**
+	 * Removes the existing watches.
+	 */
+	protected clearWatchedFiles() {
+		for (const fileWatcher of this.watchedFiles) {
+			fileWatcher.dispose();
+		}
+	}
+
+
+	/**
+	 * Watches a file. If saved a 'reload' event will be emitted.
+	 * (For reverse engineering reload of list files.)
+	 * Note: the event is delayed a little bit in case several files are changed at the same time.
+	 * @path The absolute path.
+	 */
+	protected watchFile(path: string) {
+		// Create new file watcher
+		const fileWatcher = new FileWatcher(path);
+		this.watchedFiles.push(fileWatcher);
+		// Watch for changes
+		//	let emitInProgress = false;	// For collecting several changes
+		fileWatcher.onDidChange(() => {
+			this.emit('reload');
+			/*
+					if (emitInProgress)
+						return;	// Emit will happen anyway
+					// Delay the emit to collect several different file changes
+					emitInProgress = true;
+					setTimeout(() => {
+						this.emit('reload');
+						emitInProgress = false;
+					}, 500);
+				});
+			*/
+		});
 	}
 }
 

@@ -260,7 +260,9 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		if (sourceFile == '')
 			return;
 		// Convert (also use srcDirs)
-		sourceFile = Utility.getRelSourceFilePath(sourceFile, this.config.srcDirs);
+		const config = this.config as AsmConfigBase;
+		Utility.assert(config.srcDirs);
+		sourceFile = Utility.getRelSourceFilePath(sourceFile, config.srcDirs);
 
 		// Definition file/line not required
 
