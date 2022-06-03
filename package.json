@@ -684,6 +684,10 @@
 										"path": {
 											"type": "string",
 											"description": "Path to the .list file."
+										},
+										"reloadOnSave": {
+											"type": "boolean",
+											"description": "If true all list files (and labels) will be automatically re-loaded if this list file has been changed. Otherwise the reload has to be done manually through the command palette.\nDefault is false."
 										}
 									}
 								}

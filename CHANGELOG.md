@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.0.1
+- Fixed reverse engineering mode for MAME.
+- Added "reloadOnSave" for "revEng" Remote: The labels can be automatically reloaded when the list file is saved.
+- "revEng" added to documentation.
+
 # 3.0.0
 - Better reverse engineering support
 	- Improved disassembly

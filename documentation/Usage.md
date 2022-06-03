@@ -269,12 +269,15 @@ For a full description of the .nex file format see:
 
 ### Assembler Configuration
 
-Depending on your assembler you use a different configuration names:
+Depending on your assembler you use different configuration names:
 - 'sjasmplus' for sjasmplus
 - 'z80asm' for the Savannah-z80asm
 - 'z88dk' for z88dk-z80asm
+- 'revEng' for reverse engineering
 
 You basically define which listfile is used (or several list files) and depending on the assembler you may need to add certain parameters.
+
+Note tht it is valid to specify several assembler configurations. E.g. if part of the code was written with sjasmplus and some other with z80asm.
 
 
 #### z80asm vs. z80asm
@@ -388,6 +391,22 @@ For 'path', 'srcDirs' nad 'excludeFiles' see z80asm configuration.
 - mainFile: The relative path of the file used to create the list file.
 
 
+**Reverse Engineering configuration**
+
+This is a special configuration in the sense that you can specify a list file here (like in the other configurations), but the list file has not been created by an assembler but by yourself.
+See [ReverseEngineeringUsage.md](https://github.com/maziac/DeZog/blob/master/design/documentation/ReverseEngineeringUsage.md) for more info.
+
+
+~~~json
+"revEng": [{
+    "path": "pacman.list",
+    "reloadOnSave": true
+}]
+~~~
+
+- path: The path to the .list file.
+- reloadOnSave: If true all list files (and labels) will be automatically re-loaded if this list file has been changed. Otherwise the reload has to be done manually through the command palette. Default is false.
+
 
 **Other assemblers:**
 
@@ -499,9 +518,9 @@ The following table gives an overview.
 | Breakpoints             | yes                | yes     | yes      | yes      | yes          |
 | Break reason output     | yes                | no      | yes      | yes      | yes          |
 | Conditional Breakpoints | yes                | yes     | yes/slow | yes/slow | yes/slow     |
-| WPMEM (Watchpoints) support | yes            | yes 2)  | no       | no       | no 5)        |
-| ASSERTION support       | yes                | yes     | yes/slow | yes/slow | no 5)        |
-| LOGPOINT support        | yes                | no      | yes/slow | yes/slow | no 5)        |
+| WPMEM (Watchpoints) support | yes            | yes 2)  | no       | no       | yes          |
+| ASSERTION support       | yes                | yes     | yes/slow | yes/slow | yes          |
+| LOGPOINT support        | yes                | no      | yes/slow | yes/slow | yes          |
 | Long addresses/breakpoints | yes             | yes     | yes      | yes      | no           |
 | Extended callstack      | no                 | yes     | no       | no       | no           |
 | Code coverage           | yes                | yes 1)  | no       | no       | no           |
@@ -512,7 +531,7 @@ The following table gives an overview.
 | Display of sprite attributes/patterns | yes  | yes     | no       | yes      | no           |
 | Load .sna/.nex/.obj file through DeZog | yes | yes     | yes      | yes      | no           |
 | Load .tap file through DeZog | no            | yes     | no       | no       | no           |
-| Run Z80 Unit Tests      | yes                | yes     | no 4)    | yes 3)   | no 5)        |
+| Run Z80 Unit Tests      | yes                | yes     | no 4)    | yes 3)   | yes 5)       |
 
 Notes:
 - State:
@@ -525,7 +544,7 @@ Notes:
 - 2 ) ZEsarUX memory breakpoints use 16bit only. I.e. no support for long addresses. You may experience that a memory breakpoint is hit in a wrong bank if banking is used.
 - 3 ) Z80 Unit tests do work but watchpoints (WPMEM) are not supported.
 - 4 ) Basically unit tests do work on the ZX Next. But they are not so convenient to use because you may need to manually stop the ZX Next between tests.
-- 5 ) In fact it is supported. But it cannot be used as it is not possible to load programs from DeZog into the MAME memory.
+- 5 ) There is nothing preventing you from using unit tests, but for a reverse engineering environment there is little sense in doing unit tests.
 
 
 ### The Internal Z80 Simulator

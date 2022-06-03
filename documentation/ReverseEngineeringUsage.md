@@ -43,10 +43,9 @@ The launch.json for DeZog is:
                 "port": 12000
             },
             "startAutomatically": false,
-            "z80asm": [
+            "revEng": [
                 {
-                    "path": "pacman.list",
-                    "srcDirs": []
+                    "path": "pacman.list"
                 }
             ],
             "rootFolder": "${workspaceFolder}"
@@ -71,7 +70,9 @@ At that point DeZog will re-read the symbols and also do a new disassembly: The 
 The rest of the disassembly will also use the new labels.
 7. Goto 3
 
-Note: The re-load of the list file takes place while the debug session is still active. I.e. you can simply continue with the debugging.
+Notes:
+- The re-load of the list file takes place while the debug session is still active. I.e. you can simply continue with the debugging.
+- Instead of reloading manually it is alos possible to add ```"reloadOnSave": true```to "revEng". In this case the labels will be reloaded automatically on each save of "pacman.list".
 
 
 # Disassembly
