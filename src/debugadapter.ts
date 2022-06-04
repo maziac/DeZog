@@ -1005,10 +1005,12 @@ export class DebugSessionClass extends DebugSession {
 			// Check all breakpoints
 			this.disassemblyReassignBreakpoints(prevBpAddresses);
 
-			// If disassembly text editor is open, then show decorations
+			// If disassembly text editor is open, then show decorations and update break reason
 			const docEditors = this.getEditorsForTextDoc(disasmTextDoc);
-			for (const editor of docEditors)
+			for (const editor of docEditors) {
 				Decoration.setDisasmCoverageDecoration(editor);
+				Decoration.showBreak();	// update
+			}
 		}
 
 		// Check if decoration need to be changed

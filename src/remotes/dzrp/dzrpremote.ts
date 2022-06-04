@@ -917,7 +917,7 @@ export class DzrpRemote extends RemoteBase {
 						await this.getRegistersFromEmulator();
 						await this.getCallStackFromEmulator();
 						// return
-						this.continueResolve!.resolve(breakReasonString);
+						this.continueResolve!.resolve(breakReasonString);	// TODO:await
 					}
 				}
 				catch (e) {

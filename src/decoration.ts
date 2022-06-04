@@ -75,6 +75,10 @@ export class DecorationClass {
 	// The range for the outdated decoration. Is either empty or covers the complete text.
 	protected disasmOutdatedRange: vscode.Range[] = [];
 
+	// Values are saved in case disassembly is updated.
+	protected breakPcLong: number | undefined;
+	protected breakText: string | undefined;
+
 
 	/// Initialize. Call from 'activate' to set the icon paths.
 	public static Initialize() {
@@ -242,6 +246,8 @@ export class DecorationClass {
 	 * Loops through all active editors and clears the 'Break' decorations.
 	 */
 	public clearBreak() {
+		this.breakPcLong = undefined;
+		this.breakText = undefined;
 		this.clearDecorations(this.BREAK);
 	}
 
@@ -457,17 +463,31 @@ export class DecorationClass {
 	 * Is called when a new 'break' should be shown.
 	 * This happens during continue, continueReverse, stepOut, stepOver.
 	 * The break decoration is cleared before all those actions.
-	 * @param pc The address to decorate. Used to find the source line.
+	 * @param pcLong The address to decorate. Used to find the source line.
 	 * @param text The text to show.
 	 */
-	public showBreak(pc: number, text: string) {
+	public showBreak(pcLong?: number, text?: string) {
+		// Save pc and text (in case disassembly is updated)
+		if (pcLong == undefined) {
+			// Use existing values, i.e. update
+			if (this.breakPcLong == undefined)
+				return;
+			pcLong = this.breakPcLong;
+			text = this.breakText;
+		}
+		else {
+			// Store new values
+			this.breakPcLong = pcLong;
+			this.breakText = text;
+		}
+
 		// Get file map
 		const decoMap = this.decorationFileMaps.get(this.BREAK) as DecorationFileMap;
 		const fileMap = decoMap.fileMap;
 		fileMap.clear();
 
 		// Get file location for pc
-		const location = this.getFileAndLineForAddress(pc);
+		const location = this.getFileAndLineForAddress(pcLong);
 		const filename = location.fileName;
 		if (filename.length > 0) {
 			// Get filename set
@@ -602,13 +622,13 @@ export class DecorationClass {
 	 * it does not occupy any bytes.
 	 * (Those bytes would be visible in the disasm.list file).
 	 * E.g. the breakpoint reason string should appear in that case in the disasm-list file.
-	 * @param addr The address to convert.
+	 * @param longAddr The long address to convert.
 	 */
-	protected getFileAndLineForAddress(addr: number): SourceFileEntry {
-		const location = Labels.getFileAndLineForAddress(addr);
+	protected getFileAndLineForAddress(longAddr: number): SourceFileEntry {
+		const location = Labels.getFileAndLineForAddress(longAddr);
 		if (location.fileName.length == 0 || location.size == 0) {
 			// Try disasm file
-			const lineNr = Disassembly.getLineForAddress(addr);
+			const lineNr = Disassembly.getLineForAddress(longAddr);
 			if (lineNr != undefined) {
 				// Use disassembly file
 				location.fileName = DisassemblyClass.getAbsFilePath();

@@ -177,11 +177,11 @@ export class DisassemblyClass extends Disassembler {
 
 	/**
 	 * Returns the line number for a given address.
-	 * @param address The long address.
+	 * @param longAddress The long address.
 	 * @returns The corresponding line number (beginning at 0) or undefined if no such line exists.
 	 */
-	public getLineForAddress(address: number): number | undefined {
-		return this.addrLineMap.get(address);
+	public getLineForAddress(longAddress: number): number | undefined {
+		return this.addrLineMap.get(longAddress);
 	}
 
 

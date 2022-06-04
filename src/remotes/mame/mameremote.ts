@@ -323,7 +323,7 @@ export class MameRemote extends DzrpQeuedRemote {
 					longAddr,
 					reasonString: '',
 					data: {
-						pc: result.pc
+						pc64k: result.pc64k
 					}
 				});	// Is async, but anyhow last function call	// TODO: change to async
 			}
@@ -357,7 +357,7 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * 	pc: The 64k PC value.
 	 * }
 	 */
-	protected parseStopReplyPacket(packetData: string): {breakReason: number, addr64k: number, pc: number} {
+	protected parseStopReplyPacket(packetData: string): {breakReason: number, addr64k: number, pc64k: number} {
 		packetData = packetData.toLowerCase();
 
 		// Search for PC register ('0b')
@@ -365,26 +365,26 @@ export class MameRemote extends DzrpQeuedRemote {
 		if (i < 0)
 			throw Error("No break address (PC) found.");
 		i += 3;	// Skip '0b:'
-		const pc = Utility.parseHexWordLE(packetData, i);
+		const pc64k = Utility.parseHexWordLE(packetData, i);
 
 		// Get break reason
 		let k = packetData.indexOf(':');
 		const param = packetData.substring(3, k);	// Skip break signal (is always '5')
-		let address;
+		let addr64k;
 		let breakReason;
 		if (param.endsWith('watch')) {
 			// Watchpoint hit
 			breakReason = param.startsWith('r') ? BREAK_REASON_NUMBER.WATCHPOINT_READ : BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
 			k++;	// Skip ':'
-			address = parseInt(packetData.substring(k), 16);	// Note: not target byte order
+			addr64k = parseInt(packetData.substring(k), 16);	// Note: not target byte order
 		}
 		else {
 			// Normal breakpoint
 			breakReason = BREAK_REASON_NUMBER.BREAKPOINT_HIT;
-			address = pc;
+			addr64k = pc64k;
 		}
 
-		return {breakReason, addr64k: address, pc};
+		return {breakReason, addr64k, pc64k};
 	}
 
 
@@ -640,12 +640,12 @@ export class MameRemote extends DzrpQeuedRemote {
 			const originalFuncContinueResolve = this.funcContinueResolve!;
 			const funcIntermediateContinueResolve = async (breakInfo: BreakInfo) => {
 				// Handle temporary breakpoints
-				const tmpBpHit = await this.checkTmpBreakpoints(breakInfo.data.pc, bp1Addr64k, bp2Addr64k);
+				const tmpBpHit = await this.checkTmpBreakpoints(breakInfo.data.pc64k, bp1Addr64k, bp2Addr64k);
 				if (tmpBpHit) {
 					breakInfo.reasonNumber = BREAK_REASON_NUMBER.NO_REASON;
 				}
 				// Call "real" function
-				originalFuncContinueResolve(breakInfo);
+				originalFuncContinueResolve(breakInfo);	// TODO: await
 			};
 
 			// C(ontinue)
@@ -663,26 +663,28 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * step function.
 	 * Additionally it is checked if PC is currently at one of the bps.
 	 * @param pc The current PC value.
-	 * @param bp1 First 64k breakpoint or undefined.
-	 * @param bp2 Second 64k breakpoint or undefined.
+	 * @param bp1Addr64k First 64k breakpoint or undefined.
+	 * @param bp2Addr64k Second 64k breakpoint or undefined.
 	 * @returns true if one of the bps is equal to the PC.
 	 */
-	protected async checkTmpBreakpoints(pc: number, bp1Address?: number, bp2Address?: number): Promise<boolean> {
+	protected async checkTmpBreakpoints(pc: number, bp1Addr64k?: number, bp2Addr64k?: number): Promise<boolean> {
 		let bpHit = false;
 		try {
 			// Remove temporary breakpoints
-			if (bp1Address != undefined) {
-				const bp1 = 'z1,' + bp1Address.toString(16) + ',0';
+			if (bp1Addr64k != undefined) {
+				// Remove breakpoint
+				const bp1 = 'z1,' + bp1Addr64k.toString(16) + ',0';
 				await this.sendPacketDataOk(bp1);
 				// Check PC
-				if (pc == bp1Address)
+				if (pc == bp1Addr64k)
 					bpHit = true;
 			}
-			if (bp2Address != undefined) {
-				const bp2 = 'z1,' + bp2Address.toString(16) + ',0';
+			if (bp2Addr64k != undefined) {
+				// Remove breakpoint
+				const bp2 = 'z1,' + bp2Addr64k.toString(16) + ',0';
 				await this.sendPacketDataOk(bp2);
 				// Check PC
-				if (pc == bp2Address)
+				if (pc == bp2Addr64k)
 					bpHit = true;
 			}
 		}
