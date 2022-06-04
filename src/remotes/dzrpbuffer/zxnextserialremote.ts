@@ -330,9 +330,18 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	 * @param bp2Addr64k The 64k address of breakpoint 2 or undefined if not used.
 	 */
 	protected async sendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
+		// Get long addresses
+		let longBp1Address = bp1Addr64k;
+		let longBp2Address = bp2Addr64k;
+		const slots = Z80Registers.getSlots();
+		if (bp1Addr64k != undefined)
+			longBp1Address = Z80Registers.createLongAddress(bp1Addr64k, slots);
+		if (bp2Addr64k != undefined)
+			longBp2Address = Z80Registers.createLongAddress(bp2Addr64k, slots);
+
 		// Check breakpoints
-		if (this.checkBreakpoint(bp1Addr64k) || this.checkBreakpoint(bp2Addr64k)) {
-			const breakAddress = this.getPC();
+		if (this.checkBreakpoint(longBp1Address) || this.checkBreakpoint(longBp2Address)) {
+			const breakAddress = this.getPCLong();
 			const breakReasonString = "Cannot step at address " + Utility.getHexString(breakAddress, 4) + "h.";
 			this.emit('warning', breakReasonString);
 			const breakNumber = BREAK_REASON_NUMBER.STEPPING_NOT_ALLOWED;
@@ -388,15 +397,6 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 			const opcode = opcodes[i];
 			this.breakpointsAndOpcodes.push({address, opcode});
 		}
-
-		// Get long addresses
-		let longBp1Address = bp1Addr64k;
-		let longBp2Address = bp2Addr64k;
-		const slots = Z80Registers.getSlots();
-		if (bp1Addr64k != undefined)
-			longBp1Address = Z80Registers.createLongAddress(bp1Addr64k, slots);
-		if (bp2Addr64k != undefined)
-			longBp2Address = Z80Registers.createLongAddress(bp2Addr64k, slots);
 
 		// Handle different states
 		const oldBreakedAddress = this.breakedAddress;
@@ -557,7 +557,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 
 
 	/**
-	 * This command is not used anymore. Use the NMI button instead.
+	 * This command is not used. Use the NMI button instead.
 	 */
 	protected async sendDzrpCmdPause(): Promise<void> {
 		throw Error("To pause execution use the yellow NMI button of the ZX Next.");
