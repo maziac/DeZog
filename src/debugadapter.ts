@@ -828,6 +828,8 @@ export class DebugSessionClass extends DebugSession {
 
 
 		// Set breakpoints for the file.
+		if (!Remote)
+			console.log("Remote undefined"); // TODO: remove
 		const currentBreakpoints = await Remote.setBreakpoints(path, bps);
 		const source = this.createSource(path);
 		// Now match all given breakpoints with the available.
@@ -3559,6 +3561,9 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * Should be called if PC is manually changed.
 	 */
 	protected async pcHasBeenChanged() {
+		// Clear any previous breakpoint decoration
+		Decoration.clearBreak();
+		// Refresh callstack
 		await Remote.getCallStackFromEmulator();
 		this.sendEvent(new StoppedEvent("PC changed", DebugSessionClass.THREAD_ID));	// Thread ID is required to update.
 		await BaseView.staticCallUpdateRegisterChanged();
