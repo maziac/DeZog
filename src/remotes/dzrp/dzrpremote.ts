@@ -97,6 +97,24 @@ export enum DzrpMachineType {
 	ZXNEXT = 4
 }
 
+/**
+ * This interface is passed after a break occurs and contains
+ * break address and reason.
+ */
+export interface BreakInfo {
+	// A number referring to the type of break.
+	reasonNumber: BREAK_REASON_NUMBER;
+
+	// An optional break reason string.
+	reasonString: string;
+
+	// The address where the break occurred. A long address. Either the PC value or e.g. a watched address.
+	longAddr: number;
+
+	// Optional data packet. E.g. used b MAME for the PC value.
+	data?: any;
+}
+
 
 /**
  * A class that communicates with the remote via the DZRP protocol.
@@ -110,11 +128,10 @@ export enum DzrpMachineType {
  * like 'continue'.
  */
 export class DzrpRemote extends RemoteBase {
-
 	// The function to hold the Promise's resolve function for a continue request.
 	// Note:  The 'any' type is chosen here so that other Remotes (like MAME)
 	// can extend the parameter list.
-	protected funcContinueResolve?: ({breakNumber, breakAddress, breakReasonString}: any) => void;
+	protected funcContinueResolve?: (breakInfo: BreakInfo) => void;
 
 	// The associated Promise resolve. Stored here to be called at dispose.
 	protected continueResolve?: PromiseCallbacks<string>;
@@ -423,7 +440,7 @@ export class DzrpRemote extends RemoteBase {
 			// Create data to send
 			const longAddress = address + ((bank + 1) << 16);
 			const bp: GenericBreakpoint = {
-				address: longAddress
+				longAddress: longAddress
 			};
 			await this.sendDzrpCmdAddBreakpoint(bp);
 			response += '\n Breakpoint ID: ' + bp.bpId;
@@ -435,7 +452,7 @@ export class DzrpRemote extends RemoteBase {
 				throw Error("Expecting 1 parameter: breakpoint ID.");
 			}
 			const bp: GenericBreakpoint = {
-				address: -1,	// not used
+				longAddress: -1,	// not used
 				bpId: Utility.parseValue(cmdArray[0])
 			};
 			// Create data to send
@@ -520,15 +537,15 @@ export class DzrpRemote extends RemoteBase {
 		const slots = this.getSlots()!;
 		for (const wp of this.addedWatchpoints) {
 			// Check if address falls in range
-			const addr = wp.address;
-			const addr64 = addr & 0xFFFF;
+			const longWpAddr = wp.longAddress;
+			const addr64 = longWpAddr & 0xFFFF;
 			if (address64 < addr64 || address64 >= addr64 + wp.size)	// Note: wrap around is ignored
 				continue;
 
 			// Check if wp start address is currently paged in
-			const bank = Z80RegistersClass.getBankFromAddress(addr);
-			if (bank >= 0) {
-				const slotNr = Z80Registers.getSlotFromAddress(addr);
+			const bank = Z80RegistersClass.getBankFromAddress(longWpAddr);
+			if (bank >= 0) {	// TODO: Remove if. All are long addresses.
+				const slotNr = Z80Registers.getSlotFromAddress(longWpAddr);
 				const slotBank = slots[slotNr];
 				if (bank != slotBank)
 					continue;	// Wrong bank -> Next
@@ -587,12 +604,12 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	protected addTmpBreakpoint(bp: GenericBreakpoint) {
 		const tmpBps = this.tmpBreakpoints;
-		const bpAddress = bp.address;
+		const bpAddress = bp.longAddress;
 		let bpInner = tmpBps.get(bpAddress);
 		if (!bpInner) {
 			// Create new array
 			bpInner = new Array<GenericBreakpoint>();
-			tmpBps.set(bp.address, bpInner);
+			tmpBps.set(bp.longAddress, bpInner);
 		}
 		bpInner.push(bp);
 	}
@@ -604,7 +621,7 @@ export class DzrpRemote extends RemoteBase {
 	 * is removed during a running debugged program.
 	 */
 	protected removeTmpBreakpoint(bp: GenericBreakpoint) {
-		const bpAddress = bp.address;
+		const bpAddress = bp.longAddress;
 		const bpArray = this.tmpBreakpoints.get(bpAddress)!;
 		Utility.assert(bpArray);
 		const len = bpArray.length;
@@ -689,7 +706,7 @@ export class DzrpRemote extends RemoteBase {
 				break;
 			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
 				// Check if it was an ASSERTION.
-				const abps = this.assertionBreakpoints.filter(abp => abp.address == breakAddress);
+				const abps = this.assertionBreakpoints.filter(abp => abp.longAddress == breakAddress);
 				for (const abp of abps) {
 					if (condition == abp.condition) {
 						const assertionCond = Utility.getAssertionFromCondition(condition);
@@ -758,9 +775,10 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Evaluates the breakpoint condition and log (logpoint).
 	 * Checks also pauseStep and returns '' if it is true.
-	 * @param breakNumber The break reason as number, e.g. BREAK_REASON_NUMBER.BREAKPOINT_HIT
-	 * @param breakAddress The address of the breakpoint (in future this could also be the address of a watchpoint).
-	 * @returns undefined or the condition text.
+	 * @param breakType The break reason as number, e.g. BREAK_REASON_NUMBER.BREAKPOINT_HIT
+	 * @param breakAddress The address of the breakpoint or watchpoint.
+	 * @returns A struct with a corrected break type and a condition text.
+	 * condition text:
 	 * If the breakpoint condition is not true: undefined is returned.
 	 * If the condition is true:
 	 * - If a log is present the logtext is evaluated and a 'debug_console' with the text will be emitted. 'undefined' is returned.
@@ -773,11 +791,11 @@ export class DzrpRemote extends RemoteBase {
 	 * that has been given. But in some cases a NO_REASON
 	 * might be turned into a BREAKPOINT_HIT.
 	 */
-	protected async evalBpConditionAndLog(breakNumber: number, breakAddress: number): Promise<{condition: string | undefined, correctedBreakNumber: number}> {
+	protected async evalBpConditionAndLog(breakType: number, breakAddress: number): Promise<{condition: string | undefined, correctedBreakNumber: number}> {
 		// Check breakReason, i.e. check if it was a watchpoint.
 		let condition;
-		let correctedBreakNumber = breakNumber;
-		switch (breakNumber) {
+		let correctedBreakNumber = breakType;
+		switch (breakType) {
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
 				// Check if watchpoint really exists, i.e. it could be that a watchpoint for a wrong bank was hit.
@@ -785,7 +803,7 @@ export class DzrpRemote extends RemoteBase {
 				const wps = this.getWatchpointsByAddress(breakAddress);
 				for (const wp of wps) {
 					let found = false;
-					if (breakNumber == BREAK_REASON_NUMBER.WATCHPOINT_READ) {
+					if (breakType == BREAK_REASON_NUMBER.WATCHPOINT_READ) {
 						found = wp.access.includes('r');
 					}
 					else {
@@ -834,7 +852,7 @@ export class DzrpRemote extends RemoteBase {
 				}
 
 				// Handle continue-breakpoints
-				if (breakNumber == BREAK_REASON_NUMBER.NO_REASON) {
+				if (breakType == BREAK_REASON_NUMBER.NO_REASON) {
 					// Only if other breakpoints not found or condition is false
 					if (condition == undefined) {
 						// Temporary breakpoint hit.
@@ -875,7 +893,7 @@ export class DzrpRemote extends RemoteBase {
 			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
 
 			// Use a custom function here to evaluate breakpoint condition and log string.
-			const funcContinueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
+			const funcContinueResolve = async (breakInfo: BreakInfo) => {
 				try {
 					// Give vscode a little time
 					// await this.timeWait.waitAtInterval();  // REMARK: I think I don't need it anymore
@@ -884,7 +902,7 @@ export class DzrpRemote extends RemoteBase {
 					await this.getRegistersFromEmulator();
 
 					// Check for break condition
-					const {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakNumber, breakAddress);
+					const {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakInfo.reasonNumber, breakInfo.longAddr);
 
 					// Check for continue
 					if (condition == undefined) {
@@ -894,7 +912,7 @@ export class DzrpRemote extends RemoteBase {
 					}
 					else {
 						// Construct break reason string to report
-						breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
+						const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
 						// Clear registers
 						await this.getRegistersFromEmulator();
 						await this.getCallStackFromEmulator();
@@ -944,7 +962,7 @@ export class DzrpRemote extends RemoteBase {
 			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
 
 			// Prepare for break: This function is called by the PAUSE (break) notification:
-			const funcContinueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
+			const funcContinueResolve = async (breakInfo: BreakInfo) => {
 				// Give vscode a little time
 				await this.timeWait.waitAtInterval();
 
@@ -952,7 +970,7 @@ export class DzrpRemote extends RemoteBase {
 				await this.getRegistersFromEmulator();
 
 				// Check for break condition
-				let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakNumber, breakAddress);
+				let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakInfo.reasonNumber, breakInfo.longAddr);
 
 				// Check for continue
 				if (condition == undefined) {
@@ -965,7 +983,7 @@ export class DzrpRemote extends RemoteBase {
 				}
 				else {
 					// Construct break reason string to report
-					breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
+					const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
 					// Clear registers
 					await this.getCallStackFromEmulator();
 					// return
@@ -1014,7 +1032,7 @@ export class DzrpRemote extends RemoteBase {
 			let prevPc = 0;
 
 			// Use a custom function here to evaluate breakpoint condition and log string.
-			const funcContinueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
+			const funcContinueResolve = async (breakInfo: BreakInfo) => {
 				try {
 					// Give vscode a little time
 					await this.timeWait.waitAtInterval();
@@ -1023,7 +1041,7 @@ export class DzrpRemote extends RemoteBase {
 					await this.getRegistersFromEmulator();
 
 					// Check for break condition
-					let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakNumber, breakAddress);
+					let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakInfo.reasonNumber, breakInfo.longAddr);
 					// For StepOut ignore the stepping tmp breakpoints
 					if (correctedBreakNumber == BREAK_REASON_NUMBER.NO_REASON)
 						condition = undefined;
@@ -1054,7 +1072,7 @@ export class DzrpRemote extends RemoteBase {
 					}
 					else {
 						// Construct break reason string to report
-						breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
+						const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
 						// Clear registers
 						await this.getRegistersFromEmulator();
 						await this.getCallStackFromEmulator();
@@ -1121,7 +1139,7 @@ export class DzrpRemote extends RemoteBase {
 		this.addedWatchpoints.add(wp);
 
 		// Forward request
-		await this.sendDzrpCmdAddWatchpoint(wp.address, wp.size, wp.access);
+		await this.sendDzrpCmdAddWatchpoint(wp.longAddress, wp.size, wp.access);
 	}
 
 
@@ -1134,7 +1152,7 @@ export class DzrpRemote extends RemoteBase {
 		this.addedWatchpoints.delete(wp);
 
 		// Forward request
-		await this.sendDzrpCmdRemoveWatchpoint(wp.address, wp.size, wp.access);
+		await this.sendDzrpCmdRemoveWatchpoint(wp.longAddress, wp.size, wp.access);
 	}
 
 
@@ -1201,17 +1219,17 @@ export class DzrpRemote extends RemoteBase {
 	public async setBreakpoint(bp: RemoteBreakpoint): Promise<number> {
 
 		// Check if "real" PC breakpoint
-		if (bp.address < 0) {
+		if (bp.longAddress < 0) {
 			this.emit('warning', 'DZRP does only support PC breakpoints.');
 			// set to unverified
-			bp.address = -1;
+			bp.longAddress = -1;
 			return 0;
 		}
 
 		// Set breakpoint
 		await this.sendDzrpCmdAddBreakpoint(bp);
 		if (bp.bpId == 0)
-			bp.address = -1;
+			bp.longAddress = -1;
 
 		// Add to list
 		this.breakpoints.push(bp);

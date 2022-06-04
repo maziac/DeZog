@@ -36,6 +36,15 @@ export interface ListFileLine extends SourceFileEntry {
 
 
 /**
+ * Address with corresponding line. Used for ASSERTION, LOGPOINT and WPMEM.
+ */
+export interface AddressLine {
+	address: number;	// TODO: Check if long address (should be) and rename.
+	line: string;
+}
+
+
+/**
  * Entries for the distanceForLabelAddress map.
  * Required would be only the number.
  * But the name of the next label is also stored for debugging

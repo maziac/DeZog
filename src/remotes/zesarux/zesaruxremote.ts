@@ -518,7 +518,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 				// Check if it was an ASSERTION
 				const pcLong = this.getPCLong();
-				const abps = this.assertionBreakpoints.filter(abp => abp.address == pcLong);
+				const abps = this.assertionBreakpoints.filter(abp => abp.longAddress == pcLong);
 				for (const abp of abps) {
 					let conditionTrue = true;
 					if (abp.condition != undefined) {
@@ -897,7 +897,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 				// Create watchpoint with range
 				const size = wp.size;
-				let addr = wp.address & 0xFFFF;
+				let addr = wp.longAddress & 0xFFFF;
 				zSocket.send('set-membreakpoint ' + addr.toString(16) + 'h ' + type + ' ' + size);
 			}
 
@@ -916,7 +916,7 @@ export class ZesaruxRemote extends RemoteBase {
 		return new Promise<void>(resolve => {
 			// Clear watchpoint with range
 			const size = wp.size;
-			let addr = wp.address & 0xFFFF;
+			let addr = wp.longAddress & 0xFFFF;
 			zSocket.send('set-membreakpoint ' + addr.toString(16) + 'h 0 ' + size);
 			// Return promise after last watchpoint set
 			zSocket.executeWhenQueueIsEmpty().then(resolve);
@@ -934,7 +934,7 @@ export class ZesaruxRemote extends RemoteBase {
 			for (let abp of this.assertionBreakpoints) {
 				// Set breakpoint
 				if (!abp.bpId) {
-					abp.bpId = await this.setBreakpointZesarux(abp.address, abp.condition);
+					abp.bpId = await this.setBreakpointZesarux(abp.longAddress, abp.condition);
 				}
 
 			}
@@ -1138,16 +1138,16 @@ export class ZesaruxRemote extends RemoteBase {
 		if (bp.log) {
 			this.emit('warning', 'ZEsarUX does not support logpoints ("' + bp.log + '").');
 			// set to unverified
-			bp.address = -1;
+			bp.longAddress = -1;
 			return 0;
 		}
 
 		// Set breakpoint
-		const bpId = await this.setBreakpointZesarux(bp.address, bp.condition);
+		const bpId = await this.setBreakpointZesarux(bp.longAddress, bp.condition);
 		// Check for error
 		if (bpId <= 0) {
 			// set to unverified
-			bp.address = -1;
+			bp.longAddress = -1;
 			return 0
 		}
 

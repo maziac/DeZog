@@ -6,7 +6,7 @@
  *
  */
 export interface GenericWatchpoint {
-	address: number; ///< The start address
+	longAddress: number; ///< The start address
 	size: number;	///< The length of the area to watch
 	access: string;	///< The way of access, e.g. read='r', write='w', readwrite='rw'
 	condition: string;	///< The additional condition. undefined or '' if no condition set.
@@ -19,7 +19,7 @@ export interface GenericWatchpoint {
  */
 export interface GenericBreakpoint {
 	bpId?: number,	///< An optional number bigger than 0. E.g. not used by ZEsarUX but by DZRP.
-	address: number, ///< The PC (long) address to break on
+	longAddress: number, ///< The PC (long) address to break on
 	condition?: string,	///< The additional conditions. '' if no condition set.
 	log?: string,	///< If set the log will be printed instead of stopping execution.
 	error?: string	///< An informative error text. E.g. used for additional info if a breakpoint could not be set.

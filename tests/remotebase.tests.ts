@@ -41,22 +41,22 @@ suite('RemoteBase', () => {
 			const wps: Array<GenericWatchpoint> = rem.createWatchPoints(wpLines);
 			assert.equal(wps.length, 4);
 
-			assert.equal(wps[0].address, 0xA000);
+			assert.equal(wps[0].longAddress, 0xA000);
 			assert.equal(wps[0].size, 1);
 			assert.equal(wps[0].access, "rw");
 			assert.equal(wps[0].condition, "");
 
-			assert.equal(wps[1].address, 0xA010);
+			assert.equal(wps[1].longAddress, 0xA010);
 			assert.equal(wps[1].size, 5);
 			assert.equal(wps[1].access, "w");
 			assert.equal(wps[1].condition, "");
 
-			assert.equal(wps[2].address, 0x7000);
+			assert.equal(wps[2].longAddress, 0x7000);
 			assert.equal(wps[2].size, 10);
 			assert.equal(wps[2].access, "r");
 			assert.equal(wps[2].condition, "");
 
-			assert.equal(wps[3].address, 0x6000);
+			assert.equal(wps[3].longAddress, 0x6000);
 			assert.equal(wps[3].size, 5);
 			assert.equal(wps[3].access, "w");
 			assert.equal(wps[3].condition, "A==0");
@@ -75,11 +75,11 @@ suite('RemoteBase', () => {
 			const assertions: Array<GenericBreakpoint> = rem.createAssertions(wpLines);
 			assert.equal(assertions.length, 2);
 
-			assert.equal(assertions[0].address, 0xA020);
+			assert.equal(assertions[0].longAddress, 0xA020);
 			assert.equal(assertions[0].condition, "!(false)");
 			assert.equal(assertions[0].log, undefined);
 
-			assert.equal(assertions[1].address, 0xA021);
+			assert.equal(assertions[1].longAddress, 0xA021);
 			assert.equal(assertions[1].condition, "!(B==1)");
 			assert.equal(assertions[1].log, undefined);
 		});
@@ -102,19 +102,19 @@ suite('RemoteBase', () => {
 
 			let bps: Array<GenericBreakpoint> = lps.get("GROUP1")!;
 			assert.equal(bps.length, 3);
-			assert.equal(bps[0].address, 0xA023);
+			assert.equal(bps[0].longAddress, 0xA023);
 			assert.equal(bps[0].condition, "");
 			assert.equal(bps[0].log, "[GROUP1] ${A}");
-			assert.equal(bps[1].address, 0xA024);
+			assert.equal(bps[1].longAddress, 0xA024);
 			assert.equal(bps[1].condition, "");
 			assert.equal(bps[1].log, "[GROUP1] BC=${BC:hex}");
-			assert.equal(bps[2].address, 0xA025);
+			assert.equal(bps[2].longAddress, 0xA025);
 			assert.equal(bps[2].condition, "");
 			assert.equal(bps[2].log, "[GROUP1] ");
 
 			bps = lps.get("DEFAULT")!;
 			assert.equal(bps.length, 1);
-			assert.equal(bps[0].address, 0xA026);
+			assert.equal(bps[0].longAddress, 0xA026);
 			assert.equal(bps[0].condition, "");
 			assert.equal(bps[0].log, "[DEFAULT] MY LOG");
 		});

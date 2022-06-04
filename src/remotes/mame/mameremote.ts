@@ -1,3 +1,4 @@
+import { BreakInfo } from './../dzrp/dzrpremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {LogTransport} from '../../log';
 import {Socket} from 'net';
@@ -315,13 +316,16 @@ export class MameRemote extends DzrpQeuedRemote {
 				this.funcContinueResolve = undefined;
 				// Get break reason
 				const result = this.parseStopReplyPacket(packetData);
+				const longAddr = Z80Registers.createLongAddress(result.addr64k);
 				// Handle the break.
-				continueHandler({	// Is async, but anyhow last function call
-					breakNumber: result.breakReason,
-					breakAddress: result.address,
-					breakReasonString: '',
-					pc: result.pc
-				});
+				continueHandler({
+					reasonNumber: result.breakReason,
+					longAddr,
+					reasonString: '',
+					data: {
+						pc: result.pc
+					}
+				});	// Is async, but anyhow last function call	// TODO: change to async
 			}
 		}
 		else {
@@ -347,10 +351,13 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * E.g. 'T050a:0000;0b:0100;'
 	 * Note: it should have been checked already that it is a Stop Reply,
 	 * i.e. that it starts with 'T'.
-	 * @returns The break reason as string and the watchAddress if a watchpoint was hit.
-	 * For a normal breakpoint watchAddress is undefined.
+	 * @returns {
+	 * 	breakReason: The break reason, e.g. normal breakpoint or watchpoint.
+	 * 	addr64k: The 64k breakpoint or watch address.
+	 * 	pc: The 64k PC value.
+	 * }
 	 */
-	protected parseStopReplyPacket(packetData: string): {breakReason: number, address: number, pc: number} {
+	protected parseStopReplyPacket(packetData: string): {breakReason: number, addr64k: number, pc: number} {
 		packetData = packetData.toLowerCase();
 
 		// Search for PC register ('0b')
@@ -377,7 +384,7 @@ export class MameRemote extends DzrpQeuedRemote {
 			address = pc;
 		}
 
-		return {breakReason, address, pc};
+		return {breakReason, addr64k: address, pc};
 	}
 
 
@@ -631,14 +638,14 @@ export class MameRemote extends DzrpQeuedRemote {
 			// Intercept the this.funcContinueResolve to check the temporary breakpoints.
 			// (for the break reason when stepping).
 			const originalFuncContinueResolve = this.funcContinueResolve!;
-			const funcIntermediateContinueResolve = async ({breakNumber, breakAddress, breakReasonString, pc}) => {
+			const funcIntermediateContinueResolve = async (breakInfo: BreakInfo) => {
 				// Handle temporary breakpoints
-				const tmpBpHit = await this.checkTmpBreakpoints(pc, bp1Addr64k, bp2Addr64k);
+				const tmpBpHit = await this.checkTmpBreakpoints(breakInfo.data.pc, bp1Addr64k, bp2Addr64k);
 				if (tmpBpHit) {
-					breakNumber = BREAK_REASON_NUMBER.NO_REASON;
+					breakInfo.reasonNumber = BREAK_REASON_NUMBER.NO_REASON;
 				}
 				// Call "real" function
-				originalFuncContinueResolve({breakNumber, breakAddress, breakReasonString});
+				originalFuncContinueResolve(breakInfo);
 			};
 
 			// C(ontinue)
@@ -655,7 +662,7 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * Removes temporary breakpoints that might have been set by a
 	 * step function.
 	 * Additionally it is checked if PC is currently at one of the bps.
-	 * @param pc The current PC value. If not available, it is retrieved for MAME
+	 * @param pc The current PC value.
 	 * @param bp1 First 64k breakpoint or undefined.
 	 * @param bp2 Second 64k breakpoint or undefined.
 	 * @returns true if one of the bps is equal to the PC.
@@ -703,7 +710,7 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * ID.
 	 */
 	public async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
-		const address64k = bp.address & 0xFFFF;	// Long addresses not supported
+		const address64k = bp.longAddress & 0xFFFF;	// Long addresses not supported
 		const cmd = 'Z0,' + address64k.toString(16) + ',0';
 		await this.sendPacketDataOk(cmd);
 		bp.bpId = 1;	// Just need to set something not zero.
@@ -715,7 +722,7 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * @param bp The breakpoint to remove.
 	 */
 	public async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
-		const address64k = bp.address & 0xFFFF;	// Long addresses not supported
+		const address64k = bp.longAddress & 0xFFFF;	// Long addresses not supported
 		const cmd = 'z0,' + address64k.toString(16) + ',0';
 		await this.sendPacketDataOk(cmd);
 	}

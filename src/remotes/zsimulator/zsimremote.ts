@@ -569,7 +569,7 @@ export class ZSimRemote extends DzrpRemote {
 			let breakReasonString = '';
 			let breakNumber = BREAK_REASON_NUMBER.NO_REASON;
 			//let bp;
-			let breakAddress;
+			let longBreakAddress;
 			let slots = this.memory.getSlots();	// Z80 Registers may not be filled yet.
 			let pcLong = Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
 			const leaveAtTstates = this.passedTstates + 5000 * 4;	// Break from loop at least after 2000 instructions (on average). This is to break in case of a halt.
@@ -654,7 +654,7 @@ export class ZSimRemote extends DzrpRemote {
 						// Breakpoint and condition OK
 						if (bp) {
 							breakNumber = BREAK_REASON_NUMBER.BREAKPOINT_HIT;
-							breakAddress = pcLong;
+							longBreakAddress = pcLong;
 							break;	// stop loop
 						}
 					}
@@ -665,7 +665,7 @@ export class ZSimRemote extends DzrpRemote {
 						breakNumber = (this.memory.hitAccess == 'r') ? BREAK_REASON_NUMBER.WATCHPOINT_READ : BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
 						const memAddress = this.memory.hitAddress;
 						// Calculate long address
-						breakAddress = Z80Registers.createLongAddress(memAddress, slots);
+						longBreakAddress = Z80Registers.createLongAddress(memAddress, slots);
 						// NOTE: Check for long watchpoint address could be done already here.
 						// However it is done anyway in the DzrpRemote.
 						break;
@@ -674,7 +674,7 @@ export class ZSimRemote extends DzrpRemote {
 
 					// Check if given breakpoints are hit (64k address compare, not long addresses)
 					if (pc == bp1 || pc == bp2) {
-						breakAddress = pc;
+						longBreakAddress = pcLong;
 						break;
 					}
 
@@ -698,7 +698,11 @@ export class ZSimRemote extends DzrpRemote {
 				this.stopCpu = true;
 				// Send Notification
 				Utility.assert(this.funcContinueResolve);
-				this.funcContinueResolve!({breakNumber, breakAddress, breakReasonString});
+				this.funcContinueResolve!({
+						reasonNumber: breakNumber,
+						reasonString: breakReasonString,
+						longAddr: longBreakAddress,
+					});
 				return;
 			}
 
@@ -738,14 +742,18 @@ export class ZSimRemote extends DzrpRemote {
 			if (this.stopCpu) {
 				// Manual break: Create reason string
 				breakNumber = BREAK_REASON_NUMBER.MANUAL_BREAK;
-				breakAddress = 0;
-				breakReasonString = await this.constructBreakReasonString(breakNumber, breakAddress, '', '');
+				longBreakAddress = 0;
+				breakReasonString = await this.constructBreakReasonString(breakNumber, longBreakAddress, '', '');
 
 				// Send Notification
 				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
 				Utility.assert(this.funcContinueResolve);
 				if (this.funcContinueResolve)
-					this.funcContinueResolve({breakNumber, breakAddress, breakReasonString});
+					this.funcContinueResolve({
+						reasonNumber: breakNumber,
+						reasonString: breakReasonString,
+						longAddr: longBreakAddress,
+					});
 				return;
 			}
 		}

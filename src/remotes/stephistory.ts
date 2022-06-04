@@ -449,7 +449,7 @@ export class StepHistoryClass extends EventEmitter {
 
 		const breakpoints = Remote.getBreakpointsArray();
 		for (const bp of breakpoints) {
-			if (bp.address == pc) {
+			if (bp.longAddress == pc) {
 				// Check for condition
 				if (!bp.condition) {
 					condition = "";

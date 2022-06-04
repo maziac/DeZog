@@ -347,7 +347,7 @@ export class RemoteBase extends EventEmitter {
 				else
 					access = 'rw';
 				// Set watchpoint. (long address)
-				watchpoints.push({address: entryAddress, size: length, access: access, condition: cond || ''});
+				watchpoints.push({longAddress: entryAddress, size: length, access: access, condition: cond || ''});
 			}
 			catch (e) {
 				throw Error("Problem with WPMEM. Could not evaluate: '" + entry.line + "': " + e.message + "");
@@ -414,7 +414,7 @@ export class RemoteBase extends EventEmitter {
 					}
 					else {
 						// Breakpoint for address does not yet exist. Create a new one.
-						const assertionBp = {address: entry.address, condition: conds, log: undefined};
+						const assertionBp = {longAddress: entry.address, condition: conds, log: undefined};
 						assertionMap.set(entry.address, assertionBp);
 					}
 				}
@@ -461,7 +461,7 @@ export class RemoteBase extends EventEmitter {
 				try {
 					const log = this.evalLogMessage(logMsg);
 					// set watchpoint
-					array.push({address: entry.address, condition: '', log: log});
+					array.push({longAddress: entry.address, condition: '', log: log});
 				}
 				catch (e) {
 					// Show error
@@ -1191,8 +1191,8 @@ export class RemoteBase extends EventEmitter {
 			});
 
 			// Now check which breakpoints are new or removed (this includes 'changed').
-			const newBps = currentBps.filter(bp => bp.address >= 0 && oldBps.filter(obp => (obp.condition == bp.condition) && (obp.log == bp.log) && (obp.address == bp.address)).length == 0);
-			const removedBps = oldBps.filter(bp => bp.address >= 0 && currentBps.filter(obp => (obp.condition == bp.condition) && (obp.log == bp.log) && (obp.address == bp.address)).length == 0);
+			const newBps = currentBps.filter(bp => bp.longAddress >= 0 && oldBps.filter(obp => (obp.condition == bp.condition) && (obp.log == bp.log) && (obp.longAddress == bp.longAddress)).length == 0);
+			const removedBps = oldBps.filter(bp => bp.longAddress >= 0 && currentBps.filter(obp => (obp.condition == bp.condition) && (obp.log == bp.log) && (obp.longAddress == bp.longAddress)).length == 0);
 
 			// Catch communication problems
 			try {

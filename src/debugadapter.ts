@@ -809,7 +809,7 @@ export class DebugSessionClass extends DebugSession {
 					bpId: 0,
 					filePath: path,
 					lineNr: this.convertClientLineToDebugger(bp.line),
-					address: -1,	// not known yet
+					longAddress: -1,	// not known yet
 					condition: (bp.condition) ? bp.condition : '',
 					log: log
 				};
@@ -3093,8 +3093,8 @@ E.g. use "-help -view" to put the help text in an own view.
 					// List log breakpoints
 					const lps = Remote.getLogpointsForGroup(grp);
 					for (const lp of lps) {
-						result += '\n    ' + Utility.getLongAddressString(lp.address);
-						const labels = Labels.getLabelsForLongAddress(lp.address);
+						result += '\n    ' + Utility.getLongAddressString(lp.longAddress);
+						const labels = Labels.getLabelsForLongAddress(lp.longAddress);
 						if (labels.length > 0) {
 							const labelsString = labels.join(', ');
 							result += ' (' + labelsString + ')';
@@ -3135,8 +3135,8 @@ E.g. use "-help -view" to put the help text in an own view.
 			// Also list all assertion breakpoints
 			const abps = Remote.getAllAssertionBreakpoints();
 			for (const abp of abps) {
-				result += Utility.getLongAddressString(abp.address);
-				const labels = Labels.getLabelsForLongAddress(abp.address);
+				result += Utility.getLongAddressString(abp.longAddress);
+				const labels = Labels.getLabelsForLongAddress(abp.longAddress);
 				if (labels.length > 0) {
 					const labelsString = labels.join(', ');
 					result += ' (' + labelsString + ')';
@@ -3179,8 +3179,8 @@ E.g. use "-help -view" to put the help text in an own view.
 			// Also list all watchpoints
 			const wps = Remote.getAllWpmemWatchpoints();
 			for (const wp of wps) {
-				result += Utility.getLongAddressString(wp.address);
-				const labels = Labels.getLabelsForLongAddress(wp.address);
+				result += Utility.getLongAddressString(wp.longAddress);
+				const labels = Labels.getLabelsForLongAddress(wp.longAddress);
 				if (labels.length > 0) {
 					const labelsString = labels.join(', ');
 					result += ' (' + labelsString + ')';
@@ -3221,7 +3221,7 @@ E.g. use "-help -view" to put the help text in an own view.
 
 		// Add watchpoint
 		const wp: GenericWatchpoint = {
-			address,
+			longAddress: address,
 			size,
 			access,
 			condition: ''
@@ -3259,7 +3259,7 @@ E.g. use "-help -view" to put the help text in an own view.
 
 		// Add watchpoint
 		const wp: GenericWatchpoint = {
-			address,
+			longAddress: address,
 			size,
 			access,
 			condition: ''

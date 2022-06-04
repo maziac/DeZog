@@ -241,19 +241,19 @@ export class DzrpBufferRemote extends DzrpQeuedRemote {
 				const continueHandler = this.funcContinueResolve;
 				this.funcContinueResolve = undefined;
 				// Get data
-				const breakNumber = data[2];
-				let breakAddress = Utility.getWord(data, 3);
-				if (Labels.AreLongAddressesUsed()) {
+				const type = data[2];
+				let longAddr = Utility.getWord(data, 3);
+				if (Labels.AreLongAddressesUsed()) {	// TODO: Always long
 					const breakAddressBank = data[5];
-					breakAddress += breakAddressBank << 16;
+					longAddr += breakAddressBank << 16;
 				}
 				// Get reason string
-				let breakReasonString = Utility.getStringFromBuffer(data, 6);
-				if (breakReasonString.length == 0)
-					breakReasonString = undefined as any;
+				let reasonString = Utility.getStringFromBuffer(data, 6);
+				if (reasonString.length == 0)
+					reasonString = undefined as any;
 
 				// Handle the break.
-				continueHandler({breakNumber, breakAddress, breakReasonString});
+				continueHandler({reasonNumber: type, longAddr, reasonString});
 			}
 		}
 		else {
@@ -503,7 +503,7 @@ export class DzrpBufferRemote extends DzrpQeuedRemote {
 	 * ID. If the breakpoint could not be set it is set to 0.
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
-		const bpAddress = bp.address;	// A long address
+		const bpAddress = bp.longAddress;	// A long address
 		let condition = bp.condition;
 		// Convert condition string to Buffer
 		if (!condition)

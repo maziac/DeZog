@@ -530,13 +530,13 @@ export class Z80UnitTestRunner {
 		//this.utLabels = undefined as unknown as Array<string>;
 
 		// Success and failure breakpoints
-		const successBp: RemoteBreakpoint = {bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTestRunner.addrTestReadySuccess, condition: '', log: undefined};
+		const successBp: RemoteBreakpoint = {bpId: 0, filePath: '', lineNr: -1, longAddress: Z80UnitTestRunner.addrTestReadySuccess, condition: '', log: undefined};
 		await Remote.setBreakpoint(successBp);
 
 		// Stack watchpoints
 		try {
-			const stackMinWp: GenericWatchpoint = {address: this.stackBottom, size: 2, access: 'rw', condition: ''};
-			const stackMaxWp: GenericWatchpoint = {address: this.stackTop, size: 2, access: 'rw', condition: ''};
+			const stackMinWp: GenericWatchpoint = {longAddress: this.stackBottom, size: 2, access: 'rw', condition: ''};
+			const stackMaxWp: GenericWatchpoint = {longAddress: this.stackTop, size: 2, access: 'rw', condition: ''};
 			await Remote.setWatchpoint(stackMinWp);
 			await Remote.setWatchpoint(stackMaxWp);
 		}
