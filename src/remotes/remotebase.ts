@@ -740,10 +740,9 @@ export class RemoteBase extends EventEmitter {
 			return undefined;
 		}
 
-		// Convert to long address if necessary
-		if (Labels.AreLongAddressesUsed()) {
-			callerAddr = Z80Registers.createLongAddress(callerAddr);
-		}
+		// Convert to long address
+		callerAddr = Z80Registers.createLongAddress(callerAddr);
+		calledAddr = Z80Registers.createLongAddress(calledAddr);
 
 		// Found: get label
 		const labelCalledAddrArr = Labels.getLabelsForLongAddress(calledAddr);
