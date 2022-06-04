@@ -157,9 +157,7 @@ export class DisassemblyClass extends Disassembler {
 		let lineNr = 0;
 		this.addrLineMap.clear();
 		this.lineAddrArray.length = 0;
-		let slots;
-		if (Labels.AreLongAddressesUsed())
-			slots = Z80Registers.getSlots();
+		const slots = Z80Registers.getSlots();
 		for (const line of this.disassembledLines) {
 			let address = parseInt(line, 16);
 			if (!isNaN(address)) {

@@ -1,4 +1,3 @@
-import {Labels} from '../labels/labels';
 import {Utility} from '../misc/utility';
 import {Z80Registers} from './z80registers';
 
@@ -175,8 +174,6 @@ export class DecodeRegisterData {
 	public parsePCLong(data: RegisterData): number {
 		// Get PC
 		const pc = this.parsePC(data);
-		if (!Labels.AreLongAddressesUsed())
-			return pc;
 		// Get slots
 		const slots = this.parseSlots(data);
 		// Convert

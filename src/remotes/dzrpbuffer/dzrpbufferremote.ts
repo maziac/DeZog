@@ -3,7 +3,6 @@ import {AlternateCommand, DzrpMachineType, DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME
 import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {GenericBreakpoint} from '../../genericwatchpoint';
-import {Labels} from '../../labels/labels';
 import {DzrpQeuedRemote} from '../dzrp/dzrpqeuedremote';
 
 
@@ -243,10 +242,8 @@ export class DzrpBufferRemote extends DzrpQeuedRemote {
 				// Get data
 				const type = data[2];
 				let longAddr = Utility.getWord(data, 3);
-				if (Labels.AreLongAddressesUsed()) {	// TODO: Always long
-					const breakAddressBank = data[5];
-					longAddr += breakAddressBank << 16;
-				}
+				const breakAddressBank = data[5];
+				longAddr += breakAddressBank << 16;
 				// Get reason string
 				let reasonString = Utility.getStringFromBuffer(data, 6);
 				if (reasonString.length == 0)

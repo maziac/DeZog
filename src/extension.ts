@@ -309,7 +309,7 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 				// Check user selection
 				if (result?.toLowerCase().startsWith('terminate')) {
 					// Terminate current session and start a new one
-					await session.terminateRemote();	// TODO: Can lead to a 'cannot find session', see https://github.com/maziac/DeZog/issues/91
+					await session.terminateRemote();	// Can lead to a 'cannot find session', see https://github.com/maziac/DeZog/issues/91
 					// Because of this we will stop here simply (reject)
 				}
 				// Stop here.

@@ -366,7 +366,7 @@ export class LabelParserBase {
 			const countBytes = entry.size;
 			if (countBytes > 0) {
 				for (let i = 0; i < entry.size; i++) { // TODO: long addresses?
-					const addr = (entry.addr + i) & 0xFFFF + (entry.addr & ~0xFFFF);
+					const addr = ((entry.addr + i) & 0xFFFF) + (entry.addr & ~0xFFFF);
 					//const prevFileLine = this.fileLineNrs.get(addr);
 					//if (!prevFileLine)
 					{
@@ -396,11 +396,11 @@ export class LabelParserBase {
 	 * I.e. on windows and macos a path could have been used with a different capitalization.
 	 * But for storage the correct path is used.
 	 * This in turn also checks if the file is available at all.
-	 * @param address Long address
+	 * @param longAddress Long address
 	 * @param entry Contains (relative) file name, lineNr, etc.
 	 */
-	protected setFileLineNrForAddress(address: number, entry: SourceFileEntry) {
-		this.fileLineNrs.set(address, entry);
+	protected setFileLineNrForAddress(longAddress: number, entry: SourceFileEntry) {
+		this.fileLineNrs.set(longAddress, entry);
 	}
 
 
