@@ -1,4 +1,3 @@
-import {Labels} from '../labels/labels';
 import {Utility} from '../misc/utility';
 import {Settings} from '../settings/settings';
 import {DecodeRegisterData, RegisterData} from './decoderegisterdata';
@@ -451,9 +450,6 @@ export class Z80RegistersClass {
 		// Check for normal address
 		if (!slots)
 			slots = this.decoder.parseSlots(this.RegisterCache);
-
-		if (!Labels.AreLongAddressesUsed())
-			return addr64k;
 
 		// Calculate long address
 		const result = this.funcCreateLongAddress(addr64k, slots);

@@ -191,16 +191,6 @@ export class LabelsClass extends EventEmitter {
 
 
 	/**
-	 * Returns true if long addresses have been used.
-	 * I.e. if bankSize != 0.
-	 */
-	public AreLongAddressesUsed() {	// TODO: still required?
-		//return this.bankSize != 0;
-		return true;
-	}
-
-
-	/**
 	 * This has to be set in the launchRequest.
 	 * Finishes off the loading of list and labels files.
 	 * Can throw an exception if some values make no sense.
