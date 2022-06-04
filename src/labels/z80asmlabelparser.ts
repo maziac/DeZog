@@ -46,8 +46,12 @@ export class Z80asmLabelParser extends LabelParserBase {
 		let countBytes=0;
 
 		// Extract address.
-		const address=parseInt(line.substring(0, 4), 16);
-		if (!isNaN(address)) { // isNaN if e.g. the first line: "# File main.asm"
+		const addr64k = parseInt(line.substring(0, 4), 16);
+		let longAddr;
+		if (!isNaN(addr64k)) { // isNaN if e.g. the first line: "# File main.asm"
+
+			// Create long address
+			longAddr = this.createLongAddress(addr64k, 0);
 
 			// Check for labels and "equ".
 			const match=this.labelRegEx.exec(line);
@@ -63,7 +67,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 							// Check for any '$', i.e. current address
 							if (valueString.indexOf('$')>=0) {
 								// Replace $ with current address
-								const addressString=address.toString();
+								const addressString=addr64k.toString();
 								const cAddrString=valueString.replace(/(?<![a-z_0-9\$])\$(?![a-z_0-9\$])/i, addressString);
 								valueString=cAddrString;
 							}
@@ -78,8 +82,6 @@ export class Z80asmLabelParser extends LabelParserBase {
 					}
 				}
 				else {
-					// Create long address
-					const longAddr = this.createLongAddress(address, 0);
 					// Add label
 					this.addLabelForNumber(longAddr, label);
 				}
@@ -118,7 +120,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 
 		// Store address (or several addresses for one line).
 		// This needs to be called even if address is undefined.
-		this.addAddressLine(address, countBytes);
+		this.addAddressLine(longAddr, countBytes);
 	}
 
 
