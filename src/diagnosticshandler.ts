@@ -5,8 +5,8 @@ import {SimulatedMemory} from './remotes/zsimulator/simulatedmemory';
 
 
 /**
- * A singleton that manages diagnostics. I.e. errors found in the
- * peripherals js code.
+ * A singleton that manages diagnostics. E.g. errors found in the
+ * peripherals js code or reverse engineering list file.
  */
 export class DiagnosticsHandler {
 

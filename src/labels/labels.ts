@@ -1,5 +1,4 @@
-import { FileWatcher } from './../misc/filewatcher';
-import { EventEmitter } from 'events';
+import {EventEmitter} from 'events';
 import {ListConfigBase} from './../settings/settings';
 import {Utility} from '../misc/utility';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
@@ -7,10 +6,10 @@ import {Remote} from '../remotes/remotebase';
 import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
-import * as fs from 'fs';
 import {ReverseEngineeringLabelParser} from './reverseengineeringlabelparser';
 import {SettingsParameters} from '../settings/settings';
 import {Issue, LabelParserBase} from './labelparserbase';
+import * as fs from 'fs';
 
 /**
  * For the association of the addresses to the files.
@@ -165,7 +164,7 @@ export class LabelsClass extends EventEmitter {
 	//public memoryModel: MemoryModel;
 
 	// Contains the watched files. For reverse engineering auto re-load.
-	protected watchedFiles: Array<FileWatcher> = [];
+	protected watchedFiles: Array<string> = [];
 
 
 	/**
@@ -187,7 +186,7 @@ export class LabelsClass extends EventEmitter {
 		this.smallValuesMaximum = smallValuesMaximum;
 		this.bankSize = 0;
 		this.errorHappened = false;
-		this.clearWatchedFiles();
+		this.watchedFiles.length = 0;
 	}
 
 
@@ -268,7 +267,7 @@ export class LabelsClass extends EventEmitter {
 				// Check if files need to be watched
 				if (config.reloadOnSave) {
 					// Watch file for save
-					this.watchFile(config.path);
+					this.watchedFiles.push(config.path);
 				}
 			}
 			this.bankSize = 0x4000;	// TODO: need to be read from somewhere. Still required?
@@ -466,7 +465,7 @@ export class LabelsClass extends EventEmitter {
 	 * @param addr The address (of the current label). Long address.
 	 * @returns N. addr+N is the address that relates to the next available label.
 	 */
-	public getDistanceToNextLabel(addr: number): number|undefined {
+	public getDistanceToNextLabel(addr: number): number | undefined {
 		const nextLabel = this.distanceForLabelAddress.get(addr);
 		return nextLabel?.distance;
 	}
@@ -654,8 +653,9 @@ export class LabelsClass extends EventEmitter {
 		}
 
 		const filePath = Utility.getAbsFilePath(entry.fileName);
-		return {fileName: filePath, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: entry.size
-};
+		return {
+			fileName: filePath, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: entry.size
+		};
 	}
 
 
@@ -734,47 +734,16 @@ export class LabelsClass extends EventEmitter {
 	 * @param issue The issue reported. Contains file and line number.
 	 */
 	protected handleIssue(issue: Issue) {
-		if(LabelsClass.addDiagnosticsErrorFunc)
+		if (LabelsClass.addDiagnosticsErrorFunc)
 			LabelsClass.addDiagnosticsErrorFunc(issue.message, issue.severity, issue.filepath, issue.lineNr, 0);
 	}
 
 
 	/**
-	 * Removes the existing watches.
+	 * Returns the the files to watch.
 	 */
-	protected clearWatchedFiles() {
-		for (const fileWatcher of this.watchedFiles) {
-			fileWatcher.dispose();
-		}
-	}
-
-
-	/**
-	 * Watches a file. If saved a 'reload' event will be emitted.
-	 * (For reverse engineering reload of list files.)
-	 * Note: the event is delayed a little bit in case several files are changed at the same time.
-	 * @path The absolute path.
-	 */
-	protected watchFile(path: string) {
-		// Create new file watcher
-		const fileWatcher = new FileWatcher(path);
-		this.watchedFiles.push(fileWatcher);
-		// Watch for changes
-		//	let emitInProgress = false;	// For collecting several changes
-		fileWatcher.onDidChange(() => {
-			this.emit('reload');
-			/*
-					if (emitInProgress)
-						return;	// Emit will happen anyway
-					// Delay the emit to collect several different file changes
-					emitInProgress = true;
-					setTimeout(() => {
-						this.emit('reload');
-						emitInProgress = false;
-					}, 500);
-				});
-			*/
-		});
+	public getWatchedFiles() {
+		return this.watchedFiles
 	}
 }
 

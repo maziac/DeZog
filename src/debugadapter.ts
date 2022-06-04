@@ -1,3 +1,4 @@
+import {FileWatcher} from './misc/filewatcher';
 import * as fs from 'fs';
 import {UnifiedPath} from './misc/unifiedpath';
 import * as vscode from 'vscode';
@@ -135,6 +136,9 @@ export class DebugSessionClass extends DebugSession {
 
 	/// Is used to display  the disassembly in a different decoration.
 	protected disassemblyUpToDate = false;
+
+	/// The file watchers used for auto reload of list files.
+	protected fileWatchers: FileWatcher[] = [];
 
 
 	/**
@@ -377,6 +381,9 @@ export class DebugSessionClass extends DebugSession {
 		console.log('disconnectAll started');	// TODO: REMOVE
 
 		try {
+			// Dispose file watchers
+			this.removeReloadFileWatchers();
+
 			// Close views, e.g. register memory view
 			BaseView.staticCloseAll();
 			this.removeListener('update', BaseView.staticCallUpdateFunctions);
@@ -606,11 +613,6 @@ export class DebugSessionClass extends DebugSession {
 			}
 		}
 
-		// Establish watch
-		Labels.on('reload', () => {
-			this.reloadLabels();
-		});
-
 		// Return
 		this.sendResponse(response);
 	}
@@ -704,6 +706,9 @@ export class DebugSessionClass extends DebugSession {
 					//	this.terminate(err.message);
 					this.unitTestsStartCallbacks?.reject(err);
 				}
+
+				// Instantiate file watchers for revEng auto re-load
+				this.installReloadFileWatchers();
 
 				// Get initial registers
 				await Remote.getRegistersFromEmulator();
@@ -3813,6 +3818,38 @@ E.g. use "-help -view" to put the help text in an own view.
 			Remote.terminate('Labels: ' + e.message);
 			//this.showError("Error while initializing labels.");
 		}
+	}
+
+
+	/**
+	 * Install file watchers for reverse engineering auto reload.
+	 */
+	protected installReloadFileWatchers() {
+		// Just in case
+		this.removeReloadFileWatchers();
+		// Get watched files
+		const paths = Labels.getWatchedFiles();
+		// Loop all files
+		for (const path of paths) {
+			// Create new file watcher
+			const fileWatcher = new FileWatcher(path);
+			this.fileWatchers.push(fileWatcher);
+			// Watch for changes
+			fileWatcher.onDidChange(() => {
+				this.reloadLabels();
+			});
+		}
+	}
+
+
+	/**
+	 * Remove file watchers for reverse engineering auto reload.
+	 */
+	protected removeReloadFileWatchers() {
+		for (const fileWatcher of this.fileWatchers) {
+			fileWatcher.dispose();
+		}
+		this.fileWatchers = [];
 	}
 }
 
