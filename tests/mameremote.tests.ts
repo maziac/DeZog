@@ -186,11 +186,11 @@ suite('MameRemote', () => {
 		test('parseStopReplyPacket', () => {
 			let result = mame.parseStopReplyPacket('T050a:0000;0b:0100;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.BREAKPOINT_HIT);
-			assert.equal(result.address, 0x001);
+			assert.equal(result.addr64k, 0x001);
 
 			result = mame.parseStopReplyPacket('T0500b:1234;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.BREAKPOINT_HIT);
-			assert.equal(result.address, 0x3412);
+			assert.equal(result.addr64k, 0x3412);
 
 			assert.throws(() => {
 				result = mame.parseStopReplyPacket('T050a:0000;');
@@ -198,15 +198,15 @@ suite('MameRemote', () => {
 
 			result = mame.parseStopReplyPacket('T05watch:12FE;a:0000;0b:0100;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.WATCHPOINT_WRITE);
-			assert.equal(result.address, 0x12FE);
+			assert.equal(result.addr64k, 0x12FE);
 
 			result = mame.parseStopReplyPacket('T05awatch:12FE;0a:0000;0b:0100;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.WATCHPOINT_WRITE);
-			assert.equal(result.address, 0x12FE);
+			assert.equal(result.addr64k, 0x12FE);
 
 			result = mame.parseStopReplyPacket('T05rwatch:12FE;0a:0000;0b:0100;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.WATCHPOINT_READ);
-			assert.equal(result.address, 0x12FE);
+			assert.equal(result.addr64k, 0x12FE);
 		});
 	});
 
