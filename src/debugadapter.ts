@@ -833,7 +833,7 @@ export class DebugSessionClass extends DebugSession {
 		// Now match all given breakpoints with the available.
 		const vscodeBreakpoints = givenBps.map(gbp => {
 			// Search in current list
-			let foundCbp;
+			let foundCbp: RemoteBreakpoint|undefined;
 			const lineNr = gbp.line;
 			for (const cbp of currentBreakpoints) {
 				const cLineNr = this.convertDebuggerLineToClient(cbp.lineNr);
@@ -844,14 +844,14 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Create vscode breakpoint with verification
-			const verified = (foundCbp != undefined) && (foundCbp.address >= 0);
+			const verified = (foundCbp != undefined) && (foundCbp.longAddress >= 0);
 			const bp = new Breakpoint(verified, lineNr, 0, source);
-			if (foundCbp && foundCbp.address >= 0) {
+			if (foundCbp && foundCbp.longAddress >= 0) {
 				// Add address to source name.
-				const addrString = Utility.getLongAddressString(foundCbp.address);
+				const addrString = Utility.getLongAddressString(foundCbp.longAddress);
 				// Add hover text
 				let txt = addrString;
-				const labels = Labels.getLabelsForNumber64k(foundCbp.address);
+				const labels = Labels.getLabelsForNumber64k(foundCbp.longAddress);
 				labels.forEach(lbl => txt += '\n' + lbl);
 				(bp as any).message = txt;
 			}

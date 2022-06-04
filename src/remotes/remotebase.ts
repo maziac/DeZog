@@ -1161,21 +1161,21 @@ export class RemoteBase extends EventEmitter {
 			// Create new breakpoints
 			const currentBps = new Array<RemoteBreakpoint>();
 			givenBps.forEach(bp => {
-				let ebp;
+				let ebp: RemoteBreakpoint|undefined;
 				let error;
 				// Get PC value of that line
-				let addr = this.getAddrForFileAndLine(path, bp.lineNr);
+				let longAddr = this.getAddrForFileAndLine(path, bp.lineNr);
 				// Check if valid line
-				if (addr >= 0) {
+				if (longAddr >= 0) {
 					// Now search last line with that pc
-					const file = this.getFileAndLineForAddress(addr);
+					const file = this.getFileAndLineForAddress(longAddr);
 					// Check if right file
 					if (path.valueOf() == file.fileName.valueOf()) {
 						// create breakpoint object
-						ebp = {bpId: 0, filePath: file.fileName, lineNr: file.lineNr, address: addr, condition: bp.condition, log: bp.log};
+						ebp = {bpId: 0, filePath: file.fileName, lineNr: file.lineNr, longAddress: longAddr, condition: bp.condition, log: bp.log};
 					}
 					else
-						error = "File " + file.fileName + " found at address " + Utility.getHexString(addr, 4) + "h";
+						error = "File " + file.fileName + " found at address " + Utility.getHexString(longAddr, 4) + "h";
 				}
 				else {
 					// Additional info
@@ -1185,7 +1185,7 @@ export class RemoteBase extends EventEmitter {
 				// add to array
 				if (!ebp) {
 					// Breakpoint position invalid
-					ebp = {bpId: 0, filePath: path, lineNr: bp.lineNr, address: -1, condition: '', log: undefined, error};
+					ebp = {bpId: 0, filePath: path, lineNr: bp.lineNr, longAddress: -1, condition: '', log: undefined, error};
 				}
 				currentBps.push(ebp);
 			});
