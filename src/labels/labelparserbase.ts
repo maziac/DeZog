@@ -590,12 +590,12 @@ export class LabelParserBase {
 	 * Adds the address to the list file array.
 	 * Call this even if size is 0. The addresses are also required for
 	 * lines that may contain only a comment, e.g. LOGPOINT, WPMEM, ASSERTION:
-	 * @param address The address of the line. Could be undefined.
+	 * @param longAddress The address of the line. Could be undefined.
 	 * @param size The size of the line. E.g. for a 2 byte instruction this is 2.
 	 * Has to be 1 if address is undefined.
 	 */
-	protected addAddressLine(address: number, size: number) {
-		this.currentFileEntry.addr = address;
+	protected addAddressLine(longAddress: number, size: number) {
+		this.currentFileEntry.addr = longAddress;
 		this.currentFileEntry.size = size;
 	}
 
@@ -745,24 +745,23 @@ export class LabelParserBase {
 
 
 	/**
-	 * Creates a long address from the address and the page info.
+	 * Creates a long address from the address and the bank info.
 	 * If page == -1 address is returned unchanged.
 	 * It calls 'funcConvertBank' to convert the bank into the target memory model bank.
 	 * This is setup at the beginning in 'checkMappingToTargetMemoryModel'.
-	 * @param address The 64k address, i.e. the upper bits are the slot index.
+	 * @param addr64k The 64k address, i.e. the upper bits are the slot index.
 	 * @param bank The bank the address is associated with.
 	 * @returns if bankSize: address+((page+1)<<16)
 	 * else: address.
 	 */
-	protected createLongAddress(address: number, bank: number) {
+	protected createLongAddress(addr64k: number, bank: number) {
+		Utility.assert(bank >= 0);
 		if (bank < 0)
-			return address;
+			return addr64k;	// TODO: Not used anymore
 		// Check banks
-		const convBank = this.funcConvertBank(address, bank);
+		const convBank = this.funcConvertBank(addr64k, bank);
 		// Create long address
-		let result = address;
-		//	if (this.bankSize != 0)
-		result += (convBank + 1) << 16;
+		const  result = addr64k + ((convBank + 1) << 16);
 		return result;
 	}
 
