@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.0.0-rc2",
+	"version": "3.0.0-rc3",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum.",
 	"author": {
@@ -49,6 +49,7 @@
 		"@bartificer/human-join": "^1.1.3",
 		"await-notify": "1.0.1",
 		"binary-file": "^0.2.3",
+		"diff": "^5.1.0",
 		"gif-writer": "^0.9.4",
 		"glob": "^7.2.0",
 		"intel-hex": "^0.1.2",
@@ -396,7 +397,10 @@
 															"description": "Array with first and last (inclusive) address of the slot.\nEither use a decimal number or a hex string.",
 															"default": [],
 															"items": {
-																"type": [ "number", "string" ]
+																"type": [
+																	"number",
+																	"string"
+																]
 															}
 														},
 														"banks": {
@@ -418,7 +422,10 @@
 																		"default": ""
 																	},
 																	"index": {
-																		"type": ["number", "array"],
+																		"type": [
+																			"number",
+																			"array"
+																		],
 																		"description": "Either the single index/number of the bank. Or the start and end index of a range of banks.",
 																		"default": 0,
 																		"items": {
@@ -431,7 +438,7 @@
 																		"default": ""
 																	},
 																	"romOffset": {
-																		"type":[
+																		"type": [
 																			"number",
 																			"string"
 																		],
@@ -451,8 +458,13 @@
 											},
 											"ioMmu": {
 												"description": "The javascript code for bank switching.\nOptional. Only required for memory models that use banking/paging. Please refer to the documentation.\nPlease enter the code as a string or (for readability) as an arra of strings.",
-												"type": ["string", "array"],
-												"default": [ "" ],
+												"type": [
+													"string",
+													"array"
+												],
+												"default": [
+													""
+												],
 												"items": {
 													"type": "string"
 												}
@@ -728,7 +740,9 @@
 								"type": "array",
 								"items": {
 									"type": "object",
-									"required": [ "path" ],
+									"required": [
+										"path"
+									],
 									"properties": {
 										"path": {
 											"type": "string",
@@ -997,9 +1011,11 @@
 							},
 							"startAutomatically": false,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
-							"loadObjs": [{
-								"path": "${2:The .obj file to load}"
-							}],
+							"loadObjs": [
+								{
+									"path": "${2:The .obj file to load}"
+								}
+							],
 							"execAddress": "${3:The start address / label name}",
 							"topOfStack": "${4: Top of stack / label name}"
 						}
