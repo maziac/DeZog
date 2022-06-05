@@ -65,7 +65,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	protected bankSize: number = 0;
 
 	// The number from the pages.count from the sld file.
-	// Used for checks (in mapping).
+	//  Also used in checkMappingToTargetMemoryModel.
 	protected bankCount: number = 0;
 
 	/// Regex to skip a commented SLDOPT, i.e. "; SLDOPT"
@@ -338,12 +338,13 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					});
 					// Also assume for max. instruction size and associate the following
 					// 3 bytes as well (but only to "estimated")
+					const longAddrConvBank = (longAddress >>> 16) - 1;
 					for (let i = 1; i < 4; i++) {
 						const longAddressPlus = this.createLongAddress((value + i) & 0xFFFF, bank);
 						if (longAddressPlus < longAddress)
 							break;
 						const bankPlus = (longAddressPlus >>> 16) - 1;
-						if (bankPlus != bank)
+						if (bankPlus != longAddrConvBank)
 							break;
 						// Add
 						this.estimatedFileLineNrs.set(longAddressPlus, {
