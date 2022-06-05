@@ -365,13 +365,17 @@ export class LabelParserBase {
 
 			const countBytes = entry.size;
 			if (countBytes > 0) {
-				for (let i = 0; i < entry.size; i++) { // TODO: long addresses?
-					const addr = ((entry.longAddr + i) & 0xFFFF) + (entry.longAddr & ~0xFFFF);
-					//const prevFileLine = this.fileLineNrs.get(addr);
-					//if (!prevFileLine)
-					{
-						this.setFileLineNrForAddress(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: 1});
-					}
+				const longAddress = entry.longAddr;
+				const adr64k = (entry.longAddr & 0xFFFF);
+				const slotAssociation = this.memoryModel.slotAddress64kAssociation;
+				const slot = slotAssociation[adr64k];
+				for (let i = 0; i < entry.size; i++) {
+					const slotPlus = slotAssociation[(adr64k + i) & 0xFFFF];
+					if (slotPlus != slot)
+						break;	// Reached the slot border
+					// Add
+					const longAddressPlus = longAddress + i;
+					this.setFileLineNrForAddress(longAddressPlus, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: 1});
 				}
 			}
 			else {

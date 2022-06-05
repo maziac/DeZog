@@ -338,15 +338,15 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					});
 					// Also assume for max. instruction size and associate the following
 					// 3 bytes as well (but only to "estimated")
-					const longAddrConvBank = (longAddress >>> 16) - 1;
+					const adr64k = (value & 0xFFFF);
+					const slotAssociation = this.memoryModel.slotAddress64kAssociation;
+					const slot = slotAssociation[adr64k];
 					for (let i = 1; i < 4; i++) {
-						const longAddressPlus = this.createLongAddress((value + i) & 0xFFFF, bank);
-						if (longAddressPlus < longAddress)
-							break;
-						const bankPlus = (longAddressPlus >>> 16) - 1;
-						if (bankPlus != longAddrConvBank)
-							break;
+						const slotPlus = slotAssociation[(adr64k + i) & 0xFFFF];
+						if (slotPlus != slot)
+							break;	// Reached the slot border
 						// Add
+						const longAddressPlus = longAddress + i;
 						this.estimatedFileLineNrs.set(longAddressPlus, {
 							fileName: sourceFile,
 							lineNr: lineNr,
