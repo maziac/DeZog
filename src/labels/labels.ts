@@ -184,7 +184,6 @@ export class LabelsClass {
 	 */
 	public readListFiles(mainConfig: SettingsParameters, memoryModel: MemoryModel) {
 		// Clear some fields
-		// TODO: instead of init: create new arras etc. Use this arrays for reading. Then, only on success, copy them to the real arrays.
 		this.init(mainConfig.smallValuesMaximum);
 
 		// Prepare callback to issue handler

@@ -544,12 +544,10 @@ export class DzrpRemote extends RemoteBase {
 
 			// Check if wp start address is currently paged in
 			const bank = Z80RegistersClass.getBankFromAddress(longWpAddr);
-			if (bank >= 0) {	// TODO: Remove if. All are long addresses.
-				const slotNr = Z80Registers.getSlotFromAddress(longWpAddr);
-				const slotBank = slots[slotNr];
-				if (bank != slotBank)
-					continue;	// Wrong bank -> Next
-			}
+			const slotNr = Z80Registers.getSlotFromAddress(longWpAddr);
+			const slotBank = slots[slotNr];
+			if (bank != slotBank)
+				continue;	// Wrong bank -> Next
 
 			// WP fits
 			arr.push(wp);
@@ -917,7 +915,7 @@ export class DzrpRemote extends RemoteBase {
 						await this.getRegistersFromEmulator();
 						await this.getCallStackFromEmulator();
 						// return
-						this.continueResolve!.resolve(breakReasonString);	// TODO:await
+						this.continueResolve!.resolve(breakReasonString);
 					}
 				}
 				catch (e) {

@@ -15,7 +15,7 @@ export enum BankType {
 
 
 // Definition of one memory bank, i.e. memory slot/bank relationship.
-export interface MemoryBank {	// TODO: use SlotRange instead
+export interface MemoryBank {
 	// Z80 start address of page.
 	start: number;
 
@@ -401,26 +401,25 @@ export class MemoryModel {
 	 * @returns An array with the available memory pages. Contains start and end address
 	 * and a name.
 	 */
-	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
+	public getMemoryBanks(slots: number[]): MemoryBank[] {
 		const pages: Array<MemoryBank> = [];
-		if (slots) { // TODO: slots shouldn't be undefined
-			const len = this.slotRanges.length;
-			for (let i = 0; i < len; i++) {
-				const bankNr = slots[i];
-				let name;
-				if (bankNr == undefined) {
-					// Unassigned
-					name = 'UNASSIGNED';
-				}
-				else {
-					// Use bank
-					const bank = this.banks[bankNr];
-					name = bank.name;
-				}
-				// Store
-				const slotRange = this.slotRanges[i];
-				pages.push({start: slotRange.start, end: slotRange.end, name});
+		Utility.assert(slots);
+		const len = this.slotRanges.length;
+		for (let i = 0; i < len; i++) {
+			const bankNr = slots[i];
+			let name;
+			if (bankNr == undefined) {
+				// Unassigned
+				name = 'UNASSIGNED';
 			}
+			else {
+				// Use bank
+				const bank = this.banks[bankNr];
+				name = bank.name;
+			}
+			// Store
+			const slotRange = this.slotRanges[i];
+			pages.push({start: slotRange.start, end: slotRange.end, name});
 		}
 		// Return
 		return pages;

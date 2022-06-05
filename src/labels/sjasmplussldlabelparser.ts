@@ -466,7 +466,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		if (srcMemModel == SjasmplusMemoryModel.NOSLOT64K
 			|| srcMemModel == SjasmplusMemoryModel.ZX48K) {
 			if (destMemModel instanceof MemoryModelZx128k) {
-				const permut128k = [9, 5, 2, 0];	// TODO: Before loading sna into a 128K the memory slots need to be initialized this way.
+				const permut128k = [9, 5, 2, 0];
 				this.funcConvertBank = (address: number, bank: number) => {
 					const slot = address >>> 14;
 					return permut128k[slot];
@@ -474,7 +474,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				return;
 			}
 			if (destMemModel instanceof MemoryModelZxNext) {
-				const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];	// TODO: Before loading nex into a ZXNext the memory slots need to be initialized this way.
+				const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];
 				this.funcConvertBank = (address: number, bank: number) => {
 					const index = (address >>> 13);
 					return permutNext[index];	// No conversion
@@ -497,7 +497,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		if (srcMemModel == SjasmplusMemoryModel.ZX48K) {
 			// sjasmplus was compiled for ZX48K
 			if (destMemModel instanceof MemoryModelZxNext) {
-				const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];	// TODO: Before loading nex into a ZXNext the memory slots need to be initialized this way.
+				const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];
 				this.funcConvertBank = (address: number, bank: number) => {
 					let index = 2 * bank;
 					index += (address >>> 13) & 0x01;
@@ -506,7 +506,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				return;
 			}
 			if (destMemModel instanceof MemoryModelZx128k) {
-				const permut128k = [9, 5, 2, 0];	// TODO: Before loading sna into a 128K the memory slots need to be initialized this way.
+				const permut128k = [9, 5, 2, 0];
 				this.funcConvertBank = (address: number, bank: number) => {
 					return permut128k[bank];	// No conversion
 				};

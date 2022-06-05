@@ -325,7 +325,7 @@ export class MameRemote extends DzrpQeuedRemote {
 					data: {
 						pc64k: result.pc64k
 					}
-				});	// Is async, but anyhow last function call	// TODO: change to async
+				});
 			}
 		}
 		else {
@@ -614,7 +614,7 @@ export class MameRemote extends DzrpQeuedRemote {
 		}
 
 		// All other registers are not supported
-		throw Error("Changing register " + Z80_REG[regIndex] + "is not supported by MAME.");	// TODO: Output is not seen by the user
+		throw Error("Changing register " + Z80_REG[regIndex] + "is not supported by MAME.");
 	}
 
 
@@ -645,7 +645,7 @@ export class MameRemote extends DzrpQeuedRemote {
 					breakInfo.reasonNumber = BREAK_REASON_NUMBER.NO_REASON;
 				}
 				// Call "real" function
-				originalFuncContinueResolve(breakInfo);	// TODO: await
+				originalFuncContinueResolve(breakInfo);
 			};
 
 			// C(ontinue)

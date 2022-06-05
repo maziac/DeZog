@@ -2,7 +2,7 @@
 
 
 /**
- * Holds the reference and reject callback.
+ * Holds the resolve and reject callback.
  * On creation these are assigned to a property of an object.
  * If one of 'reject' or 'resolve' is called the property of the object
  * is automatically set to undefined.

@@ -758,8 +758,6 @@ export class LabelParserBase {
 	 */
 	protected createLongAddress(addr64k: number, bank: number) {
 		Utility.assert(bank >= 0);
-		if (bank < 0)
-			return addr64k;	// TODO: Not used anymore
 		// Check banks
 		const convBank = this.funcConvertBank(addr64k, bank);
 		// Create long address
