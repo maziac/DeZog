@@ -11,25 +11,25 @@ export class Z88dkLabelParser extends LabelParserBase {
 	protected parserName = "z88dk";
 
 	/// Map with the z88dk labels/symbols.
-	protected z88dkMappings=new Map<string, number>();
+	protected z88dkMappings = new Map<string, number>();
 
 	// z88dk: The format is line-number address opcode.
 	// Used to remove the line number.
-	protected z88dkRegEx=/^\d+\s+/;
+	protected z88dkRegEx = /^\d+\s+/;
 
 	// Regex to find labels
 	// Require a ":"" after the label
-	protected labelRegEx=/^[0-9a-f]+[\s0-9a-f]*\s+>?([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i;
+	protected labelRegEx = /^[0-9a-f]+[\s0-9a-f]*\s+>?([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i;
 
 	// Search for bytes after the address:
 	// E.g. "80F1 D5 C5"
-	protected matchBytesRegEx=/[0-9a-f]{4}\s\s(([0-9a-f][0-9a-f]\s)+)/i;
+	protected matchBytesRegEx = /[0-9a-f]{4}\s\s(([0-9a-f][0-9a-f]\s)+)/i;
 
 	// RegEx to extract the line number for Sources-mode.
-	protected matchLineNumberRegEx=/^\s*(\d+)[\s\+]+(.*)/;
+	protected matchLineNumberRegEx = /^\s*(\d+)[\s\+]+(.*)/;
 
 	// Checks for "include".
-	protected matchInclStartRegEx=/^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i;
+	protected matchInclStartRegEx = /^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i;
 
 	// To correct address by the values given in the map file.
 	protected z88dkMapOffset: number;
@@ -61,16 +61,16 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 * @param startLineNr The line number to start the loop with. I.e. sometimes the
 	 * beginning of the list file contains onformation that is parsed differently.
 	 */
-	protected parseAllFilesAndLineNumbers(startLineNr=0) {
+	protected parseAllFilesAndLineNumbers(startLineNr = 0) {
 		// Check if there is a main file given in the config
-		const config=this.config as Z88dkConfig;
+		const config = this.config as Z88dkConfig;
 		if (config.mainFile) {
 			// Set main file
-			const fileName=Utility.getRelFilePath(config.mainFile);
+			const fileName = Utility.getRelFilePath(config.mainFile);
 			this.includeStart(fileName);
 		}
 		// Call super
-		this.expectedLineNr=1;
+		this.expectedLineNr = 1;
 		super.parseAllFilesAndLineNumbers(startLineNr);
 	}
 
@@ -84,35 +84,35 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 * @param line The current analyzed line of the list file.
 	 */
 	protected parseLabelAndAddress(line: string) {
-		let countBytes=0;
+		let countBytes = 0;
 
 		// Replace line number with empty string.
-		line=line.replace(this.z88dkRegEx, '');
+		line = line.replace(this.z88dkRegEx, '');
 
 		// Extract address.
-		let address=parseInt(line.substring(0, 4), 16);
-		if (isNaN(address))
-			address=undefined!;	// Should not happen
-		if (address!=undefined) {
-			const readAddress=address;
-			address+=this.z88dkMapOffset;
+		let addr64k = parseInt(line.substring(0, 4), 16);
+		let longAddr;
+		if (!isNaN(addr64k)) {
+
+			const readAddress = addr64k;
+			addr64k += this.z88dkMapOffset;
 			// Check for labels and "equ".
-			const match=this.labelRegEx.exec(line);
+			const match = this.labelRegEx.exec(line);
 			if (match) {
-				let label=match[1];
-				const equ=match[2];
+				let label = match[1];
+				const equ = match[2];
 				if (equ) {
 					if (equ.toLowerCase().startsWith('equ')) {
 						// EQU: add to label array
-						let valueString=match[3];
+						let valueString = match[3];
 						// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
 						try {
 							// Check for any '$', i.e. current address
-							if (valueString.indexOf('$')>=0) {
+							if (valueString.indexOf('$') >= 0) {
 								// Replace $ with current address
-								const addressString=address.toString();
-								const cAddrString=valueString.replace(/(?<![a-z_0-9\$])\$(?![a-z_0-9\$])/i, addressString);
-								valueString=cAddrString;
+								const addressString = addr64k.toString();
+								const cAddrString = valueString.replace(/(?<![a-z_0-9\$])\$(?![a-z_0-9\$])/i, addressString);
+								valueString = cAddrString;
 							}
 							// Evaluate
 							let value = Utility.evalExpression(valueString, false);
@@ -126,32 +126,36 @@ export class Z88dkLabelParser extends LabelParserBase {
 				}
 				else {
 					// Special handling for z88dk to overcome the relative addresses (note: the map is empty if no z88dk is used/no map file given)
-					const realAddress=this.z88dkMappings.get(label);
-					if (realAddress!=undefined) {
+					const realAddress = this.z88dkMappings.get(label);
+					if (realAddress != undefined) {
 						//console.log('z88dk: label='+label+', '+Utility.getHexString(realAddress, 4));
 						// Label/symbol found
-						this.z88dkMapOffset=realAddress-readAddress;
-						address=realAddress;
+						this.z88dkMapOffset = realAddress - readAddress;
+						addr64k = realAddress;
 					}
 					// Create long address
-					const longAddr = this.createLongAddress(address, 0);
+					longAddr = this.createLongAddress(addr64k, 0);
 					// Add label
 					this.addLabelForNumber(longAddr, label);
 				}
 			}
 
+			// Calculate long address (if not yet done)
+			if(longAddr == undefined)
+				longAddr = this.createLongAddress(addr64k, 0);
+
 			// Search for bytes after the address:
 			// E.g. "80F1  D5 C5";
-			const matchBytes=this.matchBytesRegEx.exec(line);
+			const matchBytes = this.matchBytesRegEx.exec(line);
 			// Count how many bytes are included in the line.
 			if (matchBytes) {
-				countBytes=matchBytes[1].length/3;	// 2 hex digits plus 1 space
+				countBytes = matchBytes[1].length / 3;	// 2 hex digits plus 1 space
 			}
 		}
 
 		// Store address (or several addresses for one line).
 		// This needs to be called even if address is undefined.
-		this.addAddressLine(address, countBytes);
+		this.addAddressLine(longAddr, countBytes);
 	}
 
 
@@ -167,14 +171,14 @@ export class Z88dkLabelParser extends LabelParserBase {
 		// include file ended.
 
 		// Get line number
-		const matchLineNumber=this.matchLineNumberRegEx.exec(line);
+		const matchLineNumber = this.matchLineNumberRegEx.exec(line);
 		if (!matchLineNumber)
 			return;	// sjasmplus contains lines without line number.
-		const lineNumber=parseInt(matchLineNumber[1]);
+		const lineNumber = parseInt(matchLineNumber[1]);
 
 		// z88dk: Check for end of include file
-		if (lineNumber!=this.expectedLineNr
-			&&lineNumber!=this.expectedLineNr+1) {
+		if (lineNumber != this.expectedLineNr
+			&& lineNumber != this.expectedLineNr + 1) {
 			// End of include found
 			// Note: this is not 100% error proof.
 			// E.g. if modules are used (speccytron) this happens also after the MODULE lines:
@@ -194,18 +198,18 @@ export class Z88dkLabelParser extends LabelParserBase {
 
 
 		// Check for start of include file
-		const remainingLine=matchLineNumber[2];
-		const matchInclStart=this.matchInclStartRegEx.exec(remainingLine);
+		const remainingLine = matchLineNumber[2];
+		const matchInclStart = this.matchInclStartRegEx.exec(remainingLine);
 		if (matchInclStart) {
-			const fName=matchInclStart[1];
+			const fName = matchInclStart[1];
 			this.includeStart(fName);
-			this.expectedLineNr=1;
+			this.expectedLineNr = 1;
 			return;
 		}
-		this.expectedLineNr=lineNumber;
+		this.expectedLineNr = lineNumber;
 
 		// Associate with line number
-		this.setLineNumber(lineNumber-1);	// line numbers start at 0
+		this.setLineNumber(lineNumber - 1);	// line numbers start at 0
 	}
 
 
@@ -215,7 +219,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 */
 	protected includeEnd() {
 		// Remove last include file
-		if (this.includeFileStack.length>1)
+		if (this.includeFileStack.length > 1)
 			this.includeFileStack.pop();
 	}
 
@@ -230,21 +234,19 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 * @param mapFile The absolute path to the map file.
 	 */
 	protected readmapFile(mapFile) {
-		this.z88dkMapOffset=0;
+		this.z88dkMapOffset = 0;
 		Utility.assert(mapFile);	// mapFile is already absolute path.
 
 		// Iterate over map file
-		const regex=new RegExp(/^(\w*)\b\s*=\s*\$([0-9a-f]+)/i);
-		let lines=readFileSync(mapFile).toString().split('\n');
+		const regex = new RegExp(/^(\w*)\b\s*=\s*\$([0-9a-f]+)/i);
+		let lines = readFileSync(mapFile).toString().split('\n');
 		for (const line of lines) {
-			const match=regex.exec(line);
+			const match = regex.exec(line);
 			if (match) {
-				const label=match[1];
-				const addr=parseInt(match[2], 16);
+				const label = match[1];
+				const addr = parseInt(match[2], 16);
 				this.z88dkMappings.set(label, addr);
 			}
 		}
 	}
-
 }
-
