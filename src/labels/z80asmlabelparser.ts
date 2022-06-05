@@ -114,8 +114,6 @@ export class Z80asmLabelParser extends LabelParserBase {
 
 				//}
 			}
-
-
 		}
 
 		// Store address (or several addresses for one line).

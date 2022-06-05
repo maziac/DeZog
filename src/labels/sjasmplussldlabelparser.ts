@@ -266,8 +266,8 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 		// Definition file/line not required
 
-		// Get page (bank) (-1 if not a memory address)
-		const page = parseInt(fields[4]);
+		// Get bank (-1 if not a memory address)
+		const bank = parseInt(fields[4]);
 		// Get value
 		let value = parseInt(fields[5]);
 		// Note: An EQU could have a value bigger than 0xFFFF
@@ -315,25 +315,27 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					// If some label exists
 					if (fullLabel) {
 						// Label: add to label array
-						const longValue = this.createLongAddress(value, page);
-						this.addLabelForNumberRaw(longValue, fullLabel);
+						let value64kOrLong = value;
+						if (bank >= 0)
+							value64kOrLong = this.createLongAddress(value, bank);
+						this.addLabelForNumberRaw(value64kOrLong, fullLabel);
 
 						// Add (full) label to labelLocations for unit tests
 						const lineNr = parseInt(fields[1]) - 1;	// Get line number
-						this.labelLocations.set(fullLabel, {file: sourceFile, lineNr, address: longValue});
+						this.labelLocations.set(fullLabel, {file: sourceFile, lineNr, address: value64kOrLong});
 					}
 				}
 				break;
 			case 'T':	// Instruction trace data
 				{
 					// Change value to contain page info
-					const address = this.createLongAddress(value, page);
+					const longAddress = this.createLongAddress(value, bank);
 
 					// Get line number
 					const lineNr = parseInt(fields[1]) - 1;
 
 					// Store values to associate address with line number and (last) label.
-					this.setFileLineNrForAddress(address, {
+					this.setFileLineNrForAddress(longAddress, {
 						fileName: sourceFile,
 						lineNr: lineNr,
 						modulePrefix: this.modulePrefix,
@@ -342,8 +344,8 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					});
 					// Also assume for max. instruction size and associate the following
 					// 3 bytes as well (but only to "estimated")
-					const endAddress = this.addressAdd4(address);
-					for (let addrInside = address + 1; addrInside < endAddress; addrInside++) {
+					const endAddress = this.addressAdd4(longAddress);
+					for (let addrInside = longAddress + 1; addrInside < endAddress; addrInside++) {
 						// Note: addrInside is >= address.
 						this.estimatedFileLineNrs.set(addrInside, {
 							fileName: sourceFile,
@@ -381,7 +383,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					if (lineArray[lineNr] == undefined) {
 						// Store only the first. Otherwise a breakpoint on a multi instruction
 						// line would be on the last instruction and not the first.
-						lineArray[lineNr] = address;
+						lineArray[lineNr] = longAddress;
 					}
 				}
 				break;
@@ -389,7 +391,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				{
 					// Check for WPMEM etc.
 					const comment = fields[7];
-					const address = this.createLongAddress(value, page);
+					const address = this.createLongAddress(value, bank);
 					this.findWpmemAssertionLogpoint(address, comment);
 				}
 				break;
