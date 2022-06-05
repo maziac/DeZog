@@ -802,9 +802,17 @@ export class RemoteBase extends EventEmitter {
 		callStack.addObject(lastCallStackFrame);
 
 		// Check for each value if it maybe is a CALL or RST
+		let prevValueString;
+		let type;
 		for (let i = 0; i < len; i++) {
 			const valueString = stack[i];
-			const type = await this.getStackEntryType(valueString);
+			if (valueString != prevValueString) {
+				// Optimization: Memory is only retrieved if the value changed.
+				// E.g. if a lot of 0x0000 have to be retrieved this actual memory is
+				// fetched only once.
+				type = await this.getStackEntryType(valueString);
+				prevValueString = valueString;
+			}
 			if (type) {
 				// Set caller address
 				lastCallStackFrame.addr = type.callerAddr;
