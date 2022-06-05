@@ -139,20 +139,8 @@ export class LabelsClass {
 	/// From the Settings.
 	protected smallValuesMaximum: number;
 
-
-	/// The used bank size. Only set if the assembler+parser supports
-	/// long addresses. Then it holds the used bank size (otherwise 0).
-	/// Is used to tell if the Labels are long or not and for internal
-	/// conversion if target has a different memory model.
-	/// Typical value: 0, 8192 or 16384.
-	protected bankSize: number;	// TODO: still required?
-
 	// Remembers if an error happened.
 	protected errorHappened: boolean;
-
-	/// The used memory model. E.g. if and how slots are used.
-	/// Set during 'readListFiles'.
-	//public memoryModel: MemoryModel;
 
 	// Contains the watched files. For reverse engineering auto re-load.
 	protected watchedFiles: Array<string> = [];
@@ -175,7 +163,6 @@ export class LabelsClass {
 		this.assertionLines.length = 0;
 		this.logPointLines.length = 0;
 		this.smallValuesMaximum = smallValuesMaximum;
-		this.bankSize = 0;
 		this.errorHappened = false;
 		this.watchedFiles.length = 0;
 	}
@@ -220,7 +207,6 @@ export class LabelsClass {
 				// Parse SLD file
 				const parser = new SjasmplusSldLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
 				this.loadAsmListFile(parser, config);
-				this.bankSize = parser.bankSize;
 			}
 		}
 
@@ -251,7 +237,6 @@ export class LabelsClass {
 					this.watchedFiles.push(config.path);
 				}
 			}
-			this.bankSize = 0x4000;	// TODO: need to be read from somewhere. Still required?
 		}
 
 		// Add new assemblers here ...

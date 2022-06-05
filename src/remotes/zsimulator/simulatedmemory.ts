@@ -498,15 +498,6 @@ export class SimulatedMemory implements Serializable {
 		const rangeStart = this.slotRanges[slotIndex].start;
 		const offs = addr64k - rangeStart;
 		const value = this.memoryBanks[bankNr][offs];
-
-
-/*
-		// Read
-		const slotIndex = addr >>> this.shiftCount;
-		const bankNr = this.slots[slotIndex];
-		const ramAddr = bankNr * this.bankSize + (addr & (this.bankSize - 1));	// Convert to flat address
-		const value = this.memoryData[ramAddr];
-*/
 		return value;
 	}
 
@@ -539,20 +530,6 @@ export class SimulatedMemory implements Serializable {
 			// Write
 			this.memoryBanks[bankNr][offs] = val;
 		}
-
-		/*
-		// Convert to bank
-		const slotIndex = addr64k >>> this.shiftCount;
-		const bankNr = this.slots[slotIndex];
-
-		// Don't write if non-writable, e.g. ROM or UNUSED
-		if (this.bankTypes[bankNr] == BankType.RAM) {
-			// Convert to flat address
-			const ramAddr = bankNr * this.bankSize + (addr64k & (this.bankSize - 1));
-			// Write
-			this.memoryData[ramAddr] = val;
-		}
-	*/
 	}
 
 

@@ -294,28 +294,6 @@ suite('Labels (sjasmplus)', () => {
 			assert.notEqual(entry.fileName, '');	// Known
 		});
 
-
-		test('addressAdd4', () => {
-			const mm = new MemoryModelZxNext();
-			const sdlParser = new SjasmplusSldLabelParser(mm, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, (issue) => {}) as any;	// NOSONAR
-
-			// 64k address
-			sdlParser.bankSize = 0x10000;
-			assert.equal(sdlParser.addressAdd4(0x0000), 0x0004);
-			assert.equal(sdlParser.addressAdd4(0xFFFF), 0xFFFF);
-			assert.equal(sdlParser.addressAdd4(0xFFFE), 0xFFFF);
-			assert.equal(sdlParser.addressAdd4(0xFFFD), 0xFFFF);
-			assert.equal(sdlParser.addressAdd4(0xFFFC), 0xFFFF);
-			assert.equal(sdlParser.addressAdd4(0xFFFB), 0xFFFF);
-			assert.equal(sdlParser.addressAdd4(0xFFFA), 0xFFFE);
-
-			// long address
-			sdlParser.bankSize = 0x2000;
-			assert.equal(sdlParser.addressAdd4(0x018000), 0x018004);
-			assert.equal(sdlParser.addressAdd4(0x019FFE), 0x019FFF);
-			assert.equal(sdlParser.addressAdd4(0x01FFFF), 0x01FFFF);
-		});
-
 	});
 
 
