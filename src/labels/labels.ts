@@ -28,17 +28,8 @@ export interface SourceFileEntry {
  * The representation of the list file.
  */
 export interface ListFileLine extends SourceFileEntry {
-	addr?: number;		/// The corresponding address from the list file
+	longAddr?: number;		/// The corresponding long address from the list file
 	line: string;		/// The text of the line of the list file
-}
-
-
-/**
- * Address with corresponding line. Used for ASSERTION, LOGPOINT and WPMEM.
- */
-export interface AddressLine {
-	address: number;	// TODO: Check if long address (should be) and rename.
-	line: string;
 }
 
 

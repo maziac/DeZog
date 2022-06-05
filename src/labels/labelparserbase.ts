@@ -217,14 +217,14 @@ export class LabelParserBase {
 		this.currentLineNr = 0;
 		for (let line of listLines) {
 			// Prepare an entry
-			this.currentFileEntry = {fileName, lineNr: this.currentLineNr, addr: undefined, size: 0, line, modulePrefix: this.modulePrefix, lastLabel: this.lastLabel};
+			this.currentFileEntry = {fileName, lineNr: this.currentLineNr, longAddr: undefined, size: 0, line, modulePrefix: this.modulePrefix, lastLabel: this.lastLabel};
 			this.listFile.push(this.currentFileEntry);
 
 			// Parse
 			this.parseLabelAndAddress(line);
 
 			// Check for WPMEM, ASSERTION and LOGPOINT
-			const address = this.currentFileEntry.addr;
+			const address = this.currentFileEntry.longAddr;
 			this.findWpmemAssertionLogpoint(address, line);
 
 			// Next
@@ -353,20 +353,20 @@ export class LabelParserBase {
 				let fileLoc = this.labelLocations.get(fullLabel);
 				if (!fileLoc) {
 					// Add new file location
-					const address: number = entry.addr!;
+					const address: number = entry.longAddr!;
 					fileLoc = {file: entry.fileName, lineNr: entry.lineNr, address};
 					this.labelLocations.set(fullLabel, fileLoc);
 				}
 			}
 
 			// Check address
-			if (entry.addr == undefined)
+			if (entry.longAddr == undefined)
 				continue;
 
 			const countBytes = entry.size;
 			if (countBytes > 0) {
 				for (let i = 0; i < entry.size; i++) { // TODO: long addresses?
-					const addr = ((entry.addr + i) & 0xFFFF) + (entry.addr & ~0xFFFF);
+					const addr = ((entry.longAddr + i) & 0xFFFF) + (entry.longAddr & ~0xFFFF);
 					//const prevFileLine = this.fileLineNrs.get(addr);
 					//if (!prevFileLine)
 					{
@@ -376,14 +376,14 @@ export class LabelParserBase {
 			}
 			else {
 				// Just for reverse engineering: to be able to define a breakpoint at a label with no associated bytes.
-				const addr = entry.addr;
+				const addr = entry.longAddr;
 				this.setFileLineNrForAddress(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: 0});
 			}
 
 			// Set address
 			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
 				//				if(entry.size > 0)	// Only real code gets an address, e.g. not just a label without opcode
-				lineArray[entry.lineNr] = entry.addr;
+				lineArray[entry.lineNr] = entry.longAddr;
 				//console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));
 			}
 		}
@@ -421,19 +421,19 @@ export class LabelParserBase {
 				let fileLoc = this.labelLocations.get(fullLabel);
 				if (!fileLoc) {
 					// Add new file location
-					const address: number = entry.addr!;
+					const address: number = entry.longAddr!;
 					fileLoc = {file: entry.fileName, lineNr: entry.lineNr, address};
 					this.labelLocations.set(fullLabel, fileLoc);
 				}
 			}
 
 			// Check address
-			if (entry.addr == undefined)
+			if (entry.longAddr == undefined)
 				continue;
 
 			// last address entry wins:
 			for (let i = 0; i < entry.size; i++) {
-				const addr = (i == 0) ? entry.addr : (entry.addr + i) & 0xFFFF;	// Don't mask entry addr if size is 1, i.e. for sjasmplus sld allow higher addresses
+				const addr = (i == 0) ? entry.longAddr : (entry.longAddr + i) & 0xFFFF;	// Don't mask entry addr if size is 1, i.e. for sjasmplus sld allow higher addresses
 				this.setFileLineNrForAddress(addr, {
 					fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: entry.size
 				});
@@ -450,7 +450,7 @@ export class LabelParserBase {
 
 			// Set address
 			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
-				lineArray[entry.lineNr] = entry.addr;
+				lineArray[entry.lineNr] = entry.longAddr;
 			}
 		}
 	}
@@ -595,7 +595,7 @@ export class LabelParserBase {
 	 * Has to be 1 if address is undefined.
 	 */
 	protected addAddressLine(longAddress: number, size: number) {
-		this.currentFileEntry.addr = longAddress;
+		this.currentFileEntry.longAddr = longAddress;
 		this.currentFileEntry.size = size;
 	}
 
@@ -721,7 +721,7 @@ export class LabelParserBase {
 
 		// Check for ZX128K
 		if (this.memoryModel instanceof MemoryModelZx128k) {
-			const permut128k = [9, 5, 2, 0];	// TODO: Before loading sna into a 128K the memory slots need to be initialized this way.
+			const permut128k = [9, 5, 2, 0];
 			this.funcConvertBank = (address: number, bank: number) => {
 				const index = address >>> 14;
 				return permut128k[index];	// No conversion
@@ -731,7 +731,7 @@ export class LabelParserBase {
 
 		// Check for ZXNext
 		if (this.memoryModel instanceof MemoryModelZxNext) {
-			const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];	// TODO: Before loading nex into a ZXNext the memory slots need to be initialized this way.
+			const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];
 			this.funcConvertBank = (address: number, bank: number) => {
 				const index = address >>> 13;
 				return permutNext[index];	// No conversion

@@ -936,7 +936,7 @@ export class DebugSessionClass extends DebugSession {
 		const [sfrs, longFetchAddresses] = this.stackFramesForCallStack(callStack);
 
 		const disassembleMemory = (longFetchAddresses.length > 0);
-		//this.forceDisassembly = true;
+		//const disassembleMemory = false;
 		if (disassembleMemory)	// Disassembly only if PC or call stack is unknown
 		{
 // TODO: For optimization: Remove addresses for which source files exist
