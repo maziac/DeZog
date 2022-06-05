@@ -59,12 +59,10 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	// Note: F/D are not used (deprecated), instead L is used
 
 
-	/// The used bank size. Only set if the assembler+parser supports
-	/// long addresses. Then it holds the used bank size (otherwise 0).
-	/// Is used to tell if the Labels are long or not and for internal
-	/// conversion if target has a different memory model.
-	/// Typical value: 0, 8192 or 16384.
-	public bankSize: number = 0;
+	/// The used bank size found in the sld file.
+	/// Used to determine the memory model used by sjasmplus. See checkMappingToTargetMemoryModel.
+	/// Typical value: 8192 or 16384.
+	protected bankSize: number = 0;
 
 	// The number from the pages.count from the sld file.
 	// Used for checks (in mapping).
