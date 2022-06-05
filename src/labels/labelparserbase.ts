@@ -746,13 +746,11 @@ export class LabelParserBase {
 
 	/**
 	 * Creates a long address from the address and the bank info.
-	 * If page == -1 address is returned unchanged.
 	 * It calls 'funcConvertBank' to convert the bank into the target memory model bank.
 	 * This is setup at the beginning in 'checkMappingToTargetMemoryModel'.
-	 * @param addr64k The 64k address, i.e. the upper bits are the slot index.
+	 * @param addr64k The 64k address.
 	 * @param bank The bank the address is associated with.
-	 * @returns if bankSize: address+((page+1)<<16)
-	 * else: address.
+	 * @returns addr64k+((bank+1)<<16)
 	 */
 	protected createLongAddress(addr64k: number, bank: number) {
 		Utility.assert(bank >= 0);

@@ -1,4 +1,3 @@
-import {EventEmitter} from 'events';
 import {ListConfigBase} from './../settings/settings';
 import {Utility} from '../misc/utility';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
@@ -59,22 +58,14 @@ export interface NextLabelDistance {
 /**
  * Calculation of the labels from the input list and labels file.
  *
- * For "normal" list files the labels are 64k addresses.
- * Special assemblers (e.g. sjasmplus) is also able to generate label
- * information that includes the used bank number as well.
+ * Labels are always long addresses. For assemblers like sjasmplus (but also
+ * for the revEng list file) the bank number is included in the long address.
+ * All other assemblers use a pseudo long address. I.e. bank 0 is assumed originally.
  *
- * DeZog is capable of handling both. If banking information should be used as
- * well then the bankSize field is set to something different than 0.
- * This has to be set by the list file parser.
- * Furthermore the list file parser has to provide these 'long addresses'
- * in a special format.
- * Please look at SjasmplusSldLabelParser as an example.
- *
- * LabelsClass is derived from EventEmitter to emit 'reload' events.
- * This is used for the ReverseEngineeringLabelParser to reload labels on the fly
- * if the list file was updated by the user.
+ * This long address found in the list file is then converted to the target
+ * long address.
  */
-export class LabelsClass extends EventEmitter {
+export class LabelsClass {
 	// Function used to add an error to the diagnostics.
 	public static addDiagnosticsErrorFunc: ((message: string, severity: 'error' | 'warning', filepath: string, line: number, column: number) => void) | undefined;
 
