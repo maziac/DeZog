@@ -1035,8 +1035,8 @@ export class ZSimRemote extends DzrpRemote {
 		for (const memBank of nexFile.memBanks) {
 			// Convert 16K to 8K banks
 			const bank = 2 * memBank.bank;
-			this.memory.writeMemoryData(bank, 0, memBank.data, 0, memBank.data.length);
-			this.memory.writeMemoryData(bank + 1, 0, memBank.data, 0x2000, memBank.data.length);
+			this.memory.writeMemoryData(bank, 0, memBank.data, 0, 0x2000);
+			this.memory.writeMemoryData(bank + 1, 0, memBank.data, 0x2000, 0x2000);
 		}
 
 		// Set the default slot/bank association if ZXNext

@@ -340,10 +340,15 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					});
 					// Also assume for max. instruction size and associate the following
 					// 3 bytes as well (but only to "estimated")
-					const endAddress = this.addressAdd4(longAddress);
-					for (let addrInside = longAddress + 1; addrInside < endAddress; addrInside++) {
-						// Note: addrInside is >= address.
-						this.estimatedFileLineNrs.set(addrInside, {
+					for (let i = 1; i < 4; i++) {
+						const longAddressPlus = this.createLongAddress((value + i) & 0xFFFF, bank);
+						if (longAddressPlus < longAddress)
+							break;
+						const bankPlus = (longAddressPlus >>> 16) - 1;
+						if (bankPlus != bank)
+							break;
+						// Add
+						this.estimatedFileLineNrs.set(longAddressPlus, {
 							fileName: sourceFile,
 							lineNr: lineNr,
 							modulePrefix: this.modulePrefix,
@@ -351,7 +356,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 							size: 1
 						});
 					}
-
 
 					/*
 					// Note: not only the start address is stored but also the size
@@ -407,35 +411,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			return;
 		// Otherwise call super normally
 		super.findWpmemAssertionLogpoint(address, line);
-	}
-
-
-	/**
-	 * Increments the address.
-	 * Can work with long and 64k addresses.
-	 * @param address Long address or 64k address.
-	 * @returns address + 4 but bound to the bank. long or 64k address.
-	 */
-	protected addressAdd4(address: number): number {
-		// Check for long address
-		if (address & ~0xFFFF) {
-			// Long address
-			const mask = this.bankSize - 1;
-			let addrBank = address & mask;
-			addrBank += 4;
-			if (addrBank > mask)
-				addrBank = mask;
-			// Reconstruct bank/slot
-			addrBank += address & ~mask;
-			return addrBank;
-		}
-		else {
-			// 64k address
-			let addr2 = address + 4;
-			if (addr2 > 0xFFFF)
-				addr2 = 0xFFFF;
-			return addr2;
-		}
 	}
 
 
