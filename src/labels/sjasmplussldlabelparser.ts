@@ -141,10 +141,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Check conversion to target memory model
 		this.checkMappingToTargetMemoryModel();
 
-		// Check for setting to ignore the banking
-		if ((config as SjasmplusConfig).disableBanking)
-			this.bankSize = 0;	// Ignore banking
-
 		// Loop through all lines of the sld file
 		for (const line of sldLines) {
 			this.parseFileLabelAddress(line);

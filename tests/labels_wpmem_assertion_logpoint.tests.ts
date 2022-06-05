@@ -47,8 +47,7 @@ suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
 			sjasmplus: [{
 				path: './tests/data/labels/projects/sjasmplus/wpmem_assertion_logpoint/wpmem_assertion_logpoint.sld',
 				srcDirs: [""],	// Sources mode
-				excludeFiles: [],
-				disableBanking: true
+				excludeFiles: []
 			}]
 		};
 		lbls.readListFiles(config, new MemoryModelAllRam);

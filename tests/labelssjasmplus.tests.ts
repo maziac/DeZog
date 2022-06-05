@@ -22,8 +22,7 @@ suite('Labels (sjasmplus)', () => {
 			const config: any = {
 				sjasmplus: [{
 					path: './tests/data/labels/projects/sjasmplus/general/general.sld', srcDirs: [""],	// Sources mode
-					excludeFiles: [],
-					disableBanking: true
+					excludeFiles: []
 				}]
 			};
 			const lbls = new LabelsClass();

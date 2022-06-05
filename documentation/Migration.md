@@ -18,10 +18,11 @@ The new 'customMemory' allows ou to define arbitrary slot ranges and bank switch
 
 This was all done to allow reverse engineering together with bank switching.
 
-As this is a new feature you don't have to adjust any of your programs.
-
 Please read about it in the [ReverseEngineeringUsage.md](ReverseEngineeringUsage.md).
 
+Anyhow a few changes were necessary:
+- The "disableBanking" option was removed from the "sjasmplus" launch.json configuration. If you used it, you need to remove it now from the launch.json.
+- The "zsim" "customMemory" definition was changed. please refer to the [customMemory](Usage.md#custommemory) section in Usage.md.
 
 
 # Migrate from DeZog 2.6 to DeZog 2.7
