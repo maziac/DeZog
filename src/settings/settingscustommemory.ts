@@ -60,7 +60,6 @@ export type HexNumber = number | string;
  * cannot return the memory model).
  */
 export interface CustomMemoryType {
-	// TODO: name?
 
 	// The slots definitions.
 	slots: CustomMemorySlot[];

@@ -39,25 +39,7 @@ suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
 		assert.equal(wpmemLines[6].address, 0x10000 + 0xA041);
 		assert.equal(wpmemLines[6].line, "WPMEM");
 	});
-
-	/* TODO: Not used anymore
-	test('WPMEM 64k', () => {
-		// Read the list file
-		const config: any = {
-			sjasmplus: [{
-				path: './tests/data/labels/projects/sjasmplus/wpmem_assertion_logpoint/wpmem_assertion_logpoint.sld',
-				srcDirs: [""],	// Sources mode
-				excludeFiles: []
-			}]
-		};
-		lbls.readListFiles(config, new MemoryModelAllRam);
-
-		const wpmemLines = lbls.getWatchPointLines();
-		assert.equal(wpmemLines.length, 7);
-		assert.equal(wpmemLines[0].address, 0xA000);
-		assert.equal(wpmemLines[0].line, "WPMEM");
-	});
-	*/
+	
 
 	test('ASSERTION', () => {
 		// Read the list file

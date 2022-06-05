@@ -394,7 +394,7 @@ export class SimulatedMemory implements Serializable {
 			memBuffer.writeArrayBuffer(bank);
 
 		// Write the bank switching context
-		const contextString = JSON.stringify(this.bankSwitchingContext);	// TODO: Also read/write customCode context
+		const contextString = JSON.stringify(this.bankSwitchingContext);
 		memBuffer.writeString(contextString);
 	}
 

@@ -42,7 +42,7 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 	 * The internal simulator (because it's internal) has a special way to store the history.
 	 */
 	public clear() {
-		//(async () => {	// Is this for a reason or just a leftover TODO: REMOVE
+		//(async () => {
 		this.historyIndex = -1;
 		this.revDbgHistory.length = 0;
 		this.reverseDbgStack = undefined as any;
