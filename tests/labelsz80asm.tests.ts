@@ -112,7 +112,8 @@ suite('Labels (z80asm)', () => {
 					if (!match)
 						continue;
 					// Valid address line
-					const address = parseInt(match[1], 16);
+					let address = parseInt(match[1], 16);
+					address |= 0x10000;	// Change to long address
 					// Check
 					const res = lbls.getFileAndLineForAddress(address);
 					assert.ok(res.fileName.endsWith('general.list'));
@@ -139,10 +140,11 @@ suite('Labels (z80asm)', () => {
 					if (!match)
 						continue;
 					// Valid address line
-					const address = parseInt(match[1], 16);
+					let address = parseInt(match[1], 16);
+					address |= 0x10000;	// Change to long address
 					// Check
 					let resultAddr = lbls.getAddrForFileAndLine(filename, lineNr);
-					assert.equal(address, resultAddr);
+					assert.equal(resultAddr, address);
 				}
 			});
 
@@ -194,19 +196,19 @@ suite('Labels (z80asm)', () => {
 				lbls.readListFiles(config, new MemoryModelAllRam());
 
 				// Tests
-				let res = lbls.getFileAndLineForAddress(0x8000);
+				let res = lbls.getFileAndLineForAddress(0x18000);
 				assert.ok(res.fileName.endsWith('main.asm'));
 				assert.equal(16 - 1, res.lineNr);
 
-				res = lbls.getFileAndLineForAddress(0x9001);
+				res = lbls.getFileAndLineForAddress(0x19001);
 				assert.ok(res.fileName.endsWith('filea.asm'));
 				assert.equal(7 - 1, res.lineNr);
 
-				res = lbls.getFileAndLineForAddress(0x9005);
+				res = lbls.getFileAndLineForAddress(0x19005);
 				assert.ok(res.fileName.endsWith('filea_b.asm'));
 				assert.equal(11 - 1, res.lineNr);
 
-				res = lbls.getFileAndLineForAddress(0x9008);
+				res = lbls.getFileAndLineForAddress(0x19008);
 				assert.ok(res.fileName.endsWith('filea.asm'));
 				assert.equal(16 - 1, res.lineNr);
 			});
@@ -226,16 +228,16 @@ suite('Labels (z80asm)', () => {
 
 				// Tests
 				let address = lbls.getAddrForFileAndLine('main.asm', 16 - 1);
-				assert.equal(0x8000, address);
+				assert.equal(address, 0x18000);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 7 - 1);
-				assert.equal(0x9001, address);
+				assert.equal(address, 0x19001);
 
 				address = lbls.getAddrForFileAndLine('filea_b.asm', 7 - 1);
-				assert.equal(0x9004, address);
+				assert.equal(address, 0x19004);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 16 - 1);
-				assert.equal(0x9008, address);
+				assert.equal(address, 0x19008);
 			});
 
 		});
@@ -258,19 +260,19 @@ suite('Labels (z80asm)', () => {
 		// Test WPMEM
 		const wpLines = lbls.getWatchPointLines();
 		assert.equal(wpLines.length, 1);
-		assert.equal(wpLines[0].address, 0x8200);
+		assert.equal(wpLines[0].address, 0x18200);
 		assert.equal(wpLines[0].line, "WPMEM");
 
 		// Test ASSERTION
 		const assertionLines = lbls.getAssertionLines();
 		assert.equal(assertionLines.length, 1);
-		assert.equal(assertionLines[0].address, 0x8005);
+		assert.equal(assertionLines[0].address, 0x18005);
 		assert.equal(assertionLines[0].line, "ASSERTION");
 
 		// Test LOGPOINT
 		const lpLines = lbls.getLogPointLines();
 		assert.equal(lpLines.length, 1);
-		assert.equal(lpLines[0].address, 0x800F);
+		assert.equal(lpLines[0].address, 0x1800F);
 		assert.equal(lpLines[0].line, "LOGPOINT");
 	});
 

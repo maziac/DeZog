@@ -26,55 +26,55 @@ suite('Labels', () => {
 				lbls.readListFiles(config, new MemoryModelAllRam());
 
 				// Checks
-				let res = lbls.getFileAndLineForAddress(0x7700);
+				let res = lbls.getFileAndLineForAddress(0x17700);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 0, "Expected line wrong.");
 
-				res = lbls.getFileAndLineForAddress(0x7710);
+				res = lbls.getFileAndLineForAddress(0x17710);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 1, "Expected line wrong.");
 
 
-				res = lbls.getFileAndLineForAddress(0x7721);
+				res = lbls.getFileAndLineForAddress(0x17721);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 2, "Expected line wrong.");
 
-				res = lbls.getFileAndLineForAddress(0x7721);
+				res = lbls.getFileAndLineForAddress(0x17721);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 2, "Expected line wrong.");
 
-				res = lbls.getFileAndLineForAddress(0x7723);
+				res = lbls.getFileAndLineForAddress(0x17723);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 2, "Expected line wrong.");
 
 
-				res = lbls.getFileAndLineForAddress(0x8820);
+				res = lbls.getFileAndLineForAddress(0x18820);
 				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
 				assert.equal(res.lineNr, 2, "Expected line wrong.");
 
-				res = lbls.getFileAndLineForAddress(0x8831);
-				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
-				assert.equal(res.lineNr, 3, "Expected line wrong.");
-
-				res = lbls.getFileAndLineForAddress(0x8833);
+				res = lbls.getFileAndLineForAddress(0x18831);
 				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
 				assert.equal(res.lineNr, 3, "Expected line wrong.");
 
-				res = lbls.getFileAndLineForAddress(0x8834);
+				res = lbls.getFileAndLineForAddress(0x18833);
+				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
+				assert.equal(res.lineNr, 3, "Expected line wrong.");
+
+				res = lbls.getFileAndLineForAddress(0x18834);
 				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
 				assert.equal(res.lineNr, 4, "Expected line wrong.");
 
-				res = lbls.getFileAndLineForAddress(0x8837);
+				res = lbls.getFileAndLineForAddress(0x18837);
 				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
 				assert.equal(res.lineNr, 6, "Expected line wrong.");
 
 
-				res = lbls.getFileAndLineForAddress(0x8841);
+				res = lbls.getFileAndLineForAddress(0x18841);
 				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
 				assert.equal(res.lineNr, 9, "Expected line wrong.");
 
 
-				res = lbls.getFileAndLineForAddress(0x8843);
+				res = lbls.getFileAndLineForAddress(0x18843);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 5, "Expected line wrong.");
 
@@ -94,30 +94,30 @@ suite('Labels', () => {
 
 				// main.asm
 				let addr = labels.getAddrForFileAndLine('main.asm', 0);
-				assert.equal(addr, 0x7700, "Expected address wrong.");
+				assert.equal(addr, 0x17700, "Expected address wrong.");
 
 				addr = labels.getAddrForFileAndLine('main.asm', 1);
-				assert.equal(addr, 0x7710, "Expected address wrong.");
+				assert.equal(addr, 0x17710, "Expected address wrong.");
 
 				addr = labels.getAddrForFileAndLine('main.asm', 2);
-				assert.equal(addr, 0x7721, "Expected address wrong.");
+				assert.equal(addr, 0x17721, "Expected address wrong.");
 
 
 				addr = labels.getAddrForFileAndLine('zxspectrum.asm', 2);
-				assert.equal(addr, 0x8820, "Expected address wrong.");
+				assert.equal(addr, 0x18820, "Expected address wrong.");
 
 				addr = labels.getAddrForFileAndLine('zxspectrum.asm', 4);
-				assert.equal(addr, 0x8834, "Expected address wrong.");
+				assert.equal(addr, 0x18834, "Expected address wrong.");
 
 				addr = labels.getAddrForFileAndLine('zxspectrum.asm', 6);
-				assert.equal(addr, 0x8837, "Expected address wrong.");
+				assert.equal(addr, 0x18837, "Expected address wrong.");
 
 				addr = labels.getAddrForFileAndLine('zxspectrum.asm', 9);
-				assert.equal(addr, 0x8841, "Expected address wrong.");
+				assert.equal(addr, 0x18841, "Expected address wrong.");
 
 
 				addr = labels.getAddrForFileAndLine('main.asm', 5);
-				assert.equal(addr, 0x8843, "Expected address wrong.");
+				assert.equal(addr, 0x18843, "Expected address wrong.");
 			});
 
 

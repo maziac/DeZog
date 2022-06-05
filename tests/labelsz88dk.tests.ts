@@ -252,19 +252,19 @@ suite('Labels (z88dk)', () => {
 				lbls.readListFiles(config, new MemoryModelAllRam());
 
 				// Tests
-				let res = lbls.getFileAndLineForAddress(0x8000);
+				let res = lbls.getFileAndLineForAddress(0x18000);
 				assert.ok(res.fileName.endsWith('main.asm'));
 				assert.equal(16 - 1, res.lineNr);
 
-				res = lbls.getFileAndLineForAddress(0x800D);
+				res = lbls.getFileAndLineForAddress(0x1800D);
 				assert.ok(res.fileName.endsWith('filea.asm'));
 				assert.equal(7 - 1, res.lineNr);
 
-				res = lbls.getFileAndLineForAddress(0x8010);
+				res = lbls.getFileAndLineForAddress(0x18010);
 				assert.ok(res.fileName.endsWith('filea_b.asm'));
 				assert.equal(7 - 1, res.lineNr);
 
-				res = lbls.getFileAndLineForAddress(0x8014);
+				res = lbls.getFileAndLineForAddress(0x18014);
 				assert.ok(res.fileName.endsWith('filea.asm'));
 				assert.equal(16 - 1, res.lineNr);
 			});
@@ -285,28 +285,28 @@ suite('Labels (z88dk)', () => {
 
 				// Tests
 				let address = lbls.getAddrForFileAndLine('main.asm', 16 - 1);
-				assert.equal(0x8000, address);
+				assert.equal(address, 0x18000);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 6 - 1);
-				assert.equal(0x800D, address);
+				assert.equal(address, 0x1800D);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 7 - 1);
-				assert.equal(0x800D, address);
+				assert.equal(address, 0x1800D);
 
 				address = lbls.getAddrForFileAndLine('filea_b.asm', 4 - 1);
-				assert.equal(0x8010, address);
+				assert.equal(address, 0x18010);
 
 				address = lbls.getAddrForFileAndLine('filea_b.asm', 15 - 1);
-				assert.equal(0x8013, address);
+				assert.equal(address, 0x18013);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 15 - 1);
-				assert.equal(0x8014, address);
+				assert.equal(address, 0x18014);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 15 - 1);
-				assert.equal(0x8014, address);
+				assert.equal(address, 0x18014);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 17 - 1);
-				assert.equal(0x8015, address);
+				assert.equal(address, 0x18015);
 			});
 
 		});
@@ -330,19 +330,19 @@ suite('Labels (z88dk)', () => {
 		// Test WPMEM
 		const wpLines = lbls.getWatchPointLines();
 		assert.equal(wpLines.length, 1);
-		assert.equal(wpLines[0].address, 0x8008);
+		assert.equal(wpLines[0].address, 0x18008);
 		assert.equal(wpLines[0].line, "WPMEM");
 
 		// Test ASSERTION
 		const assertionLines = lbls.getAssertionLines();
 		assert.equal(assertionLines.length, 1);
-		assert.equal(assertionLines[0].address, 0x8005);
+		assert.equal(assertionLines[0].address, 0x18005);
 		assert.equal(assertionLines[0].line, "ASSERTION");
 
 		// Test LOGPOINT
 		const lpLines = lbls.getLogPointLines();
 		assert.equal(lpLines.length, 1);
-		assert.equal(lpLines[0].address, 0x8006);
+		assert.equal(lpLines[0].address, 0x18006);
 		assert.equal(lpLines[0].line, "LOGPOINT");
 	});
 
