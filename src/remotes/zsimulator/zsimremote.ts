@@ -964,22 +964,22 @@ export class ZSimRemote extends DzrpRemote {
 				const slots = this.memoryModel.initialSlots;
 				const {bank, offset} = this.memory.getBankAndOffsetForAddress(addr64k, slots);
 				const snaMemBank = snaFile.memBanks[i];
-				this.memory.writeMemoryData(bank, snaMemBank.data, offset);
+				this.memory.writeMemoryData(bank, offset, snaMemBank.data, 0, snaMemBank.data.length);
 			}
 		}
 		else if (this.memoryModel instanceof MemoryModelZxNext) {
 			// Bank numbers need ot be doubled
 			for (const memBank of snaFile.memBanks) {
 				const nextBank = 2 * memBank.bank;
-				this.memory.writeMemoryData(nextBank, memBank.data);
-				this.memory.writeMemoryData(nextBank+1, memBank.data, 0x2000);
+				this.memory.writeMemoryData(nextBank, 0, memBank.data, 0, memBank.data.length);
+				this.memory.writeMemoryData(nextBank+1, 0, memBank.data, 0x2000, memBank.data.length);
 			}
 		}
 		else {
 			// Write banks
 			try {
 				for (const memBank of snaFile.memBanks) {
-					this.memory.writeMemoryData(memBank.bank, memBank.data);
+					this.memory.writeMemoryData(memBank.bank, 0, memBank.data, 0, memBank.data.length);
 				}
 			}
 			catch (e) {
@@ -1035,8 +1035,8 @@ export class ZSimRemote extends DzrpRemote {
 		for (const memBank of nexFile.memBanks) {
 			// Convert 16K to 8K banks
 			const bank = 2 * memBank.bank;
-			this.memory.writeMemoryData(bank, memBank.data);
-			this.memory.writeMemoryData(bank + 1, memBank.data, 0x2000);
+			this.memory.writeMemoryData(bank, 0, memBank.data, 0, memBank.data.length);
+			this.memory.writeMemoryData(bank + 1, 0, memBank.data, 0x2000, memBank.data.length);
 		}
 
 		// Set the default slot/bank association if ZXNext

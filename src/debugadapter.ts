@@ -935,14 +935,12 @@ export class DebugSessionClass extends DebugSession {
 		// If no source exists the stack frame will have 'src' as undefined.
 		const [sfrs, longFetchAddresses] = this.stackFramesForCallStack(callStack);
 
-		// Check if the complete call stack and the
-
-		// Filter addresses by current banking
-		//console.log('longPcAddressesHistory=', this.longPcAddressesHistory);
 		const disassembleMemory = (longFetchAddresses.length > 0);
 		//this.forceDisassembly = true;
 		if (disassembleMemory)	// Disassembly only if PC or call stack is unknown
 		{
+// TODO: For optimization: Remove addresses for which source files exist
+
 			// Add addresses from PC history.
 			this.addAddressesFromPcHistory(longFetchAddresses);
 

@@ -612,13 +612,15 @@ export class SimulatedMemory implements Serializable {
 	 * Write to memoryData directly into a bank.
 	 * Is e.g. used during SNA / NEX file loading.
 	 * @param bankNr The bank to write.
+	 * @param bankOffset Offset into the bank buffer.
 	 * @param data The data to write.
-	 * @param offset Offset into the data buffer.
+	 * @param dataOffset Offset into the data buffer.
+	 * @param size The number of bytes to write.
 	 */
-	public writeMemoryData(bankNr: number, data: Uint8Array, offset = 0) {
+	public writeMemoryData(bankNr: number, bankOffset: number, data: Uint8Array, dataOffset: number, size: number) {
 		const bank = this.memoryBanks[bankNr];
 		// Write
-		bank.set(data.slice(offset, offset + bank.length));
+		bank.set(data.slice(dataOffset, dataOffset + size), bankOffset);
 	}
 
 

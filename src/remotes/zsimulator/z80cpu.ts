@@ -123,7 +123,7 @@ export class Z80Cpu implements Serializable {
 	 * there is only Z80 simulation without ZX Spectrum.
 	 */
 	public execute(): number {
-		const z80=this.z80;
+		const z80 = this.z80;
 
 		// Handle instruction
 		const tStates = z80.run_instruction();
