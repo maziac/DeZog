@@ -373,6 +373,25 @@ export class LabelsClass {
 
 
 	/**
+	 * Returns all labels for either a 64k address or for a long address.
+	 * @param longOr64kAddress The address value to find.
+	 * @returns An array of strings with labels. Might return an empty array.
+	 */
+	public getLabelsForLongOr64kAddress(longOr64kAddress: number): Array<string> {
+		let labels;
+		if (longOr64kAddress >> 16) {
+			// Long
+			labels = this.getLabelsForLongAddress(longOr64kAddress);
+		}
+		else {
+			// 64k
+			labels = this.getLabelsForNumber64k(longOr64kAddress);
+		}
+		return labels;
+	}
+
+
+	/**
 	 * Returns all labels with the exact same address to the given address.
 	 * Long addresses.
 	 * @param longAddress The address value to find.

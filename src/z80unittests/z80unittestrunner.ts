@@ -535,8 +535,8 @@ export class Z80UnitTestRunner {
 
 		// Stack watchpoints
 		try {
-			const stackMinWp: GenericWatchpoint = {longAddress: this.stackBottom, size: 2, access: 'rw', condition: ''};
-			const stackMaxWp: GenericWatchpoint = {longAddress: this.stackTop, size: 2, access: 'rw', condition: ''};
+			const stackMinWp: GenericWatchpoint = {longOr64kAddress: this.stackBottom, size: 2, access: 'rw', condition: ''};
+			const stackMaxWp: GenericWatchpoint = {longOr64kAddress: this.stackTop, size: 2, access: 'rw', condition: ''};
 			await Remote.setWatchpoint(stackMinWp);
 			await Remote.setWatchpoint(stackMaxWp);
 		}

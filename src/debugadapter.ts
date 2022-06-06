@@ -3184,8 +3184,8 @@ E.g. use "-help -view" to put the help text in an own view.
 			// Also list all watchpoints
 			const wps = Remote.getAllWpmemWatchpoints();
 			for (const wp of wps) {
-				result += Utility.getLongAddressString(wp.longAddress);
-				const labels = Labels.getLabelsForLongAddress(wp.longAddress);
+				result += Utility.getLongAddressString(wp.longOr64kAddress);
+				const labels = Labels.getLabelsForLongOr64kAddress(wp.longOr64kAddress);
 				if (labels.length > 0) {
 					const labelsString = labels.join(', ');
 					result += ' (' + labelsString + ')';
@@ -3211,7 +3211,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		if (tokens.length < 1)
 			throw Error("Expecting at least 1 argument.");
 		// Address
-		const address = Utility.evalExpression(tokens[0]);
+		const addr64k = Utility.evalExpression(tokens[0]);
 		// Size
 		let size = 1;
 		let access = 'rw';
@@ -3226,7 +3226,7 @@ E.g. use "-help -view" to put the help text in an own view.
 
 		// Add watchpoint
 		const wp: GenericWatchpoint = {
-			longAddress: address,
+			longOr64kAddress: addr64k,
 			size,
 			access,
 			condition: ''
@@ -3249,7 +3249,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		if (tokens.length < 1)
 			throw Error("Expecting at least 1 argument.");
 		// Address
-		const address = Utility.evalExpression(tokens[1]);
+		const addr64k = Utility.evalExpression(tokens[1]);
 		// Size
 		let size = 1;
 		let access = 'rw';
@@ -3264,7 +3264,7 @@ E.g. use "-help -view" to put the help text in an own view.
 
 		// Add watchpoint
 		const wp: GenericWatchpoint = {
-			longAddress: address,
+			longOr64kAddress: addr64k,
 			size,
 			access,
 			condition: ''

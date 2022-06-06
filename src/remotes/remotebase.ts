@@ -346,8 +346,8 @@ export class RemoteBase extends EventEmitter {
 				}
 				else
 					access = 'rw';
-				// Set watchpoint. (long address)
-				watchpoints.push({longAddress: entryAddress, size: length, access: access, condition: cond || ''});
+				// Set watchpoint. (long or 64k address)
+				watchpoints.push({longOr64kAddress: entryAddress, size: length, access: access, condition: cond || ''});
 			}
 			catch (e) {
 				throw Error("Problem with WPMEM. Could not evaluate: '" + entry.line + "': " + e.message + "");

@@ -6,7 +6,7 @@
  *
  */
 export interface GenericWatchpoint {
-	longAddress: number; ///< The start address
+	longOr64kAddress: number; ///< The start address
 	size: number;	///< The length of the area to watch
 	access: string;	///< The way of access, e.g. read='r', write='w', readwrite='rw'
 	condition: string;	///< The additional condition. undefined or '' if no condition set.

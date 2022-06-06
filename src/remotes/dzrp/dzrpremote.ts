@@ -537,17 +537,20 @@ export class DzrpRemote extends RemoteBase {
 		const slots = this.getSlots()!;
 		for (const wp of this.addedWatchpoints) {
 			// Check if address falls in range
-			const longWpAddr = wp.longAddress;
+			const longWpAddr = wp.longOr64kAddress;
 			const addr64 = longWpAddr & 0xFFFF;
 			if (address64 < addr64 || address64 >= addr64 + wp.size)	// Note: wrap around is ignored
 				continue;
 
 			// Check if wp start address is currently paged in
 			const bank = Z80RegistersClass.getBankFromAddress(longWpAddr);
-			const slotNr = Z80Registers.getSlotFromAddress(longWpAddr);
-			const slotBank = slots[slotNr];
-			if (bank != slotBank)
-				continue;	// Wrong bank -> Next
+			// If a long address check the bank
+			if (bank >= 0) {
+				const slotNr = Z80Registers.getSlotFromAddress(longWpAddr);
+				const slotBank = slots[slotNr];
+				if (bank != slotBank)
+					continue;	// Wrong bank -> Next
+			}
 
 			// WP fits
 			arr.push(wp);
@@ -1137,7 +1140,7 @@ export class DzrpRemote extends RemoteBase {
 		this.addedWatchpoints.add(wp);
 
 		// Forward request
-		await this.sendDzrpCmdAddWatchpoint(wp.longAddress, wp.size, wp.access);
+		await this.sendDzrpCmdAddWatchpoint(wp.longOr64kAddress, wp.size, wp.access);
 	}
 
 
@@ -1150,7 +1153,7 @@ export class DzrpRemote extends RemoteBase {
 		this.addedWatchpoints.delete(wp);
 
 		// Forward request
-		await this.sendDzrpCmdRemoveWatchpoint(wp.longAddress, wp.size, wp.access);
+		await this.sendDzrpCmdRemoveWatchpoint(wp.longOr64kAddress, wp.size, wp.access);
 	}
 
 
