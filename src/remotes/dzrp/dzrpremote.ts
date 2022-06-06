@@ -733,7 +733,7 @@ export class DzrpRemote extends RemoteBase {
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
 				// Watchpoint
 				const address = breakAddress;
-				reasonString = "Watchpoint " + ((breakNumber == BREAK_REASON_NUMBER.WATCHPOINT_READ) ? "read" : "write") + " access at address 0x" + Utility.getLongAddressString(address);
+				reasonString = "Watchpoint " + ((breakNumber == BREAK_REASON_NUMBER.WATCHPOINT_READ) ? "read" : "write") + " access at address " + Utility.getLongAddressString(address);
 				const labels = Labels.getLabelsPlusIndexForNumber64k(address);
 				if (labels.length > 0) {
 					const labelsString = labels.join(', ');
