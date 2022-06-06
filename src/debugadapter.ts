@@ -943,11 +943,11 @@ export class DebugSessionClass extends DebugSession {
 		if (disassembleMemory)	// Disassembly only if PC or call stack is unknown
 		{
 			// Add addresses from PC history.
-			this.addAddressesFromPcHistory(longFetchAddresses);
+			this.addAddressesIfPagedIn(longFetchAddresses, this.longPcAddressesHistory);
 
 			// Add breakpoint addresses
 			const longBpAddrs = prevBpAddresses.map(sbpAddr => sbpAddr.longAddress);
-			longFetchAddresses.push(...longBpAddrs);
+			this.addAddressesIfPagedIn(longFetchAddresses, longBpAddrs);
 
 			// Get memory.
 			const fetchAddresses = longFetchAddresses.map(longAddr => (longAddr & 0xFFFF));
@@ -1124,12 +1124,14 @@ export class DebugSessionClass extends DebugSession {
 
 	/**
 	 * Adds addresses of the PC history if they are currently paged in.
-	 * @param addresses This list may already contain entries. New entries are added.
+	 * @param target This list may already contain entries. New entries are added.
 	 * Addresses are in long format.
+	 * @param src The source array with long addresses. Only addresses are added to target that
+	 * are currently paged in.
 	 */
-	protected addAddressesFromPcHistory(addresses: number[]) {
+	protected addAddressesIfPagedIn(target: number[], src: number[]) {
 		const slots = Z80Registers.getSlots();
-		for (const longAddr of this.longPcAddressesHistory) {
+		for (const longAddr of src) {
 			// Create 64k address
 			const addr64k = longAddr & 0xFFFF;
 			// Check if longAddr is currently paged in
@@ -1137,7 +1139,7 @@ export class DebugSessionClass extends DebugSession {
 			// Compare
 			if (longAddr == longCmpAddress) {
 				// Is paged in
-				addresses.push(longAddr);
+				target.push(longAddr);
 			}
 		}
 	}

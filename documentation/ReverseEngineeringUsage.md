@@ -89,8 +89,7 @@ The disassembly contains only the addresses where no association to another file
 Breakpoints can be set via the vscode editor as normal.
 Breakpoints can be set either in the disassembly or in the list file.
 
-Breakpoints will most of the time "survive" in the disassembly even if the file is created anew.
-Breakpoints are only removed if there does not exist any correspondent file/line/address for that breakpoint anymore after a disassembly has taken place.
+Breakpoints will "survive" in the disassembly even if the file is created anew.
 
 If you need to set a breakpoint to some location that does not exist in either the disassembly or the list file then you can do the following:
 1. In the list file just type in the address (in hex) at a start of a line.
