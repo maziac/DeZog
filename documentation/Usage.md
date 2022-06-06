@@ -510,10 +510,10 @@ The following table gives an overview.
 | State                   | stable             | stable  | stable   | stable   | experimental |
 | Breakpoints             | yes                | yes     | yes      | yes      | yes          |
 | Break reason output     | yes                | no      | yes      | yes      | yes          |
-| Conditional Breakpoints | yes                | yes     | yes/slow | yes/slow | yes/slow     |
+| Conditional Breakpoints | yes                | yes     | yes 6)   | yes 6)   | yes 6)       |
 | WPMEM (Watchpoints) support | yes            | yes 2)  | no       | no       | yes          |
-| ASSERTION support       | yes                | yes     | yes/slow | yes/slow | yes          |
-| LOGPOINT support        | yes                | no      | yes/slow | yes/slow | yes          |
+| ASSERTION support       | yes                | yes     | yes 6)   | yes 6)   | yes 6)       |
+| LOGPOINT support        | yes                | no      | yes 6)   | yes 6)   | yes 6)       |
 | Long addresses/breakpoints | yes             | yes     | yes      | yes      | no           |
 | Extended callstack      | no                 | yes     | no       | no       | no           |
 | Code coverage           | yes                | yes 1)  | no       | no       | no           |
@@ -538,6 +538,7 @@ Notes:
 - 3 ) Z80 Unit tests do work but watchpoints (WPMEM) are not supported.
 - 4 ) Basically unit tests do work on the ZX Next. But they are not so convenient to use because you may need to manually stop the ZX Next between tests.
 - 5 ) There is nothing preventing you from using unit tests, but for a reverse engineering environment there is little sense in doing unit tests.
+- 6 ) Conditions, ASSERTION and LOGPOINT are evaluated in DeZog, not by the Remote. If used heavily or in a loop this may lead to a slower performance.
 
 
 ### The Internal Z80 Simulator
@@ -1471,6 +1472,8 @@ Notes:
 
 - WPMEMs are disabled by default. If you want to have WPMEMs enabled after launch then put "-WPMEM enable" in the "commandsAfterLaunch" settings.
 - (sjasmplus) If you use label names make sure to use the global name (i.e. full dot notation).
+- If no 'addr' is given but the current address is used the long address (i.e. with bank info) is used.
+If 'addr' is given the 64k address is used.
 
 
 ### ASSERTION

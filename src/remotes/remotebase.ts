@@ -293,7 +293,7 @@ export class RemoteBase extends EventEmitter {
 			// Syntax:
 			// WPMEM [addr [, length [, access]]]
 			// with:
-			//	addr = address (or label) to observe (optional). Defaults to current address.
+			//	addr = address (or label) to observe (optional). Defaults to current (long) address.
 			//	length = the count of bytes to observe (optional). Default = 1.
 			//	access = Read/write access. Possible values: r, w or rw. Defaults to rw.
 			// e.g. WPMEM LBL_TEXT, 1, w

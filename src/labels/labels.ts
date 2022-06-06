@@ -572,7 +572,7 @@ export class LabelsClass {
 	 * If text is not a label it is tried to convert text as string to a number.
 	 * 64k addresses.
 	 * @param text The label name or a number in hex or decimal as string.
-	 * @returns The correspondent number. May return NaN.
+	 * @returns The correspondent (64k) number. May return NaN.
 	 */
 	public getNumberFromString64k(text: string): number {
 		if (text == undefined)

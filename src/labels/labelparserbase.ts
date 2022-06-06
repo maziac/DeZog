@@ -110,6 +110,13 @@ export class LabelParserBase {
 	/// The stack of include files. For parsing filenames and line numbers.
 	protected includeFileStack: Array<{fileName: string, lineNr: number}>;
 
+
+	// Regexes to find WPMEM, ASSERTION and LOGPOINT in the comments
+	protected wpmemRegEx = /.*(\bWPMEM([\s,]|$).*)/;
+	protected assertionRegEx = /.*(\bASSERTION([\s,]|$).*)/;
+	protected logpointRegEx = /.*(\bLOGPOINT([\s,]|$).*)/;
+
+
 	/// Used to determine if current (included) files are used or excluded in the addr <-> file search.
 	protected excludedFileStackIndex: number;
 
@@ -273,7 +280,7 @@ export class LabelParserBase {
 		const comment = this.getComment(fullLine);
 
 		// WPMEM
-		let match = /.*(\bWPMEM([\s,]|$).*)/.exec(comment);
+		let match =this.wpmemRegEx.exec(comment);
 		if (match) {
 			// Add watchpoint at this address
 			/*
@@ -288,14 +295,14 @@ export class LabelParserBase {
 			return;
 
 		// ASSERTION
-		match = /.*(\bASSERTION([\s,]|$).*)/.exec(comment);
+		match = this.assertionRegEx.exec(comment);
 		if (match) {
 			// Add ASSERTION at this address
 			this.assertionLines.push({address, line: match[1]});
 		}
 
 		// LOGPOINT
-		match = /.*(\bLOGPOINT([\s,]|$).*)/.exec(comment);
+		match = this.logpointRegEx.exec(comment);
 		if (match) {
 			// Add logpoint at this address
 			this.logPointLines.push({address, line: match[1]});
