@@ -99,3 +99,15 @@ If you need to set a breakpoint to some location that does not exist in either t
 ![](images/rev_eng_bp_in_listfile.jpg)
 
 
+# WPMEM, ASSERTION, LOGPOINT
+
+These all work the same as in other list files.
+E.g. to add a permanent watchpoint to some memory location use:
+~~~asm
+9000 00 00 00  data:    ; WPMEM
+~~~
+
+This will watch memory at location 9000h to 9002h.
+
+
+

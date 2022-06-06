@@ -54,14 +54,14 @@ If the next time 0xC000-0xFFFF is used by bank2 it is disassembled into "file_ba
 
 Note: it is not required to really use different files. But it is important that the list file contains addresses with bank info, e.g.:
 ~~~asm
-C000@1	3E 05		LD A,5
-C002@1  C9			RET
+C000.B1	3E 05		LD A,5
+C002.B1  C9			RET
 ~~~
 
 or for bank 2:
 ~~~asm
-C000@2  01 00 00	LD BC,0
-C002@2  C3 00 C1	JP $C100@2
+C000.B2  01 00 00	LD BC,0
+C002.B2  C3 00 C1	JP $C100.B2
 ~~~
 
 
@@ -72,19 +72,19 @@ If the reverse engineer takes part of the code into the reverse engineered list 
 
 Any code in some of the other banks (e.g. at 0x8020) that refers to a bank will get that label, e.g.:
 ~~~asm
-8020	01 00 00	CALL $C000@1
+8020	01 00 00	CALL $C000.B1
 ~~~
 
 As the code is in a non-paged area it has a simple 64k address (i.e. 8020) only.
 
 At the time the code is disassembled (or better: executed by single step) it is known which bank is paged in.
-The call address could be assigned to the long address C000@1.
+The call address could be assigned to the long address C000.B1.
 
 If the reverse engineer had given a label name to it already in the ref.list file, the label could be used:
 ~~~asm
-C000@1			MYSUB_BANK1:
-C000@1	3E 05		LD A,5
-C002@1  C9			RET
+C000.B1			MYSUB_BANK1:
+C000.B1	3E 05		LD A,5
+C002.B1  C9			RET
 ~~~
 
 ~~~asm
@@ -99,14 +99,6 @@ In this case the 64k address should be used instead, e.g.:
 8020	01 00 00	CALL $C000
 ~~~
 
-
-
-# Other ideas
-
-If banking is anyway not supported, the z80dsmblr could be used for static analysis.
-The reverse engineer can manually run a static analysis with z80dsmblr and use the result as starting point for the list file.
-
-Once a subroutine is better understood it could be re-written and the list file could be re-read by DeZog.
 
 
 # MAME

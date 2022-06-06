@@ -1,7 +1,7 @@
 # Disassembly
 
 The disassembly used in Dezog is derived from the [z80dismblr](https://github.com/maziac/z80dismblr) project.
-DeZo uses 2 kinds of disassemblies:
+DeZog uses 2 kinds of disassemblies:
 1. The SimpleDisassembly: a brute force disassembly used in the VARIABLEs pane and for the 'dasm' command.
 It is "brute force" because it disassemmbles a small amount (about 10) of instructions and just converts the opcodes into instructions.
 2. A more intelligent disassembly (DisassemblyClass) which uses z80dismblr features to distinguish code labels from data labels etc. E.g. the disassembly will not necessarily go on with the disassembly after a RET is found.
