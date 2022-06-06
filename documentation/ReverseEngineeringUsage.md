@@ -109,5 +109,5 @@ E.g. to add a permanent watchpoint to some memory location use:
 
 This will watch memory at location 9000h to 9002h.
 
-
+Please note that you can add temporary watchpoints also via the debug command "-wpadd addr ...".
 

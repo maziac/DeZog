@@ -214,7 +214,7 @@ export class DisassemblyClass extends Disassembler {
 	/**
 	 * Returns the address for a given line number.
 	 * @param lineNr The line number starting at 0.
-	 * @returns The address or -1 if none exists for the line.
+	 * @returns The  long address or -1 if none exists for the line.
 	 */
 	public getAddressForLine(lineNr: number): number {
 		if (lineNr >= this.lineAddrArray.length)

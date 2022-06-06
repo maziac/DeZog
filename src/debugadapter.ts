@@ -47,12 +47,12 @@ enum DbgAdapterState {
 
 
 /**
- * Structure to hold the address together with teh source breakpoint.
+ * Structure to hold the address together with the source breakpoint.
  * Used for the disassembly.
  */
 interface SbpAddr {
 	sbp: vscode.SourceBreakpoint;
-	address: number;	// -1 if undefined
+	longAddress: number;	// -1 if undefined
 	lineNr: number;	// The original line number is saved here because the lineNr of the SourceBreakpoint is changed by vscode when teh file changes.
 }
 
@@ -935,12 +935,19 @@ export class DebugSessionClass extends DebugSession {
 		// If no source exists the stack frame will have 'src' as undefined.
 		const [sfrs, longFetchAddresses] = this.stackFramesForCallStack(callStack);
 
-		const disassembleMemory = (longFetchAddresses.length > 0);
+		// Get BPs located in previous disassembly
+		const prevBpAddresses = this.getDisassemblyBreakpoints();
+
+		const disassembleMemory = (longFetchAddresses.length > 0) || (prevBpAddresses.length > 0);
 		//const disassembleMemory = false;
 		if (disassembleMemory)	// Disassembly only if PC or call stack is unknown
 		{
 			// Add addresses from PC history.
 			this.addAddressesFromPcHistory(longFetchAddresses);
+
+			// Add breakpoint addresses
+			const longBpAddrs = prevBpAddresses.map(sbpAddr => sbpAddr.longAddress);
+			longFetchAddresses.push(...longBpAddrs);
 
 			// Get memory.
 			const fetchAddresses = longFetchAddresses.map(longAddr => (longAddr & 0xFFFF));
@@ -951,8 +958,6 @@ export class DebugSessionClass extends DebugSession {
 			// Read previous text
 			const prevText = disasmTextDoc.getText();
 
-			// Get BPs located in previous disassembly and assign the addresses.
-			const prevBpAddresses = this.getDisassemblyBreakpoints();
 			// Remove BPs temporary
 			const removeBps = prevBpAddresses.map(sbpAddr => sbpAddr.sbp);
 			vscode.debug.removeBreakpoints(removeBps);
@@ -1007,8 +1012,8 @@ export class DebugSessionClass extends DebugSession {
 			const docEditors = this.getEditorsForTextDoc(disasmTextDoc);
 			for (const editor of docEditors) {
 				Decoration.setDisasmCoverageDecoration(editor);
-				Decoration.showBreak();	// update
 			}
+			Decoration.showBreak();	// update
 		}
 
 		// Check if decoration need to be changed
@@ -1184,7 +1189,7 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Returns the TextEditors currently in use for a given doc.
+	 * Returns the TextEditors currently visible for a given doc.
 	 * @param doc The doc to search for.
 	 * @returns An array of editors. Can be empty or contain even more than 1 editor for the same document.
 	 */
@@ -1312,7 +1317,7 @@ export class DebugSessionClass extends DebugSession {
 			const bpAddr: SbpAddr = {
 				sbp,
 				// Get address from previous disassembly
-				address: Disassembly.getAddressForLine(lineNr),
+				longAddress: Disassembly.getAddressForLine(lineNr),
 				// Save original line number
 				lineNr: sbp.location.range.start.line
 			}
@@ -1332,7 +1337,7 @@ export class DebugSessionClass extends DebugSession {
 		const reassignedBps: vscode.SourceBreakpoint[] = [];
 		for (const sbpAddr of sbpAddrs) {
 			const sbp = sbpAddr.sbp;
-			const addr = sbpAddr.address;
+			const addr = sbpAddr.longAddress;
 			// Check for address
 			if (addr >= 0) {
 				// Get the new file/line for the address

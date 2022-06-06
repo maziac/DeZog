@@ -3,10 +3,10 @@
 E.g. with MAME.
 
 Major problem is the association between 64k addresses and banked programs.
-- Static analysis (like in z80dsmblr) is not possible
+- Static analysis (like in z80dismblr) is not possible
 - MAME:
 	- The gdb (gdbstub) of MAME does not return the bank/paging information at all
-- The Dezog internal z80dsmblr
+- The Dezog internal z80dismblr
 
 
 
@@ -46,7 +46,7 @@ Note:
 If zsim is used the banking information is available for a dynamic analysis.
 Maybe the MAME gdbstub could be extended to provide that information as well (memory model + current bank/paging information).
 
-So for a certain "snapshot" z80dsmblr could do a static analysis.
+So for a certain "snapshot" z80dismblr could do a static analysis.
 Addresses that belong to a certain page are put into different files.
 
 E.g. if the area 0xC000-0xFFFF is once used for bank1 this area is disassembled into "file_bank1.list".
@@ -106,11 +106,11 @@ In this case the 64k address should be used instead, e.g.:
 ## MAME trace files
 
 Mame trace files do not include banking information as well. I.e., again, this can be used only in a system without banking.
-With this limitation they can be used already when creating the initial list file by z80dsmblr.
+With this limitation they can be used already when creating the initial list file by z80dismblr.
 
 It would also be possible to add them to the launch.json so that the information is available during DeZog on-the-fly disassembly.
 
-Giving both (z80dsmblr and DeZog) the information is probably redundant, but should also not harm.
+Giving both (z80dismblr and DeZog) the information is probably redundant, but should also not harm.
 
 
 ## MAME gdb overlays
