@@ -27,11 +27,28 @@ export class DisassemblyClass extends Disassembler {
 	/**
 	 * Creates the singleton.
 	 */
-	public static createDisassemblyInstance() {
-		Disassembly = new DisassemblyClass();
+	public static createDisassemblySingleton() {
+		Disassembly = DisassemblyClass.createDisassemblyInstance();
+
+		// Filter any address that is already present in the list file(s).
+		Disassembly.funcFilterAddresses = (addr64k: number) => {
+			// Convert to long address
+			const longAddr = Z80Registers.createLongAddress(addr64k);
+			// Check if label has a file associated
+			const entry = Labels.getSourceFileEntryForAddress(longAddr);
+			return (entry == undefined || entry.size == 0);	// Filter only non-existing addresses or addresses with no code
+		};
+	}
+
+
+	/**
+	 * Creates the singleton.
+	 */
+	public static createDisassemblyInstance(): DisassemblyClass {
+		const disassembly = new DisassemblyClass();
 
 		// Use internal labels.
-		Disassembly.funcAssignLabels = (addr64k: number) => {
+		disassembly.funcAssignLabels = (addr64k: number) => {
 			// Convert to long address
 			const longAddr = Z80Registers.createLongAddress(addr64k);
 			// Check if label already known
@@ -43,18 +60,14 @@ export class DisassemblyClass extends Disassembler {
 			return 'L' + Utility.getHexString(addr64k, 4);
 		};
 
-		// Filter any address that is already present in the list file(s).
-		Disassembly.funcFilterAddresses = (addr64k: number) => {
-			// Convert to long address
-			const longAddr = Z80Registers.createLongAddress(addr64k);
-			// Check if label has a file associated
-			const entry = Labels.getSourceFileEntryForAddress(longAddr);
-			return (entry == undefined || entry.size == 0);	// Filter only non-existing addresses or addresses with no code
+		// No filtering for now.
+		disassembly.funcFilterAddresses = (addr64k: number) => {
+			return true;	// No filtering
 		};
 
 
 		// Add bank info to the address.
-		Disassembly.funcFormatAddress = (addr64k: number) => {
+		disassembly.funcFormatAddress = (addr64k: number) => {
 			// Convert to long address
 			const longAddr = Z80Registers.createLongAddress(addr64k);
 			// Formatting
@@ -67,7 +80,7 @@ export class DisassemblyClass extends Disassembler {
 		};
 
 		// Characters reserved for the address field
-		Disassembly.clmnsAddress = 8;	// E.g. 0000:5
+		disassembly.clmnsAddress = 8;	// E.g. 0000:5
 
 		// Restore 'rst 8' opcode
 		Opcodes[0xCF] = new Opcode(0xCF, "RST %s");
@@ -77,7 +90,10 @@ export class DisassemblyClass extends Disassembler {
 			// Extend 'rst 8' opcode for esxdos
 			Opcodes[0xCF].appendToOpcode(",#n");
 		}
+
+		return disassembly;
 	}
+
 
 
 	/**
