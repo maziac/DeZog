@@ -21,7 +21,7 @@ export class Disassembler extends EventEmitter {
 
 	/// A function that can be set to assign other than the standard
 	/// label names.
-	public funcAssignLabels: (address: number) => string;
+	public funcAssignLabels: (address: number) => string | undefined;
 
 	/// A function that can be set to filter out certain addresses from the output.
 	/// Note: the addresses are still used for analysis but are simply skipped in the output ('disassembleMemory').
@@ -103,8 +103,8 @@ export class Disassembler extends EventEmitter {
 	public labelRstPrefix = "RST";
 	public labelDataLblPrefix = "DATA";
 	public labelSelfModifyingPrefix = "SELF_MOD";	// I guess this is not used anymore if DATA_LBL priority is below CODE_LBLs
-	public labelLocalLablePrefix = "_l";
-	public labelLoopPrefix = "_loop";
+	public labelLocalLablePrefix = "L";	// "_L"
+	public labelLoopPrefix = "LOOP";	// "_LOOP"
 
 	public labelIntrptPrefix = "INTRPT";
 
@@ -177,6 +177,13 @@ export class Disassembler extends EventEmitter {
 	// the line is left empty.
 	// With DeZog this can happen as it does a disassembly only on part of the memory.
 	public ignoreIncompleteOpcodes = false;
+
+	// For Dezog. Normally memory that is no data will be shown as data.
+	// The display is omitted if the memory is not referenced if set to false.
+	public disassembleUnreferencedData = true;
+
+	// For deZog. Whether or not interrupt labels should be found.
+	public findInterrupts = true;
 
 
 	/**
@@ -277,7 +284,8 @@ export class Disassembler extends EventEmitter {
 		this.collectLabels();
 
 		// Find interrupts
-		this.findInterruptLabels();
+		if(this.findInterrupts)
+			this.findInterruptLabels();
 
 		// Add special labels, e.g. the start of a ROM
 		this.setSpecialLabels();
@@ -1664,15 +1672,6 @@ export class Disassembler extends EventEmitter {
 	/// 2. Now the local label name numbers are assigned.
 	/// Reason is that the count of digits for the local label numbers is not known upfront.
 	protected assignLabelNames() {
-		// Check if a custom function should be used.
-		if (this.funcAssignLabels) {
-			for (const [address, label] of this.labels) {
-				label.name = this.funcAssignLabels(address);
-			}
-			return;
-		}
-
-
 		// Count labels ----------------
 
 		// Count all local labels.
@@ -1688,6 +1687,15 @@ export class Disassembler extends EventEmitter {
 
 		// Loop through all labels
 		for (const [address, label] of this.labels) {
+			// Check if a custom function should be used.
+			if (this.funcAssignLabels) {
+				const name = this.funcAssignLabels(address);
+				if (name != undefined) {
+					label.name = name;
+					continue;
+				}
+			}
+
 			const type = label.type;
 			switch (type) {
 				// Count main labels
@@ -1791,30 +1799,34 @@ export class Disassembler extends EventEmitter {
 
 		// Loop through all labels (labels is sorted by address)
 		// Local Labels:
-		for (const [parentLabel, childLabels] of localLabels) {
-			const localPrefix = parentLabel.name.toLowerCase();
+		//for (const [parentLabel, childLabels] of localLabels) {
+		for (const [, childLabels] of localLabels) {
+			//const localPrefix = parentLabel.name;//.toLowerCase();
 			const count = childLabels.length;
 			const digitCount = count.toString().length;
 			// Set names
 			let index = 1;
 			for (let child of childLabels) {
 				const indexString = this.getIndex(index, digitCount);
-				child.name = '.' + localPrefix + this.labelLocalLablePrefix;
+				//child.name = '.' + localPrefix + this.labelLocalLablePrefix;
+				child.name = '.' + this.labelLocalLablePrefix;
 				if (count > 1)
 					child.name += indexString;
 				index++;
 			}
 		}
 		// Local Loops:
-		for (let [parentLabel, childLabels] of localLoops) {
-			const localPrefix = parentLabel.name.toLowerCase();
+		//for (let [parentLabel, childLabels] of localLoops) {
+		for (let [, childLabels] of localLoops) {
+			//const localPrefix = parentLabel.name;//.toLowerCase();
 			const count = childLabels.length;
 			const digitCount = count.toString().length;
 			// Set names
 			let index = 1;
 			for (let child of childLabels) {
 				const indexString = this.getIndex(index, digitCount);
-				child.name = '.' + localPrefix + this.labelLoopPrefix;
+				//child.name = '.' + localPrefix + this.labelLoopPrefix;
+				child.name = '.' + this.labelLoopPrefix;
 				if (count > 1)
 					child.name += indexString;
 				index++;
@@ -2176,6 +2188,7 @@ export class Disassembler extends EventEmitter {
 			let prevMemoryAttribute = MemAttribute.DATA;
 
 			let prevParent;
+			this.resetAddEmptyLine();
 
 			// disassemble until unassigned memory found
 			while (true) {
@@ -2204,7 +2217,6 @@ export class Disassembler extends EventEmitter {
 				}
 
 				// Get association of address
-				this.resetAddEmptyLine();
 				const parent = this.addressParents[address];
 				if (parent != prevParent || (prevMemoryAttribute ^ attr) & MemAttribute.CODE || printEmptyLinesBeforeNext) {		// If parent changed or code block changed to data (or vice versa)
 					this.addEmptyLines(lines);
@@ -2239,6 +2251,7 @@ export class Disassembler extends EventEmitter {
 					// Add comments
 					const commentLines = Comment.getLines(comment, labelLine, this.commentsInDisassembly);
 					lines.push(...commentLines);
+					this.resetAddEmptyLine();
 				}
 
 				// Check if code or data should be disassembled
@@ -2277,6 +2290,18 @@ export class Disassembler extends EventEmitter {
 
 				else {
 					// DATA
+
+					// Check if unreferenced data should be disassembled
+					if (!this.disassembleUnreferencedData) {
+						if (!(attr & MemAttribute.DATA)) {
+							// Next address if no data
+							address++;
+							prevMemoryAttribute = attr;
+							continue;
+						}
+					}
+
+					// If type changed then add empty lines
 					if (!(prevMemoryAttribute & MemAttribute.DATA))
 						this.addEmptyLines(lines);
 
@@ -2287,13 +2312,24 @@ export class Disassembler extends EventEmitter {
 
 					// Read a block of data for one line (if possible)
 					let j = 1;
+					addAddress = this.numberOfDefbBytes;
 					for (; j < this.numberOfDefbBytes; j++) {
 						// Check attribute
-						const addr = (address + j) & 0xFFFF;
+						//const addr = (address + j) & 0xFFFF;
+						const addr = address + j;
 						const nextAttr = this.memory.getAttributeAt(addr);
 						if (!(nextAttr & MemAttribute.ASSIGNED) || (nextAttr & MemAttribute.CODE)) {
 							// Leave if not assigned or CODE
+							addAddress = j;
 							break;
+						}
+						// Check if unreferenced data should be disassembled
+						if (!this.disassembleUnreferencedData) {
+							if (!(nextAttr & MemAttribute.DATA)) {
+								// Leave if not DATA
+								addAddress = this.numberOfDefbBytes;
+								break;
+							}
 						}
 
 						// Read memory value at address
@@ -2305,7 +2341,6 @@ export class Disassembler extends EventEmitter {
 					}
 					// Turn memory to data memory
 					attr |= MemAttribute.DATA;
-					addAddress = j;
 
 					// Disassemble the data line
 					//const mainString = this.rightCase('DEFB ') + Format.getHexString(memValue, 2) + 'h';
@@ -2329,11 +2364,13 @@ export class Disassembler extends EventEmitter {
 					if (this.commentsInDisassembly && commentText && commentText.length > 0)
 						line += '\t; ' + commentText;
 					lines.push(line);
+					this.resetAddEmptyLine();
 				}
 				else {
 					// Add comments
 					const commentLines = Comment.getLines(comment, line, this.commentsInDisassembly);
 					lines.push(...commentLines);
+					this.resetAddEmptyLine();
 				}
 
 				// Next address
@@ -2346,6 +2383,7 @@ export class Disassembler extends EventEmitter {
 						lines.push('; ...');
 						lines.push('; ...');
 						lines.push('; ...');
+						this.resetAddEmptyLine();
 					}
 				}
 
@@ -2355,7 +2393,9 @@ export class Disassembler extends EventEmitter {
 			}
 			// The while(true) loop is left if unassigned memory was found.
 			// Add dots:
-			lines.push('...');
+			if (address < 0x10000)
+				lines.push('...');
+			this.resetAddEmptyLine();
 		}
 
 		// Return
