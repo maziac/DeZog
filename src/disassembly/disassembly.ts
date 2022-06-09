@@ -10,7 +10,6 @@ import {Remote} from "../remotes/remotebase";
 import {ReverseEngineeringLabelParser} from "../labels/reverseengineeringlabelparser";
 
 
-
 /// The filename used for the temporary disassembly. ('./.tmp/disasm.list')
 const TmpDasmFileName = 'disasm.list';
 
@@ -57,13 +56,12 @@ export class DisassemblyClass extends Disassembler {
 				return labels.join(' or ');
 			}
 			// Otherwise simple hex string, e.g. "C000"
-			return 'L' + Utility.getHexString(addr64k, 4);
+			//return 'L' + Utility.getHexString(addr64k, 4);
+			return undefined;
 		};
 
 		// No filtering for now.
-		disassembly.funcFilterAddresses = (addr64k: number) => {
-			return true;	// No filtering
-		};
+		disassembly.funcFilterAddresses = undefined as any;
 
 
 		// Add bank info to the address.
@@ -81,6 +79,9 @@ export class DisassemblyClass extends Disassembler {
 
 		// Characters reserved for the address field
 		disassembly.clmnsAddress = 8;	// E.g. 0000:5
+
+		// Do not find interrupt labels
+		disassembly.findInterrupts = false;
 
 		// Restore 'rst 8' opcode
 		Opcodes[0xCF] = new Opcode(0xCF, "RST %s");

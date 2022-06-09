@@ -36,6 +36,7 @@ import {GenericWatchpoint} from './genericwatchpoint';
 import {SimpleDisassembly} from './disassembly/simpledisassembly';
 import * as Diff from 'diff';
 import {CallStackFrame} from './callstackframe';
+import {NumberType} from './disassembler/numbertype';
 
 
 
@@ -3307,9 +3308,18 @@ E.g. use "-help -view" to put the help text in an own view.
 					// Create temporary disassemlby instance
 					const disassembly = DisassemblyClass.createDisassemblyInstance();
 					disassembly.automaticAddresses = false;	// No disassembly at 0x0000
+					disassembly.disassembleUnreferencedData = false;
+					// Do not find interrupt labels
+					disassembly.findInterrupts = false;
+
 					// Initialize disassembly
 					const rstAddrs = [0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38];
 					disassembly.initWithCodeAdresses(rstAddrs, [{address: 0, data}]);
+					// Init label names for RST
+					for (const rstAddr of rstAddrs) {
+						disassembly.setLabel(rstAddr, 'RST' + Utility.getHexString(rstAddr, 2), NumberType.CODE_RST);
+					}
+
 					// Disassemble
 					disassembly.disassemble();
 					const text = disassembly.getDisassemblyText();
