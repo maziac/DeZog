@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.0.0-rc3",
+	"version": "3.0.0-rc4",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum.",
 	"author": {
@@ -35,6 +35,9 @@
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/maziac/DeZog"
+	},
+	"sponsor": {
+    	"url": "https://github.com/sponsors/maziac"
 	},
 	"scripts": {
 		"compile": "tsc -p ./",
