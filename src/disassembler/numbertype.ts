@@ -7,28 +7,28 @@ export const enum NumberType {
 	NONE = 0,
 
 	// "Data LBL"-type, low priority, might be changed to SUB if necessary.
-	DATA_LBL,
+	DATA_LBL = 1,
 	// Label for "out/in" command
-	PORT_LBL,	// REMARK: Port needs other handling. Is another space, i.e. a memory label and a port label could have same number.
+	PORT_LBL = 2,	// REMARK: Port needs other handling. Is another space, i.e. a memory label and a port label could have same number.
 
 	// "relative-label"-type, i.e. JR
-	CODE_LOCAL_LBL,
+	CODE_LOCAL_LBL = 3,
 	// "loop"-type
-	CODE_LOCAL_LOOP,
+	CODE_LOCAL_LOOP = 4,
 	// "LBL"-type
-	CODE_LBL,
+	CODE_LBL = 5,
 	// "SUB"-type
-	CODE_SUB,
+	CODE_SUB = 6,
 	// "RST"-type
-	CODE_RST,
+	CODE_RST = 7,
 	// A relative index like (IX+5) or (IY-3)
-	RELATIVE_INDEX,
+	RELATIVE_INDEX = 8,
 	// "BYTE"-type
-	NUMBER_BYTE,
+	NUMBER_BYTE = 9,
 	// "WORD"-type
-	NUMBER_WORD,
+	NUMBER_WORD = 10,
 	// "WORD"-type for ZX Next command "PUSH $nnnn"
-	NUMBER_WORD_BIG_ENDIAN,
+	NUMBER_WORD_BIG_ENDIAN = 11,
 }
 
 

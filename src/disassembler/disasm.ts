@@ -103,7 +103,7 @@ export class Disassembler extends EventEmitter {
 	public labelRstPrefix = "RST";
 	public labelDataLblPrefix = "DATA";
 	public labelSelfModifyingPrefix = "SELF_MOD";	// I guess this is not used anymore if DATA_LBL priority is below CODE_LBLs
-	public labelLocalLablePrefix = "L";	// "_L"
+	public labelLocalLabelPrefix = "L";	// "_L"
 	public labelLoopPrefix = "LOOP";	// "_LOOP"
 
 	public labelIntrptPrefix = "INTRPT";
@@ -908,6 +908,10 @@ export class Disassembler extends EventEmitter {
 				// A relative jump backwards will become a "loop"
 				if (branchAddress <= opcodeAddress)
 					vType = NumberType.CODE_LOCAL_LOOP;
+				else {
+					// Otherwise treat as normal label
+					vType = NumberType.CODE_LBL;
+				}
 			}
 			else if (vType == NumberType.CODE_LBL) {
 				// Treat JP to unassigned memory area as a CALL.
@@ -1147,12 +1151,12 @@ export class Disassembler extends EventEmitter {
 			// Check if memory exists
 			const memAttr = this.memory.getAttributeAt(address);
 			if (!(memAttr & MemAttribute.ASSIGNED)) {
-				DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');
+				DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');	// NOSONAR
 				return false;
 			}
 			// Unfortunately it needs to be checked if address has been checked already
 			if (addrsArray.indexOf(address) >= 0) {
-				DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');
+				DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');	// NOSONAR
 				return false;	// already checked
 			}
 			// Check if a label for address exists that already is a subroutine.
@@ -1161,7 +1165,7 @@ export class Disassembler extends EventEmitter {
 				const type = addrLabel.type;
 				if (type == NumberType.CODE_SUB
 					|| type == NumberType.CODE_RST) {
-					DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': SUB FOUND. address belongs already to a SUB.');
+					DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': SUB FOUND. address belongs already to a SUB.');	// NOSONAR
 					return true;
 				}
 			}
@@ -1172,7 +1176,7 @@ export class Disassembler extends EventEmitter {
 
 			// Check if RET
 			if (opcodeClone.flags & OpcodeFlag.RET) {
-				DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': SUB FOUND. RET code = ' + opcodeClone.name + '.');
+				DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': SUB FOUND. RET code = ' + opcodeClone.name + '.');	// NOSONAR
 				return true;
 			}
 
@@ -1183,7 +1187,8 @@ export class Disassembler extends EventEmitter {
 			if (opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
 				if (!(opcodeClone.flags & OpcodeFlag.CALL)) {
 					const branchAddress = opcodeClone.value;
-					DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.'); DelayedLog.pushTab();
+					DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.');	// NOSONAR
+					DelayedLog.pushTab();
 					const res = this.findRET(branchAddress, addrsArray);
 					DelayedLog.popTab();
 					if (res)
@@ -1231,7 +1236,7 @@ export class Disassembler extends EventEmitter {
 						// Don't check start address
 						if (addr == address)
 							continue;
-						// get corresponding label
+						// Get corresponding label
 						const addrLabel = this.labels.get(addr);
 						// Check label
 						if (!addrLabel)
@@ -1294,15 +1299,16 @@ export class Disassembler extends EventEmitter {
 
 		do {
 
+
 			// Check if memory exists
 			const memAttr = this.memory.getAttributeAt(address);
 			if (!(memAttr & MemAttribute.ASSIGNED)) {
-				DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');
+				DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');	// NOSONAR
 				break;
 			}
 			// Unfortunately it needs to be checked if address has been checked already
 			if (addrsArray.indexOf(address) >= 0) {
-				DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');
+				DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');	// NOSONAR
 				break;	// already checked
 			}
 
@@ -1317,7 +1323,8 @@ export class Disassembler extends EventEmitter {
 			if (opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
 				if (!(opcodeClone.flags & OpcodeFlag.CALL)) {
 					const branchAddress = opcodeClone.value;
-					DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.'); DelayedLog.pushTab();
+					DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.');	// NOSONAR
+					DelayedLog.pushTab();
 					this.getSubroutineAddresses(branchAddress, addrsArray);
 					DelayedLog.popTab();
 				}
@@ -1332,7 +1339,7 @@ export class Disassembler extends EventEmitter {
 
 	/**
 	 * Reduces the given array to a coherent area. I.e. if there is a "hole"
-	 * inside the subroutine the parts are treated as two separte subroutines.
+	 * inside the subroutine the parts are treated as two separate subroutines.
 	 * @param address The start address of the subroutine.
 	 * @param addrsArray The array with addresses (was filled by this.getSubroutineAddresses).
 	 */
@@ -1455,8 +1462,7 @@ export class Disassembler extends EventEmitter {
 			// Check if parent already assigned
 			const memLabel = this.addressParents[address];
 			if (memLabel) {
-				DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');
-				break;	// already checked
+				DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');break;	// already checked
 			}
 
 			// Check if label is sub routine
@@ -1522,13 +1528,13 @@ export class Disassembler extends EventEmitter {
 				case NumberType.CODE_SUB:
 				case NumberType.CODE_RST:
 				case NumberType.CODE_LBL:
-					// go through references
+					// Go through references
 					const refs = label.references;
 					for (const ref of refs) {
 						// Get parent
 						const parent = this.addressParents[ref];
 						if (parent) {
-							// add label to call list of parent
+							// Add label to call list of parent
 							parent.calls.push(label);
 						}
 					}
@@ -1799,8 +1805,8 @@ export class Disassembler extends EventEmitter {
 
 		// Loop through all labels (labels is sorted by address)
 		// Local Labels:
-		//for (const [parentLabel, childLabels] of localLabels) {
-		for (const [, childLabels] of localLabels) {
+		for (const [parentLabel, childLabels] of localLabels) {
+		//for (const [, childLabels] of localLabels) {
 			//const localPrefix = parentLabel.name;//.toLowerCase();
 			const count = childLabels.length;
 			const digitCount = count.toString().length;
@@ -1809,15 +1815,15 @@ export class Disassembler extends EventEmitter {
 			for (let child of childLabels) {
 				const indexString = this.getIndex(index, digitCount);
 				//child.name = '.' + localPrefix + this.labelLocalLablePrefix;
-				child.name = '.' + this.labelLocalLablePrefix;
+				child.name = parentLabel.name + '.' + this.labelLocalLabelPrefix;
 				if (count > 1)
 					child.name += indexString;
 				index++;
 			}
 		}
 		// Local Loops:
-		//for (let [parentLabel, childLabels] of localLoops) {
-		for (let [, childLabels] of localLoops) {
+		for (let [parentLabel, childLabels] of localLoops) {
+		//for (let [, childLabels] of localLoops) {
 			//const localPrefix = parentLabel.name;//.toLowerCase();
 			const count = childLabels.length;
 			const digitCount = count.toString().length;
@@ -1826,7 +1832,7 @@ export class Disassembler extends EventEmitter {
 			for (let child of childLabels) {
 				const indexString = this.getIndex(index, digitCount);
 				//child.name = '.' + localPrefix + this.labelLoopPrefix;
-				child.name = '.' + this.labelLoopPrefix;
+				child.name = parentLabel.name + '.' + this.labelLoopPrefix;
 				if (count > 1)
 					child.name += indexString;
 				index++;

@@ -1,42 +1,42 @@
-import {FileWatcher} from './misc/filewatcher';
+import * as Diff from 'diff';
 import * as fs from 'fs';
-import {UnifiedPath} from './misc/unifiedpath';
 import * as vscode from 'vscode';
-import {Breakpoint, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ContinuedEvent, CapabilitiesEvent, InvalidatedEvent} from 'vscode-debugadapter/lib/main';
+import {Breakpoint, CapabilitiesEvent, ContinuedEvent, DebugSession, InitializedEvent, InvalidatedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread} from 'vscode-debugadapter/lib/main';
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
+import {CallStackFrame} from './callstackframe';
+import {Decoration} from './decoration';
+import {DiagnosticsHandler} from './diagnosticshandler';
+import {NumberType} from './disassembler/numbertype';
+import {Disassembly, DisassemblyClass} from './disassembly/disassembly';
+import {MemoryArray} from './disassembly/memoryarray';
+import {SimpleDisassembly} from './disassembly/simpledisassembly';
+import {GenericWatchpoint} from './genericwatchpoint';
 import {Labels} from './labels/labels';
 import {Log} from './log';
-import {Remote, RemoteBreakpoint} from './remotes/remotebase';
-import {MemoryDumpView} from './views/memorydumpview';
-import {MemoryRegisterView} from './views/memoryregisterview';
-import {Settings, SettingsParameters} from './settings/settings';
-import {DisassemblyVar, ShallowVar, MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ImmediateMemoryValue} from './variables/shallowvar';
-import {Utility} from './misc/utility';
-import {Z80RegisterHoverFormat, Z80RegistersClass, Z80Registers, } from './remotes/z80registers';
-import {RemoteFactory} from './remotes/remotefactory';
-import {ZxNextSpritesView} from './views/zxnextspritesview';
-import {TextView} from './views/textview';
-import {BaseView} from './views/baseview';
-import {ZxNextSpritePatternsView} from './views/zxnextspritepatternsview';
-import {Decoration} from './decoration';
-import {ZSimulationView} from './remotes/zsimulator/zsimulationview';
-import {ZSimRemote} from './remotes/zsimulator/zsimremote';
-import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
-import {StepHistoryClass} from './remotes/stephistory';
-import {DisassemblyClass, Disassembly} from './disassembly/disassembly';
-import {TimeWait} from './misc/timewait';
-import {MemoryArray} from './disassembly/memoryarray';
-import {MemoryDumpViewWord} from './views/memorydumpviewword';
 import {ExpressionVariable} from './misc/expressionvariable';
-import {RefList} from './misc/reflist';
+import {FileWatcher} from './misc/filewatcher';
 import {PromiseCallbacks} from './misc/promisecallbacks';
+import {RefList} from './misc/reflist';
+import {TimeWait} from './misc/timewait';
+import {UnifiedPath} from './misc/unifiedpath';
+import {Utility} from './misc/utility';
+import {CpuHistory, CpuHistoryClass, StepHistory} from './remotes/cpuhistory';
+import {Remote, RemoteBreakpoint} from './remotes/remotebase';
+import {RemoteFactory} from './remotes/remotefactory';
+import {StepHistoryClass} from './remotes/stephistory';
+import {Z80RegisterHoverFormat, Z80Registers, Z80RegistersClass} from './remotes/z80registers';
+import {ZSimRemote} from './remotes/zsimulator/zsimremote';
+import {ZSimulationView} from './remotes/zsimulator/zsimulationview';
+import {Settings, SettingsParameters} from './settings/settings';
+import {DisassemblyVar, ImmediateMemoryValue, MemDumpVar, MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, ShallowVar, StackVar, StructVar} from './variables/shallowvar';
+import {BaseView} from './views/baseview';
+import {MemoryDumpView} from './views/memorydumpview';
+import {MemoryDumpViewWord} from './views/memorydumpviewword';
+import {MemoryRegisterView} from './views/memoryregisterview';
+import {TextView} from './views/textview';
+import {ZxNextSpritePatternsView} from './views/zxnextspritepatternsview';
+import {ZxNextSpritesView} from './views/zxnextspritesview';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
-import {DiagnosticsHandler} from './diagnosticshandler';
-import {GenericWatchpoint} from './genericwatchpoint';
-import {SimpleDisassembly} from './disassembly/simpledisassembly';
-import * as Diff from 'diff';
-import {CallStackFrame} from './callstackframe';
-import {NumberType} from './disassembler/numbertype';
 
 
 
@@ -3314,6 +3314,8 @@ E.g. use "-help -view" to put the help text in an own view.
 
 					// Initialize disassembly
 					const rstAddrs = [0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38];
+					//const rstAddrs = [0x78];
+					//const rstAddrs = [0x062E, 0x0636];
 					disassembly.initWithCodeAdresses(rstAddrs, [{address: 0, data}]);
 					// Init label names for RST
 					for (const rstAddr of rstAddrs) {
