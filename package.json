@@ -216,6 +216,16 @@
 				"command": "dezog.disassemblyAtCursor.string",
 				"title": "String",
 				"category": "DeZog"
+			},
+			{
+				"command": "dezog.analyzeAtCursor.flowChart",
+				"title": "Flow Chart",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.analyzeAtCursor.callGraph",
+				"title": "Call Graph",
+				"category": "DeZog"
 			}
 		],
 		"menus": {
@@ -243,6 +253,14 @@
 					"when": "false"
 				},
 				{
+					"command": "dezog.analyzeAtCursor.flowChart",
+					"when": "false"
+				},
+				{
+					"command": "dezog.analyzeAtCursor.callGraph",
+					"when": "false"
+				},
+				{
 					"command": "dezog.clearAllDecorations"
 				},
 				{
@@ -262,6 +280,11 @@
 					"when": "resourceLangId == asm-collection && inDebugMode",
 					"submenu": "dezog.disassemblyAtCursor",
 					"group": "debug"
+				},
+				{
+					"when": "resourceLangId == asm-collection && inDebugMode",
+					"submenu": "dezog.analyzeAtCursor",
+					"group": "debug"
 				}
 			],
 			"dezog.disassemblyAtCursor": [
@@ -274,12 +297,24 @@
 				{
 					"command": "dezog.disassemblyAtCursor.string"
 				}
+			],
+			"dezog.analyzeAtCursor": [
+				{
+					"command": "dezog.analyzeAtCursor.flowChart"
+				},
+				{
+					"command": "dezog.analyzeAtCursor.callGraph"
+				}
 			]
 		},
 		"submenus": [
 			{
 				"id": "dezog.disassemblyAtCursor",
 				"label": "Disassembly at Cursor / of Selection"
+			},
+			{
+				"id": "dezog.analyzeAtCursor",
+				"label": "Analyze at Cursor"
 			}
 		],
 		"debuggers": [

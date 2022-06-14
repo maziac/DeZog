@@ -1,17 +1,17 @@
-import * as vscode from 'vscode';
-import {WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken} from 'vscode';
-import {DebugSessionClass} from './debugadapter';
 import * as Net from 'net';
-import {DecorationClass, Decoration} from './decoration';
-import {LogTransport, LogCustomCode, LogGlobal} from './log';
+import {SerialPort} from 'serialport';
+import * as vscode from 'vscode';
+import {CancellationToken, DebugConfiguration, ProviderResult, WorkspaceFolder} from 'vscode';
+import {DebugSessionClass} from './debugadapter';
+import {Decoration, DecorationClass} from './decoration';
+import {DiagnosticsHandler} from './diagnosticshandler';
+import {GlobalStorage} from './globalstorage';
+import {HelpProvider} from './help/helpprovider';
+import {LogCustomCode, LogGlobal, LogTransport} from './log';
 import {Utility} from './misc/utility';
 import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
-import {HelpProvider} from './help/helpprovider';
-import {GlobalStorage} from './globalstorage';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
-import {DiagnosticsHandler} from './diagnosticshandler';
-import {SerialPort} from 'serialport';
 
 
 
@@ -126,22 +126,47 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Command to do a disassembly at the cursor's position.
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.disassemblyAtCursor.code', async () => {
-		// Execute in debug adapter
-		executeForSelectedLineBlocks(async (session, filename, fromLine, toLine) => {
-			await session.disassemblyAtCursor('code', filename, fromLine, toLine);
-		});
+		// Only allowed in debug context
+		const session = DebugSessionClass.singleton();
+		if (session.running) {
+			const arr = getSelectedLineBlocks();
+			for (const block of arr)
+				await session.disassemblyAtCursor('code', block.filename, block.fromLine, block.toLine);
+		}
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.disassemblyAtCursor.data', async () => {
-		// Execute in debug adapter
-		executeForSelectedLineBlocks(async (session, filename, fromLine, toLine) => {
-			await session.disassemblyAtCursor('data', filename, fromLine, toLine);
-		});
+		// Only allowed in debug context
+		const session = DebugSessionClass.singleton();
+		if (session.running) {
+			const arr = getSelectedLineBlocks();
+			for (const block of arr)
+				await session.disassemblyAtCursor('data', block.filename, block.fromLine, block.toLine);
+		}
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.disassemblyAtCursor.string', async () => {
-		// Execute in debug adapter
-		executeForSelectedLineBlocks(async (session, filename, fromLine, toLine) => {
-			await session.disassemblyAtCursor('string', filename, fromLine, toLine);
-		});
+		// Only allowed in debug context
+		const session = DebugSessionClass.singleton();
+		if (session.running) {
+			const arr = getSelectedLineBlocks();
+			for (const block of arr)
+				await session.disassemblyAtCursor('string', block.filename, block.fromLine, block.toLine);
+		}
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.analyzeAtCursor.flowChart', async () => {
+		// Only allowed in debug context
+		const session = DebugSessionClass.singleton();
+		if (session.running) {
+			const arr = getSelectedLineBlocks();
+			await session.analyzeAtCursor('flowChart', arr);
+		}
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.analyzeAtCursor.callGraph', async () => {
+		// Only allowed in debug context
+		const session = DebugSessionClass.singleton();
+		if (session.running) {
+			const arr = getSelectedLineBlocks();
+			await session.analyzeAtCursor('callGraph', arr);
+		}
 	}));
 
 	// Command to disable code coverage display and analyzes.
@@ -215,20 +240,18 @@ export function deactivate() {
 
 
 /**
- * Executes the given method for each selected line block.
+ * Returns the selected lines in the editor(s).
  * In case of multi selection there might be more than 1 block.
- * For each block the start and end lines are calculated and passed.
+ * For each block the start and end lines are calculated and returned.
+ * @returns An array with blocks: filename, fromLine, toLine (included).
  */
-async function executeForSelectedLineBlocks(func: (session: DebugSessionClass, filename: string, fromLine: number, toLine: number) => Promise<void>) {
-	// Only allowed in debug context
-	const session = DebugSessionClass.singleton();
-	if (!session.running)
-		return;
+function getSelectedLineBlocks(): Array<{filename: string, fromLine: number, toLine: number}> {
 	// Get focussed editor/file and line
 	const editor = vscode.window.activeTextEditor;
 	if (!editor)
-		return undefined;
+		return [];
 	// Go through all selections in case of multiple selections
+	const arr: Array<{filename: string, fromLine: number, toLine: number}> = [];
 	for (const selection of editor.selections) {
 		let from = selection.anchor;
 		let to = selection.active;
@@ -247,9 +270,10 @@ async function executeForSelectedLineBlocks(func: (session: DebugSessionClass, f
 				toLine--;
 		}
 
-		// Execute
-		await func(session, filename, fromLine, toLine);
+		// Store in array
+		arr.push({filename, fromLine, toLine});
 	}
+	return arr;
 }
 
 
