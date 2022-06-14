@@ -613,15 +613,15 @@ export class LabelsClass {
 	 * Returns file name and line number associated with a certain memory address.
 	 * Used e.g. for the call stack.
 	 * Long addresses.
-	 * @param address The (long) memory address to search for.
+	 * @param longAddress The (long) memory address to search for.
 	 * @returns The associated filename and line number (and for sjasmplus the modulePrefix and the lastLabel).
 	 * It not found returns .fileName==''.
 	 */
-	public getFileAndLineForAddress(address: number): SourceFileEntry {
+	public getFileAndLineForAddress(longAddress: number): SourceFileEntry {
 		// Address file conversion
-		let entry = this.fileLineNrs.get(address);
+		let entry = this.fileLineNrs.get(longAddress);
 		if (!entry) {
-			entry = this.fileLineNrs.get(address & 0xFFFF);	// Try 64k address, in case some sld file was without banking.
+			entry = this.fileLineNrs.get(longAddress & 0xFFFF);	// Try 64k address, in case some sld file was without banking. // TODO: REMOVE
 			if (!entry) {
 				return {fileName: '', lineNr: 0, modulePrefix: undefined, lastLabel: undefined, size: 0};
 			}

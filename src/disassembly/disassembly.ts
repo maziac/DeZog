@@ -180,10 +180,21 @@ export class DisassemblyClass extends Disassembler {
 			if (!isNaN(address)) {
 				// Convert to long address
 				address = Z80Registers.createLongAddress(address, slots);
-				// Add to arrays
-				this.addrLineMap.set(address, lineNr);
+				// Add to arrays;
 				while (this.lineAddrArray.length <= lineNr)
 					this.lineAddrArray.push(address);
+				// Add all bytes
+				this.addrLineMap.set(address, lineNr);
+				const match = /\S+\s*(( [a-f\d][a-f\d])+)/i.exec(line);
+				if (match) {
+					const bytesCount = match[1].length / 3;
+					const addr = address & 0xFFFF;
+					const upperAddr = address & (~0xFFFF);
+					for (let i = 1; i < bytesCount; i++) {
+						const longAddr = upperAddr | ((addr + i) & 0xFFFF);
+						this.addrLineMap.set(longAddr, lineNr);
+					}
+				}
 			}
 			lineNr++;
 		}

@@ -3690,50 +3690,81 @@ E.g. use "-help -view" to put the help text in an own view.
 
 
 	/**
+	 * Checks if all lines/addresses are currently paged in.
+	 * And returns teh start and end address.
+	 * @param filename The absolute file path.
+	 * @param fromLineNr The line. Starts at 0.
+	 * @param toLineNr The line. Starts at 0.
+	 * @returs [fromAddr, toAddr] Start and end (long) address.
+	 * @throws An exception if an address of a file/line is not paged in.
+	 */
+	protected checkFileLinesPagedIn(filename: string, fromLineNr: number, toLineNr: number): Array<number> {//</number> {fromAddr: number, toAddr: number} {
+		// Get address of file/line
+		let fromAddr;	// Long
+		while (fromLineNr <= toLineNr) {
+			fromAddr = Remote.getAddrForFileAndLine(filename, fromLineNr);
+			if (fromAddr >= 0)
+				break;
+			fromLineNr++;
+		}
+		let toAddr;	// Long
+		while (fromLineNr <= toLineNr) {
+			toAddr = Remote.getAddrForFileAndLine(filename, toLineNr);
+			if (toAddr >= 0)
+				break;
+			toLineNr--;
+		}
+		if (fromAddr < 0)
+			throw Error("No address found.");
+		// Get all address of last line (not only the first)
+		let addr = toAddr & 0xFFFF;
+		let upperAddr = toAddr & (~0xFFFF);
+		while (addr < 0xFFFF) {
+			const longAddr = (addr + 1) | upperAddr;
+			const fileLine = Remote.getFileAndLineForAddress(longAddr);
+			if (fileLine.lineNr != toLineNr || fileLine.fileName != filename)
+				break;
+			// Next
+			addr++;
+			toAddr = longAddr;
+		}
+
+		// Check if bank is the same
+		const slots = Remote.getSlots();
+		Utility.assert(slots);
+
+		// Check fromAddr and toAddr
+		for (const addr of [fromAddr, toAddr]) {
+			const bank = Z80RegistersClass.getBankFromAddress(fromAddr);
+			if (bank >= 0) {
+				const slotIndex = Z80Registers.getSlotFromAddress(addr);
+				if (bank != slots[slotIndex]) {
+					throw Error("Memory currently not paged in.  (address=" + Utility.getHexString(bank & 0xFFFF, 4) + "h, bank=" + bank + ")");
+				}
+			}
+		}
+
+		// Return
+		return [fromAddr, toAddr];
+	}
+
+
+	/**
 	 * Does a disassembly to the debug console for the address at the cursor position.
 	 * @param type The disassembly type: 'code', 'data' or 'string' (data).
 	 * @param filename The absolute file path.
 	 * @param fromLineNr The line. Starts at 0.
 	 * @param toLineNr The line. Starts at 0.
 	 */
-	public async disassemblyAtCursor(type: 'code'|'data'|'string', filename: string, fromLineNr: number, toLineNr: number): Promise<void> {
-		// Get address of file/line
-		let fromAddr;
-		while (fromLineNr <= toLineNr) {
-			fromAddr = Remote.getAddrForFileAndLine(filename, fromLineNr)
-			if (fromAddr >= 0)
-				break;
-			fromLineNr++;
+	public async disassemblyAtCursor(type: 'code' | 'data' | 'string', filename: string, fromLineNr: number, toLineNr: number): Promise<void> {
+		let fromAddr: number;
+		let toAddr: number;
+		try {
+			[fromAddr, toAddr]= this.checkFileLinesPagedIn(filename, fromLineNr, toLineNr);	// Returns long addresses
 		}
-		let toAddr;
-		while (fromLineNr <= toLineNr) {
-			toAddr = Remote.getAddrForFileAndLine(filename, toLineNr)
-			if (toAddr >= 0)
-				break;
-			toLineNr--;
-		}
-		if (fromAddr < 0)
+		catch (e) {
+			this.debugConsoleAppendLine("Error: " + e.message);
 			return;
-
-		// Check if bank is the same
-		const slots = Remote.getSlots();
-		if (slots) {
-			const fromBank = Z80RegistersClass.getBankFromAddress(fromAddr);
-			if (fromBank >= 0) {
-				const slotIndex = Z80Registers.getSlotFromAddress(fromAddr);
-				if (fromBank != slots[slotIndex]) {
-					this.debugConsoleAppendLine("Memory currently not paged in.  (address=" + Utility.getHexString(fromBank & 0xFFFF, 4) + "h, bank=" + fromBank + ")");
-					return;
-				}
-			}
-			const toBank = Z80RegistersClass.getBankFromAddress(toAddr);
-			if (toBank >= 0) {
-				const slotIndex = Z80Registers.getSlotFromAddress(toAddr);
-				if (toBank != slots[slotIndex]) {
-					this.debugConsoleAppendLine("Memory currently not paged in.  (address=" + Utility.getHexString(toBank & 0xFFFF, 4) + "h, bank=" + toBank + ")");
-					return;
-				}
-			}
 		}
 
 		// Read the memory.
@@ -3767,6 +3798,19 @@ E.g. use "-help -view" to put the help text in an own view.
 		// Copy to clipboard
 		vscode.env.clipboard.writeText(text);
 		vscode.window.showInformationMessage('Disassembly copied to clipboard.');
+	}
+
+
+	/**
+	 * Does an analyze (flowchart, call graph) of the given address(es).
+	 * @param type The analyze type: 'flowChart' or 'callGraph'.
+	 * @param arr An array with the blocks to analze. Usually just the start line.
+	 */
+	public async analyzeAtCursor(type: 'flowChart' | 'callGraph', arr: Array<{filename: string, fromLine: number, toLine: number}>): Promise<void> {
+		// Get whole memory for analyzing
+		const data = await Remote.readMemoryDump(0, 0x10000);
+//Check bank
+
 	}
 
 
