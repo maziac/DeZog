@@ -45,7 +45,7 @@ export class Disassembler extends EventEmitter {
 	protected offsetLabels: Map<number, number>;
 
 	/// Here the association from an address to it's parent, i.e. the subroutine it
-	// belongs to is stored for each address.
+	/// belongs to is stored for each address.
 	protected addressParents: Array<DisLabel>;
 
 	/// Queue for start addresses only addresses of opcodes
@@ -194,21 +194,23 @@ export class Disassembler extends EventEmitter {
 		this.initLabels();
 		Opcode.setConvertToLabelHandler(value => {
 			let valueName;
-			let label;
+			let labelName;
 			let offsString = '';
-			if (this.labels)
-				label = this.labels.get(value);
-			if (!label) {
+			if (this.labels) {
+				labelName = this.reducedLabelName(value);
+			}
+			if (!labelName) {
 				// Check for offset label
 				const offs = this.offsetLabels.get(value);
 				if (offs) {
-					label = this.labels.get(value + offs);
-					if (label)
+					labelName = this.reducedLabelName(value + offs);
+					if (labelName)
 						offsString = (offs > 0) ? '' + (-offs) : '+' + (-offs);
 				}
 			}
-			if (label)
-				valueName = label.name + offsString;
+			if (labelName) {
+				valueName = labelName + offsString;
+			}
 			return valueName;
 		});
 	}
@@ -2241,7 +2243,7 @@ export class Disassembler extends EventEmitter {
 						this.addEmptyLines(lines);
 					}
 					// Add label on separate line
-					let labelLine = addrLabel.name + ':';
+					let labelLine = this.reducedLabelName(address) + ':';
 					if (this.clmnsAddress > 0) {
 						let addrString;
 						if (this.funcFormatAddress)
@@ -2406,6 +2408,30 @@ export class Disassembler extends EventEmitter {
 
 		// Return
 		return lines;
+	}
+
+
+	/**
+	 * Reduces a local label. E.g.
+	 * "SUB1.label" will become ".label" if this.currentMainLabel = "SUB1".
+	 * @param address The address for the label.
+	 * @returns The label name. E.g. "SUB1" or ".label" or "SUB1.label".
+	 */
+	protected reducedLabelName(address: number): string {
+		let labelName;
+		const label = this.labels.get(address);
+		if (label) {
+			labelName = label.name;
+			const parentLabel = this.addressParents[address];
+			if (parentLabel) {
+				const parentName = parentLabel.name;
+				if (labelName.startsWith(parentName + '.')) {
+					const len = parentName.length;
+					labelName = labelName.substring(len);
+				}
+			}
+		}
+		return labelName;
 	}
 
 
