@@ -112,6 +112,9 @@ export class Disassembler extends EventEmitter {
 	/// If set the disassemble will automatically add address 0 or the SNA address to the labels.
 	public automaticAddresses = true;
 
+	/// If set the disassembly will automatically assign a label for a start of a block.
+	public specialLabels = true;
+
 
 	/// Column areas. e.g. area for the bytes shown before each command
 	public clmnsAddress = 5;		///< size for the address at the beginning of each line. If 0 no address is shown.
@@ -188,31 +191,11 @@ export class Disassembler extends EventEmitter {
 
 	/**
 	 * Initializes the Opcode formatting.
+	 * Note: This does work only if Disassembler is a singleton.
 	 */
 	constructor() {
 		super();
 		this.initLabels();
-		Opcode.setConvertToLabelHandler(value => {
-			let valueName;
-			let labelName;
-			let offsString = '';
-			if (this.labels) {
-				labelName = this.reducedLabelName(value);
-			}
-			if (!labelName) {
-				// Check for offset label
-				const offs = this.offsetLabels.get(value);
-				if (offs) {
-					labelName = this.reducedLabelName(value + offs);
-					if (labelName)
-						offsString = (offs > 0) ? '' + (-offs) : '+' + (-offs);
-				}
-			}
-			if (labelName) {
-				valueName = labelName + offsString;
-			}
-			return valueName;
-		});
 	}
 
 	/**
@@ -220,9 +203,6 @@ export class Disassembler extends EventEmitter {
 	 * or the SNA address.
 	 */
 	public addAutomaticAddresses() {
-		if (!this.automaticAddresses)
-			return;
-
 		// If a SNA address is already given, omit address 0
 		if (this.snaStartAddress >= 0) {
 			// Use sna address
@@ -273,14 +253,44 @@ export class Disassembler extends EventEmitter {
 
 
 	/**
+	 * Converts an address to a label.
+	 * @param address The address to convert // TODO: 64k or long?
+	 * @return The label name or undefined
+	*/
+	protected convertToLabel(address: number): string {
+		let valueName;
+		let labelName;
+		let offsString = '';
+		if (this.labels) {
+			labelName = this.reducedLabelName(address);
+		}
+		if (!labelName) {
+			// Check for offset label
+			const offs = this.offsetLabels.get(address);
+			if (offs) {
+				labelName = this.reducedLabelName(address + offs);
+				if (labelName)
+					offsString = (offs > 0) ? '' + (-offs) : '+' + (-offs);
+			}
+		}
+		if (labelName) {
+			valueName = labelName + offsString;
+		}
+		return valueName;
+	}
+
+
+	/**
 	 * Disassembles the  memory area.
 	 * Disassembly is done in a few passes.
 	 * Afterwards the disassembledLines are set:
 	 * An array of strings with the disassembly.
 	 */
 	public disassemble() {
-		// Add address 0
-		this.addAutomaticAddresses();
+		if (this.automaticAddresses) {
+			// Add address 0
+			this.addAutomaticAddresses();
+		}
 
 		// Collect labels
 		this.collectLabels();
@@ -289,8 +299,10 @@ export class Disassembler extends EventEmitter {
 		if(this.findInterrupts)
 			this.findInterruptLabels();
 
-		// Add special labels, e.g. the start of a ROM
-		this.setSpecialLabels();
+		if (this.specialLabels) {
+			// Add special labels, e.g. the start of a ROM
+			this.setSpecialLabels();
+		}
 
 		// Sort all labels by address
 		this.sortLabels();
@@ -326,7 +338,9 @@ export class Disassembler extends EventEmitter {
 
 
 		// Disassemble opcode with label names
-		const disLines = this.disassembleMemory();
+		const disLines = this.disassembleMemory(address => {
+			return this.convertToLabel(address);
+		});
 
 		// Add all EQU labels to the beginning of the disassembly
 		if (this.equsInDisassembly)
@@ -2147,9 +2161,10 @@ export class Disassembler extends EventEmitter {
 	/**
 	 * Disassemble opcodes together with label names.
 	 * Returns an array of strings which contains the disassembly.
-	 * @returns The disassembly.
+	 * @param func If defined a function that returns a label for a (64k??) address or undefined if no label exists.
+	 * @returns The disassembly as text array.
 	 */
-	protected disassembleMemory(): Array<string> {
+	protected disassembleMemory(func?: (address: number) => string): Array<string> {
 		let lines = new Array<string>();
 
 		// Check if anything to disassemble
@@ -2290,7 +2305,7 @@ export class Disassembler extends EventEmitter {
 					}
 
 					// Disassemble the single opcode
-					const opCodeDescription = opcode.disassemble(this.memory);
+					const opCodeDescription = opcode.disassemble(this.memory, func);
 					line = this.formatDisassembly(address, opcode.length, opCodeDescription.mnemonic);
 					commentText = opCodeDescription.comment;
 					addAddress = opcode.length;

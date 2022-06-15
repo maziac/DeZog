@@ -34,8 +34,6 @@ export class SimpleDisassembly extends Disassembler {
 		}
 
 		// Disassemble all lines
-		const prevLabelHandler = (Opcode as any).convertToLabelHandler;
-		Opcode.setConvertToLabelHandler(undefined as any);	// Without labels
 		let address = addr;
 		const list = new Array<{address: number, instruction: string}>();
 		for (let i = 0; i < count; i++) {
@@ -49,7 +47,6 @@ export class SimpleDisassembly extends Disassembler {
 			// Next address
 			address = (address + opcode.length) & 0xFFFF;
 		}
-		Opcode.setConvertToLabelHandler(prevLabelHandler);
 
 		// Pass data
 		return list;
@@ -79,8 +76,6 @@ export class SimpleDisassembly extends Disassembler {
 		}
 
 		// Disassemble all lines
-		const prevLabelHandler = (Opcode as any).convertToLabelHandler;
-		Opcode.setConvertToLabelHandler(undefined as any);	// Without labels
 		const end = addr + size;
 		const list = new Array<{address: number, size: number, instruction: string}>();
 		while (addr < end) {
@@ -95,8 +90,6 @@ export class SimpleDisassembly extends Disassembler {
 			// Next address
 			addr += opcode.length;
 		}
-		Opcode.setConvertToLabelHandler(prevLabelHandler);
-
 		// Pass data
 		return list;
 	}

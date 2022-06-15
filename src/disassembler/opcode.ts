@@ -49,31 +49,8 @@ export class Opcode {
 	public appendValueTypes: Array<NumberType>;
 
 
-	/**
-	 * Sets the handler to convert a number into a label string.
-	 * If handler is undefined then value will not be converted, i.e. it remains
-	 * a hex value.
-	 * @param handler Gets the value and should return a string with the label.
-	 * If label string does not exist it can return undefinde and the value will be converted into a hex string.
-	 */
-	public static setConvertToLabelHandler(handler: (value: number) => string) {
-		Opcode.convertToLabelHandler = handler;
-	}
-
 	/// The static member that holds the label converter handler.
 	protected static convertToLabelHandler: (value: number) => string;
-
-
-	/// Converts a value to a label or a hex string.
-	protected static convertToLabel(value: number): string {
-		let valueString;
-		if (Opcode.convertToLabelHandler)
-			valueString = Opcode.convertToLabelHandler(value);
-		if (!valueString) {
-			valueString = Format.getHexFormattedString(value);
-		}
-		return valueString;
-	}
 
 
 	/// Call this to use lower case or upper case opcodes.
@@ -368,14 +345,33 @@ export class Opcode {
 
 
 	/**
+	 * Converts a value to a label or (if label does not exist for that address) to a
+	 * hex string.
+	 * @param address The 64k address. // TODO: How does it work with64k addresses
+	 * @param func If defined a function that returns a label for an address or undefined if no label exists.
+	 * @returns E.g. "label" or "04AFh"
+	 */
+	protected convertToLabel(address: number, func?: (address: number) => string): string {
+		let valueString;
+		if (func)
+			valueString = func(address);
+		if (!valueString) {
+			valueString = Format.getHexFormattedString(address);
+		}
+		return valueString;
+	}
+
+
+	/**
 	 * Disassembles one opcode together with a referenced label (if there
 	 * is one).
 	 * @returns A string that contains the disassembly, e.g. "LD A,(DATA_LBL1)"
 	 * or "JR Z,.sub1_lbl3".
 	   * @param memory The memory area. Used to distinguish if the access is maybe wrong.
 	 * If this is not required (comment) the parameter can be omitted.
+	 * @param func If defined a function that returns a label for a (64k??) address or undefined if no label exists.
 	 */
-	public disassemble(memory?: Memory): {mnemonic: string, comment: string} {
+	public disassemble(memory?: Memory, func?: (address: number) => string): {mnemonic: string, comment: string} {
 		// optional comment
 		let comment = '';
 
@@ -391,7 +387,7 @@ export class Opcode {
 			|| this.valueType == NumberType.CODE_LOCAL_LOOP
 			|| this.valueType == NumberType.CODE_SUB) {
 			const val = this.value;
-			valueName = Opcode.convertToLabel(val);
+			valueName = this.convertToLabel(val, func);
 			comment = Format.getConversionForAddress(val);
 			// Check if branching into the middle of an opcode
 			if (memory) {
@@ -406,7 +402,7 @@ export class Opcode {
 		}
 		else if (this.valueType == NumberType.DATA_LBL) {
 			const val = this.value;
-			valueName = Opcode.convertToLabel(val);
+			valueName = this.convertToLabel(val, func);
 			comment = Format.getConversionForAddress(val);
 			// Check if accessing code area
 			if (memory) {
@@ -577,9 +573,10 @@ class OpcodeIndexImmediate extends Opcode {
 	 * @returns A string that contains the disassembly, e.g. "LD (IX+6),4"
 	 * @param memory The memory area. Used to distinguish if the access is maybe wrong.
 	 * If this is not required (comment) the parameter can be omitted.
+	 * @param func If defined a function that returns a label for a (64k??) address or undefined if no label exists.
 	 */
-	public disassemble(memory?: Memory): {mnemonic: string, comment: string} {
-		const dasm = super.disassemble(memory);
+	public disassemble(memory?: Memory, func?: (address: number) => string): {mnemonic: string, comment: string} {
+		const dasm = super.disassemble(memory, func);
 		// Results e.g. in "LD (IX+6),%s"
 
 		const valueName = Format.getHexFormattedString(this.secondValue, 2);

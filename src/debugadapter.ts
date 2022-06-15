@@ -964,7 +964,7 @@ export class DebugSessionClass extends DebugSession {
 			vscode.debug.removeBreakpoints(removeBps);
 
 			// Initialize disassembly
-			Disassembly.initWithCodeAdresses(fetchAddresses, memArray.ranges as Array<{address: number, data: Uint8Array}>);
+			Disassembly.initWithCodeAddresses(fetchAddresses, memArray.ranges as Array<{address: number, data: Uint8Array}>);
 
 			// Disassemble
 			Disassembly.disassemble();
@@ -3305,9 +3305,11 @@ E.g. use "-help -view" to put the help text in an own view.
 				{
 					// Fetch memory. (Everything, since we cannot know what is used)
 					const data = await Remote.readMemoryDump(0, 0x10000);
-					// Create temporary disassemlby instance
+					// Create temporary disassembly instance
 					const disassembly = DisassemblyClass.createDisassemblyInstance();
-					disassembly.automaticAddresses = false;	// No disassembly at 0x0000
+					// No automatic labels
+					disassembly.automaticAddresses = false;
+					disassembly.specialLabels = false;
 					disassembly.disassembleUnreferencedData = false;
 					// Do not find interrupt labels
 					disassembly.findInterrupts = false;
@@ -3316,7 +3318,7 @@ E.g. use "-help -view" to put the help text in an own view.
 					const rstAddrs = [0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38];
 					//const rstAddrs = [0x78];
 					//const rstAddrs = [0x062E, 0x0636];
-					disassembly.initWithCodeAdresses(rstAddrs, [{address: 0, data}]);
+					disassembly.initWithCodeAddresses(rstAddrs, [{address: 0, data}]);
 					// Init label names for RST
 					for (const rstAddr of rstAddrs) {
 						disassembly.setLabel(rstAddr, 'RST' + Utility.getHexString(rstAddr, 2), NumberType.CODE_RST);
@@ -3695,7 +3697,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * @param filename The absolute file path.
 	 * @param fromLineNr The line. Starts at 0.
 	 * @param toLineNr The line. Starts at 0.
-	 * @returs [fromAddr, toAddr] Start and end (long) address.
+	 * @returns [fromAddr, toAddr] Start and end (long) address.
 	 * @throws An exception if an address of a file/line is not paged in.
 	 */
 	protected checkFileLinesPagedIn(filename: string, fromLineNr: number, toLineNr: number): Array<number> {//</number> {fromAddr: number, toAddr: number} {
@@ -3807,9 +3809,41 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * @param arr An array with the blocks to analze. Usually just the start line.
 	 */
 	public async analyzeAtCursor(type: 'flowChart' | 'callGraph', arr: Array<{filename: string, fromLine: number, toLine: number}>): Promise<void> {
+		// Get all start addresses and check banks
+		const startAddrs: number[] = [];
+		for (const block of arr) {
+			const [fromAddr,] = this.checkFileLinesPagedIn(block.filename, block.fromLine, block.toLine);
+			startAddrs.push(fromAddr);
+		}
 		// Get whole memory for analyzing
 		const data = await Remote.readMemoryDump(0, 0x10000);
-//Check bank
+		// Create new instance to disassemble
+		const disassembly = DisassemblyClass.createDisassemblyInstance();
+		// No automatic labels
+		disassembly.automaticAddresses = false;
+		disassembly.specialLabels = false;
+		disassembly.disassembleUnreferencedData = false;
+		// Do not find interrupt labels
+		disassembly.findInterrupts = false;
+
+		// Initialize disassembly
+		disassembly.initWithCodeAddresses(startAddrs, [{address: 0, data}]);
+		// Set labels for the start addresses
+		for (const longAddr of startAddrs) {
+			// Get label
+			const labels = Labels.getLabelsForLongAddress(longAddr);
+			let name;
+			if (labels && labels.length > 0) {
+				name = labels.join(' or ');
+			}
+			// Set label
+			if(name)
+				disassembly.setLabel(longAddr & 0xFFFF, name);
+		}
+		// Disassemble
+		disassembly.disassemble();
+		const text = disassembly.getDisassemblyText();
+		console.log(text);
 
 	}
 

@@ -9,7 +9,7 @@ suite('Disassembly (DisassemblyClass)', () => {
 
 			test('set', () => {
 				const dis = new DisassemblyClass();
-				dis.initWithCodeAdresses([1000], [
+				dis.initWithCodeAddresses([1000], [
 					{
 						address: 1000, data: new Uint8Array([2])
 					}]);
@@ -19,7 +19,7 @@ suite('Disassembly (DisassemblyClass)', () => {
 
 			test('unset', () => {
 				const dis = new DisassemblyClass();
-				dis.initWithCodeAdresses([1001], [
+				dis.initWithCodeAddresses([1001], [
 					{
 						address: 1000, data: new Uint8Array([2])
 					}]);
@@ -29,7 +29,7 @@ suite('Disassembly (DisassemblyClass)', () => {
 
 			test('list', () => {
 				const dis = new DisassemblyClass();
-				dis.initWithCodeAdresses([1000, 1004, 1008], [
+				dis.initWithCodeAddresses([1000, 1004, 1008], [
 					{
 						address: 1000, data: new Uint8Array([1, 2, 3, 4, 5,  6, 7, 8, 9, 10, 11, 12])
 					}]);
@@ -39,7 +39,7 @@ suite('Disassembly (DisassemblyClass)', () => {
 
 			test('list, one not CODE_FIRST', () => {
 				const dis = new DisassemblyClass();
-				dis.initWithCodeAdresses([1000, 1008], [
+				dis.initWithCodeAddresses([1000, 1008], [
 					{
 						address: 1000, data: new Uint8Array([0 /*NOP*/, 0xC9 /*RET*/, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
 					}]);

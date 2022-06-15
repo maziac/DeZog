@@ -134,6 +134,7 @@ export class DisassemblyClass extends Disassembler {
 
 		// Initialize for DeZog
 		this.automaticAddresses = false;
+		this.specialLabels = false;
 		this.commentsInDisassembly = false;
 		this.enableStatistics = false;
 		this.equsInDisassembly = false;
@@ -150,7 +151,7 @@ export class DisassemblyClass extends Disassembler {
 	 * Initializes the memory with the data at the given addresses.
 	 * Additionally puts the addresses in the address queue.
 	 */
-	public initWithCodeAdresses(addresses: number[], mem: Array<{address: number, data: Uint8Array}>) {
+	public initWithCodeAddresses(addresses: number[], mem: Array<{address: number, data: Uint8Array}>) {
 		// Init
 		this.initLabels();
 		this.addrLineMap = new Map<number, number>();
