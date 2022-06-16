@@ -37,7 +37,7 @@
 		"url": "https://github.com/maziac/DeZog"
 	},
 	"sponsor": {
-    	"url": "https://github.com/sponsors/maziac"
+		"url": "https://github.com/sponsors/maziac"
 	},
 	"scripts": {
 		"compile": "tsc -p ./",
@@ -55,6 +55,7 @@
 		"diff": "^5.1.0",
 		"gif-writer": "^0.9.4",
 		"glob": "^7.2.0",
+		"graphviz-cli": "^1.0.1",
 		"intel-hex": "^0.1.2",
 		"jsdiff": "^1.1.1",
 		"jsonc-parser": "^3.0.0",

@@ -1,3 +1,4 @@
+import { HtmlView } from './views/htmlview';
 import * as Diff from 'diff';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
@@ -3861,12 +3862,11 @@ E.g. use "-help -view" to put the help text in an own view.
 			case 'flowChart':
 				{
 					// Output flow chart to view
-					const startAddrs64k = startAddrs.map(addr => addr & 0xFFFF);
-					const text = analyzer.getFlowChart(startAddrs64k);
+					const rendered = await analyzer.renderFlowChart(startAddrs);
 
 					// Output text to new view.
 					const title = type;
-					const view = new TextView(title, text);
+					const view = new HtmlView(title, rendered);
 					await view.update();
 				}
 				break;

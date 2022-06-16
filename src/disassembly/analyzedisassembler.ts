@@ -6,6 +6,7 @@ import {Utility} from '../misc/utility';
 import {Remote} from "../remotes/remotebase";
 import {Z80Registers} from "../remotes/z80registers";
 import {Settings} from '../settings/settings';
+import {renderGraphFromSource} from 'graphviz-cli';
 
 
 
@@ -208,4 +209,18 @@ export class AnalyzeDisassembler extends Disassembler {
 		return line;
 	}
 
+
+	/**
+	 * Renders the flowchart to html/svg.
+	 * @param startLongAddrs The start address (or many). Is a long address.
+	 * @returns A string with the rendered flow chart. Can be used in a webview.
+	 */
+	public async renderFlowChart(startLongAddrs: number[]): Promise<string> {
+		// Get dot text output.
+		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
+		const dot = this.getFlowChart(startAddrs64k);
+		// Render
+		const rendered = await renderGraphFromSource({input: dot}, {format: 'svg'});
+		return rendered;
+	}
 }
