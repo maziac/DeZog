@@ -112,7 +112,9 @@ export class AnalyzeDisassembler extends Disassembler {
 		this.memory.clearAttributes();	// Clear all memory
 		for (const block of mem)
 			this.setMemory(block.address & 0xFFFF, block.data);
-		this.setAddressQueue(addresses.map(addr => addr & 0xFFFF));
+		const addrs = addresses.map(addr => addr & 0xFFFF);
+		this.setAddressQueue(addrs);
+		this.setStartAddressesWithoutLabel(addrs);
 	}
 
 

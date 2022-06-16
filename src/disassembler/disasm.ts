@@ -48,8 +48,11 @@ export class Disassembler extends EventEmitter {
 	/// belongs to is stored for each address.
 	protected addressParents: Array<DisLabel>;
 
-	/// Queue for start addresses only addresses of opcodes
+	/// Queue for start addresses only addresses of opcodes.
 	protected addressQueue = new Array<number>();
+
+	/// Used for DeZog to allow disassembly without a starting label.
+	protected startAddressesWithoutLabel = new Array<number>();
 
 	// Used for (user) comments for labels (addresses).
 	protected addressComments = new Map<number, Comment>();
@@ -517,10 +520,20 @@ export class Disassembler extends EventEmitter {
 
 	/**
 	 * Sets a new address queue.
-	 * @param queue The new queue.
+	 * @param addrs The new queue values.
 	 */
-	public setAddressQueue(queue: number[]) {
-		this.addressQueue = queue;
+	public setAddressQueue(addrs: number[]) {
+		this.addressQueue = [...addrs];
+	}
+
+
+	/**
+	 * Sets start addresses that do not necessarily have a label.
+	 * REquired to do a disassembly that starts at no label.
+	 * @param addrs The start addresses.
+	 */
+	public setStartAddressesWithoutLabel(addrs: number[]) {
+		this.startAddressesWithoutLabel = [...addrs];
 	}
 
 
@@ -2175,13 +2188,21 @@ export class Disassembler extends EventEmitter {
 		if (this.labels.size == 0)
 			return lines;
 
-		// Loop over all labels
+		// Get all addresses which are not EQU
+		const addresses: number[] = [];
+		for (const [addr, label] of this.labels) {
+			if (!label.isEqu)
+				addresses.push(addr);
+		}
+		// Add start addresses without label
+		addresses.push(...this.startAddressesWithoutLabel);
+		// Sort addresses
+		addresses.sort((a, b) => a - b);
+
+		// Loop over all addresses
 		let address = -1;
 		let printEmptyLinesBeforeNext = false;
-		for (const [addr, label] of this.labels) {
-			if (label.isEqu)
-				continue;	// Skip EQUs
-
+		for (const addr of addresses) {
 			// If first line, print ORG
 			if (address == -1) {
 				// First line
