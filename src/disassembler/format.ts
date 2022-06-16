@@ -12,6 +12,18 @@ export class Format {
 
 
 	/**
+	 * Returns the value as string digits are filled to match countDigits.
+	 * @param value The value to convert.
+	 * @param countDigits The number of digits to use.
+	 * @returns E.g. "003"
+	 */
+	public static getPaddedValue(value: number, countDigits: number): string {
+		const str = value.toString();
+		return str.padStart(countDigits, '0');
+	}
+
+
+	/**
 	 * Returns a hex string with a fixed number of digits.
 	 * @param value The value to convert.
 	 * @param countDigits The number of digits.

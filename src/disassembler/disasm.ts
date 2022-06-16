@@ -98,11 +98,11 @@ export class Disassembler extends EventEmitter {
 
 
 	/// Label prefixes
-	public labelSubPrefix = "SUB";
-	public labelLblPrefix = "LBL";
-	public labelRstPrefix = "RST";
-	public labelDataLblPrefix = "DATA";
-	public labelSelfModifyingPrefix = "SELF_MOD";	// I guess this is not used anymore if DATA_LBL priority is below CODE_LBLs
+	public labelSubPrefix = "SUB_";
+	public labelLblPrefix = "LBL_";
+	public labelRstPrefix = "RST_";
+	public labelDataLblPrefix = "DATA_";
+	public labelSelfModifyingPrefix = "SELF_MOD_";	// I guess this is not used anymore if DATA_LBL priority is below CODE_LBLs
 	public labelLocalLabelPrefix = "L";	// "_L"
 	public labelLoopPrefix = "LOOP";	// "_LOOP"
 
@@ -1702,10 +1702,10 @@ export class Disassembler extends EventEmitter {
 
 
 		// Count labels
-		let labelSubCount = 0;
-		let labelLblCount = 0;
-		let labelDataLblCount = 0;
-		let labelSelfModifyingCount = 0;
+		//let labelSubCount = 0;
+		//let labelLblCount = 0;
+		//let labelDataLblCount = 0;
+		//let labelSelfModifyingCount = 0;
 
 		// Loop through all labels
 		for (const [address, label] of this.labels) {
@@ -1721,6 +1721,7 @@ export class Disassembler extends EventEmitter {
 			const type = label.type;
 			switch (type) {
 				// Count main labels
+				/*
 				case NumberType.CODE_SUB:
 					labelSubCount++;
 					break;
@@ -1736,6 +1737,7 @@ export class Disassembler extends EventEmitter {
 						labelDataLblCount++;
 					}
 					break;
+				*/
 
 				// Collect local labels
 				case NumberType.CODE_LOCAL_LBL:
@@ -1757,18 +1759,18 @@ export class Disassembler extends EventEmitter {
 		}
 
 		// Calculate digit counts
-		const labelSubCountDigits = labelSubCount.toString().length;
-		const labelLblCountDigits = labelLblCount.toString().length;
-		const labelDataLblCountDigits = labelDataLblCount.toString().length;
-		const labelSelfModifyingCountDigits = labelSelfModifyingCount.toString().length;
+		//const labelSubCountDigits = labelSubCount.toString().length;
+		//const labelLblCountDigits = labelLblCount.toString().length;
+		//const labelDataLblCountDigits = labelDataLblCount.toString().length;
+		//const labelSelfModifyingCountDigits = labelSelfModifyingCount.toString().length;
 
 
 		// Assign names. First the main labels.
 		// Start indexes
-		let subIndex = 1;	// CODE_SUB
-		let lblIndex = 1;	// CODE_LBL
-		let dataLblIndex = 1;	// DATA_LBL
-		let dataSelfModifyingIndex = 1;	// SELF_MOD
+		//let subIndex = 1;	// CODE_SUB
+		//let lblIndex = 1;	// CODE_LBL
+		//let dataLblIndex = 1;	// DATA_LBL
+		//let dataSelfModifyingIndex = 1;	// SELF_MOD
 
 		// Loop through all labels (labels is sorted by address)
 		for (const [address, label] of this.labels) {
@@ -1781,15 +1783,15 @@ export class Disassembler extends EventEmitter {
 			switch (type) {
 				case NumberType.CODE_SUB:
 					// Set name
-					label.name = (label.belongsToInterrupt) ? this.labelIntrptPrefix : '' + this.labelSubPrefix + this.getIndex(subIndex, labelSubCountDigits);
+					label.name = (label.belongsToInterrupt) ? this.labelIntrptPrefix : '' + this.labelSubPrefix + Format.getHexString(address, 4);
 					// Next
-					subIndex++;
+					//subIndex++;
 					break;
 				case NumberType.CODE_LBL:
 					// Set name
-					label.name = (label.belongsToInterrupt) ? this.labelIntrptPrefix : '' + this.labelLblPrefix + this.getIndex(lblIndex, labelLblCountDigits);
+					label.name = (label.belongsToInterrupt) ? this.labelIntrptPrefix : '' + this.labelLblPrefix + Format.getHexString(address, 4);
 					// Next
-					lblIndex++;
+					//lblIndex++;
 					break;
 				case NumberType.CODE_RST:
 					// Set name
@@ -1802,16 +1804,18 @@ export class Disassembler extends EventEmitter {
 						assert(memAttr & MemAttribute.CODE_FIRST, 'assignLabelNames 2');
 						// Yes, is self-modifying code.
 						// Set name
-						label.name = this.labelSelfModifyingPrefix + this.getIndex(dataSelfModifyingIndex, labelSelfModifyingCountDigits);
+						//label.name = this.labelSelfModifyingPrefix + Format.getPaddedValue(dataSelfModifyingIndex, labelSelfModifyingCountDigits);
+						label.name = this.labelSelfModifyingPrefix + Format.getHexString(address, 4);
 						// Next
-						dataSelfModifyingIndex++;
+						//dataSelfModifyingIndex++;
 					}
 					else {
 						// Normal data area.
 						// Set name
-						label.name = this.labelDataLblPrefix + this.getIndex(dataLblIndex, labelDataLblCountDigits);
+						//label.name = this.labelDataLblPrefix + Format.getPaddedValue(dataLblIndex, labelDataLblCountDigits);
+						label.name = this.labelDataLblPrefix + Format.getHexString(address, 4);
 						// Next
-						dataLblIndex++;
+						//dataLblIndex++;
 					}
 					break;
 			}
@@ -1829,7 +1833,7 @@ export class Disassembler extends EventEmitter {
 			// Set names
 			let index = 1;
 			for (let child of childLabels) {
-				const indexString = this.getIndex(index, digitCount);
+				const indexString = Format.getPaddedValue(index, digitCount);
 				//child.name = '.' + localPrefix + this.labelLocalLablePrefix;
 				child.name = parentLabel.name + '.' + this.labelLocalLabelPrefix;
 				if (count > 1)
@@ -1846,7 +1850,7 @@ export class Disassembler extends EventEmitter {
 			// Set names
 			let index = 1;
 			for (let child of childLabels) {
-				const indexString = this.getIndex(index, digitCount);
+				const indexString = Format.getPaddedValue(index, digitCount);
 				//child.name = '.' + localPrefix + this.labelLoopPrefix;
 				child.name = parentLabel.name + '.' + this.labelLoopPrefix;
 				if (count > 1)
@@ -2462,17 +2466,6 @@ export class Disassembler extends EventEmitter {
 			addrString = this.funcFormatAddress(address);
 		const memory = (this.addOpcodeBytes) ? this.memory : undefined;
 		return Format.formatDisassembly(memory, this.opcodesLowerCase, this.clmnsAddress, this.clmnsBytes, this.clmnsOpcodeFirstPart, this.clmsnOpcodeTotal, address, size, mainString, addrString);
-	}
-
-
-	/**
-	 * Returns the index as string digits are filled to match countDigits.
-	 * @param index The index to convert.
-	 * @param countDigits The number of digits to use.
-	 */
-	protected getIndex(index: number, countDigits: number) {
-		const str = index.toString();
-		return '0'.repeat(countDigits - str.length) + str;
 	}
 
 

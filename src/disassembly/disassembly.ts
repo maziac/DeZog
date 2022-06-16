@@ -150,6 +150,7 @@ export class DisassemblyClass extends Disassembler {
 	/**
 	 * Initializes the memory with the data at the given addresses.
 	 * Additionally puts the addresses in the address queue.
+	 * All long addresses. Are converted to 64k.
 	 */
 	public initWithCodeAddresses(addresses: number[], mem: Array<{address: number, data: Uint8Array}>) {
 		// Init
