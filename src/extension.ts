@@ -152,6 +152,14 @@ export function activate(context: vscode.ExtensionContext) {
 				await session.disassemblyAtCursor('string', block.filename, block.fromLine, block.toLine);
 		}
 	}));
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.analyzeAtCursor.disassembly', async () => {
+		// Only allowed in debug context
+		const session = DebugSessionClass.singleton();
+		if (session.running) {
+			const arr = getSelectedLineBlocks();
+			await session.analyzeAtCursor('disassembly', arr);
+		}
+	}));
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.analyzeAtCursor.flowChart', async () => {
 		// Only allowed in debug context
 		const session = DebugSessionClass.singleton();

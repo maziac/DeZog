@@ -2141,7 +2141,6 @@ export class DebugSessionClass extends DebugSession {
 		// Check for output target
 		if (viewTitle) {
 			// Output text to new view.
-			// Create new view
 			const panel = new TextView(viewTitle, output);
 			await panel.update();
 			// Send empty response
@@ -3806,10 +3805,11 @@ E.g. use "-help -view" to put the help text in an own view.
 
 	/**
 	 * Does an analyze (flowchart, call graph) of the given address(es).
-	 * @param type The analyze type: 'flowChart' or 'callGraph'.
+	 * @param type The analyze type: (smart) 'disassembly', 'flowChart' or 'callGraph'.
 	 * @param arr An array with the blocks to analze. Usually just the start line.
 	 */
-	public async analyzeAtCursor(type: 'flowChart' | 'callGraph', arr: Array<{filename: string, fromLine: number, toLine: number}>): Promise<void> {
+	// TODO: Doku
+	public async analyzeAtCursor(type: 'disassembly' | 'flowChart' | 'callGraph', arr: Array<{filename: string, fromLine: number, toLine: number}>): Promise<void> {
 		// Get all start addresses and check banks
 		const startAddrs: number[] = [];
 		for (const block of arr) {
@@ -3841,11 +3841,48 @@ E.g. use "-help -view" to put the help text in an own view.
 			if(name)
 				analyzer.setLabel(longAddr & 0xFFFF, name);
 		}
+
 		// Disassemble
 		analyzer.disassemble();
-		const text = analyzer.getDisassemblyText();
-		console.log(text);
 
+		switch (type) {
+			case 'disassembly':
+				{
+					// Output disassembly text to view
+					const text = analyzer.getDisassemblyText();
+
+					// Output text to new view.
+					const title = type;
+					const view = new TextView(title, text);
+					await view.update();
+				}
+				break;
+
+			case 'flowChart':
+				{
+					// Output flow chart to view
+					const startAddrs64k = startAddrs.map(addr => addr & 0xFFFF);
+					const text = analyzer.getFlowChart(startAddrs64k);
+
+					// Output text to new view.
+					const title = type;
+					const view = new TextView(title, text);
+					await view.update();
+				}
+				break;
+
+			case 'callGraph':
+				{
+					// Output disassembly text to view
+					const text = analyzer.getDisassemblyText();
+
+					// Output text to new view.
+					const title = type;
+					const view = new TextView(title, text);
+					await view.update();
+				}
+				break;
+		}
 	}
 
 

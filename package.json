@@ -218,6 +218,11 @@
 				"category": "DeZog"
 			},
 			{
+				"command": "dezog.analyzeAtCursor.disassembly",
+				"title": "Smart Disassembly",
+				"category": "DeZog"
+			},
+			{
 				"command": "dezog.analyzeAtCursor.flowChart",
 				"title": "Flow Chart",
 				"category": "DeZog"
@@ -250,6 +255,10 @@
 				},
 				{
 					"command": "dezog.disassemblyAtCursor.string",
+					"when": "false"
+				},
+				{
+					"command": "dezog.analyzeAtCursor.disassembly",
 					"when": "false"
 				},
 				{
@@ -299,6 +308,9 @@
 				}
 			],
 			"dezog.analyzeAtCursor": [
+				{
+					"command": "dezog.analyzeAtCursor.disassembly"
+				},
 				{
 					"command": "dezog.analyzeAtCursor.flowChart"
 				},

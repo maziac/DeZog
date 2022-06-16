@@ -2730,10 +2730,10 @@ export class Disassembler extends EventEmitter {
 	 * @param startAddresses An array with the start address of the subroutines.
 	 */
 	public getFlowChart(startAddresses: Array<number>): string {
-		// header
+		// Header
 		let text = 'digraph FlowChart {\n\n';
 
-		// appearance
+		// Appearance
 		text += 'node [shape=box];\n';
 
 		for (const startAddress of startAddresses) {
@@ -2757,16 +2757,16 @@ export class Disassembler extends EventEmitter {
 			// Now reduce array. I.e. only a coherent block will be treated as a subroutine.
 			this.reduceSubroutineAddresses(startAddress, addrsArray);
 
-			// get the text for all branches
+			// Get the text for all branches
 			const processedAddrsArray = new Array<number>();
 			const bText = this.getBranchForAddress(startAddress, addrsArray, processedAddrsArray);
 			text += bText;
 		}
 
-		// ending
+		// Ending
 		text += '\n}\n';
 
-		// return
+		// Return
 		return text;
 	}
 
