@@ -2753,7 +2753,7 @@ export class Disassembler extends EventEmitter {
 			if (label)
 				name = label.name;
 			if (!name)
-				name += '0x' + addressString;
+				name = this.createLabelName(startAddress);
 			const start = 'b' + addressString + 'start';
 			text += start + ' [label="' + name + '", fillcolor=lightgray, style=filled, shape=tab];\n';
 			text += start + ' -> b' + Format.getHexString(startAddress, 4) + ';\n';

@@ -3876,7 +3876,7 @@ E.g. use "-help -view" to put the help text in an own view.
 
 			case 'callGraph':
 				{
-					analyzer.nodeFormatString = "${label}\\n@${address}h\\nBytes=${size}\\n";
+					analyzer.nodeFormatString = "${label}\\n@${address}h\\n${size} bytes\\n";
 					// Output call graph to view
 					const rendered = await analyzer.renderCallGraph(startAddrs);
 
