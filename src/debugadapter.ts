@@ -3827,6 +3827,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		analyzer.disassembleUnreferencedData = false;
 		// Do not find interrupt labels
 		analyzer.findInterrupts = false;
+		analyzer.enableStatistics = true;	// Required for call graphs
 
 		// Initialize disassembly
 		analyzer.initWithCodeAddresses(startAddrs, [{address: 0, data}]);
@@ -3843,12 +3844,12 @@ E.g. use "-help -view" to put the help text in an own view.
 				analyzer.setLabel(longAddr & 0xFFFF, name);
 		}
 
-		// Disassemble
-		analyzer.disassemble();
 
 		switch (type) {
 			case 'disassembly':
 				{
+					// Disassemble
+					analyzer.disassemble();
 					// Output disassembly text to view
 					const text = analyzer.getDisassemblyText();
 
@@ -3861,6 +3862,8 @@ E.g. use "-help -view" to put the help text in an own view.
 
 			case 'flowChart':
 				{
+					// Disassemble
+					analyzer.disassemble();
 					// Output flow chart to view
 					const rendered = await analyzer.renderFlowChart(startAddrs);
 
@@ -3873,12 +3876,13 @@ E.g. use "-help -view" to put the help text in an own view.
 
 			case 'callGraph':
 				{
-					// Output disassembly text to view
-					const text = analyzer.getDisassemblyText();
+					analyzer.nodeFormatString = "${label}\\n@${address}h\\nBytes=${size}\\n";
+					// Output call graph to view
+					const rendered = await analyzer.renderCallGraph(startAddrs);
 
 					// Output text to new view.
 					const title = type;
-					const view = new TextView(title, text);
+					const view = new HtmlView(title, rendered);
 					await view.update();
 				}
 				break;

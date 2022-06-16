@@ -1,4 +1,4 @@
-import { HtmlView } from './htmlview';
+import {HtmlView} from './htmlview';
 
 
 /**

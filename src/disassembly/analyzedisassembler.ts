@@ -1,4 +1,6 @@
+import {renderGraphFromSource} from 'graphviz-cli';
 import {Disassembler} from "../disassembler/disasm";
+import {NumberType} from '../disassembler/numbertype';
 import {Opcode, Opcodes} from "../disassembler/opcode";
 import {Labels} from "../labels/labels";
 import {ReverseEngineeringLabelParser} from "../labels/reverseengineeringlabelparser";
@@ -6,7 +8,7 @@ import {Utility} from '../misc/utility';
 import {Remote} from "../remotes/remotebase";
 import {Z80Registers} from "../remotes/z80registers";
 import {Settings} from '../settings/settings';
-import {renderGraphFromSource} from 'graphviz-cli';
+import {DisLabel} from './../disassembler/dislabel';
 
 
 
@@ -219,6 +221,49 @@ export class AnalyzeDisassembler extends Disassembler {
 		// Get dot text output.
 		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
 		const dot = this.getFlowChart(startAddrs64k);
+		// Render
+		const rendered = await renderGraphFromSource({input: dot}, {format: 'svg'});
+		return rendered;
+	}
+
+
+	/**
+	 * Renders the call graph to html/svg.
+	 * @param startLongAddrs The start address (or many). Is a long address.
+	 * @returns A string with the rendered flow chart. Can be used in a webview.
+	 */
+	public async renderCallGraph(startLongAddrs: number[]): Promise<string> {
+		// Create label for start address if not existing.
+		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
+		for (const addr64k of startAddrs64k) {
+			// TODO: Check if DeZog Label exists.
+			const name = this.createLabelName(addr64k);
+			this.setFixedCodeLabel(addr64k, name);
+		}
+		// Disassemble
+		this.disassemble();
+		// Create reverted map
+		this.createRevertedLabelMap();
+		// In case not all start addresses have labels, invent labels, e.g. "0AF4h"
+		const chosenLabels = new Map<number, DisLabel>();
+		for (const addr64k of startAddrs64k) {
+			// Check for existing label
+			this.getGraphLabels(addr64k, chosenLabels);
+		}
+
+		// Assure that a start address is at least a CODE_LBL
+		for (const addr64k of startAddrs64k) {
+			const label = this.labels.get(addr64k)!;
+			Utility.assert(label);
+			const type = label.type;
+			if (type != NumberType.CODE_SUB
+				&& type != NumberType.CODE_LBL
+				&& type != NumberType.CODE_RST) {
+				label.type = NumberType.CODE_LBL;
+			}
+		}
+		// Get dot text output.
+		const dot = this.getCallGraph(chosenLabels);
 		// Render
 		const rendered = await renderGraphFromSource({input: dot}, {format: 'svg'});
 		return rendered;

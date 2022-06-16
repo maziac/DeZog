@@ -1701,6 +1701,16 @@ export class Disassembler extends EventEmitter {
 	}
 
 
+	/**
+	 * Returns a label consiting of the prefix + the address as hex.
+	 * @param addr e.g. 0x4AFE
+	 * @returns e.g. "LBL_4AFE"
+	 */
+	protected createLabelName(addr: number) {
+		return this.labelLblPrefix + Format.getHexString(addr, 4);
+	}
+
+
 	/// Assign label names.
 	/// Is done in 2 passes:
 	/// 1. the major labels (e.g. "SUBnnn") are assigned and also the local label names without number.
@@ -1802,7 +1812,7 @@ export class Disassembler extends EventEmitter {
 					break;
 				case NumberType.CODE_LBL:
 					// Set name
-					label.name = (label.belongsToInterrupt) ? this.labelIntrptPrefix : '' + this.labelLblPrefix + Format.getHexString(address, 4);
+					label.name = (label.belongsToInterrupt) ? this.labelIntrptPrefix : '' + this.createLabelName(address);
 					// Next
 					//lblIndex++;
 					break;
@@ -1849,8 +1859,7 @@ export class Disassembler extends EventEmitter {
 				const indexString = Format.getPaddedValue(index, digitCount);
 				//child.name = '.' + localPrefix + this.labelLocalLablePrefix;
 				child.name = parentLabel.name + '.' + this.labelLocalLabelPrefix;
-				if (count > 1)
-					child.name += indexString;
+				child.name += indexString;
 				index++;
 			}
 		}
@@ -2553,7 +2562,7 @@ export class Disassembler extends EventEmitter {
 		let addr;
 		if (typeof (addrString) == 'string') {
 			addr = this.revertedLabelMap.get(addrString);
-			if (!addr)
+			if (addr == undefined)
 				throw Error('Could not find "' + addrString + '" while creating graph.');
 		}
 		else {
