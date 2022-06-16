@@ -7,6 +7,7 @@ import {CallStackFrame} from './callstackframe';
 import {Decoration} from './decoration';
 import {DiagnosticsHandler} from './diagnosticshandler';
 import {NumberType} from './disassembler/numbertype';
+import {AnalyzeDisassembler} from './disassembly/analyzedisassembler';
 import {Disassembly, DisassemblyClass} from './disassembly/disassembly';
 import {MemoryArray} from './disassembly/memoryarray';
 import {SimpleDisassembly} from './disassembly/simpledisassembly';
@@ -3306,27 +3307,27 @@ E.g. use "-help -view" to put the help text in an own view.
 					// Fetch memory. (Everything, since we cannot know what is used)
 					const data = await Remote.readMemoryDump(0, 0x10000);
 					// Create temporary disassembly instance
-					const disassembly = DisassemblyClass.createDisassemblyInstance();
+					const disassembler = new AnalyzeDisassembler();
 					// No automatic labels
-					disassembly.automaticAddresses = false;
-					disassembly.specialLabels = false;
-					disassembly.disassembleUnreferencedData = false;
+					disassembler.automaticAddresses = false;
+					disassembler.specialLabels = false;
+					disassembler.disassembleUnreferencedData = false;
 					// Do not find interrupt labels
-					disassembly.findInterrupts = false;
+					disassembler.findInterrupts = false;
 
 					// Initialize disassembly
 					const rstAddrs = [0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38];
 					//const rstAddrs = [0x78];
 					//const rstAddrs = [0x062E, 0x0636];
-					disassembly.initWithCodeAddresses(rstAddrs, [{address: 0, data}]);
+					disassembler.initWithCodeAddresses(rstAddrs, [{address: 0, data}]);
 					// Init label names for RST
 					for (const rstAddr of rstAddrs) {
-						disassembly.setLabel(rstAddr, 'RST' + Utility.getHexString(rstAddr, 2), NumberType.CODE_RST);
+						disassembler.setLabel(rstAddr, 'RST' + Utility.getHexString(rstAddr, 2), NumberType.CODE_RST);
 					}
 
 					// Disassemble
-					disassembly.disassemble();
-					const text = disassembly.getDisassemblyText();
+					disassembler.disassemble();
+					const text = disassembler.getDisassemblyText();
 					return text;
 				}
 				break;
@@ -3818,16 +3819,16 @@ E.g. use "-help -view" to put the help text in an own view.
 		// Get whole memory for analyzing
 		const data = await Remote.readMemoryDump(0, 0x10000);
 		// Create new instance to disassemble
-		const disassembly = DisassemblyClass.createDisassemblyInstance();
+		const analyzer = new AnalyzeDisassembler();
 		// No automatic labels
-		disassembly.automaticAddresses = false;
-		disassembly.specialLabels = false;
-		disassembly.disassembleUnreferencedData = false;
+		analyzer.automaticAddresses = false;
+		analyzer.specialLabels = false;
+		analyzer.disassembleUnreferencedData = false;
 		// Do not find interrupt labels
-		disassembly.findInterrupts = false;
+		analyzer.findInterrupts = false;
 
 		// Initialize disassembly
-		disassembly.initWithCodeAddresses(startAddrs, [{address: 0, data}]);
+		analyzer.initWithCodeAddresses(startAddrs, [{address: 0, data}]);
 		// Set labels for the start addresses
 		for (const longAddr of startAddrs) {
 			// Get label
@@ -3838,11 +3839,11 @@ E.g. use "-help -view" to put the help text in an own view.
 			}
 			// Set label
 			if(name)
-				disassembly.setLabel(longAddr & 0xFFFF, name);
+				analyzer.setLabel(longAddr & 0xFFFF, name);
 		}
 		// Disassemble
-		disassembly.disassemble();
-		const text = disassembly.getDisassemblyText();
+		analyzer.disassemble();
+		const text = analyzer.getDisassemblyText();
 		console.log(text);
 
 	}
