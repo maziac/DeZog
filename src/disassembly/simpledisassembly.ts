@@ -1,7 +1,6 @@
 import {BaseMemory} from "../disassembler/basememory";
 import {Opcode, } from "../disassembler/opcode";
 import {Format} from "../disassembler/format";
-import {Disassembler} from "../disassembler/disasm";
 import {Utility} from "../misc/utility";
 
 
@@ -9,8 +8,9 @@ import {Utility} from "../misc/utility";
 /**
  * A very simple brute force disassembler.
  * For use in the VARIABLES section.
+ * Complete static class.
  */
-export class SimpleDisassembly extends Disassembler {
+export class SimpleDisassembly  {
 
 	/**
 	 * Disassembles a given data array in a very simple way.
