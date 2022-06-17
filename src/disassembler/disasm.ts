@@ -2763,7 +2763,7 @@ export class Disassembler extends EventEmitter {
 			if (!name)
 				name = this.createLabelName(startAddress);
 			const start = 'b' + addressString + 'start';
-			text += start + ' [label="' + name + '", fillcolor="' + fillcolor + '", style=filled, shape=tab];\n';
+			text += start + ' [label="' + name + '", fillcolor="' + fillcolor + '", style=filled, shape=tab, href="#' + startAddress + '"];\n';
 			text += start + ' -> b' + Format.getHexString(startAddress, 4) + ';\n';
 			const end = 'b' + addressString + 'end';
 			text += end + ' [label="end", shape=doublecircle];\n';
@@ -2825,7 +2825,7 @@ export class Disassembler extends EventEmitter {
 
 		// finish text
 		text += disTexts.join('\\l') + '\\l';
-		text += '"];\n'
+		text += '", href="#' + address + '"];\n'
 
 		// Maybe branch
 		if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
