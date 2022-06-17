@@ -2862,9 +2862,15 @@ export class Disassembler extends EventEmitter {
 
 		// Check if subroutine ends here (RET or JP)
 		if (opcode.flags & (OpcodeFlag.STOP | OpcodeFlag.RET)) {
+		//if (opcode.flags & (OpcodeFlag.RET)) {
 			// Subroutine ends
 			assert(addrsArray.length > 0);
-			text += branch + ' -> b' + Format.getHexString(addrsArray[0], 4) + 'end;\n';
+			let color = '';
+			if (!(opcode.flags & (OpcodeFlag.RET))) {
+				// If not a RET: hide connection: make it transparent
+				color = ' [color="transparent"]';
+			}
+			text += branch + ' -> b' + Format.getHexString(addrsArray[0], 4) + 'end' + color + ';\n';
 		}
 
 		// Return
