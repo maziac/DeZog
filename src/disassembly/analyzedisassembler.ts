@@ -53,6 +53,7 @@ export class AnalyzeDisassembler extends Disassembler {
 		this.numberOfDefbBytes = 4;
 		this.addDefbComments = true;
 		this.ignoreIncompleteOpcodes = true;
+		this.opcodesLowerCase = false;
 
 		// Use internal labels.
 		this.funcAssignLabels = (addr64k: number) => {
@@ -245,9 +246,9 @@ export class AnalyzeDisassembler extends Disassembler {
 		// Create label for start address if not existing.
 		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
 		for (const addr64k of startAddrs64k) {
-			// TODO: Check if DeZog Label exists.
 			const name = this.createLabelName(addr64k);
 			this.setFixedCodeLabel(addr64k, name);
+			// Note: the name will be overridden by 'funcAssignLabels()' if it is already available in DeZog.
 		}
 		// Disassemble
 		this.disassemble();

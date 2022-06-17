@@ -2609,7 +2609,7 @@ export class Disassembler extends EventEmitter {
 		// Header
 		let text = 'digraph Callgraph {\n\n';
 		text += 'bgcolor="transparent"\n';
-		text += `node [shape=box, color="${maincolor}", fontcolor="${maincolor}"];\n`;
+		text += `node [color="${maincolor}", fontcolor="${maincolor}"];\n`;
 		text += `edge [color="${maincolor}"];\n`;
 		text += this.callGraphFormatString + '\n';
 
@@ -2809,7 +2809,7 @@ export class Disassembler extends EventEmitter {
 			opcode = Opcode.getOpcodeAt(this.memory, address);
 
 			// Add disassembly to label text
-			const disText = opcode.disassemble();
+			const disText = opcode.disassemble(undefined, this.funcAssignLabels);
 			disTexts.push(disText.mnemonic);
 
 			// Next
