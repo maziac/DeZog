@@ -218,11 +218,21 @@ export class AnalyzeDisassembler extends Disassembler {
 	 * @returns A string with the rendered flow chart. Can be used in a webview.
 	 */
 	public async renderFlowChart(startLongAddrs: number[]): Promise<string> {
+		// A note on coloring:
+		// For dark/light mode we need to use e.g. "var(--vscode-editor-foreground)" in the html/svg.
+		// If this is passed to graphviz as a color it does not survive the processing.
+		// Therefore a different approach is used:
+		// Certain colors are used as magic numbers, passed to graphviz, are rendered hardcoded into the svg.
+		// Then at the end these numbers are converted into vars like "var(--vscode-editor-foreground)".
+
 		// Get dot text output.
 		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
-		const dot = this.getFlowChart(startAddrs64k);
+		const dot = this.getFlowChart(startAddrs64k, '#FEFE01', '#FEFE02');
 		// Render
-		const rendered = await renderGraphFromSource({input: dot}, {format: 'svg'});
+		let rendered = await renderGraphFromSource({input: dot}, {format: 'svg'});
+		//const renderedModified = rendered.replace(/stroke=\S+/g, '');
+		rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
+		rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
 		return rendered;
 	}
 

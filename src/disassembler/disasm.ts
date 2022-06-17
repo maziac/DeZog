@@ -125,11 +125,13 @@ export class Disassembler extends EventEmitter {
 	public clmnsOpcodeFirstPart = 4 + 1;	///< First part of the opcodes, e.g. "LD" in "LD A,7"
 	public clmsnOpcodeTotal = 5 + 6 + 1;		///< Total length of the opcodes. After this an optional comment may start.
 
+	// Dot foreground color for call graph and flow chart.
+	public dotFgColor = "red";
 
-	// Dot format options for the node. E.g. "${label}\n${address}\nCC=${CC}\nSize=${size}\ninstr=${instructions}\n"
-	public dotFormatString = "rankdir=TB;";	// Graph direction
+	// Dot format options for the node. E.g. "rankdir=TB;". For call graph.
+	public callGraphFormatString = "rankdir=TB;";	// Graph direction
 
-	// Dot format options for the node. E.g. "${label}\n${address}\nCC=${CC}\nSize=${size}\ninstr=${instructions}\n"
+	// Dot format options for the node. E.g. "${label}\n${address}\nCC=${CC}\nSize=${size}\ninstr=${instructions}\n". For call graph.
 	public nodeFormatString = "${label}\\n0x${address}\\nSize=${size}\\n";
 
 	/// RST addresses that shouldn't be followed on a disassembly.
@@ -2605,9 +2607,11 @@ export class Disassembler extends EventEmitter {
 		const rankSame1 = new Array<string>();
 		const rankSame2 = new Array<string>();
 
-		// header
+		// Header
 		let text = 'digraph Callgraph {\n\n';
-		text += this.dotFormatString + '\n';
+		text += 'bgcolor="transparent"}\n';
+		text += 'color="' + this.dotFgColor + '"\n';
+		text += this.callGraphFormatString + '\n';
 
 		// Calculate size (font size) max and min
 		const fontSizeMin = 13;
@@ -2737,13 +2741,17 @@ export class Disassembler extends EventEmitter {
 	 * Returns a Flow-Chart for the given addresses.
 	 * Output can be used as input to graphviz.
 	 * @param startAddresses An array with the start address of the subroutines.
+	 * @param maincolor The color used for fonts and lines.
+	 * @param fillcolor The color to use for filling the main label(s), i.e. start addresses.
 	 */
-	public getFlowChart(startAddresses: Array<number>): string {
+	public getFlowChart(startAddresses: Array<number>, maincolor = 'black',  fillcolor = 'lightgray'): string {
 		// Header
 		let text = 'digraph FlowChart {\n\n';
 
 		// Appearance
-		text += 'node [shape=box];\n';
+		text += 'bgcolor=transparent;\n';
+		text += `node [shape=box, color="${maincolor}", fontcolor="${maincolor}"];\n`;
+		text += `edge [color="${maincolor}"];\n`;
 
 		for (const startAddress of startAddresses) {
 			// Start
@@ -2755,7 +2763,7 @@ export class Disassembler extends EventEmitter {
 			if (!name)
 				name = this.createLabelName(startAddress);
 			const start = 'b' + addressString + 'start';
-			text += start + ' [label="' + name + '", fillcolor=lightgray, style=filled, shape=tab];\n';
+			text += start + ' [label="' + name + '", fillcolor="' + fillcolor + '", style=filled, shape=tab];\n';
 			text += start + ' -> b' + Format.getHexString(startAddress, 4) + ';\n';
 			const end = 'b' + addressString + 'end';
 			text += end + ' [label="end", shape=doublecircle];\n';
