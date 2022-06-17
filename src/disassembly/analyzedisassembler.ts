@@ -230,7 +230,6 @@ export class AnalyzeDisassembler extends Disassembler {
 		const dot = this.getFlowChart(startAddrs64k, '#FEFE01', '#FEFE02');
 		// Render
 		let rendered = await renderGraphFromSource({input: dot}, {format: 'svg'});
-		//const renderedModified = rendered.replace(/stroke=\S+/g, '');
 		rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
 		rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
 		return rendered;
@@ -273,9 +272,11 @@ export class AnalyzeDisassembler extends Disassembler {
 			}
 		}
 		// Get dot text output.
-		const dot = this.getCallGraph(chosenLabels);
+		const dot = this.getCallGraph(chosenLabels, '#FEFE01', '#FEFE02');
 		// Render
-		const rendered = await renderGraphFromSource({input: dot}, {format: 'svg'});
+		let rendered = await renderGraphFromSource({input: dot}, {format: 'svg'});
+		rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
+		rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
 		return rendered;
 	}
 }

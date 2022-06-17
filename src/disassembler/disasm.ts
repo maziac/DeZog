@@ -125,9 +125,6 @@ export class Disassembler extends EventEmitter {
 	public clmnsOpcodeFirstPart = 4 + 1;	///< First part of the opcodes, e.g. "LD" in "LD A,7"
 	public clmsnOpcodeTotal = 5 + 6 + 1;		///< Total length of the opcodes. After this an optional comment may start.
 
-	// Dot foreground color for call graph and flow chart.
-	public dotFgColor = "red";
-
 	// Dot format options for the node. E.g. "rankdir=TB;". For call graph.
 	public callGraphFormatString = "rankdir=TB;";	// Graph direction
 
@@ -2600,17 +2597,20 @@ export class Disassembler extends EventEmitter {
 	 * calling the function.
 	 * Call 'createRevertedLabelMap' before calling this function.
 	 * @param labels The labels to print.
-	 * @param name The name of the graph.
+	 * @param maincolor The color used for fonts and lines.
+	 * @param fillcolor The color to use for filling the main label(s).
+	 * @param equLabelColor The color used if a label is an EQU instead of an address.
 	 * @returns The dot graphic as text.
 	 */
-	public getCallGraph(labels: Map<number, DisLabel>): string {
+	public getCallGraph(labels: Map<number, DisLabel>, maincolor = 'black', fillcolor = 'lightyellow', equLabelColor = 'lightgray'): string {
 		const rankSame1 = new Array<string>();
 		const rankSame2 = new Array<string>();
 
 		// Header
 		let text = 'digraph Callgraph {\n\n';
-		text += 'bgcolor="transparent"}\n';
-		text += 'color="' + this.dotFgColor + '"\n';
+		text += 'bgcolor="transparent"\n';
+		text += `node [shape=box, color="${maincolor}", fontcolor="${maincolor}"];\n`;
+		text += `edge [color="${maincolor}"];\n`;
 		text += this.callGraphFormatString + '\n';
 
 		// Calculate size (font size) max and min
@@ -2642,7 +2642,7 @@ export class Disassembler extends EventEmitter {
 			if (label.isEqu) {
 				// output gray label to indicate an EQU label
 				if (!colorString)
-					colorString = 'lightgray';
+					colorString = equLabelColor;
 				text += label.name + ' [fontsize="' + fontSizeMin + '"];\n';
 				const nodeName = this.nodeFormat(label.name, label.id, address);
 				text += label.name + ' [label="' + nodeName + '"];\n';
@@ -2669,7 +2669,7 @@ export class Disassembler extends EventEmitter {
 				if (label.references.size == 0 || label.type == NumberType.CODE_LBL) {
 					//const callers = this.getCallersOf(label);
 					if (!colorString)
-						colorString = 'lightyellow';
+						colorString = fillcolor;
 					if (label.references.size == 0)
 						rankSame1.push(label.name);
 					else
@@ -2682,7 +2682,7 @@ export class Disassembler extends EventEmitter {
 
 			// Color
 			if (colorString)
-				text += '"' + label.name + '" [fillcolor=' + colorString + ', style=filled];\n';
+				text += '"' + label.name + '" [fillcolor="' + colorString + '", style=filled];\n';
 		}
 
 		// Do some ranking.
