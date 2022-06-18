@@ -1,11 +1,28 @@
-import {HtmlView} from './htmlview';
+import {BaseView} from './baseview';
+import {Utility} from '../misc/utility';
+
 
 
 /**
  * A Webview that just shows some static text.
  * Is e.g. used to run an Emulator command and display it's output.
  */
-export class TextView extends HtmlView {
+export class TextView extends BaseView {
+	/**
+	 * Creates the text view.
+	 * @param title The title to use for this view.
+	 * @param html The html to show.
+	 */
+	constructor(title: string, html: string) {
+		super();
+		// Title
+		Utility.assert(this.vscodePanel);
+		this.vscodePanel.title = title;
+		// Use the text
+		this.setHtml(html);
+	}
+
+
 	/**
 	 * Sets the html code to display the text.
 	 * @param text Text to display.

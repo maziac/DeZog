@@ -3871,6 +3871,11 @@ E.g. use "-help -view" to put the help text in an own view.
 					const title = type;
 					const view = new HtmlView(title, rendered);
 					await view.update();
+
+					// Handler for mouse clicks: navigate to files/lines
+					view.on('click', message => {
+						console.log(message.data);
+					});
 				}
 				break;
 
