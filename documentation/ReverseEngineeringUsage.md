@@ -160,6 +160,15 @@ And here another flowchart of the main routine:
 ![](images/flowchart_main.jpg)
 
 
+### Selection
+
+The animated gif below shows how to create the flow chart from a disassembly and navigate through the code by selecting the blocks in the flow chart.
+
+![](images/flowchart_selection.gif)
+
+Note: The selection does work only on code for which a disassembly or a source file exists. If e.g. the disassembly shows too less code you might need to do a "smart disassembly" first and put that in your reverse engineered list file.
+
+
 ## Smart Disassembly
 
 This makes sense only for unknown code. Compared to the "normal" disassembly that is done on object code that has o association with a source (asm) file the smart disassembly will dig into each found subroutine and disassemble that as well.

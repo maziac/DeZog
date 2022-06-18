@@ -219,7 +219,7 @@ window.addEventListener('message', event => {
 		super(false);
 		// Title
 		Utility.assert(this.vscodePanel);
-		(this.vscodePanel as vscode.WebviewPanel).title = "DeZog Help";
+		this.vscodePanel.title = "DeZog Help";
 
 		// Get the html
 		let html = HelpView.getHelpHtml();

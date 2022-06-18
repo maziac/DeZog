@@ -476,7 +476,7 @@ export class MemoryModel {
 	 * In case the slot is not banked the bank number is derived from the address.
 	 * Also if the address does not fit to the bank an exception is thrown.
 	 * @param addr64k A 64k address.
-	 * @param bankString The string representing the short bank name. Used by the rev-eng parser.
+	 * @param bankString The string representing the short bank name. Used by the rev-eng parser. Can be undefined. Then the bank is derived from the slot.
 	 * @returns The bank number.
 	 */
 	public parseBank(addr64k: number, bankString: string): number {
@@ -499,6 +499,29 @@ export class MemoryModel {
 			const value = values.value;
 			return value;
 		}
+	}
+
+
+	/**
+	 * Parses an address with bank in the form "800A.4" or "0010.R0"
+	 * and returns teh long address.
+	 * @param longAddrString E.g "800A.4" or "0010.R0" or "A000" (if no banking for that slot)
+	 * @returns A long address, e.g. 0x05800A for "800A.4"
+	 */
+	public parseAddress(longAddrString: string): number {
+		// Devide address from bank
+		const addrBank = longAddrString.split('.');
+		const addr64kString = addrBank[0];
+		const addr64k = parseInt(addr64kString, 16);
+		const bankString = addrBank[1];	// Could be undefined
+
+		// Const get bank number
+		const bankNumber = this.parseBank(addr64k, bankString);
+
+		// Create long address
+		const longAddr = ((bankNumber + 1) << 16) + addr64k;
+
+		return longAddr;
 	}
 
 

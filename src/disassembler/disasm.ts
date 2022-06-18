@@ -30,7 +30,7 @@ export class Disassembler extends EventEmitter {
 
 	/// A function that formats the address printed at first in the disassembly.
 	/// Used to add bank information after the address.
-	public funcFormatAddress: (address: number) => void;
+	public funcFormatAddress: (address: number) => string;
 
 	/// The memory area to disassemble.
 	public memory = new Memory();
@@ -2763,7 +2763,8 @@ export class Disassembler extends EventEmitter {
 			if (!name)
 				name = this.createLabelName(startAddress);
 			const start = 'b' + addressString + 'start';
-			text += start + ' [label="' + name + '", fillcolor="' + fillcolor + '", style=filled, shape=tab, href="#' + startAddress + '"];\n';
+			const hrefAddress = this.funcFormatAddress ? this.funcFormatAddress(startAddress) : addressString;
+			text += start + ' [label="' + name + '", fillcolor="' + fillcolor + '", style=filled, shape=tab, href="#' + hrefAddress + '"];\n';
 			text += start + ' -> b' + Format.getHexString(startAddress, 4) + ';\n';
 			const end = 'b' + addressString + 'end';
 			text += end + ' [label="end", shape=doublecircle];\n';
@@ -2800,6 +2801,7 @@ export class Disassembler extends EventEmitter {
 		let text = branch + ' [label="';
 		let disTexts: Array<string> = [];
 		let opcode;
+		let hrefAddress = '';
 
 		do {
 			// Add to new array
@@ -2811,6 +2813,10 @@ export class Disassembler extends EventEmitter {
 			// Add disassembly to label text
 			const disText = opcode.disassemble(undefined, this.funcAssignLabels);
 			disTexts.push(disText.mnemonic);
+
+			// Add address for link references
+			hrefAddress += this.funcFormatAddress ? this.funcFormatAddress(address) : address;
+			hrefAddress += ';';
 
 			// Next
 			address += opcode.length;
@@ -2825,7 +2831,7 @@ export class Disassembler extends EventEmitter {
 
 		// finish text
 		text += disTexts.join('\\l') + '\\l';
-		text += '", href="#' + address + '"];\n'
+		text += '", href="#' + hrefAddress + '"];\n'
 
 		// Maybe branch
 		if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
