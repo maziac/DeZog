@@ -3809,7 +3809,6 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * @param type The analyze type: (smart) 'disassembly', 'flowChart' or 'callGraph'.
 	 * @param arr An array with the blocks to analze. Usually just the start line.
 	 */
-	// TODO: Doku
 	public async analyzeAtCursor(type: 'disassembly' | 'flowChart' | 'callGraph', arr: Array<{filename: string, fromLine: number, toLine: number}>): Promise<void> {
 		// Get all start addresses and check banks
 		const startAddrs: number[] = [];
@@ -3870,56 +3869,8 @@ E.g. use "-help -view" to put the help text in an own view.
 					const view = new HtmlView('Flow Chart', rendered);
 					await view.update();
 
-					// Handler for mouse clicks: navigate to files/lines
-					view.on('click', async message => {
-						const addressesString: string = message.data;	// Format e.g. "#800A.4" or "8010.4;8012.4;8013.4;"
-						const longAddrString = addressesString.substring(1);	// Skip #
-						// Separate addresses
-						const addresses = longAddrString.split(';');
-						// Find associations with file/line
-						let entry;
-						let nextEntry;
-						for (const addressString of addresses) {
-							if (!addressString)
-								break;	// Last item might be ''
-							const longAddr = Remote.memoryModel.parseAddress(addressString);
-							const tmpEntry = Remote.getFileAndLineForAddress(longAddr);
-							if (entry) {
-								// Check if file changed
-								if (tmpEntry.fileName != entry.fileName)
-									break;
-							}
-							else {
-								// First entry
-								entry = tmpEntry;
-							}
-							nextEntry = tmpEntry;
-						}
-
-						if (entry) {
-							// Create range
-							const clmEnd = (addresses.length == 1) ? 0 : Number.MAX_SAFE_INTEGER;
-							const range = new vscode.Range(entry.lineNr, 0, nextEntry.lineNr, clmEnd);
-
-							// Try to find if the file is already open in an editor.
-							let doc: vscode.TextDocument;
-							const foundDocs: vscode.TextDocument[] = vscode.workspace.textDocuments.filter(doc => doc.uri.fsPath == entry.fileName);
-							if (foundDocs.length > 0) {
-								// Doc found
-								doc = foundDocs[0];
-							}
-							else {
-								// Doc not found, open it
-								const uri = vscode.Uri.file(entry.fileName);
-								doc = await vscode.workspace.openTextDocument(uri);
-							}
-							// Get editor
-							const editor: vscode.TextEditor = await vscode.window.showTextDocument(doc);
-							// Set selection
-							editor.selection = new vscode.Selection(range.start.line, range.start.character, range.end.line, range.end.character);
-							editor.revealRange(range);
-						}
-					});
+					// Install mouse click handler
+					this.installSvgClickHandler(view);
 				}
 				break;
 
@@ -3932,9 +3883,71 @@ E.g. use "-help -view" to put the help text in an own view.
 					// Output text to new view.
 					const view = new HtmlView('Call Graph', rendered);
 					await view.update();
+
+					// Install mouse click handler
+					this.installSvgClickHandler(view);
 				}
 				break;
 		}
+	}
+
+
+	/**
+	 * Installs the click handler for the flow chart and call graph (SVG) views.
+	 * When clicked the coressponding code block is selected.
+	 * @param view The view to install the click handler.
+	 */
+	protected installSvgClickHandler(view: HtmlView) {
+		// Handler for mouse clicks: navigate to files/lines
+		view.on('click', async message => {
+			const addressesString: string = message.data;	// Format e.g. "#800A.4" or "8010.4;8012.4;8013.4;"
+			const longAddrString = addressesString.substring(1);	// Skip #
+			// Separate addresses
+			const addresses = longAddrString.split(';');
+			// Find associations with file/line
+			let entry;
+			let nextEntry;
+			for (const addressString of addresses) {
+				if (!addressString)
+					break;	// Last item might be ''
+				const longAddr = Remote.memoryModel.parseAddress(addressString);
+				const tmpEntry = Remote.getFileAndLineForAddress(longAddr);
+				if (entry) {
+					// Check if file changed
+					if (tmpEntry.fileName != entry.fileName)
+						break;
+				}
+				else {
+					// First entry
+					entry = tmpEntry;
+				}
+				nextEntry = tmpEntry;
+			}
+
+			if (entry) {
+				// Create range
+				const clmEnd = (addresses.length == 1) ? 0 : Number.MAX_SAFE_INTEGER;
+				const range = new vscode.Range(entry.lineNr, 0, nextEntry.lineNr, clmEnd);
+
+				// Try to find if the file is already open in an editor.
+				let doc: vscode.TextDocument;
+				const foundDocs: vscode.TextDocument[] = vscode.workspace.textDocuments.filter(doc => doc.uri.fsPath == entry.fileName);
+				if (foundDocs.length > 0) {
+					// Doc found
+					doc = foundDocs[0];
+				}
+				else {
+					// Doc not found, open it
+					const uri = vscode.Uri.file(entry.fileName);
+					doc = await vscode.workspace.openTextDocument(uri);
+				}
+				// Get editor
+				const editor: vscode.TextEditor = await vscode.window.showTextDocument(doc);
+				// Set selection
+				editor.selection = new vscode.Selection(range.start.line, range.start.character, range.end.line, range.end.character);
+				editor.revealRange(range);
+			}
+		});
 	}
 
 

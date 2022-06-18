@@ -150,6 +150,14 @@ Furthermore in the bubbles you'll find the start address and the size of the sub
 Here is a more advanced call graph from the main routine:
 ![](images/callgraph_main.jpg).
 
+### Selection
+
+The animated gif below shows how to create the call graph from a disassembly and navigate through the code by selecting the sub routines in the flow chart.
+
+![](images/callgraph_selection.gif)
+
+Note: The selection does work only on code for which a disassembly or a source file exists. If e.g. the disassembly shows too less code you might need to do a "smart disassembly" first and put that in your reverse engineered list file.
+
 
 ## Flow Chart
 

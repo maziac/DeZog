@@ -2657,7 +2657,8 @@ export class Disassembler extends EventEmitter {
 				// Output
 				text += '"' + label.name + '" [fontsize="' + Math.round(fontSize) + '"];\n';
 				const nodeName = this.nodeFormat(label.name, label.id, address, stats.CyclomaticComplexity, stats.sizeInBytes, stats.countOfInstructions);
-				text += '"' + label.name + '" [label="' + nodeName + '"];\n';
+				const hrefAddress = this.funcFormatAddress ? this.funcFormatAddress(address) : Format.getHexString(address, 4);
+				text += '"' + label.name + '" [label="' + nodeName + '", href="#' + hrefAddress + '"];\n';
 				//text += '"' + label.name + '" [label="' + label.name + '\\nID=' + label.id + '\\nCC=' + stats.CyclomaticComplexity + '\\n"];\n';
 
 				// List each callee only once
