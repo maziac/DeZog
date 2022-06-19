@@ -408,6 +408,7 @@ export class Settings {
 		}
 		catch {}
 		// Also use for the launch config.
+		rootFolder = UnifiedPath.getUnifiedPath(rootFolder);
 		launchCfg.rootFolder = rootFolder;
 
 		// Check for default values (for some reasons the default values from the package.json are not used)

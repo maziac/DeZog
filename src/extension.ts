@@ -8,6 +8,7 @@ import {DiagnosticsHandler} from './diagnosticshandler';
 import {GlobalStorage} from './globalstorage';
 import {HelpProvider} from './help/helpprovider';
 import {LogCustomCode, LogGlobal, LogTransport} from './log';
+import { UnifiedPath } from './misc/unifiedpath';
 import {Utility} from './misc/utility';
 import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
@@ -263,7 +264,7 @@ function getSelectedLineBlocks(): Array<{filename: string, fromLine: number, toL
 	for (const selection of editor.selections) {
 		let from = selection.anchor;
 		let to = selection.active;
-		const filename = editor.document.fileName;
+		const filename = UnifiedPath.getUnifiedPath(editor.document.fileName);
 		// Adjust
 		if (from.line > to.line) {
 			// exchange

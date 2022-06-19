@@ -3820,7 +3820,7 @@ E.g. use "-help -view" to put the help text in an own view.
 
 			// Get whole memory for analyzing
 			const data = await Remote.readMemoryDump(0, 0x10000);
-			
+
 			// Create new instance to disassemble
 			const analyzer = new AnalyzeDisassembler();
 			// No automatic labels
@@ -3960,19 +3960,21 @@ E.g. use "-help -view" to put the help text in an own view.
 				visibleEnd += 3;
 
 				// Try to find if the file is already open in an editor.
-				let doc: vscode.TextDocument;
-				const foundDocs: vscode.TextDocument[] = vscode.workspace.textDocuments.filter(doc => doc.uri.fsPath == fileName);
-				if (foundDocs.length > 0) {
-					// Doc found
-					doc = foundDocs[0];
+				let document;
+				for(const doc of vscode.workspace.textDocuments) {
+					const docPath = UnifiedPath.getUnifiedPath(doc.uri.fsPath);
+					if(docPath == fileName) {
+						document = doc;
+						break;
+					}
 				}
-				else {
+				if(!document) {
 					// Doc not found, open it
 					const uri = vscode.Uri.file(fileName);
-					doc = await vscode.workspace.openTextDocument(uri);
+					document = await vscode.workspace.openTextDocument(uri);
 				}
 				// Get editor
-				const editor: vscode.TextEditor = await vscode.window.showTextDocument(doc);
+				const editor: vscode.TextEditor = await vscode.window.showTextDocument(document, vscode.ViewColumn.Beside);
 
 				// Set selections and visible range
 				editor.selections = selections;
