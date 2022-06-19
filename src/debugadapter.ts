@@ -3820,6 +3820,7 @@ E.g. use "-help -view" to put the help text in an own view.
 
 			// Get whole memory for analyzing
 			const data = await Remote.readMemoryDump(0, 0x10000);
+			
 			// Create new instance to disassemble
 			const analyzer = new AnalyzeDisassembler();
 			// No automatic labels
@@ -3862,8 +3863,6 @@ E.g. use "-help -view" to put the help text in an own view.
 
 				case 'flowChart':
 					{
-						// Disassemble
-						analyzer.disassemble();
 						// Output flow chart to view
 						const rendered = await analyzer.renderFlowChart(startAddrs);
 

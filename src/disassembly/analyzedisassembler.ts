@@ -226,6 +226,9 @@ export class AnalyzeDisassembler extends Disassembler {
 		// Certain colors are used as magic numbers, passed to graphviz, are rendered hardcoded into the svg.
 		// Then at the end these numbers are converted into vars like "var(--vscode-editor-foreground)".
 
+		// Disassemble
+		this.disassemble();
+
 		// Get dot text output.
 		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
 		const dot = this.getFlowChart(startAddrs64k, '#FEFE01', '#FEFE02');

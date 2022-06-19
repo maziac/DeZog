@@ -2821,14 +2821,16 @@ export class Disassembler extends EventEmitter {
 
 			// Next
 			address += opcode.length;
+			if (address >= 0x10000)
+				break;	// Stop if address out of memory.
 
-			// stop if a label is found
+			// Stop if a label is found
 			if (this.labels.get(address))
 				break;
 
 		} while (!(opcode.flags & OpcodeFlag.BRANCH_ADDRESS) // branch-address includes a CALL
-		&& !(opcode.flags & OpcodeFlag.RET)
-			&& !(opcode.flags & OpcodeFlag.STOP));
+				&& !(opcode.flags & OpcodeFlag.RET)
+				&& !(opcode.flags & OpcodeFlag.STOP));
 
 		// finish text
 		text += disTexts.join('\\l') + '\\l';
