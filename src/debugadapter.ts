@@ -3807,7 +3807,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	/**
 	 * Does an analyze (flowchart, call graph) of the given address(es).
 	 * @param type The analyze type: (smart) 'disassembly', 'flowChart' or 'callGraph'.
-	 * @param arr An array with the blocks to analze. Usually just the start line.
+	 * @param arr An array with the blocks to analyze. Usually just the start line.
 	 */
 	public async analyzeAtCursor(type: 'disassembly' | 'flowChart' | 'callGraph', arr: Array<{filename: string, fromLine: number, toLine: number}>): Promise<void> {
 		try {

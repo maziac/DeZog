@@ -95,7 +95,7 @@ If you need to set a breakpoint to some location that does not exist in either t
 1. In the list file just type in the address (in hex) at a start of a line.
 2. In the command palette type: ```DeZog: reload the list file(s).```
 3. Set a breakpoint at the line of the address. The picture shows this for a breakpoint at address 0x8000:
-![](images/rev_eng_bp_in_listfile.jpg)
+![](images/ReverseEngineeringUsage/rev_eng_bp_in_listfile.jpg)
 
 
 # WPMEM, ASSERTION, LOGPOINT
@@ -117,7 +117,7 @@ The inclusion of the [z80dismblr](https://github.com/maziac/z80dismblr) makes it
 
 For all of these features:
 Start Dezog, place the cursor at the source code at some instruction and do a right click for "Analze at Cursor":
-![](images/analyze_at_cursor.jpg)
+![](images/ReverseEngineeringUsage/analyze_at_cursor.jpg)
 
 The examples below use the [z80-sample-program](https://github.com/maziac/z80-sample-program).
 
@@ -142,19 +142,19 @@ fill_bckg_line:
 ~~~
 
 will result into this call graph:
-![](images/callgraph_fill_bckg_line.jpg)
+![](images/ReverseEngineeringUsage/ReverseEngineeringUsage/callgraph_fill_bckg_line.jpg)
 
 I.e. it is indicated by an arrow that *fill_bckg_line* calls *fill_memory*.
 Furthermore in the bubbles you'll find the start address and the size of the sub routine in bytes.
 
 Here is a more advanced call graph from the main routine:
-![](images/callgraph_main.jpg).
+![](images/ReverseEngineeringUsage/callgraph_main.jpg).
 
 ### Selection
 
 The animated gif below shows how to create the call graph from a disassembly and navigate through the code by selecting the sub routines in the flow chart.
 
-![](images/callgraph_selection.gif)
+![](images/ReverseEngineeringUsage/callgraph_selection.gif)
 
 Note: The selection does work only on code for which a disassembly or a source file exists. If e.g. the disassembly shows too less code you might need to do a "smart disassembly" first and put that in your reverse engineered list file.
 
@@ -162,17 +162,17 @@ Note: The selection does work only on code for which a disassembly or a source f
 ## Flow Chart
 
 Here is the flow chart for the same subroutine:
-![](images/flowchart_fill_bckg_line.jpg)
+![](images/ReverseEngineeringUsage/flowchart_fill_bckg_line.jpg)
 
 And here another flowchart of the main routine:
-![](images/flowchart_main.jpg)
+![](images/ReverseEngineeringUsage/flowchart_main.jpg)
 
 
 ### Selection
 
 The animated gif below shows how to create the flow chart from a disassembly and navigate through the code by selecting the blocks in the flow chart.
 
-![](images/flowchart_selection.gif)
+![](images/ReverseEngineeringUsage/flowchart_selection.gif)
 
 Note: The selection does work only on code for which a disassembly or a source file exists. If e.g. the disassembly shows too less code you might need to do a "smart disassembly" first and put that in your reverse engineered list file.
 
@@ -183,7 +183,7 @@ This makes sense only for unknown code. Compared to the "normal" disassembly tha
 I.e. the smart disassembly analyzes the opcodes and follows all branches.
 
 A smart disassembly of the above *fill_bckg_line* looks like this:
-![](images/smart_disassembly_fill_bckg_line.jpg)
+![](images/ReverseEngineeringUsage/smart_disassembly_fill_bckg_line.jpg)
 
 I.e. you will automatically find also the *fill_memory* disassembled because it it referenced in *fill_bckg_line*.
 

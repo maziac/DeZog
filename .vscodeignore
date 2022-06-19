@@ -17,5 +17,6 @@ logs/**/*
 notes.md
 **/*.xcf
 documentation/extras
+documentation/images/ReverseEngineeringUsage
 *.vsix
 releases/
