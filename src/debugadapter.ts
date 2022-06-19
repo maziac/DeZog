@@ -3912,51 +3912,72 @@ E.g. use "-help -view" to put the help text in an own view.
 			// Separate addresses
 			const addresses = longAddrString.split(';');
 			// Find associations with file/line
-			let entry;
-			let nextEntry;
-			for (const addressString of addresses) {
-				if (!addressString)
-					break;	// Last item might be ''
-				const longAddr = Remote.memoryModel.parseAddress(addressString);
-				const tmpEntry = Remote.getFileAndLineForAddress(longAddr);
-				if (entry) {
-					// Check if file changed
-					if (tmpEntry.fileName != entry.fileName)
-						break;
-				}
-				else {
-					// First entry
-					entry = tmpEntry;
-				}
-				nextEntry = tmpEntry;
+			const fileLines = new Map<string, number[]>();
+			let selectWholeLine = false;
+			addresses.reverse();
+			if (addresses[0] == '') {
+				// Remove first (empty) object
+				addresses.shift();
+				selectWholeLine = true;
 			}
 
-			if (entry) {
-				// Create range
-				const clmEnd = (addresses.length == 1) ? 0 : Number.MAX_SAFE_INTEGER;
-				const range = new vscode.Range(entry.lineNr, 0, nextEntry.lineNr, clmEnd);
+			// Loop over all addresses
+			for (const addressString of addresses) {
+				if (!addressString)
+					continue;	// Last (first) item might be ''
+				const longAddr = Remote.memoryModel.parseAddress(addressString);
+				const entry = Remote.getFileAndLineForAddress(longAddr);
+				const fileName = entry.fileName;
+				if (fileName) {
+					let addrs = fileLines.get(fileName);
+					if (!addrs)  {
+						addrs = new Array<number>();
+						fileLines.set(fileName, addrs);
+					}
+					addrs.push(entry.lineNr);
+				}
+			}
+
+			// Loop over all files
+			for (const [fileName, lineNrs] of fileLines) {
+				// Loop over all lines
+				const selections: vscode.Selection[] = [];
+				let visibleStart = Number.MAX_SAFE_INTEGER;
+				let visibleEnd = 0;
+				for (const lineNr of lineNrs) {
+					// Set selection
+					const clmEnd = (selectWholeLine) ? Number.MAX_SAFE_INTEGER : 0;
+					selections.push(new vscode.Selection(lineNr, 0, lineNr, clmEnd));
+					// Extend visible range
+					if (lineNr < visibleStart)
+						visibleStart = lineNr;
+					if (lineNr > visibleEnd)
+						visibleEnd = lineNr;
+				}
+				// Extend visible range
+				visibleStart -= 3;
+				if (visibleStart < 0)
+					visibleStart = 0;
+				visibleEnd += 3;
 
 				// Try to find if the file is already open in an editor.
 				let doc: vscode.TextDocument;
-				const foundDocs: vscode.TextDocument[] = vscode.workspace.textDocuments.filter(doc => doc.uri.fsPath == entry.fileName);
+				const foundDocs: vscode.TextDocument[] = vscode.workspace.textDocuments.filter(doc => doc.uri.fsPath == fileName);
 				if (foundDocs.length > 0) {
 					// Doc found
 					doc = foundDocs[0];
 				}
 				else {
 					// Doc not found, open it
-					const uri = vscode.Uri.file(entry.fileName);
+					const uri = vscode.Uri.file(fileName);
 					doc = await vscode.workspace.openTextDocument(uri);
 				}
 				// Get editor
 				const editor: vscode.TextEditor = await vscode.window.showTextDocument(doc);
-				// Set selection
-				editor.selection = new vscode.Selection(range.start.line, range.start.character, range.end.line, range.end.character);
-				// Extend visible range
-				let start = range.start.line - 3;
-				if (start < 0)
-					start = 0;
-				editor.revealRange(new vscode.Range(start, range.start.character, range.end.line+3, range.end.character));
+
+				// Set selections and visible range
+				editor.selections = selections;
+				editor.revealRange(new vscode.Range(visibleStart, 0, visibleEnd, Number.MAX_SAFE_INTEGER));
 			}
 		});
 	}
