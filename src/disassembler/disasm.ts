@@ -2907,7 +2907,7 @@ export class Disassembler extends EventEmitter {
 			}
 		}
 		// Return
-		return "ASCII: " + result + "'";
+		return "ASCII: " + result;
 	}
 
 

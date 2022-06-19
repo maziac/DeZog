@@ -1,7 +1,7 @@
-import { HtmlView } from './views/htmlview';
 import * as Diff from 'diff';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
+import {HtmlView} from './views/htmlview';
 import {Breakpoint, CapabilitiesEvent, ContinuedEvent, DebugSession, InitializedEvent, InvalidatedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread} from 'vscode-debugadapter/lib/main';
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {CallStackFrame} from './callstackframe';
@@ -3703,7 +3703,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	 */
 	protected checkFileLinesPagedIn(filename: string, fromLineNr: number, toLineNr: number): Array<number> {//</number> {fromAddr: number, toAddr: number} {
 		// Get address of file/line
-		let fromAddr;	// Long
+		let fromAddr = -1;	// Long
 		while (fromLineNr <= toLineNr) {
 			fromAddr = Remote.getAddrForFileAndLine(filename, fromLineNr);
 			if (fromAddr >= 0)
@@ -3718,7 +3718,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			toLineNr--;
 		}
 		if (fromAddr < 0)
-			throw Error("No address found.");
+			throw Error("No address found at line.");
 		// Get all address of last line (not only the first)
 		let addr = toAddr & 0xFFFF;
 		let upperAddr = toAddr & (~0xFFFF);
@@ -3763,44 +3763,44 @@ E.g. use "-help -view" to put the help text in an own view.
 		let fromAddr: number;
 		let toAddr: number;
 		try {
-			[fromAddr, toAddr]= this.checkFileLinesPagedIn(filename, fromLineNr, toLineNr);	// Returns long addresses
+			[fromAddr, toAddr] = this.checkFileLinesPagedIn(filename, fromLineNr, toLineNr);	// Returns long addresses
+
+			// Read the memory.
+			this.debugConsoleAppendLine('');
+			let size = (toAddr - fromAddr + 1) & 0xFFFF;
+			if (size > 0x800) {
+				size = 0x800;
+				this.debugConsoleAppendLine('Note: Disassembly limited to ' + size + ' bytes.');
+			}
+			fromAddr &= 0xFFFF
+			//toAddr &= 0xFFFF;
+			const data = await Remote.readMemoryDump(fromAddr, size + 3);
+
+			// Disassemble
+			let text = '';
+			switch (type) {
+				case 'code':
+					text = SimpleDisassembly.getInstructionDisassembly(fromAddr, data);
+					break;
+				case 'data':
+					text = SimpleDisassembly.getDataDisassembly(fromAddr, data, false, 16);
+					break;
+				case 'string':
+					text = SimpleDisassembly.getDataDisassembly(fromAddr, data, true, 16);
+					break;
+			}
+
+			// Output
+			this.debugConsoleAppend(text + '\n');
+
+			// Copy to clipboard
+			vscode.env.clipboard.writeText(text);
+			vscode.window.showInformationMessage('Disassembly copied to clipboard.');
 		}
 		catch (e) {
 			this.debugConsoleAppendLine("Error: " + e.message);
 			return;
 		}
-
-		// Read the memory.
-		this.debugConsoleAppendLine('');
-		let size = (toAddr - fromAddr + 1) & 0xFFFF;
-		if (size > 0x800) {
-			size = 0x800;
-			this.debugConsoleAppendLine('Note: Disassembly limited to ' + size + ' bytes.');
-		}
-		fromAddr &= 0xFFFF
-		//toAddr &= 0xFFFF;
-		const data = await Remote.readMemoryDump(fromAddr, size + 3);
-
-		// Disassemble
-		let text = '';
-		switch (type) {
-			case 'code':
-				text = SimpleDisassembly.getInstructionDisassembly(fromAddr, data);
-				break;
-			case 'data':
-				text = SimpleDisassembly.getDataDisassembly(fromAddr, data, false, 16);
-				break;
-			case 'string':
-				text = SimpleDisassembly.getDataDisassembly(fromAddr, data, true, 16);
-				break;
-		}
-
-		// Output
-		this.debugConsoleAppend(text + '\n');
-
-		// Copy to clipboard
-		vscode.env.clipboard.writeText(text);
-		vscode.window.showInformationMessage('Disassembly copied to clipboard.');
 	}
 
 
@@ -3810,84 +3810,91 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * @param arr An array with the blocks to analze. Usually just the start line.
 	 */
 	public async analyzeAtCursor(type: 'disassembly' | 'flowChart' | 'callGraph', arr: Array<{filename: string, fromLine: number, toLine: number}>): Promise<void> {
-		// Get all start addresses and check banks
-		const startAddrs: number[] = [];
-		for (const block of arr) {
-			const [fromAddr,] = this.checkFileLinesPagedIn(block.filename, block.fromLine, block.toLine);
-			startAddrs.push(fromAddr);
-		}
-		// Get whole memory for analyzing
-		const data = await Remote.readMemoryDump(0, 0x10000);
-		// Create new instance to disassemble
-		const analyzer = new AnalyzeDisassembler();
-		// No automatic labels
-		analyzer.automaticAddresses = false;
-		analyzer.specialLabels = false;
-		analyzer.disassembleUnreferencedData = false;
-		// Do not find interrupt labels
-		analyzer.findInterrupts = false;
-		analyzer.enableStatistics = true;	// Required for call graphs
-
-		// Initialize disassembly
-		analyzer.initWithCodeAddresses(startAddrs, [{address: 0, data}]);
-		// Set labels for the start addresses
-		for (const longAddr of startAddrs) {
-			// Get label
-			const labels = Labels.getLabelsForLongAddress(longAddr);
-			let name;
-			if (labels && labels.length > 0) {
-				name = labels.join(' or ');
+		try {
+			// Get all start addresses and check banks
+			const startAddrs: number[] = [];
+			for (const block of arr) {
+				const [fromAddr,] = this.checkFileLinesPagedIn(block.filename, block.fromLine, block.toLine);
+				startAddrs.push(fromAddr);
 			}
-			// Set label
-			if(name)
-				analyzer.setLabel(longAddr & 0xFFFF, name);
+
+			// Get whole memory for analyzing
+			const data = await Remote.readMemoryDump(0, 0x10000);
+			// Create new instance to disassemble
+			const analyzer = new AnalyzeDisassembler();
+			// No automatic labels
+			analyzer.automaticAddresses = false;
+			analyzer.specialLabels = false;
+			analyzer.disassembleUnreferencedData = false;
+			// Do not find interrupt labels
+			analyzer.findInterrupts = false;
+			analyzer.enableStatistics = true;	// Required for call graphs
+
+			// Initialize disassembly
+			analyzer.initWithCodeAddresses(startAddrs, [{address: 0, data}]);
+			// Set labels for the start addresses
+			for (const longAddr of startAddrs) {
+				// Get label
+				const labels = Labels.getLabelsForLongAddress(longAddr);
+				let name;
+				if (labels && labels.length > 0) {
+					name = labels.join(' or ');
+				}
+				// Set label
+				if (name)
+					analyzer.setLabel(longAddr & 0xFFFF, name);
+			}
+
+
+			switch (type) {
+				case 'disassembly':
+					{
+						// Disassemble
+						analyzer.disassemble();
+						// Output disassembly text to view
+						const text = analyzer.getDisassemblyText();
+
+						// Output text to new view.
+						const view = new TextView('Smart Disassembly', text);
+						await view.update();
+					}
+					break;
+
+				case 'flowChart':
+					{
+						// Disassemble
+						analyzer.disassemble();
+						// Output flow chart to view
+						const rendered = await analyzer.renderFlowChart(startAddrs);
+
+						// Output text to new view.
+						const view = new HtmlView('Flow Chart', rendered);
+						await view.update();
+
+						// Install mouse click handler
+						this.installSvgClickHandler(view);
+					}
+					break;
+
+				case 'callGraph':
+					{
+						analyzer.nodeFormatString = "${label}\\n@${address}h\\n${size} bytes\\n";
+						// Output call graph to view
+						const rendered = await analyzer.renderCallGraph(startAddrs);
+
+						// Output text to new view.
+						const view = new HtmlView('Call Graph', rendered);
+						await view.update();
+
+						// Install mouse click handler
+						this.installSvgClickHandler(view);
+					}
+					break;
+			}
 		}
-
-
-		switch (type) {
-			case 'disassembly':
-				{
-					// Disassemble
-					analyzer.disassemble();
-					// Output disassembly text to view
-					const text = analyzer.getDisassemblyText();
-
-					// Output text to new view.
-					const view = new TextView('Smart Disassembly', text);
-					await view.update();
-				}
-				break;
-
-			case 'flowChart':
-				{
-					// Disassemble
-					analyzer.disassemble();
-					// Output flow chart to view
-					const rendered = await analyzer.renderFlowChart(startAddrs);
-
-					// Output text to new view.
-					const view = new HtmlView('Flow Chart', rendered);
-					await view.update();
-
-					// Install mouse click handler
-					this.installSvgClickHandler(view);
-				}
-				break;
-
-			case 'callGraph':
-				{
-					analyzer.nodeFormatString = "${label}\\n@${address}h\\n${size} bytes\\n";
-					// Output call graph to view
-					const rendered = await analyzer.renderCallGraph(startAddrs);
-
-					// Output text to new view.
-					const view = new HtmlView('Call Graph', rendered);
-					await view.update();
-
-					// Install mouse click handler
-					this.installSvgClickHandler(view);
-				}
-				break;
+		catch (e) {
+			this.debugConsoleAppendLine("Error: " + e.message);
+			return;
 		}
 	}
 
@@ -3945,7 +3952,11 @@ E.g. use "-help -view" to put the help text in an own view.
 				const editor: vscode.TextEditor = await vscode.window.showTextDocument(doc);
 				// Set selection
 				editor.selection = new vscode.Selection(range.start.line, range.start.character, range.end.line, range.end.character);
-				editor.revealRange(range);
+				// Extend visible range
+				let start = range.start.line - 3;
+				if (start < 0)
+					start = 0;
+				editor.revealRange(new vscode.Range(start, range.start.character, range.end.line+3, range.end.character));
 			}
 		});
 	}
