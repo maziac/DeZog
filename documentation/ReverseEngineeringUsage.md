@@ -150,15 +150,6 @@ Furthermore in the bubbles you'll find the start address and the size of the sub
 Here is a more advanced call graph from the main routine:
 ![](images/ReverseEngineeringUsage/callgraph_main.jpg).
 
-### Selection
-
-The animated gif below shows how to create the call graph from a disassembly and navigate through the code by selecting the sub routines in the flow chart.
-
-![](images/ReverseEngineeringUsage/callgraph_selection.gif)
-
-Note: The selection does work only on code for which a disassembly or a source file exists. If e.g. the disassembly shows too less code you might need to do a "smart disassembly" first and put that in your reverse engineered list file.
-
-
 ## Flow Chart
 
 Here is the flow chart for the same subroutine:
@@ -168,13 +159,25 @@ And here another flowchart of the main routine:
 ![](images/ReverseEngineeringUsage/flowchart_main.jpg)
 
 
-### Selection
+## Selection
 
-The animated gif below shows how to create the flow chart from a disassembly and navigate through the code by selecting the blocks in the flow chart.
+The animated gif below shows how to create the flow chart from a disassembly and navigate through the code by selecting the blocks in the flow chart or call graph.
 
+Flow chart example:
 ![](images/ReverseEngineeringUsage/flowchart_selection.gif)
 
-Note: The selection does work only on code for which a disassembly or a source file exists. If e.g. the disassembly shows too less code you might need to do a "smart disassembly" first and put that in your reverse engineered list file.
+Call graph example:
+![](images/ReverseEngineeringUsage/callgraph_selection.gif)
+
+Note:
+The selection does work only on code for which a disassembly or a source file exists. If e.g. the disassembly shows too less code you might need to do a "smart disassembly" first and put that in your reverse engineered list file.
+
+Hint:
+If the flow chart or call graph is hidden by the selection please enable the following vscode setting:
+~~~
+editor.revealIfOpen
+~~~
+![](images/ReverseEngineeringUsage/analyze_reveal_if_open.jpg)
 
 
 ## Smart Disassembly
