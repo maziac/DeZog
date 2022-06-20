@@ -3810,6 +3810,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * @param arr An array with the blocks to analyze. Usually just the start line.
 	 */
 	public async analyzeAtCursor(type: 'disassembly' | 'flowChart' | 'callGraph', arr: Array<{filename: string, fromLine: number, toLine: number}>): Promise<void> {
+		Log.log('analyzeAtCursor');
 		try {
 			// Get all start addresses and check banks
 			const startAddrs: number[] = [];
@@ -3864,7 +3865,7 @@ E.g. use "-help -view" to put the help text in an own view.
 				case 'flowChart':
 					{
 						// Output flow chart to view
-						const rendered = await analyzer.renderFlowChart(startAddrs);
+						const rendered = analyzer.renderFlowChart(startAddrs);
 
 						// Output text to new view.
 						const view = new HtmlView('Flow Chart', rendered);
@@ -3879,7 +3880,7 @@ E.g. use "-help -view" to put the help text in an own view.
 					{
 						analyzer.nodeFormatString = "${label}\\n@${address}h\\n${size} bytes\\n";
 						// Output call graph to view
-						const rendered = await analyzer.renderCallGraph(startAddrs);
+						const rendered = analyzer.renderCallGraph(startAddrs);
 
 						// Output text to new view.
 						const view = new HtmlView('Call Graph', rendered);
@@ -3974,7 +3975,7 @@ E.g. use "-help -view" to put the help text in an own view.
 					document = await vscode.workspace.openTextDocument(uri);
 				}
 				// Get editor
-				const editor: vscode.TextEditor = await vscode.window.showTextDocument(document, vscode.ViewColumn.Beside);
+				const editor: vscode.TextEditor = await vscode.window.showTextDocument(document);
 
 				// Set selections and visible range
 				editor.selections = selections;

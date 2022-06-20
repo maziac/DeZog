@@ -1,4 +1,4 @@
-import {renderGraphFromSource} from 'graphviz-cli';
+import { Log } from './../log';
 import {Disassembler} from "../disassembler/disasm";
 import {NumberType} from '../disassembler/numbertype';
 import {Opcode, Opcodes} from "../disassembler/opcode";
@@ -10,6 +10,7 @@ import {Z80Registers} from "../remotes/z80registers";
 import {Settings} from '../settings/settings';
 import {DisLabel} from './../disassembler/dislabel';
 
+const renderGraphviz = require('@aduh95/viz.js/sync');	// I couldn't transfer this into an "import" statement
 
 
 /**
@@ -218,7 +219,8 @@ export class AnalyzeDisassembler extends Disassembler {
 	 * @param startLongAddrs The start address (or many). Is a long address.
 	 * @returns A string with the rendered flow chart. Can be used in a webview.
 	 */
-	public async renderFlowChart(startLongAddrs: number[]): Promise<string> {
+	public renderFlowChart(startLongAddrs: number[]): string {
+		Log.log('renderFlowChart');// TODO: Remove
 		// A note on coloring:
 		// For dark/light mode we need to use e.g. "var(--vscode-editor-foreground)" in the html/svg.
 		// If this is passed to graphviz as a color it does not survive the processing.
@@ -233,7 +235,9 @@ export class AnalyzeDisassembler extends Disassembler {
 		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
 		const dot = this.getFlowChart(startAddrs64k, '#FEFE01', '#FEFE02');
 		// Render
-		let rendered = await renderGraphFromSource({input: dot}, {format: 'svg'});
+		Log.log('renderFlowChart:A');	// TODO: Remove
+		let rendered = renderGraphviz(dot);
+		Log.log('renderFlowChart:B');// TODO: Remove
 		rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
 		rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
 		return rendered;
@@ -245,7 +249,7 @@ export class AnalyzeDisassembler extends Disassembler {
 	 * @param startLongAddrs The start address (or many). Is a long address.
 	 * @returns A string with the rendered flow chart. Can be used in a webview.
 	 */
-	public async renderCallGraph(startLongAddrs: number[]): Promise<string> {
+	public renderCallGraph(startLongAddrs: number[]): string {
 		// Create label for start address if not existing.
 		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
 		for (const addr64k of startAddrs64k) {
@@ -278,7 +282,8 @@ export class AnalyzeDisassembler extends Disassembler {
 		// Get dot text output.
 		const dot = this.getCallGraph(chosenLabels, '#FEFE01', '#FEFE02');
 		// Render
-		let rendered = await renderGraphFromSource({input: dot}, {format: 'svg'});
+		//let rendered = await renderGraphFromSource({input: dot}, {format: 'svg'});
+		let rendered = renderGraphviz(dot);
 		rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
 		rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
 		return rendered;
