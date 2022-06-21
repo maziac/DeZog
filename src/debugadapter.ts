@@ -568,20 +568,19 @@ export class DebugSessionClass extends DebugSession {
 				new Scope("Memory Banks", this.listVariables.addObject(new MemorySlotsVar())),
 				new Scope("Local Stack", this.listVariables.addObject(this.localStackVar))
 			];
+
+			// Register to get a note when debug session becomes active
+			this.debugConsoleSavedText = '';
+
+			// Launch emulator
+			await this.launch(response);
 		}
 		catch (e) {
 			// Some error occurred
 			response.success = false;
 			response.message = e.message;
 			this.sendResponse(response);
-			return;
 		}
-
-		// Register to get a note when debug session becomes active
-		this.debugConsoleSavedText = '';
-
-		// Launch emulator
-		await this.launch(response);
 	}
 
 
@@ -704,10 +703,13 @@ export class DebugSessionClass extends DebugSession {
 					// This needs to be done after the labels have been read
 					await Remote.initWpmemAssertionLogpoints();
 				}
-				catch (err) {
+				catch (e) {
 					// Some error occurred during loading, e.g. file not found.
-					//	this.terminate(err.message);
-					this.unitTestsStartCallbacks?.reject(err);
+					const error = e.message || "Error";
+					Remote.terminate('Init remote (readListFiles): ' + error);
+					reject(e);
+					DebugSessionClass.singleton().unitTestsStartCallbacks?.reject(e);
+					return;
 				}
 
 				// Instantiate file watchers for revEng auto re-load
