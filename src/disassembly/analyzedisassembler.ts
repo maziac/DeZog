@@ -1,4 +1,3 @@
-import { Log } from './../log';
 import {Disassembler} from "../disassembler/disasm";
 import {NumberType} from '../disassembler/numbertype';
 import {Opcode, Opcodes} from "../disassembler/opcode";
@@ -220,7 +219,6 @@ export class AnalyzeDisassembler extends Disassembler {
 	 * @returns A string with the rendered flow chart. Can be used in a webview.
 	 */
 	public renderFlowChart(startLongAddrs: number[]): string {
-		Log.log('renderFlowChart');// TODO: Remove
 		// A note on coloring:
 		// For dark/light mode we need to use e.g. "var(--vscode-editor-foreground)" in the html/svg.
 		// If this is passed to graphviz as a color it does not survive the processing.
@@ -235,12 +233,11 @@ export class AnalyzeDisassembler extends Disassembler {
 		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
 		const dot = this.getFlowChart(startAddrs64k, '#FEFE01', '#FEFE02');
 		// Render
-		Log.log('renderFlowChart:A');	// TODO: Remove
 		let rendered = renderGraphviz(dot);
-		Log.log('renderFlowChart:B');// TODO: Remove
 		rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
 		rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
-		return rendered;
+
+		return this.addScalingSlider(rendered);
 	}
 
 
@@ -286,6 +283,42 @@ export class AnalyzeDisassembler extends Disassembler {
 		let rendered = renderGraphviz(dot);
 		rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
 		rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
-		return rendered;
+
+		return this.addScalingSlider(rendered);
+	}
+
+
+	/**
+	 * Adds a slider to scale the SVG.
+	 * @param svg The SVG html code.
+	 * @returns Html code with the added slider.
+	 */
+	protected addScalingSlider(svg: string): string {
+		// To scale remove height and width
+		const woWidthHeight = svg.replace(/width=.+height=\S+/, '');
+		// Add slider for scaling
+		let withSlider = `
+		<script>
+			function updateSlider(slideValue) {
+				var svg = document.getElementById("svg");
+				svg.style.width = slideValue + "%";
+				svg.style.height = slideValue + "%";
+			}
+		</script>
+		<div id="slider">
+			5%
+			<input id="slide" type="range"
+			min="5" max="200"
+			step="5" value="100"
+			oninput="updateSlider(this.value)"
+			/>
+			200%
+		</div>
+		<br>
+		<div id="svg">
+		${woWidthHeight}
+		</div>
+		`;
+		return withSlider;
 	}
 }
