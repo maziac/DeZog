@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.0.0-rc7",
+	"version": "3.0.0-rc8",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum.",
 	"author": {
@@ -150,6 +150,9 @@
 				"aliases": [
 					"Assembler file"
 				]
+			},
+			{
+				"id": "disassembly"
 			}
 		],
 		"breakpoints": [
@@ -232,6 +235,13 @@
 				"command": "dezog.analyzeAtCursor.callGraph",
 				"title": "Call Graph",
 				"category": "DeZog"
+			},
+			{
+				"command": "dezog.disassembly.refresh",
+				"title": "Refresh",
+				"category": "DeZog",
+				"enablement": "false",
+				"icon": "$(refresh)"
 			}
 		],
 		"menus": {
@@ -271,6 +281,10 @@
 					"when": "false"
 				},
 				{
+					"command": "dezog.disassembly.refresh",
+					"when": "false"
+				},
+				{
 					"command": "dezog.clearAllDecorations"
 				},
 				{
@@ -282,19 +296,26 @@
 			],
 			"editor/context": [
 				{
-					"when": "resourceLangId == asm-collection && inDebugMode",
+					"when": "resourceLangId == asm-collection && inDebugMode || resourceLangId == disassembly && inDebugMode",
 					"command": "dezog.movePCtoCursor",
 					"group": "debug"
 				},
 				{
-					"when": "resourceLangId == asm-collection && inDebugMode",
+					"when": "resourceLangId == asm-collection && inDebugMode || resourceLangId == disassembly && inDebugMode",
 					"submenu": "dezog.disassemblyAtCursor",
 					"group": "debug"
 				},
 				{
-					"when": "resourceLangId == asm-collection && inDebugMode",
+					"when": "resourceLangId == asm-collection && inDebugMode || resourceLangId == disassembly && inDebugMode",
 					"submenu": "dezog.analyzeAtCursor",
 					"group": "debug"
+				}
+			],
+			"editor/title": [
+				{
+					"when": "resourceLangId == disassembly && inDebugMode",
+					"command": "dezog.disassembly.refresh",
+					"group": "navigation"
 				}
 			],
 			"dezog.disassemblyAtCursor": [

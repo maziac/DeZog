@@ -1189,6 +1189,8 @@ export class DebugSessionClass extends DebugSession {
 			disasmTextDoc = await vscode.workspace.openTextDocument(uri);
 		}
 		Utility.assert(disasmTextDoc);
+		// Set the right language ID, so that editor title menu buttons can be assigned
+		vscode.languages.setTextDocumentLanguage(disasmTextDoc, 'disassembly');
 		return disasmTextDoc;
 	}
 
