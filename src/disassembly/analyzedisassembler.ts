@@ -16,21 +16,6 @@ const renderGraphviz = require('@aduh95/viz.js/sync');	// I couldn't transfer th
  * This class is especially used to create call graphs and flow charts.
  */
 export class AnalyzeDisassembler extends Disassembler {
-
-	// The current slots in use.
-	protected static slots: number[];
-
-
-	/**
-	 * Sets the slots array.
-	 * Used to set the slots that are active during disassembly.
-	 *
-	 */
-	public static setSlots(slots: number[]): void {
-		this.slots = slots;
-	}
-
-
 	// Map with the long address to line number relationship and vice versa.
 	protected addrLineMap = new Map<number, number>();
 	protected lineAddrArray = new Array<number | undefined>();

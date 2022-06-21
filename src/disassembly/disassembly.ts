@@ -39,6 +39,10 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 	}
 
 
+	// The current slots in use.
+	protected slots: number[];
+
+
 	/**
 	 * Constructor.
 	 */
@@ -66,6 +70,35 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 			return (entry == undefined || entry.size == 0);	// Filter only non-existing addresses or addresses with no code
 		};
 	}
+
+
+	/**
+	 * Sets the slots array.
+	 * Used to set the slots that are active during disassembly.
+	 * Used to compare if the slots (the banking) has changed.
+	 * @param slots The new slot configuration.
+	 */
+	public setSlots(slots: number[]): void {
+		this.slots = slots;
+	}
+
+
+	/**
+	 * Compare if the slots (the banking) has changed.
+	 * @param slots The other slot configuration.
+	 * @returns true if the slots are different.
+	 */
+	public slotsChanged(slots: number[]): boolean {
+		const len = this.slots.length;
+		if (len != slots.length)
+			return false;
+		for (let i = 0; i < len; i++) {
+			if (this.slots[i] != slots[i])
+				return false;
+		}
+		return true;
+	}
+
 }
 
 
