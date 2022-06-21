@@ -160,6 +160,9 @@
 				"language": "asm-collection"
 			},
 			{
+				"language": "disassembly"
+			},
+			{
 				"language": "z80-macroasm"
 			},
 			{
