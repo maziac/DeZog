@@ -241,7 +241,7 @@
 				"command": "dezog.disassembly.refresh",
 				"title": "Refresh disassembly",
 				"category": "DeZog",
-				"enablement": "true",
+				"enablement": "dezog:disassembler:refreshEnabled",
 				"icon": "$(refresh)"
 			}
 		],

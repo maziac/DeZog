@@ -931,8 +931,6 @@ export class DebugSessionClass extends DebugSession {
 		// If no source exists the stack frame will have 'src' as undefined.
 		const [sfrs, longCallstackAddresses] = this.stackFramesForCallStack(callStack);
 
-//  TODO: setDisasmCoverageDecoration nicht vergessen
-
 		try {
 			// Do a new disassembly if necessary.
 			const disasmUpdated = await Disassembly.setNewAddresses(longCallstackAddresses);
@@ -972,10 +970,14 @@ export class DebugSessionClass extends DebugSession {
 				// Save after edit (to be able to set breakpoints)
 				await disasmTextDoc.save();
 			}
+
+			// Enable/disable the refresh button.
+			vscode.commands.executeCommand('setContext', 'dezog:disassembler:refreshEnabled', !disasmUpdated);
 		}
 		catch (e) {
 			console.log(e);
 		}
+
 
 		// Get lines for addresses for the disassembly
 		this.addDisasmSourceInfo(sfrs);
@@ -3911,7 +3913,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	public async refreshDisassembler(): Promise<void> {
 		try {
 			// Clear the stores call stack values.
-			Disassembly.clearCallstackAddresses();
+			Disassembly.prepareRefresh();
 
 			// Do disassembly anew
 			this.sendEvent(new StoppedEvent("Refresh disassembler", DebugSessionClass.THREAD_ID));
