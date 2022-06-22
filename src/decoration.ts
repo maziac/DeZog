@@ -68,10 +68,6 @@ export class DecorationClass {
 	// Collects the coverage addresses that are not assigned yet to any file.
 	protected unassignedCodeCoverageAddresses: Set<number>;
 
-	// The outdated disassembly decoration is handled a little different as
-	// it is only used for one file.
-	protected disasmOutdatedDecoType: vscode.TextEditorDecorationType;
-
 	// The range for the outdated decoration. Is either empty or covers the complete text.
 	protected disasmOutdatedRange: vscode.Range[] = [];
 
@@ -176,12 +172,6 @@ export class DecorationClass {
 			}
 		});
 
-		// Decoration for 'Outdated' files (i.e. the disasm.list)
-		this.disasmOutdatedDecoType = vscode.window.createTextEditorDecorationType({
-			fontStyle: 'italic',
-			opacity: '0.5'
-		});
-
 		// Create the map
 		this.decorationFileMaps = new Map<string, DecorationFileMap>();
 
@@ -216,12 +206,6 @@ export class DecorationClass {
 			// Unfortunately there is no way to differentiate so both are handled.
 			// Note: Editors forget the decorations when they are hidden. I.e. decorations have to be re-applied here.
 			this.setAllDecorations(editor);
-			// Check for outdated and disassembly
-			const edFilename = UnifiedPath.getUnifiedPath(editor.document.fileName);
-
-			// Special case for disassembly file and coverage.
-			if (edFilename == DisassemblyClass.getAbsFilePath())
-				this.setDisasmOutdatedDecoration(editor);
 		});
 	}
 
@@ -654,39 +638,6 @@ export class DecorationClass {
 			}
 		}
 		return docEditors;
-	}
-
-
-	/**
-	 * Clears the outdated decoration for the disassembly.
-	 */
-	public clearDisasmOutdated() {
-		this.disasmOutdatedRange = [];
-		const disasmFile = DisassemblyClass.getAbsFilePath();
-		const editors = this.getEditorsForFile(disasmFile);
-		for (const editor of editors)
-			this.setDisasmOutdatedDecoration(editor);
-	}
-
-
-	/**
-	 * Sets the outdated decoration for the disassembly.
-	 */
-	public showDisasmOutdated() {
-		this.disasmOutdatedRange = [new vscode.Range(0, 0, 1000000, 0)];
-		const disasmFile = DisassemblyClass.getAbsFilePath();
-		const editors = this.getEditorsForFile(disasmFile);
-		for (const editor of editors)
-			this.setDisasmOutdatedDecoration(editor);
-	}
-
-
-	/**
-	 * Sets the outdated decoration anew.
-	 * Either clears or sets it for the complete editor.
-	 */
-	protected setDisasmOutdatedDecoration(editor: vscode.TextEditor) {
-		editor.setDecorations(this.disasmOutdatedDecoType, this.disasmOutdatedRange);
 	}
 }
 

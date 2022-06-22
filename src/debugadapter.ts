@@ -1,4 +1,3 @@
-import * as Diff from 'diff';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import {HtmlView} from './views/htmlview';
@@ -132,13 +131,6 @@ export class DebugSessionClass extends DebugSession {
 
 	/// Is true if a dezog debug session is running.
 	public running = false;
-
-	/// An array of a limited amount of last PC addresses (long).
-	/// Used for disassembly.
-	protected longPcAddressesHistory: number[] = [];
-
-	/// Is used to display  the disassembly in a different decoration.
-	protected disassemblyUpToDate = false;
 
 	/// The file watchers used for auto reload of list files.
 	protected fileWatchers: FileWatcher[] = [];
@@ -591,8 +583,6 @@ export class DebugSessionClass extends DebugSession {
 	protected async launch(response: DebugProtocol.Response) {
 		// Setup the disassembler
 		DisassemblyClass.createDisassemblySingleton();
-		this.disassemblyUpToDate = false;
-		Decoration.showDisasmOutdated();
 
 		// Init
 		this.processingSteppingRequest = false;
