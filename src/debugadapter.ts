@@ -938,12 +938,15 @@ export class DebugSessionClass extends DebugSession {
 
 
 			// Update disasm.list
-			if (disasmUpdated) {
+			//if (disasmUpdated)
+			{
 				// Update the disasm.list editor
 				const disasmTextDoc = await this.getOrCreateDisasmTextDoc();
 				const prevLineCount = disasmTextDoc.lineCount;
 				const newText = Disassembly.getDisassemblyText();
 
+				// Save all breakpoints
+				const prevBpAddresses = this.getDisassemblyBreakpoints();
 
 				// Add new disassembly at the end
 				const edit = new vscode.WorkspaceEdit();
@@ -954,6 +957,17 @@ export class DebugSessionClass extends DebugSession {
 
 				// Apply changes
 				await vscode.workspace.applyEdit(edit);
+
+				// Check all breakpoints
+				this.disassemblyReassignBreakpoints(prevBpAddresses);
+
+				// If disassembly text editor is open, then show decorations and update break reason
+				const docEditors = this.getEditorsForTextDoc(disasmTextDoc);
+				for (const editor of docEditors) {
+					Decoration.setDisasmCoverageDecoration(editor);
+				}
+				Decoration.showBreak();	// update
+
 				// Save after edit (to be able to set breakpoints)
 				await disasmTextDoc.save();
 			}
