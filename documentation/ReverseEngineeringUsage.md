@@ -77,11 +77,20 @@ Notes:
 
 # Disassembly
 
-The disassembly shows only part of the code: I.e. the disassembly around the current PC and also disassembly from the addresses on the call stack.
+The disassembly fetches the complete 64k memory from the Remote for disassembly.
+DeZog tries it's best to smartly analyze the code and disassemble the complete code.
 
-If one of these addresses is not associated with a file (either a list file or an asm source) then a disassembly is done.
+It starts from the first PC address it encounters. If all code is reachable from there DeZog will disassemble the complete code.
 
-The disassembly contains only the addresses where no association to another file exists.
+But there are a few caveats:
+- Interrupts: The interrupt address is not known at the beginning. I.e. as long as you do not break into the interrupt DeZog will not be able to disassemble the code.
+- Same for ```JP (HL)```. The jump address is only available during run time. Therefore DeZog cannot disassemble this prior to execution.
+- Self-modifying code. DeZog does not fetch and disassemble the code on every step. Therefore, in case of self-modifying code, you may not see the correct disassembly. If the code looks suspicious you can do a manual refresh of the disassembly by pressing the refresh button ![](images/ReverseEngineeringUsage/disasm_refresh.jpg) in the top right of the disasm.list file.
+
+To keep the disassembly up-to-date most of the time DeZog decides to automatically update the disassembly under the following occasions:
+- The slots (i.e. the current banking/paging) changes.
+- The memory contents at the current PC has changed.
+- The PC is at a former unknown address (e.g. at an interrupt).
 
 
 # Breakpoints
@@ -89,7 +98,7 @@ The disassembly contains only the addresses where no association to another file
 Breakpoints can be set via the vscode editor as normal.
 Breakpoints can be set either in the disassembly or in the list file.
 
-Breakpoints will "survive" in the disassembly even if the file is created anew.
+Breakpoints will "survive" in the disassembly even if the disassembly is updated.
 
 If you need to set a breakpoint to some location that does not exist in either the disassembly or the list file then you can do the following:
 1. In the list file just type in the address (in hex) at a start of a line.

@@ -18,7 +18,8 @@ const TmpDasmFileName = 'disasm.list';
  *
  * The disassembly works on the complete 64k memory space.
  * At start the 64k memory is fetched from the remote and disassembled.
- * A new fetch is done if either the slots change or if the user presses the refresh button.
+ * A new fetch is done if either the slots change, if the memory at the current PC
+ * has changed or if the user presses the refresh button.
  * A new disassembly is done if the memory is refreshed or if there are new addresses to disassemble.
  * If the disassembly is not recent the refresh button is enabled for indication.
  *
@@ -137,11 +138,14 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 
 
 	/**
-	 * Called to clear the stored call stack addresses.
+	 * Clears the stored call stack addresses and
+	 * clears the slots so that on next call to 'setNewAddresses'
+	 * new memory is loaded and a new disassembly is done.
 	 * Done on a manual refresh.
 	 */
-	public clearCallstackAddresses() {
+	public prepareRefresh() {
 		this.longCallStackAddresses = [];
+		this.slots = [];
 	}
 
 
