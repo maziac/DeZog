@@ -239,9 +239,9 @@
 			},
 			{
 				"command": "dezog.disassembly.refresh",
-				"title": "Refresh",
+				"title": "Refresh disassembly",
 				"category": "DeZog",
-				"enablement": "false",
+				"enablement": "true",
 				"icon": "$(refresh)"
 			}
 		],

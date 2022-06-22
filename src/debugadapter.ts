@@ -3904,6 +3904,26 @@ E.g. use "-help -view" to put the help text in an own view.
 
 
 	/**
+	 * Refreshes the disassembly.
+	 * Called when the Refresh button is pressed.
+	 */
+
+	public async refreshDisassembler(): Promise<void> {
+		try {
+			// Clear the stores call stack values.
+			Disassembly.clearCallstackAddresses();
+
+			// Do disassembly anew
+			this.sendEvent(new StoppedEvent("Refresh disassembler", DebugSessionClass.THREAD_ID));
+		}
+		catch (e) {
+			// Some error occurred
+			Remote.terminate('Labels: ' + e.message);
+		}
+	}
+
+
+	/**
 	 * Reloads all list/sld file(s).
 	 * Is targeted at reverse engineering, so mainly at list files.
 	 * Only the list files are reloaded, not the launch.json, nor the binary (loadObjs).

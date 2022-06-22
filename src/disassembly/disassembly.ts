@@ -137,6 +137,15 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 
 
 	/**
+	 * Called to clear the stored call stack addresses.
+	 * Done on a manual refresh.
+	 */
+	public clearCallstackAddresses() {
+		this.longCallStackAddresses = [];
+	}
+
+
+	/**
 	 * Called when a stack trace request is done. Ie. when a new PC with call stack
 	 * is available.
 	 * The first call stack address is the current PC.

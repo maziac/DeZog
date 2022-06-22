@@ -194,6 +194,16 @@ export function activate(context: vscode.ExtensionContext) {
 		await session.reloadLabels();
 	}));
 
+	// Command to refresh (button) the disassembly.
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.disassembly.refresh', async () => {
+		// Only allowed in debug context
+		const session = DebugSessionClass.singleton();
+		if (!session.running)
+			return;
+		// Execute in debug adapter
+		await session.refreshDisassembler();
+	}));
+
 	// Register a configuration provider for 'dezog' debug type
 	const configProvider = new DeZogConfigurationProvider();
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('dezog', configProvider));
