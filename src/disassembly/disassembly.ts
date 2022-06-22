@@ -60,10 +60,10 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 
 
 	/// An array of last PC addresses (long).
-	protected longPcAddressesHistory: number[] = [];	// TODO: change to Set
+	protected longPcAddressesHistory: number[] = [];
 
 	/// An array of (long) addresses from the callstack. The addresses might overlap with the longPcAddressesHistory array.
-	protected longCallStackAddresses: number[] = [];	// TODO: change to Set
+	protected longCallStackAddresses: number[] = [];
 
 
 	/**
@@ -146,6 +146,14 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 	 */
 	public async setNewAddresses(longCallStackAddresses: number[]): Promise<boolean> {
 		let disasmRequired = false;
+		let pcAddr64k;
+
+		// Check if addresses passed
+		const len = longCallStackAddresses.length;
+		if (len > 0) {
+			// Note: the current PC address (and the call stack addresses) are for sure paged in, i.e. the conversion to a bank is not necessary.
+			pcAddr64k = longCallStackAddresses[0] & 0xFFFF;
+		}
 
 		// Check if slots changed
 		const slots = Z80Registers.getSlots();
@@ -154,40 +162,45 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 			await this.fetch64kMemory();
 			disasmRequired = true;
 		}
-
-		// Check if addresses passed
-		const len = longCallStackAddresses.length;
-		if (len > 0) {
-			const longPcAddr = longCallStackAddresses[0];
-			// Note: the current PC address (and the call stack addresses) are for sure paged in, i.e. the conversion to a bank is not necessary.
-			const pcAddr = longPcAddr & 0xFFFF;
-			// Check if PC address needs to be added
-			const attr = this.memory.getAttributeAt(pcAddr);
-			if (!(attr & MemAttribute.CODE_FIRST)) {
-				// Is an unknown address, add it
-				this.longPcAddressesHistory.push(longPcAddr);
-				disasmRequired = true;
-			}
-
-			// Check if call stack addresses need to be added
-			for (let i = 1; i < len; i++) {
-				const longAddr = longCallStackAddresses[i];
-				const addr = longAddr & 0xFFFF;
-				const attr = this.memory.getAttributeAt(addr);
-				if (!(attr & MemAttribute.CODE_FIRST)) {
-					// Is an unknown address, add it
-					this.longCallStackAddresses.push(longAddr);
+		else {
+			// Check if memory at current PC has changed, e.g. because of self modifying code.
+			if (pcAddr64k) {
+				// Fetch one byte
+				const pcData = await Remote.readMemoryDump(pcAddr64k, 1);
+				// Compare
+				const prevData = this.memory.getValueAt(pcAddr64k);
+				if (pcData[0] != prevData) {
+					await this.fetch64kMemory();
 					disasmRequired = true;
 				}
 			}
 		}
 
+		// Check current pc
+		if (pcAddr64k) {
+			// Check if PC address needs to be added
+			const attr = this.memory.getAttributeAt(pcAddr64k);
+			if (!(attr & MemAttribute.CODE_FIRST)) {
+				// Is an unknown address, add it
+				this.longPcAddressesHistory.push(longCallStackAddresses[0]);
+				disasmRequired = true;
+			}
+		}
+
+		// Check if call stack addresses need to be added
+		for (let i = 1; i < len; i++) {
+			const longAddr = longCallStackAddresses[i];
+			const addr = longAddr & 0xFFFF;
+			const attr = this.memory.getAttributeAt(addr);
+			if (!(attr & MemAttribute.CODE_FIRST)) {
+				// Is an unknown address, add it
+				this.longCallStackAddresses.push(longAddr);
+				disasmRequired = true;
+			}
+		}
+
 		// Check if disassembly is required
 		if(disasmRequired) {
-			// TODO:
-			// Save breakpoints
-
-
 			// Get all addresses
 			const addrs64k = this.getOnlyPagedInAddresses(this.longPcAddressesHistory);
 			const csAddrs64k = this.getOnlyPagedInAddresses(this.longCallStackAddresses);
@@ -199,8 +212,6 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 
 			// Disassemble
 			Disassembly.disassemble();
-
-			// Restore breakpoints
 		}
 
 		return disasmRequired;
