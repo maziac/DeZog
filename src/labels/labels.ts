@@ -39,7 +39,7 @@ export interface ListFileLine extends SourceFileEntry {
  * But the name of the next label is also stored for debugging
  * purposes.
  */
-export interface NextLabelDistance {
+interface NextLabelDistance {
 	distance: number;		/// The distance in bytes to the next label
 	nextLabel: string;		/// The next label as string.
 }

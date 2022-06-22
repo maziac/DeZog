@@ -6,7 +6,7 @@ const MEM_DUMP_BOUNDARY = 16;
 
 
 /// One address range (block) the user wants to show.
-export interface MemBlock {
+interface MemBlock {
 	/// The address to start show dump values. (Note: the data is already shown
 	/// earlier at a mod 16 boundary.)
 	address:	number;

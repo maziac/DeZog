@@ -9,7 +9,6 @@ import {DiagnosticsHandler} from './diagnosticshandler';
 import {NumberType} from './disassembler/numbertype';
 import {AnalyzeDisassembler} from './disassembly/analyzedisassembler';
 import {Disassembly, DisassemblyClass} from './disassembly/disassembly';
-import {MemoryArray} from './disassembly/memoryarray';
 import {SimpleDisassembly} from './disassembly/simpledisassembly';
 import {GenericWatchpoint} from './genericwatchpoint';
 import {Labels} from './labels/labels';
@@ -134,6 +133,9 @@ export class DebugSessionClass extends DebugSession {
 
 	/// The file watchers used for auto reload of list files.
 	protected fileWatchers: FileWatcher[] = [];
+
+	/// The scopes (variables etc) are set in here.
+	protected scopes: Array<Scope>;
 
 
 	/**
@@ -520,7 +522,6 @@ export class DebugSessionClass extends DebugSession {
 	 * @param response
 	 * @param args
 	 */
-	protected scopes: Array<Scope>;
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 		try {
 			console.log('launchRequest');	// TODO: REMOVE
@@ -938,7 +939,7 @@ export class DebugSessionClass extends DebugSession {
 
 
 			// Update disasm.list
-			//if (disasmUpdated)
+			if (disasmUpdated)
 			{
 				// Update the disasm.list editor
 				const disasmTextDoc = await this.getOrCreateDisasmTextDoc();
@@ -975,111 +976,6 @@ export class DebugSessionClass extends DebugSession {
 		catch (e) {
 			console.log(e);
 		}
-
-		/*
-		const [sfrs, longFetchAddresses] = this.stackFramesForCallStack(callStack);
-
-		// Get BPs located in previous disassembly
-		const prevBpAddresses = this.getDisassemblyBreakpoints();
-
-		const disassembleMemory = (longFetchAddresses.length > 0) || (prevBpAddresses.length > 0);
-		//const disassembleMemory = false;
-		if (disassembleMemory)	// Disassembly only if PC or call stack is unknown
-		{
-			// Add addresses from PC history.
-			this.addAddressesIfPagedIn(longFetchAddresses, this.longPcAddressesHistory);
-
-			// Add breakpoint addresses
-			const longBpAddrs = prevBpAddresses.map(sbpAddr => sbpAddr.longAddress);
-			this.addAddressesIfPagedIn(longFetchAddresses, longBpAddrs);
-
-			// Get memory.
-			const fetchAddresses = longFetchAddresses.map(longAddr => (longAddr & 0xFFFF));
-			const memArray = await this.fetchMemoryForAddresses(fetchAddresses);
-
-			// Create text document
-			const disasmTextDoc = await this.getOrCreateDisasmTextDoc();
-			// Read previous text
-			const prevText = disasmTextDoc.getText();
-
-			// Remove BPs temporary
-			const removeBps = prevBpAddresses.map(sbpAddr => sbpAddr.sbp);
-			vscode.debug.removeBreakpoints(removeBps);
-
-			// Initialize disassembly
-			Disassembly.initWithCodeAddresses(fetchAddresses, memArray.ranges as Array<{address: number, data: Uint8Array}>);
-
-			// Disassemble
-			Disassembly.disassemble();
-			const text = Disassembly.getDisassemblyText();
-
-			// TODO: remove these files after testing phase (if warning 'Disassembly text wrong!!!' does not show up anymore)
-			const fnamep = Utility.getRelTmpFilePath('disasm_real_p.list');
-			const fname = Utility.getRelTmpFilePath('disasm_real.list');
-			const fnamevp = Utility.getRelTmpFilePath('disasm_vscode_p.list');
-			try {
-				fs.copyFileSync(fname, fnamep);
-			}
-			catch {}
-			fs.writeFileSync(fname, text);
-			fs.writeFileSync(fnamevp, prevText);
-
-			// Check for change in the disassembly text
-			const opt = {
-				ignoreWhitespace: false,
-				newlineIsToken: true
-			};
-			const diffLines = Diff.diffLines(prevText, text, opt);
-
-			// Apply diffs to editor
-			await this.applyDiffToVscodeEditor(diffLines, disasmTextDoc);
-
-			// Check for error // TODO: REMOVE once it's clear that everything is working fine
-			const currentText = disasmTextDoc.getText();
-			const dText = Disassembly.getDisassemblyText();
-			if (currentText != dText) {
-				// Error
-				this.showWarning('Disassembly text wrong!!!');
-			}
-
-			// Check all breakpoints
-			this.disassemblyReassignBreakpoints(prevBpAddresses);
-
-			// If disassembly text editor is open, then show decorations and update break reason
-			const docEditors = this.getEditorsForTextDoc(disasmTextDoc);
-			for (const editor of docEditors) {
-				Decoration.setDisasmCoverageDecoration(editor);
-			}
-			Decoration.showBreak();	// update
-		}
-
-		// Check if decoration need to be changed
-		if (disassembleMemory != this.disassemblyUpToDate) {
-			this.disassemblyUpToDate = disassembleMemory;
-			// Change decoration
-			if (disassembleMemory)
-				Decoration.clearDisasmOutdated();
-			else
-				Decoration.showDisasmOutdated();
-		}
-
-		// Add PC to history (independent of disassembly)
-		const pcLong = Remote.getPCLong();
-		//console.log('pcLong=', pcLong);
-		// If address is already in the list move it to the top.
-		const k = this.longPcAddressesHistory.indexOf(pcLong);
-		if (k >= 0) {
-			this.longPcAddressesHistory.splice(k, 1);
-		}
-		else {
-			const histLength = this.longPcAddressesHistory.length;
-			// Otherwise add it and remove the last one
-			if (histLength >= 20)
-				this.longPcAddressesHistory.pop();
-		}
-		this.longPcAddressesHistory.unshift(pcLong);
-*/
-
 
 		// Get lines for addresses for the disassembly
 		this.addDisasmSourceInfo(sfrs);
@@ -1161,50 +1057,6 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Adds addresses of the PC history if they are currently paged in.
-	 * @param target This list may already contain entries. New entries are added.
-	 * Addresses are in long format.
-	 * @param src The source array with long addresses. Only addresses are added to target that
-	 * are currently paged in.
-	 */
-	protected addAddressesIfPagedIn(target: number[], src: number[]) {
-		const slots = Z80Registers.getSlots();
-		for (const longAddr of src) {
-			// Create 64k address
-			const addr64k = longAddr & 0xFFFF;
-			// Check if longAddr is currently paged in
-			const longCmpAddress = Z80Registers.createLongAddress(addr64k, slots);
-			// Compare
-			if (longAddr == longCmpAddress) {
-				// Is paged in
-				target.push(longAddr);
-			}
-		}
-	}
-
-
-
-	/**
-	 * Fetches memory from the remote for the given address list.
-	 * The memory area is concatenated before and for each address
-	 * at least 100 bytes are fetched.
-	 * @param addresses A list of (64k) addresses to fetch (+100 bytes).
-	 * @returns A MemoryArray with ranges and fetched data.
-	 */
-	protected async fetchMemoryForAddresses(addresses: number[]): Promise<MemoryArray> {
-		const memArray = new MemoryArray();
-		memArray.addRangesWithSize(addresses, 100);	// Assume 100 bytes each
-
-		// Fetch memory
-		for (const range of memArray.ranges) {
-			range.data = await Remote.readMemoryDump(range.address, range.size);
-		}
-
-		return memArray;
-	}
-
-
-	/**
 	 * Opens the text document for disasm.list.
 	 * If it does not exist, it is created.
 	 * @return The text document associated with disasm.list.
@@ -1244,60 +1096,6 @@ export class DebugSessionClass extends DebugSession {
 			}
 		}
 		return docEditors;
-	}
-
-
-	/**
-	 * Apply diff to previous disassembly also to the vscode editor.
-	 * @param diffLines The diff as it is returned by js-diff.
-	 * @param doc The vscode textEditor to update.
-	 */
-	// TODO: REMOVE
-	protected async applyDiffToVscodeEditor(diffLines, doc: vscode.TextDocument) {
-		let lineNr = 0;
-		let clmn = 0;
-		let edited = false;
-		const uri = doc.uri;
-		// Note: For combining in one edit I need to take into account to use the original line numbers and column numbers.
-		// Therefore the lineNr is increased on 'removed' and not on 'insert'.
-		const edit = new vscode.WorkspaceEdit();
-		for (const diff of diffLines) {
-			if (diff.added) {
-				// Added
-				edit.insert(uri, new vscode.Position(lineNr, clmn), diff.value);
-				edited = true;
-			}
-			else if (diff.removed) {
-				// Removed
-				const count = Utility.countOccurrencesOf('\n', diff.value);
-				const prevClmn = clmn;
-				const lClmn = diff.value.lastIndexOf('\n');
-				if (lClmn < 0)
-					clmn += diff.value.length;
-				else
-					clmn = diff.value.length - lClmn - 1;
-				edit.delete(uri, new vscode.Range(lineNr, prevClmn, lineNr + count, clmn));
-				lineNr += count;
-				edited = true;
-			}
-			else {
-				// Unchanged
-				const count = Utility.countOccurrencesOf('\n', diff.value);
-				lineNr += count;
-				const lClmn = diff.value.lastIndexOf('\n');
-				if (lClmn < 0)
-					clmn += diff.value.length;
-				else
-					clmn = diff.value.length - lClmn - 1;
-			}
-		}
-
-		// Apply changes
-		if (edited) {
-			await vscode.workspace.applyEdit(edit);
-			// Save after edit (to be able to set breakpoints)
-			await doc.save();
-		}
 	}
 
 
@@ -4170,4 +3968,3 @@ E.g. use "-help -view" to put the help text in an own view.
 
 
 DebugSessionClass.run(DebugSessionClass);
-
