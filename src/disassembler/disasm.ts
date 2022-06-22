@@ -78,6 +78,7 @@ export class Disassembler extends EventEmitter {
 	/// Choose how many lines should separate code blocks in the disassembly listing
 	public numberOfLinesBetweenBlocks = 2;
 
+	// TODO: Many of the below have 0 references, REMOVE?
 	/// Choose if references should be added to SUBs
 	public addReferencesToSubroutines = true;
 
@@ -1795,6 +1796,8 @@ export class Disassembler extends EventEmitter {
 		//let dataSelfModifyingIndex = 1;	// SELF_MOD
 
 		// Loop through all labels (labels is sorted by address)
+		let labelIndex = 1;
+		let loopIndex = 1;
 		for (const [address, label] of this.labels) {
 			// Check if label was already set (e.g. from commandline)
 			if (label.name)
@@ -1838,6 +1841,22 @@ export class Disassembler extends EventEmitter {
 						label.name = this.labelDataLblPrefix + Format.getHexString(address, 4);
 						// Next
 						//dataLblIndex++;
+					}
+					break;
+
+				// These are odd cases but it can happen that we have a local label without parent.
+				case NumberType.CODE_LOCAL_LBL:
+				case NumberType.CODE_LOCAL_LOOP:
+					const parentLabel = this.addressParents[address];
+					if (!parentLabel) {
+						if (type == NumberType.CODE_LOCAL_LBL) {
+							label.name = this.labelLocalLabelPrefix + labelIndex;
+							labelIndex++;
+						}
+						else {
+							label.name = this.labelLoopPrefix + loopIndex;
+							loopIndex++;
+						}
 					}
 					break;
 			}

@@ -1,3 +1,5 @@
+import { MemAttribute } from './../disassembler/memory';
+import { Remote } from './../remotes/remotebase';
 import {Format} from "../disassembler/format";
 import {Labels} from "../labels/labels";
 import {Utility} from '../misc/utility';
@@ -13,6 +15,20 @@ const TmpDasmFileName = 'disasm.list';
 /**
  * This class encapsulates a few disassembling functions.
  * Used in DeZog when no file is associated with code.
+ *
+ * The disassembly works on the complete 64k memory space.
+ * At start the 64k memory is fetched from the remote and disassembled.
+ * A new fetch is done if either the slots change or if the user presses the refresh button.
+ * A new disassembly is done if the memory is refreshed or if there are new addresses to disassemble.
+ * If the disassembly is not recent the refresh button is enabled for indication.
+ *
+ * The last PC values are stored because these values are known to be code locations and are used
+ * for the disassembly.
+ * A special handling is done for the callstack: The caller of the current subroutine cannot be
+ * determined to 100%.
+ * I.e. the stack might be misinterpreted.
+ * Therefore the stack addresses are stored in a different array. This array is cleared when the refresh button is pressed.
+ * I.e. if something looks strange the user can reload the disassembly.
  */
 export class DisassemblyClass extends AnalyzeDisassembler {
 
@@ -40,7 +56,14 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 
 
 	// The current slots in use.
-	protected slots: number[];
+	protected slots: number[] = [];
+
+
+	/// An array of last PC addresses (long).
+	protected longPcAddressesHistory: number[] = [];	// TODO: change to Set
+
+	/// An array of (long) addresses from the callstack. The addresses might overlap with the longPcAddressesHistory array.
+	protected longCallStackAddresses: number[] = [];	// TODO: change to Set
 
 
 	/**
@@ -73,12 +96,24 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 
 
 	/**
+	 * Fetches the complete 64k memory from the Remote.
+	 *  TODO: Could maybe be optimized to fetch only changed slots.
+	 */
+	protected async fetch64kMemory(): Promise<void> {
+		// Fetch memory
+		const mem = await Remote.readMemoryDump(0, 0x10000);
+		this.memory.clearAttributes();
+		this.setMemory(0, mem);
+	}
+
+
+	/**
 	 * Sets the slots array.
 	 * Used to set the slots that are active during disassembly.
 	 * Used to compare if the slots (the banking) has changed.
 	 * @param slots The new slot configuration.
 	 */
-	public setSlots(slots: number[]): void {
+	protected setSlots(slots: number[]): void {
 		this.slots = slots;
 	}
 
@@ -88,15 +123,111 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 	 * @param slots The other slot configuration.
 	 * @returns true if the slots are different.
 	 */
-	public slotsChanged(slots: number[]): boolean {
+	protected slotsChanged(slots: number[]): boolean {
 		const len = this.slots.length;
 		if (len != slots.length)
-			return false;
+			return true;
 		for (let i = 0; i < len; i++) {
 			if (this.slots[i] != slots[i])
-				return false;
+				return true;
 		}
-		return true;
+		// Everything is the same
+		return false;
+	}
+
+
+	/**
+	 * Called when a stack trace request is done. Ie. when a new PC with call stack
+	 * is available.
+	 * The first call stack address is the current PC.
+	 * IF the slots have changed beforehand new memory is fetched from the Remote.
+	 * @param longCallStackAddresses The call stack.
+	 * @returns true if a new disassembly was done.
+	 */
+	public async setNewAddresses(longCallStackAddresses: number[]): Promise<boolean> {
+		let disasmRequired = false;
+
+		// Check if slots changed
+		const slots = Z80Registers.getSlots();
+		if (this.slotsChanged(slots)) {
+			this.setSlots(slots);
+			await this.fetch64kMemory();
+			disasmRequired = true;
+		}
+
+		// Check if addresses passed
+		const len = longCallStackAddresses.length;
+		if (len > 0) {
+			const longPcAddr = longCallStackAddresses[0];
+			// Note: the current PC address (and the call stack addresses) are for sure paged in, i.e. the conversion to a bank is not necessary.
+			const pcAddr = longPcAddr & 0xFFFF;
+			// Check if PC address needs to be added
+			const attr = this.memory.getAttributeAt(pcAddr);
+			if (!(attr & MemAttribute.CODE_FIRST)) {
+				// Is an unknown address, add it
+				this.longPcAddressesHistory.push(longPcAddr);
+				disasmRequired = true;
+			}
+
+			// Check if call stack addresses need to be added
+			for (let i = 1; i < len; i++) {
+				const longAddr = longCallStackAddresses[i];
+				const addr = longAddr & 0xFFFF;
+				const attr = this.memory.getAttributeAt(addr);
+				if (!(attr & MemAttribute.CODE_FIRST)) {
+					// Is an unknown address, add it
+					this.longCallStackAddresses.push(longAddr);
+					disasmRequired = true;
+				}
+			}
+		}
+
+		// Check if disassembly is required
+		if(disasmRequired) {
+			// TODO:
+			// Save breakpoints
+
+
+			// Get all addresses
+			const addrs64k = this.getOnlyPagedInAddresses(this.longPcAddressesHistory);
+			const csAddrs64k = this.getOnlyPagedInAddresses(this.longCallStackAddresses);
+			addrs64k.push(...csAddrs64k);
+
+			// Set addresses for the memory
+			this.setAddressQueue(addrs64k);
+			this.setStartAddressesWithoutLabel(addrs64k);
+
+			// Disassemble
+			Disassembly.disassemble();
+
+			// Restore breakpoints
+		}
+
+		return disasmRequired;
+	}
+
+
+
+	/**
+	 * Adds addresses of the PC history if they are currently paged in.
+	 * @param src The source array with long addresses. Only addresses are added to target that
+	 * are currently paged in.
+	 * @returns An array with 64k addresses.
+	 */
+	protected getOnlyPagedInAddresses(src: number[]): number[] {
+		const result: number[] = [];
+		for (const longAddr of src) {
+			// Create 64k address
+			const addr64k = longAddr & 0xFFFF;
+			// Check if longAddr is currently paged in
+			const longCmpAddress = Z80Registers.createLongAddress(addr64k, this.slots);
+			// Compare
+			if (longAddr == longCmpAddress) {
+				// Is paged in
+				result.push(longAddr & 0xFFFF);
+			}
+		}
+		return result;
 	}
 
 }

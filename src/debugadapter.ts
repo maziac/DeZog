@@ -938,6 +938,41 @@ export class DebugSessionClass extends DebugSession {
 
 		// Go through complete call stack and get the sources.
 		// If no source exists the stack frame will have 'src' as undefined.
+		const [sfrs, longCallstackAddresses] = this.stackFramesForCallStack(callStack);
+
+//  TODO: setDisasmCoverageDecoration nicht vergessen
+
+		try {
+			// Do a new disassembly if necessary.
+			const disasmUpdated = await Disassembly.setNewAddresses(longCallstackAddresses);
+
+
+			// Update disasm.list
+			if (disasmUpdated) {
+				// Update the disasm.list editor
+				const disasmTextDoc = await this.getOrCreateDisasmTextDoc();
+				const prevLineCount = disasmTextDoc.lineCount;
+				const newText = Disassembly.getDisassemblyText();
+
+
+				// Add new disassembly at the end
+				const edit = new vscode.WorkspaceEdit();
+				const uri = disasmTextDoc.uri;
+				edit.insert(uri, new vscode.Position(prevLineCount, 0), newText);
+				// Remove old text
+				edit.delete(uri, new vscode.Range(0, 0, prevLineCount, 0));
+
+				// Apply changes
+				await vscode.workspace.applyEdit(edit);
+				// Save after edit (to be able to set breakpoints)
+				await disasmTextDoc.save();
+			}
+		}
+		catch (e) {
+			console.log(e);
+		}
+
+		/*
 		const [sfrs, longFetchAddresses] = this.stackFramesForCallStack(callStack);
 
 		// Get BPs located in previous disassembly
@@ -999,13 +1034,6 @@ export class DebugSessionClass extends DebugSession {
 			const currentText = disasmTextDoc.getText();
 			const dText = Disassembly.getDisassemblyText();
 			if (currentText != dText) {
-				/*
-				const len = 20;
-				const cText = currentText.substring(currentText.length - len);
-				const ttext = text.substring(text.length - len);
-				const cArr = currentText.split('\n');
-				const tArr = text.split('\n');
-				*/
 				// Error
 				this.showWarning('Disassembly text wrong!!!');
 			}
@@ -1046,6 +1074,7 @@ export class DebugSessionClass extends DebugSession {
 				this.longPcAddressesHistory.pop();
 		}
 		this.longPcAddressesHistory.unshift(pcLong);
+*/
 
 
 		// Get lines for addresses for the disassembly
@@ -1219,6 +1248,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param diffLines The diff as it is returned by js-diff.
 	 * @param doc The vscode textEditor to update.
 	 */
+	// TODO: REMOVE
 	protected async applyDiffToVscodeEditor(diffLines, doc: vscode.TextDocument) {
 		let lineNr = 0;
 		let clmn = 0;
