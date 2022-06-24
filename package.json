@@ -153,6 +153,16 @@
 				"id": "disassembly"
 			}
 		],
+		"grammars": [
+			{
+				"language": "disassembly",
+				"scopeName": "source.asm.disassembly",
+				"path": "./grammar/asm_disassembly.json",
+				"injectTo": [
+					"source.asm"
+				]
+			}
+		],
 		"breakpoints": [
 			{
 				"language": "asm-collection"
