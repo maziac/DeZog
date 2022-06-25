@@ -148,27 +148,11 @@
 				"aliases": [
 					"Assembler file"
 				]
-			},
-			{
-				"id": "disassembly"
-			}
-		],
-		"grammars": [
-			{
-				"language": "disassembly",
-				"scopeName": "source.asm.disassembly",
-				"path": "./grammar/asm_disassembly.json",
-				"injectTo": [
-					"source.asm"
-				]
 			}
 		],
 		"breakpoints": [
 			{
 				"language": "asm-collection"
-			},
-			{
-				"language": "disassembly"
 			},
 			{
 				"language": "z80-macroasm"
@@ -251,7 +235,7 @@
 				"command": "dezog.disassembly.refresh",
 				"title": "Refresh disassembly",
 				"category": "DeZog",
-				"enablement": "dezog:disassembler:refreshEnabled",
+				"enablement": "dezog.disassembler.refreshEnabled",
 				"icon": "$(refresh)"
 			}
 		],
@@ -307,24 +291,24 @@
 			],
 			"editor/context": [
 				{
-					"when": "resourceLangId == asm-collection && inDebugMode || resourceLangId == disassembly && inDebugMode",
+					"when": "inDebugMode && resourceLangId == asm-collection",
 					"command": "dezog.movePCtoCursor",
 					"group": "debug"
 				},
 				{
-					"when": "resourceLangId == asm-collection && inDebugMode || resourceLangId == disassembly && inDebugMode",
+					"when": "inDebugMode && resourceLangId == asm-collection",
 					"submenu": "dezog.disassemblyAtCursor",
 					"group": "debug"
 				},
 				{
-					"when": "resourceLangId == asm-collection && inDebugMode || resourceLangId == disassembly && inDebugMode",
+					"when": "inDebugMode && resourceLangId == asm-collection",
 					"submenu": "dezog.analyzeAtCursor",
 					"group": "debug"
 				}
 			],
 			"editor/title": [
 				{
-					"when": "resourceLangId == disassembly && inDebugMode",
+					"when": "inDebugMode && resourcePath in dezog.disassembler.disasmPath",
 					"command": "dezog.disassembly.refresh",
 					"group": "navigation"
 				}

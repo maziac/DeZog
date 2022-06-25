@@ -972,7 +972,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Enable/disable the refresh button.
-			vscode.commands.executeCommand('setContext', 'dezog:disassembler:refreshEnabled', !disasmUpdated);
+			vscode.commands.executeCommand('setContext', 'dezog.disassembler.refreshEnabled', !disasmUpdated);
 		}
 		catch (e) {
 			console.log(e);
@@ -1076,10 +1076,15 @@ export class DebugSessionClass extends DebugSession {
 			editCreate.createFile(uri);
 			await vscode.workspace.applyEdit(editCreate);
 			disasmTextDoc = await vscode.workspace.openTextDocument(uri);
+			// Make the path known, so that the refresh button is shown (see package.json)
 		}
 		Utility.assert(disasmTextDoc);
 		// Set the right language ID, so that editor title menu buttons can be assigned
-		vscode.languages.setTextDocumentLanguage(disasmTextDoc, 'disassembly');
+//		vscode.languages.setTextDocumentLanguage(disasmTextDoc, 'disassembly');
+		// Set the path, so that editor title menu buttons can be assigned
+		// Note: For some reason the when clause "resourcePath == dezog.disassembler.disasmPath" in package.json does not work.
+		// But instead "resourcePath in dezog.disassembler.disasmPath" does work.
+		vscode.commands.executeCommand('setContext', 'dezog.disassembler.disasmPath', [absFilePath]);
 		return disasmTextDoc;
 	}
 
