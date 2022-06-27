@@ -82,6 +82,8 @@ DeZog tries it's best to smartly analyze the code and disassemble the complete c
 
 It starts from the first PC address it encounters. If all code is reachable from there DeZog will disassemble the complete code.
 
+![](images/ReverseEngineeringUsage/disassembly.jpg)
+
 But there are a few caveats:
 - Interrupts: The interrupt address is not known at the beginning. I.e. as long as you do not break into the interrupt DeZog will not be able to disassemble the code.
 - Same for ```JP (HL)```. The jump address is only available during run time. Therefore DeZog cannot disassemble this prior to execution.
@@ -91,6 +93,10 @@ To keep the disassembly up-to-date most of the time DeZog decides to automatical
 - The slots (i.e. the current banking/paging) changes.
 - The memory contents at the current PC has changed.
 - The PC is at a former unknown address (e.g. at an interrupt).
+
+Anyhow: If in doubt that the disassembly is recent you can also compare it with the (brute force) disassembly in the VARIABLE pane, e.g.:
+![](images/ReverseEngineeringUsage/variables_disassembly.jpg)
+which is **always** up-to-date.
 
 
 # Breakpoints
