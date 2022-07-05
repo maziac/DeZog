@@ -406,15 +406,6 @@ export class DebugSessionClass extends DebugSession {
 			// Remove BPs temporary
 			const removeBps = disasmBps.map(sbpAddr => sbpAddr.sbp);
 			vscode.debug.removeBreakpoints(removeBps);
-			/*
-			// Remove disassembly text editor. vscode does not support closing directly, thus this hack:
-			if (this.disasmTextDoc) {	// TODO: Maybe I should leave it open.
-				vscode.window.showTextDocument(this.disasmTextDoc.uri, {preview: true, preserveFocus: false})
-					.then(() => {
-						return vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-					});
-			}
-			*/
 
 			// Clear all decorations
 			if (this.state == DbgAdapterState.UNITTEST) {
@@ -3173,7 +3164,7 @@ E.g. use "-help -view" to put the help text in an own view.
 					const text = disassembler.getDisassemblyText();
 					return text;
 				}
-				break;
+				//break;
 		}
 
 		// Error

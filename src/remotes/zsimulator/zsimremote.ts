@@ -971,8 +971,8 @@ export class ZSimRemote extends DzrpRemote {
 			// Bank numbers need ot be doubled
 			for (const memBank of snaFile.memBanks) {
 				const nextBank = 2 * memBank.bank;
-				this.memory.writeMemoryData(nextBank, 0, memBank.data, 0, memBank.data.length);
-				this.memory.writeMemoryData(nextBank+1, 0, memBank.data, 0x2000, memBank.data.length);
+				this.memory.writeMemoryData(nextBank, 0, memBank.data, 0, 0x2000);
+				this.memory.writeMemoryData(nextBank+1, 0, memBank.data, 0x2000, 0x2000);
 			}
 		}
 		else {

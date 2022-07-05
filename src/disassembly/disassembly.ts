@@ -98,7 +98,7 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 
 	/**
 	 * Fetches the complete 64k memory from the Remote.
-	 *  TODO: Could maybe be optimized to fetch only changed slots.
+	 * Note: Could maybe be optimized to fetch only changed slots.
 	 */
 	protected async fetch64kMemory(): Promise<void> {
 		// Fetch memory

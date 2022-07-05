@@ -78,7 +78,7 @@ export class Disassembler extends EventEmitter {
 	/// Choose how many lines should separate code blocks in the disassembly listing
 	public numberOfLinesBetweenBlocks = 2;
 
-	// TODO: Many of the below have 0 references, REMOVE?
+/* Not used:
 	/// Choose if references should be added to SUBs
 	public addReferencesToSubroutines = true;
 
@@ -90,6 +90,7 @@ export class Disassembler extends EventEmitter {
 
 	/// Choose if references should be added to DATA labels
 	public addReferencesToDataLabels = true;
+*/
 
 	/// Choose to add the opcode bytes also, e.g. "CB 01" for "RLC C"
 	public addOpcodeBytes = true;

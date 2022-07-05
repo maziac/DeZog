@@ -37,7 +37,7 @@ export class ZxUlaScreen implements Serializable {
 
 			// Use ZX128K ULA Bank switching.
 			this.currentUlaBank = this.normalUlaBank;
-			ports.registerSpecificOutPortFunction(0x7FFD, this.zx128UlaScreenSwitch.bind(this));	// TODO: use generic function. In fact this is not a specific address but a bit mask for the port.
+			ports.registerGenericOutPortFunction(this.zx128UlaScreenSwitch.bind(this));
 		}
 		else if (bankCount > 1) {
 			// ZX16/48: use bank 1
@@ -62,9 +62,12 @@ export class ZxUlaScreen implements Serializable {
 	 *   bit 5: If set, memory paging will be disabled and further output to this port will be ignored until the computer is reset.
 	 */
 	public zx128UlaScreenSwitch(port: number, value: number) {
-		// bit 3: Select normal(0) or shadow(1) screen to be displayed.
-		const useShadowBank = ((value & 0b01000) != 0);
-		this.currentUlaBank = (useShadowBank) ? this.shadowUlaBank : this.normalUlaBank;
+		// Check bit 1 and bit 15 being 0 (partially decoding)
+		if ((port & 0b1000_0000_0000_0010) == 0) {
+			// bit 3: Select normal(0) or shadow(1) screen to be displayed.
+			const useShadowBank = ((value & 0b01000) != 0);
+			this.currentUlaBank = (useShadowBank) ? this.shadowUlaBank : this.normalUlaBank;
+		}
 	}
 
 

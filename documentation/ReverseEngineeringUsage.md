@@ -72,7 +72,7 @@ The rest of the disassembly will also use the new labels.
 
 Notes:
 - The re-load of the list file takes place while the debug session is still active. I.e. you can simply continue with the debugging.
-- Instead of reloading manually it is alos possible to add ```"reloadOnSave": true```to "revEng". In this case the labels will be reloaded automatically on each save of "pacman.list".
+- Instead of reloading manually it is also possible to add ```"reloadOnSave": true```to "revEng". In this case the labels will be reloaded automatically on each save of "pacman.list".
 
 
 # Disassembly
@@ -131,7 +131,7 @@ Please note that you can add temporary watchpoints also via the debug command "-
 The inclusion of the [z80dismblr](https://github.com/maziac/z80dismblr) makes it possible to use some of it's analysing features, namely flowcharts, call graphs and smart disassembly.
 
 For all of these features:
-Start Dezog, place the cursor at the source code at some instruction and do a right click for "Analze at Cursor":
+Start Dezog, place the cursor at the source code at some instruction and do a right click for "Analyze at Cursor":
 ![](images/ReverseEngineeringUsage/analyze_at_cursor.jpg)
 
 The examples below use the [z80-sample-program](https://github.com/maziac/z80-sample-program).
@@ -195,7 +195,7 @@ editor.revealIfOpen
 ![](images/ReverseEngineeringUsage/analyze_reveal_if_open.jpg)
 
 
-## Smart Disassembly
+## Smart Disassembly # TODO: REMOVE feature.
 
 This makes sense only for unknown code. Compared to the "normal" disassembly that is done on object code that has o association with a source (asm) file the smart disassembly will dig into each found subroutine and disassemble that as well.
 I.e. the smart disassembly analyzes the opcodes and follows all branches.

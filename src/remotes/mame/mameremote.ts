@@ -433,7 +433,7 @@ export class MameRemote extends DzrpQeuedRemote {
 			// Put into queue
 			const entry = this.putIntoQueue(buffer, this.cmdRespTimeoutTime, resolve, reject);
 			entry.customData = {
-				packet,	// TODO: Remove. Only used for debugging.
+				packet,	// Note: packet is used only for debugging.
 				noReply: (packetData == 'c')
 			};
 
