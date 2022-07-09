@@ -16,7 +16,7 @@ export class DisLabel {
 	public type: NumberType;
 
 	// The associated 64k address.
-	public address: number;	// Not used: but helpful when debugging.
+	public address: number;
 
 	/// The name of the label, e.g. "SUB001" or ".sub001_loop5"
 	public name: string;

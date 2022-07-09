@@ -179,7 +179,7 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 		}
 		else {
 			// Check if memory at current PC has changed, e.g. because of self modifying code.
-			if (pcAddr64k) {
+			if (pcAddr64k != undefined) {
 				// Fetch one byte
 				const pcData = await Remote.readMemoryDump(pcAddr64k, 1);
 				// Compare
@@ -192,7 +192,7 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 		}
 
 		// Check current pc
-		if (pcAddr64k) {
+		if (pcAddr64k != undefined) {
 			// Check if PC address needs to be added
 			const attr = this.memory.getAttributeAt(pcAddr64k);
 			if (!(attr & MemAttribute.CODE_FIRST)) {
