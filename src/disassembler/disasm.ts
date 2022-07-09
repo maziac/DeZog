@@ -1325,45 +1325,51 @@ export class Disassembler extends EventEmitter {
 	 * all addresses of the subroutine.
 	 */
 	protected getSubroutineAddresses(address: number, addrsArray: Array<number>) {
-		let opcodeClone;
+		let flags: OpcodeFlag;
 
 		do {
-
-
-			// Check if memory exists
 			const memAttr = this.memory.getAttributeAt(address);
+			// Check if already analyzed
+			if (memAttr & MemAttribute.FLOW_ANALYZED) {
+				// Was already analyzed, skip:
+				break;
+			}
+			// Check if memory exists
 			if (!(memAttr & MemAttribute.ASSIGNED)) {
-				DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');	// NOSONAR
+				if (address < 0x10000) {
+					DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');	// NOSONAR
+				}
 				break;
 			}
 			// Unfortunately it needs to be checked if address has been checked already
 			if (addrsArray.indexOf(address) >= 0) {
-				DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');	// NOSONAR
+				//	DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');	// NOSONAR
 				break;	// already checked
 			}
 
-			// check opcode
+			// Check opcode
 			const opcode = Opcode.getOpcodeAt(this.memory, address);
-			opcodeClone = {...opcode};	// Required otherwise opcode is overwritten on next call to 'getOpcodeAt' if it's the same opcode.
+			this.memory.addAttributeAt(address, opcode.length, MemAttribute.FLOW_ANALYZED);
 
 			// Add to array
 			addrsArray.push(address);
 
+			// Proceed to next address
+			address += opcode.length;
+
+			// Remember flags
+			flags = opcode.flags;
+
 			// And maybe branch address
-			if (opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
-				if (!(opcodeClone.flags & OpcodeFlag.CALL)) {
-					const branchAddress = opcodeClone.value;
-					DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.');	// NOSONAR
-					DelayedLog.pushTab();
-					this.getSubroutineAddresses(branchAddress, addrsArray);
-					DelayedLog.popTab();
-				}
+			if (flags & OpcodeFlag.BRANCH_ADDRESS && !(flags & OpcodeFlag.CALL)) {
+				const branchAddress = opcode.value;
+				//DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.');	// NOSONAR
+				//DelayedLog.pushTab();
+				this.getSubroutineAddresses(branchAddress, addrsArray);	// Note: this changes opcode. Don't use anymore.
+				//DelayedLog.popTab();
 			}
 
-			// Now check next address
-			address += opcodeClone.length;
-
-		} while (!(opcodeClone.flags & OpcodeFlag.STOP));
+		} while (!(flags & OpcodeFlag.STOP));
 	}
 
 

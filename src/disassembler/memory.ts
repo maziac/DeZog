@@ -17,8 +17,11 @@ export enum MemAttribute {
 	/// All bytes of an opcode will get this attribute.
 	//CODE_STOP = 0x08,
 	/// Data area
-	DATA = 0x10
+	DATA = 0x10,
+	/// Flow has been already analyzed
+	FLOW_ANALYZED = 0x20,
 }
+
 
 /**
  * Class to hold and access the memory.
