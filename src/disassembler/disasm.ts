@@ -467,7 +467,7 @@ export class Disassembler extends EventEmitter {
 		}
 
 		// Create a new label
-		label = new DisLabel(type);
+		label = new DisLabel(type, address);
 		this.labels.set(address, label);
 		(label.name as any) = name;	// allow undefined
 		// Check if out of range
@@ -501,7 +501,7 @@ export class Disassembler extends EventEmitter {
 		let label = this.labels.get(address);
 		if (!label) {
 			// Create new label
-			label = new DisLabel(NumberType.CODE_LBL);
+			label = new DisLabel(NumberType.CODE_LBL, address);
 			this.labels.set(address, label);
 		}
 
@@ -773,7 +773,7 @@ export class Disassembler extends EventEmitter {
 		}
 		else {
 			// Label does not exist yet, just add it
-			label = new DisLabel(type);
+			label = new DisLabel(type, address);
 			this.labels.set(address, label);
 			// Check if out of range
 			if (!(attr & MemAttribute.ASSIGNED))
@@ -1845,11 +1845,21 @@ export class Disassembler extends EventEmitter {
 					}
 					break;
 
-				// These are odd cases but it can happen that we have a local label without parent.
 				case NumberType.CODE_LOCAL_LBL:
 				case NumberType.CODE_LOCAL_LOOP:
-					const parentLabel = this.addressParents[address];
-					if (!parentLabel) {
+					const parentLabel: DisLabel = this.addressParents[address];
+					if (parentLabel) {
+						/* TODO: REMOVE
+						// Make sure that the local label is really in reach.
+						// E.g. it could be before the parent label.
+						const parAddress = parentLabel.address; if (parAddress > address) {
+							// Change to non-local label.
+							label.type = NumberType.CODE_LBL;
+						}
+						*/
+					}
+					else {
+						// These are odd cases but it can happen that we have a local label without parent.
 						if (type == NumberType.CODE_LOCAL_LBL) {
 							label.name = this.labelLocalLabelPrefix + labelIndex;
 							labelIndex++;
@@ -2481,7 +2491,7 @@ export class Disassembler extends EventEmitter {
 
 	/**
 	 * Reduces a local label. E.g.
-	 * "SUB1.label" will become ".label" if this.currentMainLabel = "SUB1".
+	 * "SUB1.label" will become ".label" if parent label is "SUB1".
 	 * @param address The address for the label.
 	 * @returns The label name. E.g. "SUB1" or ".label" or "SUB1.label".
 	 */
@@ -2492,10 +2502,28 @@ export class Disassembler extends EventEmitter {
 			labelName = label.name;
 			const parentLabel = this.addressParents[address];
 			if (parentLabel) {
-				const parentName = parentLabel.name;
-				if (labelName.startsWith(parentName + '.')) {
-					const len = parentName.length;
-					labelName = labelName.substring(len);
+				// Check that there is no other (main) label in between
+				let belongs;
+				if (address < parentLabel.address) {
+					belongs = false;
+				}
+				else {
+					// Check until address is reached, that there is no other (main) label
+					belongs = true;
+					for (let addr = parentLabel.address + 1; addr < address; addr++) {
+						const lbl = this.addressParents[addr];
+						if (lbl && lbl != parentLabel) {
+							belongs = false;
+							break;
+						}
+					}
+				}
+				if (belongs) {
+					const parentName = parentLabel.name;
+					if (labelName.startsWith(parentName + '.')) {
+						const len = parentName.length;
+						labelName = labelName.substring(len);
+					}
 				}
 			}
 		}

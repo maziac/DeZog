@@ -768,7 +768,8 @@ export class RemoteBase extends EventEmitter {
 		// calculate the depth of the call stack
 		const tos = this.topOfStack;
 		let depth = tos - sp; // 2 bytes per word
-		if (depth > 2 * RemoteBase.MAX_STACK_ITEMS) depth = 2 * RemoteBase.MAX_STACK_ITEMS;
+		if (depth > 2 * RemoteBase.MAX_STACK_ITEMS)
+			depth = 2 * RemoteBase.MAX_STACK_ITEMS;
 
 		// Check if callstack need to be called
 		const zStack: Array<string> = [];

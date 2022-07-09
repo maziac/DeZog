@@ -6,7 +6,7 @@ import {NumberType, getNumberTypeAsString} from './numbertype';
  * Class for the labels used for disassembly.
  */
 export class DisLabel {
-	// A static counter to assign an id tp the labels.
+	// A static counter to assign an id to the labels.
 	public static id = 0;
 
 	/// The id of the label. Starts at 1.
@@ -14,6 +14,9 @@ export class DisLabel {
 
 	/// The type of the label, e.g. if it is data or program code.
 	public type: NumberType;
+
+	// The associated 64k address.
+	public address: number;	// Not used: but helpful when debugging.
 
 	/// The name of the label, e.g. "SUB001" or ".sub001_loop5"
 	public name: string;
@@ -42,11 +45,14 @@ export class DisLabel {
 
 	/**
 	 * Constructor: Initializes memory.
+	 * @param type E.g. CODE_LOCAL_LBL
+	 * @param address The associated 64k address.
 	 */
-	constructor(type: NumberType) {
+	constructor(type: NumberType, address: number) {
 		this.type = type;
 		DisLabel.id++;
 		this.id = DisLabel.id;
+		this.address = address;
 	}
 
 
