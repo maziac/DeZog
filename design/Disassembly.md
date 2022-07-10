@@ -85,7 +85,7 @@ Otherwise these would show up as error (not associated breakpoints), and would b
 The disassembly list file requires a button. Therefore it requires to have an own language ID ("disassembly").
 This is a different ID then "asm-collection". Therefore "ASM Code Lense" cannot be used for syntax coloring.
 
-So DeZog alos adds an own grammar, where it includes the grammar from "ASM Code Lens".
+So DeZog also adds an own grammar, where it includes the grammar from "ASM Code Lens".
 If "ASM Code Lense" is not installed this is silently ignored and no syntax highlighting is done.
 
 The involved files are:
