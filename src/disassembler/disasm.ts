@@ -1,10 +1,10 @@
 //import * as util from 'util';
 import * as assert from 'assert';
-import {DelayedLog} from './delayedlog';
+//import {DelayedLog} from './delayedlog';
 import {MAX_MEM_SIZE} from './basememory';
 import {Memory, MemAttribute} from './memory';
 import {Opcode, OpcodeFlag} from './opcode';
-import {NumberType, getNumberTypeAsString} from './numbertype'
+import {NumberType} from './numbertype'
 import {DisLabel} from './dislabel';
 import {Comment} from './comment';
 import {SubroutineStatistics} from './statistics';
@@ -726,8 +726,8 @@ export class Disassembler extends EventEmitter {
 					break;
 
 				// Mark memory area
-				this.memory.addAttributeAt(address, 1, MemAttribute.CODE_FIRST);
-				this.memory.addAttributeAt(address, opcode.length, MemAttribute.CODE);
+				this.memory.addAttributesAt(address, 1, MemAttribute.CODE_FIRST);
+				this.memory.addAttributesAt(address, opcode.length, MemAttribute.CODE);
 
 				/*
 				// Mark as stop code?
@@ -1147,20 +1147,23 @@ export class Disassembler extends EventEmitter {
 		for (let [address, label] of this.labels) {
 			if (label.type == NumberType.CODE_LBL) {
 				// Log
-				DelayedLog.startLog();
+				//DelayedLog.startLog();
 				// Find a "RET" on the path
 				const addrsArray = new Array<number>();
 				const retFound = this.findRET(address, addrsArray);
 				if (retFound) {
 					// Debug
-					DelayedLog.logIf(address, () =>
-						'Addresses: ' + addrsArray.map(addr => addr.toString(16)).join(' '));
-					DelayedLog.logIf(address, () => 'turnLBLintoSUB: Turned Label ' + getNumberTypeAsString(label.type) + ' into CODE_SUB.');
+					//DelayedLog.logIf(address, () =>
+					//		'Addresses: ' + addrsArray.map(addr => addr.toString(16)).join(' '));
+					//DelayedLog.logIf(address, () => 'turnLBLintoSUB: Turned Label ' + getNumberTypeAsString(label.type) + ' into CODE_SUB.');
 
 					// It is a subroutine, so turn the LBL into a SUB.
 					label.type = NumberType.CODE_SUB;
+					// Mark all addresses for: RET(I) found
+					for (let k = addrsArray.length - 1; k >= 0; k--)
+						this.memory.addAttributeAt(addrsArray[k], MemAttribute.RET_ANALYZED);
 				}
-				DelayedLog.stopLog();
+				//DelayedLog.stopLog();
 			}
 		}
 	}
@@ -1178,15 +1181,19 @@ export class Disassembler extends EventEmitter {
 
 		do {
 
-			// Check if memory exists
 			const memAttr = this.memory.getAttributeAt(address);
+			// Check if already analyzed
+			if (memAttr & MemAttribute.RET_ANALYZED) {
+				return true;
+			}
+			// Check if memory exists
 			if (!(memAttr & MemAttribute.ASSIGNED)) {
-				DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');	// NOSONAR
+				//DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');	// NOSONAR
 				return false;
 			}
 			// Unfortunately it needs to be checked if address has been checked already
 			if (addrsArray.indexOf(address) >= 0) {
-				DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');	// NOSONAR
+				//DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');	// NOSONAR
 				return false;	// already checked
 			}
 			// Check if a label for address exists that already is a subroutine.
@@ -1195,7 +1202,7 @@ export class Disassembler extends EventEmitter {
 				const type = addrLabel.type;
 				if (type == NumberType.CODE_SUB
 					|| type == NumberType.CODE_RST) {
-					DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': SUB FOUND. address belongs already to a SUB.');	// NOSONAR
+					//DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': SUB FOUND. address belongs already to a SUB.');	// NOSONAR
 					return true;
 				}
 			}
@@ -1206,7 +1213,7 @@ export class Disassembler extends EventEmitter {
 
 			// Check if RET
 			if (opcodeClone.flags & OpcodeFlag.RET) {
-				DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': SUB FOUND. RET code = ' + opcodeClone.name + '.');	// NOSONAR
+				//DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': SUB FOUND. RET code = ' + opcodeClone.name + '.');	// NOSONAR
 				return true;
 			}
 
@@ -1217,10 +1224,10 @@ export class Disassembler extends EventEmitter {
 			if (opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
 				if (!(opcodeClone.flags & OpcodeFlag.CALL)) {
 					const branchAddress = opcodeClone.value;
-					DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.');	// NOSONAR
-					DelayedLog.pushTab();
+					//DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.');	// NOSONAR
+					//DelayedLog.pushTab();
 					const res = this.findRET(branchAddress, addrsArray);
-					DelayedLog.popTab();
+					//DelayedLog.popTab();
 					if (res)
 						return true;	// SUB found
 				}
@@ -1255,7 +1262,7 @@ export class Disassembler extends EventEmitter {
 				case NumberType.CODE_SUB:
 				case NumberType.CODE_RST:
 					// Log
-					DelayedLog.startLog();
+					//DelayedLog.startLog();
 					// Get all addresses belonging to the subroutine
 					const addrsArray = new Array<number>();
 					this.getSubroutineAddresses(address, addrsArray);
@@ -1290,9 +1297,9 @@ export class Disassembler extends EventEmitter {
 						}
 						if (!outsideFound) {
 							// Debug
-							DelayedLog.logIf(addr, () =>
-								'Addresses: ' + addrsArray.map(addr => addr.toString(16)).join(' '));
-							DelayedLog.logIf(addr, () => 'findLocalLabelsInSubroutines: Turned Label' + getNumberTypeAsString(addrLabel.type) + ' into CODE_LOCAL_LBL.');
+							//DelayedLog.logIf(addr, () =>
+							//	'Addresses: ' + addrsArray.map(addr => addr.toString(16)).join(' '));
+							//DelayedLog.logIf(addr, () => 'findLocalLabelsInSubroutines: Turned Label' + getNumberTypeAsString(addrLabel.type) + ' into CODE_LOCAL_LBL.');
 
 							// No reference outside the subroutine found
 							// -> turn CODE_LBL into local label
@@ -1309,7 +1316,7 @@ export class Disassembler extends EventEmitter {
 							}
 						}
 					}
-					DelayedLog.stopLog();
+					//DelayedLog.stopLog();
 			}
 		}
 	}
@@ -1337,7 +1344,7 @@ export class Disassembler extends EventEmitter {
 			// Check if memory exists
 			if (!(memAttr & MemAttribute.ASSIGNED)) {
 				if (address < 0x10000) {
-					DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');	// NOSONAR
+					//DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');	// NOSONAR
 				}
 				break;
 			}
@@ -1349,7 +1356,7 @@ export class Disassembler extends EventEmitter {
 
 			// Check opcode
 			const opcode = Opcode.getOpcodeAt(this.memory, address);
-			this.memory.addAttributeAt(address, opcode.length, MemAttribute.FLOW_ANALYZED);
+			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED);
 
 			// Add to array
 			addrsArray.push(address);
@@ -1419,12 +1426,12 @@ export class Disassembler extends EventEmitter {
 				|| type == NumberType.CODE_RST
 				|| type == NumberType.CODE_LBL) {
 				// Collect all addresses belonging to a subroutine
-				DelayedLog.startLog();
+				//DelayedLog.startLog();
 				this.setSubroutineParent(address, label);
-				DelayedLog.logIf(address, () =>
-					'' + Format.getHexString(address, 4) + ' processed.'
-				);
-				DelayedLog.stopLog();
+				//DelayedLog.logIf(address, () =>
+				//	'' + Format.getHexString(address, 4) + ' processed.'
+				//);
+				//DelayedLog.stopLog();
 			}
 		}
 
@@ -1491,14 +1498,14 @@ export class Disassembler extends EventEmitter {
 			// Check if memory exists
 			const memAttr = this.memory.getAttributeAt(address);
 			if (!(memAttr & MemAttribute.ASSIGNED)) {
-				DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');
+				//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');
 				break;
 			}
 
 			// Check if parent already assigned
 			const memLabel = this.addressParents[address];
 			if (memLabel) {
-				DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');break;	// already checked
+				//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');break;	// already checked
 			}
 
 			// Check if label is sub routine
@@ -1521,7 +1528,7 @@ export class Disassembler extends EventEmitter {
 			// Add to array
 			this.addressParents[address] = parentLabel;
 
-			DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': added. ' + opcodeClone.name);
+			//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': added. ' + opcodeClone.name);
 
 			// And maybe branch address
 			if (opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
@@ -1535,9 +1542,9 @@ export class Disassembler extends EventEmitter {
 					|| branchLabel.type == NumberType.CODE_RST)
 					*/
 				{
-					DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.\n'); DelayedLog.pushTab();
+					//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.\n'); DelayedLog.pushTab();
 					this.setSubroutineParent(branchAddress, parentLabel);
-					DelayedLog.popTab();
+					//DelayedLog.popTab();
 				}
 			}
 
@@ -1546,7 +1553,7 @@ export class Disassembler extends EventEmitter {
 
 		} while (!(opcodeClone.flags & OpcodeFlag.STOP));
 
-		DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': stop.\n');
+		//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': stop.\n');
 	}
 
 

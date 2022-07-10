@@ -18,8 +18,10 @@ export enum MemAttribute {
 	//CODE_STOP = 0x08,
 	/// Data area
 	DATA = 0x10,
+	/// A RET(I) has been found at the end of the flow for that address.
+	RET_ANALYZED = 0x20,
 	/// Flow has been already analyzed
-	FLOW_ANALYZED = 0x20,
+	FLOW_ANALYZED = 0x30,
 }
 
 
@@ -90,12 +92,22 @@ export class Memory extends BaseMemory {
 
 
 	/**
+	 * Adds (ORs) a **single** memory attribute for an address range.
+	 * Is used to enhance performance a little bit if just a single address need to be changed.
+	 * @param address The memory address
+	 * @param attr The attribute to set (e.g. CODE or DATA)
+	 */
+	public addAttributeAt(address: number, attr: MemAttribute) {
+		this.memoryAttr[address] |= attr;
+	}
+
+	/**
 	 * Adds (ORs) a memory attribute for an address range.
 	 * @param address The memory address
 	 * @param length The size of the memory area to change.
 	 * @param attr The attribute to set (e.g. CODE or DATA)
 	 */
-	public addAttributeAt(address: number, length: number, attr: MemAttribute) {
+	public addAttributesAt(address: number, length: number, attr: MemAttribute) {
 		for (let i = 0; i < length; i++)
 			this.memoryAttr[address++] |= attr;
 	}
