@@ -48,7 +48,7 @@ export interface SlotRange {
 /**
  * For storing the banks.
  */
-interface BankInfo {
+export interface BankInfo {
 	// The name of the bank, can include the index variable.
 	// Used in the VARIABLE pane. E.g. "ROM0"
 	// E.g. 'BANK3' or 'ROM0'.
@@ -89,7 +89,8 @@ export class MemoryModel {
 	// The name of the model
 	public name = 'CUSTOM';
 
-	// Holds all slot ranges.
+	// Holds all slot ranges. Whole 64k will be filled. Unused slots are mapped to
+	// new invented banks of BankType.UNUSED.
 	public slotRanges: SlotRange[] = [];
 
 	// Holds the complete bank info.

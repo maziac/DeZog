@@ -694,6 +694,9 @@ export class DebugSessionClass extends DebugSession {
 					return;
 				}
 
+				// Inform Disassembler of MemoryModel
+				Disassembly.setMemoryModel(Remote.memoryModel);
+
 				// Instantiate file watchers for revEng auto re-load
 				this.installReloadFileWatchers();
 
@@ -3659,6 +3662,8 @@ E.g. use "-help -view" to put the help text in an own view.
 
 			// Create new instance to disassemble
 			const analyzer = new AnalyzeDisassembler();
+			analyzer.setMemoryModel(Remote.memoryModel);
+
 			// No automatic labels
 			analyzer.automaticAddresses = false;
 			analyzer.specialLabels = false;

@@ -8,6 +8,7 @@ import {Remote} from "../remotes/remotebase";
 import {Z80Registers} from "../remotes/z80registers";
 import {Settings} from '../settings/settings';
 import {DisLabel} from './../disassembler/dislabel';
+import {BankType, MemoryModel} from './../remotes/MemoryModel/memorymodel';
 
 const renderGraphviz = require('@aduh95/viz.js/sync');	// I couldn't transfer this into an "import" statement
 
@@ -71,7 +72,7 @@ export class AnalyzeDisassembler extends Disassembler {
 		};
 
 		// Characters reserved for the address field
-		this.clmnsAddress = 8;	// E.g. 0000:5
+		this.clmnsAddress = 8;	// E.g. 0000.5
 
 		// Do not find interrupt labels
 		this.findInterrupts = false;
@@ -83,6 +84,24 @@ export class AnalyzeDisassembler extends Disassembler {
 		if (Settings.launch.disassemblerArgs.esxdosRst) {
 			// Extend 'rst 8' opcode for esxdos
 			Opcodes[0xCF].appendToOpcode(",#n");
+		}
+	}
+
+
+	/**
+	 * Sets the memory model.
+	 * Used to check if certain eexecution flows should be followed or not.
+	 * @param memModel The memory model obtained from the settings through the Remote.
+	 */
+	public setMemoryModel(memModel: MemoryModel) {
+		const slotLen = memModel.slotRanges.length;
+		for (let slot = 0; slot < slotLen; slot++) {
+			const range = memModel.slotRanges[slot];
+			// Now check if maybe unused
+			const [bankNr] = range.banks;
+			const bank = memModel.banks[bankNr];
+			const singleBank = (bank.bankType != BankType.UNUSED) && (range.banks.size == 1);
+			this.setSlotBankInfo(range.start, range.end, slot, singleBank);
 		}
 	}
 

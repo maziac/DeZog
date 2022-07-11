@@ -13,6 +13,17 @@ import {Format} from './format';
 import {readFileSync} from 'fs';
 
 
+/**
+ * The SlotBankInfo is set at the start for every address.
+ * It depends on the used memory model.
+ */
+interface SlotBankInfo {
+	// The slot number of an address.
+	slot: number;
+	// true if non-switchable single bank. false if more than 2 banks or if slot is not used (BankType.UNUSED).
+	singleBank: boolean;
+}
+
 
 /**
  * The main Disassembler class.
@@ -148,6 +159,13 @@ export class Disassembler extends EventEmitter {
 	/// The disassembled lines.
 	protected disassembledLines: Array<string>;
 
+	// Holds information to which slot an address belongs.
+	// Will be created once and not changed anymore.
+	protected addressesSlotBankInfo = new Array<SlotBankInfo>(0x10000);
+
+	// The current slots. Used to append a suffix to labels and addresses if the address in a slot is pageable.
+	protected slots: number[];
+
 	// The SNA start address.
 	protected snaStartAddress = -1;
 
@@ -201,6 +219,53 @@ export class Disassembler extends EventEmitter {
 		super();
 		this.initLabels();
 	}
+
+
+	/**
+	 * Sets the slot and bank info.
+	 * Has to be done before the disassembly.
+	 * Is not changed anymore.
+	 * @param addrStart The start address.
+	 * @param addrEnd The end address (inclusive).
+	 * @param slot The slot number for that range.
+	 * @param singleBank Set true if single bank. False if multiple banks or if bank/slot is not used.
+	 */
+	public setSlotBankInfo(addrStart: number, addrEnd: number, slot: number, singleBank: boolean) {
+		for (let addr = addrStart; addr <= addrEnd; addr++)
+			this.addressesSlotBankInfo[addr] = {slot, singleBank};
+	}
+
+
+	/**
+	 * Sets the current slots.
+	 * @param slots Array with the slots.
+	 */
+	public setCurrentSlots(slots: number[]) {
+		this.slots = slots;		// TODO: use for addresses and labels
+	}
+
+
+	/**
+	 * Checks for bank border.
+	 * A bank border is recognized if the address64k's slot is different that the
+	 * startSlot and the address64k points to pageable memory.
+	 * @param startSlot The slot to compare with. E.g. where the process flow started.
+	 * @param address64k The address to check.
+	 * @returns true if banks would be passed. false if it stays in same bank/slot or
+	 * address64k is not pageable.
+	 */
+	protected bankBorderPassed(startSlot: number, address64k: number): boolean {
+		const addressSlotBank = this.addressesSlotBankInfo[address64k];
+		if (!addressSlotBank)
+			return true;	// Undefined => I.e. not accessible.
+		if (startSlot != addressSlotBank.slot) {
+			if (!addressSlotBank.singleBank)
+				return true;	// Bank border
+		}
+		// No border, address reachable
+		return false;
+	}
+
 
 	/**
 	 * Adds address 0 to the labels if it has not been added already
@@ -679,13 +744,11 @@ export class Disassembler extends EventEmitter {
 		let address;
 		let opcode;
 
-		// get new address from queue
+		// Get new address from queue
 		while ((address = this.addressQueue.shift()) != undefined) {
-			//console.log('address=0x' + address.toString(16));
-			// disassemble until stop-code
-			//console.log('===');
+			const startSlot = this.addressesSlotBankInfo[address].slot;
+			// Disassemble addresses until stop-code or bank border
 			do {
-				//console.log('addr=' + address.toString(16));
 				// Check if memory has already been disassembled
 				let attr = this.memory.getAttributeAt(address);
 				if (attr & MemAttribute.CODE)
@@ -746,6 +809,10 @@ export class Disassembler extends EventEmitter {
 
 				// Next address
 				address += opcode.length;
+
+				// Check for bank border
+				if (this.bankBorderPassed(startSlot, address))
+					break;	// Bank border
 
 				// Check for end of disassembly (JP, RET)
 			} while (!(opcode.flags & OpcodeFlag.STOP));
@@ -1080,8 +1147,8 @@ export class Disassembler extends EventEmitter {
 
 	/**
 	 * Finds the next label in the path.
-	 * Uses the direct path, i.e. it doesnot follow any branch addresses.
-	 * Returns at a STOP code.
+	 * Uses the direct path, i.e. it does not follow any branch addresses.
+	 * Returns at a STOP code or bank border.
 	 * Is used to find "flow-through" references. I.e. references from a SUB
 	 * to another that are creates because the program flow simply flows
 	 * through to the other subroutine instead of jumping to it or calling
@@ -1096,6 +1163,9 @@ export class Disassembler extends EventEmitter {
 			return undefined;
 		}
 
+		// Get slot
+		const startSlot = this.addressesSlotBankInfo[address].slot;
+
 		// Get opcode
 		let opcode = Opcode.getOpcodeAt(this.memory, address);
 
@@ -1104,6 +1174,10 @@ export class Disassembler extends EventEmitter {
 			// Next address
 			const prevAddress = address;
 			address += opcode.length;
+
+			// Check for bank border
+			if (this.bankBorderPassed(startSlot, address))
+				break;	// Bank border
 
 			// Check if label exists
 			const foundLabel = this.labels.get(address);
@@ -1269,7 +1343,8 @@ export class Disassembler extends EventEmitter {
 					//DelayedLog.startLog();
 					// Get all addresses belonging to the subroutine
 					const addrsArray = new Array<number>();
-					this.getSubroutineAddresses(address, addrsArray);
+					const startSlot = this.addressesSlotBankInfo[address].slot;
+					this.getSubroutineAddresses(startSlot, address, addrsArray);
 					// Now reduce array. I.e. only a coherent block will be treated as a subroutine.
 					this.reduceSubroutineAddresses(address, addrsArray);
 					// Iterate array
@@ -1332,14 +1407,19 @@ export class Disassembler extends EventEmitter {
 	 * //Does NOT stop if it reaches a label of another subroutine.
 	 * //Works recursively.
 	 * Stops if it reaches already analyzed code.
+	 * @param startSlot The slot of the subroutine.
 	 * @param address The start address of the subroutine.
 	 * @param addrsArray An empty array in the beginning that is filled with
 	 * all addresses of the subroutine.
 	 */
-	protected getSubroutineAddresses(address: number, addrsArray: Array<number>) {
+	protected getSubroutineAddresses(startSlot: number, address: number, addrsArray: Array<number>) {
 		let flags: OpcodeFlag;
 
 		do {
+			// Check for bank border
+			if (this.bankBorderPassed(startSlot, address))
+				break;	// Bank border
+
 			const memAttr = this.memory.getAttributeAt(address);
 			// Check if already analyzed
 			if (memAttr & MemAttribute.FLOW_ANALYZED) {
@@ -1377,7 +1457,7 @@ export class Disassembler extends EventEmitter {
 				const branchAddress = opcode.value;
 				//DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.');	// NOSONAR
 				//DelayedLog.pushTab();
-				this.getSubroutineAddresses(branchAddress, addrsArray);	// Note: this changes opcode. Don't use opcode from here on.
+				this.getSubroutineAddresses(startSlot, branchAddress, addrsArray);	// Note: this changes opcode. Don't use opcode from here on.
 				//DelayedLog.popTab();
 			}
 
@@ -1432,7 +1512,8 @@ export class Disassembler extends EventEmitter {
 				|| type == NumberType.CODE_LBL) {
 				// Collect all addresses belonging to a subroutine
 				//DelayedLog.startLog();
-				this.setSubroutineParent(address, label);
+				const startSlot = this.addressesSlotBankInfo[address].slot;
+				this.setSubroutineParent(startSlot, address, label);
 				//DelayedLog.logIf(address, () =>
 				//	'' + Format.getHexString(address, 4) + ' processed.'
 				//);
@@ -1493,14 +1574,18 @@ export class Disassembler extends EventEmitter {
 	 * Fills the 'this.addressParents' array.
 	 * Works recursively.
 	 * Note: does work also on CODE_LBL.
+	 * @param startSlot The slot of the subroutine.
 	 * @param addr The start address of the subroutine.
 	 * @param parentLabel The label to associate the found addresses with.
 	 */
-	protected setSubroutineParent(addr: number, parentLabel: DisLabel) {
+	protected setSubroutineParent(startSlot: number, addr: number, parentLabel: DisLabel) {
 		let opcodeClone;
 		let address = addr;
 
 		do {
+			// Check for bank border
+			if (this.bankBorderPassed(startSlot, address))
+				break;	// Bank border
 
 			// Check if memory exists
 			const memAttr = this.memory.getAttributeAt(address);
@@ -1551,7 +1636,7 @@ export class Disassembler extends EventEmitter {
 					*/
 				{
 					//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.\n'); DelayedLog.pushTab();
-					this.setSubroutineParent(branchAddress, parentLabel);
+					this.setSubroutineParent(startSlot, branchAddress, parentLabel);
 					//DelayedLog.popTab();
 				}
 			}
@@ -2293,11 +2378,12 @@ export class Disassembler extends EventEmitter {
 			// Use address
 			address = addr;
 			let prevMemoryAttribute = MemAttribute.DATA;
+			const startSlot = this.addressesSlotBankInfo[address].slot;
 
 			let prevParent;
 			this.resetAddEmptyLine();
 
-			// disassemble until unassigned memory found
+			// Disassemble until unassigned memory or bank border found
 			while (true) {
 				//console.log('disMem: address=0x' + address.toString(16))
 				// Check if memory has already been disassembled
@@ -2493,6 +2579,10 @@ export class Disassembler extends EventEmitter {
 						this.resetAddEmptyLine();
 					}
 				}
+
+				// Check for bank border
+				if (this.bankBorderPassed(startSlot, address))
+					break;	// Bank border
 
 				prevMemoryAttribute = attr;
 				// Log
@@ -2841,7 +2931,8 @@ export class Disassembler extends EventEmitter {
 
 			// Get all addresses belonging to the subroutine
 			const addrsArray = new Array<number>();
-			this.getSubroutineAddresses(startAddress, addrsArray);
+			const startSlot = this.addressesSlotBankInfo[startAddress].slot;
+			this.getSubroutineAddresses(startSlot, startAddress, addrsArray);
 			// Now reduce array. I.e. only a coherent block will be treated as a subroutine.
 			this.reduceSubroutineAddresses(startAddress, addrsArray);
 

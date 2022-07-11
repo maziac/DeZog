@@ -4,9 +4,9 @@ The disassembly used in Dezog is derived from the [z80dismblr](https://github.co
 DeZog uses 2 kinds of disassemblies:
 1. The SimpleDisassembly: a brute force disassembly used in the VARIABLEs pane and for the 'dasm' command.
 It is "brute force" because it disassembles a small amount (about 10) of instructions and just converts the opcodes into instructions.
-2. A more intelligent disassembly (AnalyzeDisassembler and DisassemblyClass) which uses z80dismblr features to distinguish code labels from data labels etc. E.g. the disassembly will not necessarily go on with the disassembly after a RET is found.
+2. A more intelligent i.e. "smart" disassembly (AnalyzeDisassembler and DisassemblyClass) which uses z80dismblr features to distinguish code labels from data labels etc. E.g. the disassembly will not necessarily go on with the disassembly after a RET is found.
 
-This document discusses the 2nd (intelligent) disassembly.
+This document discusses the 2nd (smart) disassembly.
 
 # Glossary
 
@@ -15,7 +15,7 @@ This document discusses the 2nd (intelligent) disassembly.
 | reverse engineered list file (rev-eng.list)| The list file maintained by the user. Code that the user has reverse engineered and understood is out here. Normally the user will copy part of the disassembly here, change the labels to meaningful names and add comments. |
 
 
-# Intelligent Disassembly (z80dismblr)
+# Smart Disassembly (z80dismblr)
 
 Basically the disassembler works on own 'memory', a 64k address block.
 The memory can have attributes attached to each address.
@@ -80,7 +80,75 @@ But the breakpoints associated with the disassembly list files are removed.
 Otherwise these would show up as error (not associated breakpoints), and would be removed, at the next start of an debug session.
 
 
-## Grammar
+# Special Problems
+
+There are a few special problems to solve in the disassembly and sometimes no real solution exists.
+
+## RST
+
+The RST instruction is often used such that it is followed by one or more bytes that re ready by the RST sub routine.
+The disassembler cannot analyze this. For one it would require a dynamic analysis and furthermore it can also be unclear which RST sub routine is used in case several ROMs can be page in.
+
+For now the disassembly simply goes no after the RST instruction. This could lead into a wrong disassembly, e.g. a (1 byte) instruction is decoded that is not existing or, even more problematic), e.g. a non-existing 3 byte instruction is decoded so that also the following instruction is wrongly decoded.
+
+It would be nice if at least the user could correct the disassembly.
+One possible solution could to interpret the RST in the rev-eng.list file.
+If e.g.
+~~~asm
+	RST 8
+	defb 5
+~~~
+
+I.e. data after a RST instruction then the rev-eng parser could mark this memory and pass it to the disassembler.
+So the disassembler could also mark as DATA and skip to the next instruction.
+
+Problem:
+This is a new concept for the parser and also for the disassembler and this information need to be passed from parser to disassembler.
+
+To be decided yet.
+
+
+## Branching into Paged Banks
+
+If there is a branch from a slot A into slot B and slot B is shared between 2 or more banks then it is not clear to which bank the branch will take us.
+
+Example:
+There are 2 slots.
+Slot A is 0x0000-0xBFFF and slot B is 0xC000-0xFFFF.
+Slot A is not paged i.e. always points to bank 0.
+Slot B can point to bank 1 or bank 2.
+
+Now suppose the following program:
+~~~asm
+				...
+				... ; Some bank switching code
+0x4100			call 0xC000
+				...
+
+0xC000.B1	SUB_BANK1:
+0xC000.B1		ld a,5
+0xC002.B1		ret
+
+0xC000.B2	SUB_BANK2:
+0xC000.B2		ld hl,0x0000
+0xC002.B2		ret
+~~~
+
+At the time of disassembly it is unknown if the code at 0x4100 will jump to SUB_BANK1 or SUB_BANK2.
+Even if, at the time of disassembly, bank 1 is paged in, it could happen that bank 2 will be paged in when 0x4100 is executed somewhere in the future.
+
+To overcome this problem the disassembler will follow the execution flow only
+- as long as the branch address is in the same slot
+- or the slot of the branch address is not shared between several banks
+
+Therefore the disassembler has to get the information about the used memory model, i.e. the usage of the slots.
+
+Note: Branching will not only stop on CALLs but also on all other branches like JP/JR.
+In case of a call graph the graph will simply stop at that point.
+
+
+
+# Grammar
 
 The disassembly list file requires a button. Therefore it requires to have an own language ID ("disassembly").
 This is a different ID then "asm-collection". Therefore "ASM Code Lense" cannot be used for syntax coloring.

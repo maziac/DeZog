@@ -1,10 +1,10 @@
-import { MemAttribute } from './../disassembler/memory';
-import { Remote } from './../remotes/remotebase';
 import {Format} from "../disassembler/format";
 import {Labels} from "../labels/labels";
 import {Utility} from '../misc/utility';
 import {Z80Registers} from "../remotes/z80registers";
 import {Settings} from '../settings/settings';
+import {MemAttribute} from './../disassembler/memory';
+import {Remote} from './../remotes/remotebase';
 import {AnalyzeDisassembler} from './analyzedisassembler';
 
 
@@ -54,10 +54,6 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 		const absPath = Utility.getAbsFilePath(relPath);
 		return absPath;
 	}
-
-
-	// The current slots in use.
-	protected slots: number[] = [];
 
 
 	/// An array of last PC addresses (long).
@@ -111,22 +107,13 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 
 
 	/**
-	 * Sets the slots array.
-	 * Used to set the slots that are active during disassembly.
-	 * Used to compare if the slots (the banking) has changed.
-	 * @param slots The new slot configuration.
-	 */
-	protected setSlots(slots: number[]): void {
-		this.slots = slots;
-	}
-
-
-	/**
 	 * Compare if the slots (the banking) has changed.
 	 * @param slots The other slot configuration.
 	 * @returns true if the slots are different.
 	 */
 	protected slotsChanged(slots: number[]): boolean {
+		if (!this.slots)
+			return true;	// No previous slots
 		const len = this.slots.length;
 		if (len != slots.length)
 			return true;
@@ -173,7 +160,7 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 		// Check if slots changed
 		const slots = Z80Registers.getSlots();
 		if (this.slotsChanged(slots)) {
-			this.setSlots(slots);
+			this.setCurrentSlots(slots);
 			await this.fetch64kMemory();
 			disasmRequired = true;
 		}
