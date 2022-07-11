@@ -21,7 +21,7 @@ export enum MemAttribute {
 	/// A RET(I) has been found at the end of the flow for that address.
 	RET_ANALYZED = 0x20,
 	/// Flow has been already analyzed
-	FLOW_ANALYZED = 0x30,
+	FLOW_ANALYZED = 0x40,
 }
 
 

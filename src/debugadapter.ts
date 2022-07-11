@@ -967,6 +967,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 		catch (e) {
 			console.log(e);
+			this.debugConsoleAppendLine('Disassembly: ' + e.message);
 		}
 
 

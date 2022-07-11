@@ -1197,7 +1197,6 @@ export class Disassembler extends EventEmitter {
 				return false;	// already checked
 			}
 			// Check if a label for address exists that already is a subroutine.
-
 			/*
 			const addrLabel = this.labels.get(address);	// TODO: should be superfluous
 			if (addrLabel) {
@@ -1454,6 +1453,8 @@ export class Disassembler extends EventEmitter {
 					// Check if reference is a call:
 					const memAttr = this.memory.getAttributeAt(ref);
 					assert(memAttr & MemAttribute.ASSIGNED);
+					if (!(memAttr & MemAttribute.CODE))
+						console.log();	// TODO REMOVE
 					assert(memAttr & MemAttribute.CODE);
 					assert(memAttr & MemAttribute.CODE_FIRST);
 					// Check opcode
@@ -1511,7 +1512,8 @@ export class Disassembler extends EventEmitter {
 			// Check if parent already assigned
 			const memLabel = this.addressParents[address];
 			if (memLabel) {
-				//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');break;	// already checked
+				//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');
+				break;	// already checked
 			}
 
 			// Check if label is sub routine
