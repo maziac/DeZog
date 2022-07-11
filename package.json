@@ -137,8 +137,6 @@
 			{
 				"id": "asm-collection",
 				"extensions": [
-					".list",
-					".lis",
 					".a80",
 					".z80",
 					".asm",
@@ -148,11 +146,24 @@
 				"aliases": [
 					"Assembler file"
 				]
+			},
+			{
+				"id": "asm-list-file",
+				"extensions": [
+					".list",
+					".lis"
+				],
+				"aliases": [
+					"Assembler list file"
+				]
 			}
 		],
 		"breakpoints": [
 			{
 				"language": "asm-collection"
+			},
+			{
+				"language": "asm-list-file"
 			},
 			{
 				"language": "z80-macroasm"
@@ -291,17 +302,17 @@
 			],
 			"editor/context": [
 				{
-					"when": "inDebugMode && resourceLangId == asm-collection",
+					"when": "inDebugMode && resourceLangId == asm-collection || inDebugMode && resourceLangId == asm-list-file",
 					"command": "dezog.movePCtoCursor",
 					"group": "debug"
 				},
 				{
-					"when": "inDebugMode && resourceLangId == asm-collection",
+					"when": "inDebugMode && resourceLangId == asm-collection || inDebugMode && resourceLangId == asm-list-file",
 					"submenu": "dezog.disassemblyAtCursor",
 					"group": "debug"
 				},
 				{
-					"when": "inDebugMode && resourceLangId == asm-collection",
+					"when": "inDebugMode && resourceLangId == asm-collection || inDebugMode && resourceLangId == asm-list-file",
 					"submenu": "dezog.analyzeAtCursor",
 					"group": "debug"
 				}
