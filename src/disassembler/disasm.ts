@@ -241,7 +241,7 @@ export class Disassembler extends EventEmitter {
 	 * @param slots Array with the slots.
 	 */
 	public setCurrentSlots(slots: number[]) {
-		this.slots = slots;		// TODO: use for addresses and labels
+		this.slots = slots;
 	}
 
 
@@ -740,7 +740,8 @@ export class Disassembler extends EventEmitter {
 	 * ".subNNN_" or ".lblNNN_". E.g. ".sub001_l5", ".sub001_loop1", ".lbl788_l89", ".lbl788_loop23".
 	 * All labels are stored into this.labels. At the end the list is sorted by the address.
 	 */
-	protected collectLabels() {
+	protected
+	collectLabels() {
 		let address;
 		let opcode;
 
@@ -749,7 +750,6 @@ export class Disassembler extends EventEmitter {
 			const startSlot = this.addressesSlotBankInfo[address].slot;
 			// Disassemble addresses until stop-code or bank border
 			do {
-				// Check if memory has already been disassembled
 				let attr = this.memory.getAttributeAt(address);
 				if (attr & MemAttribute.CODE)
 					break;	// Yes, already disassembled
@@ -799,9 +799,7 @@ export class Disassembler extends EventEmitter {
 				*/
 
 				// Check opcode for labels
-				if (!this.disassembleForLabel(address, opcode)) {
-					return;
-				}
+				this.disassembleForLabel(startSlot, address, opcode);
 
 				// Check for stop code. (JP, JR, RET)
 				if (opcode.flags & OpcodeFlag.STOP)
@@ -985,11 +983,11 @@ export class Disassembler extends EventEmitter {
 	 * "Disassembles" one label. I.e. the opcode is disassembled and checked if it includes
 	 * a label.
 	 * If so, the label is stored together with the call information.
+	 * @param startSlot Used for bank border test.
 	 * @param opcode The opcode to search for a label.
 	 * @param opcodeAddress The current address.
-	 * @returns false if problem occurred.
 	 */
-	protected disassembleForLabel(opcodeAddress: number, opcode: Opcode): boolean {
+	protected disassembleForLabel(startSlot: number, opcodeAddress: number, opcode: Opcode) {
 
 		// Check for branching etc. (CALL, RST, JP, JR)
 		if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
@@ -1016,17 +1014,20 @@ export class Disassembler extends EventEmitter {
 					vType = NumberType.CODE_SUB;
 			}
 
-			// Set label with correct type
-			this.setFoundLabel(branchAddress, new Set([opcodeAddress]), vType, attr);
+			// Create label and follow address only if not across a bank border
+			if (!this.bankBorderPassed(startSlot, branchAddress)) {
+				// Set label with correct type
+				this.setFoundLabel(branchAddress, new Set([opcodeAddress]), vType, attr);
 
-			// Check if code from the branching address has already been disassembled
-			if (!(attr & MemAttribute.CODE)) {
-				// It has not been disassembled yet
-				if (attr & MemAttribute.ASSIGNED) {
-					// memory location exists, so queue it for disassembly
-					if (vType != NumberType.CODE_RST || this.rstDontFollowAddresses.indexOf(branchAddress) < 0) {
-						// But only if it is not a RST address which was banned by the user.
-						this.addressQueue.push(branchAddress);
+				// Check if code from the branching address has already been disassembled
+				if (!(attr & MemAttribute.CODE)) {
+					// It has not been disassembled yet
+					if (attr & MemAttribute.ASSIGNED) {
+						// memory location exists, so queue it for disassembly
+						if (vType != NumberType.CODE_RST || this.rstDontFollowAddresses.indexOf(branchAddress) < 0) {
+							// But only if it is not a RST address which was banned by the user.
+							this.addressQueue.push(branchAddress);
+						}
 					}
 				}
 			}
@@ -1034,24 +1035,24 @@ export class Disassembler extends EventEmitter {
 		else if (opcode.valueType == NumberType.DATA_LBL) {
 			// It's a data label, like "LD A,(nn)"
 			let address = opcode.value;
-			// Check if it is the top of stack
-			if (opcode.flags & OpcodeFlag.LOAD_STACK_TOP) {
-				// yes, top of stack i.e. "LD SP,nn".
-				// add comment
-				if (!this.addressComments.get(address)) {
-					const comment = new Comment();
-					comment.addBefore('; Top of the stack:');
-					this.addressComments.set(address, comment);
+			// Create label only if not across a bank border
+			if (!this.bankBorderPassed(startSlot, address)) {
+				// Check if it is the top of stack
+				if (opcode.flags & OpcodeFlag.LOAD_STACK_TOP) {
+					// yes, top of stack i.e. "LD SP,nn".
+					// add comment
+					if (!this.addressComments.get(address)) {
+						const comment = new Comment();
+						comment.addBefore('; Top of the stack:');
+						this.addressComments.set(address, comment);
+					}
 				}
+				// "normal", e.g. "LD A,(nn)"
+				const attr = this.memory.getAttributeAt(address);
+				// Create new label or prioritize if label already exists
+				this.setFoundLabel(address, new Set([opcodeAddress]), opcode.valueType, attr);
 			}
-			// "normal", e.g. "LD A,(nn)"
-			const attr = this.memory.getAttributeAt(address);
-			// Create new label or prioritize if label already exists
-			this.setFoundLabel(address, new Set([opcodeAddress]), opcode.valueType, attr);
 		}
-
-		// Everything fine
-		return true;
 	}
 
 
@@ -2913,6 +2914,9 @@ export class Disassembler extends EventEmitter {
 		text += `node [shape=box, color="${maincolor}", fontcolor="${maincolor}"];\n`;
 		text += `edge [color="${maincolor}"];\n`;
 
+		// Clear FLOW_ANALYZED flags
+		this.memory.resetAttributeFlag(MemAttribute.FLOW_ANALYZED);
+
 		for (const startAddress of startAddresses) {
 			// Start
 			const label = this.labels.get(startAddress);
@@ -2954,8 +2958,9 @@ export class Disassembler extends EventEmitter {
 	 * Returns the text of one branch (or recursively more branches)
 	 * of the flowchart of one subroutine.
 	 * @param address The start address of the branch.
-	 * @param addrsArray The array that contains all addresses belonging to the subroutine.
+	 * @param addrsArray The array that contains all addresses belonging to the subroutine. Could also be empty (if addresses outside bank border).
 	 * @param processedAddrsArray At the start an empty array. Is filled with all processed addresses.
+	 * @returns node text for the branching, something "xxx -> yyy"
 	 */
 	protected getBranchForAddress(address: number, addrsArray: Array<number>, processedAddrsArray: Array<number>): string {
 		const branch = 'b' + Format.getHexString(address, 4);
@@ -3005,9 +3010,12 @@ export class Disassembler extends EventEmitter {
 				text += branch + ' -> b' + Format.getHexString(branchAddress, 4) + ' [headport="n", tailport="e"];\n';
 				// Check if already disassembled
 				if (processedAddrsArray.indexOf(branchAddress) < 0) {
-					// No, so disassemble
-					const textBranch = this.getBranchForAddress(branchAddress, addrsArray, processedAddrsArray);
-					text += textBranch;
+					// Check if outside
+					if (addrsArray.indexOf(branchAddress) >= 0) {
+						// No, so disassemble
+						const textBranch = this.getBranchForAddress(branchAddress, addrsArray, processedAddrsArray);
+						text += textBranch;
+					}
 				}
 			}
 		}
@@ -3033,7 +3041,6 @@ export class Disassembler extends EventEmitter {
 		if (opcode.flags & (OpcodeFlag.STOP | OpcodeFlag.RET)) {
 		//if (opcode.flags & (OpcodeFlag.RET)) {
 			// Subroutine ends
-			assert(addrsArray.length > 0);
 			let color = '';
 			if (!(opcode.flags & (OpcodeFlag.RET))) {
 				// If not a RET: hide connection: make it transparent

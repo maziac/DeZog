@@ -44,11 +44,24 @@ export class Memory extends BaseMemory {
 		//this.clearAttributes(); Not required, is anyhow 0 = MemAttribute.UNUSED
 	}
 
+
 	/**
 	 * Clears all attributes to 0.
 	 */
 	public clearAttributes() {
 		this.memoryAttr.fill(MemAttribute.UNUSED);
+	}
+
+
+	/**
+	 * Resets a single flag or flags in the whole memoryAttr array.
+	 * @param flags The flag or flags to reset.
+	 */
+	public resetAttributeFlag(flags: MemAttribute) {
+		const notFlags = ~flags;
+		for (let k = this.memoryAttr.length; k >= 0; k--) {
+			this.memoryAttr[k] &= notFlags;
+		}
 	}
 
 
