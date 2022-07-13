@@ -2963,12 +2963,23 @@ export class Disassembler extends EventEmitter {
 	 * @returns node text for the branching, something "xxx -> yyy"
 	 */
 	protected getBranchForAddress(address: number, addrsArray: Array<number>, processedAddrsArray: Array<number>): string {
-		const branch = 'b' + Format.getHexString(address, 4);
+		const addrString = Format.getHexString(address, 4);
+		const branch = 'b' + addrString;
 		let text = branch + ' [label="';
 		let disTexts: Array<string> = [];
 		let opcode;
 		let hrefAddress = '';
 
+		// Check if outside
+		if (addrsArray.indexOf(address) < 0) {
+			// Yes, outside: Just print the address.
+			text += addrString + 'h"';
+			hrefAddress += this.funcFormatAddress ? this.funcFormatAddress(address) : address;
+			text += ', href="#' + hrefAddress + ';"];\n'
+			return text;
+		}
+
+		// Loop
 		do {
 			// Add to new array
 			processedAddrsArray.push(address);
@@ -3004,18 +3015,15 @@ export class Disassembler extends EventEmitter {
 		// Maybe branch
 		if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
 			const branchAddress = opcode.value;
-			// Check if outside
-			if (addrsArray.indexOf(branchAddress) >= 0) {
+			// Only branch for condditional branches
+			if ((opcode.flags & OpcodeFlag.CONDITIONAL)) {
 				// Inside
 				text += branch + ' -> b' + Format.getHexString(branchAddress, 4) + ' [headport="n", tailport="e"];\n';
 				// Check if already disassembled
 				if (processedAddrsArray.indexOf(branchAddress) < 0) {
-					// Check if outside
-					if (addrsArray.indexOf(branchAddress) >= 0) {
-						// No, so disassemble
-						const textBranch = this.getBranchForAddress(branchAddress, addrsArray, processedAddrsArray);
-						text += textBranch;
-					}
+					// No, so disassemble
+					const textBranch = this.getBranchForAddress(branchAddress, addrsArray, processedAddrsArray);
+					text += textBranch;
 				}
 			}
 		}
