@@ -1415,6 +1415,7 @@ export class Disassembler extends EventEmitter {
 	 */
 	protected getSubroutineAddresses(startSlot: number, address: number, addrsArray: Array<number>) {
 		let flags: OpcodeFlag;
+		const branchAddrs: number[] = [];
 
 		do {
 			// Check for bank border
@@ -1429,15 +1430,7 @@ export class Disassembler extends EventEmitter {
 			}
 			// Check if memory exists
 			if (!(memAttr & MemAttribute.ASSIGNED)) {
-				//if (address < 0x10000) {
-					//DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');	// NOSONAR
-				//}
 				break;
-			}
-			// Unfortunately it needs to be checked if address has been checked already
-			if (addrsArray.indexOf(address) >= 0) {
-				//	DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');	// NOSONAR
-				break;	// already checked
 			}
 
 			// Check opcode
@@ -1456,13 +1449,22 @@ export class Disassembler extends EventEmitter {
 			// And maybe branch address
 			if (flags & OpcodeFlag.BRANCH_ADDRESS && !(flags & OpcodeFlag.CALL)) {
 				const branchAddress = opcode.value;
-				//DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.');	// NOSONAR
-				//DelayedLog.pushTab();
-				this.getSubroutineAddresses(startSlot, branchAddress, addrsArray);	// Note: this changes opcode. Don't use opcode from here on.
-				//DelayedLog.popTab();
+				branchAddrs.push(branchAddress);
 			}
 
 		} while (!(flags & OpcodeFlag.STOP));
+
+		// Now follow the collected branches
+		branchAddrs.sort((a, b) => a - b);	// Sort: small to big
+		let len = branchAddrs.length;
+		for (let i = 0; i < len; i++) {
+			const branchAddress = branchAddrs[i];
+			if (branchAddress != address)
+				break;	// I.e. a hole is found in the block, so most probably the rest does not belong to the subroutine
+			address = this.getSubroutineAddresses(startSlot, branchAddress, addrsArray);
+		}
+
+		return address;
 	}
 
 
@@ -1473,6 +1475,7 @@ export class Disassembler extends EventEmitter {
 	 * @param addrsArray The array with addresses (was filled by this.getSubroutineAddresses).
 	 */
 	protected reduceSubroutineAddresses(address: number, addrsArray: Array<number>) {
+		// TODO: Not required anymore
 		// sort array
 		addrsArray.sort((a, b) => a - b);
 		// Throw away all addresses smaller than the start address
@@ -1703,8 +1706,8 @@ export class Disassembler extends EventEmitter {
 				case NumberType.CODE_SUB:
 				case NumberType.CODE_LBL:
 					// Get all addresses belonging to the subroutine
-					const addresses = new Array<number>();
-					const statistics = this.countAddressStatistic(address, addresses);
+					const addressStat = this.countAddressStatistic(address);
+					const statistics = addressStat.statistics;
 					statistics.CyclomaticComplexity++;	// Add 1 as default
 					this.subroutineStatistics.set(label, statistics);
 					// Get max
@@ -1734,64 +1737,68 @@ export class Disassembler extends EventEmitter {
 	 * all addresses of the subroutine. Used to escape from loops.
 	 * @returns statistics: size so far, cyclomatic complexity.
 	 */
-	protected countAddressStatistic(address: number, addresses: Array<number>): SubroutineStatistics {
+	protected countAddressStatistic(address: number): {address: number, statistics: SubroutineStatistics} {
+		let flags: OpcodeFlag;
+		const branchAddrs: number[] = [];
+
 		let statistics = {sizeInBytes: 0, countOfInstructions: 0, CyclomaticComplexity: 0};
 
 		let opcodeClone;
 		do {
 			// Check if memory exists
 			const memAttr = this.memory.getAttributeAt(address);
-			if (!(memAttr & MemAttribute.ASSIGNED)) {
-				return statistics;
+			// Check if already analyzed
+			if (memAttr & MemAttribute.FLOW_ANALYZED) {
+				// Was already analyzed, stop
+				return {address, statistics};
 			}
-			// Unfortunately it needs to be checked if address has been checked already
-			if (addresses.indexOf(address) >= 0)
-				return statistics;	// already checked
-			// Add to array
-			addresses.push(address);
-			// check opcode
+			// Check if memory exists
+			if (!(memAttr & MemAttribute.ASSIGNED)) {
+				return {address, statistics};
+			}
+
+			// Check opcode
 			const opcode = Opcode.getOpcodeAt(this.memory, address);
-			opcodeClone = {...opcode};	// Required otherwise opcode is overwritten on next call to 'getOpcodeAt' if it's the same opcode.
+			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED);
+
+			// Remember flags
+			flags = opcode.flags;
+
+			// Proceed to next address
+			address += opcode.length;
 
 			// Add statistics
 			statistics.sizeInBytes += opcodeClone.length;
 			statistics.countOfInstructions++;
 			// Cyclomatic complexity: add 1 for each conditional branch
-			if (opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
+			if (flags & OpcodeFlag.BRANCH_ADDRESS) {
 				// Now exclude unconditional CALLs, JPs and JRs
 				if (opcode.name.indexOf(',') >= 0)
 					statistics.CyclomaticComplexity++;
 			}
-			else if ((opcodeClone.flags & OpcodeFlag.RET)
-				&& (opcodeClone.flags & OpcodeFlag.CONDITIONAL)) {
+			else if ((flags & OpcodeFlag.RET)
+				&& (flags & OpcodeFlag.CONDITIONAL)) {
 				// It is a conditional return
 				statistics.CyclomaticComplexity++;
 			}
 
 			// And maybe branch address
-			if (opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
-				if (!(opcodeClone.flags & OpcodeFlag.CALL)) {
-					// Only branch if no CALL, but for conditional and conditional JP or JR.
-					// At last check if the JP/JR might jump to a subroutine. This wouldn't be followed.
-					const branchAddress = opcodeClone.value;
-					const branchLabel = this.labels.get(branchAddress);
-					let isSUB = false;
-					if (branchLabel)
-						if (branchLabel.type == NumberType.CODE_SUB
-							|| branchLabel.type == NumberType.CODE_RST)
-							isSUB = true;
-					// Only if no subroutine
-					if (!isSUB) {
-						const addStat = this.countAddressStatistic(branchAddress, addresses);
-						statistics.sizeInBytes += addStat.sizeInBytes;
-						statistics.countOfInstructions += addStat.countOfInstructions;
-						statistics.CyclomaticComplexity += addStat.CyclomaticComplexity;
-					}
+			if (flags & OpcodeFlag.BRANCH_ADDRESS && !(flags & OpcodeFlag.CALL)) {
+				// Only branch if no CALL, but for conditional and conditional JP or JR.
+				// At last check if the JP/JR might jump to a subroutine. This wouldn't be followed.
+				const branchAddress = opcode.value;
+				const branchLabel = this.labels.get(branchAddress);
+				let isSUB = false;
+				if (branchLabel)
+					if (branchLabel.type == NumberType.CODE_SUB
+						|| branchLabel.type == NumberType.CODE_RST)
+						isSUB = true;
+				// Only if no subroutine
+				if (!isSUB) {
+					const branchAddress = opcode.value;
+					branchAddrs.push(branchAddress);
 				}
 			}
-
-			// Next
-			address += opcodeClone.length;
 
 			// Stop at flow-through
 			const nextLabel = this.labels.get(address);
@@ -1804,8 +1811,24 @@ export class Disassembler extends EventEmitter {
 
 		} while (!(opcodeClone.flags & OpcodeFlag.STOP));
 
+		// Now follow the collected branches
+		branchAddrs.sort((a, b) => a - b);	// Sort: small to big
+		let len = branchAddrs.length;
+		for (let i = 0; i < len; i++) {
+			const branchAddress = branchAddrs[i];
+			if (branchAddress != address)
+				break;	// I.e. a hole is found in the block, so most probably the rest does not belong to the subroutine
+			const addressStat = this.countAddressStatistic(branchAddress);
+			const addStat = addressStat.statistics;
+			statistics.sizeInBytes += addStat.sizeInBytes;
+			statistics.countOfInstructions += addStat.countOfInstructions;
+			statistics.CyclomaticComplexity += addStat.CyclomaticComplexity;
+			// Next
+			address = addressStat.address;
+		}
+
 		// return
-		return statistics;
+		return {address, statistics};
 	}
 
 
