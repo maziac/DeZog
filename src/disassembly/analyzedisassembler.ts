@@ -312,11 +312,11 @@ export class AnalyzeDisassembler extends Disassembler {
 		<div id="slider">
 			5%
 			<input id="slide" type="range"
-			min="5" max="200"
+			min="5" max="1000"
 			step="5" value="100"
 			oninput="updateSlider(this.value)"
 			/>
-			200%
+			1000%
 		</div>
 		<br>
 		<div id="svg">

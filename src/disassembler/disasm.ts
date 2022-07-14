@@ -1344,8 +1344,7 @@ export class Disassembler extends EventEmitter {
 					//DelayedLog.startLog();
 					// Get all addresses belonging to the subroutine
 					const addrsArray = new Array<number>();
-					const startSlot = this.addressesSlotBankInfo[address].slot;
-					this.getSubroutineAddresses(startSlot, address, addrsArray);
+					this.getSubroutineAddresses(address, addrsArray);
 					// Now reduce array. I.e. only a coherent block will be treated as a subroutine.
 					this.reduceSubroutineAddresses(address, addrsArray);
 					// Iterate array
@@ -1408,12 +1407,38 @@ export class Disassembler extends EventEmitter {
 	 * //Does NOT stop if it reaches a label of another subroutine.
 	 * //Works recursively.
 	 * Stops if it reaches already analyzed code.
-	 * @param startSlot The slot of the subroutine.
 	 * @param address The start address of the subroutine.
 	 * @param addrsArray An empty array in the beginning that is filled with
 	 * all addresses of the subroutine.
 	 */
-	protected getSubroutineAddresses(startSlot: number, address: number, addrsArray: Array<number>) {
+	protected getSubroutineAddresses(address: number, addrsArray: Array<number>) {
+		const startSlot = this.addressesSlotBankInfo[address].slot;
+		this.memory.resetAttributeFlag(MemAttribute.FLOW_ANALYZED);
+		this.followFlowPath(startSlot, address,
+			(flags: OpcodeFlag, opcode: Opcode, opcodeAddr: number, branchAddrs: number[]) => {
+				if (flags & OpcodeFlag.BRANCH_ADDRESS && !(flags & OpcodeFlag.CALL)) {
+					// Analyze branch
+					const branchAddress = opcode.value;
+					branchAddrs.push(branchAddress);
+				}
+				// Do not stop loop
+				return false;
+			},
+			addrsArray);
+	}
+
+
+	/**
+	 * Follows the execution path.
+	 * On each instruction 'func' will be called.
+	 * The loop stops if either func returns true or if a stop code (RET instruction) is found.
+	 * @param startSlot The slot that belongs to the start address.
+	 * @param address The start address of the subroutine.
+	 * @param func The function to execute.
+	 * @param addrsArray An empty array in the beginning that is filled with
+	 * all addresses of the subroutine.
+	 */
+	protected followFlowPath(startSlot: number, address: number, func: (flags: OpcodeFlag, opcode: Opcode, opcodeAddr: number, branchAddrs: number[]) => boolean, addrsArray?: Array<number>) {
 		let flags: OpcodeFlag;
 		const branchAddrs: number[] = [];
 
@@ -1438,7 +1463,7 @@ export class Disassembler extends EventEmitter {
 			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED);
 
 			// Add to array
-			addrsArray.push(address);
+			addrsArray?.push(address);
 
 			// Remember flags
 			flags = opcode.flags;
@@ -1446,11 +1471,9 @@ export class Disassembler extends EventEmitter {
 			// Proceed to next address
 			address += opcode.length;
 
-			// And maybe branch address
-			if (flags & OpcodeFlag.BRANCH_ADDRESS && !(flags & OpcodeFlag.CALL)) {
-				const branchAddress = opcode.value;
-				branchAddrs.push(branchAddress);
-			}
+			// branch address
+			if (func(flags, opcode, address, branchAddrs))
+				break;	// Break from loop
 
 		} while (!(flags & OpcodeFlag.STOP));
 
@@ -1459,9 +1482,11 @@ export class Disassembler extends EventEmitter {
 		let len = branchAddrs.length;
 		for (let i = 0; i < len; i++) {
 			const branchAddress = branchAddrs[i];
+			if (branchAddress < address)
+				continue;
 			if (branchAddress != address)
 				break;	// I.e. a hole is found in the block, so most probably the rest does not belong to the subroutine
-			address = this.getSubroutineAddresses(startSlot, branchAddress, addrsArray);
+			address = this.followFlowPath(startSlot, branchAddress, func, addrsArray);
 		}
 
 		return address;
@@ -1476,6 +1501,7 @@ export class Disassembler extends EventEmitter {
 	 */
 	protected reduceSubroutineAddresses(address: number, addrsArray: Array<number>) {
 		// TODO: Not required anymore
+		return;
 		// sort array
 		addrsArray.sort((a, b) => a - b);
 		// Throw away all addresses smaller than the start address
@@ -1516,8 +1542,7 @@ export class Disassembler extends EventEmitter {
 				|| type == NumberType.CODE_LBL) {
 				// Collect all addresses belonging to a subroutine
 				//DelayedLog.startLog();
-				const startSlot = this.addressesSlotBankInfo[address].slot;
-				this.setSubroutineParent(startSlot, address, label);
+				this.setSubroutineParent(address, label);
 				//DelayedLog.logIf(address, () =>
 				//	'' + Format.getHexString(address, 4) + ' processed.'
 				//);
@@ -1579,10 +1604,46 @@ export class Disassembler extends EventEmitter {
 	 * Works recursively.
 	 * Note: does work also on CODE_LBL.
 	 * @param startSlot The slot of the subroutine.
-	 * @param addr The start address of the subroutine.
+	 * @param address The start address of the subroutine.
 	 * @param parentLabel The label to associate the found addresses with.
 	 */
-	protected setSubroutineParent(startSlot: number, addr: number, parentLabel: DisLabel) {
+	protected setSubroutineParent(address: number, parentLabel: DisLabel) {
+		const startSlot = this.addressesSlotBankInfo[address].slot;
+		this.memory.resetAttributeFlag(MemAttribute.FLOW_ANALYZED);
+		this.followFlowPath(startSlot, address,
+			(flags: OpcodeFlag, opcode: Opcode, opcodeAddr: number, branchAddrs: number[]) => {
+
+				// Check if label is sub routine
+				const label = this.labels.get(address);
+				if (label) {
+					if (label != parentLabel) {	// Omit start address
+						const type = label.type;
+						if (type == NumberType.CODE_SUB
+							|| type == NumberType.CODE_RST
+							|| type == NumberType.CODE_LBL
+						)
+							return true;	// Stop loop if label LBL, CALL or RST is reached
+					}
+				}
+
+				// Add to array
+				this.addressParents[opcodeAddr] = parentLabel;
+
+				// And maybe branch address
+				if (flags & OpcodeFlag.BRANCH_ADDRESS) {
+					const branchAddress = opcode.value;
+					branchAddrs.push(branchAddress);
+				}
+
+				// Return
+				return false;	// Don't leave loop
+			}
+		);
+
+	}
+
+	// TODO: REMOVE
+	protected setSubroutineParen_oldt(startSlot: number, addr: number, parentLabel: DisLabel) {
 		let opcodeClone;
 		let address = addr;
 
@@ -1640,7 +1701,7 @@ export class Disassembler extends EventEmitter {
 					*/
 				{
 					//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.\n'); DelayedLog.pushTab();
-					this.setSubroutineParent(startSlot, branchAddress, parentLabel);
+					this.setSubroutineParen_oldt(startSlot, branchAddress, parentLabel);
 					//DelayedLog.popTab();
 				}
 			}
@@ -1706,8 +1767,7 @@ export class Disassembler extends EventEmitter {
 				case NumberType.CODE_SUB:
 				case NumberType.CODE_LBL:
 					// Get all addresses belonging to the subroutine
-					const addressStat = this.countAddressStatistic(address);
-					const statistics = addressStat.statistics;
+					const statistics = this.countAddressStatistic(address);
 					statistics.CyclomaticComplexity++;	// Add 1 as default
 					this.subroutineStatistics.set(label, statistics);
 					// Get max
@@ -1733,42 +1793,18 @@ export class Disassembler extends EventEmitter {
 	 * Calculates statistics like size or cyclomatic complexity.
 	 * Works recursively.
 	 * @param address The start address of the subroutine.
-	 * @param addresses An empty array in the beginning that is filled with
-	 * all addresses of the subroutine. Used to escape from loops.
 	 * @returns statistics: size so far, cyclomatic complexity.
 	 */
-	protected countAddressStatistic(address: number): {address: number, statistics: SubroutineStatistics} {
-		let flags: OpcodeFlag;
-		const branchAddrs: number[] = [];
+	protected countAddressStatistic(address: number): SubroutineStatistics {
+		const statistics = {sizeInBytes: 0, countOfInstructions: 0, CyclomaticComplexity: 0};
+		const startSlot = this.addressesSlotBankInfo[address].slot;
+		this.memory.resetAttributeFlag(MemAttribute.FLOW_ANALYZED);
 
-		let statistics = {sizeInBytes: 0, countOfInstructions: 0, CyclomaticComplexity: 0};
-
-		let opcodeClone;
-		do {
-			// Check if memory exists
-			const memAttr = this.memory.getAttributeAt(address);
-			// Check if already analyzed
-			if (memAttr & MemAttribute.FLOW_ANALYZED) {
-				// Was already analyzed, stop
-				return {address, statistics};
-			}
-			// Check if memory exists
-			if (!(memAttr & MemAttribute.ASSIGNED)) {
-				return {address, statistics};
-			}
-
-			// Check opcode
-			const opcode = Opcode.getOpcodeAt(this.memory, address);
-			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED);
-
-			// Remember flags
-			flags = opcode.flags;
-
-			// Proceed to next address
-			address += opcode.length;
+		// Follow execution flow
+		this.followFlowPath(startSlot, address, (flags: OpcodeFlag, opcode: Opcode, opcodeAddr: number, branchAddrs: number[]) => {
 
 			// Add statistics
-			statistics.sizeInBytes += opcodeClone.length;
+			statistics.sizeInBytes += opcode.length;
 			statistics.countOfInstructions++;
 			// Cyclomatic complexity: add 1 for each conditional branch
 			if (flags & OpcodeFlag.BRANCH_ADDRESS) {
@@ -1793,7 +1829,7 @@ export class Disassembler extends EventEmitter {
 					if (branchLabel.type == NumberType.CODE_SUB
 						|| branchLabel.type == NumberType.CODE_RST)
 						isSUB = true;
-				// Only if no subroutine
+				// Analyze branch only if no subroutine
 				if (!isSUB) {
 					const branchAddress = opcode.value;
 					branchAddrs.push(branchAddress);
@@ -1806,29 +1842,14 @@ export class Disassembler extends EventEmitter {
 				const type = nextLabel.type;
 				if (type == NumberType.CODE_SUB
 					|| type == NumberType.CODE_RST)
-					break;	// Stop when entering another subroutine.
+					return true;	// Stop when entering another subroutine.
 			}
 
-		} while (!(opcodeClone.flags & OpcodeFlag.STOP));
-
-		// Now follow the collected branches
-		branchAddrs.sort((a, b) => a - b);	// Sort: small to big
-		let len = branchAddrs.length;
-		for (let i = 0; i < len; i++) {
-			const branchAddress = branchAddrs[i];
-			if (branchAddress != address)
-				break;	// I.e. a hole is found in the block, so most probably the rest does not belong to the subroutine
-			const addressStat = this.countAddressStatistic(branchAddress);
-			const addStat = addressStat.statistics;
-			statistics.sizeInBytes += addStat.sizeInBytes;
-			statistics.countOfInstructions += addStat.countOfInstructions;
-			statistics.CyclomaticComplexity += addStat.CyclomaticComplexity;
-			// Next
-			address = addressStat.address;
-		}
+			return false;	// Do not stop loop
+		});
 
 		// return
-		return {address, statistics};
+		return statistics;
 	}
 
 
@@ -2958,8 +2979,7 @@ export class Disassembler extends EventEmitter {
 
 			// Get all addresses belonging to the subroutine
 			const addrsArray = new Array<number>();
-			const startSlot = this.addressesSlotBankInfo[startAddress].slot;
-			this.getSubroutineAddresses(startSlot, startAddress, addrsArray);
+			this.getSubroutineAddresses(startAddress, addrsArray);
 			// Now reduce array. I.e. only a coherent block will be treated as a subroutine.
 			this.reduceSubroutineAddresses(startAddress, addrsArray);
 
