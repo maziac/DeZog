@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.7.1
+- Fixed #93 problem stepping over "DEC/INC (IX+n)"
+
 # 2.7.0
 - Experimental MAME support.
 - Changed name of disassembly from 'disasm.asm' to 'disasm.list'.
