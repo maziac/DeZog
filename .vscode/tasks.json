@@ -14,7 +14,6 @@
 				"isDefault": true
 			}
 		},
-
 		{
 			"label": "Clean SonarLint Problems",
 			"type": "shell",
@@ -24,8 +23,22 @@
 				"pattern": {
 					"regexp": "a^"
 				},
-				"owner": "sonarlint" // Right-click/copy to get the owner
+				"owner": "sonarlint"
 			}
+		},
+		{
+			"label": "Start local SonarQube server",
+			"type": "shell",
+			"command": "/Volumes/SDDPCIE2TB/Projects/Sonar/sonarqube/bin/macosx-universal-64/sonar.sh console",
+			"group": "none",
+			"problemMatcher": []
+		},
+		{
+			"label": "Sonar scan - all sources",
+			"type": "shell",
+			"command": "/Volumes/SDDPCIE2TB/Projects/Sonar/sonar-scanner-macosx/bin/sonar-scanner",
+			"group": "none",
+			"problemMatcher": []
 		}
 	]
 }

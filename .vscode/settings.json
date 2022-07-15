@@ -25,5 +25,9 @@
 		"**/out": true,
 		"**/node_modules": true,
 		"**/bower_components": true
-	}
+	},
+	"sonarlint.connectedMode.project": {
+		"projectKey": "dezog"
+	},
+	"sonarlint.disableTelemetry": true,
 }
