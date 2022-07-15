@@ -1,8 +1,7 @@
 import * as util from 'util';
 import {Remote} from '../remotes/remotebase';
-import { BaseView } from './baseview';
+import {BaseView} from './baseview';
 import {ImageConvert} from '../misc/imageconvert';
-import {WebviewPanel} from 'vscode';
 import {Utility} from '../misc/utility';
 import * as Random from 'rng';
 import {Log} from '../log';
@@ -17,7 +16,7 @@ enum PaletteSelection {
 	PALETTE_1,		///< The second sprite palette
 	DEFAULT,	///< The default palette. The index is the color value.
 	FALSE_COLORS,	///< A false color palette
-};
+}
 
 
 /**
@@ -58,10 +57,10 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * Called at launchRequest.
 	 */
 	public static staticInit() {
-		ZxNextSpritePatternsView.currentPaletteNumber=-1;
-		ZxNextSpritePatternsView.spritesPaletteTransparentIndex=0;
-		ZxNextSpritePatternsView.spritePatterns=new Map<number, Array<number>>();
-		ZxNextSpritePatternsView.spritePalettes=new Map<number, Array<number>>();
+		ZxNextSpritePatternsView.currentPaletteNumber = -1;
+		ZxNextSpritePatternsView.spritesPaletteTransparentIndex = 0;
+		ZxNextSpritePatternsView.spritePatterns = new Map<number, Array<number>>();
+		ZxNextSpritePatternsView.spritePalettes = new Map<number, Array<number>>();
 		// Register for static updates.
 		BaseView.staticViewClasses.push(ZxNextSpritePatternsView);
 	}
@@ -75,9 +74,9 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 */
 	protected static staticUpdate(reason?: any) {
 		// Reload current palette number and transparent index on every update.
-		ZxNextSpritePatternsView.currentPaletteNumber=-1;
+		ZxNextSpritePatternsView.currentPaletteNumber = -1;
 		// Reload patterns and palettes only if not 'step'
-		if (!reason||reason.step!=true) {
+		if (!(reason?.step)) {
 			// Mark 'dirty'
 			ZxNextSpritePatternsView.spritePatterns.clear();
 			ZxNextSpritePatternsView.spritePalettes.delete(PaletteSelection.PALETTE_0);
@@ -101,7 +100,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 	protected patternDataValid = false;
 
 	/// prohibits processing a new message from the web view when the previous is not finally processed yet.
-	protected processingWebViewMessage=false;
+	protected processingWebViewMessage = false;
 
 
 	/**
@@ -115,15 +114,15 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 		// Create array with slots
 		this.patternIds = new Array<number>();
-		while(true) {
+		while (true) {
 			const start = indexRanges.shift();
-			if(start == undefined)
+			if (start == undefined)
 				break;
 			let end = indexRanges.shift() || -1;
 			Utility.assert(end >= 0);
 			end += start;
-			for(let k=start; k<end; k++) {
-				if(k > 63)
+			for (let k = start; k < end; k++) {
+				if (k > 63)
 					break;
 				this.patternIds.push(k);
 			}
@@ -131,7 +130,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 		// Title
 		Utility.assert(this.vscodePanel);
-		(this.vscodePanel as WebviewPanel).title = title;
+		this.vscodePanel.title = title;
 	}
 
 
@@ -142,32 +141,32 @@ export class ZxNextSpritePatternsView extends BaseView {
 	protected async webViewMessageReceived(message: any) {
 		if (this.processingWebViewMessage)
 			return;
-		this.processingWebViewMessage=true;
+		this.processingWebViewMessage = true;
 
 		switch (message.command) {
 			case 'reload':
 				ZxNextSpritePatternsView.staticUpdate();
-				const views=BaseView.staticGetAllViews(ZxNextSpritePatternsView);
+				const views = BaseView.staticGetAllViews(ZxNextSpritePatternsView);
 				for (const view of views) {
 					await view.update();
 				}
 				break;
 			case 'bckgColor':
 				// Save color
-				this.usedBckgColor=message.value;
+				this.usedBckgColor = message.value;
 				break;
 			case 'palette':
 				// Save palette
-				this.usedPalette=message.value;
+				this.usedPalette = message.value;
 				// Reload only current view, keep already loaded palettes
-				ZxNextSpritePatternsView.currentPaletteNumber=-1;
+				ZxNextSpritePatternsView.currentPaletteNumber = -1;
 				await this.update();
 				break;
 			default:
 				Utility.assert(false);
 				break;
 		}
-		this.processingWebViewMessage=false;
+		this.processingWebViewMessage = false;
 	}
 
 
@@ -179,7 +178,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 */
 	protected static staticGetPaletteNumberFromSelectedIndex(selectedIndex: PaletteSelection): number {
 		let paletteNumber;
-		switch(selectedIndex) {
+		switch (selectedIndex) {
 			case PaletteSelection.PALETTE_0:
 				paletteNumber = 0;
 				break;
@@ -204,7 +203,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * @returns PaletteSelection.PALETTE_0 or PaletteSelection.PALETTE_1
 	 */
 	protected static staticGetSelectedIndexFromPaletteNumber(paletteNumber: number): PaletteSelection {
-		if(paletteNumber == 0)
+		if (paletteNumber == 0)
 			return PaletteSelection.PALETTE_0;
 		else {
 			Utility.assert(paletteNumber == 1);
@@ -220,10 +219,10 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 */
 	protected static staticGetPaletteForSelectedIndex(selectedIndex: PaletteSelection): any {
 
-		Log.log('ZxNextSpritePatternView::staticGetPaletteForSelectedIndex a, selectedIndex='+selectedIndex+', currentPaletteNumber='+ZxNextSpritePatternsView.currentPaletteNumber);
+		Log.log('ZxNextSpritePatternView::staticGetPaletteForSelectedIndex a, selectedIndex=' + selectedIndex + ', currentPaletteNumber=' + ZxNextSpritePatternsView.currentPaletteNumber);
 		let paletteSelection = selectedIndex;
-		if(selectedIndex == PaletteSelection.CURRENT) {
-			switch(ZxNextSpritePatternsView.currentPaletteNumber) {
+		if (selectedIndex == PaletteSelection.CURRENT) {
+			switch (ZxNextSpritePatternsView.currentPaletteNumber) {
 				case 0:
 					paletteSelection = PaletteSelection.PALETTE_0;
 					break;
@@ -237,7 +236,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 			}
 		}
 
-		const palette=ZxNextSpritePatternsView.spritePalettes.get(paletteSelection);
+		const palette = ZxNextSpritePatternsView.spritePalettes.get(paletteSelection);
 		Log.log('ZxNextSpritePatternView::staticGetPaletteForSelectedIndex b');
 		return palette;
 	}
@@ -260,11 +259,11 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 */
 	protected createDefaultPalette(): Array<number> {
 		// Create default palette
-		const defaultPalette = new Array<number>(3*256);
+		const defaultPalette = new Array<number>(3 * 256);
 		let k = 0;
 		const offs = [0x0, 0x2, 0x5, 0x7, 0x8, 0xA, 0xD, 0xF];
-		for(let i=0;i<256; i++) {
-		//000 002 005 007 008 00A 00D 00F 010 012 015 017 018 01A 01D 01F 020 022 025 027 028 02A 02D 02F 030 032 035 037 038 03A 03D 03F 040 042 045 047 048 04A 04D 04F 050 052 055 057 058 05A 05D 05F 060 062 065 067 068 06A 06D 06F 070 072 075 077 078 07A 07D 07F 080 082 085 087 088 08A 08D 08F 090 092 095 097 098 09A 09D 09F 0A0 0A2 0A5 0A7 0A8 0AA 0AD 0AF 0B0 0B2 0B5 0B7 0B8 0BA 0BD 0BF 0C0 0C2 0C5 0C7 0C8 0CA 0CD 0CF 0D0 0D2 0D5 0D7 0D8 0DA 0DD 0DF 0E0 0E2 0E5 0E7 0E8 0EA 0ED 0EF 0F0 0F2 0F5 0F7 0F8 0FA 0FD 0FF 100 102 105 107 108 10A 10D 10F 110 112 115 117 118 11A 11D 11F 120 122 125 127 128 12A 12D 12F 130 132 135 137 138 13A 13D 13F 140 142 145 147 148 14A 14D 14F 150 152 155 157 158 15A 15D 15F 160 162 165 167 168 16A 16D 16F 170 172 175 177 178 17A 17D 17F 180 182 185 187 188 18A 18D 18F 190 192 195 197 198 19A 19D 19F 1A0 1A2 1A5 1A7 1A8 1AA 1AD 1AF 1B0 1B2 1B5 1B7 1B8 1BA 1BD 1BF 1C0 1C2 1C5 1C7 1C8 1CA 1CD 1CF 1D0 1D2 1D5 1D7 1D8 1DA 1DD 1DF 1E0 1E2 1E5 1E7 1E8 1EA 1ED 1EF 1F0 1F2 1F5 1F7 1F8 1FA 1FD 1FF
+		for (let i = 0; i < 256; i++) {
+			//000 002 005 007 008 00A 00D 00F 010 012 015 017 018 01A 01D 01F 020 022 025 027 028 02A 02D 02F 030 032 035 037 038 03A 03D 03F 040 042 045 047 048 04A 04D 04F 050 052 055 057 058 05A 05D 05F 060 062 065 067 068 06A 06D 06F 070 072 075 077 078 07A 07D 07F 080 082 085 087 088 08A 08D 08F 090 092 095 097 098 09A 09D 09F 0A0 0A2 0A5 0A7 0A8 0AA 0AD 0AF 0B0 0B2 0B5 0B7 0B8 0BA 0BD 0BF 0C0 0C2 0C5 0C7 0C8 0CA 0CD 0CF 0D0 0D2 0D5 0D7 0D8 0DA 0DD 0DF 0E0 0E2 0E5 0E7 0E8 0EA 0ED 0EF 0F0 0F2 0F5 0F7 0F8 0FA 0FD 0FF 100 102 105 107 108 10A 10D 10F 110 112 115 117 118 11A 11D 11F 120 122 125 127 128 12A 12D 12F 130 132 135 137 138 13A 13D 13F 140 142 145 147 148 14A 14D 14F 150 152 155 157 158 15A 15D 15F 160 162 165 167 168 16A 16D 16F 170 172 175 177 178 17A 17D 17F 180 182 185 187 188 18A 18D 18F 190 192 195 197 198 19A 19D 19F 1A0 1A2 1A5 1A7 1A8 1AA 1AD 1AF 1B0 1B2 1B5 1B7 1B8 1BA 1BD 1BF 1C0 1C2 1C5 1C7 1C8 1CA 1CD 1CF 1D0 1D2 1D5 1D7 1D8 1DA 1DD 1DF 1E0 1E2 1E5 1E7 1E8 1EA 1ED 1EF 1F0 1F2 1F5 1F7 1F8 1FA 1FD 1FF
 			const j = i % 8;
 			const high = (i << 1) & 0xF0;
 			const val = high + offs[j];
@@ -283,13 +282,13 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 */
 	protected createFalseColorsPalette(): Array<number> {
 		// Create false colors palette
-		const falseColorsPalette = new Array<number>(3*256);
-		let k=0;
-		const rng=new Random.MT(12345);	// Use always the same seed
-		for(let i=0;i<256; i++) {
-			falseColorsPalette[k++]=rng.range(0, 255);
-			falseColorsPalette[k++]=rng.range(0, 255);
-			falseColorsPalette[k++]=rng.range(0, 255);
+		const falseColorsPalette = new Array<number>(3 * 256);
+		let k = 0;
+		const rng = new Random.MT(12345);	// Use always the same seed
+		for (let i = 0; i < 256; i++) {
+			falseColorsPalette[k++] = rng.range(0, 255);
+			falseColorsPalette[k++] = rng.range(0, 255);
+			falseColorsPalette[k++] = rng.range(0, 255);
 		}
 		return falseColorsPalette;
 	}
@@ -299,20 +298,20 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * First checks which palette is in use, then loads it from the emulator.
 	 */
 	protected async getSpritesPalette(): Promise<void> {
-		if (ZxNextSpritePatternsView.currentPaletteNumber>=0) {
+		if (ZxNextSpritePatternsView.currentPaletteNumber >= 0) {
 			return;
 		}
 
 		// Get the transparent index
 		let value = await Remote.getTbblueRegister(75);
-		ZxNextSpritePatternsView.spritesPaletteTransparentIndex=value;
+		ZxNextSpritePatternsView.spritesPaletteTransparentIndex = value;
 
 		// Get in use palette number
-		value=await Remote.getTbblueRegister(0x43);	// ULANextControlRegister
-		ZxNextSpritePatternsView.currentPaletteNumber=(value>>>3)&0x01;
+		value = await Remote.getTbblueRegister(0x43);	// ULANextControlRegister
+		ZxNextSpritePatternsView.currentPaletteNumber = (value >>> 3) & 0x01;
 
 		// Check if already existing
-		if(ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette)) {
+		if (ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette)) {
 			return;
 		}
 
@@ -321,7 +320,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 		let paletteNumber;
 		// Check palette selection and maybe override this number
 		const usedPal = this.usedPalette;
-		switch(usedPal) {
+		switch (usedPal) {
 			case PaletteSelection.DEFAULT:
 				// Create default palette
 				ZxNextSpritePatternsView.spritePalettes.set(usedPal, this.createDefaultPalette());
@@ -335,12 +334,12 @@ export class ZxNextSpritePatternsView extends BaseView {
 				break;
 		}
 		// Get palette
-		const paletteArray=await Remote.getTbblueSpritesPalette(paletteNumber);
+		const paletteArray = await Remote.getTbblueSpritesPalette(paletteNumber);
 		// Convert bits to single numbers
-		const loadedPalette = new Array<number>(3*256);
+		const loadedPalette = new Array<number>(3 * 256);
 		// 3 colors
 		let k = 0;
-		for(const color of paletteArray) {
+		for (const color of paletteArray) {
 			// Red
 			loadedPalette[k++] = color & 0b11100000;
 			// Green
@@ -360,22 +359,22 @@ export class ZxNextSpritePatternsView extends BaseView {
 	  */
 	protected async getSpritePatterns(): Promise<void> {
 		// Check if a pattern needs to be requested
-		if (this.patternIds.length==0) {
+		if (this.patternIds.length == 0) {
 			return;
 		}
 
-		const usedIndex=new Array<number>();
+		const usedIndex = new Array<number>();
 		for (const index of this.patternIds) {
 			// Check if it exists already
-			const pattern=ZxNextSpritePatternsView.spritePatterns.get(index);
+			const pattern = ZxNextSpritePatternsView.spritePatterns.get(index);
 			if (!pattern) {
 				// Pattern does not exists yet.
 				// Get pattern from emulator
 				usedIndex.push(index);
-				const spritePatterns=await Remote.getTbblueSpritePatterns(index, 1);
-				const indexPop=usedIndex.shift()!;
-				Utility.assert(indexPop!=undefined);
-				if(spritePatterns.length>0)
+				const spritePatterns = await Remote.getTbblueSpritePatterns(index, 1);
+				const indexPop = usedIndex.shift()!;
+				Utility.assert(indexPop != undefined);
+				if (spritePatterns.length > 0)
 					ZxNextSpritePatternsView.spritePatterns.set(indexPop, spritePatterns[0]);
 			}
 		}
@@ -394,7 +393,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 		try {
 			Log.log('ZxNextSpritePatternView::update a');
 			// Mark as invalid until pattern have been loaded.
-			this.patternDataValid=(!reason||reason.step!=true);
+			this.patternDataValid = !(reason.step);
 
 			// REMARK: Muss ich verloggen um rauszukriegen wo currentpalette auf -1 gesetzt wird.
 
@@ -407,8 +406,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 				await this.getSpritePatterns();
 			}
 			catch (e) {
-				this.retrievingError=e.message;
-			};
+				this.retrievingError = e.message;
+			}
 
 			Log.log('ZxNextSpritePatternView::update c');
 
@@ -419,7 +418,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 		}
 		catch (e) {
 			Remote.emit('warning', e.message);
-		};
+		}
 	}
 
 
@@ -503,8 +502,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 		`;
 
 		const invalid = (this.patternDataValid) ? "" : "*";
-		const hidden=(this.retrievingError)? "hidden":"";
-		const html=util.format(format, invalid, hidden, ZxNextSpritePatternsView.currentPaletteNumber, this.usedBckgColor, this.usedPalette);
+		const hidden = (this.retrievingError) ? "hidden" : "";
+		const html = util.format(format, invalid, hidden, ZxNextSpritePatternsView.currentPaletteNumber, this.usedBckgColor, this.usedPalette);
 		return html;
 	}
 
@@ -512,7 +511,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 	/**
 	 * Returns a table cell (td) and inserts the first value.
 	 * If first and second value are different then the cell is made bold.
-	 * @param currentValue The currentvalue to show.
+	 * @param currentValue The current value to show.
 	 * @param prevValue The previous value.
 	 */
 	protected getTableTdWithBold(currentValue: any, prevValue: any): string {
@@ -528,14 +527,14 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 */
 	protected createHtmlTable(): string {
 		if (this.retrievingError)
-			return '<div>'+this.retrievingError+'</div>';
+			return '<div>' + this.retrievingError + '</div>';
 
 		// Create a string with the table itself.
 		Log.log('ZxNextSpritePatternView::createHtmlTable a');
 
 		let palette = ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
 		Utility.assert(palette);
-		let table=`
+		let table = `
 <style>
 	.classPattern {
 		width:auto;
@@ -550,16 +549,16 @@ export class ZxNextSpritePatternsView extends BaseView {
 `;
 		let k = 0;
 		let count = this.patternIds.length;
-		for(const patternId of this.patternIds) {
-			count --;
+		for (const patternId of this.patternIds) {
+			count--;
 			let pattern = ZxNextSpritePatternsView.spritePatterns.get(patternId);
 			if (!pattern) {
 				// Use empty image
-				pattern=new Array<number>(16*16);
+				pattern = new Array<number>(16 * 16);
 			}
 
 			// Start of table (note there are several tables next to each other).
-			if(k % 16 == 0) {
+			if (k % 16 == 0) {
 				table += `<table style="text-align:center; float:left" border="1"
 					cellpadding="0">
 					<colgroup>
@@ -581,42 +580,42 @@ export class ZxNextSpritePatternsView extends BaseView {
 			table += '<tr>\n<td>' + patternId + '</td>\n'
 
 			// Convert 8bit Pattern to base64
-			const buf8b=Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex));
-			const base64String8b=buf8b.toString('base64');
-			table+=' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,'+base64String8b+'"></td>\n';
+			const buf8b = Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex));
+			const base64String8b = buf8b.toString('base64');
+			table += ' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,' + base64String8b + '"></td>\n';
 
 			// Convert 4bit N6=0 Pattern to base64
-			const pattern4b0=new Array<number>(256);
-			for (let i=0; i<128; i++) {
-				const val=pattern[i];
-				pattern4b0[2*i]=val>>>4;
-				pattern4b0[2*i+1]=val&0x0F;
+			const pattern4b0 = new Array<number>(256);
+			for (let i = 0; i < 128; i++) {
+				const val = pattern[i];
+				pattern4b0[2 * i] = val >>> 4;
+				pattern4b0[2 * i + 1] = val & 0x0F;
 			}
-			const buf4b0=Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern4b0, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex&0x0F));
-			const base64String4b0=buf4b0.toString('base64');
-			table+=' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,'+base64String4b0+'"></td>\n';
+			const buf4b0 = Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern4b0, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex & 0x0F));
+			const base64String4b0 = buf4b0.toString('base64');
+			table += ' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,' + base64String4b0 + '"></td>\n';
 
 			// Convert 4bit N6=1 Pattern to base64
-			const pattern4b1=new Array<number>(256);
-			for (let i=0; i<128; i++) {
-				const val=pattern[128+i];
-				pattern4b1[2*i]=val>>>4;
-				pattern4b1[2*i+1]=val&0x0F;
+			const pattern4b1 = new Array<number>(256);
+			for (let i = 0; i < 128; i++) {
+				const val = pattern[128 + i];
+				pattern4b1[2 * i] = val >>> 4;
+				pattern4b1[2 * i + 1] = val & 0x0F;
 			}
-			const buf4b1=Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern4b1, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex&0x0F));
-			const base64String4b1=buf4b1.toString('base64');
-			table+=' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,'+base64String4b1+'"></td>\n';
+			const buf4b1 = Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern4b1, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex & 0x0F));
+			const base64String4b1 = buf4b1.toString('base64');
+			table += ' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,' + base64String4b1 + '"></td>\n';
 
 			// End of row
-			table+='</tr>\n\n';
+			table += '</tr>\n\n';
 
 			// end of table
-			if((k % 16 == 15) || (count == 0)) {
+			if ((k % 16 == 15) || (count == 0)) {
 				table += '</table>\n\n';
 			}
 
 			// Next
-			k ++;
+			k++;
 		}
 
 
@@ -670,4 +669,3 @@ export class ZxNextSpritePatternsView extends BaseView {
 		this.vscodePanel.webview.html = html;
 	}
 }
-

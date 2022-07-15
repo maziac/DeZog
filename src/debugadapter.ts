@@ -333,7 +333,7 @@ export class DebugSessionClass extends DebugSession {
 	 * The debugger has to send the terminateEvent for proper handling after e.g. the
 	 * socket has been disconnected.
 	 */
-	protected async terminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments): Promise<void> {
+	protected async terminateRequest(response: DebugProtocol.TerminateResponse, _args: DebugProtocol.TerminateArguments): Promise<void> {
 		console.log('terminateRequest');	// TODO: REMOVE
 		// Disconnect Remote etc.
 		await this.disconnectAll();
@@ -3558,15 +3558,15 @@ E.g. use "-help -view" to put the help text in an own view.
 		if (fromAddr < 0)
 			throw Error("No address found at line.");
 		// Get all address of last line (not only the first)
-		let addr = toAddr & 0xFFFF;
+		let address = toAddr & 0xFFFF;
 		let upperAddr = toAddr & (~0xFFFF);
-		while (addr < 0xFFFF) {
-			const longAddr = (addr + 1) | upperAddr;
+		while (address < 0xFFFF) {
+			const longAddr = (address + 1) | upperAddr;
 			const fileLine = Remote.getFileAndLineForAddress(longAddr);
 			if (fileLine.lineNr != toLineNr || fileLine.fileName != filename)
 				break;
 			// Next
-			addr++;
+			address++;
 			toAddr = longAddr;
 		}
 

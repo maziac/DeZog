@@ -740,8 +740,7 @@ export class Disassembler extends EventEmitter {
 	 * ".subNNN_" or ".lblNNN_". E.g. ".sub001_l5", ".sub001_loop1", ".lbl788_l89", ".lbl788_loop23".
 	 * All labels are stored into this.labels. At the end the list is sorted by the address.
 	 */
-	protected
-	collectLabels() {
+	protected collectLabels() {
 		let address;
 		let opcode;
 
@@ -789,7 +788,7 @@ export class Disassembler extends EventEmitter {
 					break;
 
 				// Mark memory area
-				this.memory.addAttributesAt(address, 1, MemAttribute.CODE_FIRST);
+				this.memory.addAttributeAt(address, MemAttribute.CODE_FIRST);
 				this.memory.addAttributesAt(address, opcode.length, MemAttribute.CODE);
 
 				/*
@@ -1468,12 +1467,12 @@ export class Disassembler extends EventEmitter {
 			// Remember flags
 			flags = opcode.flags;
 
-			// Proceed to next address
-			address += opcode.length;
-
 			// branch address
 			if (func(flags, opcode, address, branchAddrs))
 				break;	// Break from loop
+
+			// Proceed to next address
+			address += opcode.length;
 
 		} while (!(flags & OpcodeFlag.STOP));
 

@@ -143,8 +143,8 @@ export class MemoryModel {
 					end: start - 1,
 					banks: new Set<number>()
 				}
-				const slotIndex = this.slotRanges.length;
-				this.slotAddress64kAssociation.fill(slotIndex, unassignedSlotRange.start, unassignedSlotRange.end + 1);
+				const unassignedSlotIndex = this.slotRanges.length;
+				this.slotAddress64kAssociation.fill(unassignedSlotIndex, unassignedSlotRange.start, unassignedSlotRange.end + 1);
 				this.slotRanges.push(unassignedSlotRange);
 				this.initialSlots.push(-1);
 			}
