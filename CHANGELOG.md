@@ -16,7 +16,7 @@
 - "disableBanking" option removed from "sjasmplus" launch.json configuration.
 
 # 2.7.1
-- Fixed disassembly of instructions: INC (IX+n), DEC (IX+n), INC (IY+n) and DEC (IY+n).
+- Fixed disassembly of instructions: INC (IX+n), DEC (IX+n), INC (IY+n) and DEC (IY+n). #93 Stepping over.
 
 # 2.7.0
 - Experimental MAME support.
