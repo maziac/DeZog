@@ -901,7 +901,8 @@ export class Disassembler extends EventEmitter {
 		// Add reference(s). Do a union of both sets.
 		//label.references = new Set([...label.references, ...referenceAddresses]);
 		for (let ref of referenceAddresses) {
-			if (ref != address) {
+			//if (ref != address) // Filter own address
+			{
 				label.references.add(ref);
 			}
 		}
@@ -1888,13 +1889,12 @@ export class Disassembler extends EventEmitter {
 						isSUB = true;
 				// Analyze branch only if no subroutine
 				if (!isSUB) {
-					const branchAddress = opcode.value;
 					branchAddrs.push(branchAddress);
 				}
 			}
 
 			// Stop at flow-through
-			const nextLabel = this.labels.get(address);
+			const nextLabel = this.labels.get((opcodeAddr + opcode.length) & 0xFFFF);
 			if (nextLabel) {
 				const type = nextLabel.type;
 				if (type == NumberType.CODE_SUB
