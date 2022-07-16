@@ -354,15 +354,16 @@ export class Disassembler extends EventEmitter {
 	 * Disassembly is done in a few passes.
 	 * Afterwards the disassembledLines are set:
 	 * An array of strings with the disassembly.
+	 * @param maxDepth The call stack size to disassemble. 1=don't dive into calls/jp. 2=dive one level deep. 3=etc.
 	 */
-	public disassemble() {
+	public disassemble(maxDepth: number) {
 		if (this.automaticAddresses) {
 			// Add address 0
 			this.addAutomaticAddresses();
 		}
 
 		// Collect labels
-		this.collectLabels();
+		this.collectLabels(maxDepth);
 
 		// Find interrupts
 		if(this.findInterrupts)
@@ -739,8 +740,61 @@ export class Disassembler extends EventEmitter {
 	 * "loop" and "lbl" labels are prefixed by a previous "SUB"- or "LBL"-label with a prefix
 	 * ".subNNN_" or ".lblNNN_". E.g. ".sub001_l5", ".sub001_loop1", ".lbl788_l89", ".lbl788_loop23".
 	 * All labels are stored into this.labels. At the end the list is sorted by the address.
+	 * @param maxDepth The call stack size to disassemble. 1=don't dive into calls/jp. 2=dive one level deep. 3=etc.
 	 */
-	protected collectLabels() {
+	protected collectLabels(maxDepth: number) {
+		this.memory.resetAttributeFlag(MemAttribute.
+			FLOW_ANALYZED);	// Not really required, as collectLabels is the first to work on the memory.
+
+		// Due analysis in several steps to check for the depth.
+		let depth = 0; // I.e. depth=0 is the starting level.
+		let nextAddresses = this.addressQueue;
+		while (depth < maxDepth) {
+			// Move arrays
+			const addresses = nextAddresses;
+			nextAddresses = [];
+
+			// Get addresses from queue
+			for (const address of addresses) {
+				// and analyze
+				const startSlot = this.addressesSlotBankInfo[address].slot;
+				this.followFlowPath(startSlot, address, (_flags: OpcodeFlag, opcode: Opcode, opcodeAddr: number, _branchAddrs: number[]) => {
+					// Check if memory area has already been PARTLY disassembled
+					const len = opcode.length;
+					let memAddress = opcodeAddr;
+					for (let i = 1; i < len; i++) {
+						memAddress++;
+						const attr = this.memory.getAttributeAt(memAddress);
+						if (attr & MemAttribute.CODE) {
+							// It has already been disassembled -> error.
+							const otherOpcode = Opcode.getOpcodeAt(this.memory, memAddress);
+							// emit warning
+							this.emit('warning', 'Aborting disassembly: Ambiguous disassembly: Trying to disassemble opcode "' + opcode.name + '" at address 0x' + address.toString(16) + ' but address 0x' + memAddress.toString(16) + ' already contains opcode "' + otherOpcode.name + '".');
+
+							// Quit current loop.
+							return true;
+						}
+					}
+
+					// Mark memory area
+					this.memory.addAttributeAt(opcodeAddr, MemAttribute.CODE_FIRST);
+					this.memory.addAttributesAt(opcodeAddr, opcode.length, MemAttribute.CODE);
+
+					// Check opcode for labels
+					this.disassembleForLabel(startSlot, opcodeAddr, opcode, nextAddresses);
+
+					// Do not stop loop
+					return false;
+				});
+			}
+
+			// Next level
+			depth++;
+		}
+	}
+
+
+	protected collectLabelso() { // TODO: REMOVE
 		let address;
 		let opcode;
 
@@ -798,7 +852,7 @@ export class Disassembler extends EventEmitter {
 				*/
 
 				// Check opcode for labels
-				this.disassembleForLabel(startSlot, address, opcode);
+				this.disassembleForLabel(startSlot, address, opcode, []);
 
 				// Check for stop code. (JP, JR, RET)
 				if (opcode.flags & OpcodeFlag.STOP)
@@ -985,8 +1039,10 @@ export class Disassembler extends EventEmitter {
 	 * @param startSlot Used for bank border test.
 	 * @param opcode The opcode to search for a label.
 	 * @param opcodeAddress The current address.
+	 * @param nextAddresses If it is a branching opcode (and some other constraints)
+	 * then the branchAddress is added here.
 	 */
-	protected disassembleForLabel(startSlot: number, opcodeAddress: number, opcode: Opcode) {
+	protected disassembleForLabel(startSlot: number, opcodeAddress: number, opcode: Opcode, nextAddresses: number[]) {
 
 		// Check for branching etc. (CALL, RST, JP, JR)
 		if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
@@ -1025,7 +1081,7 @@ export class Disassembler extends EventEmitter {
 						// memory location exists, so queue it for disassembly
 						if (vType != NumberType.CODE_RST || this.rstDontFollowAddresses.indexOf(branchAddress) < 0) {
 							// But only if it is not a RST address which was banned by the user.
-							this.addressQueue.push(branchAddress);
+							nextAddresses.push(branchAddress);
 						}
 					}
 				}
@@ -1414,7 +1470,7 @@ export class Disassembler extends EventEmitter {
 		const startSlot = this.addressesSlotBankInfo[address].slot;
 		this.memory.resetAttributeFlag(MemAttribute.FLOW_ANALYZED);
 		this.followFlowPath(startSlot, address,
-			(flags: OpcodeFlag, opcode: Opcode, opcodeAddr: number, branchAddrs: number[]) => {
+			(flags: OpcodeFlag, opcode: Opcode, _opcodeAddr: number, branchAddrs: number[]) => {
 				if (flags & OpcodeFlag.BRANCH_ADDRESS && !(flags & OpcodeFlag.CALL)) {
 					// Analyze branch
 					const branchAddress = opcode.value;
@@ -1436,6 +1492,8 @@ export class Disassembler extends EventEmitter {
 	 * @param func The function to execute.
 	 * @param addrsArray An empty array in the beginning that is filled with
 	 * all addresses of the subroutine.
+	 * @param depth Starts at 0. Every iteration this is increased.
+	 * Used to stop analysis after a certain depth (disassembly).
 	 */
 	protected followFlowPath(startSlot: number, address: number, func: (flags: OpcodeFlag, opcode: Opcode, opcodeAddr: number, branchAddrs: number[]) => boolean, addrsArray?: Array<number>) {
 		let flags: OpcodeFlag;
@@ -2754,12 +2812,12 @@ export class Disassembler extends EventEmitter {
 	/**
 	 * Returns a map of chosen addresses, labels for creating the
 	 * dot graph.
+	 * @param depth At start this is the count of call depth to show:
+	 * 1=dive one level deep. 2=two levels, etc.
+	 * @param addrString The address to show for the node.
+	 * @param chosenLabels
 	 */
-	public getGraphLabels(addrString: number | string, chosenLabels?: Map<number, DisLabel>): Map<number, DisLabel> {
-		// Crete new map
-		if (!chosenLabels)
-			chosenLabels = new Map<number, DisLabel>();
-
+	public getGraphLabels(depth: number, addrString: number | string,chosenLabels: Map<number, DisLabel>) {
 		// Convert to number
 		let addr;
 		if (typeof (addrString) == 'string') {
@@ -2780,16 +2838,17 @@ export class Disassembler extends EventEmitter {
 		if (!chosenLabels.get(addr)) {
 			// Save in new map
 			chosenLabels.set(addr, label);
-			// Also add the called sub routines
-			for (const called of label.calls) {
-				// Recursive
-				const callee = called.getName();
-				this.getGraphLabels(callee, chosenLabels);
+			// Check depth
+			depth--;
+			if (depth > 0) {
+				// Also add the called sub routines
+				for (const called of label.calls) {
+					// Recursive
+					const callee = called.getName();
+					this.getGraphLabels(depth, callee, chosenLabels);
+				}
 			}
 		}
-
-		// Return
-		return chosenLabels;
 	}
 
 
@@ -2800,14 +2859,16 @@ export class Disassembler extends EventEmitter {
 	 * calling the function.
 	 * Call 'createRevertedLabelMap' before calling this function.
 	 * @param labels The labels to print.
+	 * @param startAddresses All main labels. Printed in a different color.
 	 * @param maincolor The color used for fonts and lines.
 	 * @param fillcolor The color to use for filling the main label(s).
 	 * @param equLabelColor The color used if a label is an EQU instead of an address.
 	 * @returns The dot graphic as text.
 	 */
-	public getCallGraph(labels: Map<number, DisLabel>, maincolor = 'black', fillcolor = 'lightyellow', equLabelColor = 'lightgray'): string {
+	public getCallGraph(labels: Map<number, DisLabel>, startAddresses: number[], maincolor = 'black', fillcolor = 'lightyellow', equLabelColor = 'lightgray'): string {
 		const rankSame1 = new Array<string>();
 		const rankSame2 = new Array<string>();
+		//const ranked = new Array<string>();
 
 		// Header
 		let text = 'digraph Callgraph {\n\n';
@@ -2866,22 +2927,35 @@ export class Disassembler extends EventEmitter {
 
 				// List each callee only once
 				const callees = new Set<DisLabel>();
+				//const names = Array<string>();
 				for (const callee of label.calls) {
-					callees.add(callee);
-				}
-				// Output all called labels in different color:
-				if (label.references.size == 0 || label.type == NumberType.CODE_LBL) {
-					//const callers = this.getCallersOf(label);
-					if (!colorString)
-						colorString = fillcolor;
-					if (label.references.size == 0)
-						rankSame1.push(label.name);
-					else
-						rankSame2.push(label.name);
+					if (labels.has(callee.address)) {
+						callees.add(callee);
+						/*
+						const name = callee.name;
+						if (ranked.indexOf(name) < 0)
+							names.push(name);	// Rank only if not already ranked.
+						*/
+					}
 				}
 
-				if (callees.size > 0)
+				/*
+				// Rank the nodes
+				if (names.length) {
+					text += '\n{ rank=same; "' + names.join('", "') + '" };\n\n';
+					ranked.push(...names);
+				}
+				*/
+
+				// Output all main labels in different color
+				if (startAddresses.indexOf(label.address) >= 0) {
+					colorString = fillcolor;
+				}
+
+				if (callees.size > 0) {
 					text += '"' + label.name + '" -> { ' + Array.from(callees).map(refLabel => '"' + refLabel.name + '"').join(' ') + ' };\n';
+					// text += '"' + label.name + '":s -> { ' + Array.from(callees).map(refLabel => '"' + refLabel.name + '"').join(' ') + ' };\n'; // Differnet look of arrows: more curved instead of straight
+				}
 			}
 
 			// Color

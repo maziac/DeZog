@@ -3164,7 +3164,7 @@ E.g. use "-help -view" to put the help text in an own view.
 					}
 
 					// Disassemble
-					disassembler.disassemble();
+					disassembler.disassemble(2);
 					const text = disassembler.getDisassemblyText();
 					return text;
 				}
@@ -3691,7 +3691,7 @@ E.g. use "-help -view" to put the help text in an own view.
 				case 'disassembly':
 					{
 						// Disassemble
-						analyzer.disassemble();
+						analyzer.disassemble(2);
 						// Output disassembly text to view
 						const text = analyzer.getDisassemblyText();
 

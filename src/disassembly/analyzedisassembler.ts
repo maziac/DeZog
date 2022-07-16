@@ -129,10 +129,11 @@ export class AnalyzeDisassembler extends Disassembler {
 	/**
 	 * Disassembles the memory.
 	 * Additionally keeps the address/line locations.
+	 * @param maxDepth The call stack size to disassemble. 1=don't dive into calls/jp. 2=dive one level deep. 3=etc.
 	 */
-	public disassemble() {
+	public disassemble(maxDepth: number) {
 		// Disassemble
-		super.disassemble();
+		super.disassemble(maxDepth);
 		// Get address/line relationship.
 		let lineNr = 0;
 		this.addrLineMap.clear();
@@ -231,7 +232,7 @@ export class AnalyzeDisassembler extends Disassembler {
 		// Then at the end these numbers are converted into vars like "var(--vscode-editor-foreground)".
 
 		// Disassemble
-		this.disassemble();
+		this.disassemble(1);
 
 		// Get dot text output.
 		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
@@ -259,14 +260,15 @@ export class AnalyzeDisassembler extends Disassembler {
 			// Note: the name will be overridden by 'funcAssignLabels()' if it is already available in DeZog.
 		}
 		// Disassemble
-		this.disassemble();
+		const depth = 3;
+		this.disassemble(depth);
 		// Create reverted map
 		this.createRevertedLabelMap();
 		// In case not all start addresses have labels, invent labels, e.g. "0AF4h"
 		const chosenLabels = new Map<number, DisLabel>();
 		for (const addr64k of startAddrs64k) {
 			// Check for existing label
-			this.getGraphLabels(addr64k, chosenLabels);
+			this.getGraphLabels(depth, addr64k, chosenLabels);
 		}
 
 		// Assure that a start address is at least a CODE_LBL
@@ -281,9 +283,8 @@ export class AnalyzeDisassembler extends Disassembler {
 			}
 		}
 		// Get dot text output.
-		const dot = this.getCallGraph(chosenLabels, '#FEFE01', '#FEFE02');
+		const dot = this.getCallGraph(chosenLabels, startAddrs64k, '#FEFE01', '#FEFE02');
 		// Render
-		//let rendered = await renderGraphFromSource({input: dot}, {format: 'svg'});
 		let rendered = renderGraphviz(dot);
 		rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
 		rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
