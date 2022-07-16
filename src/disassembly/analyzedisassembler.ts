@@ -130,10 +130,12 @@ export class AnalyzeDisassembler extends Disassembler {
 	 * Disassembles the memory.
 	 * Additionally keeps the address/line locations.
 	 * @param maxDepth The call stack size to disassemble. 1=don't dive into calls/jp. 2=dive one level deep. 3=etc.
+	 * @returns The really used depth. To determine the used depth simply pass the max. 655356 as maxDepth.
+	 * The return value is the real required depth.
 	 */
-	public disassemble(maxDepth: number) {
+	public disassemble(maxDepth: number): number {
 		// Disassemble
-		super.disassemble(maxDepth);
+		const depth = super.disassemble(maxDepth);
 		// Get address/line relationship.
 		let lineNr = 0;
 		this.addrLineMap.clear();
@@ -162,6 +164,7 @@ export class AnalyzeDisassembler extends Disassembler {
 			}
 			lineNr++;
 		}
+		return depth;
 	}
 
 
@@ -260,8 +263,7 @@ export class AnalyzeDisassembler extends Disassembler {
 			// Note: the name will be overridden by 'funcAssignLabels()' if it is already available in DeZog.
 		}
 		// Disassemble
-		const depth = 3;
-		this.disassemble(depth);
+		const depth = this.disassemble(65536);	// Try max depth and get real depth.
 		// Create reverted map
 		this.createRevertedLabelMap();
 		// In case not all start addresses have labels, invent labels, e.g. "0AF4h"

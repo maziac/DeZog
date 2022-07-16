@@ -355,15 +355,17 @@ export class Disassembler extends EventEmitter {
 	 * Afterwards the disassembledLines are set:
 	 * An array of strings with the disassembly.
 	 * @param maxDepth The call stack size to disassemble. 1=don't dive into calls/jp. 2=dive one level deep. 3=etc.
+	 * @returns The really used depth. To determine the used depth simply pass the max. 655356 as maxDepth.
+	 * The return value is the real required depth.
 	 */
-	public disassemble(maxDepth: number) {
+	public disassemble(maxDepth: number): number {
 		if (this.automaticAddresses) {
 			// Add address 0
 			this.addAutomaticAddresses();
 		}
 
 		// Collect labels
-		this.collectLabels(maxDepth);
+		const depth = this.collectLabels(maxDepth);
 
 		// Find interrupts
 		if(this.findInterrupts)
@@ -434,6 +436,8 @@ export class Disassembler extends EventEmitter {
 		// Trim all lines
 		const trimmed = this.disassembledLines.map(line => line.trimEnd());
 		this.disassembledLines = trimmed;
+
+		return depth;
 	}
 
 
@@ -741,15 +745,17 @@ export class Disassembler extends EventEmitter {
 	 * ".subNNN_" or ".lblNNN_". E.g. ".sub001_l5", ".sub001_loop1", ".lbl788_l89", ".lbl788_loop23".
 	 * All labels are stored into this.labels. At the end the list is sorted by the address.
 	 * @param maxDepth The call stack size to disassemble. 1=don't dive into calls/jp. 2=dive one level deep. 3=etc.
+	 * @returns The really used depth. To determine the used depth simply pass the max. 655356 as maxDepth.
+	 * The return value is the real required depth.
 	 */
-	protected collectLabels(maxDepth: number) {
+	protected collectLabels(maxDepth: number): number {
 		this.memory.resetAttributeFlag(MemAttribute.
 			FLOW_ANALYZED);	// Not really required, as collectLabels is the first to work on the memory.
 
 		// Due analysis in several steps to check for the depth.
 		let depth = 0; // I.e. depth=0 is the starting level.
 		let nextAddresses = this.addressQueue;
-		while (depth < maxDepth) {
+		while (depth < maxDepth && nextAddresses.length > 0) {
 			// Move arrays
 			const addresses = nextAddresses;
 			nextAddresses = [];
@@ -791,6 +797,8 @@ export class Disassembler extends EventEmitter {
 			// Next level
 			depth++;
 		}
+
+		return depth;
 	}
 
 
@@ -1911,7 +1919,7 @@ export class Disassembler extends EventEmitter {
 
 
 	/**
-	 * Returns a label consiting of the prefix + the address as hex.
+	 * Returns a label consisting of the prefix + the address as hex.
 	 * @param addr e.g. 0x4AFE
 	 * @returns e.g. "LBL_4AFE"
 	 */
