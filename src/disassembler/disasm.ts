@@ -2874,10 +2874,6 @@ export class Disassembler extends EventEmitter {
 	 * @returns The dot graphic as text.
 	 */
 	public getCallGraph(labels: Map<number, DisLabel>, startAddresses: number[], maincolor = 'black', fillcolor = 'lightyellow', equLabelColor = 'lightgray'): string {
-		const rankSame1 = new Array<string>();
-		const rankSame2 = new Array<string>();
-		//const ranked = new Array<string>();
-
 		// Header
 		let text = 'digraph Callgraph {\n\n';
 		text += 'bgcolor="transparent"\n';
@@ -2933,36 +2929,18 @@ export class Disassembler extends EventEmitter {
 				text += '"' + label.name + '" [label="' + nodeName + '", href="#' + hrefAddress + '"];\n';
 				//text += '"' + label.name + '" [label="' + label.name + '\\nID=' + label.id + '\\nCC=' + stats.CyclomaticComplexity + '\\n"];\n';
 
-				// List each callee only once
-				const callees = new Set<DisLabel>();
-				//const names = Array<string>();
-				for (const callee of label.calls) {
-					if (labels.has(callee.address)) {
-						callees.add(callee);
-						/*
-						const name = callee.name;
-						if (ranked.indexOf(name) < 0)
-							names.push(name);	// Rank only if not already ranked.
-						*/
+				// Get all callers and draw arrows
+				for (const ref of label.references) {
+					const parentLabel = this.addressParents[ref]
+					const callerLabel = labels.get(parentLabel.address);
+					if (callerLabel) {
+						text += '"' + callerLabel.name + '" -> "' + label.name + '";\n';
 					}
 				}
-
-				/*
-				// Rank the nodes
-				if (names.length) {
-					text += '\n{ rank=same; "' + names.join('", "') + '" };\n\n';
-					ranked.push(...names);
-				}
-				*/
 
 				// Output all main labels in different color
 				if (startAddresses.indexOf(label.address) >= 0) {
 					colorString = fillcolor;
-				}
-
-				if (callees.size > 0) {
-					text += '"' + label.name + '" -> { ' + Array.from(callees).map(refLabel => '"' + refLabel.name + '"').join(' ') + ' };\n';
-					// text += '"' + label.name + '":s -> { ' + Array.from(callees).map(refLabel => '"' + refLabel.name + '"').join(' ') + ' };\n'; // Differnet look of arrows: more curved instead of straight
 				}
 			}
 
@@ -2970,13 +2948,6 @@ export class Disassembler extends EventEmitter {
 			if (colorString)
 				text += '"' + label.name + '" [fillcolor="' + colorString + '", style=filled];\n';
 		}
-
-		// Do some ranking.
-		// All labels without callers are ranked at the same level.
-		if (rankSame1.length > 0)
-			text += '\n{ rank=same; "' + rankSame1.join('", "') + '" };\n\n';
-		if (rankSame2.length > 0)
-			text += '\n{ rank=same; "' + rankSame2.join('", "') + '" };\n\n';
 
 		// ending
 		text += '}\n';

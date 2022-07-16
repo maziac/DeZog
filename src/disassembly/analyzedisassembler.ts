@@ -245,7 +245,7 @@ export class AnalyzeDisassembler extends Disassembler {
 		rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
 		rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
 
-		return this.addScalingSlider(rendered);
+		return this.addControls(rendered);
 	}
 
 
@@ -266,32 +266,44 @@ export class AnalyzeDisassembler extends Disassembler {
 		const depth = this.disassemble(65536);	// Try max depth and get real depth.
 		// Create reverted map
 		this.createRevertedLabelMap();
-		// In case not all start addresses have labels, invent labels, e.g. "0AF4h"
-		const chosenLabels = new Map<number, DisLabel>();
-		for (const addr64k of startAddrs64k) {
-			// Check for existing label
-			this.getGraphLabels(depth, addr64k, chosenLabels);
-		}
 
-		// Assure that a start address is at least a CODE_LBL
-		for (const addr64k of startAddrs64k) {
-			const label = this.labels.get(addr64k)!;
-			Utility.assert(label);
-			const type = label.type;
-			if (type != NumberType.CODE_SUB
-				&& type != NumberType.CODE_LBL
-				&& type != NumberType.CODE_RST) {
-				label.type = NumberType.CODE_LBL;
+		// Prepare an array for each depth
+		const svgs: string[] = [];
+
+		// Create SVGs for each depth
+		for (let i = 1; i <= depth; i++) {
+
+			// In case not all start addresses have labels, invent labels, e.g. "0AF4h"
+			const chosenLabels = new Map<number, DisLabel>();
+			for (const addr64k of startAddrs64k) {
+				// Check for existing label
+				this.getGraphLabels(i, addr64k, chosenLabels);
 			}
-		}
-		// Get dot text output.
-		const dot = this.getCallGraph(chosenLabels, startAddrs64k, '#FEFE01', '#FEFE02');
-		// Render
-		let rendered = renderGraphviz(dot);
-		rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
-		rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
 
-		return this.addScalingSlider(rendered);
+			// Assure that a start address is at least a CODE_LBL
+			for (const addr64k of startAddrs64k) {
+				const label = this.labels.get(addr64k)!;
+				Utility.assert(label);
+				const type = label.type;
+				if (type != NumberType.CODE_SUB
+					&& type != NumberType.CODE_LBL
+					&& type != NumberType.CODE_RST) {
+					label.type = NumberType.CODE_LBL;
+				}
+			}
+			// Get dot text output.
+			const dot = this.getCallGraph(chosenLabels, startAddrs64k, '#FEFE01', '#FEFE02');
+			// Render
+			let rendered = renderGraphviz(dot);
+			rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
+			rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
+
+			// Store
+			svgs.push(rendered);
+		}
+
+
+		return this.addControls(svgs);
 	}
 
 
@@ -300,32 +312,65 @@ export class AnalyzeDisassembler extends Disassembler {
 	 * @param svg The SVG html code.
 	 * @returns Html code with the added slider.
 	 */
-	protected addScalingSlider(svg: string): string {
-		// To scale remove height and width
-		const woWidthHeight = svg.replace(/width=.+height=\S+/, '');
-		// Add slider for scaling
-		let withSlider = `
+	protected addControls(svgs: string[]): string {
+		const len = svgs.length;
+		// Add slider for scaling and slider for depth
+		let html = `
 		<script>
-			function updateSlider(slideValue) {
-				var svg = document.getElementById("svg");
-				svg.style.width = slideValue + "%";
-				svg.style.height = slideValue + "%";
+			function updateSliderScale(slideValue) {
+				for (let i = 1; i <= ${len}; i++) {
+					let svg = document.getElementById("svg"+i);
+					svg.style.width = slideValue + "%";
+					svg.style.height = slideValue + "%";
+				}
 			}
 		</script>
-		<div id="slider">
-			5%
+		<div id="sliderScale">
+			Scale: 5%
 			<input id="slide" type="range"
-			min="5" max="1000"
+			min="5" max="200"
 			step="5" value="100"
-			oninput="updateSlider(this.value)"
+			oninput="updateSliderScale(this.value)"
 			/>
-			1000%
+			200%
 		</div>
 		<br>
-		<div id="svg">
-		${woWidthHeight}
+
+		<script>
+			function updateSliderDepth(slideValue) {
+				for (let i = 1; i <= ${len}; i++) {
+					let svg = document.getElementById("svg"+i);
+					svg.hidden = (i != slideValue);
+				}
+			}
+		</script>
+		<div id="sliderDepth">
+			Depth: 1
+			<input id="slide" type="range"
+			min="1" max="${len}"
+			step="1" value="${len}"
+			oninput="updateSliderDepth(this.value)"
+			/>
+			${len}
+		</div>
+		<br>
+		`;
+
+		// Add a div for each svg
+		for (let i = 0; i < len; i++) {
+			// To scale remove height and width
+			const svg = svgs[i];
+			const modSvg = svg.replace(/width=.+height=\S+/, '');
+			// Add div: id = svg1/svg2/...svgN
+			const depth = i + 1;
+			const hidden = (depth == len) ? '' : 'hidden';
+			html += `
+		<div id="svg${depth}" ${hidden}>
+		${modSvg}
 		</div>
 		`;
-		return withSlider;
+		}
+
+		return html;
 	}
 }
