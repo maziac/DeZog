@@ -3674,6 +3674,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			// Initialize disassembly
 			analyzer.initWithCodeAddresses(startAddrs, [{address: 0, data}]);
 			// Set labels for the start addresses
+			let titles: string[] = [];
 			for (const longAddr of startAddrs) {
 				// Get label
 				const labels = Labels.getLabelsForLongAddress(longAddr);
@@ -3684,8 +3685,12 @@ E.g. use "-help -view" to put the help text in an own view.
 				// Set label
 				if (name)
 					analyzer.setLabel(longAddr & 0xFFFF, name);
+				// Add to title
+				if (!name)
+					name = Utility.getHexString(longAddr & 0xFFFF, 4) + 'h';
+				titles.push(name);
 			}
-
+			const title = titles.join(', ');
 
 			switch (type) {
 				case 'disassembly':
@@ -3696,7 +3701,7 @@ E.g. use "-help -view" to put the help text in an own view.
 						const text = analyzer.getDisassemblyText();
 
 						// Output text to new view.
-						const view = new TextView('Smart Disassembly', text);
+						const view = new TextView('Smart Disassembly - ' + title, text);
 						await view.update();
 					}
 					break;
@@ -3707,7 +3712,7 @@ E.g. use "-help -view" to put the help text in an own view.
 						const rendered = analyzer.renderFlowChart(startAddrs);
 
 						// Output text to new view.
-						const view = new HtmlView('Flow Chart', rendered);
+						const view = new HtmlView('Flow Chart - ' + title, rendered);
 						await view.update();
 
 						// Install mouse click handler
@@ -3723,7 +3728,7 @@ E.g. use "-help -view" to put the help text in an own view.
 						const rendered = analyzer.renderCallGraph(startAddrs);
 
 						// Output text to new view.
-						const view = new HtmlView('Call Graph', rendered);
+						const view = new HtmlView('Call Graph - ' + title, rendered);
 						await view.update();
 
 						// Install mouse click handler
@@ -3741,7 +3746,7 @@ E.g. use "-help -view" to put the help text in an own view.
 
 	/**
 	 * Installs the click handler for the flow chart and call graph (SVG) views.
-	 * When clicked the coressponding code block is selected.
+	 * When clicked the corresponding code block is selected.
 	 * @param view The view to install the click handler.
 	 */
 	protected installSvgClickHandler(view: HtmlView) {
