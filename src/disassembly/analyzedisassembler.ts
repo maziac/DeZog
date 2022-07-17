@@ -281,7 +281,7 @@ export class AnalyzeDisassembler extends Disassembler {
 		const svgs: string[] = [];
 
 		// Create SVGs for each depth
-		for (let i = 2; i <= 2; i++) {
+		for (let i = 0; i <= depth; i++) {
 
 			// In case not all start addresses have labels, invent labels, e.g. "0AF4h"
 			const chosenLabels = new Map<number, DisLabel>();
