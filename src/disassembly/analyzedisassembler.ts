@@ -281,7 +281,7 @@ export class AnalyzeDisassembler extends Disassembler {
 		const svgs: string[] = [];
 
 		// Create SVGs for each depth
-		for (let i = 0; i <= depth; i++) {
+		for (let i = 1; i <= depth; i++) {
 
 			// In case not all start addresses have labels, invent labels, e.g. "0AF4h"
 			const chosenLabels = new Map<number, DisLabel>();
@@ -331,7 +331,7 @@ export class AnalyzeDisassembler extends Disassembler {
 				const sliderValue = document.getElementById("sliderScaleValue");
 				sliderValue.value = slideValue + " %";
 				for (let i = 1; i <= ${len}; i++) {
-					let svg = document.getElementById("svg"+i);
+					const svg = document.getElementById("svg"+i);
 					svg.style.width = slideValue + "%";
 					svg.style.height = slideValue + "%";
 				}

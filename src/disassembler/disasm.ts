@@ -797,6 +797,7 @@ export class Disassembler extends EventEmitter {
 			// Next level
 			depth++;
 		}
+		depth--;
 
 		return depth;
 	}
@@ -2848,7 +2849,7 @@ export class Disassembler extends EventEmitter {
 			chosenLabels.set(addr, label);
 			// Check depth
 			depth--;
-			if (depth > 0) {
+			if (depth >= 0) {
 				// Also add the called sub routines
 				for (const called of label.calls) {
 					// Recursive
