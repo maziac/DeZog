@@ -328,6 +328,8 @@ export class AnalyzeDisassembler extends Disassembler {
 		let html = `
 		<script>
 			function updateSliderScale(slideValue) {
+				const sliderValue = document.getElementById("sliderScaleValue");
+				sliderValue.value = slideValue + " %";
 				for (let i = 1; i <= ${len}; i++) {
 					let svg = document.getElementById("svg"+i);
 					svg.style.width = slideValue + "%";
@@ -336,13 +338,15 @@ export class AnalyzeDisassembler extends Disassembler {
 			}
 		</script>
 		<div id="sliderScale">
-			Scale: 5%
+			Scale:
 			<input id="slide" type="range"
 			min="5" max="200"
 			step="5" value="100"
 			oninput="updateSliderScale(this.value)"
 			/>
-			200%
+			<output id="sliderScaleValue">
+				100%
+			</output>
 		</div>
 		<br>
 		`;
@@ -352,20 +356,24 @@ export class AnalyzeDisassembler extends Disassembler {
 			html += `
 		<script>
 			function updateSliderDepth(slideValue) {
+				const sliderValue = document.getElementById("sliderDepthValue");
+				sliderValue.value = slideValue;
 				for (let i = 1; i <= ${len}; i++) {
-					let svg = document.getElementById("svg"+i);
+					const svg = document.getElementById("svg"+i);
 					svg.hidden = (i != slideValue);
 				}
 			}
 		</script>
 		<div id="sliderDepth">
-			Depth: 1
+			Depth:
 			<input id="slide" type="range"
 			min="1" max="${len}"
 			step="1" value="${len}"
 			oninput="updateSliderDepth(this.value)"
 			/>
-			${len}
+			<output id="sliderDepthValue">
+				${len}
+			</output>
 		</div>
 		<br>
 		`;
