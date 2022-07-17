@@ -2929,9 +2929,13 @@ export class Disassembler extends EventEmitter {
 				text += '"' + label.name + '" [label="' + nodeName + '", href="#' + hrefAddress + '"];\n';
 				//text += '"' + label.name + '" [label="' + label.name + '\\nID=' + label.id + '\\nCC=' + stats.CyclomaticComplexity + '\\n"];\n';
 
+				// Convert references to parent references
+				// (i.e. one subroutine might call more than once)
+				const refs = Array.from(label.references);
+				const parents = refs.map(ref => this.addressParents[ref]);
+				const parentSet = new Set(parents);
 				// Get all callers and draw arrows
-				for (const ref of label.references) {
-					const parentLabel = this.addressParents[ref]
+				for (const parentLabel of parentSet) {
 					const callerLabel = labels.get(parentLabel.address);
 					if (callerLabel) {
 						text += '"' + callerLabel.name + '" -> "' + label.name + '";\n';
