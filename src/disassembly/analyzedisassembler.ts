@@ -245,12 +245,22 @@ export class AnalyzeDisassembler extends Disassembler {
 		rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
 		rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
 
-		return this.addControls(rendered);
+		return this.addControls([rendered]);
 	}
 
 
 	/**
 	 * Renders the call graph to html/svg.
+	 * Renders separately one html/svg for each depth.
+	 * This might ot be the optimal way. Maybe it would be better to generate
+	 * an intermediate format where it is possible to easily change the depth and
+	 * generate an SVG from.
+	 * However this would also require more communication between the webview and the webview client.
+	 * Currently it does nto seem to be a performance bottleneck, so no reason
+	 * to change anything...
+	 * Main time consuming is the 'renderGraphviz' function. For real big and deep callgraphs
+	 * (32) this might take a few seconds (sum over all conversions).
+	 * But for normal size just about a second in total.
 	 * @param startLongAddrs The start address (or many). Is a long address.
 	 * @returns A string with the rendered flow chart. Can be used in a webview.
 	 */
@@ -271,7 +281,7 @@ export class AnalyzeDisassembler extends Disassembler {
 		const svgs: string[] = [];
 
 		// Create SVGs for each depth
-		for (let i = 1; i <= depth; i++) {
+		for (let i = 0; i <= depth; i++) {
 
 			// In case not all start addresses have labels, invent labels, e.g. "0AF4h"
 			const chosenLabels = new Map<number, DisLabel>();
@@ -302,15 +312,15 @@ export class AnalyzeDisassembler extends Disassembler {
 			svgs.push(rendered);
 		}
 
-
 		return this.addControls(svgs);
 	}
 
 
 	/**
-	 * Adds a slider to scale the SVG.
-	 * @param svg The SVG html code.
-	 * @returns Html code with the added slider.
+	 * Adds a slider to scale the SVG and a slider to control the call depth.
+	 * @param svgs The SVG html code of all depths
+	 * @returns Html code with the added sliders. The depth slider is only added if svgs contains
+	 * more than 1 items.
 	 */
 	protected addControls(svgs: string[]): string {
 		const len = svgs.length;
@@ -335,7 +345,11 @@ export class AnalyzeDisassembler extends Disassembler {
 			200%
 		</div>
 		<br>
+		`;
 
+		// Add depth slider only if there is a choice
+		if (len > 1) {
+			html += `
 		<script>
 			function updateSliderDepth(slideValue) {
 				for (let i = 1; i <= ${len}; i++) {
@@ -355,6 +369,7 @@ export class AnalyzeDisassembler extends Disassembler {
 		</div>
 		<br>
 		`;
+		}
 
 		// Add a div for each svg
 		for (let i = 0; i < len; i++) {
