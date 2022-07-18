@@ -36,6 +36,8 @@ export class TextView extends BaseView {
 	<title>Dump</title>
 </head>
 
+<body>
+
 <pre>
 ${text}
 </pre>
