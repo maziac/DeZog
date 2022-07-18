@@ -213,7 +213,8 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 			this.setStartAddressesWithoutLabel(addrs64k);
 
 			// Disassemble
-			Disassembly.disassemble(2);
+			//Disassembly.disassemble(2);
+			Disassembly.disassemble(65536);
 		}
 
 		return disasmRequired;
