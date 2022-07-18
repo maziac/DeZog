@@ -3695,13 +3695,11 @@ E.g. use "-help -view" to put the help text in an own view.
 			switch (type) {
 				case 'disassembly':
 					{
-						// Disassemble
-						analyzer.disassemble(2);
-						// Output disassembly text to view
-						const text = analyzer.getDisassemblyText();
+						// Output disassembly
+						const rendered = analyzer.renderSmartDisassembly(startAddrs);
 
 						// Output text to new view.
-						const view = new TextView('Smart Disassembly - ' + title, text);
+						const view = new HtmlView('Smart Disassembly - ' + title, rendered);
 						await view.update();
 					}
 					break;
