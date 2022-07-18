@@ -288,11 +288,18 @@ export class AnalyzeDisassembler extends Disassembler {
 		// Certain colors are used as magic numbers, passed to graphviz, are rendered hardcoded into the svg.
 		// Then at the end these numbers are converted into vars like "var(--vscode-editor-foreground)".
 
+		// Set start addresses
+		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
+		for (const addr64k of startAddrs64k) {
+			this.setFixedCodeLabel(addr64k);
+			// Note: the name will be overridden by 'funcAssignLabels()' if it is already available in DeZog.
+		}
+
 		// Disassemble
 		this.disassemble(1);
 
 		// Get dot text output.
-		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
+
 		const dot = this.getFlowChart(startAddrs64k, '#FEFE01', '#FEFE02');
 		// Render
 		let rendered = renderGraphviz(dot);
@@ -319,7 +326,7 @@ export class AnalyzeDisassembler extends Disassembler {
 	 * @returns A string with the rendered call graph. To be used in a webview.
 	 */
 	public renderCallGraph(startLongAddrs: number[]): string {
-		// Create label for start address if not existing.
+		// Set start addresses
 		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
 		for (const addr64k of startAddrs64k) {
 			this.setFixedCodeLabel(addr64k);
