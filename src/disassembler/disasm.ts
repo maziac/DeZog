@@ -1608,12 +1608,7 @@ export class Disassembler extends EventEmitter {
 				|| type == NumberType.CODE_RST
 				|| type == NumberType.CODE_LBL) {
 				// Collect all addresses belonging to a subroutine
-				//DelayedLog.startLog();
 				this.setSubroutineParent(address, label);
-				//DelayedLog.logIf(address, () =>
-				//	'' + Format.getHexString(address, 4) + ' processed.'
-				//);
-				//DelayedLog.stopLog();
 			}
 		}
 
@@ -1675,6 +1670,7 @@ export class Disassembler extends EventEmitter {
 	 * @param parentLabel The label to associate the found addresses with.
 	 */
 	protected setSubroutineParent(address: number, parentLabel: DisLabel) {
+		let retFound = false;
 		const startSlot = this.addressesSlotBankInfo[address].slot;
 		this.memory.resetAttributeFlag(MemAttribute.FLOW_ANALYZED);
 		this.followFlowPath(startSlot, address,
@@ -1696,6 +1692,10 @@ export class Disassembler extends EventEmitter {
 				// Add to array
 				this.addressParents[opcodeAddr] = parentLabel;
 
+				// Check for RET
+				if (opcode.flags & OpcodeFlag.RET)
+					retFound = true;
+
 				// And maybe branch address
 				if (flags & OpcodeFlag.BRANCH_ADDRESS) {
 					const branchAddress = opcode.value;
@@ -1707,78 +1707,11 @@ export class Disassembler extends EventEmitter {
 			}
 		);
 
-	}
-
-	// TODO: REMOVE
-	protected setSubroutineParen_oldt(startSlot: number, addr: number, parentLabel: DisLabel) {
-		let opcodeClone;
-		let address = addr;
-
-		do {
-			// Check for bank border
-			if (this.bankBorderPassed(startSlot, address))
-				break;	// Bank border
-
-			// Check if memory exists
-			const memAttr = this.memory.getAttributeAt(address);
-			if (!(memAttr & MemAttribute.ASSIGNED)) {
-				//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');
-				break;
-			}
-
-			// Check if parent already assigned
-			const memLabel = this.addressParents[address];
-			if (memLabel) {
-				//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');
-				break;	// already checked
-			}
-
-			// Check if label is sub routine
-			const label = this.labels.get(address);
-			if (label) {
-				if (label != parentLabel) {	// Omit start address
-					const type = label.type;
-					if (type == NumberType.CODE_SUB
-						|| type == NumberType.CODE_RST
-						|| type == NumberType.CODE_LBL
-					)
-						break;	// Stop if label which is LBL, CALL or RST is reached
-				}
-			}
-
-			// check opcode
-			const opcode = Opcode.getOpcodeAt(this.memory, address);
-			opcodeClone = {...opcode};	// Required otherwise opcode is overwritten on next call to 'getOpcodeAt' if it's the same opcode.
-
-			// Add to array
-			this.addressParents[address] = parentLabel;
-
-			//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': added. ' + opcodeClone.name);
-
-			// And maybe branch address
-			if (opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
-				//				if(!(opcodeClone.flags & OpcodeFlag.CALL)) {
-				// Check if a label exists to either a subroutine or another absolute label.
-				const branchAddress = opcodeClone.value;
-				/*const branchLabel = this.labels.get(branchAddress);
-				if(!branchLabel
-					|| branchLabel.type == NumberType.CODE_LBL
-					|| branchLabel.type == NumberType.CODE_SUB
-					|| branchLabel.type == NumberType.CODE_RST)
-					*/
-				{
-					//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.\n'); DelayedLog.pushTab();
-					this.setSubroutineParen_oldt(startSlot, branchAddress, parentLabel);
-					//DelayedLog.popTab();
-				}
-			}
-
-			// Now check next address
-			address += opcodeClone.length;
-
-		} while (!(opcodeClone.flags & OpcodeFlag.STOP));
-
-		//DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': stop.\n');
+		// If a RET was found then it is a subroutine
+		if (retFound) {
+			// Change label to SUB
+			parentLabel.type = NumberType.CODE_SUB;
+		}
 	}
 
 
