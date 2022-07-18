@@ -8,6 +8,7 @@ import {Remote} from "../remotes/remotebase";
 import {Z80Registers} from "../remotes/z80registers";
 import {Settings} from '../settings/settings';
 import {DisLabel} from './../disassembler/dislabel';
+import {MemAttribute} from './../disassembler/memory';
 import {BankType, MemoryModel} from './../remotes/MemoryModel/memorymodel';
 
 const renderGraphviz = require('@aduh95/viz.js/sync');	// I couldn't transfer this into an "import" statement
@@ -221,10 +222,63 @@ export class AnalyzeDisassembler extends Disassembler {
 	}
 
 
+
+	/**
+	 * Renders the smart disassembly to html.
+	 * Renders separately one html-part for each depth.
+	 * @param startLongAddrs The start address (or many). Is a long address.
+	 * @returns A string with the rendered disassembly. To be used in a webview.
+	 */
+	public renderSmartDisassembly(startLongAddrs: number[]): string {
+		// Create label for start address if not existing.
+		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
+		for (const addr64k of startAddrs64k) {
+			const name = this.createLabelName(addr64k);
+			this.setFixedCodeLabel(addr64k, name);
+			// Note: the name will be overridden by 'funcAssignLabels()' if it is already available in DeZog.
+		}
+		// Disassemble
+		const depth = this.disassemble(65536);	// Try max depth
+		const maxDepthDasmText = this.getDisassemblyText();
+
+		// Prepare an array for each depth
+		const dasms: string[] = [];
+
+		// Create SVGs for each depth (but the last)
+		for (let i = 1; i < depth; i++) {
+			// Disassemble
+			this.memory.resetAttributeFlag(~MemAttribute.ASSIGNED);
+			this.disassemble(i);
+			const dasmText = this.getDisassemblyText();
+			// Store
+			dasms.push('<pre>' + dasmText + '</pre>');
+		}
+		// And the last one
+		dasms.push('<pre>' + maxDepthDasmText + '</pre>');
+
+		// Construct regex to find labels/addresses to highlight
+		const findWords: string[] = [];
+		for (const addr64k of startAddrs64k) {
+			// First try to get a label
+			const name = this.funcFormatAddress(addr64k);
+			findWords.push(name);
+		}
+		const regex = new RegExp('[\n^]((' + findWords.join('|') + ')[\n]*:)', 'g');
+
+		// Highlight the starting address/label in each disassembly
+		for (let i = 0; i < depth; i++) {
+			const highlighted = dasms[i].replace(regex, '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-foreground);font-weight:bold">$1</span>');
+			dasms[i] = highlighted;
+		}
+
+		return this.addControls(dasms, false);
+	}
+
+
 	/**
 	 * Renders the flowchart to html/svg.
 	 * @param startLongAddrs The start address (or many). Is a long address.
-	 * @returns A string with the rendered flow chart. Can be used in a webview.
+	 * @returns A string with the rendered flow chart. To be used in a webview.
 	 */
 	public renderFlowChart(startLongAddrs: number[]): string {
 		// A note on coloring:
@@ -252,7 +306,7 @@ export class AnalyzeDisassembler extends Disassembler {
 	/**
 	 * Renders the call graph to html/svg.
 	 * Renders separately one html/svg for each depth.
-	 * This might ot be the optimal way. Maybe it would be better to generate
+	 * This might not be the optimal way. Maybe it would be better to generate
 	 * an intermediate format where it is possible to easily change the depth and
 	 * generate an SVG from.
 	 * However this would also require more communication between the webview and the webview client.
@@ -262,14 +316,13 @@ export class AnalyzeDisassembler extends Disassembler {
 	 * (32) this might take a few seconds (sum over all conversions).
 	 * But for normal size just about a second in total.
 	 * @param startLongAddrs The start address (or many). Is a long address.
-	 * @returns A string with the rendered flow chart. Can be used in a webview.
+	 * @returns A string with the rendered call graph. To be used in a webview.
 	 */
 	public renderCallGraph(startLongAddrs: number[]): string {
 		// Create label for start address if not existing.
 		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
 		for (const addr64k of startAddrs64k) {
-			const name = this.createLabelName(addr64k);
-			this.setFixedCodeLabel(addr64k, name);
+			this.setFixedCodeLabel(addr64k);
 			// Note: the name will be overridden by 'funcAssignLabels()' if it is already available in DeZog.
 		}
 		// Disassemble
@@ -318,14 +371,17 @@ export class AnalyzeDisassembler extends Disassembler {
 
 	/**
 	 * Adds a slider to scale the SVG and a slider to control the call depth.
-	 * @param svgs The SVG html code of all depths
-	 * @returns Html code with the added sliders. The depth slider is only added if svgs contains
+	 * @param enableScaleSlider true to enable/false to disabel the scale slider
+	 * @param htmls The SVG/html code of all depths.
+	 * @returns Html code with the added sliders. The depth slider is only added if htmls contains
 	 * more than 1 items.
 	 */
-	protected addControls(svgs: string[]): string {
-		const len = svgs.length;
+	protected addControls(htmls: string[], enableScaleSlider = true): string {
+		const len = htmls.length;
 		// Add slider for scaling and slider for depth
-		let html = `
+		let html = '';
+		if (enableScaleSlider) {
+			html += `
 		<script>
 			function updateSliderScale(slideValue) {
 				const sliderValue = document.getElementById("sliderScaleValue");
@@ -350,6 +406,7 @@ export class AnalyzeDisassembler extends Disassembler {
 		</div>
 		<br>
 		`;
+		}
 
 		// Add depth slider only if there is a choice
 		if (len > 1) {
@@ -382,14 +439,15 @@ export class AnalyzeDisassembler extends Disassembler {
 		// Add a div for each svg
 		for (let i = 0; i < len; i++) {
 			// To scale remove height and width
-			const svg = svgs[i];
-			const modSvg = svg.replace(/width=.+height=\S+/, '');
+			let  item = htmls[i];
+			if (enableScaleSlider)
+				item = item.replace(/width=.+height=\S+/, '');
 			// Add div: id = svg1/svg2/...svgN
 			const depth = i + 1;
 			const hidden = (depth == len) ? '' : 'hidden';
 			html += `
 		<div id="svg${depth}" ${hidden}>
-		${modSvg}
+		${item}
 		</div>
 		`;
 		}
