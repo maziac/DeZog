@@ -1194,7 +1194,6 @@ export class Disassembler extends EventEmitter {
 		for (let [address, label] of this.labels) {
 			if (label.type == NumberType.CODE_LBL) {
 				// Log
-				//DelayedLog.startLog();
 				// Find a "RET" on the path
 				const addrsArray = new Array<number>();
 				const retFound = this.findRET(address, addrsArray);
@@ -1289,7 +1288,6 @@ export class Disassembler extends EventEmitter {
 				case NumberType.CODE_SUB:
 				case NumberType.CODE_RST:
 					// Log
-					//DelayedLog.startLog();
 					// Get all addresses belonging to the subroutine
 					const addrsArray = new Array<number>();
 					this.getSubroutineAddresses(address, addrsArray);
