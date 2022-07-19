@@ -11,6 +11,7 @@ import {DisLabel} from './../disassembler/dislabel';
 import {MemAttribute} from './../disassembler/memory';
 import {BankType, MemoryModel} from './../remotes/MemoryModel/memorymodel';
 
+// From: https://github.com/aduh95/viz.js
 const renderGraphviz = require('@aduh95/viz.js/sync');	// I couldn't transfer this into an "import" statement
 
 
@@ -263,7 +264,7 @@ export class AnalyzeDisassembler extends Disassembler {
 			const name = this.funcFormatAddress(addr64k);
 			findWords.push(name);
 		}
-		const regex = new RegExp('[\n^]((' + findWords.join('|') + ')[\n]*:)', 'g');
+		const regex = new RegExp('[\n^]((' + findWords.join('|') + ')[^\n]*:)', 'g');
 
 		// Highlight the starting address/label in each disassembly
 		for (let i = 0; i < depth; i++) {
@@ -299,12 +300,11 @@ export class AnalyzeDisassembler extends Disassembler {
 		this.disassemble(1);
 
 		// Get dot text output.
-
 		const dot = this.getFlowChart(startAddrs64k, '#FEFE01', '#FEFE02');
 		// Render
 		let rendered = renderGraphviz(dot);
-		rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
-		rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
+		// Adjust
+		rendered = this.adjustSvg(rendered);
 
 		return this.addControls([rendered]);
 	}
@@ -344,7 +344,7 @@ export class AnalyzeDisassembler extends Disassembler {
 		for (let i = 1; i <= depth; i++) {
 
 			// In case not all start addresses have labels, invent labels, e.g. "0AF4h"
-			const chosenLabels = new Map<number, DisLabel>();
+			const chosenLabels = new Map<number, DisLabel|number>();
 			for (const addr64k of startAddrs64k) {
 				// Check for existing label
 				this.getGraphLabels(i, addr64k, chosenLabels);
@@ -365,14 +365,30 @@ export class AnalyzeDisassembler extends Disassembler {
 			const dot = this.getCallGraph(chosenLabels, startAddrs64k, '#FEFE01', '#FEFE02');
 			// Render
 			let rendered = renderGraphviz(dot);
-			rendered = rendered.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
-			rendered = rendered.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
+			// Adjust
+			rendered = this.adjustSvg(rendered);
 
 			// Store
 			svgs.push(rendered);
 		}
 
 		return this.addControls(svgs);
+	}
+
+
+	/**
+	 * Adjusts the SVG to vscode color vars and removes the titles to remove
+	 * the tooltips/hovering.
+	 * @param svg The rendered SVG.
+	 * @return The changed/stripped SVG.
+	 */
+	protected adjustSvg(svg: string): string {
+		svg = svg.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
+		svg = svg.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
+		// Strip tooltip (title)
+		svg = svg.replace(/xlink:title=".*"/g, 'xlink:title=""'); // E.g. remove 'xlink:title="main"'
+		svg = svg.replace(/<title>.*<\/title>/g, ''); 	// E.g. "<title>b8035</title>"
+		return svg;
 	}
 
 
