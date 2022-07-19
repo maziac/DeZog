@@ -69,7 +69,6 @@ export class AnalyzeDisassembler extends Disassembler {
 			const shortName = Remote.memoryModel.getBankShortNameForAddress(longAddr);
 			if (shortName)
 				addrString += ReverseEngineeringLabelParser.bankSeparator + shortName;
-			//addrString += '[' + shortName + ']';
 			return addrString;
 		};
 

@@ -159,21 +159,6 @@ export class DebugSessionClass extends DebugSession {
 		// Init line numbering
 		this.setDebuggerLinesStartAt1(false);
 		this.setDebuggerColumnsStartAt1(false);
-		/*
-		// Register for start/stop events
-		vscode.debug.onDidStartDebugSession(session => {
-			// Check if started
-			//console.log(session);
-			if (session.configuration.type == 'dezog')
-				this.running = true;
-		});
-		vscode.debug.onDidTerminateDebugSession(session => {
-			// Check if started
-			//console.log(session);
-			if (session.configuration.type == 'dezog')
-				this.running = false;
-		});
-		*/
 		vscode.debug.onDidChangeActiveDebugSession(dbgSession => {
 			if (dbgSession?.configuration.type == 'dezog') {
 				vscode.debug.activeDebugConsole.append(this.debugConsoleSavedText);
@@ -451,7 +436,6 @@ export class DebugSessionClass extends DebugSession {
 		// Is done in launchRequest:
 		//response.body.supportsStepBack = true;
 
-		//response.body.supportTerminateDebuggee = true;
 		response.body.supportTerminateDebuggee = false;
 
 		// Get terminateRequest before disconnectRequest
@@ -794,7 +778,6 @@ export class DebugSessionClass extends DebugSession {
 
 		// convert breakpoints
 		const givenBps = args.breakpoints || [];
-		//console.log('setBreakPointsRequest:', givenBps);
 
 		const bps = new Array<RemoteBreakpoint>();
 		for (const bp of givenBps) {
@@ -852,10 +835,8 @@ export class DebugSessionClass extends DebugSession {
 			if (!verified) {
 				const text = JSON.stringify(bp);
 				this.debugConsoleAppendLine('Unverified breakpoint: ' + text);
-				//console.log('Unverified breakpoint: ' + text);
 				if (foundCbp && foundCbp.error) {
 					this.debugConsoleAppendLine('  Additional info: ' + foundCbp.error);
-					//console.log('  Additional info: ' + foundCbp.error);
 				}
 			}
 
@@ -1206,9 +1187,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param args
 	 */
 	protected async scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): Promise<void> {
-		//this.listVariables.tmpList.clear();		// Clear temporary list.
 		const frameId = args.frameId;
-		//const frame = this.listFrames.getObject(frameId);
 		let frame;
 		if (StepHistory.isInStepBackMode())
 			frame = StepHistory.getCallStack().getObject(frameId);
@@ -1639,7 +1618,6 @@ export class DebugSessionClass extends DebugSession {
 			// Reset t-states counter
 			await Remote.resetTstates();
 		}
-		//Log.log('startStepInfo <-');
 	}
 
 
@@ -2201,7 +2179,6 @@ export class DebugSessionClass extends DebugSession {
 
 		// Get size from type
 		if (lblType) {
-			//elemSize = Labels.getNumberFromString64k(lblType);
 			elemSize = Utility.evalExpression(lblType, true, modulePrefix, lastLabel);
 			if (isNaN(elemSize))
 				throw Error("Could not parse element size.");
@@ -3490,7 +3467,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * Should be called if memory content has been manually changed.
 	 */
 	protected async memoryHasBeenChanged() {
-		//this.sendEvent(new InvalidatedEvent(['variables'])); // Not required. The VARIABLES and the WATCHes will be updated anyway. If uncommented then the WATCHes are not highlighted on a change.
+		//this.sendEvent(new InvalidatedEvent(['variables'])); // Not required. The VARIABLES and the WATCHes will be updated anyway. If uncommented then the WATCHes are not highlighted on a change. // NOSONAR
 		await BaseView.staticCallUpdateFunctions();
 	}
 
@@ -3611,7 +3588,6 @@ E.g. use "-help -view" to put the help text in an own view.
 				this.debugConsoleAppendLine('Note: Disassembly limited to ' + size + ' bytes.');
 			}
 			fromAddr &= 0xFFFF
-			//toAddr &= 0xFFFF;
 			const data = await Remote.readMemoryDump(fromAddr, size + 3);
 
 			// Disassemble

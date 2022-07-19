@@ -1,6 +1,4 @@
-//import * as util from 'util';
 import * as assert from 'assert';
-//import {DelayedLog} from './delayedlog';
 import {MAX_MEM_SIZE} from './basememory';
 import {Memory, MemAttribute} from './memory';
 import {Opcode, OpcodeFlag} from './opcode';
@@ -173,10 +171,10 @@ export class Disassembler extends EventEmitter {
 	protected emptyLinesWritten = false;
 
 	/// For debugging:
-	protected DBG_COLLECT_LABELS = false;	//true;
+	protected DBG_COLLECT_LABELS = false;
 
 	/// Add decimal conversion to addresses (at beginning of line)
-	protected DBG_ADD_DEC_ADDRESS = false; //true;
+	protected DBG_ADD_DEC_ADDRESS = false
 
 	// Warnings
 
@@ -636,19 +634,11 @@ export class Disassembler extends EventEmitter {
 		const trace = readFileSync(path).toString();
 		if (trace.length < 5)
 			return;
-		/* Doesn't make sense:
-			// Use first address as start address
-			const startAddress = trace.substr(0,5);
-			this.setLabel(parseInt(startAddress, 16), 'TR_LBL_MAIN_START_'+ startAddress);
-		*/
 		// Loop over the complete trace file
 		const buffer = new Array<boolean>(MAX_MEM_SIZE);	// initialized to undefined
 		let k = 0;
 		let jpHlRef;
-		//let lineNr = 1;
 		do {
-			//const text = trace.substr(k,100);
-			//console.log('log: "' + text + '"');
 			const addressString = trace.substring(k, k+5);
 			if (addressString.length == 5 && addressString[4] == ':') {
 				// Use address
@@ -674,8 +664,8 @@ export class Disassembler extends EventEmitter {
 			}
 			// next
 			k = trace.indexOf('\n', k) + 1;
-			//lineNr ++;
 		} while (k != 0);
+
 		// Now add the addresses to the queue
 		for (let addr = 0; addr < MAX_MEM_SIZE; addr++) {
 			if (buffer[addr])
@@ -1175,7 +1165,7 @@ export class Disassembler extends EventEmitter {
 			}
 
 			// Check if memory exists
-			const memAttr = this.memory.getAttributeAt(address);
+			memAttr = this.memory.getAttributeAt(address);
 			if (!(memAttr & MemAttribute.ASSIGNED)) {
 				return undefined;
 			}
@@ -1209,18 +1199,12 @@ export class Disassembler extends EventEmitter {
 				const addrsArray = new Array<number>();
 				const retFound = this.findRET(address, addrsArray);
 				if (retFound) {
-					// Debug
-					//DelayedLog.logIf(address, () =>
-					//		'Addresses: ' + addrsArray.map(addr => addr.toString(16)).join(' '));
-					//DelayedLog.logIf(address, () => 'turnLBLintoSUB: Turned Label ' + getNumberTypeAsString(label.type) + ' into CODE_SUB.');
-
 					// It is a subroutine, so turn the LBL into a SUB.
 					label.type = NumberType.CODE_SUB;
 					// Mark all addresses for: RET(I) found
 					for (let k = addrsArray.length - 1; k >= 0; k--)
 						this.memory.addAttributeAt(addrsArray[k], MemAttribute.RET_ANALYZED);
 				}
-				//DelayedLog.stopLog();
 			}
 		}
 	}
@@ -1245,26 +1229,12 @@ export class Disassembler extends EventEmitter {
 			}
 			// Check if memory exists
 			if (!(memAttr & MemAttribute.ASSIGNED)) {
-				//DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');	// NOSONAR
 				return false;
 			}
 			// Unfortunately it needs to be checked if address has been checked already
 			if (addrsArray.indexOf(address) >= 0) {
-				//DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');	// NOSONAR
 				return false;	// already checked
 			}
-			// Check if a label for address exists that already is a subroutine.
-			/*
-			const addrLabel = this.labels.get(address);	// TODO: should be superfluous
-			if (addrLabel) {
-				const type = addrLabel.type;
-				if (type == NumberType.CODE_SUB
-					|| type == NumberType.CODE_RST) {
-					//DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': SUB FOUND. address belongs already to a SUB.');	// NOSONAR
-					return true;
-				}
-			}
-			*/
 
 			// check opcode
 			const opcode = Opcode.getOpcodeAt(this.memory, address);
@@ -1277,7 +1247,6 @@ export class Disassembler extends EventEmitter {
 
 			// Check if RET
 			if (flags & OpcodeFlag.RET) {
-				//DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': SUB FOUND. RET code = ' + opcodeClone.name + '.');	// NOSONAR
 				return true;
 			}
 
@@ -1288,10 +1257,7 @@ export class Disassembler extends EventEmitter {
 			if (flags & OpcodeFlag.BRANCH_ADDRESS) {
 				if (!(flags & OpcodeFlag.CALL)) {
 					const branchAddress = opcode.value;
-					//DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.');	// NOSONAR
-					//DelayedLog.pushTab();
 					const res = this.findRET(branchAddress, addrsArray);	// Note: this changes opcode. Don't use opcode from here on.
-					//DelayedLog.popTab();
 					if (res)
 						return true;	// SUB found
 				}
@@ -1327,8 +1293,6 @@ export class Disassembler extends EventEmitter {
 					// Get all addresses belonging to the subroutine
 					const addrsArray = new Array<number>();
 					this.getSubroutineAddresses(address, addrsArray);
-					// Now reduce array. I.e. only a coherent block will be treated as a subroutine.
-					this.reduceSubroutineAddresses(address, addrsArray);
 					// Iterate array
 					for (let addr of addrsArray) {
 						// Don't check start address
@@ -1357,11 +1321,6 @@ export class Disassembler extends EventEmitter {
 							}
 						}
 						if (!outsideFound) {
-							// Debug
-							//DelayedLog.logIf(addr, () =>
-							//	'Addresses: ' + addrsArray.map(addr => addr.toString(16)).join(' '));
-							//DelayedLog.logIf(addr, () => 'findLocalLabelsInSubroutines: Turned Label' + getNumberTypeAsString(addrLabel.type) + ' into CODE_LOCAL_LBL.');
-
 							// No reference outside the subroutine found
 							// -> turn CODE_LBL into local label
 							addrLabel.type = NumberType.CODE_LOCAL_LBL;
@@ -1377,7 +1336,6 @@ export class Disassembler extends EventEmitter {
 							}
 						}
 					}
-					//DelayedLog.stopLog();
 			}
 		}
 	}
@@ -1472,40 +1430,6 @@ export class Disassembler extends EventEmitter {
 		}
 
 		return address;
-	}
-
-
-	/**
-	 * Reduces the given array to a coherent area. I.e. if there is a "hole"
-	 * inside the subroutine the parts are treated as two separate subroutines.
-	 * @param address The start address of the subroutine.
-	 * @param addrsArray The array with addresses (was filled by this.getSubroutineAddresses).
-	 */
-	protected reduceSubroutineAddresses(address: number, addrsArray: Array<number>) {
-		// TODO: Not required anymore
-		return;
-		// sort array
-		addrsArray.sort((a, b) => a - b);
-		// Throw away all addresses smaller than the start address
-		const array = addrsArray.filter(value => value >= address);
-
-		// It's just required to disassemble the straight line of addresses, no branches.
-		addrsArray.length = 0;	// clear array
-		let nextAddress = address;
-		for (const addr of array) {
-			// Check for coherent block
-			if (addr != nextAddress)
-				break;
-
-			// get opcode
-			const opcode = Opcode.getOpcodeAt(this.memory, addr);
-
-			// Add to array
-			addrsArray.push(nextAddress);
-
-			// Next
-			nextAddress = addr + opcode.length;
-		}
 	}
 
 
@@ -1616,9 +1540,9 @@ export class Disassembler extends EventEmitter {
 					if (flags & OpcodeFlag.CALL) {
 						// Add either label or address (address in case label does not exist.
 						// E.g. because behind bank border.
-						const label = this.labels.get(branchAddress);
-						if (label)
-							parentLabel.calls.push(label);
+						const branchLabel = this.labels.get(branchAddress);
+						if (branchLabel)
+							parentLabel.calls.push(branchLabel);
 						else
 							parentLabel.calls.push(branchAddress);
 					}
@@ -1659,24 +1583,26 @@ export class Disassembler extends EventEmitter {
 				// Otherwise flow through.
 				case NumberType.CODE_SUB:
 				case NumberType.CODE_LBL:
-					// Get all addresses belonging to the subroutine
-					const statistics = this.countAddressStatistic(address);
-					statistics.CyclomaticComplexity++;	// Add 1 as default
-					this.subroutineStatistics.set(label, statistics);
-					// Get max
-					if (statistics.sizeInBytes > this.statisticsMax.sizeInBytes)
-						this.statisticsMax.sizeInBytes = statistics.sizeInBytes;
-					if (statistics.countOfInstructions > this.statisticsMax.countOfInstructions)
-						this.statisticsMax.countOfInstructions = statistics.countOfInstructions;
-					if (statistics.CyclomaticComplexity > this.statisticsMax.CyclomaticComplexity)
-						this.statisticsMax.CyclomaticComplexity = statistics.CyclomaticComplexity;
-					// Get min
-					if (statistics.sizeInBytes < this.statisticsMin.sizeInBytes)
-						this.statisticsMin.sizeInBytes = statistics.sizeInBytes;
-					if (statistics.countOfInstructions < this.statisticsMin.countOfInstructions)
-						this.statisticsMin.countOfInstructions = statistics.countOfInstructions;
-					if (statistics.CyclomaticComplexity < this.statisticsMin.CyclomaticComplexity)
-						this.statisticsMin.CyclomaticComplexity = statistics.CyclomaticComplexity;
+					{
+						// Get all addresses belonging to the subroutine
+						const statistics = this.countAddressStatistic(address);
+						statistics.CyclomaticComplexity++;	// Add 1 as default
+						this.subroutineStatistics.set(label, statistics);
+						// Get max
+						if (statistics.sizeInBytes > this.statisticsMax.sizeInBytes)
+							this.statisticsMax.sizeInBytes = statistics.sizeInBytes;
+						if (statistics.countOfInstructions > this.statisticsMax.countOfInstructions)
+							this.statisticsMax.countOfInstructions = statistics.countOfInstructions;
+						if (statistics.CyclomaticComplexity > this.statisticsMax.CyclomaticComplexity)
+							this.statisticsMax.CyclomaticComplexity = statistics.CyclomaticComplexity;
+						// Get min
+						if (statistics.sizeInBytes < this.statisticsMin.sizeInBytes)
+							this.statisticsMin.sizeInBytes = statistics.sizeInBytes;
+						if (statistics.countOfInstructions < this.statisticsMin.countOfInstructions)
+							this.statisticsMin.countOfInstructions = statistics.countOfInstructions;
+						if (statistics.CyclomaticComplexity < this.statisticsMin.CyclomaticComplexity)
+							this.statisticsMin.CyclomaticComplexity = statistics.CyclomaticComplexity;
+					}
 			}
 		}
 	}
@@ -1787,30 +1713,10 @@ export class Disassembler extends EventEmitter {
 
 			const type = label.type;
 			switch (type) {
-				// Count main labels
-				/*
-				case NumberType.CODE_SUB:
-					labelSubCount++;
-					break;
-				case NumberType.CODE_LBL:
-					labelLblCount++;
-					break;
-				case NumberType.DATA_LBL:
-					const memAttr = this.memory.getAttributeAt(address);
-					if (memAttr & MemAttribute.CODE) {
-						labelSelfModifyingCount++;
-					}
-					else {
-						labelDataLblCount++;
-					}
-					break;
-				*/
-
 				// Collect local labels
 				case NumberType.CODE_LOCAL_LBL:
 				case NumberType.CODE_LOCAL_LOOP:
 					const parentLabel = this.addressParents[address];
-					//assert(parentLabel, 'assignLabelNames 1');
 					if (parentLabel) {
 						// This might not be set if address was set by addAddressToQueue.
 						const arr = (type == NumberType.CODE_LOCAL_LBL) ? localLabels : localLoops;
@@ -1824,20 +1730,6 @@ export class Disassembler extends EventEmitter {
 					break;
 			}
 		}
-
-		// Calculate digit counts
-		//const labelSubCountDigits = labelSubCount.toString().length;
-		//const labelLblCountDigits = labelLblCount.toString().length;
-		//const labelDataLblCountDigits = labelDataLblCount.toString().length;
-		//const labelSelfModifyingCountDigits = labelSelfModifyingCount.toString().length;
-
-
-		// Assign names. First the main labels.
-		// Start indexes
-		//let subIndex = 1;	// CODE_SUB
-		//let lblIndex = 1;	// CODE_LBL
-		//let dataLblIndex = 1;	// DATA_LBL
-		//let dataSelfModifyingIndex = 1;	// SELF_MOD
 
 		// Loop through all labels (labels is sorted by address)
 		let labelIndex = 1;
@@ -1853,14 +1745,10 @@ export class Disassembler extends EventEmitter {
 				case NumberType.CODE_SUB:
 					// Set name
 					label.name = (label.belongsToInterrupt) ? this.labelIntrptPrefix : '' + this.labelSubPrefix + Format.getHexString(address, 4);
-					// Next
-					//subIndex++;
 					break;
 				case NumberType.CODE_LBL:
 					// Set name
 					label.name = (label.belongsToInterrupt) ? this.labelIntrptPrefix : '' + this.createLabelName(address);
-					// Next
-					//lblIndex++;
 					break;
 				case NumberType.CODE_RST:
 					// Set name
@@ -1873,35 +1761,18 @@ export class Disassembler extends EventEmitter {
 						assert(memAttr & MemAttribute.CODE_FIRST, 'assignLabelNames 2');
 						// Yes, is self-modifying code.
 						// Set name
-						//label.name = this.labelSelfModifyingPrefix + Format.getPaddedValue(dataSelfModifyingIndex, labelSelfModifyingCountDigits);
 						label.name = this.labelSelfModifyingPrefix + Format.getHexString(address, 4);
-						// Next
-						//dataSelfModifyingIndex++;
 					}
 					else {
 						// Normal data area.
-						// Set name
-						//label.name = this.labelDataLblPrefix + Format.getPaddedValue(dataLblIndex, labelDataLblCountDigits);
 						label.name = this.labelDataLblPrefix + Format.getHexString(address, 4);
-						// Next
-						//dataLblIndex++;
 					}
 					break;
 
 				case NumberType.CODE_LOCAL_LBL:
 				case NumberType.CODE_LOCAL_LOOP:
 					const parentLabel: DisLabel = this.addressParents[address];
-					if (parentLabel) {
-						/* TODO: REMOVE
-						// Make sure that the local label is really in reach.
-						// E.g. it could be before the parent label.
-						const parAddress = parentLabel.address; if (parAddress > address) {
-							// Change to non-local label.
-							label.type = NumberType.CODE_LBL;
-						}
-						*/
-					}
-					else {
+					if (!parentLabel) {
 						// These are odd cases but it can happen that we have a local label without parent.
 						if (type == NumberType.CODE_LOCAL_LBL) {
 							label.name = this.labelLocalLabelPrefix + labelIndex;
@@ -1929,7 +1800,6 @@ export class Disassembler extends EventEmitter {
 			let index = 1;
 			for (let child of childLabels) {
 				const indexString = Format.getPaddedValue(index, digitCount);
-				//child.name = '.' + localPrefix + this.labelLocalLablePrefix;
 				child.name = parentLabel.name + '.' + this.labelLocalLabelPrefix;
 				child.name += indexString;
 				index++;
@@ -1945,7 +1815,6 @@ export class Disassembler extends EventEmitter {
 			let index = 1;
 			for (let child of childLabels) {
 				const indexString = Format.getPaddedValue(index, digitCount);
-				//child.name = '.' + localPrefix + this.labelLoopPrefix;
 				child.name = parentLabel.name + '.' + this.labelLoopPrefix;
 				if (count > 1)
 					child.name += indexString;
@@ -2079,7 +1948,6 @@ export class Disassembler extends EventEmitter {
 					if (!addrLabel.isEqu) {
 						// Line 3
 						line3 = 'Calls: ';
-						//first = true;
 						const callees = new Set<string>();
 						for (const callee of addrLabel.calls) {
 							callees.add(DisLabel.getLabelName(callee));
@@ -2111,7 +1979,7 @@ export class Disassembler extends EventEmitter {
 							}
 							return s;
 						});
-						const line2 = refArray.join(', ');
+						line2 = refArray.join(', ');
 						lineArray.push(line2);
 					}
 					break;
@@ -2401,8 +2269,8 @@ export class Disassembler extends EventEmitter {
 						const len = opcode.length;
 						for (let i = 1; i < len; i++) {
 							const addr64k = (address + i) & 0xFFFF;
-							const attr = this.memory.getAttributeAt(addr64k);
-							if (!(attr & MemAttribute.ASSIGNED)) {
+							const attrRest = this.memory.getAttributeAt(addr64k);
+							if (!(attrRest & MemAttribute.ASSIGNED)) {
 								incomplete = true;
 								break;
 							}
@@ -2446,8 +2314,8 @@ export class Disassembler extends EventEmitter {
 					for (; j < this.numberOfDefbBytes; j++) {
 						// Check attribute
 						//const addr = (address + j) & 0xFFFF;
-						const addr = address + j;
-						const nextAttr = this.memory.getAttributeAt(addr);
+						const addrj = address + j;
+						const nextAttr = this.memory.getAttributeAt(addrj);
 						if (!(nextAttr & MemAttribute.ASSIGNED) || (nextAttr & MemAttribute.CODE)) {
 							// Leave if not assigned or CODE
 							addAddress = j;
@@ -2463,8 +2331,8 @@ export class Disassembler extends EventEmitter {
 						}
 
 						// Read memory value at address
-						const memValue = this.memory.getValueAt(addr);
-						bytes.push(memValue);
+						const memValuej = this.memory.getValueAt(addrj);
+						bytes.push(memValuej);
 
 						// Next
 						attr = nextAttr;
@@ -2766,21 +2634,7 @@ export class Disassembler extends EventEmitter {
 				const nodeName = this.nodeFormat(label.name, label.id, address, stats.CyclomaticComplexity, stats.sizeInBytes, stats.countOfInstructions);
 				const hrefAddress = this.funcFormatAddress ? this.funcFormatAddress(address) : Format.getHexString(address, 4);
 				text += '"' + label.name + '" [fontsize="' + Math.round(fontSize) + '", label="' + nodeName + '", href="#' + hrefAddress + '"];\n';
-/*
-				// Convert references to parent references
-				// (i.e. one subroutine might call more than once)
-				const refs = Array.from(label.references);
-				const parents = refs.map(ref => this.addressParents[ref]);
-				const parentSet = new Set(parents);
-				// Get all callers and draw arrows
-				for (const parentLabel of parentSet) {
-					const callerLabel = labels.get(parentLabel.address);
-					if (callerLabel != undefined) {
-						const callerLabelName = DisLabel.getLabelName(callerLabel);
-						text += '"' + callerLabelName + '" -> "' + label.name + '";\n';
-					}
-				}
-*/
+
 				for (const called of label.calls) {
 					// Get address of callee
 					const addr = DisLabel.getLabelAddress(called);
@@ -2888,8 +2742,6 @@ export class Disassembler extends EventEmitter {
 			// Get all addresses belonging to the subroutine
 			const addrsArray = new Array<number>();
 			this.getSubroutineAddresses(startAddress, addrsArray);
-			// Now reduce array. I.e. only a coherent block will be treated as a subroutine.
-			this.reduceSubroutineAddresses(startAddress, addrsArray);
 
 			// Get the text for all branches
 			const processedAddrsArray = new Array<number>();
