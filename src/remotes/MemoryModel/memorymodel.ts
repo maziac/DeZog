@@ -505,7 +505,7 @@ export class MemoryModel {
 
 	/**
 	 * Parses an address with bank in the form "800A.4" or "0010.R0"
-	 * and returns teh long address.
+	 * and returns the long address.
 	 * @param longAddrString E.g "800A.4" or "0010.R0" or "A000" (if no banking for that slot)
 	 * @returns A long address, e.g. 0x05800A for "800A.4"
 	 */

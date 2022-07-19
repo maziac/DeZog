@@ -63,7 +63,7 @@ ${body}
 
 	/**
 	 * The received events send to the callback.
-	 * @param message The message. message.command contains the command as a string. message.data contains additional data (dependend on the command)
+	 * @param message The message. message.command contains the command as a string. message.data contains additional data (dependent on the command)
 	 * The only command created by the HtlmView is 'clicked' if a node with a 'href' attribute
 	 * has been clicked.
 	 * 'message.data' contains the contents of the 'href'.
@@ -80,7 +80,7 @@ ${body}
 	 * Works very much like the Emitter function 'on'.
 	 * It registers a function that is invoked when the command
 	 * string is received from the webview.
-	 * @param command E.g. 'clikced'.
+	 * @param command E.g. 'clicked'.
 	 * @param func The function to call. The function is called with 'message'
 	 * as parameter. The data can be obtained from message.data.
 	 * If undefined the registration is cleared.
