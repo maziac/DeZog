@@ -2137,7 +2137,7 @@ export class DebugSessionClass extends DebugSession {
 			throw Error("No expression found.");
 
 		// Index inside label
-		const matchIndex = /(.*)[^\[]*\[([^\]]+)\]/.exec(labelString);
+		const matchIndex = /(.*)[^\[]*\[([^\]]+)\]/.exec(labelString);	// Instead this simpler one could be used: /(.*?)\[(.+?)\]/
 		let lblIndexString = '';
 		if (matchIndex) {
 			labelString = matchIndex[1].trim();
