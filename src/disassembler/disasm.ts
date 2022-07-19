@@ -394,9 +394,6 @@ export class Disassembler extends EventEmitter {
 		// Add parent references to each address and remove self referenced labels
 		this.addParentReferences();
 
-		// Add 'calls' list to subroutine labels
-		this.addCallsListToLabels();
-
 		// Count statistics (size of subroutines, cyclomatic complexity)
 		if(this.enableStatistics)
 			this.countStatistics();
@@ -800,80 +797,6 @@ export class Disassembler extends EventEmitter {
 		depth--;
 
 		return depth;
-	}
-
-
-	protected collectLabelso() { // TODO: REMOVE
-		let address;
-		let opcode;
-
-		// Get new address from queue
-		while ((address = this.addressQueue.shift()) != undefined) {
-			const startSlot = this.addressesSlotBankInfo[address].slot;
-			// Disassemble addresses until stop-code or bank border
-			do {
-				let attr = this.memory.getAttributeAt(address);
-				if (attr & MemAttribute.CODE)
-					break;	// Yes, already disassembled
-				if (!(attr & MemAttribute.ASSIGNED)) {
-					// Error: trying to disassemble unassigned memory areas
-					if (!this.no_warning_disassemble_unassigned_memory)
-						this.emit('warning', 'Trying to disassemble unassigned memory area at 0x' + address.toString(16) + '.');
-					break;
-				}
-
-				// Read memory value
-				opcode = Opcode.getOpcodeAt(this.memory, address);
-				if (this.DBG_COLLECT_LABELS)
-					console.log(Format.getHexString(address) + '\t' + opcode.disassemble().mnemonic);
-
-				// Check if memory area has already been PARTLY disassembled
-				const len = opcode.length;
-				let memAddress = address;
-				let quitDoWhile = false;
-				for (let i = 1; i < len; i++) {
-					memAddress++;
-					attr = this.memory.getAttributeAt(memAddress);
-					if (attr & MemAttribute.CODE) {
-						// It has already been disassembled -> error.
-						const otherOpcode = Opcode.getOpcodeAt(this.memory, memAddress);
-						// emit warning
-						this.emit('warning', 'Aborting disassembly: Ambiguous disassembly: Trying to disassemble opcode "' + opcode.name + '" at address 0x' + address.toString(16) + ' but address 0x' + memAddress.toString(16) + ' already contains opcode "' + otherOpcode.name + '".');
-
-						//assert(attr & MemAttribute.CODE_FIRST, 'Internal error: Expected CODE_FIRST');
-						//return;
-						// Just quit current thread.
-						quitDoWhile = true;
-						break;
-					}
-				}
-				if (quitDoWhile)
-					break;
-
-				// Mark memory area
-				this.memory.addAttributeAt(address, MemAttribute.CODE_FIRST);
-				this.memory.addAttributesAt(address, opcode.length, MemAttribute.CODE);
-
-				// Check opcode for labels
-				this.disassembleForLabel(startSlot, address, opcode, []);
-
-				// Check for stop code. (JP, JR, RET)
-				if (opcode.flags & OpcodeFlag.STOP)
-					break;
-
-				// Next address
-				address += opcode.length;
-
-				// Check for bank border
-				if (this.bankBorderPassed(startSlot, address))
-					break;	// Bank border
-
-				// Check for end of disassembly (JP, RET)
-			} while (!(opcode.flags & OpcodeFlag.STOP));
-
-			if (this.DBG_COLLECT_LABELS)
-				console.log('\n');
-		}
 	}
 
 
@@ -1710,37 +1633,6 @@ export class Disassembler extends EventEmitter {
 		if (retFound) {
 			// Change label to SUB
 			parentLabel.type = NumberType.CODE_SUB;
-		}
-	}
-
-
-	/**
-	 * Adds the 'calls'-list to the subroutine labels.
-	 * The reference list already includes the references (subroutines) who
-	 * call the label.
-	 * Now a list should be added to the label which contains all called
-	 * subroutines.
-	 * This is for call-graphs and for the comments in the listing.
-	 */
-	// TODO: REMOVE
-	protected addCallsListToLabels() {
-		return; //
-		for (let [, label] of this.labels) {
-			switch (label.type) {
-				case NumberType.CODE_SUB:
-				case NumberType.CODE_RST:
-				case NumberType.CODE_LBL:
-					// Go through references
-					const refs = label.references;
-					for (const ref of refs) {
-						// Get parent
-						const parent = this.addressParents[ref];
-						if (parent) {
-							// Add label to call list of parent
-							parent.calls.push(label);
-						}
-					}
-			}
 		}
 	}
 
