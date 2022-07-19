@@ -854,12 +854,6 @@ export class Disassembler extends EventEmitter {
 				this.memory.addAttributeAt(address, MemAttribute.CODE_FIRST);
 				this.memory.addAttributesAt(address, opcode.length, MemAttribute.CODE);
 
-				/*
-				// Mark as stop code?
-				if(opcode.flags & OpcodeFlag.STOP)
-					this.memory.addAttributeAt(address, opcode.length, MemAttribute.CODE_STOP);
-				*/
-
 				// Check opcode for labels
 				this.disassembleForLabel(startSlot, address, opcode, []);
 
@@ -1502,8 +1496,6 @@ export class Disassembler extends EventEmitter {
 	 * @param func The function to execute.
 	 * @param addrsArray An empty array in the beginning that is filled with
 	 * all addresses of the subroutine.
-	 * @param depth Starts at 0. Every iteration this is increased.
-	 * Used to stop analysis after a certain depth (disassembly).
 	 */
 	protected followFlowPath(startSlot: number, address: number, func: (flags: OpcodeFlag, opcode: Opcode, opcodeAddr: number, branchAddrs: number[]) => boolean, addrsArray?: Array<number>) {
 		let flags: OpcodeFlag;
@@ -1617,23 +1609,19 @@ export class Disassembler extends EventEmitter {
 		for (let [address, label] of this.labels) {
 			const refs = label.references;
 			let anyRefOutside = false;
-			for (let ref of refs) {
-				const addr = ref;
+			for (const addr of refs) {
 				const parentLabel = this.addressParents[addr];
 				if (parentLabel == label) {
-					// self-reference:
+					// Self-reference:
 					// Check if reference is a call:
-					const memAttr = this.memory.getAttributeAt(ref);
+					const memAttr = this.memory.getAttributeAt(addr);
 					assert(memAttr & MemAttribute.ASSIGNED);
-					if (!(memAttr & MemAttribute.CODE))
-						console.log();	// TODO REMOVE
-					assert(memAttr & MemAttribute.CODE);
-					assert(memAttr & MemAttribute.CODE_FIRST);
+					// Note: because of a low depth the memAttr might not contain CODE.
 					// Check opcode
-					const opcode = Opcode.getOpcodeAt(this.memory, ref);
+					const opcode = Opcode.getOpcodeAt(this.memory, addr);
 					if (!(opcode.flags & OpcodeFlag.CALL)) {
 						// No, it was no call, so it must be a jump. Remove reference.
-						refs.delete(ref);
+						refs.delete(addr);
 					}
 				}
 				else {
@@ -1700,6 +1688,17 @@ export class Disassembler extends EventEmitter {
 				if (flags & OpcodeFlag.BRANCH_ADDRESS) {
 					const branchAddress = opcode.value;
 					branchAddrs.push(branchAddress);
+
+					// Check for a call
+					if (flags & OpcodeFlag.CALL) {
+						// Add either label or address (address in case label does not exist.
+						// E.g. because behind bank border.
+						const label = this.labels.get(branchAddress);
+						if (label)
+							parentLabel.calls.push(label);
+						else
+							parentLabel.calls.push(branchAddress);
+					}
 				}
 
 				// Return
@@ -1723,7 +1722,9 @@ export class Disassembler extends EventEmitter {
 	 * subroutines.
 	 * This is for call-graphs and for the comments in the listing.
 	 */
+	// TODO: REMOVE
 	protected addCallsListToLabels() {
+		return; //
 		for (let [, label] of this.labels) {
 			switch (label.type) {
 				case NumberType.CODE_SUB:
@@ -2187,11 +2188,11 @@ export class Disassembler extends EventEmitter {
 						// Line 3
 						line3 = 'Calls: ';
 						//first = true;
-						const callees = new Set<DisLabel>();
+						const callees = new Set<string>();
 						for (const callee of addrLabel.calls) {
-							callees.add(callee);
+							callees.add(DisLabel.getLabelName(callee));
 						}
-						line3 += Array.from(callees).map(refLabel => refLabel.name).join(', ');
+						line3 += Array.from(callees).join(', ');
 						// Check if anything has been output
 						line3 += (callees.size > 0) ? '.' : '-';
 
@@ -2629,8 +2630,6 @@ export class Disassembler extends EventEmitter {
 					break;	// Bank border
 
 				prevMemoryAttribute = attr;
-				// Log
-				//				console.log('DISASSEMBLY: ' + lines[lines.length-1]);
 			}
 			// The while(true) loop is left if unassigned memory was found.
 			// Add dots:
@@ -2759,7 +2758,7 @@ export class Disassembler extends EventEmitter {
 	 * @param addrString The address to show for the node.
 	 * @param chosenLabels
 	 */
-	public getGraphLabels(depth: number, addrString: number | string,chosenLabels: Map<number, DisLabel>) {
+	public getGraphLabels(depth: number, addrString: number | string,chosenLabels: Map<number, DisLabel|number>) {
 		// Convert to number
 		let addr;
 		if (typeof (addrString) == 'string') {
@@ -2786,8 +2785,14 @@ export class Disassembler extends EventEmitter {
 				// Also add the called sub routines
 				for (const called of label.calls) {
 					// Recursive
-					const callee = called.getName();
-					this.getGraphLabels(depth, callee, chosenLabels);
+					if (typeof called == 'number') {
+						// Just add number as label
+						chosenLabels.set(called, called);	// 'called' is a number
+					}
+					else {
+						const name = DisLabel.getLabelName(called);
+						this.getGraphLabels(depth, name, chosenLabels);
+					}
 				}
 			}
 		}
@@ -2796,7 +2801,7 @@ export class Disassembler extends EventEmitter {
 
 	/**
 	 * Returns the labels call graph in dot syntax.
-	 * Every main labels represents a bubble.
+	 * Every main label represents a bubble.
 	 * Arrows from one bubble to the other represents
 	 * calling the function.
 	 * Call 'createRevertedLabelMap' before calling this function.
@@ -2807,7 +2812,7 @@ export class Disassembler extends EventEmitter {
 	 * @param equLabelColor The color used if a label is an EQU instead of an address.
 	 * @returns The dot graphic as text.
 	 */
-	public getCallGraph(labels: Map<number, DisLabel>, startAddresses: number[], maincolor = 'black', fillcolor = 'lightyellow', equLabelColor = 'lightgray'): string {
+	public getCallGraph(labels: Map<number, DisLabel|number>, startAddresses: number[], maincolor = 'black', fillcolor = 'lightyellow', equLabelColor = 'lightgray'): string {
 		// Header
 		let text = 'digraph Callgraph {\n\n';
 		text += 'bgcolor="transparent"\n';
@@ -2818,36 +2823,45 @@ export class Disassembler extends EventEmitter {
 		// Calculate size (font size) max and min
 		const fontSizeMin = 13;
 		const fontSizeMax = 40;
-		//const min = this.statisticsMin.sizeInBytes;
-		//const fontSizeFactor = (fontSizeMax-fontSizeMin) / (this.statisticsMax.sizeInBytes-min);
 		const min = this.statisticsMin.CyclomaticComplexity;
 		const complDiff = this.statisticsMax.CyclomaticComplexity - min
 		const fontSizeFactor = (fontSizeMax - fontSizeMin) / ((complDiff < 8) ? 8 : complDiff);
 
 		// Loop
 		for (const [address, label] of labels) {
-			const type = label.type;
-			if (type != NumberType.CODE_SUB
-				&& type != NumberType.CODE_LBL
-				&& type != NumberType.CODE_RST)
-				continue;
-			//console.log(label.name + '(' + Format.getHexString(address) + '):')
-
-			// Handle fill color (highlights)
-			let colorString = this.dotMarkedLabels.get(address);
-			if (!colorString) {
-				// Now try also the label name
+			let colorString;
+			if (typeof label == 'object') {
+				const type = label.type;
+				if (type != NumberType.CODE_SUB
+					&& type != NumberType.CODE_LBL
+					&& type != NumberType.CODE_RST)
+					continue;
+				// Try the label name for the color
 				colorString = this.dotMarkedLabels.get(label.getName());
 			}
 
-			// Skip other labels
-			if (label.isEqu) {
+			// Handle fill color (highlights)
+			if (!colorString) {
+				// Now try also the address for the fill color
+				colorString = this.dotMarkedLabels.get(address);
+			}
+
+			// Check label type
+			if (typeof label == 'number') {
+				// E.g. because of bank border
+				const name = DisLabel.getLabelName(label);
+				const fontSize = (fontSizeMax - fontSizeMin) / 2;
+
+				// Output
+				const hrefAddress = Format.getHexString(address, 4);
+				text += '"' + name + '" [fontsize="' + Math.round(fontSize) + '", label="' + name + '", href="#' + hrefAddress + '"];\n';
+			}
+			else if (label.isEqu) {
 				// output gray label to indicate an EQU label
 				if (!colorString)
 					colorString = equLabelColor;
-				text += label.name + ' [fontsize="' + fontSizeMin + '"];\n';
 				const nodeName = this.nodeFormat(label.name, label.id, address);
-				text += label.name + ' [label="' + nodeName + '"];\n';
+				text += label.name + ' [fontsize="' + fontSizeMin + '", label="' + nodeName + '"];\n';
 			}
 			else {
 				// A normal label.
@@ -2857,12 +2871,10 @@ export class Disassembler extends EventEmitter {
 				const fontSize = fontSizeMin + fontSizeFactor * (stats.CyclomaticComplexity - min);
 
 				// Output
-				text += '"' + label.name + '" [fontsize="' + Math.round(fontSize) + '"];\n';
 				const nodeName = this.nodeFormat(label.name, label.id, address, stats.CyclomaticComplexity, stats.sizeInBytes, stats.countOfInstructions);
 				const hrefAddress = this.funcFormatAddress ? this.funcFormatAddress(address) : Format.getHexString(address, 4);
-				text += '"' + label.name + '" [label="' + nodeName + '", href="#' + hrefAddress + '"];\n';
-				//text += '"' + label.name + '" [label="' + label.name + '\\nID=' + label.id + '\\nCC=' + stats.CyclomaticComplexity + '\\n"];\n';
-
+				text += '"' + label.name + '" [fontsize="' + Math.round(fontSize) + '", label="' + nodeName + '", href="#' + hrefAddress + '"];\n';
+/*
 				// Convert references to parent references
 				// (i.e. one subroutine might call more than once)
 				const refs = Array.from(label.references);
@@ -2871,8 +2883,20 @@ export class Disassembler extends EventEmitter {
 				// Get all callers and draw arrows
 				for (const parentLabel of parentSet) {
 					const callerLabel = labels.get(parentLabel.address);
-					if (callerLabel) {
-						text += '"' + callerLabel.name + '" -> "' + label.name + '";\n';
+					if (callerLabel != undefined) {
+						const callerLabelName = DisLabel.getLabelName(callerLabel);
+						text += '"' + callerLabelName + '" -> "' + label.name + '";\n';
+					}
+				}
+*/
+				for (const called of label.calls) {
+					// Get address of callee
+					const addr = DisLabel.getLabelAddress(called);
+					// Check if depth allows to show it
+					if (labels.get(addr)) {
+						// Yes
+						const calledName = DisLabel.getLabelName(called);
+						text += '"' + label.name + '" -> "' + calledName + '";\n';
 					}
 				}
 
@@ -2883,8 +2907,10 @@ export class Disassembler extends EventEmitter {
 			}
 
 			// Color
-			if (colorString)
-				text += '"' + label.name + '" [fillcolor="' + colorString + '", style=filled];\n';
+			if (colorString) {
+				const name = DisLabel.getLabelName(label);
+				text += '"' + name + '" [fillcolor="' + colorString + '", style=filled];\n';
+			}
 		}
 
 		// ending

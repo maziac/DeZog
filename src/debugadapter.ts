@@ -3768,16 +3768,37 @@ E.g. use "-help -view" to put the help text in an own view.
 			for (const addressString of addresses) {
 				if (!addressString)
 					continue;	// Last (first) item might be ''
-				const longAddr = Remote.memoryModel.parseAddress(addressString);
+				// Check for long address
+				let longAddr;
+				try{
+					// A long address
+					longAddr = Remote.memoryModel.parseAddress(addressString);
+				}
+				catch(e) {
+					// It might happen that a 64k address is given here instead of a long address (in case the disassembly does not know which bank is correct).
+					// In that case the current bank is paged.
+					if (addressString.includes('.')) {
+						this.showError(e.message);
+						throw e;	// Rethrow if a bank was explicitly given
+					}
+					// Otherwise take the current address and warn
+					const addr64k = parseInt(addressString, 16);	// Convert hex, e.g. ("C000h")
+					longAddr = Z80Registers.createLongAddress(addr64k, Remote.getSlots());
+				}
 				const entry = Remote.getFileAndLineForAddress(longAddr);
 				const fileName = entry.fileName;
 				if (fileName) {
+					// Associated file found
 					let addrs = fileLines.get(fileName);
-					if (!addrs)  {
+					if (!addrs) {
 						addrs = new Array<number>();
 						fileLines.set(fileName, addrs);
 					}
 					addrs.push(entry.lineNr);
+				}
+				else {
+					// No associateed file found
+					this.showWarning('Address ' + addressString + ' has no associated file/line.');
 				}
 			}
 

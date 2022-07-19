@@ -1,3 +1,4 @@
+import { Format } from './format';
 import {NumberType, getNumberTypeAsString} from './numbertype';
 
 
@@ -29,7 +30,7 @@ export class DisLabel {
 	public references = new Set<number>();
 
 	/// A list with all called subroutine labels. (for statistics)
-	public calls = new Array<DisLabel>();
+	public calls = new Array<DisLabel|number>();
 
 	/// True if it is an EQU label. A label whose memory was not given as binary value.
 	/// I.e. outside the range of the given memory.
@@ -70,5 +71,41 @@ export class DisLabel {
 	 */
 	public getName() {
 		return this.name;
+	}
+
+
+	/**
+	 * Returns either the hex value as string or the label name.
+	 * Used for items in the 'this.calls' list.
+	 * @param called Either a label or an 64k address.
+	 * @returns a string, e.g. "C000h".
+	 */
+	public static getLabelName(called: DisLabel | number) {
+		if (typeof called == 'number') {
+			// Just return the hex address as name
+			return Format.getHexString(called, 4) + 'h';
+		}
+		else {
+			// Return the label name
+			return called.name;
+		}
+	}
+
+
+	/**
+	 * Returns the address (number) no matter if a number or a DisLabel is passed.
+	 * Used for items in the 'this.calls' list.
+	 * @param called Either a label or an 64k address.
+	 * @returns The 64k address e.g. 0xC000h
+	 */
+	public static getLabelAddress(called: DisLabel | number) {
+		if (typeof called == 'number') {
+			// Just return the hex address as name
+			return called;
+		}
+		else {
+			// Return the label address
+			return called.address;
+		}
 	}
 }
