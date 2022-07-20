@@ -67,7 +67,7 @@ export class DecodeRegisterData {
 	 * @returns The value of the register.
 	 */
 	public getRegValueByName(regName: string, data: RegisterData): number {
-		let handler = this.regMap.get(regName.toUpperCase()) || (data => 0);
+		let handler = this.regMap.get(regName.toUpperCase()) || (_data => 0);
 		Utility.assert(handler != undefined, 'Register ' + regName + ' does not exist.');
 		Utility.assert(data);
 		let value = handler(data);

@@ -926,7 +926,7 @@ export class DzrpRemote extends RemoteBase {
 					try {
 						await this.getRegistersFromEmulator();
 						await this.getCallStackFromEmulator();
-					} catch (e) {}	// Ignore if error already happened
+					} catch {}	// Ignore if error already happened
 					const reason: string = e.message;
 					this.continueResolve!.resolve(reason);
 				}
@@ -1065,11 +1065,11 @@ export class DzrpRemote extends RemoteBase {
 					// Check for continue
 					if (condition == undefined) {
 						// Calculate the breakpoints to use for step-over
-						let [, bp1, bp2] = await this.calcStepBp(true);
+						let [, sobp1, sobp2] = await this.calcStepBp(true);
 						// Continue
 						this.funcContinueResolve = funcContinueResolve;
 						prevPc = Z80Registers.getPC();
-						await this.sendDzrpCmdContinue(bp1, bp2);
+						await this.sendDzrpCmdContinue(sobp1, sobp2);
 					}
 					else {
 						// Construct break reason string to report

@@ -644,10 +644,9 @@ export class CpuHistoryClass extends StepHistoryClass {
 			}
 
 			// And push to stack
-			//const pc=Z80Registers.decoder.parsePC(currentLine);
 			const pc = Z80Registers.decoder.parsePCLong(currentLine);
-			const frame = new CallStackFrame(pc, sp, labelCallAddr);
-			this.reverseDbgStack.push(frame);
+			const csFrame = new CallStackFrame(pc, sp, labelCallAddr);
+			this.reverseDbgStack.push(csFrame);
 
 			// End
 			return;
@@ -705,8 +704,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 		}
 
 		// Adjust PC within frame
-		const pc = Z80Registers.decoder.parsePCLong(currentLine);
-		frame.addr = pc;
+		const pcLong = Z80Registers.decoder.parsePCLong(currentLine);
+		frame.addr = pcLong;
 
 		// Add a possibly pushed value
 		if (pushedValue != undefined)
