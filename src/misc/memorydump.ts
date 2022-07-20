@@ -167,7 +167,8 @@ export class MemoryDump {
 		else {
 			boundAddr = Utility.getBoundary(memBlock.address, MEM_DUMP_BOUNDARY);
 			const boundEnd = Utility.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + MEM_DUMP_BOUNDARY;
-			let boundSize = boundEnd - boundAddr + 1;
+			//let boundSize = boundEnd - boundAddr + 1;
+			boundSize = boundEnd - boundAddr + 1;	// The previous assignment was probably wrong.
 			if (boundSize > 0xFFFF) {
 				boundSize = Math.trunc(0xFFFF / MEM_DUMP_BOUNDARY) * MEM_DUMP_BOUNDARY;
 				memBlock.size = boundAddr + boundSize - startAddress;
