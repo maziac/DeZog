@@ -28,8 +28,6 @@ import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
  * @param context
  */
 export function activate(context: vscode.ExtensionContext) {
-	//console.log("Extension ACTIVATED");
-
 	// Init package info
 	PackageInfo.Init(context);
 
@@ -90,8 +88,8 @@ export function activate(context: vscode.ExtensionContext) {
 		if (event.affectsConfiguration(extensionBaseName + '.log.global')
 			|| event.affectsConfiguration(extensionBaseName+'.log.transport')
 			|| event.affectsConfiguration(extensionBaseName + '.log.customCode')) {
-			const configuration = PackageInfo.getConfiguration();
-			configureLogging(configuration);
+			const currentConfig = PackageInfo.getConfiguration();
+			configureLogging(currentConfig);
 		}
 		// 'donated' changed
 		if (event.affectsConfiguration(extensionBaseName + '.donated')) {
@@ -254,7 +252,7 @@ export function activate(context: vscode.ExtensionContext) {
  * 'deactivate' is only called when vscode is terminated.
  */
 export function deactivate() {
-	//console.log("Extension DEACTIVATED");
+	//
 }
 
 
@@ -314,7 +312,7 @@ function getSelectedLineBlocks(): Array<{filename: string, fromLine: number, toL
  */
 class DeZogInlineValuesProvider implements vscode.InlineValuesProvider {
 	//onDidChangeInlineValues?: vscode.Event<void> | undefined;
-	provideInlineValues(document: vscode.TextDocument, viewPort: vscode.Range, context: vscode.InlineValueContext, token: vscode.CancellationToken): vscode.ProviderResult<vscode.InlineValue[]> {
+	provideInlineValues(_document: vscode.TextDocument, _viewPort: vscode.Range, _context: vscode.InlineValueContext, _token: vscode.CancellationToken): vscode.ProviderResult<vscode.InlineValue[]> {
 		return undefined;
 	}
 
@@ -338,7 +336,7 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 	 * Is called once per vscode window.
 	 * I.e. each window has a separate environment.
 	 */
-	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
+	resolveDebugConfiguration(_folder: WorkspaceFolder | undefined, config: DebugConfiguration, _token?: CancellationToken): ProviderResult<DebugConfiguration> {
 		return new Promise<DebugConfiguration | undefined>(async (resolve, reject) => {
 
 			// Remove current debug session

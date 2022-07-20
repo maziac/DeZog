@@ -1,4 +1,3 @@
-//import { Log } from './log';
 import {Labels} from '../labels/labels';
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {Settings} from '../settings/settings'
@@ -37,7 +36,7 @@ export class ShallowVar {
 	 * @param start The start index of the array. E.g. only the range [100..199] should be displayed.
 	 * @param count The number of bytes to display.
 	 */
-	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
+	public async getContent(_start: number, _count: number): Promise<Array<DebugProtocol.Variable>> {
 		return [];
 	}
 
@@ -50,7 +49,7 @@ export class ShallowVar {
 	 * @param value The value to set.
 	 * @returns A Promise with the formatted string. undefined if not implemented.
 	 */
-	public async setValue(name: string, value: number): Promise<string> {
+	public async setValue(_name: string, _value: number): Promise<string> {
 		return undefined as any;
 	}
 
@@ -62,7 +61,7 @@ export class ShallowVar {
 	 * @param name The name of data.
 	 * @returns 'Altering values not allowed in time-travel mode.' or undefined.
 	 */
-	public changeable(name: string): string | undefined {
+	public changeable(_name: string): string | undefined {
 		// Change normally not allowed if in reverse debugging
 		if (StepHistory.isInStepBackMode())
 			return 'Altering values not allowed in time-travel mode.';
@@ -82,7 +81,7 @@ export class ShallowVarConst extends ShallowVar {
 	 * @param name The name of data.
 	 * @returns 'You cannot alter this value.'
 	 */
-	public changeable(name: string): string | undefined {
+	public changeable(_name: string): string | undefined {
 		return 'You cannot alter this value.';
 	}
 }
@@ -122,7 +121,7 @@ export class DisassemblyVar extends ShallowVarConst {
 
 		// Add extra info
 		const list = new Array<DebugProtocol.Variable>();
-		const dasmFiltered = dasmArray.filter((value, index) => (index >= start && index < end));
+		const dasmFiltered = dasmArray.filter((_value, index) => (index >= start && index < end));
 		for (const entry of dasmFiltered) {
 			const address = entry.address;
 			// Add to list
@@ -362,16 +361,16 @@ export class StackVar extends ShallowVar {
 			// Change neg to pos
 			if (value < 0)
 				value += 0x10000;
-			const data = new Uint8Array(2);
-			data[0] = value & 0xFF;
-			data[1] = value >>> 8;
-			await Remote.writeMemoryDump(address, data);
+			const writeData = new Uint8Array(2);
+			writeData[0] = value & 0xFF;
+			writeData[1] = value >>> 8;
+			await Remote.writeMemoryDump(address, writeData);
 			ShallowVar.memoryChanged = true;
 		}
 
 		// Retrieve memory values, to see if they really have been set.
-		const data = await Remote.readMemoryDump(address, 2);
-		const memWord = data[0] + (data[1] << 8);
+		const readData = await Remote.readMemoryDump(address, 2);
+		const memWord = readData[0] + (readData[1] << 8);
 		// Pass formatted string to vscode
 		const formattedString = Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined);
 		return formattedString;
@@ -440,7 +439,7 @@ export class SubStructVar extends ShallowVar {
 	 * @param list The list of variables. The constructor adds the 2 pseudo variables to it.
 	 * @param parentStruct A reference to a parent struct which retrieves the memory for all sub structs.
 	 */
-	protected createPropArray(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct: StructVar) {
+	protected createPropArray(relIndex: number, _count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct: StructVar) {
 		// Now create a new variable for each
 		const unsortedMap = new Map<number, string>();
 		for (const prop of props) {
@@ -530,7 +529,7 @@ export class SubStructVar extends ShallowVar {
 	 * Ignores start and count for a struct.
 	 * @returns A Promise with the properties.
 	 */
-	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
+	public async getContent(_start: number, _count: number): Promise<Array<DebugProtocol.Variable>> {
 		// Return range
 		const dbgVarArray = new Array<DebugProtocol.Variable>();
 		for (const [name, item] of this.propMap) {
@@ -661,14 +660,14 @@ export class StructVar extends SubStructVar {
 	 * @param parentStruct If undefined the method does nothing. Otherwise it is the
 	 * reference to a parent struct which retrieves the memory for all sub structs.
 	 */
-	protected createPropArray(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct: StructVar) {
+	protected createPropArray(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, _parentStruct: StructVar) {
 		// But only if more than 1 element
 		if (count <= 1) {
 			super.createPropArray(relIndex, count, elemSize, struct, props, list, this);
 		}
 		else {
 			// Create a number of nodes
-			let relIndex = 0;
+			let subRelIndex = 0;
 			for (let i = 0; i < count; i++) {
 				let labelVar;
 				const address = this.getAddress() + i * elemSize;
@@ -681,18 +680,18 @@ export class StructVar extends SubStructVar {
 				};
 				if (props.length) {
 					// Sub structure
-					labelVar = new SubStructVar(relIndex, 1, elemSize, struct, props, list, this);
+					labelVar = new SubStructVar(subRelIndex, 1, elemSize, struct, props, list, this);
 				}
 				else {
 					// Simple array
 					labelVar = new MemDumpVar(this.getAddress(), elemSize, 1, this.littleEndian);
-					labelVar.setParent(this, relIndex);
+					labelVar.setParent(this, subRelIndex);
 					item.indexedVariables = elemSize;
 				}
 				item.itemRef = list.addObject(labelVar);
 				this.propMap.set(name, item);
 				// Next
-				relIndex += elemSize;
+				subRelIndex += elemSize;
 			}
 		}
 	}

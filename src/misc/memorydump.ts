@@ -1,4 +1,4 @@
-import { Utility } from './utility';
+import {Utility} from './utility';
 
 
 /// The boundary at which the memory dumps should be shown.
@@ -9,7 +9,7 @@ const MEM_DUMP_BOUNDARY = 16;
 interface MemBlock {
 	/// The address to start show dump values. (Note: the data is already shown
 	/// earlier at a mod 16 boundary.)
-	address:	number;
+	address: number;
 
 	/// The size of the memory dump.
 	size: number;
@@ -23,7 +23,7 @@ interface MemBlock {
 export class MetaBlock {
 	/// The address to start show dump values.
 	/// This starts at a mod 16 boundary.
-	public address:	number;
+	public address: number;
 
 	/// The size of the complete memory dump.
 	public size: number;
@@ -33,22 +33,22 @@ export class MetaBlock {
 
 	/// The (current) memory data.
 	/// The data is stored as one continuous hex string.
-	public data: Uint8Array|undefined;
+	public data: Uint8Array | undefined;
 	/// The previous memory data (used to check which values have changed).
 	/// Undefined if not used.
-	public prevData: Uint8Array|undefined;
+	public prevData: Uint8Array | undefined;
 
 	/// Title shown as table caption, can be omitted.
-	public title: string|undefined;
+	public title: string | undefined;
 
 	/// Constructor.
-	constructor(address: number, size: number, memBlocks: Array<MemBlock>, title: string|undefined = undefined) {
+	constructor(address: number, size: number, memBlocks: Array<MemBlock>, title: string | undefined = undefined) {
 		this.address = address;
 		this.size = size;
-		this.memBlocks=memBlocks;
+		this.memBlocks = memBlocks;
 		// For the first time no data or prevData is available
-		this.data=undefined;
-		this.prevData=undefined;
+		this.data = undefined;
+		this.prevData = undefined;
 		this.title = title;
 	}
 
@@ -63,8 +63,8 @@ export class MetaBlock {
 	 */
 	public isInRange(address: number): boolean {
 		// Seach all wrapped memory blocks.
-		for(let memBlock of this.memBlocks) {
-			if(address >= memBlock.address && address < memBlock.address+memBlock.size)
+		for (let memBlock of this.memBlocks) {
+			if (address >= memBlock.address && address < memBlock.address + memBlock.size)
 				return true;
 		}
 		// nothing found
@@ -98,26 +98,26 @@ export class MemoryDump {
 	 * @param size The size of the memory block in bytes.
 	 * @param title An optional title for the memory block (shown as table header).
 	 */
-	public addBlock(startAddress: number, size: number, title: string|undefined=undefined) {
+	public addBlock(startAddress: number, size: number, title: string | undefined = undefined) {
 		// Create memory block
-		const memBlock={address: startAddress, size: size, data: []};
+		const memBlock = {address: startAddress, size: size, data: []};
 		let bigBlock;
 		// Check for size > 0xFFFF
-		if (size<=0xFFFF-2*(2*MEM_DUMP_BOUNDARY-1)) {
+		if (size <= 0xFFFF - 2 * (2 * MEM_DUMP_BOUNDARY - 1)) {
 			// Create one meta block for the memory block
-			const boundAddr=Utility.getBoundary(memBlock.address-MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
-			const boundSize=Utility.getBoundary(memBlock.address+memBlock.size-1, MEM_DUMP_BOUNDARY)+2*MEM_DUMP_BOUNDARY-boundAddr;
-			bigBlock=new MetaBlock(boundAddr, boundSize, [memBlock], title);
+			const boundAddr = Utility.getBoundary(memBlock.address - MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
+			const boundSize = Utility.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + 2 * MEM_DUMP_BOUNDARY - boundAddr;
+			bigBlock = new MetaBlock(boundAddr, boundSize, [memBlock], title);
 		}
 		else {
-			const boundAddr=Utility.getBoundary(memBlock.address, MEM_DUMP_BOUNDARY);
-			const boundEnd=Utility.getBoundary(memBlock.address+memBlock.size-1, MEM_DUMP_BOUNDARY)+MEM_DUMP_BOUNDARY;
-			let boundSize=boundEnd-boundAddr+1;
-			if (boundSize>0xFFFF) {
-				boundSize=Math.trunc(0xFFFF/MEM_DUMP_BOUNDARY)*MEM_DUMP_BOUNDARY;
-				memBlock.size=boundAddr+boundSize-startAddress;
+			const boundAddr = Utility.getBoundary(memBlock.address, MEM_DUMP_BOUNDARY);
+			const boundEnd = Utility.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + MEM_DUMP_BOUNDARY;
+			let boundSize = boundEnd - boundAddr + 1;
+			if (boundSize > 0xFFFF) {
+				boundSize = Math.trunc(0xFFFF / MEM_DUMP_BOUNDARY) * MEM_DUMP_BOUNDARY;
+				memBlock.size = boundAddr + boundSize - startAddress;
 			}
-			bigBlock=new MetaBlock(boundAddr, boundSize, [memBlock], title);
+			bigBlock = new MetaBlock(boundAddr, boundSize, [memBlock], title);
 		}
 		this.metaBlocks.push(bigBlock);
 	}
@@ -151,43 +151,43 @@ export class MemoryDump {
 	 * @param startAddress The address of the memory block.
 	 * @param size The size of the memory block.
 	 */
-	public changeBlock(blockIndex: number, startAddress: number, size: number, title: string|undefined=undefined) {
-		Utility.assert(blockIndex<this.metaBlocks.length);
+	public changeBlock(blockIndex: number, startAddress: number, size: number, title: string | undefined = undefined) {
+		Utility.assert(blockIndex < this.metaBlocks.length);
 
-		const memBlock={address: startAddress, size: size, data: []};
+		const memBlock = {address: startAddress, size: size, data: []};
 		let bigBlock;
 		let boundAddr;
 		let boundSize;
 		// Check for size > 0xFFFF
-		if (size<=0xFFFF-2*(2*MEM_DUMP_BOUNDARY-1)) {
+		if (size <= 0xFFFF - 2 * (2 * MEM_DUMP_BOUNDARY - 1)) {
 			// Create one meta block for the memory block
-			boundAddr=Utility.getBoundary(memBlock.address-MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
-			boundSize=Utility.getBoundary(memBlock.address+memBlock.size-1, MEM_DUMP_BOUNDARY)+2*MEM_DUMP_BOUNDARY-boundAddr;
+			boundAddr = Utility.getBoundary(memBlock.address - MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
+			boundSize = Utility.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + 2 * MEM_DUMP_BOUNDARY - boundAddr;
 		}
 		else {
-			boundAddr=Utility.getBoundary(memBlock.address, MEM_DUMP_BOUNDARY);
-			const boundEnd=Utility.getBoundary(memBlock.address+memBlock.size-1, MEM_DUMP_BOUNDARY)+MEM_DUMP_BOUNDARY;
-			let boundSize=boundEnd-boundAddr+1;
-			if (boundSize>0xFFFF) {
-				boundSize=Math.trunc(0xFFFF/MEM_DUMP_BOUNDARY)*MEM_DUMP_BOUNDARY;
-				memBlock.size=boundAddr+boundSize-startAddress;
+			boundAddr = Utility.getBoundary(memBlock.address, MEM_DUMP_BOUNDARY);
+			const boundEnd = Utility.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + MEM_DUMP_BOUNDARY;
+			let boundSize = boundEnd - boundAddr + 1;
+			if (boundSize > 0xFFFF) {
+				boundSize = Math.trunc(0xFFFF / MEM_DUMP_BOUNDARY) * MEM_DUMP_BOUNDARY;
+				memBlock.size = boundAddr + boundSize - startAddress;
 			}
 		}
 
 		// Compare sizes
-		const metaBlock=this.metaBlocks[blockIndex];
-		if (metaBlock.address==boundAddr
-			&&metaBlock.size==boundSize) {
+		const metaBlock = this.metaBlocks[blockIndex];
+		if (metaBlock.address == boundAddr
+			&& metaBlock.size == boundSize) {
 			// Range is the same, change only memblock
-			metaBlock.memBlocks=[memBlock];
+			metaBlock.memBlocks = [memBlock];
 			return;
 		}
 
 		// Otherwise create new block
-		bigBlock=new MetaBlock(boundAddr, boundSize, [memBlock], title);
+		bigBlock = new MetaBlock(boundAddr, boundSize, [memBlock], title);
 
 		// And exchange with current one
-		this.metaBlocks[blockIndex]=bigBlock;
+		this.metaBlocks[blockIndex] = bigBlock;
 	}
 
 
@@ -328,25 +328,25 @@ ranges.
 
 		// Now merge blocks
 		const biggerBlocks = this.metaBlocks;
-		if(biggerBlocks.length >= 2) {
-			let prevBigBlock = biggerBlocks[biggerBlocks.length-1];
-			for(let i=biggerBlocks.length-2; i>=0; i--) {
+		if (biggerBlocks.length >= 2) {
+			let prevBigBlock = biggerBlocks[biggerBlocks.length - 1];
+			for (let i = biggerBlocks.length - 2; i >= 0; i--) {
 				// get current block
 				const curBigBlock = biggerBlocks[i];
 				// compare address ranges (Note: the block's addresses are already ordered)
 				const prevAddr = prevBigBlock.address;
-				if(prevAddr <= curBigBlock.address+curBigBlock.size+1+MEM_DUMP_BOUNDARY) {
+				if (prevAddr <= curBigBlock.address + curBigBlock.size + 1 + MEM_DUMP_BOUNDARY) {
 					// There is max one line between the blocks, merge:
 					// Check which end address is bigger.
 					const prevEndAddr = prevAddr + prevBigBlock.size;
-					if(prevEndAddr > curBigBlock.address+curBigBlock.size) {
+					if (prevEndAddr > curBigBlock.address + curBigBlock.size) {
 						// Increase end address
 						curBigBlock.size = prevEndAddr - curBigBlock.address;
 					}
 					// Add block to metablock
 					curBigBlock.memBlocks.push(...prevBigBlock.memBlocks);
 					// Remove previous metablock
-					biggerBlocks.splice(i+1,1);
+					biggerBlocks.splice(i + 1, 1);
 				}
 				// next
 				prevBigBlock = curBigBlock;

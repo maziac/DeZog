@@ -1,16 +1,15 @@
 import {ZxAudioBeeper} from "./zxaudiobeeper";
 
-declare var acquireVsCodeApi: any;
-declare var cpuLoad: HTMLLabelElement;
-declare var slots: Array<HTMLDivElement>;
-declare var visualMem: HTMLCanvasElement;
-//declare var screenImg: HTMLCanvasElement;
-declare var screenImgContext: CanvasRenderingContext2D;
-declare var screenImgImgData: ImageData;
-declare var screenImg: HTMLDivElement;
-declare var UIAPI: CustomUiApi;
+declare let acquireVsCodeApi: any;
+declare let cpuLoad: HTMLLabelElement;
+declare let slots: Array<HTMLDivElement>;
+declare let visualMem: HTMLCanvasElement;
+declare let screenImgContext: CanvasRenderingContext2D;
+declare let screenImgImgData: ImageData;
+declare let screenImg: HTMLDivElement;
+declare let UIAPI: CustomUiApi;
 // @ts-ignore
-declare var zxAudioBeeper: ZxAudioBeeper;
+declare let zxAudioBeeper: ZxAudioBeeper;
 
 
 let countOfProcessedMessages = 0;
@@ -36,7 +35,7 @@ const MESSAGE_LOW_WATERMARK = 10;
 
 
 //---- Handle Messages from vscode extension --------
-window.addEventListener('message', event => {
+window.addEventListener('message', event => {// NOSONAR
 	// Count message
 	countOfProcessedMessages++;
 	if (countOfProcessedMessages >= MESSAGE_LOW_WATERMARK) {
@@ -130,7 +129,6 @@ function cellSelect(cell, on) {
 // Toggle the cell.
 // @ts-ignore
 function cellClicked(cell) {
-	//log.textContent += "clicked ";
 	cell.tag = !cell.tag;
 	cellSelect(cell, cell.tag);
 }
@@ -163,18 +161,6 @@ function findCell(keyCode) {
 	const cell = document.getElementById("key_" + keyCode);
 	return cell;
 }
-
-// Toggles the visibility of an element.
-/*
-function toggleVisibility(id) {
-	const x = document.getElementById(id);
-	if (x.style.display === "none") {
-		x.style.display = "block";
-	} else {
-		x.style.display = "none";
-	}
-}
-*/
 
 
 // "Copy all HTML" button-- >
@@ -218,7 +204,6 @@ function keydown(e) {
 	// Find correspondent cell
 	const cell = findCell(e.code);
 	cellSelect(cell, true);
-	//log.textContent += e.code + ", ";
 }
 
 

@@ -145,7 +145,7 @@ export class ZSimulationView extends BaseView {
 		});
 
 		// Handle vertical sync
-		this.simulator.on('vertSync', async (reason) => {
+		this.simulator.on('vertSync', async () => {
 			this.vertSync();
 		});
 
@@ -197,7 +197,6 @@ export class ZSimulationView extends BaseView {
 		this.nextUpdateTime = nowTime + this.displayTime;
 		// Start timer
 		this.displayTimer = setInterval(() => {
-			//Log.log("timer: do update");
 			// Update
 			this.updateDisplay();
 			// Get current time

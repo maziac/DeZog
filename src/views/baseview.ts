@@ -140,7 +140,6 @@ export class BaseView {
 
 		// Handle messages from the webview
 		this.vscodePanel.webview.onDidReceiveMessage(async message => {
-			//console.log("webView command '"+message.command+"':", message);
 			await this.webViewMessageReceived(message);
 		});
 
@@ -173,7 +172,7 @@ export class BaseView {
 	 * @param message The message. message.command contains the command as a string.
 	 * This needs to be created inside the web view.
 	 */
-	protected async webViewMessageReceived(message: any) {
+	protected async webViewMessageReceived(_message: any) {
 		// Overwrite
 		Utility.assert(false);
 	}
@@ -203,7 +202,7 @@ export class BaseView {
 	 * @param reason The reason is a data object that contains additional information.
 	 * E.g. for 'step' it contains { step: true };
 	 */
-	public async update(reason?: any): Promise<void> {
+	public async update(_reason?: any): Promise<void> {
 		// Overwrite this.
 	}
 

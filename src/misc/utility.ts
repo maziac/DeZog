@@ -120,7 +120,7 @@ export class Utility {
 	 */
 	public static parseHexWordLE(hexString: string, index = 0): number {
 		const sub1 = hexString.substring(index, index + 2);
-		const sub2 = hexString.substring(index+2, index + 4);
+		const sub2 = hexString.substring(index + 2, index + 4);
 		const value = parseInt(sub2, 16) * 256 + parseInt(sub1, 16);
 		return value;
 	}
@@ -385,7 +385,7 @@ export class Utility {
 		const regex = /\${(.*?)(:(.*?))?}/g;
 		const reAt = /([bw]@)?\((.*?)\)/i;
 		let offsCorrection = 0;
-		logString = logString.replace(regex, (match, statement /*p1*/, p2, format /*p3*/, offset) => {
+		logString = logString.replace(regex, (match, statement /*p1*/, _p2, format /*p3*/, offset) => {
 			// 'statement' contains the statement, e.g. "b@(HL)".
 			// 'format' contains the formatting, e.g. "hex".
 			let promise = new Promise<string>(async resolve => {
@@ -415,8 +415,8 @@ export class Utility {
 					// Now format value
 					let formatString = format || 'unsigned';
 					formatString = '${' + formatString + '}';
-					const result = await this.numberFormatted('', value, size, formatString, undefined);
-					resolve(result);
+					const formattedNumber = await this.numberFormatted('', value, size, formatString, undefined);
+					resolve(formattedNumber);
 				}
 				catch (e) {
 					// Return the error in case of an error.
@@ -441,8 +441,7 @@ export class Utility {
 		while (replacement = data.shift()) {
 			const offset = offsets.shift() as number;
 			const length = offset - i;
-			//result += logString.substr(i, length);
-			result += logString.substring(i, i+length);
+			result += logString.substring(i, i + length);
 			i = offset;
 			result += replacement;
 		}
@@ -470,7 +469,7 @@ export class Utility {
 		if (!format.includes('\t'))
 			return null;	// no tabs
 		// Replace every formatting with maximum size replacement
-		const result = format.replace(/\${([^}]*?:)?([^:]*?)(:[\s\S]*?)?}/g, (match, p1, p2, p3) => {
+		const result = format.replace(/\${([^}]*?:)?([^:]*?)(:[\s\S]*?)?}/g, (_match, p1, p2, _p3) => {
 			let usedSize = size;
 			// Check modifier p1
 			const modifier = (p1 == null) ? '' : p1.substr(0, p1.length - 1);
@@ -578,7 +577,6 @@ export class Utility {
 		// Return registers only if 'name' itself is not a register.
 		if (!Z80RegistersClass.isRegister(name)) {
 			regsAsWell = true;
-			//await Remote.getRegisters();
 		}
 
 		// Check first if we need to retrieve address values
@@ -629,7 +627,7 @@ export class Utility {
 		// Search for format string '${...}'
 		// Note: [\s\S] is the same as . but also includes newlines.
 		// First search for '${'
-		let valString = format.replace(/\${([\s\S]*?)(?=\${|$)/g, (match, p) => {
+		let valString = format.replace(/\${([\s\S]*?)(?=\${|$)/g, (_match, p) => {
 			// '${...' found now check for } from the left side.
 			// This assures that } can also be used inside a ${...}
 			const k = p.lastIndexOf('}');
@@ -732,10 +730,8 @@ export class Utility {
 			if (tabSizeArr.length == valString.split('\t').length) {
 				let index = 0;
 				valString += '\t';	// to replace also the last string
-				valString = valString.replace(/(.*?)\t/g, (match, p1, offset) => {
+				valString = valString.replace(/(.*?)\t/g, (_match, p1, _offset) => {
 					const tabSize = tabSizeArr[index].length;
-					//if(index == 0)
-					//	--tabSize;	// First line missing the space in front
 					++index;
 					let result = p1.padStart(tabSize) + " ";
 					return result;
@@ -824,7 +820,6 @@ export class Utility {
 		}
 		else {
 			// Big endian
-			const end = index + count;
 			for (let i = end - 1; i >= index; i--) {
 				memory[i] = memVal % 0x100;
 				memVal = Math.trunc(memVal / 0x100);
@@ -1165,8 +1160,8 @@ export class Utility {
 				let errorText = '';
 				for (const stackLine of stack) {
 					// Search for "at "
-//					if (stackLine.startsWith('\tat ')) {
-					if(/\s*at\s/.exec(stackLine)) {
+					//					if (stackLine.startsWith('\tat ')) {
+					if (/\s*at\s/.exec(stackLine)) {
 						// Check if this line is e.g. '/Volumes/.../ports.js:93:1'
 						const regex = new RegExp(filename + ':(\\d+):(\\d+)');
 						const match = regex.exec(stackLine);
@@ -1394,7 +1389,7 @@ export class Utility {
 	 * @param hexNumber "number" or "string". E.g. "123Dh". Or undefined: in that case undefined is also returned.
 	 * @returns A number e.g. 65535.
 	 */
-	public static convertHexNumber(hexNumber: HexNumber | undefined): number | undefined{
+	public static convertHexNumber(hexNumber: HexNumber | undefined): number | undefined {
 		if (hexNumber == undefined)
 			return undefined;
 		if (typeof hexNumber == "string") {
@@ -1536,12 +1531,6 @@ export class Utility {
 	public static assert(test: any, message?: string) {
 		if (!test) {
 			try {
-				/*
-				while (true) {
-					Log.log('assert');
-					console.log();
-				};
-				*/
 				throw Error("'assert'" + (message || ""));
 			}
 			catch (err) {

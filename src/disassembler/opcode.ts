@@ -144,7 +144,6 @@ export class Opcode {
 
 				// now check for opcode flags
 				if (name.startsWith("DJNZ")) {
-					//this.valueType = NumberType.CODE_LOCAL_LOOP;
 					this.valueType = NumberType.CODE_LOCAL_LBL;	// Becomes a loop because it jumps backwards.
 					this.flags |= OpcodeFlag.BRANCH_ADDRESS | OpcodeFlag.CONDITIONAL;
 				}
@@ -1106,11 +1105,11 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 
 /// Opcodes that start with 0xED.
 export const OpcodesED: Array<Opcode> = [
-	...Array<number>(0x23).fill(0).map((value, index) => new OpcodeInvalid(index)),
+	...Array<number>(0x23).fill(0).map((_value, index) => new OpcodeInvalid(index)),
 
 	new OpcodeNext(0x23, "SWAPNIB"),     // ZX Spectrum Next
 	new OpcodeNext(0x24, "MIRROR"),     // ZX Spectrum Next
-	...Array<number>(0x02).fill(0).map((value, index) => new OpcodeInvalid(0x25 + index)),
+	...Array<number>(0x02).fill(0).map((_value, index) => new OpcodeInvalid(0x25 + index)),
 
 	new OpcodeNext(0x27, "TEST #n"),     // ZX Spectrum Next
 
@@ -1119,7 +1118,7 @@ export const OpcodesED: Array<Opcode> = [
 	new OpcodeNext(0x2A, "BSRL DE,B"),     // ZX Spectrum Next
 	new OpcodeNext(0x2B, "BSRF DE,B"),     // ZX Spectrum Next
 	new OpcodeNext(0x2C, "BRLC DE,B"),     // ZX Spectrum Next
-	...Array<number>(0x03).fill(0).map((value, index) => new OpcodeInvalid(0x2D + index)),
+	...Array<number>(0x03).fill(0).map((_value, index) => new OpcodeInvalid(0x2D + index)),
 
 	new OpcodeNext(0x30, "MUL D,E"),     // ZX Spectrum Next
 	new OpcodeNext(0x31, "ADD HL,A"),     // ZX Spectrum Next
@@ -1128,7 +1127,7 @@ export const OpcodesED: Array<Opcode> = [
 	new OpcodeNext(0x34, "ADD HL,#nn"),     // ZX Spectrum Next
 	new OpcodeNext(0x35, "ADD DE,#nn"),     // ZX Spectrum Next
 	new OpcodeNext(0x36, "ADD BC,#nn"),     // ZX Spectrum Next
-	...Array<number>(0x09).fill(0).map((value, index) => new OpcodeInvalid(0x37 + index)),
+	...Array<number>(0x09).fill(0).map((_value, index) => new OpcodeInvalid(0x37 + index)),
 
 	new Opcode(0x40, "IN B,(C)"),
 	new Opcode(0x41, "OUT (C),B"),
@@ -1194,20 +1193,20 @@ export const OpcodesED: Array<Opcode> = [
 	new Opcode(0x7D, "[reti]"),
 	new Opcode(0x7E, "[im2]"),
 	new Opcode(0x7F, "[ld r,r?]"),
-	...Array<number>(0x0A).fill(0).map((value, index) => new OpcodeInvalid(0x80 + index)),
+	...Array<number>(0x0A).fill(0).map((_value, index) => new OpcodeInvalid(0x80 + index)),
 
 	new OpcodeNextPush(0x8A, "PUSH #nn"),     // ZX Spectrum Next
-	...Array<number>(0x06).fill(0).map((value, index) => new OpcodeInvalid(0x8B + index)),
+	...Array<number>(0x06).fill(0).map((_value, index) => new OpcodeInvalid(0x8B + index)),
 
 	new OpcodeNext_nextreg_n_n(0x91, "NEXTREG #n,#n"),     // ZX Spectrum Next
 	new OpcodeNext_nextreg_n_a(0x92, "NEXTREG #n,A"),     // ZX Spectrum Next
 	new OpcodeNext(0x93, "PIXELDN"),     // ZX Spectrum Next
 	new OpcodeNext(0x94, "PIXELAD"),     // ZX Spectrum Next
 	new OpcodeNext(0x95, "SETAE"),     // ZX Spectrum Next
-	...Array<number>(0x02).fill(0).map((value, index) => new OpcodeInvalid(0x96 + index)),
+	...Array<number>(0x02).fill(0).map((_value, index) => new OpcodeInvalid(0x96 + index)),
 	new OpcodeNext(0x98, "JP (C)"),     // ZX Spectrum Next
 
-	...Array<number>(0x07).fill(0).map((value, index) => new OpcodeInvalid(0x99 + index)),
+	...Array<number>(0x07).fill(0).map((_value, index) => new OpcodeInvalid(0x99 + index)),
 
 	new Opcode(0xA0, "LDI"),
 	new Opcode(0xA1, "CPI"),
@@ -1217,7 +1216,7 @@ export const OpcodesED: Array<Opcode> = [
 	new OpcodeNext(0xA4, "LDIX"),     // ZX Spectrum Next
 	new OpcodeNext(0xA5, "LDWS"),     // ZX Spectrum Next
 
-	...Array<number>(0x02).fill(0).map((value, index) => new OpcodeInvalid(0xA6 + index)),
+	...Array<number>(0x02).fill(0).map((_value, index) => new OpcodeInvalid(0xA6 + index)),
 
 	new Opcode(0xA8, "LDD"),
 	new Opcode(0xA9, "CPD"),
@@ -1226,7 +1225,7 @@ export const OpcodesED: Array<Opcode> = [
 
 	new OpcodeNext(0xAC, "LDDX"),     // ZX Spectrum Next
 
-	...Array<number>(0x03).fill(0).map((value, index) => new OpcodeInvalid(0xAD + index)),
+	...Array<number>(0x03).fill(0).map((_value, index) => new OpcodeInvalid(0xAD + index)),
 
 	new Opcode(0xB0, "LDIR"),
 	new Opcode(0xB1, "CPIR"),
@@ -1245,7 +1244,7 @@ export const OpcodesED: Array<Opcode> = [
 
 	new OpcodeNext(0xBC, "LDDRX"),     // ZX Spectrum Next
 
-	...Array<number>(0x100 - 0xBC - 1).fill(0).map((value, index) => new OpcodeInvalid(0xBD + index))
+	...Array<number>(0x100 - 0xBC - 1).fill(0).map((_value, index) => new OpcodeInvalid(0xBD + index))
 ];
 // Fix length (2)
 OpcodesED.forEach(opcode => {
