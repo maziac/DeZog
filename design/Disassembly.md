@@ -15,7 +15,14 @@ This document discusses the 2nd (smart) disassembly.
 | reverse engineered list file (rev-eng.list)| The list file maintained by the user. Code that the user has reverse engineered and understood is out here. Normally the user will copy part of the disassembly here, change the labels to meaningful names and add comments. |
 
 
-# Smart Disassembly (z80dismblr)
+
+# Analysis
+
+The different types of analysis are discussed here:
+Flowchart, call graph, smart disassembly and parameter.
+
+
+## Smart Disassembly (z80dismblr)
 
 Basically the disassembler works on own 'memory', a 64k address block.
 The memory can have attributes attached to each address.
@@ -53,7 +60,7 @@ I.e. if something looks strange the user can reload the disassembly.
 (On a reload only the call stack history is cleared but the current call stack is used for disassembly.)
 
 
-# AnalyzeDisassembler and DisassemblyClass
+### AnalyzeDisassembler and DisassemblyClass
 
 The AnalyzeDisassembler and the DisassemblyClass are derived from the Disassembler (z80dismblr).
 It modifies the behavior to be more suited for DeZog and (interactive) reverse engineering.
@@ -80,11 +87,11 @@ But the breakpoints associated with the disassembly list files are removed.
 Otherwise these would show up as error (not associated breakpoints), and would be removed, at the next start of an debug session.
 
 
-# Special Problems
+### Special Problems
 
 There are a few special problems to solve in the disassembly and sometimes no real solution exists.
 
-## RST
+#### RST
 
 The RST instruction is often used such that it is followed by one or more bytes that re ready by the RST sub routine.
 The disassembler cannot analyze this. For one it would require a dynamic analysis and furthermore it can also be unclear which RST sub routine is used in case several ROMs can be page in.
@@ -108,7 +115,7 @@ This is a new concept for the parser and also for the disassembler and this info
 To be decided yet.
 
 
-## Branching into Paged Banks
+#### Branching into Paged Banks
 
 If there is a branch from a slot A into slot B and slot B is shared between 2 or more banks then it is not clear to which bank the branch will take us.
 
@@ -148,7 +155,7 @@ In case of a call graph the graph will simply stop at that point.
 
 
 
-# Grammar
+### Grammar
 
 The disassembly list file requires a button. Therefore it requires to have an own language ID ("disassembly").
 This is a different ID then "asm-collection". Therefore "ASM Code Lense" cannot be used for syntax coloring.
@@ -161,13 +168,31 @@ The involved files are:
 - grammar/asm_disassembly.json
 
 
-# Analysis
+## Flow Chart Analysis
+
+The flow chart analysis is based on the smart disassembly.
+Analysis is always done in depth = 1 only, i.e. the calls are not followed.
+It uses dot language and a dot to svg converter to display the flow chart.
+Involved functions are: 'renderFlowChart' and 'getFlowChart'.
+
+## Call Graph Analysis
+
+The call graph analysis is based on the smart disassembly.
+Analysis is always done first with highest depth to calculate the actual used depth.
+Then for each depth a call graph is created and put in a webview.
+The user can switch the depth via a slider.
+
+It uses dot language and a dot to svg converter to display the flow chart.
+Involved functions are: 'renderCallGraph', 'getGraphLabels' and 'getCallGraph'.
+
+## Parameter Analysis
 
 Apart from call graph and flow chart analysis there is also a symbol execution analysis which is somewhere between static and dynamic analysis.
 
 The goal of this symbolic execution is to find
 - the input parameters/registers
 - the changed registers
+- if memory is used or modified
 
 of a subroutine.
 
@@ -175,9 +200,16 @@ The analyzer cannot distinguish between (accidentally) changed registers and "re
 So, the user has to decide by himself what from the changed register is output and what is just a side effect.
 
 
+A changed register is a register that is modified in the subroutine such that it may contain a different value when leaving the subroutine than when entering it.
+
+An input parameter/register is a register that somehow modifies the output.
+Output can be another register, memory or I/O.
+
+Notes:
+- Side effects are not considered. I.e. if an I/O port is read from an "input" register but the IN result is afterwards "thrown away" the "input" register is not recognized as input.
+
 Additional to the flow path (as in flow chart and call graph) the values of the registers are taken into account.
 The analysis is symbolic as the registers are normally not assigned with a concrete number but just with a symbolic value.
-
 
 When a register gets a new value it is updated in a map called 'registers'.
 - If, at subroutine end, a register does not exist in the map it's value is not touched by the subroutine. I.e. it is unused.
@@ -195,9 +227,16 @@ When a register gets a new value it is updated in a map called 'registers'.
 
 
 This results in 2 possible values:
-- 'input', plus the register this value was copied from.
 - 'known', additionally the concrete value is saved.
 - 'unknown'
+
+~~~json
+"SymbolicValue": {
+	"known": boolean,
+	"values": (number|string)[],	// A concrete number or a symbolic value (string)
+}
+~~~
+
 
 Together with the symbolic value also the origin is copied.
 E.g.:
@@ -213,7 +252,9 @@ Then something is done to A.
 Eventually 'B's contents is copied to 'A' which contains 'input-A'.
 I.e. the result is:
 - A is unchanged.
-- A is input
+- A is input (as it is copied to B)
+
+Note: Maybe B was used here just to save and restore register A. Or the intention was also to copy the value. The algorithm cannot decide on that.
 
 
 What the symbolic execution cannot find:
@@ -236,20 +277,206 @@ L2:
 ~~~
 
 
-## Memory
+### Registers
+
+If a register is set there are several possibilities how a registers gets its symbolic value.
+
+- Simple assignment: Example: LD A,5: Symbol(A) = known
+- Copy: Example: LD A,B: Symbol(A) = Symbol(B)
+- Modification:	Example: INC A
+	Any input stays as it was. The 'known' is changed to false.
+- Calculation with 2 inputs: Example: ADD A,B
+	The input is merged. The 'known' is changed to false.
+	See also the more advanced explanation below.
+
+#### Symbolic calculations with 2 inputs
+
+The symbolic values calculations below apply to all map entries, not only memory.
+(E.g. "ADD A,B")
+
+| A         | B         | Result      |
+|-----------|-----------|-------------|
+| input-X,k | input-Y,k | input-X,Y,u |
+| known     | known     | unknown     |
+| known     | unknown   | unknown     |
+| unknown   | known     | unknown     |
+| input-X,k | known     | input-X,u   |
+| known     | input-Y,k | input-Y,u   |
+| input-X,k | unknown   | input-X,u   |
+| unknown   | input-Y,k | input-Y,u   |
+| input-X,u | input-Y,k | input-X,Y,u |
+| input-X,k | input-Y,u | input-X,Y,u |
+| input-X,u | input-Y,u | input-X,Y,u |
+
+Simplified:
+- 'unknown' has a higher priority than 'known'
+- 'input' are handled independent of known/unknown and inputs are simply merged.
+
+| A         | B         | Result      |
+|-----------|-----------|-------------|
+| known     | known     | unknown     |
+| known     | unknown   | unknown     |
+| unknown   | known     | unknown     |
+| unknown   | unknown   | unknown     |
+
+I.e. no matter what operands are used in the calculation, the result is unknown.
+
+
+
+### Memory and I/O
 
 Memory like "($80000)" or "(HL)" is also handled as registers.
 I.e. in the same map.
 
+The "input" can often be read as "depends on. I.e. a ```LD A,(HL)``` gets the value: "input-H,L,u" as it depends on H and L. It is 'unknown' because even if H and L are known it is unknown which exact value the memory contents is.
 
-## Stack
+Examples:
 
-HIER WEITER
+~~~asm
+	LD ($8000),A	; Symbol("($8000)") = input-A, known
+	RET
+	; Here A would be an input as "($8000)" is added to the map and contains "input-A".
+~~~
+
+~~~asm
+	INC A			; Symbol(A) = input-A, unknown
+	LD ($8000),A	; Symbol("(HL)") = input-A, unknown
+	RET
+	; A is input because of 2 reasons:
+	;   - A was incremented ("input-A,u") and
+	;   - "(HL)" is added to the map and contains "input-A".
+~~~
+
+~~~asm
+	INC A			; Symbol(A) = input-A, unknown
+	LD A,($8000)	; Symbol(A) = input-$8000, k
+	RET
+	; A is not input. No entry in the map contains "input-A".
+	; Memory $8000 becomes input as A contains "input-$8000, k"
+~~~
+
+~~~asm
+	LD A,(HL)	; Symbol(A) = "input-H,L,u"; Symbol("(HL)") = "input-H,L,k" or not created
+	RET
+	; HL is input as the map contains "input-H,L,k" for "(HL)" and "input-H,L,u" for "A"
+~~~
+
+~~~asm
+	LD (HL),A	; Symbol(A) = "input-A"; Symbol("(HL)") = "input-A,H,L,k"
+	RET
+	; HL is input as the map contains "input-H,L,k" for "(HL)"
+~~~
+
+~~~asm
+	LD (HL),A	; Symbol(A) = "input-A"; Symbol("(HL)") = "input-A,H,L,k"
+	LD B,(HL)	; Symbol(B) = "input-A,H,L,k"; Symbol("(HL)") = "input-A,H,L,k"
+	RET
+	; HL is input as the map contains "input-H,L,k" for "(HL)"
+~~~
+
+~~~asm
+	IN A,(C)	; Symbol(A) = "input-B,C,u"; Symbol("IN(C)") = "input-B,C,k" or not created
+	RET
+	; BC is input as the map contains "input-B,C,u" for "A"
+~~~
+
+~~~asm
+	OUT (C),A	; Symbol(A) = "input-A,k"; Symbol("OUT(C)") = "input-A,B,C,k"
+	RET
+	; BC is input as the map contains "input-A,B,C,k" for "OUT(C)"
+	; A is input as the map contains A in "input-A,B,C,k" for "OUT(C)"
+~~~
 
 
-## Branches
+### Stack
 
-If the execution flow branches there are several possibilities how a particular register value is set.
+NOTE: A good stack analysis would require algebra on the symbolic or concrete values which is ot done because it would also require a loop analysis.
+
+Therefore the stack analysis is limited to PUSH/POP only and it assumes that these are not done in a LOOP or on different branches.
+If such a piece of SW would be analyzed the results are certainly wrong.
+
+The analysis here is mainly to find out that certain values have been restored and are not altered by the subroutine.
+
+
+NOT DONE:
+
+The stack is treated similar to memory but with the difference that changes to SP-memory are not considered as input.
+For the stack pointer some calculation is available.
+On entry of the subroutine the SP value is unknown, therefore only a relative addressing is available.
+PUSH and POP are considered and would use the map entries of the SP value.
+
+Example:
+~~~asm
+	PUSH BC		; Symbol("SP(-2)") = input-B,C,k
+	PUSH HL		; Symbol("SP(-4)") = input-H,L,k
+	LD HL,DE
+	...
+	POP HL		; Symbol(H,L) = input-H,L,k
+	POP BC		; Symbol(B,C) = input-B,C,k
+	RET
+~~~
+
+
+~~~asm
+	INC C		; Symbol(C) = input-C,u
+	PUSH BC		; Symbol("SP(-2)") = input-B,C,u
+	...
+	POP BC		; Symbol(B,C) = input-B,C,u
+	RET
+~~~
+
+Note: this would result in B and C being input because they have been modified (Symbol(B,C) = input-B,C,u). but this is wrong, only C has been modified.
+
+
+If SP is set to a certain value:
+~~~asm
+	LD SP,$8000	; Symbol(SP) = known
+	PUSH BC		; Symbol("SP($8000-2)") = input-B,C,k
+	PUSH HL		; Symbol("SP($8000-4)") = input-H,L,k
+	LD HL,DE
+	...
+	POP HL		; Symbol(H,L) = input-H,L,k
+	POP BC		; Symbol(B,C) = input-B,C,k
+	RET
+~~~
+
+SP manipulates the return address (e.g. RST x; defb N):
+~~~asm
+	PUSH AF		; Save AF
+	PUSH HL		; Save HL
+	INC SP : INC SP : INC SP : INC SP	; Increment to point to return address
+	POP HL		; Get return address
+	LD A,(HL)	; Get value at return address
+	INC HL		; Modify return pointer
+	PUSH HL		; And put on stack
+	...			; Do something
+	DEC SP : DEC SP : DEC SP : DEC SP	; Decrement to restore HL and AF
+	POP HL		; Restore HL
+	POP AF		; Restore AF
+	RET
+~~~
+~~~asm
+	PUSH AF		; Symbol("SP(-2)") = input-A,F,k
+	PUSH HL		; Symbol("SP(-4)") = input-H,L,k
+	INC SP : INC SP : INC SP : INC SP	; Symbol(SP) = known, value=0
+	POP HL		; Symbol(H,L) = input-SP(0), k
+	LD A,(HL)	; Symbol(A) = input-SP(0), k
+	INC HL		; Symbol(H,L) = input-SP(0), u
+	PUSH HL		; Symbol("SP(0)") = input-SP(0), u
+	...			; Do something
+	DEC SP : DEC SP : DEC SP : DEC SP	; Symbol(SP) = known, value=-4
+	POP HL		; Symbol(H,L) = input-H,L,k
+	POP AF		; Symbol(A,F) = input-A,F,k
+	RET
+~~~
+Result: HL, AF unchanged. The input data N after the RST is not exactly found.
+This would require better symbolic algebra.
+
+
+
+### Branches
+
+If the execution branches there are several possibilities how a particular register value is set.
 
 Consider the following branches:
 ~~~dot
@@ -330,28 +557,10 @@ If, at the end,
 - a register still contains 'input-R,k' (R = register name) then it is unchanged.
 - a register (or memory) contains 'input-R,u' (no matter if R is own register name or not) then R is an input parameter.
 
-Vielleicht USED einführen?
-
-
-~~~json
-{
-	"input": string[],
-	"symValue": 'known|unknown'
-	"exactValues": number[],
-}
-{
-	"known": boolean,
-	"values": (number|string)[],	// A concrete number or a symbolic value (string)
-}
-~~~
 
 
 
-
-
-
-
-## Examples:
+### Examples:
 
 ~~~asm
 	INC A	; Symbol(A) = input-A, unknown
@@ -450,34 +659,3 @@ LOOP:
 	POP DE
 	RET		; Changed: -. Input: A
 ~~~
-
-Symbolic values calculations, e.g. for "ADD":
-
-| A         | B         | Result      |
-|-----------|-----------|-------------|
-| input-X,k | input-Y,k | input-X,Y,u |
-| known     | known     | unknown     |
-| known     | unknown   | unknown     |
-| unknown   | known     | unknown     |
-| input-X,k | known     | input-X,u   |
-| known     | input-Y,k | input-Y,u   |
-| input-X,k | unknown   | input-X,u   |
-| unknown   | input-Y,k | input-Y,u   |
-| input-X,u | input-Y,k | input-X,Y,u |
-| input-X,k | input-Y,u | input-X,Y,u |
-| input-X,u | input-Y,u | input-X,Y,u |
-
-Simplified:
-- 'unknown' has a higher priority than 'known'
-- 'input' are handled independent of known/unknown and inputs are simply merged.
-
-
-| A         | B         | Result      |
-|-----------|-----------|-------------|
-| known     | known     | unknown     |
-| known     | unknown   | unknown     |
-| unknown   | known     | unknown     |
-| unknown   | unknown   | unknown     |
-
-I.e. no matter what operands are used in the calculation, the result is unknown.
-
