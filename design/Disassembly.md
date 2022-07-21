@@ -159,3 +159,307 @@ If "ASM Code Lense" is not installed this is silently ignored and no syntax high
 The involved files are:
 - package.json: "grammars"
 - grammar/asm_disassembly.json
+
+
+# Analysis
+
+Apart from call graph and flow chart analysis there is also a symbol execution analysis which is somewhere between static and dynamic analysis.
+
+The goal of this symbolic execution is to find
+- the input parameters/registers
+- the changed registers
+
+of a subroutine.
+
+The analyzer cannot distinguish between (accidentally) changed registers and "real" output registers.
+So, the user has to decide by himself what from the changed register is output and what is just a side effect.
+
+
+Additional to the flow path (as in flow chart and call graph) the values of the registers are taken into account.
+The analysis is symbolic as the registers are normally not assigned with a concrete number but just with a symbolic value.
+
+
+When a register gets a new value it is updated in a map called 'registers'.
+- If, at subroutine end, a register does not exist in the map it's value is not touched by the subroutine. I.e. it is unused.
+- If a register (1) is assigned from another register (2), e.g. ```LD A,B```:
+	- register (1) is added to 'registers' and gets the symbolic value of register (2).
+	- If register (2) does not exist in 'registers':
+		- register (1) gets 'unknown'.
+		- register (2) is saved in the 'inputRegisters' set. I.e. it is input to the subroutine.
+- If a register is modified wo another register, e.g. ```INC A``` or ```LD A,(nn)```:
+	- The register is added to 'registers' and gets 'unknown'.
+	- If the register does not exist in 'registers':
+		- the register is saved in the 'inputRegisters' set. I.e. it is input to the subroutine.
+- If a register is set to a concrete value, e.g. ```LD A,#5```:
+	- The register is added to 'registers' and gets 'known'. Additionally the value itself is saved.
+
+
+This results in 2 possible values:
+- 'input', plus the register this value was copied from.
+- 'known', additionally the concrete value is saved.
+- 'unknown'
+
+Together with the symbolic value also the origin is copied.
+E.g.:
+~~~asm
+	LD B,A
+	ADD A,5
+	... ; Do something useful
+	LD A,B
+~~~
+
+would copy 'input-A' to the 'registers' map for register 'B'.
+Then something is done to A.
+Eventually 'B's contents is copied to 'A' which contains 'input-A'.
+I.e. the result is:
+- A is unchanged.
+- A is input
+
+
+What the symbolic execution cannot find:
+- Loops: The analyzer will not follow an loops. I.e. each branch is only followed once. Otherwise a complete execution and Z80 simulation would be required.
+- The analyzer will not notice that a register is unchanged if it is modified and then inversely modified. E.g.
+~~~asm
+	INC A
+	DEC A
+~~~
+To catch those flow paths a full symbolic calculation would be required. This would latest come to its limits when there are loops. E.g.
+~~~asm
+	LD B,5
+L1:
+	INC A
+	DJNZ L1
+	LD B,5
+L2:
+	DEC A
+	DJNZ L2
+~~~
+
+
+## Memory
+
+Memory like "($80000)" or "(HL)" is also handled as registers.
+I.e. in the same map.
+
+
+## Stack
+
+HIER WEITER
+
+
+## Branches
+
+If the execution flow branches there are several possibilities how a particular register value is set.
+
+Consider the following branches:
+~~~dot
+digraph {
+  "n0" ["label" = "CP 10"];
+  "c0" ["label" = "JR Z,L2"];
+  "b1" ["label" = "LD B,6"];
+  "b2" ["label" = "LD B,7"];
+  "end" ["label" = "RET"];
+  "n0" -> "c0";
+  "c0" -> "b1" ["label" = "L1"];
+  "c0" -> "b2" ["label" = "L2"];
+  "b1" -> "end";
+  "b2" -> "end";
+}
+~~~
+
+If A would be 10 when entering the graph, B would become 7 at RET.
+Otherwise B would be 6.
+No other values for B are allowed.
+At the end of the graph B is a set: B = known, [6, 7]
+
+
+It becomes more difficult in the following case:
+~~~dot
+digraph {
+  "n0" ["label" = "CP 10"];
+  "c0" ["label" = "JR Z,L2"];
+  "b1" ["label" = "INC B"];
+  "b2" ["label" = "LD B,7"];
+  "end" ["label" = "RET"];
+  "n0" -> "c0";
+  "c0" -> "b1" ["label" = "L1"];
+  "c0" -> "b2" ["label" = "L2"];
+  "b1" -> "end";
+  "b2" -> "end";
+}
+~~~
+
+IF A is 10 THEN: B = 7.
+ELSE: B = input-B, modified.
+At the end of the graph B is: input-B, modified.
+'modified' includes all numbers (0-0xFFFF), so it includes also the 7.
+
+The priority table is similar (but not equal) to the symbolic values calculations:
+
+| L1        | L2        | Result      |
+|-----------|-----------|-------------|
+| input-X   | input-Y   | input-X,Y   |
+| known     | known     | known (2 values) |
+| known     | modified  | modified    |
+| modified  | known     | modified    |
+| input-X   | known     | input-X,m   |
+| known     | input-Y   | input-Y,m   |
+| input-X   | modified  | input-X,m   |
+| modified  | input-Y   | input-Y,m   |
+| input-X,m | input-Y   | input-X,Y,m |
+| input-X   | input-Y,m | input-X,Y,m |
+| input-X,m | input-Y,m | input-X,Y,m |
+
+Note: input-X,Y, i.e. several input possibilities, implies 'modified'.
+Simplified: 'input' has a higher priority over 'modified' and 'modified' is higher than 'known'.
+
+
+
+
+| A        | B        | Result    |
+|----------|----------|-----------|
+| input-X  | input-Y  | input-X,Y |
+| known    | known    | modified  |
+| known    | modified | modified  |
+| modified | known    | modified  |
+| input-X  | known    | input-X   |
+| known    | input-Y  | input-Y   |
+| input-X  | modified | input-X   |
+| modified | input-Y  | input-Y   |
+
+Simplified: 'input' has a higher priority over 'modified' and 'modified' is higher than 'known'.
+
+~~~json
+{
+	"input": string[],
+	"symValue": 'unmodified|known|unknown|modified'
+	"exactValue": number[],
+}
+~~~
+Note: 'unmodified' is only used for unmodified input values.
+
+
+
+
+
+
+## Examples:
+
+~~~asm
+	INC A	; Symbol(A) = input-A, modified
+	RET		; A is input and changed register
+~~~
+
+~~~asm
+	LD B,A	; Symbol(B) = input-A
+	INC A	; Symbol(A) = input-A, modified
+	LD A,B	; Symbol(A) = input-A
+	RET		; A is unchanged, B is a changed register, B contains input-A
+~~~
+
+~~~asm
+	LD B,A	; Symbol(B) = input-A
+LOOP:
+	DEC D	; Symbol(D) = input-D, modified
+	DJNZ LOOP	; Symbol(B) = input-A, modified
+	RET		; Changed: B, D. Input: A, D
+~~~
+
+~~~asm
+	LD B,A	; Symbol(B) = input-A
+	LD D,0	; Symbol(D) = known
+LOOP:
+	INC D	; Symbol(D) = modified
+	DJNZ LOOP	; Symbol(B) = input-A, modified
+	RET		; Changed: B, D. Input: A
+~~~
+
+~~~asm
+	LD A,(HL)	; Symbol(A) = input-H,L, modified; Unchanged: Symbol(H,L) = input-H,L
+	RET		; Changed: A. Input: H, L
+~~~
+
+~~~asm
+	LD H,$80	; Symbol(H) = known
+	LD A,(HL)	; Symbol(A) = input-L, modified; Unchanged: Symbol(L) = input-L
+	RET		; Changed: H, A. Input: L
+~~~
+
+~~~asm
+	LD HL,$8000	; Symbol(H,L) = known
+	LD A,(HL)	; Symbol(A) = modified
+	RET		; Changed: H=$80, L=$00, A. Input: -
+~~~
+
+~~~asm
+	LD (IX+5),A	; Symbol(A) = input-A; Symbol(IXH,IXL) = input-IXH,IXL
+	RET		; Changed: H=$80, L=$00, A. Input: -
+~~~
+
+~~~asm
+	LD A,(DE)	; Symbol(A) = input-D,E, modified; Unchanged: Symbol(D,E) = input-D,E
+	ADD A,(HL)	; Symbol(A) = input-D,E,H,L, modified; Unchanged: Symbol(H,L) = input-H,L
+	RET		; Changed: A. Input: D, E, H, L
+~~~
+
+~~~asm
+	LD A,B	; Symbol(A) = input-B, modified; Symbol(B) = input-B
+	ADD A,E	; Symbol(A) = input-B,E, modified; Symbol(E) = input-E
+	INC L	; Symbol(E) = input-L, modified
+	ADD A,L	; Symbol(A) = input-B,E,L, modified; Unchanged: Symbol(L) = input-L, modified
+	RET		; Changed: A, L. Input: B, E, L.
+~~~
+
+~~~asm
+	PUSH HL		; Symbol(STACK) = input-H,L
+	LD H,$80	; Symbol(H) = known
+	LD A,(HL)	; Symbol(A) = input-L, modified; Unchanged: Symbol(L) = input-L
+	POP HL		; Symbol(H,L) = input-H,L
+	RET		; Changed: A. Input: L
+~~~
+
+~~~asm
+	PUSH AF			; Symbol(STACK) = input-A,F
+	LD ($8000),A	; Symbol($8000) = input-A
+	POP AF			; Symbol(H,L) = input-A,F
+	RET		; Changed: -. Input: A
+~~~
+
+~~~asm
+	PUSH AF		; Symbol(STACK) = input-A,F
+	PUSH HL		; Symbol(STACK) = input-H,L
+	INC HL		; Symbol(H,L) = input-H,L, modified
+	LD (HL),A	; Symbol("(HL)") = input-A
+	POP HL		; Symbol(H,L) = input-H,L
+	POP AF		; Symbol(H,L) = input-A,F
+	RET		; Changed: -. Input: A
+~~~
+
+~~~asm
+	PUSH HL			; Symbol(STACK) = input-A,F
+	PUSH DE
+	POP HL
+	POP DE
+	RET		; Changed: -. Input: A
+~~~
+
+Symbolic values calculations, e.g. for "ADD":
+
+| A         | B         | Result      |
+|-----------|-----------|-------------|
+| input-X   | input-Y   | input-X,Y   |
+| known     | known     | modified    |
+| known     | modified  | modified    |
+| modified  | known     | modified    |
+| input-X   | known     | input-X,m   |
+| known     | input-Y   | input-Y,m   |
+| input-X   | modified  | input-X,m   |
+| modified  | input-Y   | input-Y,m   |
+| input-X,m | input-Y   | input-X,Y,m |
+| input-X   | input-Y,m | input-X,Y,m |
+| input-X,m | input-Y,m | input-X,Y,m |
+
+Simplified: 'input' has a higher priority over 'modified' and 'modified' is higher than 'known'.
+
+
+
