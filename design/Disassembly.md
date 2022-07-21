@@ -290,53 +290,47 @@ digraph {
 ~~~
 
 IF A is 10 THEN: B = 7.
-ELSE: B = input-B, modified.
-At the end of the graph B is: input-B, modified.
-'modified' includes all numbers (0-0xFFFF), so it includes also the 7.
+ELSE: B = input-B, unknown.
+At the end of the graph B is: input-B, unknown.
+'unknown' includes all numbers (0-0xFFFF), so it includes also the 7.
 
 The priority table is similar (but not equal) to the symbolic values calculations:
 
 | L1        | L2        | Result      |
 |-----------|-----------|-------------|
-| input-X   | input-Y   | input-X,Y   |
+| input-X,k | input-Y,k | input-X,Y,k |
 | known     | known     | known (2 values) |
-| known     | modified  | modified    |
-| modified  | known     | modified    |
-| input-X   | known     | input-X,m   |
-| known     | input-Y   | input-Y,m   |
-| input-X   | modified  | input-X,m   |
-| modified  | input-Y   | input-Y,m   |
-| input-X,m | input-Y   | input-X,Y,m |
-| input-X   | input-Y,m | input-X,Y,m |
-| input-X,m | input-Y,m | input-X,Y,m |
+| known     | unknown   | unknown     |
+| unknown   | known     | unknown     |
+| input-X,k | known     | input-X,u   |
+| known     | input-Y,k | input-Y,u   |
+| input-X,k | unknown   | input-X,u   |
+| unknown   | input-Y,k | input-Y,u   |
+| input-X,u | input-Y,k | input-X,Y,u |
+| input-X,k | input-Y,u | input-X,Y,u |
+| input-X,u | input-Y,u | input-X,Y,u |
 
-Note: input-X,Y, i.e. several input possibilities, implies 'modified'.
-Simplified: 'input' has a higher priority over 'modified' and 'modified' is higher than 'known'.
+Note: input-X,Y, i.e. several input possibilities, implies 'unknown'.
+
+Simplified: 'input' has a higher priority over 'unknown' and 'unknown' is higher than 'known'.
 
 
+| A         | B         | Result      |
+|-----------|-----------|-------------|
+| known     | known     | unknown     |
+| known     | unknown   | unknown     |
+| unknown   | known     | unknown     |
+| unknown   | unknown   | unknown     |
 
-
-| A        | B        | Result    |
-|----------|----------|-----------|
-| input-X  | input-Y  | input-X,Y |
-| known    | known    | modified  |
-| known    | modified | modified  |
-| modified | known    | modified  |
-| input-X  | known    | input-X   |
-| known    | input-Y  | input-Y   |
-| input-X  | modified | input-X   |
-| modified | input-Y  | input-Y   |
-
-Simplified: 'input' has a higher priority over 'modified' and 'modified' is higher than 'known'.
 
 ~~~json
 {
 	"input": string[],
-	"symValue": 'unmodified|known|unknown|modified'
-	"exactValue": number[],
+	"symValue": 'known|unknown'
+	"exactValues": number[],
 }
 ~~~
-Note: 'unmodified' is only used for unmodified input values.
+
 
 
 
@@ -346,13 +340,13 @@ Note: 'unmodified' is only used for unmodified input values.
 ## Examples:
 
 ~~~asm
-	INC A	; Symbol(A) = input-A, modified
+	INC A	; Symbol(A) = input-A, unknown
 	RET		; A is input and changed register
 ~~~
 
 ~~~asm
 	LD B,A	; Symbol(B) = input-A
-	INC A	; Symbol(A) = input-A, modified
+	INC A	; Symbol(A) = input-A, unknown
 	LD A,B	; Symbol(A) = input-A
 	RET		; A is unchanged, B is a changed register, B contains input-A
 ~~~
@@ -360,8 +354,8 @@ Note: 'unmodified' is only used for unmodified input values.
 ~~~asm
 	LD B,A	; Symbol(B) = input-A
 LOOP:
-	DEC D	; Symbol(D) = input-D, modified
-	DJNZ LOOP	; Symbol(B) = input-A, modified
+	DEC D	; Symbol(D) = input-D, unknown
+	DJNZ LOOP	; Symbol(B) = input-A, unknown
 	RET		; Changed: B, D. Input: A, D
 ~~~
 
@@ -369,25 +363,25 @@ LOOP:
 	LD B,A	; Symbol(B) = input-A
 	LD D,0	; Symbol(D) = known
 LOOP:
-	INC D	; Symbol(D) = modified
-	DJNZ LOOP	; Symbol(B) = input-A, modified
+	INC D	; Symbol(D) = unknown
+	DJNZ LOOP	; Symbol(B) = input-A, unknown
 	RET		; Changed: B, D. Input: A
 ~~~
 
 ~~~asm
-	LD A,(HL)	; Symbol(A) = input-H,L, modified; Unchanged: Symbol(H,L) = input-H,L
+	LD A,(HL)	; Symbol(A) = input-H,L, unknown; Unchanged: Symbol(H,L) = input-H,L
 	RET		; Changed: A. Input: H, L
 ~~~
 
 ~~~asm
 	LD H,$80	; Symbol(H) = known
-	LD A,(HL)	; Symbol(A) = input-L, modified; Unchanged: Symbol(L) = input-L
+	LD A,(HL)	; Symbol(A) = input-L, unknown; Unchanged: Symbol(L) = input-L
 	RET		; Changed: H, A. Input: L
 ~~~
 
 ~~~asm
 	LD HL,$8000	; Symbol(H,L) = known
-	LD A,(HL)	; Symbol(A) = modified
+	LD A,(HL)	; Symbol(A) = unknown
 	RET		; Changed: H=$80, L=$00, A. Input: -
 ~~~
 
@@ -397,23 +391,23 @@ LOOP:
 ~~~
 
 ~~~asm
-	LD A,(DE)	; Symbol(A) = input-D,E, modified; Unchanged: Symbol(D,E) = input-D,E
-	ADD A,(HL)	; Symbol(A) = input-D,E,H,L, modified; Unchanged: Symbol(H,L) = input-H,L
+	LD A,(DE)	; Symbol(A) = input-D,E, unknown; Unchanged: Symbol(D,E) = input-D,E
+	ADD A,(HL)	; Symbol(A) = input-D,E,H,L, unknown; Unchanged: Symbol(H,L) = input-H,L
 	RET		; Changed: A. Input: D, E, H, L
 ~~~
 
 ~~~asm
-	LD A,B	; Symbol(A) = input-B, modified; Symbol(B) = input-B
-	ADD A,E	; Symbol(A) = input-B,E, modified; Symbol(E) = input-E
-	INC L	; Symbol(E) = input-L, modified
-	ADD A,L	; Symbol(A) = input-B,E,L, modified; Unchanged: Symbol(L) = input-L, modified
+	LD A,B	; Symbol(A) = input-B, unknown; Symbol(B) = input-B
+	ADD A,E	; Symbol(A) = input-B,E, unknown; Symbol(E) = input-E
+	INC L	; Symbol(E) = input-L, unknown
+	ADD A,L	; Symbol(A) = input-B,E,L, unknown; Unchanged: Symbol(L) = input-L, unknown
 	RET		; Changed: A, L. Input: B, E, L.
 ~~~
 
 ~~~asm
 	PUSH HL		; Symbol(STACK) = input-H,L
 	LD H,$80	; Symbol(H) = known
-	LD A,(HL)	; Symbol(A) = input-L, modified; Unchanged: Symbol(L) = input-L
+	LD A,(HL)	; Symbol(A) = input-L, unknown; Unchanged: Symbol(L) = input-L
 	POP HL		; Symbol(H,L) = input-H,L
 	RET		; Changed: A. Input: L
 ~~~
@@ -428,7 +422,7 @@ LOOP:
 ~~~asm
 	PUSH AF		; Symbol(STACK) = input-A,F
 	PUSH HL		; Symbol(STACK) = input-H,L
-	INC HL		; Symbol(H,L) = input-H,L, modified
+	INC HL		; Symbol(H,L) = input-H,L, unknown
 	LD (HL),A	; Symbol("(HL)") = input-A
 	POP HL		; Symbol(H,L) = input-H,L
 	POP AF		; Symbol(H,L) = input-A,F
@@ -447,19 +441,29 @@ Symbolic values calculations, e.g. for "ADD":
 
 | A         | B         | Result      |
 |-----------|-----------|-------------|
-| input-X   | input-Y   | input-X,Y   |
-| known     | known     | modified    |
-| known     | modified  | modified    |
-| modified  | known     | modified    |
-| input-X   | known     | input-X,m   |
-| known     | input-Y   | input-Y,m   |
-| input-X   | modified  | input-X,m   |
-| modified  | input-Y   | input-Y,m   |
-| input-X,m | input-Y   | input-X,Y,m |
-| input-X   | input-Y,m | input-X,Y,m |
-| input-X,m | input-Y,m | input-X,Y,m |
+| input-X,k | input-Y,k | input-X,Y,u |
+| known     | known     | unknown     |
+| known     | unknown   | unknown     |
+| unknown   | known     | unknown     |
+| input-X,k | known     | input-X,u   |
+| known     | input-Y,k | input-Y,u   |
+| input-X,k | unknown   | input-X,u   |
+| unknown   | input-Y,k | input-Y,u   |
+| input-X,u | input-Y,k | input-X,Y,u |
+| input-X,k | input-Y,u | input-X,Y,u |
+| input-X,u | input-Y,u | input-X,Y,u |
 
-Simplified: 'input' has a higher priority over 'modified' and 'modified' is higher than 'known'.
+Simplified:
+- 'unknown' has a higher priority than 'known'
+- 'input' are handled independent of known/unknown and inputs are simply merged.
 
 
+| A         | B         | Result      |
+|-----------|-----------|-------------|
+| known     | known     | unknown     |
+| known     | unknown   | unknown     |
+| unknown   | known     | unknown     |
+| unknown   | unknown   | unknown     |
+
+I.e. no matter what operands are used in the calculation, the result is unknown.
 
