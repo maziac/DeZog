@@ -298,7 +298,11 @@ The priority table is similar (but not equal) to the symbolic values calculation
 
 | L1        | L2        | Result      |
 |-----------|-----------|-------------|
-| input-X,k | input-Y,k | input-X,Y,k |
+| input-X,k | input-X,k | input-X,k   |
+| input-X,u | input-X,k | input-X,u   |
+| input-X,k | input-X,u | input-X,u   |
+| input-X,u | input-X,u | input-X,u   |
+| input-X,k | input-Y,k | input-X,Y,u |
 | known     | known     | known (2 values) |
 | known     | unknown   | unknown     |
 | unknown   | known     | unknown     |
@@ -310,17 +314,23 @@ The priority table is similar (but not equal) to the symbolic values calculation
 | input-X,k | input-Y,u | input-X,Y,u |
 | input-X,u | input-Y,u | input-X,Y,u |
 
-Note: input-X,Y, i.e. several input possibilities, implies 'unknown'.
-
-Simplified: 'input' has a higher priority over 'unknown' and 'unknown' is higher than 'known'.
-
+Simplified:
+- If branches are equal the result is L1 or L2 (are the same anyway)
+- The result is 'known' only if all branches are 'known'.
+- The inputs merge.
 
 | A         | B         | Result      |
 |-----------|-----------|-------------|
-| known     | known     | unknown     |
+| known     | known     | known       |
 | known     | unknown   | unknown     |
 | unknown   | known     | unknown     |
 | unknown   | unknown   | unknown     |
+
+If, at the end,
+- a register still contains 'input-R,k' (R = register name) then it is unchanged.
+- a register (or memory) contains 'input-R,u' (no matter if R is own register name or not) then R is an input parameter.
+
+Vielleicht USED einführen?
 
 
 ~~~json
@@ -328,6 +338,10 @@ Simplified: 'input' has a higher priority over 'unknown' and 'unknown' is higher
 	"input": string[],
 	"symValue": 'known|unknown'
 	"exactValues": number[],
+}
+{
+	"known": boolean,
+	"values": (number|string)[],	// A concrete number or a symbolic value (string)
 }
 ~~~
 
