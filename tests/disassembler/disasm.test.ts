@@ -3,7 +3,7 @@ import {Disassembler} from '../../src/disassembler/disasm';
 import {NumberType} from '../../src/disassembler/numbertype';
 import { writeFileSync } from 'fs';
 import {Format} from '../../src/disassembler/format';
-import {Opcodes} from '../../src/disassembler/opcode';
+import {Opcode} from '../../src/disassembler/opcode';
 
 
 
@@ -2640,8 +2640,8 @@ suite('Disassembler', () => {
 				/*1000*/	0xCF, 0x99, 'RST 08h, CODE=99h',
 				/*1002*/	0xD7, 0x01, 0x34, 0x12, 0xFF, 'RST 10h, a=01h, b=1234h, c=FFh'
 			];
-			Opcodes[0xCF].appendToOpcode(", CODE=#n");
-			Opcodes[0xD7].appendToOpcode(", a=#n, b=#nn, c=#n");
+			Opcode.Opcodes[0xCF].appendToOpcode(", CODE=#n");
+			Opcode.Opcodes[0xD7].appendToOpcode(", a=#n, b=#nn, c=#n");
 			const org = 0x1000;
 			const error = checkDisassembly(combined, org);
 			assert.equal(error, undefined, error);

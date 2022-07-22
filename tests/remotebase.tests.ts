@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import {RemoteBase} from '../src/remotes/remotebase';
 import {Settings} from '../src/settings/settings';
 import {Z80RegistersClass, Z80Registers} from '../src/remotes/z80registers';
-import {Opcodes, Opcode} from '../src/disassembler/opcode';
+import {Opcode} from '../src/disassembler/opcode';
 import {GenericBreakpoint, GenericWatchpoint} from '../src/genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../src/remotes/z80registersstandarddecoder';
 
@@ -19,7 +19,7 @@ suite('RemoteBase', () => {
 		Z80RegistersClass.createRegisters();
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 		// Restore 'rst 8' opcode
-		Opcodes[0xCF] = new Opcode(0xCF, "RST %s");
+		Opcode.Opcodes[0xCF] = new Opcode(0xCF, "RST %s");
 	});
 
 
@@ -262,7 +262,7 @@ suite('RemoteBase', () => {
 		test('ESXDOS RST 08 and step over', async () => {
 			// Works the same as "RST 08 and step over"
 			// Extend 'rst 8' opcode for esxdos
-			Opcodes[0xCF].appendToOpcode(",#n");
+			Opcode.Opcodes[0xCF].appendToOpcode(",#n");
 			const remote = new RemoteBaseMock();
 			const rem = remote as any;
 
@@ -307,7 +307,7 @@ suite('RemoteBase', () => {
 
 		test('ESXDOS RST 08 and step into', async () => {
 			// Extend 'rst 8' opcode for esxdos
-			Opcodes[0xCF].appendToOpcode(",#n");
+			Opcode.Opcodes[0xCF].appendToOpcode(",#n");
 			Settings.launch.disassemblerArgs.esxdosRst = true;
 			const remote = new RemoteBaseMock();
 			const rem = remote as any;

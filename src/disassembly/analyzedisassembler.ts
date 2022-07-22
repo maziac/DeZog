@@ -1,6 +1,6 @@
 import {Disassembler} from "../disassembler/disasm";
 import {NumberType} from '../disassembler/numbertype';
-import {Opcode, Opcodes} from "../disassembler/opcode";
+import {Opcode} from "../disassembler/opcode";
 import {Labels} from "../labels/labels";
 import {ReverseEngineeringLabelParser} from "../labels/reverseengineeringlabelparser";
 import {Utility} from '../misc/utility';
@@ -79,12 +79,12 @@ export class AnalyzeDisassembler extends Disassembler {
 		this.findInterrupts = false;
 
 		// Restore 'rst 8' opcode
-		Opcodes[0xCF] = new Opcode(0xCF, "RST %s");
+		Opcode.Opcodes[0xCF] = new Opcode(0xCF, "RST %s");
 
 		// Setup configuration.
 		if (Settings.launch.disassemblerArgs.esxdosRst) {
 			// Extend 'rst 8' opcode for esxdos
-			Opcodes[0xCF].appendToOpcode(",#n");
+			Opcode.Opcodes[0xCF].appendToOpcode(",#n");
 		}
 	}
 

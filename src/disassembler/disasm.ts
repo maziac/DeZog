@@ -215,6 +215,7 @@ export class Disassembler extends EventEmitter {
 	 */
 	constructor() {
 		super();
+		Opcode.InitOpcodes();
 		this.initLabels();
 	}
 
