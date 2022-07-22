@@ -2973,11 +2973,11 @@ suite('Disassembler', () => {
 			dasm.clmnsAddress = 5;
 			dasm.addOpcodeBytes = true;
 
-			dasm.readSnaFile('./src/tests/data/sw.sna');
+			dasm.readSnaFile('./tests/disassembler/data/sw.sna');
 			//dasm.setLabel(0xA5F7, "LBL_MAIN_INTERRUPT");
 
 			// Set tr file
-			dasm.useMameTraceFile('./src/tests/data/sw.tr');
+			dasm.useMameTraceFile('./tests/disassembler/data/sw.tr');
 
 			// Disassemble
 			dasm.disassemble(65536);
