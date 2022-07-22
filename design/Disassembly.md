@@ -185,6 +185,71 @@ The user can switch the depth via a slider.
 It uses dot language and a dot to svg converter to display the flow chart.
 Involved functions are: 'renderCallGraph', 'getGraphLabels' and 'getCallGraph'.
 
+
+
+## Much simplified parameter analysis
+
+The parameter analysis with symbolic execution is difficult and, without loops, is also quite limited especially when it comes to stack manipulations.
+
+On the other hand, for sub routines that follow a certain pattern the analysis can be simplified.
+The assumed pattern is that saved registered are saved via PUSH at the beginning of the function. Then the registers are restored via POP at the end of the sub routine.
+PUSH and POP are not expected in loops. This would make the algorithm fail.
+
+An example would look like:
+~~~asm
+	; SAVING
+	PUSH AF
+	PUSH HL
+	PUSH DE
+
+	; Do something
+	LD A,...
+	; Branching etc.
+	JR Z,...
+
+	; RESTORING
+	POP DE
+	POP HL
+	POP AF
+	RET
+~~~
+
+The SAVING phase where PUSH/POP are analyzed lasts until the first branch.
+Each PUSH writes the register equivalent on a symbolic stack. (Each POP removes one).
+After the SAVING phase each POP (PUSH) is written to another symbolic stack. When a branch occurs the stack is thrown away.
+But when a RET is found (also RET cc) the stack is compared with the stack from the SAVING phase.
+Each restored register is marked as unchanged.
+As there might be several RETs in a subroutine this has to be done a few times. Hopefully always with the same result. If not the lowest common denominator is used.
+
+The **input parameters** are simply determined by the instructions.
+If e.g. a ```LD A,B``` is used but B was not assigned beforehand then B is an input.
+
+
+An output could look like:
+~~~asm
+	; Input registers: B
+	; Used registers: HL, A, B
+	; Assigned registers: HL, A
+	; Unchanged registers: HL, B
+	PUSH HL
+	INC HL
+	LD A,B
+	INC A
+	LD (HL),A
+	POP HL
+	RET
+~~~
+
+Note: Special instructions to consider:
+~~~ASM
+	EXX
+	EX DE,HL
+	EX AF,AF'
+	JP (HL)
+	LD SP,nnnn
+	LD SP,HL
+~~~
+
 ## Parameter Analysis
 
 Apart from call graph and flow chart analysis there is also a symbol execution analysis which is somewhere between static and dynamic analysis.
