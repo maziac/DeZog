@@ -25,20 +25,6 @@
 				},
 				"owner": "sonarlint"
 			}
-		},
-		{
-			"label": "Start local SonarQube server",
-			"type": "shell",
-			"command": "/Volumes/SDDPCIE2TB/Projects/Sonar/sonarqube/bin/macosx-universal-64/sonar.sh console",
-			"group": "none",
-			"problemMatcher": []
-		},
-		{
-			"label": "Sonar scan - all sources",
-			"type": "shell",
-			"command": "/Volumes/SDDPCIE2TB/Projects/Sonar/sonar-scanner-macosx/bin/sonar-scanner",
-			"group": "none",
-			"problemMatcher": []
 		}
 	]
 }
