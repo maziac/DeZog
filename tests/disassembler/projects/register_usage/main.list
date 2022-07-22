@@ -1,0 +1,25 @@
+# file opened: main.asm
+ 1    0000
+ 2    0000              	DEFS 0x0000
+ 3    0000              	; Input registers: B
+ 4    0000              	; Used registers: HL, A, B
+ 5    0000              	; Assigned registers: HL, A
+ 6    0000              	; Unchanged registers: HL, B
+ 7    0000 E5           	PUSH HL
+ 8    0001 23           	INC HL
+ 9    0002 78           	LD A,B
+10    0003 3C           	INC A
+11    0004 77           	LD (HL),A
+12    0005 E1           	POP HL
+13    0006 C9           	RET
+14    0007
+15    0007 00 00 00...  	DEFS 0x0100-$
+16    0100 E5           	PUSH HL
+17    0101 23           	INC HL
+18    0102 78           	LD A,B
+19    0103 3C           	INC A
+20    0104 77           	LD (HL),A
+21    0105 E1           	POP HL
+22    0106 C9           	RET
+23    0107
+# file closed: main.asm
