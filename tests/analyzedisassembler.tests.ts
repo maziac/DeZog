@@ -8,6 +8,16 @@ suite('Disassembly (AnalyzeDisassembler)', () => {
 
 	class MockAnalyzeDisassembler extends AnalyzeDisassembler {
 		/**
+		 * Constructor.
+		 * Prefill slot related data.
+		 */
+		constructor() {
+			super();
+			this.setSlotBankInfo(0, 0xFFFF, 0, true);
+			this.setCurrentSlots([0]);
+		}
+
+		/**
 		 * Checks that all addresses have attribute CODE_FIRST.
 		 * @param addresses A list of addresses.
 		 * @returns true if all addresses are of attribute CODE_FIRST.
@@ -42,7 +52,7 @@ suite('Disassembly (AnalyzeDisassembler)', () => {
 					{
 						address: 1000, data: new Uint8Array([2])
 					}]);
-				(dis as any).collectLabels();	// Sets CODE_FIRST
+				(dis as any).collectLabels(65536);	// Sets CODE_FIRST
 				assert.ok(dis.checkCodeFirst([1000]));
 			});
 
@@ -52,7 +62,7 @@ suite('Disassembly (AnalyzeDisassembler)', () => {
 					{
 						address: 1000, data: new Uint8Array([2])
 					}]);
-				(dis as any).collectLabels();	// Sets CODE_FIRST
+				(dis as any).collectLabels(65536);	// Sets CODE_FIRST
 				assert.ok(!dis.checkCodeFirst([1000]));
 			});
 
@@ -62,7 +72,7 @@ suite('Disassembly (AnalyzeDisassembler)', () => {
 					{
 						address: 1000, data: new Uint8Array([1, 2, 3, 4, 5,  6, 7, 8, 9, 10, 11, 12])
 					}]);
-				(dis as any).collectLabels();	// Sets CODE_FIRST
+				(dis as any).collectLabels(65536);	// Sets CODE_FIRST
 				assert.ok(dis.checkCodeFirst([1000, 1004, 1008]));
 			});
 
@@ -72,7 +82,7 @@ suite('Disassembly (AnalyzeDisassembler)', () => {
 					{
 						address: 1000, data: new Uint8Array([0 /*NOP*/, 0xC9 /*RET*/, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
 					}]);
-				(dis as any).collectLabels();	// Sets CODE_FIRST
+				(dis as any).collectLabels(65536);	// Sets CODE_FIRST
 				assert.ok(!dis.checkCodeFirst([1000, 1004, 1008]));
 			});
 		});

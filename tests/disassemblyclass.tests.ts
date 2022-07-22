@@ -21,11 +21,11 @@ suite('Disassembly (DisassemblyClass)', () => {
 
 			assert.ok(dis.slotsChanged([1]));
 
-			dis.setSlots([1]);
+			dis.setCurrentSlots([1]);
 			assert.ok(!dis.slotsChanged([1]));
 
 			assert.ok(dis.slotsChanged([1, 2]));
-			dis.setSlots([1, 2]);
+			dis.setCurrentSlots([1, 2]);
 			assert.ok(!dis.slotsChanged([1, 2]));
 
 			assert.ok(dis.slotsChanged([1, 3]));
