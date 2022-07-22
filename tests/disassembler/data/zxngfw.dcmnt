@@ -1,0 +1,1396 @@
+0x00000000 main_start
+
+0x00000038 IM1_INTERRUPT_38H
+
+0x00000477 sound.music_main_interrupt
+
+0x0000243B IO_NEXTREG_REG
+
+0x0000253B IO_NEXTREG_DAT
+
+0x0000123B LAYER_2_PORT
+
+0x00001FFD PLUS_3_MEMORY_PAGING_CONTROL
+
+0x0000DFFD NEXT_MEMORY_BANK_SELECT
+
+0x000000DF SPECDRUM_DAC_OUTPUT
+
+0x00000000 REG_MACHINE_ID
+
+0x00000001 RMI_DE1A
+
+0x00000002 RMI_DE2A
+
+0x00000005 RMI_FBLABS
+
+0x00000006 RMI_VTRUCCO
+
+0x00000007 RMI_WXEDA
+
+0x00000008 RMI_EMULATORS
+
+0x0000000A RMI_ZXNEXT
+
+0x0000000B RMI_MULTICORE
+
+0x000000FA RMI_ZXNEXT_AB
+
+0x00000001 REG_VERSION
+
+0x000000F0 RV_MAJOR
+
+0x0000000F RV_MINOR
+
+0x00000002 REG_RESET
+
+0x00000004 RR_POWER_ON_RESET
+
+0x00000002 RR_HARD_RESET
+
+0x00000001 RR_SOFT_RESET
+
+0x00000003 REG_MACHINE_TYPE
+
+0x00000080 RMT_LOCK_TIMING
+
+0x00000010 RMT_TIMING_48
+
+0x00000020 RMT_TIMING_128
+
+0x00000030 RMT_TIMING_P3E
+
+0x00000040 RMT_TIMING_PENTAGON
+
+0x00000000 RMT_CONFIG_MODE
+
+0x00000001 RMT_48
+
+0x00000002 RMT_128
+
+0x00000003 RMT_P3E
+
+0x00000004 RMT_PENTAGON
+
+0x00000004 REG_RAM_PAGE
+
+0x00000008 RRP_RAM_DIVMMC
+
+0x00000004 RRP_ROM_DIVMMC
+
+0x00000005 RRP_ROM_MF
+
+0x00000000 RRP_ROM_SPECTRUM
+
+0x00000005 REG_PERIPHERAL_1
+
+0x00000000 RP1_JOY1_SINCLAIR
+
+0x00000040 RP1_JOY1_KEMPSTON
+
+0x00000080 RP1_JOY1_CURSOR
+
+0x00000000 RP1_JOY2_SINCLAIR
+
+0x00000010 RP1_JOY2_KEMPSTON
+
+0x00000020 RP1_JOY2_CURSOR
+
+0x00000000 RP1_RATE_50
+
+0x00000004 RP1_RATE_60
+
+0x00000002 RP1_ENABLE_SCANLINES
+
+0x00000001 RP1_ENABLE_SCANDOUBLER
+
+0x00000006 REG_PERIPHERAL_2
+
+0x00000080 RP2_ENABLE_TURBO
+
+0x00000000 RP2_DAC_I2S
+
+0x00000040 RP2_DAC_JAP
+
+0x00000020 RP2_ENABLE_LIGHTPEN
+
+0x00000010 RP2_ENABLE_DIVMMC
+
+0x00000008 RP2_ENABLE_MULTIFACE
+
+0x00000000 RP2_PS2_KEYBOARD
+
+0x00000004 RP2_PS2_MOUSE
+
+0x00000003 RP2_PSGMODE_AY
+
+0x00000002 RP2_PSGMODE_YM
+
+0x00000000 RP2_PSGMODE_DISABLE
+
+0x00000007 REG_TURBO_MODE
+
+0x00000000 RTM_3MHZ
+
+0x00000001 RTM_7MHZ
+
+0x00000002 RTM_14MHZ
+
+0x00000003 RTM_28MHZ
+
+0x00000008 REG_PERIPHERAL_3
+
+0x00000000 RP3_STEREO_ABC
+
+0x00000020 RP3_STEREO_ACB
+
+0x00000010 RP3_ENABLE_SPEAKER
+
+0x00000008 RP3_ENABLE_SPECDRUM
+
+0x00000008 RP3_ENABLE_COVOX
+
+0x00000004 RP3_ENABLE_TIMEX
+
+0x00000002 RP3_ENABLE_TURBOSOUND
+
+0x00000080 RP3_UNLOCK_7FFD
+
+0x00000040 RP3_DISABLE_RAM_CONTENTION
+
+0x00000009 REG_PERIPHERAL_4
+
+0x00000080 RP4_AY2_MONO
+
+0x00000040 RP4_AY1_MONO
+
+0x00000020 RP4_AY0_MONO
+
+0x00000010 RP4_SPRITE_ID_LOCK_STEP
+
+0x00000008 RP4_DISABLE_KEMPSTON_PORT
+
+0x00000004 RP4_DISABLE_DIVMMC_PORT
+
+0x00000000 RP4_SCANLINES_OFF
+
+0x00000001 RP4_SCANLINES_75
+
+0x00000010 RP4_SCANLINES_50
+
+0x00000011 RP4_SCANLINES_25
+
+0x0000000E REG_SUB_VERSION
+
+0x0000000F REG_VIDEO_PARAM
+
+0x00000010 REG_ANTI_BRICK
+
+0x00000080 RAB_COMMAND_NORMALCORE
+
+0x00000002 RAB_BUTTON_DIVMMC
+
+0x00000001 RAB_BUTTON_MULTIFACE
+
+0x00000011 REG_VIDEO_TIMING
+
+0x00000012 REG_LAYER_2_RAM_PAGE
+
+0x0000003F RL2RP_MASK
+
+0x00000012 REG_LAYER_2_RAM_BANK
+
+0x0000003F RL2RB_MASK
+
+0x00000013 REG_LAYER_2_SHADOW_RAM_PAGE
+
+0x0000003F RL2SRP_MASK
+
+0x00000013 REG_LAYER_2_SHADOW_RAM_BANK
+
+0x0000003F RL2SRB_MASK
+
+0x00000014 REG_GLOBAL_TRANSPARENCY_COLOR
+
+0x00000015 REG_SPRITE_LAYER_SYSTEM
+
+0x00000080 RSLS_ENABLE_LORES
+
+0x00000000 RSLS_LAYER_PRIORITY_SLU
+
+0x00000004 RSLS_LAYER_PRIORITY_LSU
+
+0x00000008 RSLS_LAYER_PRIORITY_SUL
+
+0x0000000C RSLS_LAYER_PRIORITY_LUS
+
+0x00000010 RSLS_LAYER_PRIORITY_USL
+
+0x00000014 RSLS_LAYER_PRIORITY_ULS
+
+0x00000002 RSLS_SPRITES_OVER_BORDER
+
+0x00000001 RSLS_SPRITES_VISIBLE
+
+0x00000016 REG_LAYER_2_OFFSET_X
+
+0x00000017 REG_LAYER_2_OFFSET_Y
+
+0x00000018 REG_CLIP_WINDOW_LAYER_2
+
+0x00000019 REG_CLIP_WINDOW_SPRITES
+
+0x0000001A REG_CLIP_WINDOW_ULA
+
+0x0000001C REG_CLIP_WINDOW_CONTROL
+
+0x00000004 RCWC_RESET_ULA_CLIP_INDEX
+
+0x00000002 RCWC_RESET_SPRITE_CLIP_INDEX
+
+0x00000001 RCWC_RESET_LAYER_2_CLIP_INDEX
+
+0x0000001E REG_ACTIVE_VIDEO_LINE_H
+
+0x0000001F REG_ACTIVE_VIDEO_LINE_L
+
+0x00000022 REG_LINE_INTERRUPT_CONTROL
+
+0x00000080 RLIC_INTERRUPT_FLAG
+
+0x00000004 RLIC_DISABLE_ULA_INTERRUPT
+
+0x00000002 RLIC_ENABLE_LINE_INTERRUPT
+
+0x00000001 RLIC_LINE_INTERRUPT_VALUE_H
+
+0x00000023 REG_LINE_INTERRUPT_VALUE_L
+
+0x00000028 REG_KEYMAP_ADDRESS_H
+
+0x00000029 REG_KEYMAP_ADDRESS_L
+
+0x0000002A REG_KEYMAP_DATA_H
+
+0x0000002B REG_KEYMAP_DATA_L
+
+0x0000002D REG_DAC_MONO
+
+0x00000032 REG_LORES_OFFSET_X
+
+0x00000033 REG_LORES_OFFSET_Y
+
+0x00000040 REG_PALETTE_INDEX
+
+0x00000041 REG_PALETTE_VALUE_8
+
+0x00000042 REG_ULANEXT_PALETTE_FORMAT
+
+0x00000043 REG_PALETTE_CONTROL
+
+0x00000080 RPC_DISABLE_AUTOINC
+
+0x00000000 RPC_SELECT_ULA_PALETTE_0
+
+0x00000040 RPC_SELECT_ULA_PALETTE_1
+
+0x00000010 RPC_SELECT_LAYER_2_PALETTE_0
+
+0x00000050 RPC_SELECT_LAYER_2_PALETTE_1
+
+0x00000020 RPC_SELECT_SPRITES_PALETTE_0
+
+0x00000060 RPC_SELECT_SPRITES_PALETTE_1
+
+0x00000000 RPC_ENABLE_SPRITES_PALETTE_0
+
+0x00000008 RPC_ENABLE_SPRITES_PALETTE_1
+
+0x00000000 RPC_ENABLE_LAYER_2_PALETTE_0
+
+0x00000004 RPC_ENABLE_LAYER_2_PALETTE_1
+
+0x00000000 RPC_ENABLE_ULA_PALETTE_0
+
+0x00000002 RPC_ENABLE_ULA_PALETTE_1
+
+0x00000001 RPC_ENABLE_ULANEXT
+
+0x00000044 REG_PALETTE_VALUE_16
+
+0x0000004A REG_FALLBACK_COLOR
+
+0x00000050 REG_MMU0
+
+0x00000051 REG_MMU1
+
+0x00000052 REG_MMU2
+
+0x00000053 REG_MMU3
+
+0x00000054 REG_MMU4
+
+0x00000055 REG_MMU5
+
+0x00000056 REG_MMU6
+
+0x00000057 REG_MMU7
+
+0x000000FF ROM_BANK
+
+0x00000004 MMU4_DEFAULT_BANK
+
+0x00000060 REG_COPPER_DATA
+
+0x00000061 REG_COPPER_CONTROL_L
+
+0x00000062 REG_COPPER_CONTROL_H
+
+0x00000000 RCCH_COPPER_STOP
+
+0x00000040 RCCH_COPPER_RUN_LOOP_RESET
+
+0x00000080 RCCH_COPPER_RUN_LOOP
+
+0x000000C0 RCCH_COPPER_RUN_VBI
+
+0x000000FF REG_
+
+0x00000040 MAX_HW_SPRITES
+
+0x0000004B REG_SPRITE_TRANSPARENCY_COLOR_INDEX
+
+0x0000303B IO_SPRITE_SLOT
+
+0x0000303B IO_SPRITE_FLAGS
+
+0x00000034 REG_SPRITE_SLOT
+
+0x00000002 ISF_MAX_SPRITES_PER_LINE
+
+0x00000001 ISF_COLLISION
+
+0x00000002 IO_303B_MAX_SPRITES_PER_LINE
+
+0x00000001 IO_303B_COLLISION
+
+0x00000053 IO_SPRITE_PALETTE
+
+0x00000057 IO_SPRITE_ATTRIBUTE
+
+0x00000035 REG_SPRITE_ATTRIBUTE_0
+
+0x00000036 REG_SPRITE_ATTRIBUTE_1
+
+0x00000037 REG_SPRITE_ATTRIBUTE_2
+
+0x00000038 REG_SPRITE_ATTRIBUTE_3
+
+0x00000039 REG_SPRITE_ATTRIBUTE_4
+
+0x00000040 SPRITE_INC_SLOT
+
+0x0000005B IO_SPRITE_PATTERN
+
+0x00000083 DMA_DISABLE
+
+0x00000087 DMA_ENABLE
+
+0x000000CF DMA_LOAD
+
+0x0000006B ZXN_DMA_PORT
+
+0x00000000 BLACK
+
+0x00000001 BLUE
+
+0x00000002 RED
+
+0x00000003 MAGENTA
+
+0x00000004 GREEN
+
+0x00000005 CYAN
+
+0x00000006 YELLOW
+
+0x00000007 WHITE
+
+0x00000008 TRANSPARENT
+
+0x00000080 FLASH
+
+0x00000040 BRIGHT
+
+0x000000FE PORT_BORDERCOLOR
+
+0x00004000 SCREEN
+
+0x00001800 SCREEN_SIZE
+
+0x00005800 COLOR_SCREEN
+
+0x00000300 COLOR_SCREEN_SIZE
+
+0x00003D00 ROM_FONT
+
+0x00000300 ROM_FONT_SIZE
+
+0x00000000 ROM_START
+
+0x00004000 ROM_SIZE
+
+0x0000004B math.udiv_c_d
+
+0x0000004E math.udiv_c_d.loop
+
+0x00000056 math.udiv_c_d.l1
+
+0x00000059 math.udiv_hl_e
+
+0x0000005C math.udiv_hl_e.loop
+
+0x00000063 math.udiv_hl_e.l1
+
+0x00000066 math.udiv_bc_de
+
+0x0000006C math.udiv_bc_de.loop
+
+0x00000077 math.udiv_bc_de.l1
+
+0x0000007B math.udiv_abc_de
+
+0x00000082 math.udiv_abc_de.loop
+
+0x0000008F math.udiv_abc_de.l1
+
+0x00000094 math.bcd_add
+
+0x0000009A math.bcd_add.loop
+
+0x000000A3 math.bcd_inc
+
+0x000000AF math.bcd_inc.loop
+
+0x000000B9 util.rand
+
+0x00000CC9 util.random_seed
+
+0x000000D1 util.rand.no_carry
+
+0x000000D5 call_hl
+
+0x000000D6 util.clear_screen
+
+0x00000000 util.memory.fill
+
+0x000000E0 util.fill_color_screen
+
+0x000000E9 util.wait_on_vsync
+
+0x000000EB util.do_nothing_cb
+
+0x000000EC util.empty_word_list
+
+0x00000003 util._LIST
+
+0x00000000 util._LIST.PTR
+
+0x00000003 util._LIST.DATA
+
+0x000000EE util.list.reset
+
+0x000000F4 util.list.set_index_ptr
+
+0x000000F8 util.listb.push
+
+0x00000101 util.listb.pop
+
+0x0000010A util.listw.push
+
+0x00000117 util.listw.pop
+
+0x0000011A util.listw.pop_wo_get
+
+0x00000124 memory.get_bank
+
+0x0000012D memory.small_fill
+
+0x00000132 memory.fill
+
+0x00000000 string.BIT.FLAG_STRING_NO_TERMINATING_0
+
+0x00000001 string.BIT.FLAG_STRING_NO_LEADING_0
+
+0x00000002 string.BIT.FLAG_STRING_RIGHT_JUST
+
+0x00000001 string.FLAG_STRING_NO_TERMINATING_0
+
+0x00000002 string.FLAG_STRING_NO_LEADING_0
+
+0x00000004 string.FLAG_STRING_RIGHT_JUST
+
+0x0000013A string.byte_to_string
+
+0x0000014E string.byte_to_string.div_a
+
+0x0000013F string.byte_to_string.div10
+
+0x00000147 string.byte_to_string.check_terminating_0
+
+0x00000150 string.byte_to_string.div_a_loop
+
+0x00000163 string.byte_to_string.l1
+
+0x00000165 string.byte_to_string.l3
+
+0x00000169 string.byte_to_string.l2
+
+0x0000016C string.word_to_string
+
+0x00000189 string.word_to_string.div_hl
+
+0x0000018A string.word_to_string.div_hl_loop
+
+0x0000019E string.word_to_string.l1
+
+0x000001A0 string.word_to_string.l3
+
+0x000001A2 string.word_to_string.l2
+
+0x000001A8 string.bcd_to_string
+
+0x000001A8 string.bcd_to_string.loop
+
+0x000001C2 string.bcd_to_string.write_digit
+
+0x000001BE string.bcd_to_string.l4
+
+0x000001D1 string.bcd_to_string.l1
+
+0x000001D3 string.bcd_to_string.l3
+
+0x000001D5 string.bcd_to_string.l2
+
+0x00000001 esxdos.file.FA_READ
+
+0x00000006 esxdos.file.FA_APPEND
+
+0x0000000C esxdos.file.FA_OVERWRITE
+
+0x00000089 esxdos.file.M_GETSETDRV
+
+0x0000009A esxdos.file.F_OPEN
+
+0x0000009B esxdos.file.F_CLOSE
+
+0x0000009D esxdos.file.F_READ
+
+0x0000009E esxdos.file.F_WRITE
+
+0x0000009F esxdos.file.F_SEEK
+
+0x000000A8 esxdos.file.F_GET_DIR
+
+0x000000A9 esxdos.file.F_SET_DIR
+
+0x000000A1 esxdos.file.F_FSTAT
+
+0x000001D8 esxdos.file.open_read
+
+0x000001DA esxdos.file.open_mode
+
+0x0000024F esxdos.file.error
+
+0x00000CCB esxdos.file.file_handle
+
+0x000001ED esxdos.file.return
+
+0x000001EF esxdos.file.open_write
+
+0x000001F3 esxdos.file.close
+
+0x000001FD esxdos.file.read
+
+0x0000020A esxdos.file.write
+
+0x00000217 esxdos.file.seek
+
+0x00000228 esxdos.file.fstat
+
+0x00000CCC esxdos.file.stat_data
+
+0x00000239 esxdos.file.read_file
+
+0x00000001 joystick.JOY0
+
+0x00000002 joystick.JOY1
+
+0x00000000 joystick.BIT.RIGHT
+
+0x00000001 joystick.BIT.LEFT
+
+0x00000002 joystick.BIT.DOWN
+
+0x00000003 joystick.BIT.UP
+
+0x00000004 joystick.BIT.BUTTON_B
+
+0x00000005 joystick.BIT.BUTTON_C
+
+0x00000006 joystick.BIT.BUTTON_A
+
+0x00000007 joystick.BIT.BUTTON_START
+
+0x0000EFFE joystick.PORT_JOY_0
+
+0x0000F7FE joystick.PORT_JOY_1
+
+0x00000251 joystick.init
+
+0x00000256 joystick.get
+
+0x00000266 joystick.get.bit1
+
+0x0000027B joystick.get.no_joy
+
+0x00000261 joystick.get.ret_port
+
+0x00000263 joystick.get.ret_xor
+
+0x0000026F joystick.get.both
+
+0x0000027D speech.test_burst_mode
+
+0x00000287 speech.test_burst_mode.loop4
+
+0x00000294 speech.test_burst_mode.loop3
+
+0x000002AB speech.dma_code
+
+0x000002BC speech.dma_code_end
+
+0x000002A3 speech.test_burst_mode.loop2
+
+0x000002AD speech.dma_source_addr
+
+0x000002AF speech.dma_length
+
+0x000002BC sound.MUSIC_INIT
+
+0x00000007 sound.R7_MIXER
+
+0x00000008 sound.R10_AMPL_CH_A
+
+0x00000009 sound.R11_AMPL_CH_B
+
+0x0000000A sound.R12_AMPL_CH_C
+
+0x0000000D sound.R15_ENV_SHAPE
+
+0x000000FF sound.END_OF_SOUND
+
+0x00000020 sound.TUNES_MEM_BANK
+
+0x00000015 sound.MIDI_KEY_MIN
+
+0x0000006C sound.MIDI_KEY_MAX
+
+0x00000015 sound.NOTE_MIN
+
+0x00000002 sound.MUSIC_MAIN_DIVIDER
+
+0x0000FFFD sound.TURBO_SOUND_NEXT_AYCTRL
+
+0x0000BFFD sound.SOUND_CHIP_REG_WRITE_AYDATA
+
+0x000F4240 sound.AY8910_CLOCK_FREQUENCY
+
+0x00000000 sound.RO_TONE_CH_A_FINE
+
+0x00000001 sound.R1_TONE_CH_A
+
+0x00000002 sound.R2_TONE_CH_B_FINE
+
+0x00000003 sound.R3_TONE_CH_B
+
+0x00000004 sound.R4_TONE_CH_C_FINE
+
+0x00000005 sound.R5_TONE_CH_C
+
+0x00000006 sound.R6_NOISE
+
+0x0000000B sound.R13_ENV_PERIOD_FINE
+
+0x0000000C sound.R14_ENV_PERIOD
+
+0x0000000E sound.R16
+
+0x0000000F sound.R17
+
+0x00000003 sound.COUNT_REGISTERS_AY8910
+
+0x00000003 sound.COUNT_AY8910
+
+0x00000009 sound.COUNT_REGISTERS
+
+0x00000000 sound.CMD_TUNE_MUSIC_END
+
+0x00000001 sound.CMD_INIT
+
+0x00000002 sound.CMD_ENVELOPE
+
+0x00000003 sound.CMD_BREAK
+
+0x00000004 sound.CMD_JMP
+
+0x00000080 sound.TYPE_EXPLOSION
+
+0x00000081 sound.TYPE_TONE
+
+0x00000080 sound.CMD_TUNE_NOTE_OFF
+
+0x00000000 sound.CMD_TUNE_NOTE_ON
+
+0x000000FE sound.CMD_TUNE_WORD_DELAY_LENGTH
+
+0x00000000 sound.MUSIC_STATE_IDLE
+
+0x00000001 sound.MUSIC_STATE_RELEASE
+
+0x000002C7 sound.NOTE_FREQ_TABLE
+
+0x0000039D sound.NOTE_FREQ_TABLE_END
+
+0x0000039D sound.init
+
+0x00000CDA sound.music_enabled
+
+0x000003D1 sound.sub_ay8910_play_sound_hl
+
+0x00000D0E sound.music_note_release_sub
+
+0x00000D0D sound.last_used_tone_regs_free_index
+
+0x00000D04 sound.last_used_tone_regs
+
+0x000003BC sound.init.loop
+
+0x00000CE6 sound.music_0A_key
+
+0x000006C0 sound.test_music
+
+0x00000492 sound.music_play_track
+
+0x000003D3 sound.sound_loop
+
+0x000003E8 sound.sound_end
+
+0x000003EB sound.disable_further_sounds
+
+0x000003ED sound.en_dis_sounds
+
+0x00000403 sound.explosion
+
+0x00000438 sound.sound_effect_tone_on
+
+0x0000046E sound.sound_effect_tone_off
+
+0x000004B4 sound.music_stop
+
+0x000004BE sound.music_stop_all
+
+0x00000400 sound.enable_sounds
+
+0x000005A4 sound.choose_tone_register
+
+0x000006A2 sound.ay8910_set_mixer
+
+0x0000067E sound.ay8910_set_volume_shift
+
+0xFFFFFFEC sound.state_offset
+
+0xFFFFFFF6 sound.key_offset
+
+0x0000000A sound.release_offset
+
+0x00000432 sound.sound_effect_pling
+
+0x00000535 sound.turn_key_off
+
+0x00000449 sound.sound_effect_tone_on.note_found
+
+0x0000044D sound.sound_effect_tone_on.set_frequency
+
+0x000005AF sound.select_ay8910_chip
+
+0x0000068F sound.ay8910_set_frequency
+
+0x00000631 sound.envelope_handling
+
+0x00000CD7 sound.music_main_divider_counter
+
+0x00000CD8 sound.music_duration
+
+0x000004DF sound.music_handle_notes
+
+0x00000D10 sound.music_last_track
+
+0x00000D1A sound.music_stack_top
+
+0x00000D1C sound.music_stack_ptr
+
+0x00000618 sound.all_keys_off
+
+0x00000516 sound.music_cmd_end_stop
+
+0x000004CA sound.music_clear_track
+
+0x000004D1 sound.music_sub_track
+
+0x000004E6 sound.music_next_cmd_main
+
+0x000004EB sound.music_next_cmd
+
+0x000004EA sound.counter
+
+0x00000500 sound.music_cmd_end
+
+0x00000521 sound.music_cmd_envelope
+
+0x0000051B sound.music_cmd_jmp
+
+0x00000528 sound.music_cmd_key
+
+0x00000551 sound.music_cmd_key_on
+
+0x00000533 sound.music_key_off
+
+0x00000586 sound.music_cmd_note_next_time_step
+
+0x00000CF0 sound.music_0A_volume
+
+0x0000053B sound.turn_key_off.loop
+
+0x00000548 sound.turn_key_off.note_found
+
+0x000006A6 sound.ay8910_set_mixer_b
+
+0x0000058C sound.music_cmd_note_next_time_step_modify_ret
+
+0x00000598 sound.music_cmd_note_l1
+
+0x00000594 sound.music_store_duration_in_hl
+
+0x000005BE sound.get_and_allocate_tone_register
+
+0x000005B3 sound.select_ay8910_chip.l2
+
+0x000005D0 sound.get_and_allocate_tone_register.choose_existing
+
+0x000005D5 sound.get_and_allocate_tone_register.loop_oldest
+
+0x000005E4 sound.get_and_allocate_tone_register.skip
+
+0x000005EF sound.get_and_allocate_tone_register.oldest_found
+
+0x000005F3 sound.shift_tone_registers
+
+0x000005FC sound.free_tone_register
+
+0x0000060D sound.free_tone_register.find_loop_start
+
+0x00000608 sound.free_tone_register.find_loop
+
+0x00000610 sound.free_tone_register.found
+
+0x0000061E sound.all_keys_off_loop
+
+0x00000628 sound.all_keys_off_l1
+
+0x00000CDC sound.music_0A_state
+
+0x00000CE4 sound.music_2C_state
+
+0x0000063B sound.envelope_handling_loop
+
+0x00000648 sound.envelope_handling_loop.no_chip_change
+
+0x00000655 sound.envelope_handling_release
+
+0x0000064F sound.envelope_handling_next
+
+0x00000CFA sound.music_0A_release_sub
+
+0x00000667 sound.env_release_end
+
+0x00000681 sound.ay8910_set_volume_shift2
+
+0x00000685 sound.ay8910_set_volume
+
+0x000006A6 sound.cmd_expl_mixer_loop
+
+0x00000D0F sound.ay8910_mixer_shadow_reg
+
+0x00000005 sound.test_music.STEP
+
+0x0000003C sound.test_music.INDEX
+
+0x00000100 sprites.MAX_COUNT_HW_SPRITES
+
+0x00000004 sprites.NODE
+
+0x00000000 sprites.NODE.NEXT
+
+0x00000002 sprites.NODE.PREV
+
+0x00000004 sprites.ATTRIBS
+
+0x00000000 sprites.ATTRIBS.X_LOW
+
+0x00000001 sprites.ATTRIBS.Y_LOW
+
+0x00000002 sprites.ATTRIBS.X_PALETTE_ROT
+
+0x00000003 sprites.ATTRIBS.PATTERN
+
+0x00000006 sprites.SPRITE_TYPE
+
+0x00000000 sprites.SPRITE_TYPE.MOVE
+
+0x00000002 sprites.SPRITE_TYPE.COLLIDE
+
+0x00000004 sprites.SPRITE_TYPE.DESTROY
+
+0x00000000 sprites.STATE.CONTROLLED
+
+0x00000001 sprites.STATE.MARKED_FOR_REMOVAL
+
+0x000006F3 sprites.init
+
+0x00000724 sprites.init_controlled_sprite_list
+
+0x0000071A sprites.init_groups_linked_list
+
+0x000007C3 sprites.init_type_prop_table
+
+0x00000710 sprites.clear_shadow_memory
+
+0x00001100 sprites.flag_list
+
+0x00000EFF sprites.removal_list_count
+
+0x00001C00 sprites.shadow_memory
+
+0x00002000 sprites.shadow_memory_end
+
+0x000000FF sprites.SPRITE_LIST_END_NUMBER
+
+0x00001400 sprites.groups_list
+
+0x00000FFF sprites.controlled_sprite_first_alloc
+
+0x0000072A sprites.get_ix_from_a
+
+0x00000735 sprites.get_hl_from_a
+
+0x00000736 sprites.get_hl_from_a_2
+
+0x0000073B sprites.get_x_from_ix
+
+0x00000745 sprites.set_x_to_ix
+
+0x00000753 sprites.get_y_from_ix
+
+0x0000075A sprites.set_y_to_ix
+
+0x0000075E sprites.clr_enable_to_ix
+
+0x00000763 sprites.clr_enable_to_hl
+
+0x0000076A sprites.add
+
+0x00000794 sprites.add.not_successful
+
+0x00000797 sprites.add.alloc_sprite
+
+0x000007A1 sprites.add.alloc_group
+
+0x00000799 sprites.add.alloc
+
+0x000007A6 sprites.set_all_attribs
+
+0x000007B9 sprites.get_type_prop_pointer
+
+0x00002001 sprites.type_prop_list
+
+0x000007D5 sprites.remove
+
+0x00000E00 sprites.removal_list
+
+0x000007EF sprites.removal
+
+0x000007F8 sprites.removal.loop
+
+0x00000808 sprites.remove_from_control_list
+
+0x00001200 sprites.type_list
+
+0x00000F00 sprites.controlled_sprite_list_next
+
+0x00000844 sprites.remove_from_control_list.free
+
+0x00001500 sprites.groups_list_next
+
+0x0000084D sprites.movement
+
+0x0000084F sprites.movement.loop
+
+0x00001700 sprites.anim_flags
+
+0x000009D1 sprites.animate_2
+
+0x00000878 sprites.write_to_hw
+
+0x00000889 sprites.write_to_hw_dma
+
+0x00000895 sprites.dma_code
+
+0x000008A5 sprites.dma_code_end
+
+0x00000897 sprites.dma_source_addr
+
+0x00000899 sprites.dma_length
+
+0x00000004 sprites.COLLISION_LIST_ENTRY
+
+0x00000000 sprites.COLLISION_LIST_ENTRY.FIRST
+
+0x00000002 sprites.COLLISION_LIST_ENTRY.SECOND
+
+0x000000FF sprites.COLLISION_LIST_END
+
+0x000008A5 sprites.check_hw_collision
+
+0x000008AC sprites.collision
+
+0x000008AC sprites.collision.loop
+
+0x000025FB sprites.tmp_collision_pair_ptr
+
+0x000008BE sprites.collision_2_types
+
+0x000025FD sprites.tmp_collision_type2
+
+0x000008C7 sprites.collision_2_types.loop
+
+0x000008D3 sprites.collision_loop_type2
+
+0x000025FE sprites.tmp_collision_spr_index
+
+0x00001300 sprites.csize_list
+
+0x00002603 sprites.tmp_collision_spr_size
+
+0x000025FF sprites.tmp_collision_spr_x1
+
+0x00000902 sprites.collision_loop_type2.loop
+
+0x0000090E sprites.check_sprite_collision
+
+0x00000974 sprites.calc_sub_square
+
+0x00002601 sprites.tmp_collision_spr_y1
+
+0x0000097F sprites.calc_sub_square.continue
+
+0x00000984 sprites.calc_sub_square.continue_square
+
+0x00000989 sprites.patterns.set_index
+
+0x0000098F sprites.patterns.load
+
+0x00000000 sprites.patterns.esxdos.file.stat_size
+
+0x0000099A sprites.patterns.load.loop
+
+0x00000000 sprites.patterns.util.tmp_block256
+
+0x00000007 sprites.BIT.ANIMATION.TIME_CONTROLLED
+
+0x00000006 sprites.BIT.ANIMATION.BOUNCE_ANIMATION
+
+0x00000005 sprites.BIT.ANIMATION.COUNT_DOWN
+
+0x00000004 sprites.BIT.ANIMATION.REMOVE_AFTER_ANIM
+
+0x00000006 sprites.BIT.ANIMATION.COORDS_CONTROLLED
+
+0x00000005 sprites.BIT.ANIMATION.Y_COORD
+
+0x00000080 sprites.ANIMATION.TIME_CONTROLLED
+
+0x00000040 sprites.ANIMATION.BOUNCE_ANIMATION
+
+0x00000020 sprites.ANIMATION.COUNT_DOWN
+
+0x00000010 sprites.ANIMATION.REMOVE_AFTER_ANIM
+
+0x00000040 sprites.ANIMATION.COORDS_CONTROLLED
+
+0x00000020 sprites.ANIMATION.Y_COORD
+
+0x000009B3 sprites.set_animation
+
+0x000009CD sprites.animate
+
+0x000009DA sprites.animate_2.time_controlled
+
+0x00000A2E sprites.animate_2.coords_controlled
+
+0x000009EC sprites.animate_2.l1
+
+0x00000A24 sprites.animate_2.boundary_not_reached
+
+0x00000A08 sprites.animate_2.remove_after_anim
+
+0x00000A16 sprites.animate_2.bouncing
+
+0x00000A2B sprites.animate_2.count_up
+
+0x00001B00 sprites.anim_pattern_end_or_mask
+
+0x00000A4B sprites.animate_2.y_controlled
+
+0x00000A3B sprites.animate_2.mask_coord
+
+0x00001A00 sprites.anim_pattern_base
+
+0x0000E000 layer2.bank_address
+
+0x00002000 layer2.bank_size
+
+0x00000A4F layer2.setup
+
+0x00002605 layer2.bank0
+
+0x00000A53 layer2.set_x_offset
+
+0x00002606 layer2.x_offset
+
+0x00000A5A layer2.set_y_offset
+
+0x00002607 layer2.y_offset
+
+0x00000A61 layer2.fill
+
+0x00000A67 layer2.fill.loop
+
+0x00000A7C layer2.clear
+
+0x00000A80 text.init
+
+0x00000A83 text.set_font
+
+0x00002608 text.font_address
+
+0x00000A87 text.ula.calc_address
+
+0x00000A8E text.ula.print_char
+
+0x00000A9F text.ula.print_char.loop
+
+0x00000AB7 text.ula.print_string
+
+0x00000AB7 text.ula.print_string.loop
+
+0x00000AC4 text.layer2.print_char
+
+0x00000ADA text.layer2.print_char.loop
+
+0x00000AE1 text.layer2.print_char.innerloop
+
+0x00000AE5 text.layer2.print_char.no_pixel
+
+0x00000B03 text.layer2.print_char.no_bank_switch
+
+0x00000B06 text.layer2.print_char.end
+
+0x00000B08 text.layer2.print_string
+
+0x00000B16 text.layer2.print_string.y_visible
+
+0x00000B17 text.layer2.print_string.y_invisible
+
+0x00000000 text.util.tmp0
+
+0x00000B35 text.layer2.print_string.loop
+
+0x00000B4F text.layer2.print_string.end
+
+0x00000B50 text.layer2.print_string.end2
+
+0x00000001 game.USE_HW_COLLISION_DETECTION
+
+0x00000005 game.STAGE
+
+0x00000000 game.STAGE.FLAGS
+
+0x00000001 game.STAGE.COLLISION_PAIRS
+
+0x00000003 game.STAGE.FRAME_CALLBACK
+
+0x00000000 game.BIT.USE_HW_COLLISION_DETECTION
+
+0x00000B55 game.init
+
+0x00000B67 game.mainloop
+
+0x00000DCE game.stage
+
+0x00000B79 game.mainloop.loop
+
+0x00000B81 game.one_step
+
+0x00000DD1 game.stage.FRAME_CALLBACK
+
+0x00000DCE game.stage.FLAGS
+
+0x00000BB2 game.one_step.check_sw_collision
+
+0x00000BB8 game.one_step.no_sw_collision_check
+
+0x00000DCF game.stage.COLLISION_PAIRS
+
+0x00000BC8 main_code_end
+
+0x00000BC8 util.tmp_block256
+
+0x00000BC8 util.tmp0
+
+0x00000BC9 util.tmp1
+
+0x00000BCA util.tmp2
+
+0x00000BCB util.tmp3
+
+0x00000CCC esxdos.file.stat_drive
+
+0x00000CCD esxdos.file.stat_device
+
+0x00000CCE esxdos.file.stat_attribs
+
+0x00000CCF esxdos.file.stat_date
+
+0x00000CD3 esxdos.file.stat_size
+
+0x00000CDD sound.music_0B_state
+
+0x00000CDE sound.music_0C_state
+
+0x00000CDF sound.music_1A_state
+
+0x00000CE0 sound.music_1B_state
+
+0x00000CE1 sound.music_1C_state
+
+0x00000CE2 sound.music_2A_state
+
+0x00000CE3 sound.music_2B_state
+
+0x00000CE7 sound.music_0B_key
+
+0x00000CE8 sound.music_0C_key
+
+0x00000CE9 sound.music_1A_key
+
+0x00000CEA sound.music_1B_key
+
+0x00000CEB sound.music_1C_key
+
+0x00000CEC sound.music_2A_key
+
+0x00000CED sound.music_2B_key
+
+0x00000CEE sound.music_2C_key
+
+0x00000CF1 sound.music_0B_volume
+
+0x00000CF2 sound.music_0C_volume
+
+0x00000CF3 sound.music_1A_volume
+
+0x00000CF4 sound.music_1B_volume
+
+0x00000CF5 sound.music_1C_volume
+
+0x00000CF6 sound.music_2A_volume
+
+0x00000CF7 sound.music_2B_volume
+
+0x00000CF8 sound.music_2C_volume
+
+0x00000CFB sound.music_0B_release_sub
+
+0x00000CFC sound.music_0C_release_sub
+
+0x00000CFD sound.music_1A_release_sub
+
+0x00000CFE sound.music_1B_release_sub
+
+0x00000CFF sound.music_1C_release_sub
+
+0x00000D00 sound.music_2A_release_sub
+
+0x00000D01 sound.music_2B_release_sub
+
+0x00000D02 sound.music_2C_release_sub
+
+0x00000D12 sound.music_stack
+
+0x00000D1E midi_frequency_table
+
+0x0000006D midi_frequency_table.midi_number
+
+0x00000DD4 game.no_collision_groups
+
+0x00000DD6 game.no_frame_callback
+
+0x00001000 sprites.controlled_sprite_list_prev
+
+0x000010FF sprites.controlled_sprite_list_prev.unused
+
+0x000011FF sprites.flag_list.unused
+
+0x000012FF sprites.type_list.unused
+
+0x000013FF sprites.csize_list.unused
+
+0x000014FF sprites.groups_list.unused
+
+0x000015FF sprites.groups_list_next_first_tmp
+
+0x00001600 sprites.groups_list_prev
+
+0x000016FF sprites.groups_list_prev.unused
+
+0x000017FF sprites.anim_flags.unused
+
+0x00001800 sprites.anim_speed
+
+0x000018FF sprites.anim_speed.unused
+
+0x00001900 sprites.anim_counter
+
+0x000019FF sprites.anim_counter.unused
+
+0x00001AFF sprites.anim_pattern_base.unused
+
+0x00001BFF sprites.anim_pattern_end_or_mask.unused
+
+0x00001C00 sprites.last_used_data_before_shadow_mem
+
+0x000000FF sprites.MAX_COUNT_HW_TYPES
+
+0x00002621 main_end
+
