@@ -1,8 +1,9 @@
+import { DisassemblerNextGen } from './../../src/disassembler/disasmnextgen';
 import * as assert from 'assert';
+import {writeFileSync} from 'fs';
 import {Disassembler} from '../../src/disassembler/disasm';
-import {NumberType} from '../../src/disassembler/numbertype';
-import { writeFileSync } from 'fs';
 import {Format} from '../../src/disassembler/format';
+import {NumberType} from '../../src/disassembler/numbertype';
 import {Opcode} from '../../src/disassembler/opcode';
 
 
@@ -3433,36 +3434,22 @@ suite('Disassembler', () => {
 
 	suite('Register usage', () => {
 
-		test('size', () => {
-			const memory = [
-				//7216 SUB006:
-				/*7216*/ 0x01, 0x11, 0x02,	//     ld   bc,529 ; 0211h
-				/*7219*/ 0x3A, 0x13, 0x70,	//     ld   a,(DATA131) ; 7013h
-				/*721C*/ 0xFE, 0x12,      	//	   cp   18     ; 12h
-				/*721E*/ 0x38, 0x03,        //		jr   c,.sub006_l ; 7223h
-				/*7220*/ 0x0C,           	//		inc  c
-				/*7221*/ 0xD6, 0x12,        //		sub  a,18   ; 12h
-				/*7223 .sub006_l:
-				/*7223*/ 0x80,           	//		add  a,b
-				/*7224*/ 0x47,           	//		ld   b,a
-				/*7225*/ 0xCD, 0x28, 0x7C,	//     call SUB081 ; 7C28h
-				/*7228*/ 0x3E, 0x8F,		//     ld   a,143  ; 8Fh, -113
-				/*722A*/ 0xC9,
-			];
-
-			const org = 0x7216;
-			dasm.memory.setMemory(org, new Uint8Array(memory));
-			dasm.setFixedCodeLabel(org);
-			dasm.disassemble(65536);
-			//const linesUntrimmed = dasm.disassembledLines;
-
-			// Check size
-			const labels = dasm.labels;
-			const statistics = dasm.subroutineStatistics;
-			const labelSub = labels.get(org);
-			const stats = statistics.get(labelSub);
-			assert.equal(stats.sizeInBytes, 21);
-			assert.equal(stats.countOfInstructions, 11);
+		let dng: DisassemblerNextGen;
+		setup(() => {
+			dasm = new DisassemblerNextGen();
+			dasm.readBinFile(0, './tests/disassembler/projects/register_usage/main.bin');
 		});
 
+		test('Simple', () => {
+			dng.getFlowGraph([0x0000]);
+			dng.getRegisterUsage();
+			/*
+			const linesUntrimmed = dasm.disassembledLines;
+			const lines = trimAllLines(linesUntrimmed);
+
+			// Check size
+			assert.equal(lines.length, 21);
+			*/
+		});
+	});
 });
