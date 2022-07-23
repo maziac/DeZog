@@ -3436,13 +3436,24 @@ suite('Disassembler', () => {
 
 		let dng: DisassemblerNextGen;
 		setup(() => {
-			dasm = new DisassemblerNextGen();
-			dasm.readBinFile(0, './tests/disassembler/projects/register_usage/main.bin');
+			dng = new DisassemblerNextGen();
+			dng.setSlotBankInfo(0, 0xFFFF, 0, true);
+			dng.setCurrentSlots([0]);
+			dng.readBinFile(0, './tests/disassembler/projects/register_usage/main.bin');
 		});
 
 		test('Simple', () => {
 			dng.getFlowGraph([0x0000]);
-			dng.getRegisterUsage();
+			let node = dng.getNodeForAddress(0x0000)!;
+			assert.notEqual(node, undefined);
+			assert.equal(node.instructions.length, 7);
+			assert.equal(node.length, 7);
+			assert.equal(node.callers.length, 0);
+			assert.equal(node.predecessors.length, 0);
+			assert.equal(node.callee, undefined);
+			assert.equal(node.branchNodes.length, 0);
+
+			//dng.getRegisterUsage();
 			/*
 			const linesUntrimmed = dasm.disassembledLines;
 			const lines = trimAllLines(linesUntrimmed);

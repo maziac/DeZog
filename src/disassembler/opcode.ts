@@ -1428,7 +1428,7 @@ export class Opcode {
 	 */
 	public clone(): Opcode {
 		// Create empty object
-		const clone = Object.create(
+		const clone: Opcode = Object.create(
 			Object.getPrototypeOf(this),
 			Object.getOwnPropertyDescriptors(this)
 		);
@@ -1441,8 +1441,10 @@ export class Opcode {
 		clone.valueType = this.valueType;
 		clone.length = this.length;
 		clone.value = this.value;
-		clone.appendValues = this.appendValues;
-		clone.appendValueTypes = this.appendValueTypes;
+		if (this.appendValues)
+			clone.appendValues = [...this.appendValues];
+		if (this.appendValueTypes)
+			clone.appendValueTypes = [...this.appendValueTypes];
 		return clone;
 	}
 

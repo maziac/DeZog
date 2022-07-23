@@ -19,11 +19,11 @@ export class AsmNode {
 	public instructions: Opcode[] = [];
 
 	// The callers of the node. Can be 0 length or any size.
-	public callers: number[] = [];
+	// It is the address(es) of the calling node(s).
+	public callers: AsmNode[] = [];
 
-	CHANGE all to numbers:
-
-	// The predecessors (callers, JPs, etc.) of the node.
+	// Other predecessors (e.g. JPs, flow through) of the node.
+	// It is the address(es) of the previous node(s).
 	public predecessors: AsmNode[] = [];
 
 	// The call the node might do, e.g. CALL nn.
@@ -34,4 +34,6 @@ export class AsmNode {
 	// Could be 0 (e.g. RET), 1 (e.g. CALL cc nn) or 2 (e.g. JP Z,nn).
 	public branchNodes: AsmNode[] = [];
 
+	// Comments are added here.
+	public comments: string[] = [];
 }

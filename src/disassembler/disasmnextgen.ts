@@ -1,11 +1,9 @@
-import { Flags } from 'regexpp/ast';
-import { AsmNode } from './asmnode';
-import {Memory, MemAttribute} from './memory';
-import {Opcode, OpcodeFlag} from './opcode';
-import {Format} from './format';
 import {readFileSync} from 'fs';
-import {prototype} from 'events';
-import {getNodeMajorVersion} from 'typescript';
+import {Utility} from './../misc/utility';
+import {AsmNode} from './asmnode';
+import {Format} from './format';
+import {MemAttribute, Memory} from './memory';
+import {Opcode, OpcodeFlag} from './opcode';
 
 
 
@@ -51,6 +49,9 @@ export class DisassemblerNextGen {
 
 	// The current slots. Used to append a suffix to labels and addresses if the address in a slot is pageable.
 	protected slots: number[];
+
+	// The map of the nodes model of the disassembly.
+	protected nodes = new Map<number, AsmNode>();
 
 	/// Label prefixes
 	public labelSubPrefix = "SUB_";
@@ -143,69 +144,13 @@ export class DisassemblerNextGen {
 		return false;
 	}
 
-
 	/**
-	 * Follows the execution path.
-	 * On each instruction 'func' will be called.
-	 * The loop stops if either func returns true or if a stop code (RET instruction) is found.
-	 * @param startSlot The slot that belongs to the start address.
-	 * @param address The start address of the subroutine.
-	 * @param func The function to execute.
-	 * @param addrsArray An empty array in the beginning that is filled with
-	 * all addresses of the subroutine.
+	 * Returns the node for a given address.
+	 * @param addr64k The 64k address.
+	 * @returns The AsmNode or undefined.
 	 */
-	protected followFlowPath(startSlot: number, address: number, func: (flags: OpcodeFlag, opcode: Opcode, opcodeAddr: number, branchAddrs: number[]) => boolean, addrsArray?: Array<number>) {
-		let flags: OpcodeFlag;
-		const branchAddrs: number[] = [];
-
-		do {
-			// Check for bank border
-			if (this.bankBorderPassed(startSlot, address))
-				break;	// Bank border
-
-			const memAttr = this.memory.getAttributeAt(address);
-			// Check if already analyzed
-			if (memAttr & MemAttribute.FLOW_ANALYZED) {
-				// Was already analyzed, skip:
-				break;
-			}
-			// Check if memory exists
-			if (!(memAttr & MemAttribute.ASSIGNED)) {
-				break;
-			}
-
-			// Check opcode
-			const opcode = Opcode.getOpcodeAt(this.memory, address);
-			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED);
-
-			// Add to array
-			addrsArray?.push(address);
-
-			// Remember flags
-			flags = opcode.flags;
-
-			// branch address
-			if (func(flags, opcode, address, branchAddrs))
-				break;	// Break from loop
-
-			// Proceed to next address
-			address += opcode.length;
-
-		} while (!(flags & OpcodeFlag.STOP));
-
-		// Now follow the collected branches
-		branchAddrs.sort((a, b) => a - b);	// Sort: small to big
-		let len = branchAddrs.length;
-		for (let i = 0; i < len; i++) {
-			const branchAddress = branchAddrs[i];
-			if (branchAddress < address)
-				continue;
-			if (branchAddress != address)
-				break;	// I.e. a hole is found in the block, so most probably the rest does not belong to the subroutine
-			address = this.followFlowPath(startSlot, branchAddress, func, addrsArray);
-		}
-
-		return address;
+	public getNodeForAddress(addr64k: number): AsmNode | undefined{
+		return this.nodes.get(addr64k);
 	}
 
 
@@ -220,50 +165,60 @@ export class DisassemblerNextGen {
 
 
 	/**
-	 *
-	 *
+	 * Runs 2 passes.
+	 * First creates the shallow AsmNodes from all branches and calls addresses.
+	 * Then all attributes of the nodes are filled (e.g. all calls, callers).
+	 * At the end the complete flow graph is setup in the this.nodes
+	 * map.
+	 * @param addresses All 64k addresses to start flow graphs from.
 	 */
-	public getFlowGraph(addresses: number[]): AsmNode[] {
+	public getFlowGraph(addresses: number[]) {
 		this.memory.resetAttributeFlag(MemAttribute.
 			FLOW_ANALYZED);
-		const rootNodes: AsmNode[] = [];
-		for (const addr of addresses) {
-			const node = this.followNode(addr);
-			rootNodes.push(node);
+		this.nodes.clear();
+
+		// Create all (shallow) AsmNodes
+		const sortedAdresses = [...addresses];
+		sortedAdresses.sort((a, b) => a - b);
+		for (const addr of sortedAdresses) {
+			const memAttr = this.memory.getAttributeAt(addr);
+			if (!(memAttr & MemAttribute.FLOW_ANALYZED)) {
+				// If not already analyzed
+				this.createNodeForAddress(addr);
+			}
 		}
-		return rootNodes;
+
+		// Now fill the nodes.
+		this.fillNodes();
 	}
 
 
 	/**
-	 *Follows the execution path of a node and its sub nodes.
-	 * @param address The (long) stat address.
-	 * @returns A node with opcodes and sub node branches.
+	 * Follows the execution path of an address recursively.
+	 * It fills up the this.nodes map with nodes.
+	 * The nodes are just empty containers which contain only the start address.
+	 * They will be filled in a secondary pass.
+	 * @param address The 64k start address.
 	 */
-	public followNode(address: number): AsmNode {
-		// Now check if address would hit the middle (or exactly) of another node ad split it
-		let node = this.splitOtherNode(address);
-		if (node)
-			return node;
+	protected createNodeForAddress(address: number) {
+		// Check if address/node already exists.
+		let memAttr = this.memory.getAttributeAt(address);
+		// Check if already analyzed
+		if (memAttr & MemAttribute.FLOW_ANALYZED) {
+			// Was already analyzed, return
+			return;
+		}
 
 		// Node does not exist, create  new one
-		node = new AsmNode();
+		const node = new AsmNode();
 		node.start = address;
 		node.slot = this.addressesSlotBankInfo[address].slot;
-		let opcode;
+		this.nodes.set(address, node);
+
+		const allBranchAddresses: number[] = [];
 
 		while (true) {
 
-			// Check for bank border
-			if (this.bankBorderPassed(node.slot, address))
-				break;	// Bank border
-
-			const memAttr = this.memory.getAttributeAt(address);
-			// Check if already analyzed
-			if (memAttr & MemAttribute.FLOW_ANALYZED) {
-				// Was already analyzed, skip
-				break;
-			}
 			// Check if memory exists
 			if (!(memAttr & MemAttribute.ASSIGNED)) {
 				break;
@@ -271,7 +226,7 @@ export class DisassemblerNextGen {
 
 			// Get opcode
 			const refOpcode = Opcode.getOpcodeAt(this.memory, address);
-			opcode = {...refOpcode};
+			const opcode = {...refOpcode};
 			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED);
 
 			// Next address
@@ -281,78 +236,132 @@ export class DisassemblerNextGen {
 			if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
 				// First natural flow, i.e. the next address.
 				if (!(opcode.flags & OpcodeFlag.STOP)) {
-					const naturalNode = this.followNode(address);
-					node.branchNodes.push(naturalNode);
+					allBranchAddresses.push(address);
+				}
+
+				// Now the branch
+				allBranchAddresses.push(address);
+
+				// Leave loop
+				break;
+			}
+
+			// Check for RET or JP
+			if (opcode.flags & OpcodeFlag.STOP) {
+				break;
+			}
+
+			// Check for bank border
+			if (this.bankBorderPassed(node.slot, address))
+				break;	// Bank border
+
+			memAttr = this.memory.getAttributeAt(address);
+			// Check if already analyzed
+			if (memAttr & MemAttribute.FLOW_ANALYZED) {
+				// Was already analyzed, skip
+				break;
+			}
+		}
+
+		// Now dive into branches
+		for (const addr of allBranchAddresses) {
+			this.createNodeForAddress(addr);
+		}
+
+		return node;
+	}
+
+
+	/**
+	 * In the second pass the nodes are filled.
+	 * I.e. the calls, the branches, the predecessors and the callers.
+	 * @param address The 64k start address.
+	 */
+	protected fillNodes() {
+		for (const [, node] of this.nodes) {
+			this.fillNode(node);
+		}
+	}
+
+
+	/**
+	 * Fills a single node with info:
+	 * - calls
+	 * - branches
+	 * - length
+	 * Also fills other nodes:
+	 * - callees
+	 * - predecessors
+	 * Is not recursive.
+	 * @param node The node to work on.
+	 */
+	protected fillNode(node: AsmNode) {
+		let address = node.start;
+
+		while (true) {
+
+			// Check for bank border
+			if (this.bankBorderPassed(node.slot, address))
+				break;	// Bank border
+
+			const memAttr = this.memory.getAttributeAt(address);
+			// Check if memory exists
+			if (!(memAttr & MemAttribute.ASSIGNED)) {
+				break;
+			}
+
+			// Get opcode
+			const refOpcode = Opcode.getOpcodeAt(this.memory, address);
+			const opcode = refOpcode.clone();
+			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED);
+
+			// Store
+			node.instructions.push(opcode);
+
+			// Next address
+			address += opcode.length;
+
+			// Check for branch
+			if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
+				// First natural flow, i.e. the next address.
+				if (!(opcode.flags & OpcodeFlag.STOP)) {
+					const followingNode = this.nodes.get(address);
+					Utility.assert(followingNode);
+					node.branchNodes.push(followingNode!);
 				}
 
 				// Now the branch
 				const branchAddress = opcode.value;
-				const branchNode = this.followNode(branchAddress);
+				const branchNode = this.nodes.get(branchAddress)!;
+				Utility.assert(branchNode);
 
 				// Check if it is a call
 				if (opcode.flags & OpcodeFlag.CALL) {
 					node.callee = branchNode;
+					branchNode.callers.push(node);
 				}
 				else {
 					// No CALL, e.g. a JP etc.
 					node.branchNodes.push(branchNode);
+					branchNode.predecessors.push(node);
 				}
 
 				// Leave loop
 				break;
 			}
-		}
 
-		return node;
-	}
-
-
-	/**
-	 * Returns the node for an address.
-	 * @param address The long address.
-	 * @returns The associated node or undefined if node does not exist.
-	 */
-	protected nodes = new Map<number, AsmNode>();
-	protected getNodeForAddress(address: number): AsmNode | undefined {
-		const node = this.nodes.get(address);
-		return node;
-	}
-
-
-	/**
-	 * Checks if a node would split another node.
-	 * This happens if the address is inside of another node.
-	 * In this case the original node is split in 2.
-	 * All branches, calls, predecessors are adjusted correctly.
-	 * A new upper part is generated. The lower part is the adjusted already existing node.
-	 * If address is exactly the same as an already existing node, nothing happens and
-	 * that node is returned.
-	 * @param address The long address.
-	 * @returns The associated node for the address.
-	 */
-	protected splitOtherNode(address: number): AsmNode | undefined {
-		// First check if a node exactly hits.
-		const exactNode = this.getNodeForAddress(address);
-		if (exactNode)
-			return exactNode;
-
-		// Now loop through all
-		for (const [, node] of this.nodes) {
-			if (address > node.start && address < node.start + node.length) {
-				// Hit found, split node:
-				// Create new node
-				const upperNode = new AsmNode();
-
-				Besser undersrum: upper part erhalten.
-				Dann müsste ich aber die Addressen statt den nodes speichern.
-				Schwierig bei Predecessors.
-
-
+			// Check for RET or JP
+			if (opcode.flags & OpcodeFlag.STOP) {
+				break;
 			}
 		}
 
-		// Nothing found
-		return undefined;
+		// Set length
+		node.length = address - node.start;
+		// Comment
+		if (node.length == 0) {
+			node.comments.push('Probably an error: The subroutine starts in unassigned memory.');
+		}
 	}
 
 
