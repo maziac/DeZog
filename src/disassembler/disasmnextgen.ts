@@ -202,10 +202,8 @@ export class DisassemblerNextGen {
 	 */
 	protected createNodeForAddress(address: number) {
 		// Check if address/node already exists.
-		let memAttr = this.memory.getAttributeAt(address);
-		// Check if already analyzed
-		if (memAttr & MemAttribute.FLOW_ANALYZED) {
-			// Was already analyzed, return
+		if (this.nodes.get(address)) {
+			// Node already exists
 			return;
 		}
 
@@ -218,6 +216,13 @@ export class DisassemblerNextGen {
 		const allBranchAddresses: number[] = [];
 
 		while (true) {
+
+			const memAttr = this.memory.getAttributeAt(address);
+			// Check if already analyzed
+			if (memAttr & MemAttribute.FLOW_ANALYZED) {
+				// Was already analyzed, skip
+				break;
+			}
 
 			// Check if memory exists
 			if (!(memAttr & MemAttribute.ASSIGNED)) {
@@ -240,7 +245,8 @@ export class DisassemblerNextGen {
 				}
 
 				// Now the branch
-				allBranchAddresses.push(address);
+				const branchAddress = opcode.value;
+				allBranchAddresses.push(branchAddress);
 
 				// Leave loop
 				break;
@@ -255,12 +261,6 @@ export class DisassemblerNextGen {
 			if (this.bankBorderPassed(node.slot, address))
 				break;	// Bank border
 
-			memAttr = this.memory.getAttributeAt(address);
-			// Check if already analyzed
-			if (memAttr & MemAttribute.FLOW_ANALYZED) {
-				// Was already analyzed, skip
-				break;
-			}
 		}
 
 		// Now dive into branches
@@ -325,9 +325,10 @@ export class DisassemblerNextGen {
 			if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
 				// First natural flow, i.e. the next address.
 				if (!(opcode.flags & OpcodeFlag.STOP)) {
-					const followingNode = this.nodes.get(address);
+					const followingNode = this.nodes.get(address)!;
 					Utility.assert(followingNode);
-					node.branchNodes.push(followingNode!);
+					node.branchNodes.push(followingNode);
+					followingNode.predecessors.push(node);
 				}
 
 				// Now the branch
@@ -352,6 +353,14 @@ export class DisassemblerNextGen {
 
 			// Check for RET or JP
 			if (opcode.flags & OpcodeFlag.STOP) {
+				break;
+			}
+
+			// Also stop if next node starts
+			const followingNode = this.nodes.get(address)!;
+			if (followingNode) {
+				node.branchNodes.push(followingNode);
+				followingNode.predecessors.push(node);
 				break;
 			}
 		}

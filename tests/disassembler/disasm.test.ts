@@ -1,3 +1,4 @@
+import { AsmNode } from './../../src/disassembler/asmnode';
 import { DisassemblerNextGen } from './../../src/disassembler/disasmnextgen';
 import * as assert from 'assert';
 import {writeFileSync} from 'fs';
@@ -3432,18 +3433,21 @@ suite('Disassembler', () => {
 	});
 
 
-	suite('Register usage', () => {
+	suite('nodes', () => {
 
 		let dng: DisassemblerNextGen;
+		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
 			dng = new DisassemblerNextGen();
 			dng.setSlotBankInfo(0, 0xFFFF, 0, true);
 			dng.setCurrentSlots([0]);
-			dng.readBinFile(0, './tests/disassembler/projects/register_usage/main.bin');
+			dng.readBinFile(0, './tests/disassembler/projects/nodes/main.bin');
+			dngNodes = (dng as any).nodes;
 		});
 
 		test('Simple', () => {
 			dng.getFlowGraph([0x0000]);
+			assert.equal(dngNodes.size, 1);
 			let node = dng.getNodeForAddress(0x0000)!;
 			assert.notEqual(node, undefined);
 			assert.equal(node.instructions.length, 7);
@@ -3452,15 +3456,59 @@ suite('Disassembler', () => {
 			assert.equal(node.predecessors.length, 0);
 			assert.equal(node.callee, undefined);
 			assert.equal(node.branchNodes.length, 0);
-
-			//dng.getRegisterUsage();
-			/*
-			const linesUntrimmed = dasm.disassembledLines;
-			const lines = trimAllLines(linesUntrimmed);
-
-			// Check size
-			assert.equal(lines.length, 21);
-			*/
 		});
+
+		test('Simple, multiple addresses', () => {
+			dng.getFlowGraph([6, 5, 4, 3, 2, 1, 0]);
+			assert.equal(dngNodes.size, 1);
+			let node = dng.getNodeForAddress(0x0000)!;
+			assert.notEqual(node, undefined);
+			assert.equal(node.instructions.length, 7);
+			assert.equal(node.length, 7);
+			assert.equal(node.callers.length, 0);
+			assert.equal(node.predecessors.length, 0);
+			assert.equal(node.callee, undefined);
+			assert.equal(node.branchNodes.length, 0);
+		});
+
+		test('Branch', () => {
+			dng.getFlowGraph([0x0100]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(0x0100)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(0x0105)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(0x0107)!;
+			assert.notEqual(node3, undefined);
+
+			assert.equal(node1.instructions.length, 3);
+			assert.equal(node1.length, 5);
+			assert.equal(node1.callers.length, 0);
+			assert.equal(node1.predecessors.length, 0);
+			assert.equal(node1.callee, undefined);
+			assert.equal(node1.branchNodes.length, 2);
+			assert.ok(node1.branchNodes.includes(node2));
+			assert.ok(node1.branchNodes.includes(node3));
+
+			assert.equal(node2.instructions.length, 1);
+			assert.equal(node2.length, 2);
+			assert.equal(node2.callers.length, 0);
+			assert.equal(node2.predecessors.length, 1);
+			assert.ok(node2.predecessors.includes(node1));
+			assert.equal(node2.callee, undefined);
+			assert.equal(node2.branchNodes.length, 1);
+			assert.ok(node1.branchNodes.includes(node3));
+
+			assert.equal(node3.instructions.length, 1);
+			assert.equal(node3.length, 1);
+			assert.equal(node3.callers.length, 0);
+			assert.equal(node3.predecessors.length, 2);
+			assert.ok(node3.predecessors.includes(node1));
+			assert.ok(node3.predecessors.includes(node2));
+			assert.equal(node3.callee, undefined);
+			assert.equal(node3.branchNodes.length, 0);
+		});
+
 	});
 });

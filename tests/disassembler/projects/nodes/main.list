@@ -1,0 +1,22 @@
+# file opened: main.asm
+ 1    0000
+ 2    0000              	DEFS 0x0000
+ 3    0000              	; Simple node
+ 4    0000 E5           	PUSH HL
+ 5    0001 23           	INC HL
+ 6    0002 78           	LD A,B
+ 7    0003 3C           	INC A
+ 8    0004 77           	LD (HL),A
+ 9    0005 E1           	POP HL
+10    0006 C9           	RET
+11    0007
+12    0007 00 00 00...  	DEFS 0x0100-$
+13    0100              	; 1 branch
+14    0100 3E 05        	LD A,5
+15    0102 B8           	CP B
+16    0103 28 02        	JR Z,L1
+17    0105 ED 44        	NEG
+18    0107              L1:
+19    0107 C9           	RET
+20    0108
+# file closed: main.asm
