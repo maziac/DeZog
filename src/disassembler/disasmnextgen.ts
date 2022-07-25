@@ -409,17 +409,22 @@ export class DisassemblerNextGen {
 		// Loop all nodes
 		let blockNode;
 		let blockBranches: AsmNode[] = [];
+		let addr;
 		for (const node of sortedNodes) {
 			// Check for block start
-			if (node.callers.length > 0 || !blockBranches.includes(node)) {
+			if (node.start != addr || node.callers.length > 0 || !blockBranches.includes(node)) {
 				blockNode = node;
+				addr = node.start;
 				// Use all block branches
 				blockBranches = [];
 				node.getBranchesRecursive(blockBranches);
 			}
 
 			// Fill addresses
-			this.blocks.fill(blockNode, node.start, node.start + node.length);
+			this.blocks.fill(blockNode, addr, addr + node.length);
+
+			// Next
+			addr += node.length;
 		}
 	}
 
