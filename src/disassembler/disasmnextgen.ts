@@ -199,6 +199,9 @@ export class DisassemblerNextGen {
 		// Find which address blocks represent the same subroutine
 		// (for local labels)
 		this.partitionBlocks();
+
+		// Assign global and local labels.
+		this.assignLabels();
 	}
 
 
@@ -407,7 +410,7 @@ export class DisassemblerNextGen {
 		let blockNode;
 		let blockBranches: AsmNode[] = [];
 		for (const node of sortedNodes) {
-			// Check for block start (subroutine or in addresses)
+			// Check for block start
 			if (node.callers.length > 0 || !blockBranches.includes(node)) {
 				blockNode = node;
 				// Use all block branches
@@ -457,39 +460,35 @@ export class DisassemblerNextGen {
 	 * @param node The node for which local labels are assigned.
 	 */
 	public assignLocalLabels(node: AsmNode) {
-		// Loop through all branches
-		for (const branchNode of node.branchNodes) {
-			if (this.blocks[branchNode.start] == node) {
-				// Is in same block
-
-			}
-		}
-
 		const localNodes: AsmNode[] = [];
 		const loopNodes: AsmNode[] = [];
 		let addr = node.start;
 		let blockNode = node;
 		while (addr < 0x10000) {
-			// Leave if block ends
-			if (this.blocks[addr] != node)
-				break;
-
-			// Check all branches
-			if (!blockNode.label) {	// Only if not already assigned
-				// Check if loop
-				if (blockNode.isLoopRoot()) {
-					// A loop
-					loopNodes.push(blockNode);
-				}
-				else {
-					// Just a local label
-					localNodes.push(blockNode);
+			// Check if block is referenced out of the normal flow
+			if (blockNode.otherReference()) {
+				// Check all branches
+				if (!blockNode.label) {	// Only if not already assigned
+					// Check if loop
+					if (blockNode.isLoopRoot()) {
+						// A loop
+						loopNodes.push(blockNode);
+					}
+					else {
+						// Just a local label
+						localNodes.push(blockNode);
+					}
 				}
 			}
-
 			// Next
 			Utility.assert(addr == blockNode.start);
 			addr += blockNode.length;
+			if (blockNode.branchNodes.length == 0)
+				break;	// Block stops here
+			blockNode = blockNode.branchNodes[0];	// Natural flow
+			// Leave if block ends
+			if (this.blocks[addr] != node)
+				break;
 		}
 
 		// Number the local labels

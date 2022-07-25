@@ -114,4 +114,31 @@ export class AsmNode {
 		// Nothing found
 		return false;
 	}
+
+
+	/**
+	 * Checks if a node has no references (predecessors, calls) other
+	 * than the natural flow from the previous node.
+	 * @return true if there ae other references.
+	 */
+	public otherReference(): boolean {
+		if (this.callers.length > 0)
+			return true;
+
+		// No reference
+		if (this.predecessors.length == 0)
+			return false;
+
+		// 1 reference
+		if (this.predecessors.length == 1) {
+			// Check if first and only predecessor is the natural previous node
+			const predec = this.predecessors[0];
+			if (predec.start + predec.length == this.start) {
+				return false;
+			}
+		}
+
+		// Otherwise false
+		return true;
+	}
 }

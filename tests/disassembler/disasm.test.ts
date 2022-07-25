@@ -3939,7 +3939,7 @@ suite('Disassembler', () => {
 			// node2
 			for (let addr = startAddr + 9; addr < startAddr + 0x0B; addr++) {
 				const node = (dng as any).blocks[addr];
-				assert.equal(node, node1, "Address=" + addr.toString(16));
+				assert.equal(node, node2, "Address=" + addr.toString(16));
 			}
 
 			// Undefined
@@ -4069,6 +4069,77 @@ suite('Disassembler', () => {
 		});
 	});
 
+
+
+	suite('assignLabels', () => {
+
+		let dng: DisassemblerNextGen;
+		let dngNodes: Map<number, AsmNode>;
+		setup(() => {
+			dng = new DisassemblerNextGen();
+			dng.labelLblPrefix = 'LLBL_';
+			dng.labelSubPrefix = 'SUBR_';
+			dng.labelLoopPrefix = 'LLOOP';
+			dng.labelLocalLabelPrefix = 'LL';
+			dng.setSlotBankInfo(0, 0xFFFF, 0, true);
+			dng.setCurrentSlots([0]);
+			dng.readBinFile(0, './tests/disassembler/projects/assign_labels/main.bin');
+			dngNodes = (dng as any).nodes;
+		});
+
+		test('Simple', () => {
+			const startAddr = 0x0000;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 1);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+
+			assert.equal(node1.label, 'LLBL_0000');
+		});
+
+		test('1 branch, local label', () => {
+			const startAddr = 0x0100;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 5)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(startAddr + 7)!;
+			assert.notEqual(node2, undefined);
+
+			assert.equal(node1.label, 'LLBL_0100');
+			assert.equal(node2.label, undefined);
+			assert.equal(node3.label, '.LL1');
+		});
+
+		test('JR after RET, global label', () => {
+			const startAddr = 0x0200;
+			dng.getFlowGraph([startAddr, startAddr + 9]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 9)!;
+			assert.notEqual(node2, undefined);
+
+			assert.equal(node1.label, 'LLBL_0200');
+			assert.equal(node2.label, 'LLBL_0209');
+		});
+
+		test('Local label', () => {
+			const startAddr = 0x0000;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 1);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+
+			assert.equal(node1.label, 'LLBL_0000');
+		});
+	});
 
 	/* Tests:
 	- bank border
