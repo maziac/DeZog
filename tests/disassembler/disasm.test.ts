@@ -2801,7 +2801,7 @@ suite('Disassembler', () => {
 			assert.equal(lines[i], 'JP (IY)');
 			assert.equal(lines[++i], 'DEFB 00h');
 			assert.equal(lines[++i], 'JP (C)');
-			assert.equal(lines[++i], 'DEFB 00h');
+			assert.equal(lines[++i], 'DEFB 00h'); // NOSONAR
 		});
 
 		test('Assemble until unassigned area', () => {
@@ -2864,7 +2864,7 @@ suite('Disassembler', () => {
 			assert.equal(lines[++i], 'ORG 1000h')
 			assert.equal(lines[++i], 'RST 00h')
 			assert.equal(lines[++i], 'ORG 2000h');
-			assert.equal(lines[++i], 'RST 20h')
+			assert.equal(lines[++i], 'RST 20h') // NOSONAR
 		});
 
 	});

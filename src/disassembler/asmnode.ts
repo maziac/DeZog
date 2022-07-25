@@ -1,3 +1,4 @@
+import {LogLevel} from 'vscode-debugadapter/lib/logger';
 import {Opcode} from './opcode';
 
 
@@ -71,7 +72,7 @@ export class AsmNode {
 		// Check predecessors
 		const potentialLoops: AsmNode[] = [];
 		for (const predecessor of this.predecessors) {
-			if (predecessor.start > this.start)
+			if (predecessor.start >= this.start)
 				potentialLoops.push(predecessor);
 		}
 
@@ -86,6 +87,42 @@ export class AsmNode {
 
 
 	/**
+	 * Returns all nodes belonging to a loop for that node.
+	 * Note: Several loops may exist. All are merged.
+	 */
+	protected getLoop(target: AsmNode, alreadyChecked: AsmNode[] = []): AsmNode[] | undefined {
+		// Check if already searched
+		if (alreadyChecked.includes(this))
+			return undefined;
+		alreadyChecked.push(this);
+
+		// Check own
+		if (target == this)
+			return [this];	// Something found
+
+		// Check predecessors
+		const loop: AsmNode[] = [];
+		for (const predecessor of this.predecessors) {
+			const predecLoop = predecessor.getLoop(target, alreadyChecked);
+			if (predecLoop) {
+				// Add this and return
+				loop.push(...predecLoop);
+			}
+		}
+
+		// Check if something found
+		if (loop.length > 0) {
+			// Add this and return
+			loop.push(this);
+			return loop;
+		}
+
+		// Nothing found
+		return undefined;
+	}
+
+
+	/**
 	 * Checks if a node is reachable from this node.
 	 * Loops through the branchNodes recursively
 	 * until it finds one of the target nodes.
@@ -96,9 +133,12 @@ export class AsmNode {
 		// Check if already checked
 		if (alreadyChecked.includes(this))
 			return false;
+		alreadyChecked.push(this);
+
 		// Check if target is reached
 		if (targets.includes(this))
 			return true;
+
 		// Now check all branchNodes
 		for (const branch of this.branchNodes) {
 			if (branch.isReachable(targets, alreadyChecked))
