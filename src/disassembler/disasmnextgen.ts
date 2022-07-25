@@ -477,7 +477,7 @@ export class DisassemblerNextGen {
 			// Check all branches
 			if (!blockNode.label) {	// Only if not already assigned
 				// Check if loop
-				if (blockNode.isLoop()) {
+				if (blockNode.isLoopRoot()) {
 					// A loop
 					loopNodes.push(blockNode);
 				}

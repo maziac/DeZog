@@ -113,8 +113,8 @@ suite('AsmNode', () => {
 			n2.branchNodes.push(n1);
 			n1.predecessors.push(n2);
 
-			assert.ok(n1.isLoop());
-			assert.ok(!n2.isLoop());
+			assert.ok(n1.isLoopRoot());
+			assert.ok(!n2.isLoopRoot());
 		});
 
 
@@ -125,7 +125,7 @@ suite('AsmNode', () => {
 			n1.branchNodes.push(n1);
 			n1.predecessors.push(n1);
 
-			assert.ok(n1.isLoop());
+			assert.ok(n1.isLoopRoot());
 		});
 
 		test('3 nodes', () => {
@@ -147,9 +147,9 @@ suite('AsmNode', () => {
 			n1.predecessors.push(n3);
 
 
-			assert.ok(n1.isLoop());
-			assert.ok(!n2.isLoop());
-			assert.ok(!n3.isLoop());
+			assert.ok(n1.isLoopRoot());
+			assert.ok(!n2.isLoopRoot());
+			assert.ok(!n3.isLoopRoot());
 		});
 
 		test('3 nodes, shuffled', () => {
@@ -171,9 +171,9 @@ suite('AsmNode', () => {
 			n1.predecessors.push(n3);
 
 
-			assert.ok(n1.isLoop());
-			assert.ok(!n2.isLoop());
-			assert.ok(!n3.isLoop());
+			assert.ok(n1.isLoopRoot());
+			assert.ok(!n2.isLoopRoot());
+			assert.ok(!n3.isLoopRoot());
 		});
 	});
 });

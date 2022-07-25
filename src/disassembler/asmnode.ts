@@ -1,4 +1,3 @@
-import {LogLevel} from 'vscode-debugadapter/lib/logger';
 import {Opcode} from './opcode';
 
 
@@ -61,64 +60,31 @@ export class AsmNode {
 
 
 	/**
-	 * Checks if the node is included in a loop.
-	 * A node is a loop if it has at least 1 predecessor that has an
-	 * address which is higher than the own one.
-	 * Furthermore the predecessor needs to be reachable
-	 * from the branchNodes.
-	 * @returns true if a loop.
-	 */
-	public isLoop(): boolean {
-		// Check predecessors
-		const potentialLoops: AsmNode[] = [];
-		for (const predecessor of this.predecessors) {
-			if (predecessor.start >= this.start)
-				potentialLoops.push(predecessor);
-		}
-
-		// Return if no potential predecessor
-		if (potentialLoops.length == 0)
-			return false;
-
-		// Now check if reachable
-		const reachable = this.isReachable(potentialLoops);
-		return reachable;
-	}
-
-
-	/**
 	 * Returns all nodes belonging to a loop for that node.
 	 * Note: Several loops may exist. All are merged.
+	 * @param target The node for which to test if it is loop root.
 	 */
-	protected getLoop(target: AsmNode, alreadyChecked: AsmNode[] = []): AsmNode[] | undefined {
-		// Check if already searched
-		if (alreadyChecked.includes(this))
-			return undefined;
-		alreadyChecked.push(this);
-
-		// Check own
-		if (target == this)
-			return [this];	// Something found
-
+	public isLoopRoot(target: AsmNode = this, alreadyProcessed: AsmNode[] = []): boolean{
 		// Check predecessors
-		const loop: AsmNode[] = [];
 		for (const predecessor of this.predecessors) {
-			const predecLoop = predecessor.getLoop(target, alreadyChecked);
-			if (predecLoop) {
-				// Add this and return
-				loop.push(...predecLoop);
-			}
-		}
-
-		// Check if something found
-		if (loop.length > 0) {
-			// Add this and return
-			loop.push(this);
-			return loop;
+			// Check if already processed
+			if (alreadyProcessed.includes(predecessor))
+				continue;
+			// Check if node is lower than target
+			if (predecessor.start < target.start)
+				continue;
+			// Check if found
+			if (target == predecessor)
+				return true;
+			// Check recursive
+			if (predecessor.isLoopRoot(target, alreadyProcessed))
+				return true;
+			// Mark as processed
+			alreadyProcessed.push(predecessor);
 		}
 
 		// Nothing found
-		return undefined;
+		return false;
 	}
 
 
@@ -129,11 +95,11 @@ export class AsmNode {
 	 * @param targets One or more target nodes.
 	 * @return false if no target is reachable.
 	 */
-	protected isReachable(targets: AsmNode[], alreadyChecked: AsmNode[] = []) {
+	protected isReachable(targets: AsmNode[], alreadyProcessed: AsmNode[] = []) {
 		// Check if already checked
-		if (alreadyChecked.includes(this))
+		if (alreadyProcessed.includes(this))
 			return false;
-		alreadyChecked.push(this);
+		alreadyProcessed.push(this);
 
 		// Check if target is reached
 		if (targets.includes(this))
@@ -141,7 +107,7 @@ export class AsmNode {
 
 		// Now check all branchNodes
 		for (const branch of this.branchNodes) {
-			if (branch.isReachable(targets, alreadyChecked))
+			if (branch.isReachable(targets, alreadyProcessed))
 				return true;	// Stop if one found
 		}
 
