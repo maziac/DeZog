@@ -53,6 +53,11 @@ export class DisassemblerNextGen {
 	// The map of the nodes model of the disassembly.
 	protected nodes = new Map<number, AsmNode>();
 
+	// Blocks (subroutines are put into this array. I.e. all addresses
+	// that share the same block.
+	protected blocks = new Array<AsmNode>(0x10000);
+
+
 	/// Label prefixes
 	public labelSubPrefix = "SUB_";
 	public labelLblPrefix = "LBL_";
@@ -190,6 +195,10 @@ export class DisassemblerNextGen {
 
 		// Now fill the nodes.
 		this.fillNodes();
+
+		// Find which address blocks represent the same subroutine
+		// (for local labels)
+		this.partitionBlocks();
 	}
 
 
@@ -249,6 +258,13 @@ export class DisassemblerNextGen {
 				allBranchAddresses.push(branchAddress);
 
 				// Leave loop
+				break;
+			}
+
+			// Check for RET cc
+			if (opcode.flags & OpcodeFlag.RET && opcode.flags & OpcodeFlag.CONDITIONAL) {
+				// Follow natural flow
+				allBranchAddresses.push(address);
 				break;
 			}
 
@@ -370,6 +386,37 @@ export class DisassemblerNextGen {
 		// Comment
 		if (node.length == 0) {
 			node.comments.push('Probably an error: The subroutine starts in unassigned memory.');
+		}
+	}
+
+
+	/**
+	 * Expects a sorted (by address) nodes map.
+	 * Each nodes that are called by some other node are starting points of
+	 * subroutines.
+	 * The nodes direct trail is followed until it ends or another subroutine is found.
+	 * The this.blocks array is filled with the starting node.
+	 */
+
+	protected partitionBlocks() {
+		// Sort nodes by address
+		const sortedNodes = Array.from(this.nodes.values());
+		sortedNodes.sort((a, b) => a.start - b.start);
+
+		// Loop all nodes
+		let blockNode;
+		let blockBranches: AsmNode[] = [];
+		for (const node of sortedNodes) {
+			// Check for block start (subroutine or in addresses)
+			if (node.callers.length > 0 || !blockBranches.includes(node)) {
+				blockNode = node;
+			}
+
+			// Fill addresses
+			this.blocks.fill(blockNode, node.start, node.start + node.length);
+
+			// Use all block branches
+			blockBranches.push(...node.branchNodes);
 		}
 	}
 

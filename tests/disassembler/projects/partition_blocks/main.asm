@@ -1,6 +1,6 @@
 
 	DEFS 0x0000
-	; Simple node
+	; Simple block
 	PUSH HL
 	INC HL
 	LD A,B
@@ -39,36 +39,31 @@ L2:
 
 
 	DEFS 0x0300-$
-	; LOOP
-	LD A,10
+	; Sub in sub
+	LD A,5
+SUBA:
+	INC A
+	RET
 
-LOOP1:
-	DEC A
-	JR NZ,LOOP1
-
+	CALL SUBA
 	RET
 
 
-	DEFS 0x0400-$
-	; LOOP self
-LOOP2:
-	DEC A
-	JR NZ,LOOP2
-
-	RET
 
 
 	DEFS 0x0500-$
-	; 2 subs, same block
+	; 2 subs, sharing block
+SUBB:
 	LD A,5
 
-L3:
+.L3:
 	NEG
 	RET
 
 	DEFS 0x0520-$
+SUBC:
 	LD A,6
-	JP L3
+	JP SUBB.L3
 
 
 	DEFS 0x0600-$
@@ -82,17 +77,6 @@ SUB1:
 	RET
 
 
-	DEFS 0x0700-$
-	; 2 calls, same sub
-	LD A,5
-	CALL SUB2
-
-	CALL SUB2
-
-	RET
-SUB2:
-	ADD A,2
-	RET
 
 
 	DEFS 0x0800-$

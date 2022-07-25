@@ -1,11 +1,11 @@
-import { AsmNode } from './../../src/disassembler/asmnode';
-import { DisassemblerNextGen } from './../../src/disassembler/disasmnextgen';
 import * as assert from 'assert';
 import {writeFileSync} from 'fs';
 import {Disassembler} from '../../src/disassembler/disasm';
 import {Format} from '../../src/disassembler/format';
 import {NumberType} from '../../src/disassembler/numbertype';
 import {Opcode} from '../../src/disassembler/opcode';
+import {AsmNode} from './../../src/disassembler/asmnode';
+import {DisassemblerNextGen} from './../../src/disassembler/disasmnextgen';
 
 
 
@@ -3510,5 +3510,515 @@ suite('Disassembler', () => {
 			assert.equal(node3.branchNodes.length, 0);
 		});
 
+		test('JR after RET', () => {
+			dng.getFlowGraph([0x0200]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(0x0200)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(0x0205)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(0x0209)!;
+			assert.notEqual(node3, undefined);
+
+			assert.equal(node1.instructions.length, 3);
+			assert.equal(node1.length, 5);
+			assert.equal(node1.callers.length, 0);
+			assert.equal(node1.predecessors.length, 0);
+			assert.equal(node1.callee, undefined);
+			assert.equal(node1.branchNodes.length, 2);
+			assert.ok(node1.branchNodes.includes(node2));
+			assert.ok(node1.branchNodes.includes(node3));
+
+			assert.equal(node2.instructions.length, 2);
+			assert.equal(node2.length, 3);
+			assert.equal(node2.callers.length, 0);
+			assert.equal(node2.predecessors.length, 1);
+			assert.ok(node2.predecessors.includes(node1));
+			assert.equal(node2.callee, undefined);
+			assert.equal(node2.branchNodes.length, 0);
+
+			assert.equal(node3.instructions.length, 2);
+			assert.equal(node3.length, 2);
+			assert.equal(node3.callers.length, 0);
+			assert.equal(node3.predecessors.length, 1);
+			assert.ok(node3.predecessors.includes(node1));
+			assert.equal(node3.callee, undefined);
+			assert.equal(node3.branchNodes.length, 0);
+		});
+
+		test('LOOP', () => {
+			dng.getFlowGraph([0x0300]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(0x0300)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(0x0302)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(0x0305)!;
+			assert.notEqual(node3, undefined);
+
+			assert.equal(node1.instructions.length, 1);
+			assert.equal(node1.length, 2);
+			assert.equal(node1.callers.length, 0);
+			assert.equal(node1.predecessors.length, 0);
+			assert.equal(node1.callee, undefined);
+			assert.equal(node1.branchNodes.length, 1);
+			assert.ok(node1.branchNodes.includes(node2));
+
+			assert.equal(node2.instructions.length, 2);
+			assert.equal(node2.length, 3);
+			assert.equal(node2.callers.length, 0);
+			assert.equal(node2.predecessors.length, 2);
+			assert.ok(node2.predecessors.includes(node1));
+			assert.ok(node2.predecessors.includes(node2));
+			assert.equal(node2.callee, undefined);
+			assert.equal(node2.branchNodes.length, 2);
+			assert.ok(node2.branchNodes.includes(node2));
+			assert.ok(node2.branchNodes.includes(node3));
+
+			assert.equal(node3.instructions.length, 1);
+			assert.equal(node3.length, 1);
+			assert.equal(node3.callers.length, 0);
+			assert.equal(node3.predecessors.length, 1);
+			assert.ok(node3.predecessors.includes(node2));
+			assert.equal(node3.callee, undefined);
+			assert.equal(node3.branchNodes.length, 0);
+		});
+
+		test('LOOP self', () => {
+			dng.getFlowGraph([0x0400]);
+			assert.equal(dngNodes.size, 2);
+
+			const node2 = dng.getNodeForAddress(0x0400)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(0x0403)!;
+			assert.notEqual(node3, undefined);
+
+			assert.equal(node2.instructions.length, 2);
+			assert.equal(node2.length, 3);
+			assert.equal(node2.callers.length, 0);
+			assert.equal(node2.predecessors.length, 1);
+			assert.ok(node2.predecessors.includes(node2));
+			assert.equal(node2.callee, undefined);
+			assert.equal(node2.branchNodes.length, 2);
+			assert.ok(node2.branchNodes.includes(node2));
+			assert.ok(node2.branchNodes.includes(node3));
+
+			assert.equal(node3.instructions.length, 1);
+			assert.equal(node3.length, 1);
+			assert.equal(node3.callers.length, 0);
+			assert.equal(node3.predecessors.length, 1);
+			assert.ok(node3.predecessors.includes(node2));
+			assert.equal(node3.callee, undefined);
+			assert.equal(node3.branchNodes.length, 0);
+		});
+
+		test('2 subs, same block', () => {
+			dng.getFlowGraph([0x0500, 0x520]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(0x0500)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(0x0502)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(0x0520)!;
+			assert.notEqual(node3, undefined);
+
+			assert.equal(node1.instructions.length, 1);
+			assert.equal(node1.length, 2);
+			assert.equal(node1.callers.length, 0);
+			assert.equal(node1.predecessors.length, 0);
+			assert.equal(node1.callee, undefined);
+			assert.equal(node1.branchNodes.length, 1);
+			assert.ok(node1.branchNodes.includes(node2));
+
+			assert.equal(node2.instructions.length, 2);
+			assert.equal(node2.length, 3);
+			assert.equal(node2.callers.length, 0);
+			assert.equal(node2.predecessors.length, 2);
+			assert.ok(node2.predecessors.includes(node1));
+			assert.ok(node2.predecessors.includes(node3));
+			assert.equal(node2.callee, undefined);
+			assert.equal(node2.branchNodes.length, 0);
+
+			assert.equal(node3.instructions.length, 2);
+			assert.equal(node3.length, 5);
+			assert.equal(node3.callers.length, 0);
+			assert.equal(node3.predecessors.length, 0);
+			assert.equal(node3.callee, undefined);
+			assert.equal(node3.branchNodes.length, 1);
+			assert.ok(node3.branchNodes.includes(node2));
+		});
+
+		test('2 subs, same block, reverse', () => {
+			dng.getFlowGraph([0x0520, 0x500]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(0x0500)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(0x0502)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(0x0520)!;
+			assert.notEqual(node3, undefined);
+
+			assert.equal(node1.instructions.length, 1);
+			assert.equal(node1.length, 2);
+			assert.equal(node1.callers.length, 0);
+			assert.equal(node1.predecessors.length, 0);
+			assert.equal(node1.callee, undefined);
+			assert.equal(node1.branchNodes.length, 1);
+			assert.ok(node1.branchNodes.includes(node2));
+
+			assert.equal(node2.instructions.length, 2);
+			assert.equal(node2.length, 3);
+			assert.equal(node2.callers.length, 0);
+			assert.equal(node2.predecessors.length, 2);
+			assert.ok(node2.predecessors.includes(node1));
+			assert.ok(node2.predecessors.includes(node3));
+			assert.equal(node2.callee, undefined);
+			assert.equal(node2.branchNodes.length, 0);
+
+			assert.equal(node3.instructions.length, 2);
+			assert.equal(node3.length, 5);
+			assert.equal(node3.callers.length, 0);
+			assert.equal(node3.predecessors.length, 0);
+			assert.equal(node3.callee, undefined);
+			assert.equal(node3.branchNodes.length, 1);
+			assert.ok(node3.branchNodes.includes(node2));
+		});
+
+		test('Simple call', () => {
+			dng.getFlowGraph([0x0600]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(0x0600)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(0x0605)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(0x0606)!;
+			assert.notEqual(node3, undefined);
+
+			assert.equal(node1.instructions.length, 2);
+			assert.equal(node1.length, 5);
+			assert.equal(node1.callers.length, 0);
+			assert.equal(node1.predecessors.length, 0);
+			assert.equal(node1.callee, node3);
+			assert.equal(node1.branchNodes.length, 1);
+			assert.ok(node1.branchNodes.includes(node2));
+
+			assert.equal(node2.instructions.length, 1);
+			assert.equal(node2.length, 1);
+			assert.equal(node2.callers.length, 0);
+			assert.equal(node2.predecessors.length, 1);
+			assert.ok(node2.predecessors.includes(node1));
+			assert.equal(node2.callee, undefined);
+			assert.equal(node2.branchNodes.length, 0);
+
+			assert.equal(node3.instructions.length, 2);
+			assert.equal(node3.length, 3);
+			assert.equal(node3.callers.length, 1);
+			assert.ok(node3.callers.includes(node1));
+			assert.equal(node3.predecessors.length, 0);
+			assert.equal(node3.callee, undefined);
+			assert.equal(node3.branchNodes.length, 0);
+		});
+
+		test('2 calls, same sub', () => {
+			dng.getFlowGraph([0x0700]);
+			assert.equal(dngNodes.size, 4);
+
+			const node1 = dng.getNodeForAddress(0x0700)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(0x0705)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(0x0708)!;
+			assert.notEqual(node3, undefined);
+			const node4 = dng.getNodeForAddress(0x0709)!;
+			assert.notEqual(node4, undefined);
+
+			assert.equal(node1.instructions.length, 2);
+			assert.equal(node1.length, 5);
+			assert.equal(node1.callers.length, 0);
+			assert.equal(node1.predecessors.length, 0);
+			assert.equal(node1.callee, node4);
+			assert.equal(node1.branchNodes.length, 1);
+			assert.ok(node1.branchNodes.includes(node2));
+
+			assert.equal(node2.instructions.length, 1);
+			assert.equal(node2.length, 3);
+			assert.equal(node2.callers.length, 0);
+			assert.equal(node2.predecessors.length, 1);
+			assert.ok(node2.predecessors.includes(node1));
+			assert.equal(node2.callee, node4);
+			assert.equal(node2.branchNodes.length, 1);
+			assert.ok(node2.branchNodes.includes(node3));
+
+			assert.equal(node3.instructions.length, 1);
+			assert.equal(node3.length, 1);
+			assert.equal(node3.callers.length, 0);
+			assert.equal(node3.predecessors.length, 1);
+			assert.ok(node3.predecessors.includes(node2));
+			assert.equal(node3.callee, undefined);
+			assert.equal(node3.branchNodes.length, 0);
+
+			assert.equal(node4.instructions.length, 2);
+			assert.equal(node4.length, 3);
+			assert.equal(node4.callers.length, 2);
+			assert.ok(node4.callers.includes(node1));
+			assert.ok(node4.callers.includes(node2));
+			assert.equal(node4.predecessors.length, 0);
+			assert.equal(node4.callee, undefined);
+			assert.equal(node4.branchNodes.length, 0);
+		});
+
+		test('Recursive call', () => {
+			dng.getFlowGraph([0x0800]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(0x0800)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(0x0803)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(0x0807)!;
+			assert.notEqual(node3, undefined);
+
+			assert.equal(node1.instructions.length, 2);
+			assert.equal(node1.length, 3);
+			assert.equal(node1.callers.length, 1);
+			assert.ok(node1.callers.includes(node2));
+			assert.equal(node1.predecessors.length, 0);
+			assert.equal(node1.callee, undefined);
+			assert.equal(node1.branchNodes.length, 1);
+			assert.ok(node1.branchNodes.includes(node2));
+
+			assert.equal(node2.instructions.length, 2);
+			assert.equal(node2.length, 4);
+			assert.equal(node2.callers.length, 0);
+			assert.equal(node2.predecessors.length, 1);
+			assert.ok(node2.predecessors.includes(node1));
+			assert.equal(node2.callee, node1);
+			assert.equal(node2.branchNodes.length, 1);
+			assert.ok(node2.branchNodes.includes(node3));
+
+			assert.equal(node3.instructions.length, 1);
+			assert.equal(node3.length, 1);
+			assert.equal(node3.callers.length, 0);
+			assert.equal(node3.predecessors.length, 1);
+			assert.ok(node3.predecessors.includes(node2));
+			assert.equal(node3.callee, undefined);
+			assert.equal(node3.branchNodes.length, 0);
+
+		});
+
+		test('Subroutine inside subroutine', () => {
+			dng.getFlowGraph([0x0900, 0x0920]);
+			assert.equal(dngNodes.size, 4);
+
+			const node1 = dng.getNodeForAddress(0x0900)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(0x0902)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(0x0920)!;
+			assert.notEqual(node3, undefined);
+			const node4 = dng.getNodeForAddress(0x0923)!;
+			assert.notEqual(node4, undefined);
+
+			assert.equal(node1.instructions.length, 1);
+			assert.equal(node1.length, 2);
+			assert.equal(node1.callers.length, 0);
+			assert.equal(node1.predecessors.length, 0);
+			assert.equal(node1.callee, undefined);
+			assert.equal(node1.branchNodes.length, 1);
+			assert.ok(node1.branchNodes.includes(node2));
+
+			assert.equal(node2.instructions.length, 2);
+			assert.equal(node2.length, 2);
+			assert.equal(node2.callers.length, 1);
+			assert.ok(node2.callers.includes(node3));
+			assert.equal(node2.predecessors.length, 1);
+			assert.ok(node2.predecessors.includes(node1));
+			assert.equal(node2.callee, undefined);
+			assert.equal(node2.branchNodes.length, 0);
+
+			assert.equal(node3.instructions.length, 1);
+			assert.equal(node3.length, 3);
+			assert.equal(node3.callers.length, 0);
+			assert.equal(node3.predecessors.length, 0);
+			assert.equal(node3.callee, node2);
+			assert.equal(node3.branchNodes.length, 1);
+			assert.ok(node3.branchNodes.includes(node4));
+
+			assert.equal(node4.instructions.length, 1);
+			assert.equal(node4.length, 1);
+			assert.equal(node4.callers.length, 0);
+			assert.equal(node4.predecessors.length, 1);
+			assert.ok(node4.predecessors.includes(node3));
+			assert.equal(node4.callee, undefined);
+			assert.equal(node4.branchNodes.length, 0);
+		});
 	});
+
+
+	suite('partitionBlocks', () => {
+
+		let dng: DisassemblerNextGen;
+		let dngNodes: Map<number, AsmNode>;
+		setup(() => {
+			dng = new DisassemblerNextGen();
+			dng.setSlotBankInfo(0, 0xFFFF, 0, true);
+			dng.setCurrentSlots([0]);
+			dng.readBinFile(0, './tests/disassembler/projects/partition_blocks/main.bin');
+			dngNodes = (dng as any).nodes;
+		});
+
+		// Checks if the addresses outside the block are all undefinded.
+		function checkUndefined(blockStart: number, blockLength: number) {
+			// Before
+			for (let addr = 0; addr < blockStart; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, undefined, "Address=" + addr.toString(16));
+			}
+
+			// After
+			for (let addr = blockStart + blockLength; addr < 0x10000; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, undefined, "Address=" + addr.toString(16));
+			}
+		}
+
+
+		test('Simple block', () => {
+			const startAddr = 0x0000;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 1);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+
+			for (let addr = startAddr; addr < startAddr + 7; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node1, "Address=" + addr.toString(16));
+			}
+
+			checkUndefined(0, 7);
+		});
+
+		test('1 branch', () => {
+			const startAddr = 0x0100;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+
+			for (let addr = startAddr; addr < startAddr + 8; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node1, "Address=" + addr.toString(16));
+			}
+
+			checkUndefined(startAddr, 8);
+		});
+
+		test('JR after RET (2 blocks)', () => {
+			const startAddr = 0x0200;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 9)!;
+			assert.notEqual(node2, undefined);
+
+			// node1
+			for (let addr = startAddr; addr < startAddr + 8; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node1, "Address=" + addr.toString(16));
+			}
+
+			// node2
+			for (let addr = startAddr + 9; addr < startAddr + 0x0B; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node1, "Address=" + addr.toString(16));
+			}
+
+			// Undefined
+			const nop = (dng as any).blocks[startAddr + 8];
+			assert.equal(nop, undefined, "Address=" + (startAddr + 8).toString(16));
+			checkUndefined(startAddr, 0x0B);
+		});
+
+		test('Sub in sub', () => {
+			const startAddr = 0x0300;
+			dng.getFlowGraph([startAddr, startAddr + 4]);
+			assert.equal(dngNodes.size, 4);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 2)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(startAddr + 4)!;
+			assert.notEqual(node3, undefined);
+
+			// node1
+			let addr;
+			for (addr = startAddr; addr < startAddr + 2; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node1, "Address=" + addr.toString(16));
+			}
+
+			// node2
+			for (; addr < startAddr + 4; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node2, "Address=" + addr.toString(16));
+			}
+
+			// node3
+			for (; addr < startAddr + 8; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node3, "Address=" + addr.toString(16));
+			}
+
+			// Undefined
+			checkUndefined(startAddr, 8);
+		});
+
+		test('2 subs, sharing block', () => {
+			const startAddr = 0x0500;
+			dng.getFlowGraph([startAddr, startAddr + 0x20]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 0x20)!;
+			assert.notEqual(node2, undefined);
+
+			// node1
+			let addr;
+			for (addr = startAddr; addr < startAddr + 5; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node1, "Address=" + addr.toString(16));
+			}
+
+			// Undefined
+			for (; addr < startAddr + 0x20; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, undefined, "Address=" + addr.toString(16));
+			}
+
+			// node2
+			for (; addr < startAddr + 0x25; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node2, "Address=" + addr.toString(16));
+			}
+
+			checkUndefined(startAddr, 0x25);
+		});
+	});
+
+
+	/* Tests:
+	- bank border
+		- Auch comments
+	*/
 });
