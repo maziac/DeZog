@@ -421,6 +421,100 @@ export class DisassemblerNextGen {
 	}
 
 
+
+	/**
+	 * Assigns the labels to the nodes.
+	 * Local and global labels.
+	 * E.g. "SUB_04AD", "LBL_FF00", ".L1", ".L2", ".LOOP", ".LOOP1"
+	 */
+	public assignLabels() {
+		// Loop over all nodes
+		for (const [addr64k, node] of this.nodes) {
+			// Get the block
+			const blockNode = this.blocks[addr64k];
+			Utility.assert(blockNode);	// If false, a label has been requested for a not analyzed address.
+
+			// Check for block start / global node (label)
+			if (blockNode == node) {
+				// Now check if it is a subroutine, if some other node
+				// called it.
+				const prefix = (blockNode.callers.length > 0) ? this.labelSubPrefix : this.labelLblPrefix;
+				// Add global label name
+				node.label = prefix + Utility.getHexString(addr64k, 4);
+
+				// Now dive into node and assign local names.
+				this.assignLocalLabels(node);
+			}
+		}
+	}
+
+
+	/**
+	 * Assigns the local labels for a node.
+	 * Since local labels are indexed it is necessary to count the number
+	 * of indices before assigning.
+	 * Examples: ".L1", ".L2", ".LOOP", ".LOOP1"
+	 * @param node The node for which local labels are assigned.
+	 */
+	public assignLocalLabels(node: AsmNode) {
+		// Loop through all branches
+		for (const branchNode of node.branchNodes) {
+			if (this.blocks[branchNode.start] == node) {
+				// Is in same block
+
+			}
+		}
+
+		const localNodes: AsmNode[] = [];
+		const loopNodes: AsmNode[] = [];
+		let addr = node.start;
+		let blockNode = node;
+		while (addr < 0x10000) {
+			// Leave if block ends
+			if (this.blocks[addr] != node)
+				break;
+
+			// Check all branches
+			if (!blockNode.label) {	// Only if not already assigned
+				// Check if loop
+				if (blockNode.isLoop()) {
+					// A loop
+					loopNodes.push(blockNode);
+				}
+				else {
+					// Just a local label
+					localNodes.push(blockNode);
+				}
+			}
+
+			// Next
+			Utility.assert(addr == blockNode.start);
+			addr += blockNode.length;
+		}
+
+		// Number the local labels
+		let i = 1;
+		for (const node of localNodes) {
+			node.label = '.' + this.labelLocalLabelPrefix + i;
+			i++;
+		}
+
+		// Number the local loops
+		if (loopNodes.length == 1) {
+			// Just one loop, omit index
+			loopNodes[0].label = '.' + this.labelLoopPrefix;
+		}
+		else {
+			// Add index
+			let k = 1;
+			for (const node of loopNodes) {
+				node.label = '.' + this.labelLoopPrefix + k;
+				k++;
+			}
+		}
+	}
+
+
 	/**
 	 * Follows the execution path and collects used and unchanged registers.
 	 * @param address The start address of the subroutine.

@@ -1,4 +1,4 @@
-import { Opcode } from './opcode';
+import {Opcode} from './opcode';
 
 
 
@@ -37,10 +37,15 @@ export class AsmNode {
 	// Comments are added here.
 	public comments: string[] = [];
 
+	// The global or local name of the node.
+	// Can also be undefined.
+	// E.g. "SUB_04AD", "LBL_FF00", ".L1", ".L2", ".LOOP", ".LOOP1"
+	public label: string;
+
 
 	/**
 	 * Fills the given array with the used branches (recursively).
-	 * @param brnaches At the start an empty array that gets filled.
+	 * @param branches At the start an empty array that gets filled.
 	 */
 	public getBranchesRecursive(branches: AsmNode[]) {
 		// Add referenced branches
@@ -51,5 +56,56 @@ export class AsmNode {
 				branch.getBranchesRecursive(branches);
 			}
 		}
+	}
+
+
+	/**
+	 * Checks if the node is included in a loop.
+	 * A node is a loop if it has at least 1 predecessor that has an
+	 * address which is higher than the own one.
+	 * Furthermore the predecessor needs to be reachable
+	 * from the branchNodes.
+	 * @returns true if a loop.
+	 */
+	public isLoop(): boolean {
+		// Check predecessors
+		const potentialLoops: AsmNode[] = [];
+		for (const predecessor of this.predecessors) {
+			if (predecessor.start > this.start)
+				potentialLoops.push(predecessor);
+		}
+
+		// Return if no potential predecessor
+		if (potentialLoops.length == 0)
+			return false;
+
+		// Now check if reachable
+		const reachable = this.isReachable(potentialLoops);
+		return reachable;
+	}
+
+
+	/**
+	 * Checks if a node is reachable from this node.
+	 * Loops through the branchNodes recursively
+	 * until it finds one of the target nodes.
+	 * @param targets One or more target nodes.
+	 * @return false if no target is reachable.
+	 */
+	protected isReachable(targets: AsmNode[], alreadyChecked: AsmNode[] = []) {
+		// Check if already checked
+		if (alreadyChecked.includes(this))
+			return false;
+		// Check if target is reached
+		if (targets.includes(this))
+			return true;
+		// Now check all branchNodes
+		for (const branch of this.branchNodes) {
+			if (branch.isReachable(targets, alreadyChecked))
+				return true;	// Stop if one found
+		}
+
+		// Nothing found
+		return false;
 	}
 }
