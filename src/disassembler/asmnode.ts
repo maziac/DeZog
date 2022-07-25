@@ -36,4 +36,20 @@ export class AsmNode {
 
 	// Comments are added here.
 	public comments: string[] = [];
+
+
+	/**
+	 * Fills the given array with the used branches (recursively).
+	 * @param brnaches At the start an empty array that gets filled.
+	 */
+	public getBranchesRecursive(branches: AsmNode[]) {
+		// Add referenced branches
+		for (const branch of this.branchNodes) {
+			if (!branches.includes(branch)) {
+				branches.push(branch);
+				// Step into
+				branch.getBranchesRecursive(branches);
+			}
+		}
+	}
 }

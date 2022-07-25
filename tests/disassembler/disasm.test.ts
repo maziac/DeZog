@@ -3983,6 +3983,23 @@ suite('Disassembler', () => {
 			checkUndefined(startAddr, 8);
 		});
 
+		test('Complex jumping', () => {
+			const startAddr = 0x0400;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 5)
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+
+			// node1
+			for (let addr = startAddr; addr < startAddr + 0x0E; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node1, "Address=" + addr.toString(16));
+			}
+
+			// Undefined
+			checkUndefined(startAddr, 0x0E);
+		});
+
 		test('2 subs, sharing block', () => {
 			const startAddr = 0x0500;
 			dng.getFlowGraph([startAddr, startAddr + 0x20]);
@@ -4013,6 +4030,42 @@ suite('Disassembler', () => {
 			}
 
 			checkUndefined(startAddr, 0x25);
+		});
+
+		test('Loop', () => {
+			const startAddr = 0x0600;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+
+			// node1
+			let addr;
+			for (addr = startAddr; addr < startAddr + 6; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node1, "Address=" + addr.toString(16));
+			}
+
+			checkUndefined(startAddr, 6);
+		});
+
+		test('Recursive call', () => {
+			const startAddr = 0x0800;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+
+			// node1
+			let addr;
+			for (addr = startAddr; addr < startAddr + 8; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node1, "Address=" + addr.toString(16));
+			}
+
+			checkUndefined(startAddr, 8);
 		});
 	});
 

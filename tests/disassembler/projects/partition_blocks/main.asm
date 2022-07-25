@@ -49,6 +49,23 @@ SUBA:
 	RET
 
 
+	DEFS 0x0400-$
+	; Complex jumping
+SUBD:
+	LD A,5
+	JP Z,.L1
+
+	RET
+
+.L2:
+	NOP
+	RET
+
+.L1:
+	JP C,.L2
+
+	NEG
+	RET
 
 
 	DEFS 0x0500-$
@@ -67,20 +84,19 @@ SUBC:
 
 
 	DEFS 0x0600-$
-	; Simple call
+	; Loop
+SUBE:
 	LD A,5
-	CALL SUB1
+
+.LOOP:
+	INC A
+	DJNZ .LOOP
 
 	RET
-SUB1:
-	ADD A,2
-	RET
-
-
 
 
 	DEFS 0x0800-$
-	; Recuvrsive call
+	; Recursive call
 SUB_REC:
 	CP 0
 	RET Z
@@ -90,16 +106,3 @@ SUB_REC:
 
 	RET
 
-
-	DEFS 0x0900-$
-	; Subroutine inside subroutine
-	LD A,5
-
-SUB3:
-	INC A
-	RET
-
-	DEFS 0x0920-$
-	CALL SUB3
-
-	RET

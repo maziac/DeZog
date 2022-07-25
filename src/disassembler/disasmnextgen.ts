@@ -410,13 +410,13 @@ export class DisassemblerNextGen {
 			// Check for block start (subroutine or in addresses)
 			if (node.callers.length > 0 || !blockBranches.includes(node)) {
 				blockNode = node;
+				// Use all block branches
+				blockBranches = [];
+				node.getBranchesRecursive(blockBranches);
 			}
 
 			// Fill addresses
 			this.blocks.fill(blockNode, node.start, node.start + node.length);
-
-			// Use all block branches
-			blockBranches.push(...node.branchNodes);
 		}
 	}
 
