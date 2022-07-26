@@ -15,6 +15,11 @@ export class AsmNode {
 	// The length of the block in bytes.
 	public length: number;
 
+	// If a path of the node is ended by a RET or RET cc than it is
+	// marked as a subroutine.
+	// Not only the topmost but all paths are marked.
+	public isSubroutine: boolean = false;
+
 	// The instruction in the right order of the block.
 	public instructions: Opcode[] = [];
 
@@ -140,5 +145,19 @@ export class AsmNode {
 
 		// Otherwise false
 		return true;
+	}
+
+
+	/**
+	 * Mark as subroutine. Also recursively the predecessors.
+	 * Returns immediately if already marked as subroutine.
+	 */
+	public markAsSubroutine() {
+		if (this.isSubroutine)
+			return;
+		this.isSubroutine = true;
+		for (const predec of this.predecessors) {
+			predec.markAsSubroutine();
+		}
 	}
 }

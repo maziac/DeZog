@@ -183,7 +183,7 @@ suite('AsmNode', () => {
 			const n1 = new AsmNode();
 			n1.start = 0;
 			n1.length = 10;
-			assert.ok(n1.otherReference());
+			assert.ok(!n1.otherReference());
 		});
 
 		test('Single node, natural flow', () => {
@@ -198,7 +198,7 @@ suite('AsmNode', () => {
 			n1.branchNodes.push(n2);
 			n2.predecessors.push(n1);
 
-			assert.ok(n2.otherReference());
+			assert.ok(!n2.otherReference());
 		});
 
 		test('Single node, no natural flow', () => {
@@ -213,7 +213,7 @@ suite('AsmNode', () => {
 			n1.branchNodes.push(n2);
 			n2.predecessors.push(n1);
 
-			assert.ok(!n2.otherReference());
+			assert.ok(n2.otherReference());
 		});
 	});
 });

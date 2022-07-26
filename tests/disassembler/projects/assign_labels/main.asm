@@ -24,45 +24,48 @@ L1:
 
 	DEFS 0x0200-$
 	; JR after RET
+SSUB_0200:
 	LD A,5
 	CP B
-	JR Z,L2
+	JR Z,SSUB_0209
 
 	NEG
 	RET
 
 	NOP
 
-L2:
+SSUB_0209:
 	NOP
 	RET
 
 
 	DEFS 0x0300-$
 	; Sub in sub
+SUBAA:
 	LD A,5
 SUBA:
 	INC A
 	RET
 
 	CALL SUBA
-	RET
+
+	JR $
 
 
 	DEFS 0x0400-$
 	; Complex jumping
-SUBD:
+SSUB_0400:
 	LD A,5
-	JP Z,.L1
+	JP Z,.LL2
 
 	RET
 
-.L2:
+.LL1:
 	NOP
 	RET
 
-.L1:
-	JP C,.L2
+.LL2:
+	JP C,.LL1
 
 	NEG
 	RET
@@ -85,17 +88,51 @@ SUBC:
 
 	DEFS 0x0600-$
 	; Loop
-SUBE:
+SSUB_0600:
 	LD A,5
 
-.LOOP:
+.LLOOP:
 	INC A
-	DJNZ .LOOP
+	DJNZ .LLOOP
+
+	RET
+
+
+	DEFS 0x0700-$
+	; Nested loops
+SSUB_0700:
+	LD A,5
+
+.LLOOP1:
+	INC HL
+
+.LLOOP2:
+	INC DE
+	DJNZ .LLOOP2
+
+	DEC A
+	JR NZ,.LLOOP1
 
 	RET
 
 
 	DEFS 0x0800-$
+	; Nested loops, same label
+SSUB_0800:
+	LD A,5
+
+.LLOOP:
+	INC HL
+	INC DE
+	DJNZ .LLOOP
+
+	DEC A
+	JR NZ,.LLOOP
+
+	RET
+
+
+	DEFS 0x1000-$
 	; Recursive call
 SUB_REC:
 	CP 0

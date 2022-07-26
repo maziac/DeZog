@@ -12,7 +12,7 @@ export enum OpcodeFlag {
 	BRANCH_ADDRESS = 0x01,	///< contains a branch address, e.g. jp, jp cc, jr, jr cc, call, call cc.
 	CALL = 0x02,	///< is a subroutine call, e.g. call, call cc or rst
 	STOP = 0x04,	///< is a stop-code. E.g. ret, reti, jp or jr. Disassembly procedure stops here.
-	RET = 0x08,		///< is a RETURN from a subroutine
+	RET = 0x08,		///< is a RETURN from a subroutine (RET, RET cc)
 	CONDITIONAL = 0x10,	///< is a conditional opcode, e.g. JP NZ, RET Z, CALL P etc.
 	LOAD_STACK_TOP = 0x20,	///< value is the stack top value.
 	COPY,	///< Is a copy instruction (used for "used registers")

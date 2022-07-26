@@ -196,7 +196,10 @@ export class DisassemblerNextGen {
 		// Now fill the nodes.
 		this.fillNodes();
 
-		// Find which address blocks represent the same subroutine
+		// Find nodes that are subroutines.
+		this.markSubroutines();
+
+		// Find which address blocks represent the same block
 		// (for local labels)
 		this.partitionBlocks();
 
@@ -311,6 +314,7 @@ export class DisassemblerNextGen {
 	 * Also fills other nodes:
 	 * - callees
 	 * - predecessors
+	 * - isSubroutine
 	 * Is not recursive.
 	 * @param node The node to work on.
 	 */
@@ -370,7 +374,12 @@ export class DisassemblerNextGen {
 				break;
 			}
 
-			// Check for RET or JP
+			// Check for RET
+			if (opcode.flags & OpcodeFlag.RET) {
+				node.isSubroutine = true;
+			}
+
+			// Check for JP (or RET) // TODO: Is this correct. Write a test.
 			if (opcode.flags & OpcodeFlag.STOP) {
 				break;
 			}
@@ -389,6 +398,22 @@ export class DisassemblerNextGen {
 		// Comment
 		if (node.length == 0) {
 			node.comments.push('Probably an error: The subroutine starts in unassigned memory.');
+		}
+	}
+
+
+	/**
+	 * Mark all nodes as subroutine that end in a node that is already marked as a subroutine
+	 * (i.e. end with a RET, RET cc).
+	 */
+	protected markSubroutines() {
+		// Loop all nodes
+		for (const [, node] of this.nodes) {
+			if (node.isSubroutine) {
+				// Mark recursively
+				for (const predec of node.predecessors)
+					predec.markAsSubroutine();
+			}
 		}
 	}
 
@@ -429,7 +454,6 @@ export class DisassemblerNextGen {
 	}
 
 
-
 	/**
 	 * Assigns the labels to the nodes.
 	 * Local and global labels.
@@ -446,7 +470,7 @@ export class DisassemblerNextGen {
 			if (blockNode == node) {
 				// Now check if it is a subroutine, if some other node
 				// called it.
-				const prefix = (blockNode.callers.length > 0) ? this.labelSubPrefix : this.labelLblPrefix;
+				const prefix = (blockNode.isSubroutine) ? this.labelSubPrefix : this.labelLblPrefix;
 				// Add global label name
 				node.label = prefix + Utility.getHexString(addr64k, 4);
 
@@ -485,15 +509,15 @@ export class DisassemblerNextGen {
 					}
 				}
 			}
-			// Next
+			// Next address
 			Utility.assert(addr == blockNode.start);
 			addr += blockNode.length;
-			if (blockNode.branchNodes.length == 0)
-				break;	// Block stops here
-			blockNode = blockNode.branchNodes[0];	// Natural flow
 			// Leave if block ends
 			if (this.blocks[addr] != node)
 				break;
+			// Next block
+			blockNode = this.nodes.get(addr)!;
+			Utility.assert(blockNode);
 		}
 
 		// Number the local labels

@@ -4078,7 +4078,7 @@ suite('Disassembler', () => {
 		setup(() => {
 			dng = new DisassemblerNextGen();
 			dng.labelLblPrefix = 'LLBL_';
-			dng.labelSubPrefix = 'SUBR_';
+			dng.labelSubPrefix = 'SSUB_';
 			dng.labelLoopPrefix = 'LLOOP';
 			dng.labelLocalLabelPrefix = 'LL';
 			dng.setSlotBankInfo(0, 0xFFFF, 0, true);
@@ -4095,7 +4095,7 @@ suite('Disassembler', () => {
 			const node1 = dng.getNodeForAddress(startAddr)!;
 			assert.notEqual(node1, undefined);
 
-			assert.equal(node1.label, 'LLBL_0000');
+			assert.equal(node1.label, 'SSUB_0000');
 		});
 
 		test('1 branch, local label', () => {
@@ -4110,7 +4110,7 @@ suite('Disassembler', () => {
 			const node3 = dng.getNodeForAddress(startAddr + 7)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(node1.label, 'LLBL_0100');
+			assert.equal(node1.label, 'SSUB_0100');
 			assert.equal(node2.label, undefined);
 			assert.equal(node3.label, '.LL1');
 		});
@@ -4125,23 +4125,134 @@ suite('Disassembler', () => {
 			const node2 = dng.getNodeForAddress(startAddr + 9)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(node1.label, 'LLBL_0200');
-			assert.equal(node2.label, 'LLBL_0209');
+			assert.equal(node1.label, 'SSUB_0200');
+			assert.equal(node2.label, 'SSUB_0209');
 		});
 
-		test('Local label', () => {
-			const startAddr = 0x0000;
-			dng.getFlowGraph([startAddr]);
-			assert.equal(dngNodes.size, 1);
+		test('Sub in sub', () => {
+			const startAddr = 0x0300;
+			dng.getFlowGraph([startAddr, startAddr + 4]);
+			assert.equal(dngNodes.size, 4);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
 			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 2)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(startAddr + 4)!;
+			assert.notEqual(node3, undefined);
+			const node4 = dng.getNodeForAddress(startAddr + 7)!;
+			assert.notEqual(node4, undefined);
 
-			assert.equal(node1.label, 'LLBL_0000');
+			assert.equal(node1.label, 'SSUB_0300');
+			assert.equal(node2.label, 'SSUB_0302');
+			assert.equal(node3.label, 'LLBL_0304');
+			assert.equal(node4.label, '.LLOOP');
+		});
+
+
+		test('Complex jumping', () => {
+			const startAddr = 0x0400;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 5);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 5)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(startAddr + 6)!;
+			assert.notEqual(node3, undefined);
+			const node4 = dng.getNodeForAddress(startAddr + 8)!;
+			assert.notEqual(node4, undefined);
+			const node5 = dng.getNodeForAddress(startAddr + 0x0B)!;
+			assert.notEqual(node5, undefined);
+
+			assert.equal(node1.label, 'SSUB_0400');
+			assert.equal(node2.label, undefined);
+			assert.equal(node3.label, '.LL1');
+			assert.equal(node4.label, '.LL2');
+			assert.equal(node5.label, undefined);
+		});
+
+		test('Loop', () => {
+			const startAddr = 0x0600;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 2)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(startAddr + 5)!;
+			assert.notEqual(node3, undefined);
+
+			assert.equal(node1.label, 'SSUB_0600');
+			assert.equal(node2.label, '.LLOOP');
+			assert.equal(node3.label, undefined);
+		});
+
+		test('Nested loops', () => {
+			const startAddr = 0x0700;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 5);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 2)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(startAddr + 3)!;
+			assert.notEqual(node3, undefined);
+			const node4 = dng.getNodeForAddress(startAddr + 6)!;
+			assert.notEqual(node4, undefined);
+			const node5 = dng.getNodeForAddress(startAddr + 9)!;
+			assert.notEqual(node5, undefined);
+
+			assert.equal(node1.label, 'SSUB_0700');
+			assert.equal(node2.label, '.LLOOP1');
+			assert.equal(node3.label, '.LLOOP2');
+			assert.equal(node4.label, undefined);
+			assert.equal(node5.label, undefined);
+		});
+
+		test('Nested loops, same label', () => {
+			const startAddr = 0x0800;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 4);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 2)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(startAddr + 6)!;
+			assert.notEqual(node3, undefined);
+			const node4 = dng.getNodeForAddress(startAddr + 9)!;
+			assert.notEqual(node4, undefined);
+
+			assert.equal(node1.label, 'SSUB_0800');
+			assert.equal(node2.label, '.LLOOP');
+			assert.equal(node3.label, undefined);
+			assert.equal(node4.label, undefined);
+		});
+
+		test('Recursive call', () => {
+			const startAddr = 0x1000;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 3);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 3)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(startAddr + 7)!;
+			assert.notEqual(node3, undefined);
+
+			assert.equal(node1.label, 'SSUB_1000');
+			assert.equal(node2.label, undefined);
+			assert.equal(node3.label, undefined);
 		});
 	});
 
 	/* Tests:
+	- JP nn
 	- bank border
 		- Auch comments
 	*/
