@@ -51,17 +51,15 @@ export class AsmNode {
 	// Comments are added here.
 	public comments: string[] = [];
 
-	// The global or local name of the node.
-	// Can also be undefined.
-	// E.g. "SUB_04AD", "LBL_FF00", ".L1", ".L2", ".LOOP", ".LOOP1"
-	public label: string;
+	// A debug name- E.g. the label name.
+	public dbgName: string;
 
 
 	/**
 	 * For debugging in the watch window.
 	 */
 	public toString() {
-		return "AsmNode: start=" + Utility.getHexString(this.start,4) + ', label=' + this.label;
+		return "AsmNode: start=" + Utility.getHexString(this.start, 4) + ', label=' + this.dbgName;
 	}
 
 

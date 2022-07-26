@@ -30,7 +30,7 @@
 29    6001
 30    6001
 31    6001 00 00 00...  	DEFS 0x7FFF-$
-32    7FFF              	; Reach into a not assigned area. Now with opcode that starts in one ban and ends in another. This works because other bank is a single bank.
+32    7FFF              	; Reach into a not assigned area. Now with opcode that starts in one bank and ends in another. This works because other bank is a single bank.
 33    7FFF 3E 05        	LD A,5
 34    8001              	; Is disassembled because it ends in a single bank
 35    8001 C9           	RET

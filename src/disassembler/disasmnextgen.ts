@@ -54,10 +54,16 @@ export class DisassemblerNextGen {
 	// Does NOT include bank border nodes.
 	protected nodes = new Map<number, AsmNode>();
 
-	// Blocks (subroutines are put into this array. I.e. all addresses
-	// that share the same block.
+	// Blocks all addresses that share the same block are put here.
+	// This is similar but not equal to a subroutine.
+	// A subroutine can span more than one block.
+	// Sparse array.
 	protected blocks = new Array<AsmNode>(0x10000);
 
+	// An array with the given label names.
+	// E.g. "SUB_04AD", "LBL_FF00", "SUB_04AD.L1", "SUB_04AD.L2", "SUB_04AD.LOOP", "SUB_04AD.LOOP1"
+	// Sparse array.
+	protected labels = new Array<string>(0x10000);
 
 	/// Label prefixes
 	public labelSubPrefix = "SUB_";
@@ -152,13 +158,24 @@ export class DisassemblerNextGen {
 		return false;
 	}
 
+
 	/**
 	 * Returns the node for a given address.
 	 * @param addr64k The 64k address.
 	 * @returns The AsmNode or undefined.
 	 */
-	public getNodeForAddress(addr64k: number): AsmNode | undefined{
+	public getNodeForAddress(addr64k: number): AsmNode | undefined {
 		return this.nodes.get(addr64k);
+	}
+
+
+	/**
+	 * Returns the label for a given address.
+	 * @param addr64k The 64k address.
+	 * @returns The label, e.g. "SUB_0456.LOOP1", or undefined.
+	 */
+	public getLabelForAddress(addr64k: number): string | undefined {
+		return this.labels[addr64k];
 	}
 
 
@@ -544,12 +561,25 @@ export class DisassemblerNextGen {
 				// called it.
 				const prefix = (blockNode.isSubroutine) ? this.labelSubPrefix : this.labelLblPrefix;
 				// Add global label name
-				node.label = prefix + Utility.getHexString(addr64k, 4);
+				const label = prefix + Utility.getHexString(addr64k, 4);
+				this.setLabel(addr64k, label, node);
 
 				// Now dive into node and assign local names.
 				this.assignLocalLabels(node);
 			}
 		}
+	}
+
+	/**
+	 * Sets a label for an address.
+	 * Also sets the associated node's dbgName (if any).
+	 * @param addr64k The 64k address.
+	 * @param label and it'S associated label name, e.g. "SUB_0456.LOOP1"
+	 */
+	protected setLabel(addr64k: number, label: string, node?: AsmNode) {
+		this.labels[addr64k] = label;
+		if(node)
+			node.dbgName = label;
 	}
 
 
@@ -569,7 +599,8 @@ export class DisassemblerNextGen {
 			// Check if block is referenced out of the normal flow
 			if (blockNode.otherReference()) {
 				// Check all branches
-				if (!blockNode.label) {	// Only if not already assigned
+				const label = this.labels[addr];
+				if (!label) {	// Only if not already assigned
 					// Check if loop
 					if (blockNode.isLoopRoot()) {
 						// A loop
@@ -595,20 +626,24 @@ export class DisassemblerNextGen {
 		// Number the local labels
 		let i = 1;
 		for (const node of localNodes) {
-			node.label = '.' + this.labelLocalLabelPrefix + i;
+			const label = '.' + this.labelLocalLabelPrefix + i;
+			this.setLabel(node.start, label, node);
 			i++;
 		}
 
 		// Number the local loops
 		if (loopNodes.length == 1) {
 			// Just one loop, omit index
-			loopNodes[0].label = '.' + this.labelLoopPrefix;
+			const node = loopNodes[0];
+			const label = '.' + this.labelLoopPrefix;
+			this.setLabel(node.start, label, node);
 		}
 		else {
 			// Add index
 			let k = 1;
 			for (const node of loopNodes) {
-				node.label = '.' + this.labelLoopPrefix + k;
+				const label = '.' + this.labelLoopPrefix + k;
+				this.setLabel(node.start, label, node);
 				k++;
 			}
 		}
