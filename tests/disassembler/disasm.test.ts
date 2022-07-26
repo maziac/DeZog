@@ -4051,7 +4051,7 @@ suite('Disassembler', () => {
 		});
 
 		test('Recursive call', () => {
-			const startAddr = 0x0800;
+			const startAddr = 0x1000;
 			dng.getFlowGraph([startAddr]);
 			assert.equal(dngNodes.size, 3);
 
@@ -4063,6 +4063,32 @@ suite('Disassembler', () => {
 			for (addr = startAddr; addr < startAddr + 8; addr++) {
 				const node = (dng as any).blocks[addr];
 				assert.equal(node, node1, "Address=" + addr.toString(16));
+			}
+
+			checkUndefined(startAddr, 8);
+		});
+
+		test('JP', () => {
+			const startAddr = 0x1100;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 2);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 5)!;
+			assert.notEqual(node2, undefined);
+
+			// node1
+			let addr = startAddr;
+			for (; addr < startAddr + 5; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node1, "Address=" + addr.toString(16));
+			}
+
+			// node2
+			for (; addr < startAddr + 1; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node2, "Address=" + addr.toString(16));
 			}
 
 			checkUndefined(startAddr, 8);
@@ -4249,10 +4275,25 @@ suite('Disassembler', () => {
 			assert.equal(node2.label, undefined);
 			assert.equal(node3.label, undefined);
 		});
+
+		test('JP', () => {
+			const startAddr = 0x1100;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 2);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 5)!;
+			assert.notEqual(node2, undefined);
+
+			assert.equal(node1.label, 'SSUB_1100');
+			assert.ok(node1.isSubroutine);
+			assert.equal(node2.label, 'SSUB_1105');
+			assert.ok(node2.isSubroutine);
+		});
 	});
 
 	/* Tests:
-	- JP nn
 	- bank border
 		- Auch comments
 	*/

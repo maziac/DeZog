@@ -95,7 +95,7 @@ SUBE:
 	RET
 
 
-	DEFS 0x0800-$
+	DEFS 0x1000-$
 	; Recursive call
 SUB_REC:
 	CP 0
@@ -105,3 +105,13 @@ SUB_REC:
 	CALL SUB_REC
 
 	RET
+
+
+	DEFS 0x1100-$
+	; JP
+SUB_1100:
+	LD A,5
+	JP SUB_1105
+SUB_1105:
+	RET
+
