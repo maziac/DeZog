@@ -11,7 +11,7 @@
 
 
 	DEFS 0x0100-$
-	; 1 branch
+	; 1 branch, local label
 	LD A,5
 	CP B
 	JR Z,L1
@@ -148,7 +148,7 @@ SUB_REC:
 	; JP
 SUB_1100:
 	LD A,5
-	JP SUB_1105
-SUB_1105:
+	JP .LL1
+.LL1:
 	RET
 

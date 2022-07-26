@@ -8,6 +8,10 @@ import {Opcode} from './opcode';
  * I.e. up to (including) a "JP Z,nn", a "CALL NZ,nn", "CALL nn" or similar.
  */
 export class AsmNode {
+	// A bank border node is not included in the this.nodes map.
+	// It is used as end-object for calls/jumps into a bank border.
+	public bankBorder: boolean = false;
+
 	// The slot of the complete node.
 	public slot: number;
 	// The (long) start address.
@@ -38,6 +42,10 @@ export class AsmNode {
 	// The following nodes. I.e. all branch addresses except calls.
 	// Could be 0 (e.g. RET), 1 (e.g. CALL cc nn) or 2 (e.g. JP Z,nn).
 	public branchNodes: AsmNode[] = [];
+
+	// If true the node has no "natural" successor. I.e. the last instruction
+	// was a JP (branchNodes.length = 1) or RET (branchNodes.length = 0).
+	public stop: boolean = false;
 
 	// Comments are added here.
 	public comments: string[] = [];
@@ -124,7 +132,7 @@ export class AsmNode {
 	/**
 	 * Checks if a node has no references (predecessors, calls) other
 	 * than the natural flow from the previous node.
-	 * @return true if there ae other references.
+	 * @return true if there are other references.
 	 */
 	public otherReference(): boolean {
 		if (this.callers.length > 0)
@@ -139,7 +147,8 @@ export class AsmNode {
 			// Check if first and only predecessor is the natural previous node
 			const predec = this.predecessors[0];
 			if (predec.start + predec.length == this.start) {
-				return false;
+				// The 'stop' test is just for the pathological case that the predecessor was a JP to the this node.
+				return predec.stop;
 			}
 		}
 

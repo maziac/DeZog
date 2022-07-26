@@ -4288,7 +4288,7 @@ suite('Disassembler', () => {
 
 			assert.equal(node1.label, 'SSUB_1100');
 			assert.ok(node1.isSubroutine);
-			assert.equal(node2.label, 'SSUB_1105');
+			assert.equal(node2.label, '.LL1');
 			assert.ok(node2.isSubroutine);
 		});
 	});

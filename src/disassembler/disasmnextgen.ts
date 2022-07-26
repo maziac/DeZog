@@ -1,4 +1,5 @@
 import {readFileSync} from 'fs';
+import {off} from 'process';
 import {Utility} from './../misc/utility';
 import {AsmNode} from './asmnode';
 import {Format} from './format';
@@ -51,6 +52,7 @@ export class DisassemblerNextGen {
 	protected slots: number[];
 
 	// The map of the nodes model of the disassembly.
+	// Does NOT include bank border nodes.
 	protected nodes = new Map<number, AsmNode>();
 
 	// Blocks (subroutines are put into this array. I.e. all addresses
@@ -231,9 +233,6 @@ export class DisassemblerNextGen {
 		const allBranchAddresses: number[] = [];
 
 		while (true) {
-			// Check for bank border
-			if (this.bankBorderPassed(node.slot, address))
-				break;	// Bank border
 
 			const memAttr = this.memory.getAttributeAt(address);
 			// Check if already analyzed
@@ -281,11 +280,17 @@ export class DisassemblerNextGen {
 			if (opcode.flags & OpcodeFlag.STOP) {
 				break;
 			}
+
+			// Check for bank border
+			if (this.bankBorderPassed(node.slot, address))
+				break;	// Bank border
 		}
 
 		// Now dive into branches
 		for (const addr of allBranchAddresses) {
-			this.createNodeForAddress(addr);
+			// Check for bank border
+			if (!this.bankBorderPassed(node.slot, addr))
+				this.createNodeForAddress(addr);
 		}
 
 		return node;
@@ -309,21 +314,41 @@ export class DisassemblerNextGen {
 	 * - calls
 	 * - branches
 	 * - length
+	 * - stop
 	 * Also fills other nodes:
 	 * - callees
 	 * - predecessors
 	 * - isSubroutine
 	 * Is not recursive.
+	 * Does create new nodes (that are not included in the this.nodes map)
+	 * for nodes that are reached through a bank border.
 	 * @param node The node to work on.
 	 */
 	protected fillNode(node: AsmNode) {
 		let address = node.start;
+		const nodeSlot = node.slot;
 
+		// Loop over node's addresses
 		while (true) {
 
 			// Check for bank border
-			if (this.bankBorderPassed(node.slot, address))
-				break;	// Bank border
+			if (this.bankBorderPassed(nodeSlot, address)) {
+				// Bank border, flows through into another bank.
+				// Check that address is exactly at first address of slot
+				const currSlotBank = this.addressesSlotBankInfo[address];
+				const prevSlotBank = this.addressesSlotBankInfo[address - 1];
+				if(currSlotBank.slot == prevSlotBank.slot) {
+					// The last opcode was partly already inside the banked slot.
+					node.comments.push('The last opcode spreads over 2 different banks. This could be wrong. The disassembly stops here.');
+					break;
+				}
+				// Create a "fake" AsmNode that is not included in the map.
+				// Just an end-object for the caller.
+				const fakeNode = this.getNodeForFill(nodeSlot, address);
+				node.branchNodes.push(fakeNode);
+				fakeNode.predecessors.push(node);
+				break;
+			}
 
 			const memAttr = this.memory.getAttributeAt(address);
 			// Check if memory exists
@@ -346,7 +371,7 @@ export class DisassemblerNextGen {
 			if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
 				// First natural flow, i.e. the next address.
 				if (!(opcode.flags & OpcodeFlag.STOP)) {
-					const followingNode = this.nodes.get(address)!;
+					const followingNode = this.getNodeForFill(nodeSlot, address);
 					Utility.assert(followingNode);
 					node.branchNodes.push(followingNode);
 					followingNode.predecessors.push(node);
@@ -354,8 +379,7 @@ export class DisassemblerNextGen {
 
 				// Now the branch
 				const branchAddress = opcode.value;
-				const branchNode = this.nodes.get(branchAddress)!;
-				Utility.assert(branchNode);
+				const branchNode = this.getNodeForFill(nodeSlot, branchAddress);
 
 				// Check if it is a call
 				if (opcode.flags & OpcodeFlag.CALL) {
@@ -368,18 +392,25 @@ export class DisassemblerNextGen {
 					branchNode.predecessors.push(node);
 				}
 
+				// Check for JP (RET will not occur because of OpcodeFlag.BRANCH_ADDRESS)
+				if (opcode.flags & OpcodeFlag.STOP) {
+					node.stop = true;
+				}
 				// Leave loop
 				break;
 			}
+			else {
+				// No branch, e.g. normal opcode (LD A,5), JP, RET or RET cc
+				// Check for RET or RET cc
+				if (opcode.flags & OpcodeFlag.RET) {
+					node.isSubroutine = true;
+				}
 
-			// Check for RET
-			if (opcode.flags & OpcodeFlag.RET) {
-				node.isSubroutine = true;
-			}
-
-			// Check for JP (or RET) // TODO: Is this correct. Write a test.
-			if (opcode.flags & OpcodeFlag.STOP) {
-				break;
+				// Check for JP (or RET)
+				if (opcode.flags & OpcodeFlag.STOP) {
+					node.stop = true;
+					break;
+				}
 			}
 
 			// Also stop if next node starts
@@ -397,6 +428,33 @@ export class DisassemblerNextGen {
 		if (node.length == 0) {
 			node.comments.push('Probably an error: The subroutine starts in unassigned memory.');
 		}
+	}
+
+
+	/**
+	 * Connects node with the node at address.
+	 * If no node exists at address a new (bank border) node is created
+	 * and connected.
+	 * Method is only intended for use in 'fillNode'-
+	 * @param slot The slot of the start node.
+	 * @param address The address to check if in same slot.
+	 * @return An AsmNode, either from the this.nodes map or a new created one.
+	 */
+	protected getNodeForFill(nodeSlot: number, address: number): AsmNode {
+		let otherNode;
+		if (this.bankBorderPassed(nodeSlot, address)) {
+			// Node does not exist. I.e. it is a node that is reached through
+			// a bank border and need to be created.
+			otherNode = new AsmNode();
+			otherNode.bankBorder = true;
+			otherNode.comments.push('The address is in a different bank. As the current paged bank might be the wrong one the program flow is not followed further.');
+		}
+		else {
+			// The bank should already exist
+			otherNode = this.nodes.get(address)!;
+			Utility.assert(otherNode);
+		}
+		return otherNode;
 	}
 
 
