@@ -231,6 +231,9 @@ export class DisassemblerNextGen {
 		const allBranchAddresses: number[] = [];
 
 		while (true) {
+			// Check for bank border
+			if (this.bankBorderPassed(node.slot, address))
+				break;	// Bank border
 
 			const memAttr = this.memory.getAttributeAt(address);
 			// Check if already analyzed
@@ -278,11 +281,6 @@ export class DisassemblerNextGen {
 			if (opcode.flags & OpcodeFlag.STOP) {
 				break;
 			}
-
-			// Check for bank border
-			if (this.bankBorderPassed(node.slot, address))
-				break;	// Bank border
-
 		}
 
 		// Now dive into branches
@@ -464,7 +462,9 @@ export class DisassemblerNextGen {
 		for (const [addr64k, node] of this.nodes) {
 			// Get the block
 			const blockNode = this.blocks[addr64k];
-			Utility.assert(blockNode);	// If false, a label has been requested for a not analyzed address.
+			//Utility.assert(blockNode);	// If false, a label has been requested for a not analyzed address.
+			if (!blockNode)
+				continue;	// A label has been requested for a not analyzed address.
 
 			// Check for block start / global node (label)
 			if (blockNode == node) {

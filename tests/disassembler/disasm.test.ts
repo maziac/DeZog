@@ -4293,8 +4293,47 @@ suite('Disassembler', () => {
 		});
 	});
 
-	/* Tests:
-	- bank border
-		- Auch comments
-	*/
+
+	suite('bank border', () => {
+
+		let dng: DisassemblerNextGen;
+		let dngNodes: Map<number, AsmNode>;
+		setup(() => {
+			dng = new DisassemblerNextGen();
+			dng.setSlotBankInfo(0x0000, 0x3FFF, 0, true);
+			dng.setSlotBankInfo(0x4000, 0x7FFF, 1, false);
+			dng.setSlotBankInfo(0x8000, 0xBFFF, 2, false);
+			dng.setSlotBankInfo(0xC000, 0xFFFF, 3, false);
+			dng.setCurrentSlots([0, 1, 2, 3]);	// A different bank in each slot
+			dng.readBinFile(0, './tests/disassembler/projects/bank_border/main.bin');
+			dngNodes = (dng as any).nodes;
+		});
+
+		test('Simple', () => {
+			const startAddr = 0x0100;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 6);
+
+			const node0 = dng.getNodeForAddress(0x0000)!;
+			assert.notEqual(node0, undefined);
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 3)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(startAddr + 6)!;
+			assert.notEqual(node3, undefined);
+			const node4 = dng.getNodeForAddress(startAddr + 9)!;
+			assert.notEqual(node4, undefined);
+			const node5 = dng.getNodeForAddress(startAddr + 0x0C)!;
+			assert.notEqual(node5, undefined);
+
+			assert.equal(node1.label, 'SSUB_0800');
+
+			let addr = startAddr;
+			for (; addr < startAddr + 5; addr++) {
+				const node = (dng as any).blocks[addr];
+				assert.equal(node, node1, "Address=" + addr.toString(16));
+			}
+		});
+	});
 });
