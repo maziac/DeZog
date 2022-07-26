@@ -1,5 +1,4 @@
 import {readFileSync} from 'fs';
-import {off} from 'process';
 import {Utility} from './../misc/utility';
 import {AsmNode} from './asmnode';
 import {Format} from './format';
@@ -102,6 +101,8 @@ export class DisassemblerNextGen {
 	 */
 	public setCurrentSlots(slots: number[]) {
 		this.slots = slots;
+		const i = 5;
+		console.log(i.toString());
 	}
 
 
@@ -184,16 +185,8 @@ export class DisassemblerNextGen {
 			FLOW_ANALYZED);
 		this.nodes.clear();
 
-		// Create all (shallow) AsmNodes
-		const sortedAdresses = [...addresses];
-		sortedAdresses.sort((a, b) => a - b);
-		for (const addr of sortedAdresses) {
-			const memAttr = this.memory.getAttributeAt(addr);
-			if (!(memAttr & MemAttribute.FLOW_ANALYZED)) {
-				// If not already analyzed
-				this.createNodeForAddress(addr);
-			}
-		}
+		// Create the nodes
+		this.createNodes(addresses);
 
 		// Now fill the nodes.
 		this.fillNodes();
@@ -207,6 +200,24 @@ export class DisassemblerNextGen {
 
 		// Assign global and local labels.
 		this.assignLabels();
+	}
+
+
+	/**
+	 * Creates all nodes in the this.nodes map.
+	 * @param addresses All 64k addresses to start from.
+	 */
+	protected createNodes(addresses: number[]) {
+		// Create all (shallow) AsmNodes
+		const sortedAdresses = [...addresses];
+		sortedAdresses.sort((a, b) => a - b);
+		for (const addr of sortedAdresses) {
+			const memAttr = this.memory.getAttributeAt(addr);
+			if (!(memAttr & MemAttribute.FLOW_ANALYZED)) {
+				// If not already analyzed
+				this.createNodeForAddress(addr);
+			}
+		}
 	}
 
 
@@ -446,6 +457,7 @@ export class DisassemblerNextGen {
 			// Node does not exist. I.e. it is a node that is reached through
 			// a bank border and need to be created.
 			otherNode = new AsmNode();
+			otherNode.start = address;
 			otherNode.bankBorder = true;
 			otherNode.comments.push('The address is in a different bank. As the current paged bank might be the wrong one the program flow is not followed further.');
 		}

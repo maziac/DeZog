@@ -1,3 +1,4 @@
+import { Utility } from './../misc/utility';
 import {Opcode} from './opcode';
 
 
@@ -17,7 +18,7 @@ export class AsmNode {
 	// The (long) start address.
 	public start: number;
 	// The length of the block in bytes.
-	public length: number;
+	public length: number = 0;
 
 	// If a path of the node is ended by a RET or RET cc than it is
 	// marked as a subroutine.
@@ -54,6 +55,14 @@ export class AsmNode {
 	// Can also be undefined.
 	// E.g. "SUB_04AD", "LBL_FF00", ".L1", ".L2", ".LOOP", ".LOOP1"
 	public label: string;
+
+
+	/**
+	 * For debugging in the watch window.
+	 */
+	public toString() {
+		return "AsmNode: start=" + Utility.getHexString(this.start,4) + ', label=' + this.label;
+	}
 
 
 	/**

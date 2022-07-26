@@ -3443,6 +3443,9 @@ suite('Disassembler', () => {
 			dng.setCurrentSlots([0]);
 			dng.readBinFile(0, './tests/disassembler/projects/nodes/main.bin');
 			dngNodes = (dng as any).nodes;
+			/* To view in the WATCH pane use e.g.:
+			Array.from(dngNodes.values()).map(v => v.start.toString(16).toUpperCase().padStart(4, '0') + ': ' + v.label)
+			*/
 		});
 
 		test('Simple', () => {
@@ -4300,6 +4303,10 @@ suite('Disassembler', () => {
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
 			dng = new DisassemblerNextGen();
+			dng.labelLblPrefix = 'LLBL_';
+			dng.labelSubPrefix = 'SSUB_';
+			dng.labelLoopPrefix = 'LLOOP';
+			dng.labelLocalLabelPrefix = 'LL';
 			dng.setSlotBankInfo(0x0000, 0x3FFF, 0, true);
 			dng.setSlotBankInfo(0x4000, 0x7FFF, 1, false);
 			dng.setSlotBankInfo(0x8000, 0xBFFF, 2, false);
@@ -4309,13 +4316,20 @@ suite('Disassembler', () => {
 			dngNodes = (dng as any).nodes;
 		});
 
-		test('Simple', () => {
+		test('From slot 0', () => {
 			const startAddr = 0x0100;
 			dng.getFlowGraph([startAddr]);
 			assert.equal(dngNodes.size, 6);
 
-			const node0 = dng.getNodeForAddress(0x0000)!;
-			assert.notEqual(node0, undefined);
+			const node0000 = dng.getNodeForAddress(0x0000)!;
+			assert.notEqual(node0000, undefined);
+			const node4000 = dng.getNodeForAddress(0x4000)!;
+			assert.equal(node4000, undefined);
+			const node8000 = dng.getNodeForAddress(0x8000)!;
+			assert.equal(node8000, undefined);
+			const nodeC000 = dng.getNodeForAddress(0xC000)!;
+			assert.equal(nodeC000, undefined);
+
 			const node1 = dng.getNodeForAddress(startAddr)!;
 			assert.notEqual(node1, undefined);
 			const node2 = dng.getNodeForAddress(startAddr + 3)!;
@@ -4324,16 +4338,84 @@ suite('Disassembler', () => {
 			assert.notEqual(node3, undefined);
 			const node4 = dng.getNodeForAddress(startAddr + 9)!;
 			assert.notEqual(node4, undefined);
-			const node5 = dng.getNodeForAddress(startAddr + 0x0C)!;
-			assert.notEqual(node5, undefined);
 
-			assert.equal(node1.label, 'SSUB_0800');
+			assert.equal(node1.callee?.start, 0x0000);
+			assert.equal(node2.callee?.start, 0x4000);
+			assert.equal(node3.callee?.start, 0x8000);
+			assert.equal(node4.callee?.start, 0xC000);
+		});
 
-			let addr = startAddr;
-			for (; addr < startAddr + 5; addr++) {
-				const node = (dng as any).blocks[addr];
-				assert.equal(node, node1, "Address=" + addr.toString(16));
-			}
+		test('From slot 1', () => {
+			const startAddr = 0x4100;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 7);
+
+			const node0000 = dng.getNodeForAddress(0x0000)!;
+			assert.notEqual(node0000, undefined);
+			const node4000 = dng.getNodeForAddress(0x4000)!;
+			assert.notEqual(node4000, undefined);
+			const node8000 = dng.getNodeForAddress(0x8000)!;
+			assert.equal(node8000, undefined);
+			const nodeC000 = dng.getNodeForAddress(0xC000)!;
+			assert.equal(nodeC000, undefined);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 3)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(startAddr + 6)!;
+			assert.notEqual(node3, undefined);
+			const node4 = dng.getNodeForAddress(startAddr + 9)!;
+			assert.notEqual(node4, undefined);
+
+			assert.equal(node1.callee?.start, 0x0000);
+			assert.equal(node2.callee?.start, 0x4000);
+			assert.equal(node3.callee?.start, 0x8000);
+			assert.equal(node4.callee?.start, 0xC000);
+		});
+
+		test('From slot 2', () => {
+			const startAddr = 0x8100;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 7);
+
+			const node0000 = dng.getNodeForAddress(0x0000)!;
+			assert.notEqual(node0000, undefined);
+			const node4000 = dng.getNodeForAddress(0x4000)!;
+			assert.equal(node4000, undefined);
+			const node8000 = dng.getNodeForAddress(0x8000)!;
+			assert.notEqual(node8000, undefined);
+			const nodeC000 = dng.getNodeForAddress(0xC000)!;
+			assert.equal(nodeC000, undefined);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 3)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(startAddr + 6)!;
+			assert.notEqual(node3, undefined);
+			const node4 = dng.getNodeForAddress(startAddr + 9)!;
+			assert.notEqual(node4, undefined);
+
+			assert.equal(node1.callee?.start, 0x0000);
+			assert.equal(node2.callee?.start, 0x4000);
+			assert.equal(node3.callee?.start, 0x8000);
+			assert.equal(node4.callee?.start, 0xC000);
+		});
+
+		test('From slot 3', () => {
+			const startAddr = 0xC000;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 1);	// A node is created although e.g. length is 0.
+
+			const node0000 = dng.getNodeForAddress(0x0000)!;
+			assert.equal(node0000, undefined);
+			const node4000 = dng.getNodeForAddress(0x4000)!;
+			assert.equal(node4000, undefined);
+			const node8000 = dng.getNodeForAddress(0x8000)!;
+			assert.equal(node8000, undefined);
+			const nodeC000 = dng.getNodeForAddress(0xC000)!;
+			assert.notEqual(nodeC000, undefined);
 		});
 	});
 });
