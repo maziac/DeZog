@@ -347,11 +347,13 @@ export class DisassemblerNextGen {
 				// Bank border, flows through into another bank.
 				// Check that address is exactly at first address of slot
 				const currSlotBank = this.addressesSlotBankInfo[address];
-				const prevSlotBank = this.addressesSlotBankInfo[address - 1];
-				if(currSlotBank.slot == prevSlotBank.slot) {
-					// The last opcode was partly already inside the banked slot.
-					node.comments.push('The last opcode spreads over 2 different banks. This could be wrong. The disassembly stops here.');
-					break;
+				if (!currSlotBank.singleBank) {
+					const prevSlotBank = this.addressesSlotBankInfo[address - 1];
+					if (currSlotBank.slot == prevSlotBank.slot) {
+						// The last opcode was partly already inside the banked slot.
+						node.comments.push('The last opcode spreads over 2 different banks. This could be wrong. The disassembly stops here.');
+						break;
+					}
 				}
 				// Create a "fake" AsmNode that is not included in the map.
 				// Just an end-object for the caller.

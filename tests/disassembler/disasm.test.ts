@@ -4303,10 +4303,6 @@ suite('Disassembler', () => {
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
 			dng = new DisassemblerNextGen();
-			dng.labelLblPrefix = 'LLBL_';
-			dng.labelSubPrefix = 'SSUB_';
-			dng.labelLoopPrefix = 'LLOOP';
-			dng.labelLocalLabelPrefix = 'LL';
 			dng.setSlotBankInfo(0x0000, 0x3FFF, 0, true);
 			dng.setSlotBankInfo(0x4000, 0x7FFF, 1, false);
 			dng.setSlotBankInfo(0x8000, 0xBFFF, 2, false);
@@ -4418,4 +4414,93 @@ suite('Disassembler', () => {
 			assert.notEqual(nodeC000, undefined);
 		});
 	});
+
+
+	suite('Flow through slot', () => {
+
+		let dng: DisassemblerNextGen;
+		let dngNodes: Map<number, AsmNode>;
+		setup(() => {
+			dng = new DisassemblerNextGen();
+			dng.setSlotBankInfo(0x0000, 0x1FFF, 0, true);
+			dng.setSlotBankInfo(0x2000, 0x3FFF, 1, false);
+			dng.setSlotBankInfo(0x4000, 0x5FFF, 2, true);
+			dng.setSlotBankInfo(0x6000, 0x7FFF, 3, false);
+			dng.setSlotBankInfo(0x8000, 0x9FFF, 3, true);
+			dng.setSlotBankInfo(0xA000, 0xBFFF, 3, true);
+			dng.setSlotBankInfo(0xC000, 0xFFFF, 3, true);
+			dng.setCurrentSlots([0, 1, 2, 3, 4, 5, 6]);	// A different bank in each slot
+			dng.readBinFile(0, './tests/disassembler/projects/flow_through_slot/main.bin');
+			dngNodes = (dng as any).nodes;
+		});
+
+		test('Flow through to unassigned or other bank', () => {
+			const startAddr = 0x1FFE;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 1);
+
+			const node1 = dng.getNodeForAddress(0x1FFE)!;
+			assert.notEqual(node1, undefined);
+			assert.equal(node1.comments.length, 0);
+
+			const successor = node1.branchNodes[0];
+			assert.equal(successor.start, 0x2000);
+			assert.equal(successor.length, 0);
+			assert.notEqual(successor.comments.length, 0);
+		});
+
+		test('Flow through from multi bank to single bank', () => {
+			const startAddr = 0x3FFE;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 1);
+
+			const node1 = dng.getNodeForAddress(0x3FFE)!;
+			assert.notEqual(node1, undefined);
+			assert.equal(node1.comments.length, 0);
+			assert.equal(node1.instructions.length, 2);
+			assert.equal(node1.length, 3);
+		});
+
+		test('Flow through with opcode to unassigned or other bank', () => {
+			// Now the opcode is split between the banks.
+			const startAddr = 0x5FFF;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 1);
+
+			const node1 = dng.getNodeForAddress(0x5FFF)!;
+			assert.notEqual(node1, undefined);
+			assert.equal(node1.comments.length, 1);
+
+			assert.equal(node1.branchNodes.length, 0);
+		});
+
+
+		test('Flow through with opcode from multi bank to single bank', () => {
+			// Now the opcode is split between the banks.
+			const startAddr = 0x7FFF;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 1);
+
+			const node1 = dng.getNodeForAddress(0x7FFF)!;
+			assert.notEqual(node1, undefined);
+			assert.equal(node1.comments.length, 0);
+			assert.equal(node1.instructions.length, 2);
+			assert.equal(node1.length, 3);
+		});
+
+		test('Flow through single bank to single bank', () => {
+			const startAddr = 0x9FFE;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 1);
+
+			const node1 = dng.getNodeForAddress(0x9FFE)!;
+			assert.notEqual(node1, undefined);
+			assert.equal(node1.comments.length, 0);
+			assert.equal(node1.instructions.length, 2);
+			assert.equal(node1.length, 3);
+		});
+	});
+
+	// flow through to same
+	// loop root
 });
