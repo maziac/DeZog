@@ -4126,7 +4126,7 @@ suite('Disassembler', () => {
 			const node1 = dng.getNodeForAddress(startAddr)!;
 			assert.notEqual(node1, undefined);
 
-			assert.equal(dng.getLabelForAddress(node1.start), 'SSUB_0000');
+			assert.equal(node1.label, 'SSUB_0000');
 		});
 
 		test('1 branch, local label', () => {
@@ -4141,9 +4141,9 @@ suite('Disassembler', () => {
 			const node3 = dng.getNodeForAddress(startAddr + 7)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(dng.getLabelForAddress(node1.start), 'SSUB_0100');
-			assert.equal(dng.getLabelForAddress(node2.start), undefined);
-			assert.equal(dng.getLabelForAddress(node3.start), '.LL1');
+			assert.equal(node1.label, 'SSUB_0100');
+			assert.equal(node2.label, undefined);
+			assert.equal(node3.label, '.LL1');
 		});
 
 		test('JR after RET, global label', () => {
@@ -4156,8 +4156,8 @@ suite('Disassembler', () => {
 			const node2 = dng.getNodeForAddress(startAddr + 9)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(dng.getLabelForAddress(node1.start), 'SSUB_0200');
-			assert.equal(dng.getLabelForAddress(node2.start), 'SSUB_0209');
+			assert.equal(node1.label, 'SSUB_0200');
+			assert.equal(node2.label, 'SSUB_0209');
 		});
 
 		test('Sub in sub', () => {
@@ -4174,10 +4174,10 @@ suite('Disassembler', () => {
 			const node4 = dng.getNodeForAddress(startAddr + 7)!;
 			assert.notEqual(node4, undefined);
 
-			assert.equal(dng.getLabelForAddress(node1.start), 'SSUB_0300');
-			assert.equal(dng.getLabelForAddress(node2.start), 'SSUB_0302');
-			assert.equal(dng.getLabelForAddress(node3.start), 'LLBL_0304');
-			assert.equal(dng.getLabelForAddress(node4.start), '.LLOOP');
+			assert.equal(node1.label, 'SSUB_0300');
+			assert.equal(node2.label, 'SSUB_0302');
+			assert.equal(node3.label, 'LLBL_0304');
+			assert.equal(node4.label, '.LLOOP');
 		});
 
 
@@ -4197,11 +4197,11 @@ suite('Disassembler', () => {
 			const node5 = dng.getNodeForAddress(startAddr + 0x0B)!;
 			assert.notEqual(node5, undefined);
 
-			assert.equal(dng.getLabelForAddress(node1.start), 'SSUB_0400');
-			assert.equal(dng.getLabelForAddress(node2.start), undefined);
-			assert.equal(dng.getLabelForAddress(node3.start), '.LL1');
-			assert.equal(dng.getLabelForAddress(node4.start), '.LL2');
-			assert.equal(dng.getLabelForAddress(node5.start), undefined);
+			assert.equal(node1.label, 'SSUB_0400');
+			assert.equal(node2.label, undefined);
+			assert.equal(node3.label, '.LL1');
+			assert.equal(node4.label, '.LL2');
+			assert.equal(node5.label, undefined);
 		});
 
 		test('Loop', () => {
@@ -4216,9 +4216,9 @@ suite('Disassembler', () => {
 			const node3 = dng.getNodeForAddress(startAddr + 5)!;
 			assert.notEqual(node3, undefined);
 
-			assert.equal(dng.getLabelForAddress(node1.start), 'SSUB_0600');
-			assert.equal(dng.getLabelForAddress(node2.start), '.LLOOP');
-			assert.equal(dng.getLabelForAddress(node3.start), undefined);
+			assert.equal(node1.label, 'SSUB_0600');
+			assert.equal(node2.label, '.LLOOP');
+			assert.equal(node3.label, undefined);
 		});
 
 		test('Nested loops', () => {
@@ -4237,11 +4237,11 @@ suite('Disassembler', () => {
 			const node5 = dng.getNodeForAddress(startAddr + 9)!;
 			assert.notEqual(node5, undefined);
 
-			assert.equal(dng.getLabelForAddress(node1.start), 'SSUB_0700');
-			assert.equal(dng.getLabelForAddress(node2.start), '.LLOOP1');
-			assert.equal(dng.getLabelForAddress(node3.start), '.LLOOP2');
-			assert.equal(dng.getLabelForAddress(node4.start), undefined);
-			assert.equal(dng.getLabelForAddress(node5.start), undefined);
+			assert.equal(node1.label, 'SSUB_0700');
+			assert.equal(node2.label, '.LLOOP1');
+			assert.equal(node3.label, '.LLOOP2');
+			assert.equal(node4.label, undefined);
+			assert.equal(node5.label, undefined);
 		});
 
 		test('Nested loops, same label', () => {
@@ -4258,10 +4258,10 @@ suite('Disassembler', () => {
 			const node4 = dng.getNodeForAddress(startAddr + 9)!;
 			assert.notEqual(node4, undefined);
 
-			assert.equal(dng.getLabelForAddress(node1.start), 'SSUB_0800');
-			assert.equal(dng.getLabelForAddress(node2.start), '.LLOOP');
-			assert.equal(dng.getLabelForAddress(node3.start), undefined);
-			assert.equal(dng.getLabelForAddress(node4.start), undefined);
+			assert.equal(node1.label, 'SSUB_0800');
+			assert.equal(node2.label, '.LLOOP');
+			assert.equal(node3.label, undefined);
+			assert.equal(node4.label, undefined);
 		});
 
 		test('Recursive call', () => {
@@ -4276,9 +4276,9 @@ suite('Disassembler', () => {
 			const node3 = dng.getNodeForAddress(startAddr + 7)!;
 			assert.notEqual(node3, undefined);
 
-			assert.equal(dng.getLabelForAddress(node1.start), 'SSUB_1000');
-			assert.equal(dng.getLabelForAddress(node2.start), undefined);
-			assert.equal(dng.getLabelForAddress(node3.start), undefined);
+			assert.equal(node1.label, 'SSUB_1000');
+			assert.equal(node2.label, undefined);
+			assert.equal(node3.label, undefined);
 		});
 
 		test('JP', () => {
@@ -4291,9 +4291,9 @@ suite('Disassembler', () => {
 			const node2 = dng.getNodeForAddress(startAddr + 5)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(dng.getLabelForAddress(node1.start), 'SSUB_1100');
+			assert.equal(node1.label, 'SSUB_1100');
 			assert.ok(node1.isSubroutine);
-			assert.equal(dng.getLabelForAddress(node2.start), '.LL1');
+			assert.equal(node2.label, '.LL1');
 			assert.ok(node2.isSubroutine);
 		});
 	});
@@ -4507,11 +4507,8 @@ suite('Disassembler', () => {
 	suite('adjustAddress', () => {
 
 		let dng: DisassemblerNextGen;
-		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
 			dng = new DisassemblerNextGen();
-			//dng.setSlotBankInfo(0x0000, 0xFFFF, 3, true);
-			//dng.setCurrentSlots([0]);	// A different bank in each slot
 			dng.setMemory(0x1000, new Uint8Array([0, 0, 0, 0, 1, 1, 1, 2]));
 		});
 

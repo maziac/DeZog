@@ -29,7 +29,7 @@
 
 
 	DEFS 0x7FFF-$
-	; Reach into a not assigned area. Now with opcode that starts in one bank and ends in another. This works because other bank is a single bank.
+	; Reach into a not assigned area. Now with opcode that starts in one ban and ends in another. This works because other bank is a single bank.
 	LD A,5
 	; Is disassembled because it ends in a single bank
 	RET
