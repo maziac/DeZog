@@ -1,7 +1,9 @@
 import * as assert from 'assert';
 import {writeFileSync} from 'fs';
+import {memoryUsage} from 'process';
 import {Disassembler} from '../../src/disassembler/disasm';
 import {Format} from '../../src/disassembler/format';
+import {MemAttribute} from '../../src/disassembler/memory';
 import {NumberType} from '../../src/disassembler/numbertype';
 import {Opcode} from '../../src/disassembler/opcode';
 import {AsmNode} from './../../src/disassembler/asmnode';
@@ -4498,6 +4500,35 @@ suite('Disassembler', () => {
 			assert.equal(node1.comments.length, 0);
 			assert.equal(node1.instructions.length, 2);
 			assert.equal(node1.length, 3);
+		});
+	});
+
+
+	suite('adjustAddress', () => {
+
+		let dng: DisassemblerNextGen;
+		let dngNodes: Map<number, AsmNode>;
+		setup(() => {
+			dng = new DisassemblerNextGen();
+			//dng.setSlotBankInfo(0x0000, 0xFFFF, 3, true);
+			//dng.setCurrentSlots([0]);	// A different bank in each slot
+			dng.setMemory(0x1000, new Uint8Array([0, 0, 0, 0, 1, 1, 1, 2]));
+		});
+
+		test('adjustAddress', () => {
+
+			dng.memory.setAttributesAt(0x1004, 3, MemAttribute.CODE)
+			dng.memory.addAttributeAt(0x1004, MemAttribute.CODE_FIRST);
+
+			assert.equal((dng as any).adjustAddress(0x200), 0x200);
+			assert.equal((dng as any).adjustAddress(0x1001), 0x1001);
+			assert.equal((dng as any).adjustAddress(0x1003), 0x1003);
+			assert.equal((dng as any).adjustAddress(0x1004), 0x1004);
+			assert.equal((dng as any).adjustAddress(0x1005), 0x1004);
+			assert.equal((dng as any).adjustAddress(0x1006), 0x1004);
+			assert.equal((dng as any).adjustAddress(0x1007), 0x1007);
+			assert.equal((dng as any).adjustAddress(0x1008), 0x1008);
+			assert.equal((dng as any).adjustAddress(0x1009), 0x1009);
 		});
 	});
 });

@@ -651,6 +651,25 @@ export class DisassemblerNextGen {
 
 
 	/**
+	 * Returns an adjusted address.
+	 * The address is returned unchanged if the address does not point to
+	 * CODE or to CODE_FIRST.
+	 * The idea is to adjust a label to the start of an opcode.
+	 * @param addr64k A 64k address.
+	 * @returns The adjusted address.
+	 */
+	protected adjustAddress(addr64k: number): number {
+		while (true) {
+			const attr = this.memory.getAttributeAt(addr64k);
+			if (attr & MemAttribute.CODE_FIRST || !(attr & MemAttribute.CODE))
+				return addr64k;
+			// Next
+			addr64k--;
+		}
+	}
+
+
+	/**
 	 * Follows the execution path and collects used and unchanged registers.
 	 * @param address The start address of the subroutine.
 	 * @returns
