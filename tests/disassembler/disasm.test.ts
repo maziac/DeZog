@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 import {writeFileSync} from 'fs';
-import {memoryUsage} from 'process';
 import {Disassembler} from '../../src/disassembler/disasm';
 import {Format} from '../../src/disassembler/format';
 import {MemAttribute} from '../../src/disassembler/memory';

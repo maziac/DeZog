@@ -47,7 +47,7 @@ export class Opcode {
 	public length: number;
 
 	/// The value (if any) used in the opcode, e.g. nn in "LD HL,nn"
-	/// Is only a temporary value, decoded for the current instruction.
+	/// Is set when decoded for the current instruction.
 	public value: number;
 
 	/// For custom opcodes further bytes to decode can be added.
@@ -1590,6 +1590,7 @@ export class Opcode {
 	 * @param func If defined a function that returns a label for an address or undefined if no label exists.
 	 * @returns E.g. "label" or "04AFh"
 	 */
+	// TODO: REMOVE
 	protected convertToLabel(address: number, func?: (address: number) => string): string {
 		let valueString;
 		if (func)
@@ -1683,7 +1684,7 @@ export class Opcode {
 		// Disassemble
 		let opCodeString;
 		if (!this.appendValueTypes) {
-			// Nomal disassembly
+			// Normal disassembly
 			opCodeString = util.format(this.name, valueName);
 		}
 		else {
@@ -1714,6 +1715,78 @@ export class Opcode {
 		}
 
 		return {mnemonic: opCodeString, comment: comment};
+	}
+
+
+	/**
+	 * Disassembles one opcode together with a referenced label (if there
+	 * is one).
+	 * @returns A string that contains the disassembly, e.g. "LD A,(DATA_LBL1)"
+	 * or "JR Z,.sub1_lbl3".
+	 * @param func A function that returns a label for a (64k) address.
+	 */
+	// TODO: Rename to 'disassemble'.
+	public disassembleOpcode(funcGetLabel: (addr64k: number) => string): string {
+		// Check if there is any value
+		if (this.valueType == NumberType.NONE) {
+			// Just e.g. "INC A"
+			return this.name;
+		}
+
+		// Get referenced label name
+		let valueName = '';
+		if (this.valueType == NumberType.CODE_LBL
+			|| this.valueType == NumberType.CODE_LOCAL_LBL
+			|| this.valueType == NumberType.CODE_LOCAL_LOOP
+			|| this.valueType == NumberType.CODE_SUB
+			|| this.valueType == NumberType.DATA_LBL) {
+			valueName = funcGetLabel(this.value);
+		}
+		else if (this.valueType == NumberType.RELATIVE_INDEX) {
+			// E.g. in 'LD (IX+n),a'
+			let val = this.value;
+			valueName = (val >= 0) ? '+' : '';
+			valueName += val.toString();
+		}
+		else if (this.valueType == NumberType.CODE_RST) {
+			// Use value instead of label (looks better)
+			valueName = Format.getHexFormattedString(this.value, 2);
+		}
+		else {
+			// Use direct value
+			const val = this.value;
+			// Add comment
+			if (this.valueType == NumberType.NUMBER_BYTE) {
+				// byte
+				valueName = Format.getHexFormattedString(val, 2);
+			}
+			else {
+				// word
+				valueName = Format.getHexFormattedString(val, 4);
+			}
+		}
+
+		// Disassemble
+		let opCodeString;
+		if (!this.appendValueTypes) {
+			// Normal disassembly
+			opCodeString = util.format(this.name, valueName);
+		}
+		else {
+			// Custom opcode with appended bytes.
+			const len = this.appendValueTypes.length;
+			const vals = new Array<string>();
+			for (let k = 0; k < len; k++) {
+				const vType = this.appendValueTypes[k];
+				const val = this.appendValues[k];
+				let valName = (vType == NumberType.NUMBER_BYTE) ? Format.getHexString(val, 2) : Format.getHexString(val, 4);
+				valName += 'h';
+				vals.push(valName);
+			}
+			opCodeString = util.format(this.name, valueName, ...vals);
+		}
+
+		return opCodeString;
 	}
 }
 

@@ -3,6 +3,7 @@ import {Utility} from './../misc/utility';
 import {AsmNode} from './asmnode';
 import {Format} from './format';
 import {MemAttribute, Memory} from './memory';
+import {NumberType} from './numbertype';
 import {Opcode, OpcodeFlag} from './opcode';
 
 
@@ -20,22 +21,37 @@ interface SlotBankInfo {
 
 
 /**
+ * Combines an opcode and the address it references.
+ * Helper structure to collect all the addresses that the opcodes
+ * reference.
+ * At the end these are turned into labels.
+ * E.g. "LD A,(1234h)": The 1234h will be stored in refAddress.
+ */
+interface OpcodeReference {
+	// The Opcode
+	opcode: Opcode;
+	// The address that it refers to
+	refAddress: number;
+}
+
+
+/**
  * The main Disassembler class.
  */
 export class DisassemblerNextGen {
 
 	/// A function that can be set to assign other than the standard
 	/// label names.
-	public funcAssignLabels: (address: number) => string | undefined;
+	public funcGetLabel: (addr64k: number) => string | undefined;
 
 	/// A function that can be set to filter out certain addresses from the output.
 	/// Note: the addresses are still used for analysis but are simply skipped in the output ('disassembleMemory').
 	// If false is returned the line for this address is not shown.
-	public funcFilterAddresses: (address: number) => boolean;
+	public funcFilterAddresses: (addr64k: number) => boolean;
 
 	/// A function that formats the address printed at first in the disassembly.
 	/// Used to add bank information after the address.
-	public funcFormatAddress: (address: number) => string;
+	public funcFormatAddress: (addr64k: number) => string;
 
 	/// The memory area to disassemble.
 	public memory = new Memory();
@@ -58,13 +74,21 @@ export class DisassemblerNextGen {
 	// that share the same block.
 	protected blocks = new Array<AsmNode>(0x10000);
 
+	// This map contains data labels (strings) that are referenced by instructions.
+	// E.g. LD A,(C000h)
+	// It does not contain the node labels.
+	// It also contains references into code areas for self modifying code.
+	protected otherLabels = new Map<number, string>();
+
+	// This is a helper array that collects the opcodes and the reference of the opcode.
+	protected opcodeReferences: OpcodeReference[] = [];
 
 	/// Label prefixes
 	public labelSubPrefix = "SUB_";
 	public labelLblPrefix = "LBL_";
 	public labelRstPrefix = "RST_";
 	public labelDataLblPrefix = "DATA_";
-	public labelSelfModifyingPrefix = "SELF_MOD_";	// I guess this is not used anymore if DATA_LBL priority is below CODE_LBLs
+	public labelCodePrefix = "CODE_";	// Is used if data is read /written to a CODE section.
 	public labelLocalLabelPrefix = "L";	// "_L"
 	public labelLoopPrefix = "LOOP";	// "_LOOP"
 
@@ -198,8 +222,11 @@ export class DisassemblerNextGen {
 		// (for local labels)
 		this.partitionBlocks();
 
-		// Assign global and local labels.
-		this.assignLabels();
+		// Assign global and local labels to the nodes.
+		this.assignNodeLabels();
+
+		// Assign labels from the opcode references, e.g. "LD A,(1234h)"
+		this.assignOpcodeReferenceLabels();
 	}
 
 
@@ -258,7 +285,7 @@ export class DisassemblerNextGen {
 			}
 
 			// Get opcode
-			const refOpcode = Opcode.getOpcodeAt(this.memory, address);
+			const refOpcode = Opcode.getOpcodeAt(this.memory, address);	// TODO: getOpcodeAt should already return a clone.
 			const opcode = {...refOpcode};
 			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED);
 
@@ -373,6 +400,16 @@ export class DisassemblerNextGen {
 			const refOpcode = Opcode.getOpcodeAt(this.memory, address);
 			const opcode = refOpcode.clone();
 			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED);
+
+			// Check for referenced data addresses
+			if (opcode.valueType == NumberType.DATA_LBL) {
+				// Then collect the address for later usage
+				const opcRef: OpcodeReference = {
+					opcode,
+					refAddress: opcode.value
+				}
+				this.opcodeReferences.push(opcRef);
+			}
 
 			// Store
 			node.instructions.push(opcode);
@@ -529,7 +566,7 @@ export class DisassemblerNextGen {
 	 * Local and global labels.
 	 * E.g. "SUB_04AD", "LBL_FF00", ".L1", ".L2", ".LOOP", ".LOOP1"
 	 */
-	public assignLabels() {
+	public assignNodeLabels() {
 		// Loop over all nodes
 		for (const [addr64k, node] of this.nodes) {
 			// Get the block
@@ -616,21 +653,112 @@ export class DisassemblerNextGen {
 
 
 	/**
-	 * Returns an adjusted address.
-	 * The address is returned unchanged if the address does not point to
-	 * CODE or to CODE_FIRST.
-	 * The idea is to adjust a label to the start of an opcode.
-	 * @param addr64k A 64k address.
-	 * @returns The adjusted address.
+	 * For the opcode references (e.g. the 1234h in "LD A,(1234h)")
+	 * the this.opcodeReferences array has been filled with
+	 * opcodes and addresses.
+	 * For each of the address a labels is now created and put into
+	 * this.otherLabels.
 	 */
-	protected adjustAddress(addr64k: number): number {
-		while (true) {
-			const attr = this.memory.getAttributeAt(addr64k);
-			if (attr & MemAttribute.CODE_FIRST || !(attr & MemAttribute.CODE))
-				return addr64k;
-			// Next
-			addr64k--;
+	protected assignOpcodeReferenceLabels() {
+		// Loop over all collected addresses
+		for (const opcRef of this.opcodeReferences) {
+			let addr64k = opcRef.refAddress;
+			let attr = this.memory.getAttributeAt(addr64k);
+			// Check for DATA or CODE
+			let prefix;
+			if (attr & MemAttribute.CODE) {
+				// CODE
+				prefix = this.labelCodePrefix;
+
+				// Adjust address (in case it does not point to the start of instruction)
+				while (!(attr & MemAttribute.CODE_FIRST)) {
+					addr64k--;
+					attr = this.memory.getAttributeAt(addr64k);
+				}
+			}
+			else {
+				// DATA
+				prefix = this.labelLblPrefix;
+			}
+
+			// Check if label already exists.
+			let label = this.funcGetLabel(addr64k);
+			if (!label)
+				label = this.nodes.get(addr64k)?.label;
+			if (!label)
+				label = this.otherLabels.get(addr64k);
+			if (!label) {
+				// Now create a new label
+				label = prefix + Utility.getHexString(addr64k, 4);
+				// And store
+				this.otherLabels.set(addr64k, label);
+			}
 		}
+	}
+
+
+	/**
+	 * Returns the label for the given address.
+	 * It first checks with the given function this.funcGetLabel.
+	 * If nothing found it checks the this.nodes labels.
+	 * If still nothing found it checks this.otherLabels.
+	 * If not found there it just returns undefined.
+	 * @param addr64k The 64k address.
+	 * @returns The label as string e.g. "SUB_0604.LOOP" or "LBL_0788+1" (in case address points to 0x0789 inside an instruction).
+	 */
+	protected getLabelForAddress(addr64k: number): string {
+		// Check for CODE and adjust address.
+		let suffix = '';
+		let attr = this.memory.getAttributeAt(addr64k);
+		if (attr & MemAttribute.CODE) {
+			// Adjust address (in case it does not point to the start of instruction)
+			const origAddress = addr64k;
+			while (!(attr & MemAttribute.CODE_FIRST)) {
+				addr64k--;
+				attr = this.memory.getAttributeAt(addr64k);
+			}
+			const diff = origAddress - addr64k;
+			if (diff > 0)
+				suffix = '+' + diff;
+		}
+		// Find label
+		let label = this.funcGetLabel(addr64k);
+		if (!label)
+			label = this.nodes.get(addr64k)?.label;
+		if (!label)
+			label = this.otherLabels.get(addr64k);
+		Utility.assert(label);
+		return label! + suffix;
+	}
+
+
+	/**
+	 * Disassembles one opcode together with a referenced label (if there
+	 * is one).
+	 * @param opcode The opcode to disassemble.
+	 * @returns A string that contains the disassembly, e.g. "LD A,(DATA_LBL1)"
+	 * or "JR Z,.sub1_lbl3".
+	 */
+	public disassembleOpcode(opcode: Opcode): string {
+		const disasm = opcode.disassembleOpcode((addr64k: number) => {
+			// Return an existing label for the address or invent one.
+			const labelName = this.getLabelForAddress(addr64k);
+			return labelName;
+		});
+
+		return disasm;
+	}
+
+	/**
+	 * Disassembles all nodes.
+	 * The text is assigned to the nodes.
+	 * I.e. afterwards one of the following can be generated easily:
+	 * - disassembly text
+	 * - call graph
+	 * - flow chart
+	 */
+	public disassemble() {
+
 	}
 
 
@@ -641,5 +769,6 @@ export class DisassemblerNextGen {
 	 */
 	public getRegisterUsage(address: number) {
 	}
+
 
 }
