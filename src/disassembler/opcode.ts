@@ -56,6 +56,9 @@ export class Opcode {
 	/// For custom opcodes further bytes to decode can be added.
 	public appendValueTypes: Array<NumberType>;
 
+	// The disassembled text of the opcode. E.g. "LD A,(DATA_LBL0400)".
+	public disassembledText: string;
+
 
 	/// Call this to use lower case or upper case opcodes.
 	public static makeLowerCase() {
@@ -1726,11 +1729,12 @@ export class Opcode {
 	 * @param func A function that returns a label for a (64k) address.
 	 */
 	// TODO: Rename to 'disassemble'.
-	public disassembleOpcode(funcGetLabel: (addr64k: number) => string): string {
+	public disassembleOpcode(funcGetLabel: (addr64k: number) => string) {
 		// Check if there is any value
 		if (this.valueType == NumberType.NONE) {
 			// Just e.g. "INC A"
-			return this.name;
+			this.disassembledText = this.name;
+			return;
 		}
 
 		// Get referenced label name
@@ -1786,7 +1790,7 @@ export class Opcode {
 			opCodeString = util.format(this.name, valueName, ...vals);
 		}
 
-		return opCodeString;
+		this.disassembledText = opCodeString;
 	}
 }
 

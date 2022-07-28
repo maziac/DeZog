@@ -49,9 +49,9 @@ export class DisassemblerNextGen {
 	// If false is returned the line for this address is not shown.
 	public funcFilterAddresses: (addr64k: number) => boolean;
 
-	/// A function that formats the address printed at first in the disassembly.
-	/// Used to add bank information after the address.
-	public funcFormatAddress: (addr64k: number) => string;
+	/// A function that formats the long address printed at first in the disassembly.
+	/// Used to add bank information after the address. Using the current slot.
+	public funcFormatLongAddress: (addr64k: number) => string;
 
 	/// The memory area to disassemble.
 	public memory = new Memory();
@@ -678,7 +678,7 @@ export class DisassemblerNextGen {
 			}
 			else {
 				// DATA
-				prefix = this.labelLblPrefix;
+				prefix = this.labelDataLblPrefix;
 			}
 
 			// Check if label already exists.
@@ -702,11 +702,20 @@ export class DisassemblerNextGen {
 	 * It first checks with the given function this.funcGetLabel.
 	 * If nothing found it checks the this.nodes labels.
 	 * If still nothing found it checks this.otherLabels.
-	 * If not found there it just returns undefined.
+	 * If nothing is found the address in hex is returned.
+	 * //If not found there it just returns undefined.
 	 * @param addr64k The 64k address.
-	 * @returns The label as string e.g. "SUB_0604.LOOP" or "LBL_0788+1" (in case address points to 0x0789 inside an instruction).
+	 * @param slot The slot where the access origined. I.e. if there is a bank
+	 * border not the label but a pure hex address is shown.
+	 * @returns The label as string e.g. "SUB_0604.LOOP" or "LBL_0788+1" (in case address points to 0x0789 inside an instruction) or "$C000".
 	 */
-	protected getLabelForAddress(addr64k: number): string {
+	protected getLabelFromSlotForAddress(slot: number, addr64k: number): string {
+		// Check if no bank border
+		if (this.bankBorderPassed(slot, addr64k)) {
+			// Just return the address as hex string
+			return Format.getHexFormattedString(addr64k, 4);
+		}
+
 		// Check for CODE and adjust address.
 		let suffix = '';
 		let attr = this.memory.getAttributeAt(addr64k);
@@ -739,26 +748,44 @@ export class DisassemblerNextGen {
 	 * @returns A string that contains the disassembly, e.g. "LD A,(DATA_LBL1)"
 	 * or "JR Z,.sub1_lbl3".
 	 */
-	public disassembleOpcode(opcode: Opcode): string {
-		const disasm = opcode.disassembleOpcode((addr64k: number) => {
+	// TODO: REMOVE
+	/*
+	public disassembleOpcode(opcode: Opcode) {
+		opcode.disassembleOpcode((addr64k: number) => {
 			// Return an existing label for the address or invent one.
 			const labelName = this.getLabelForAddress(addr64k);
 			return labelName;
 		});
-
-		return disasm;
 	}
+	*/
+
 
 	/**
 	 * Disassembles all nodes.
 	 * The text is assigned to the nodes.
-	 * I.e. afterwards one of the following can be generated easily:
+	 * This is the same and required for:
 	 * - disassembly text
-	 * - call graph
 	 * - flow chart
+	 * For call graph this step is not required (as no disassembly is shown).
+	 * Puts the disassembled texts into the opcodes. e.g. "LD A,(DATA_LBL1)"
+	 * or "JR Z,.sub1_lbl3".
 	 */
-	public disassemble() {
-
+	public disassembleNodes() {
+		// Loop over all nodes
+		for (const [, node] of this.nodes) {
+			// Loop over all instructions/opcodes
+			const slot = this.addressesSlotBankInfo[node.start].slot;
+			//let opcodeAddress = node.start;
+			for (const opcode of node.instructions) {
+				opcode.disassembleOpcode((addr64k: number) => {
+					// Return an existing label for the address or invent one.
+					const labelName = this.getLabelFromSlotForAddress(slot, addr64k);
+					return labelName;
+				});
+				// Next
+				//opcodeAddress += opcode.length;
+			}
+		}
 	}
 
 

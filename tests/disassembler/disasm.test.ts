@@ -602,7 +602,7 @@ suite('Disassembler', () => {
 		 * On a mismatch an error string is returned.
 		 * On success undefined is returned.
 		 */
-		function checkDisassembly(combined: Array<number|string>, org = 0): string|undefined {
+		function checkDisassembly(combined: Array<number | string>, org = 0): string | undefined {
 			// Convert into memory and expected strings
 			const memory: number[] = [];
 			const expected: string[] = [];
@@ -1527,11 +1527,11 @@ suite('Disassembler', () => {
 				0xDD, 0x31, "INVALID INSTRUCTION",
 				0xDD, 0x32, "INVALID INSTRUCTION",
 				0xDD, 0x33, "INVALID INSTRUCTION",
-				0xDD, 0x34, 0,  "INC (IX+0)",
-				0xDD, 0x34, 7,  "INC (IX+7)",
+				0xDD, 0x34, 0, "INC (IX+0)",
+				0xDD, 0x34, 7, "INC (IX+7)",
 				0xDD, 0x34, -8, "INC (IX-8)",
-				0xDD, 0x35, 0,  "DEC (IX+0)",
-				0xDD, 0x35, 7,  "DEC (IX+7)",
+				0xDD, 0x35, 0, "DEC (IX+0)",
+				0xDD, 0x35, 7, "DEC (IX+7)",
 				0xDD, 0x35, -8, "DEC (IX-8)",
 				0xDD, 0x36, 0xFC, 0x05, 'LD (IX-4),05h',
 				0xDD, 0x37, "INVALID INSTRUCTION",
@@ -2059,11 +2059,11 @@ suite('Disassembler', () => {
 				0xFD, 0x31, "INVALID INSTRUCTION",
 				0xFD, 0x32, "INVALID INSTRUCTION",
 				0xFD, 0x33, "INVALID INSTRUCTION",
-				0xFD, 0x34, 0,  "INC (IY+0)",
-				0xFD, 0x34, 1,  "INC (IY+1)",
+				0xFD, 0x34, 0, "INC (IY+0)",
+				0xFD, 0x34, 1, "INC (IY+1)",
 				0xFD, 0x34, -1, "INC (IY-1)",
-				0xFD, 0x35, 0,  "DEC (IY+0)",
-				0xFD, 0x35, 1,  "DEC (IY+1)",
+				0xFD, 0x35, 0, "DEC (IY+0)",
+				0xFD, 0x35, 1, "DEC (IY+1)",
 				0xFD, 0x35, -1, "DEC (IY-1)",
 				0xFD, 0x36, 0xFC, 0x05, 'LD (IY-4),05h',
 				0xFD, 0x37, "INVALID INSTRUCTION",
@@ -2745,7 +2745,7 @@ suite('Disassembler', () => {
 /*5000*/ 					// START:
 /*5000*/ 0x21, 0x00, 0x60,	// 	    ld hl,0x6000
 /*5003*/ 0xC3, 0x01, 0x50,	//		jp START+1
-/*5006*/ //0xC9, 				// 		ret
+				/*5006*/ //0xC9, 				// 		ret
 			];
 
 			const org = 0x5000;
@@ -2766,19 +2766,19 @@ suite('Disassembler', () => {
 
 		test('jp (hl)', () => {
 			const memory = [
-/* 5000h */
-0x21, 0x00, 0x60,	// ld hl,0x6000
-0x28, 0x02,			// jr z,+2 to reach the next instruction
-0xE9,				// jp (hl)
-0x00,				// Is a 'DEFB 0' and not a 'NOP'
-0x28, 0x03,			// jr z,+3 to reach the next instruction
-0xDD, 0xE9,			// jp (ix)
-0x00,				// Is a 'DEFB 0' and not a 'NOP'
-0x28, 0x03,			// jr z,+3 to reach the next instruction
-0xFD, 0xE9,			// jp (iy)
-0x00,				// Is a 'DEFB 0' and not a 'NOP'
-0xED, 0x98,			// jp (c)
-0x00,				// Is a 'DEFB 0' and not a 'NOP'
+				/* 5000h */
+				0x21, 0x00, 0x60,	// ld hl,0x6000
+				0x28, 0x02,			// jr z,+2 to reach the next instruction
+				0xE9,				// jp (hl)
+				0x00,				// Is a 'DEFB 0' and not a 'NOP'
+				0x28, 0x03,			// jr z,+3 to reach the next instruction
+				0xDD, 0xE9,			// jp (ix)
+				0x00,				// Is a 'DEFB 0' and not a 'NOP'
+				0x28, 0x03,			// jr z,+3 to reach the next instruction
+				0xFD, 0xE9,			// jp (iy)
+				0x00,				// Is a 'DEFB 0' and not a 'NOP'
+				0xED, 0x98,			// jp (c)
+				0x00,				// Is a 'DEFB 0' and not a 'NOP'
 			];
 
 
@@ -2833,7 +2833,7 @@ suite('Disassembler', () => {
 			assert(warning != undefined);
 		});
 
-    });
+	});
 
 
 	suite('several memories', () => {
@@ -2929,7 +2929,7 @@ suite('Disassembler', () => {
 			assert(lines.length > 1000);
 		});
 
-    });
+	});
 
 	suite('complete sna files', () => {
 
@@ -2960,7 +2960,7 @@ suite('Disassembler', () => {
 			assert(lines.length > 1000);
 		});
 
-    });
+	});
 
 
 	suite('mame', () => {
@@ -2994,7 +2994,7 @@ suite('Disassembler', () => {
 			assert(lines.length > 1000);
 		});
 
-    });
+	});
 
 
 	suite('disassemble - labels', () => {
@@ -3346,7 +3346,7 @@ suite('Disassembler', () => {
 			const memory = [
 				//8000 SUB1:
 				/*8000*/ 0x3E, 0x22,		//   LD   A,34
-				/*8002*/ 0x10, 256-4,		//   DJNZ SUB1
+				/*8002*/ 0x10, 256 - 4,		//   DJNZ SUB1
 				/*8005*/ 0xC9,     			//	 RET
 			];
 
@@ -4525,6 +4525,174 @@ suite('Disassembler', () => {
 			assert.equal((dng as any).adjustAddress(0x1007), 0x1007);
 			assert.equal((dng as any).adjustAddress(0x1008), 0x1008);
 			assert.equal((dng as any).adjustAddress(0x1009), 0x1009);
+		});
+	});
+
+
+	suite('disassembleNodes', () => {
+
+		let dng: DisassemblerNextGen;
+		//let dngNodes: Map<number, AsmNode>;
+		setup(() => {
+			dng = new DisassemblerNextGen();
+			dng.labelLblPrefix = 'LLBL_';
+			dng.labelSubPrefix = 'SSUB_';
+			dng.labelLoopPrefix = 'LLOOP';
+			dng.labelLocalLabelPrefix = 'LL';
+			dng.labelDataLblPrefix = "DDATA_";
+			dng.setSlotBankInfo(0x0000, 0x3FFF, 0, true);
+			dng.setSlotBankInfo(0x4000, 0x7FFF, 1, true);
+			dng.setSlotBankInfo(0x8000, 0xFFFF, 3, false);
+			dng.setCurrentSlots([0, 1, 2]);	// A different bank in each slot
+			dng.readBinFile(0, './tests/disassembler/projects/disassemble/main.bin');
+			Format.hexFormat = '$';
+		});
+
+		/**
+		 * Checks if the instruction disassemlbies contain the text
+		 * in 'lines'.
+		 */
+		function checkInstructions(node: AsmNode, lines: string[]) {
+			let l = 0;
+			const instrs = node.instructions.map(i => i.disassembledText);
+			for (const instr of instrs) {
+				const line = lines[l];
+				assert.equal(instr, line, 'Line: ' + l + ' of ["' + instrs.join('", "') + '"] should be ["' + lines.join('", "') + '"]');
+				l++;
+			}
+			// Check for same number of lines
+			assert.equal(node.instructions.length, lines.length, "Expected number of lines");
+		}
+
+		test('From single bank to multi bank', () => {
+			dng.funcGetLabel = (addr64k: number) => {
+				return undefined;
+			};
+			const startAddr = 0x0100;
+			dng.getFlowGraph([startAddr, 0x0000, 0x4000, 0x8000]);
+			dng.disassembleNodes();
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			checkInstructions(node1, [
+				"LD A,$05",
+				"LD DE,$0000",
+				"LD HL,(SSUB_0000)",
+				"CALL SUB_0000"
+			]);
+
+			const node2 = dng.getNodeForAddress(startAddr + 0x0B)!;
+			assert.notEqual(node2, undefined);
+			checkInstructions(node2, [
+				"LD B,C",
+				"LD DE,$4000",
+				"LD HL,(SSUB_4000)",
+				"CALL SSUB_4000"
+			]);
+
+			const node3 = dng.getNodeForAddress(startAddr + 0x15)!;
+			assert.notEqual(node3, undefined);
+			checkInstructions(node3, [
+				"LD DE,$8010",
+				"LD HL,($8010)",
+				"CALL $8000"
+			]);
+
+			const node4 = dng.getNodeForAddress(startAddr + 0x1E)!;
+			assert.notEqual(node4, undefined);
+			checkInstructions(node4, [
+				"NOP",
+				"RET"
+			]);
+		});
+
+		test('From multi bank to single bank', () => {
+			dng.funcGetLabel = (addr64k: number) => {
+				return undefined;
+			};
+			const startAddr = 0x8100;
+			dng.getFlowGraph([startAddr, 0x0000, 0x4000, 0x8000]);
+			dng.disassembleNodes();
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			checkInstructions(node1, [
+				"CALL SSUB_0000"
+			]);
+
+			const node2 = dng.getNodeForAddress(startAddr + 3)!;
+			assert.notEqual(node2, undefined);
+			checkInstructions(node2, [
+				"CALL SSUB_4000"
+			]);
+
+			const node3 = dng.getNodeForAddress(startAddr + 6)!;
+			assert.notEqual(node3, undefined);
+			checkInstructions(node3, [
+				"CALL SSUB_8000"
+			]);
+
+			const node4 = dng.getNodeForAddress(startAddr + 9)!;
+			assert.notEqual(node4, undefined);
+			checkInstructions(node4, [
+				"RET"
+			]);
+		});
+
+		test('Same bank, misc', () => {
+			dng.funcGetLabel = (addr64k: number) => {
+				return undefined;
+			};
+			const startAddr = 0xD000;
+			dng.getFlowGraph([startAddr]);
+			dng.disassembleNodes();
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			checkInstructions(node1, [
+				"LD (IX+5),A",
+			]);
+
+			const node1b = dng.getNodeForAddress(startAddr+3)!;
+			assert.notEqual(node1b, undefined);
+			checkInstructions(node1b, [
+				"LD A,(IY-7)",
+				"JR Z,.LLOOP",
+			]);
+
+			const node2 = dng.getNodeForAddress(startAddr + 8)!;
+			assert.notEqual(node2, undefined);
+			checkInstructions(node2, [
+				"BIT 7,(IX+0)",
+				"JR NZ,.LL1",
+			]);
+
+			const node3 = dng.getNodeForAddress(startAddr + 0x0E)!;
+			assert.notEqual(node3, undefined);
+			checkInstructions(node3, [
+				"LD BC,(DDATA_D100)",
+			]);
+
+			const node4 = dng.getNodeForAddress(startAddr + 0x12)!;
+			assert.notEqual(node4, undefined);
+			checkInstructions(node4, [
+				"LD (DDATA_D102),DE",
+				"LD IY,(DDATA_D104)",
+				"JP P,.LL2",
+			]);
+
+			const node5 = dng.getNodeForAddress(startAddr + 0x1D)!;
+			assert.notEqual(node5, undefined);
+			checkInstructions(node5, [
+				"RET",
+			]);
+
+			const node6 = dng.getNodeForAddress(startAddr + 0x1E)!;
+			assert.notEqual(node6, undefined);
+			checkInstructions(node6, [
+				"NEG",
+				"RET"
+			]);
 		});
 	});
 });
