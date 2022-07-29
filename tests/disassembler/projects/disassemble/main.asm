@@ -59,7 +59,21 @@ LBL_8010:
 
 
 	DEFS 0xD000-$
-SUB_D000:
+
+	CALL SUB_D003
+	JR $
+
+LBL_D000:
+	LD A,$08
+
+LBL_D002:
+	NOP
+	JP SUB_D003
+
+	nop
+	nop
+
+SUB_D003:
 	LD (IX+5),A
 
 .LOOP:
@@ -80,6 +94,10 @@ SUB_D000:
 
 .L2:
 	NEG
+	JR Z,LBL_D000
+
+	JP NC,LBL_D002
+
 	RET
 
 	DEFS 0xD100 -$
@@ -92,3 +110,11 @@ DATA_D102:
 
 DATA_D104:
 	DEFW 0x1111
+
+
+
+	DEFS 0xE000-$
+	; Self modifying code
+SUB_E000:
+
+	RET

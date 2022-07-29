@@ -545,6 +545,7 @@ export class DisassemblerNextGen {
 		for (const node of sortedNodes) {
 			// Check for block start
 			if (node.start != addr || node.callers.length > 0 || !blockBranches.includes(node)) {
+			//if (node.start != addr || !blockBranches.includes(node)) {
 				blockNode = node;
 				addr = node.start;
 				// Use all block branches
@@ -568,7 +569,16 @@ export class DisassemblerNextGen {
 	 */
 	public assignNodeLabels() {
 		// Loop over all nodes
-		for (const [addr64k, node] of this.nodes) {
+		//for (const [addr64k, node] of this.nodes) {
+
+// TODO: Change back
+		// Sort nodes by address
+		const sortedNodes = Array.from(this.nodes.values());
+		sortedNodes.sort((a, b) => a.start - b.start);
+		// Loop over all nodes
+		for (const node of sortedNodes) {
+			// Print label and address:
+			const addr64k = node.start;
 			// Get the block
 			const blockNode = this.blocks[addr64k];
 			//Utility.assert(blockNode);	// If false, a label has been requested for a not analyzed address.

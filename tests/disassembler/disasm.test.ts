@@ -7,6 +7,7 @@ import {NumberType} from '../../src/disassembler/numbertype';
 import {Opcode} from '../../src/disassembler/opcode';
 import {AsmNode} from './../../src/disassembler/asmnode';
 import {DisassemblerNextGen} from './../../src/disassembler/disasmnextgen';
+import {Utility} from './../../src/misc/utility';
 
 
 
@@ -4564,6 +4565,29 @@ suite('Disassembler', () => {
 			assert.equal(node.instructions.length, lines.length, "Expected number of lines");
 		}
 
+		/**
+		 * Outputs a simpledisassembly.
+		 */
+		function dbgDisassembly(nodes: Map<number, AsmNode>) {
+			// Sort nodes by address
+			const sortedNodes = Array.from(nodes.values());
+			 sortedNodes.sort((a, b) => a.start - b.start);
+			// Loop over all nodes
+			for (const node of sortedNodes) {
+				// Print label and address:
+				let addr = node.start;
+				console.log(Utility.getHexString(addr, 4) + ' ' + node.label + ':');
+				// Loop over all instructions
+				for (const opcode of node.instructions) {
+					console.log(Utility.getHexString(addr, 4) + '\t' + opcode.disassembledText);
+					// Next
+					addr += opcode.length;
+				}
+				console.log();
+			}
+		}
+
+
 		test('From single bank to multi bank', () => {
 			dng.funcGetLabel = (addr64k: number) => {
 				return undefined;
@@ -4578,7 +4602,7 @@ suite('Disassembler', () => {
 				"LD A,$05",
 				"LD DE,$0000",
 				"LD HL,(SSUB_0000)",
-				"CALL SUB_0000"
+				"CALL SSUB_0000"
 			]);
 
 			const node2 = dng.getNodeForAddress(startAddr + 0x0B)!;
@@ -4643,9 +4667,24 @@ suite('Disassembler', () => {
 			dng.funcGetLabel = (addr64k: number) => {
 				return undefined;
 			};
-			const startAddr = 0xD000;
-			dng.getFlowGraph([startAddr]);
+			const startAddr = 0xD003;
+			dng.getFlowGraph([0xD000]);
+			//dng.getFlowGraph([startAddr]);
 			dng.disassembleNodes();
+
+			dbgDisassembly((dng as any).nodes);
+
+			const node0 = dng.getNodeForAddress(startAddr-3)!;
+			assert.notEqual(node0, undefined);
+			checkInstructions(node0, [
+				"LD A,$08",
+			]);
+
+			const node0b = dng.getNodeForAddress(startAddr-1)!;
+			assert.notEqual(node0b, undefined);
+			checkInstructions(node0b, [
+				"NOP",
+			]);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
 			assert.notEqual(node1, undefined);
