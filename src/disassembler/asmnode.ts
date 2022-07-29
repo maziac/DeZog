@@ -25,6 +25,14 @@ export class AsmNode {
 	// Not only the topmost but all paths are marked.
 	public isSubroutine: boolean = false;
 
+	// Is set either if it is the first address given to decode
+	// or if node is CALLed by someone.
+	// Used to determine the start of a subroutine for labels:
+	// "SUB_" is used if '(isSubroutine && isStartingNode) == true'
+	// otherwise "LBL_" (or local label).
+	public isStartingNode: boolean = false;
+
+
 	// The instruction in the right order of the block.
 	public instructions: Opcode[] = [];
 
@@ -82,9 +90,9 @@ export class AsmNode {
 
 
 	/**
-	 * Returns all nodes belonging to a loop for that node.
-	 * Note: Several loops may exist. All are merged.
+	 * Checks if target is the smallest address of all predecessors.
 	 * @param target The node for which to test if it is loop root.
+	 * @returns true if target is the lowest predecessor of the loop.
 	 */
 	public isLoopRoot(target: AsmNode = this, alreadyProcessed: AsmNode[] = []): boolean{
 		// Check predecessors

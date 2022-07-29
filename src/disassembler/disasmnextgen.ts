@@ -242,7 +242,7 @@ export class DisassemblerNextGen {
 			const memAttr = this.memory.getAttributeAt(addr);
 			if (!(memAttr & MemAttribute.FLOW_ANALYZED)) {
 				// If not already analyzed
-				this.createNodeForAddress(addr);
+				this.createNodeForAddress(addr, true);
 			}
 		}
 	}
@@ -254,8 +254,11 @@ export class DisassemblerNextGen {
 	 * The nodes are just empty containers which contain only the start address.
 	 * They will be filled in a secondary pass.
 	 * @param address The 64k start address.
+	 * @param startingNode Set to true for the first call (from createNodes).
+	 * Will set node.isStartingNode. Later also all called nodes will get
+	 * this set.
 	 */
-	protected createNodeForAddress(address: number) {
+	protected createNodeForAddress(address: number, startingNode: boolean) {
 		// Check if address/node already exists.
 		if (this.nodes.get(address)) {
 			// Node already exists
@@ -264,6 +267,7 @@ export class DisassemblerNextGen {
 
 		// Node does not exist, create  new one
 		const node = new AsmNode();
+		node.isStartingNode = startingNode;
 		node.start = address;
 		node.slot = this.addressesSlotBankInfo[address].slot;
 		this.nodes.set(address, node);
@@ -328,7 +332,7 @@ export class DisassemblerNextGen {
 		for (const addr of allBranchAddresses) {
 			// Check for bank border
 			if (!this.bankBorderPassed(node.slot, addr))
-				this.createNodeForAddress(addr);
+				this.createNodeForAddress(addr, false);
 		}
 
 		return node;
@@ -349,7 +353,7 @@ export class DisassemblerNextGen {
 
 	/**
 	 * Fills a single node with info:
-	 * - calls
+	 * - callers
 	 * - branches
 	 * - length
 	 * - stop
@@ -435,6 +439,7 @@ export class DisassemblerNextGen {
 				if (opcode.flags & OpcodeFlag.CALL) {
 					node.callee = branchNode;
 					branchNode.callers.push(node);
+					branchNode.isStartingNode = true;
 				}
 				else {
 					// No CALL, e.g. a JP etc.
@@ -544,8 +549,8 @@ export class DisassemblerNextGen {
 		let addr;
 		for (const node of sortedNodes) {
 			// Check for block start
-			if (node.start != addr || node.callers.length > 0 || !blockBranches.includes(node)) {
-			//if (node.start != addr || !blockBranches.includes(node)) {
+			//if (node.start != addr || node.callers.length > 0 || !blockBranches.includes(node)) {
+			if (node.start != addr || node.isStartingNode || !blockBranches.includes(node)) {
 				blockNode = node;
 				addr = node.start;
 				// Use all block branches
@@ -569,16 +574,8 @@ export class DisassemblerNextGen {
 	 */
 	public assignNodeLabels() {
 		// Loop over all nodes
-		//for (const [addr64k, node] of this.nodes) {
-
-// TODO: Change back
-		// Sort nodes by address
-		const sortedNodes = Array.from(this.nodes.values());
-		sortedNodes.sort((a, b) => a.start - b.start);
-		// Loop over all nodes
-		for (const node of sortedNodes) {
+		for (const [addr64k, node] of this.nodes) {
 			// Print label and address:
-			const addr64k = node.start;
 			// Get the block
 			const blockNode = this.blocks[addr64k];
 			//Utility.assert(blockNode);	// If false, a label has been requested for a not analyzed address.
@@ -587,9 +584,10 @@ export class DisassemblerNextGen {
 
 			// Check for block start / global node (label)
 			if (blockNode == node) {
+				// Check if this is really the start, other
 				// Now check if it is a subroutine, if some other node
 				// called it.
-				const prefix = (blockNode.isSubroutine) ? this.labelSubPrefix : this.labelLblPrefix;
+				const prefix = (blockNode.isSubroutine && blockNode.isStartingNode) ? this.labelSubPrefix : this.labelLblPrefix;
 				// Add global label name
 				node.label = prefix + Utility.getHexString(addr64k, 4);
 

@@ -68,10 +68,10 @@ LBL_D000:
 
 LBL_D002:
 	NOP
-	JP SUB_D003
+	;JP SUB_D003
 
-	nop
-	nop
+	;nop
+	;nop
 
 SUB_D003:
 	LD (IX+5),A
