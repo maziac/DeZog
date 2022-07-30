@@ -87,6 +87,44 @@ But the breakpoints associated with the disassembly list files are removed.
 Otherwise these would show up as error (not associated breakpoints), and would be removed, at the next start of an debug session.
 
 
+### General Approach
+
+Before the actual opcode-to-text conversion is done an analysis is done.
+Goal is to find blocks of opcodes that belong together and to find subroutines.
+The blocks are used mainly for assigning labels.
+
+A block and a subroutine are often, but not always the same.
+
+Normally all instructions that jump to addresses in the same subroutine without any "holes" in it are marked to belong to the same block.
+The block a specific address belongs to is found in 'blocks' and set up in 'partitionBlocks()'.
+A new block also starts if there is a starting node ('isStartingNode') found, even if there is no hole.
+This allows to deal with subroutines that e.g. loop to addresses lower than the actual subroutine start address.
+These nodes belong to the same subroutine but are located in different blocks.
+This is required because it is otherwise not possible to deal with local labels.
+
+A node does not need to belong to one subroutine only. It is possible that part (the end) of a subroutine is shared between 2 or more subroutines.
+
+The system is not perfect and cannot be perfect because in assembler (e.g. compared to C) there is no clear entry or exit point of subroutines.
+
+
+Here are the general steps taken to do a complete disassembly:
+
+1. **createNodes()**: Creates all nodes that are present in the this.nodes map.
+The nodes at this point only contain the start address.
+2. **fillNodes()**: The nodes are filled with info (e.g. callees, callers, predecessors, successors, ...). Additional nodes are created for 'bank border' calls. I.e. calls that would cross a bank to a multi-bank slot.
+3. **markSubroutines()**: nodes are searched to find nodes with RET, RET CC, RET or RETN. These nodes and their predecessor nodes are marked as a subroutine.
+All node that are called by another node are marked as 'isStartingNode'.
+4. **partitionBlocks()**: All nodes are searched (from low address to high). All recursive branches of that node are added to the same block if they do not include a "hole" or are not a new stating node.
+5. **assignNodeLabels()**: Assigns labels to block starts and the recursive local labels. The prefix for a subroutine is determined by '(isSubroutine && isStartingNode) == true)'.
+6. **assignOpcodeReferenceLabels()**: The labels for the jumps and calls have been analyzed already. But there are still data references (e.g. "LD A,(nn)") that could point to code, e.g. for self modifying code. These are assigned 'otherLabels' here.
+
+
+
+
+
+
+
+
 ### Special Problems
 
 There are a few special problems to solve in the disassembly and sometimes no real solution exists.

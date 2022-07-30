@@ -59,21 +59,17 @@ LBL_8010:
 
 
 	DEFS 0xD000-$
-
-	CALL SUB_D003
+	; Same bank, misc
+	CALL SUB_D008
 	JR $
 
-LBL_D000:
+LBL_D005:
 	LD A,$08
 
-LBL_D002:
+.L1:
 	NOP
-	;JP SUB_D003
 
-	;nop
-	;nop
-
-SUB_D003:
+SUB_D008:
 	LD (IX+5),A
 
 .LOOP:
@@ -94,9 +90,9 @@ SUB_D003:
 
 .L2:
 	NEG
-	JR Z,LBL_D000
+	JR Z,LBL_D005
 
-	JP NC,LBL_D002
+	JP NC,LBL_D005.L1
 
 	RET
 
@@ -112,9 +108,114 @@ DATA_D104:
 	DEFW 0x1111
 
 
+	DEFS 0xD200-$
+	; 2 subroutines merged
+	CALL SUB_D207
+	CALL SUB_D209
+	RET
+
+SUB_D207:
+	LD A,$01
+SUB_D209:
+	LD A,$02
+	RET
+
+
+	DEFS 0xD300-$
+	; 2 subroutines,sharing tail
+	CALL SUB_D307
+	CALL SUB_D30B
+	RET
+
+SUB_D307:
+	LD A,$01
+	JR SUB_D30B.L1
+SUB_D30B:
+	LD A,$02
+.L1:
+	RET
+
+
+	DEFS 0xD400-$
+	; subroutine with jumps < subroutine address
+	CALL SUB_D408
+	RET
+
+LBL_D404:
+	LD A,$01
+
+.L1:
+	LD A,$02
+
+SUB_D408:
+	LD A,$03
+
+.LOOP:
+	LD A,$04
+	JR Z,.LOOP
+
+	LD A,$05
+	JR NZ,.L1
+
+	LD A,$06
+
+.L1:
+	JP P,.L2
+
+	RET
+
+.L2:
+	NEG
+	JR Z,LBL_D404
+
+	JP NC,LBL_D404.L1
+
+	RET
+
+
+	DEFS 0xD500-$
+	; subroutine with jumps < subroutine address, with additional JP
+	CALL SUB_D509
+	RET
+
+LBL_D504:
+	LD A,$01
+	JP SUB_D509
+
+SUB_D509:
+	LD A,$02
+	JP NC,LBL_D504
+
+	RET
+
+
+	DEFS 0xD600-$
+	; subroutine with jumps < subroutine address, with additional JP with hole
+	CALL SUB_D60A
+	RET
+
+LBL_D604:
+	LD A,$01
+	JP SUB_D60A
+
+	NOP	; "Hole"
+
+SUB_D60A:
+	LD A,$02
+	JP NC,LBL_D604
+
+	RET
+
 
 	DEFS 0xE000-$
 	; Self modifying code
-SUB_E000:
+	LD A,$1
+	LD (SUB_E009.L1+1),A
+	CALL SUB_E009
+	RET
 
+SUB_E009:
+	LD A,$02
+.L1:	; This does not split the nodes but is a referenced / otherLabels)
+	LD B,$00	; Modified
 	RET

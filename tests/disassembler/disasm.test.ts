@@ -4546,6 +4546,9 @@ suite('Disassembler', () => {
 			dng.setSlotBankInfo(0x8000, 0xFFFF, 3, false);
 			dng.setCurrentSlots([0, 1, 2]);	// A different bank in each slot
 			dng.readBinFile(0, './tests/disassembler/projects/disassemble/main.bin');
+			dng.funcGetLabel = (addr64k: number) => {
+				return undefined;
+			};
 			Format.hexFormat = '$';
 		});
 
@@ -4589,9 +4592,6 @@ suite('Disassembler', () => {
 
 
 		test('From single bank to multi bank', () => {
-			dng.funcGetLabel = (addr64k: number) => {
-				return undefined;
-			};
 			const startAddr = 0x0100;
 			dng.getFlowGraph([startAddr, 0x0000, 0x4000, 0x8000]);
 			dng.disassembleNodes();
@@ -4631,9 +4631,6 @@ suite('Disassembler', () => {
 		});
 
 		test('From multi bank to single bank', () => {
-			dng.funcGetLabel = (addr64k: number) => {
-				return undefined;
-			};
 			const startAddr = 0x8100;
 			dng.getFlowGraph([startAddr, 0x0000, 0x4000, 0x8000]);
 			dng.disassembleNodes();
@@ -4664,12 +4661,8 @@ suite('Disassembler', () => {
 		});
 
 		test('Same bank, misc', () => {
-			dng.funcGetLabel = (addr64k: number) => {
-				return undefined;
-			};
-			const startAddr = 0xD003;
-			dng.getFlowGraph([0xD000]);
-			//dng.getFlowGraph([startAddr]);
+			const startAddr = 0xD000;
+			dng.getFlowGraph([startAddr]);
 			dng.disassembleNodes();
 
 			dbgDisassembly((dng as any).nodes);
@@ -4731,6 +4724,146 @@ suite('Disassembler', () => {
 			checkInstructions(node6, [
 				"NEG",
 				"RET"
+			]);
+		});
+
+
+
+
+
+
+
+		test('2 subroutines merged', () => {
+			const startAddr = 0xD200;
+			dng.getFlowGraph([startAddr]);
+			dng.disassembleNodes();
+
+			dbgDisassembly((dng as any).nodes);
+
+			const node1 = dng.getNodeForAddress(startAddr + 7)!;
+			assert.notEqual(node1, undefined);
+			assert.equal(node1.label, 'SSUB_D207');
+
+			const node2 = dng.getNodeForAddress(startAddr + 0x09)!;
+			assert.notEqual(node2, undefined);
+			assert.equal(node2.label, 'SSUB_D209');
+
+			checkInstructions(node1, [
+				"LD A,$01",
+			]);
+			checkInstructions(node2, [
+				"LD A,$02",
+				"RET"
+			]);
+		});
+
+		test('2 subroutines merged, sharing tail', () => {
+			const startAddr = 0xD300;
+			dng.getFlowGraph([startAddr]);
+			dng.disassembleNodes();
+
+			dbgDisassembly((dng as any).nodes);
+
+			const node1 = dng.getNodeForAddress(startAddr + 7)!;
+			assert.notEqual(node1, undefined);
+			assert.equal(node1.label, 'SSUB_D307');
+
+			const node2 = dng.getNodeForAddress(startAddr + 0x0B)!;
+			assert.notEqual(node2, undefined);
+			assert.equal(node2.label, 'SSUB_D30B');
+
+			const node3 = dng.getNodeForAddress(startAddr + 0x0D)!;
+			assert.notEqual(node3, undefined);
+			assert.equal(node3.label, 'SSUB_D30B.LL1');
+
+			checkInstructions(node1, [
+				"LD A,$01",
+				"JR SUB_D30B.L1"
+			]);
+			checkInstructions(node2, [
+				"LD A,$02"
+			]);
+			checkInstructions(node3, [
+				"RET"
+			]);
+		});
+
+
+		test('Subroutine with jumps < subroutine address, with additional JP', () => {
+			const startAddr = 0xD500;
+			dng.getFlowGraph([startAddr]);
+			dng.disassembleNodes();
+
+			dbgDisassembly((dng as any).nodes);
+
+			const node1 = dng.getNodeForAddress(startAddr + 4)!;
+			assert.notEqual(node1, undefined);
+			assert.equal(node1.label, 'LLBL_D504');
+
+			const node2 = dng.getNodeForAddress(startAddr + 9)!;
+			assert.notEqual(node2, undefined);
+			assert.equal(node2.label, 'SSUB_D509');
+
+
+			checkInstructions(node1, [
+				"LD A,$01",
+				"JP SSUB_D509"
+			]);
+			checkInstructions(node2, [
+				"LD A,$02",
+				"JP NC,LLBL_D504"
+			]);
+		});
+
+		test('Subroutine with jumps < subroutine address, with additional JP with hole', () => {
+			const startAddr = 0xD600;
+			dng.getFlowGraph([startAddr]);
+			dng.disassembleNodes();
+
+			dbgDisassembly((dng as any).nodes);
+
+			const node1 = dng.getNodeForAddress(startAddr + 4)!;
+			assert.notEqual(node1, undefined);
+			assert.equal(node1.label, 'LLBL_D604');
+
+			const node2 = dng.getNodeForAddress(startAddr + 0x0A)!;
+			assert.notEqual(node2, undefined);
+			assert.equal(node2.label, 'SSUB_D60A');
+
+			checkInstructions(node1, [
+				"LD A,$01",
+				"JP SSUB_D60A"
+			]);
+			checkInstructions(node2, [
+				"LD A,$02",
+				"JP NC,LLBL_D604"
+			]);
+		});
+
+
+		test('Self modifying code', () => {
+			const startAddr = 0xE000;
+			dng.getFlowGraph([startAddr]);
+			dng.disassembleNodes();
+
+			dbgDisassembly((dng as any).nodes);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			assert.equal(node1.label, undefined);
+
+			const node2 = dng.getNodeForAddress(startAddr + 9)!;
+			assert.notEqual(node2, undefined);
+			assert.equal(node2.label, 'SSUB_E009');
+
+			checkInstructions(node1, [
+				"LD A,$01",
+				"LD (SSUB_E009.L1+1),A",
+				"CALL SSUB_E009"
+			]);
+			checkInstructions(node2, [
+				"LD A,$02",
+				"LD B,$00"
 			]);
 		});
 	});
