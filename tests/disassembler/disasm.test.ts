@@ -4778,7 +4778,7 @@ suite('Disassembler', () => {
 
 			checkInstructions(node1, [
 				"LD A,$01",
-				"JR SUB_D30B.L1"
+				"JR SSUB_D30B.LL1"
 			]);
 			checkInstructions(node2, [
 				"LD A,$02"

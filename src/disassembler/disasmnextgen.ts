@@ -642,22 +642,23 @@ export class DisassemblerNextGen {
 		}
 
 		// Number the local labels
+		Utility.assert(node.label);
 		let i = 1;
-		for (const node of localNodes) {
-			node.label = '.' + this.labelLocalLabelPrefix + i;
+		for (const localNode of localNodes) {
+			localNode.label = node.label + '.' + this.labelLocalLabelPrefix + i;
 			i++;
 		}
 
 		// Number the local loops
 		if (loopNodes.length == 1) {
 			// Just one loop, omit index
-			loopNodes[0].label = '.' + this.labelLocalLoopPrefix;
+			loopNodes[0].label = node.label + '.' + this.labelLocalLoopPrefix;
 		}
 		else {
 			// Add index
 			let k = 1;
 			for (const node of loopNodes) {
-				node.label = '.' + this.labelLocalLoopPrefix + k;
+				node.label = node.label + '.' + this.labelLocalLoopPrefix + k;
 				k++;
 			}
 		}
