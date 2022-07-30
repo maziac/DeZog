@@ -4110,7 +4110,7 @@ suite('Disassembler', () => {
 			dng = new DisassemblerNextGen();
 			dng.labelLblPrefix = 'LLBL_';
 			dng.labelSubPrefix = 'SSUB_';
-			dng.labelLoopPrefix = 'LLOOP';
+			dng.labelLocalLoopPrefix = 'LLOOP';
 			dng.labelLocalLabelPrefix = 'LL';
 			dng.setSlotBankInfo(0, 0xFFFF, 0, true);
 			dng.setCurrentSlots([0]);
@@ -4538,7 +4538,7 @@ suite('Disassembler', () => {
 			dng = new DisassemblerNextGen();
 			dng.labelLblPrefix = 'LLBL_';
 			dng.labelSubPrefix = 'SSUB_';
-			dng.labelLoopPrefix = 'LLOOP';
+			dng.labelLocalLoopPrefix = 'LLOOP';
 			dng.labelLocalLabelPrefix = 'LL';
 			dng.labelDataLblPrefix = "DDATA_";
 			dng.setSlotBankInfo(0x0000, 0x3FFF, 0, true);
@@ -4858,12 +4858,30 @@ suite('Disassembler', () => {
 
 			checkInstructions(node1, [
 				"LD A,$01",
-				"LD (SSUB_E009.L1+1),A",
+				"LD (SSUB_E009.CODE_E00B+1),A",
 				"CALL SSUB_E009"
 			]);
 			checkInstructions(node2, [
 				"LD A,$02",
 				"LD B,$00"
+			]);
+		});
+
+		test('Self modifying code through bank border', () => {
+			const startAddr = 0x6000;
+			dng.getFlowGraph([startAddr]);
+			dng.disassembleNodes();
+
+			dbgDisassembly((dng as any).nodes);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			assert.equal(node1.label, undefined);
+
+			checkInstructions(node1, [
+				"LD A,$01",
+				"LD ($E00C),A",
+				"CALL $E009"
 			]);
 		});
 	});

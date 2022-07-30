@@ -30,6 +30,8 @@ interface SlotBankInfo {
 interface OpcodeReference {
 	// The Opcode
 	opcode: Opcode;
+	// The address of the opcode
+	opcodeAddress: number;
 	// The address that it refers to
 	refAddress: number;
 }
@@ -88,9 +90,9 @@ export class DisassemblerNextGen {
 	public labelLblPrefix = "LBL_";
 	public labelRstPrefix = "RST_";
 	public labelDataLblPrefix = "DATA_";
-	public labelCodePrefix = "CODE_";	// Is used if data is read /written to a CODE section.
+	public labelCodePrefix = "CODE_";	// Is used if data is read /written to a CODE section. For local (e.g. "SUB_C000.CODE_C00B") and global (e.g. "CODE_C00B").
 	public labelLocalLabelPrefix = "L";	// "_L"
-	public labelLoopPrefix = "LOOP";	// "_LOOP"
+	public labelLocalLoopPrefix = "LOOP";	// "_LOOP"
 
 	public labelIntrptPrefix = "INTRPT";
 
@@ -411,6 +413,7 @@ export class DisassemblerNextGen {
 				// Then collect the address for later usage
 				const opcRef: OpcodeReference = {
 					opcode,
+					opcodeAddress: address,
 					refAddress: opcode.value
 				}
 				this.opcodeReferences.push(opcRef);
@@ -648,13 +651,13 @@ export class DisassemblerNextGen {
 		// Number the local loops
 		if (loopNodes.length == 1) {
 			// Just one loop, omit index
-			loopNodes[0].label = '.' + this.labelLoopPrefix;
+			loopNodes[0].label = '.' + this.labelLocalLoopPrefix;
 		}
 		else {
 			// Add index
 			let k = 1;
 			for (const node of loopNodes) {
-				node.label = '.' + this.labelLoopPrefix + k;
+				node.label = '.' + this.labelLocalLoopPrefix + k;
 				k++;
 			}
 		}
@@ -671,36 +674,60 @@ export class DisassemblerNextGen {
 	protected assignOpcodeReferenceLabels() {
 		// Loop over all collected addresses
 		for (const opcRef of this.opcodeReferences) {
+			// Check first if bank border crossed
 			let addr64k = opcRef.refAddress;
-			let attr = this.memory.getAttributeAt(addr64k);
+			const slot = this.addressesSlotBankInfo[opcRef.opcodeAddress].slot;
+			if (this.bankBorderPassed(slot, addr64k))
+				continue;	// Does not create a label
+
 			// Check for DATA or CODE
-			let prefix;
+			let attr = this.memory.getAttributeAt(addr64k);
 			if (attr & MemAttribute.CODE) {
 				// CODE
-				prefix = this.labelCodePrefix;
-
 				// Adjust address (in case it does not point to the start of instruction)
 				while (!(attr & MemAttribute.CODE_FIRST)) {
 					addr64k--;
 					attr = this.memory.getAttributeAt(addr64k);
 				}
+
+				// Check if there is already a label
+				let label = this.funcGetLabel(addr64k);
+				if (!label)
+					label = this.nodes.get(addr64k)?.label;
+				if (!label)
+					label = this.otherLabels.get(addr64k);
+				if (!label) {
+					// Now create a new label
+					// Get the block node
+					const blockNode = this.blocks[addr64k];
+					Utility.assert(blockNode);
+					label = blockNode.label;
+					if (label) {
+						// Create a new local label, e.g. "SUB_C000.CODE_C00B"
+						label += '.' + this.labelCodePrefix + Utility.getHexString(addr64k, 4);
+					}
+					else {
+						// Create a new label, e.g. "CODE_C00B"
+						label = this.labelCodePrefix + Utility.getHexString(addr64k, 4);
+					}
+					// And store
+					this.otherLabels.set(addr64k, label);
+				}
 			}
 			else {
 				// DATA
-				prefix = this.labelDataLblPrefix;
-			}
-
-			// Check if label already exists.
-			let label = this.funcGetLabel(addr64k);
-			if (!label)
-				label = this.nodes.get(addr64k)?.label;
-			if (!label)
-				label = this.otherLabels.get(addr64k);
-			if (!label) {
-				// Now create a new label
-				label = prefix + Utility.getHexString(addr64k, 4);
-				// And store
-				this.otherLabels.set(addr64k, label);
+				// Check if label already exists.
+				let label = this.funcGetLabel(addr64k);
+				if (!label)
+					label = this.nodes.get(addr64k)?.label;
+				if (!label)
+					label = this.otherLabels.get(addr64k);
+				if (!label) {
+					// Now create a new label
+					label = this.labelDataLblPrefix + Utility.getHexString(addr64k, 4);
+					// And store
+					this.otherLabels.set(addr64k, label);
+				}
 			}
 		}
 	}
@@ -784,15 +811,12 @@ export class DisassemblerNextGen {
 		for (const [, node] of this.nodes) {
 			// Loop over all instructions/opcodes
 			const slot = this.addressesSlotBankInfo[node.start].slot;
-			//let opcodeAddress = node.start;
 			for (const opcode of node.instructions) {
 				opcode.disassembleOpcode((addr64k: number) => {
-					// Return an existing label for the address or invent one.
+					// Return an existing label for the address or just the address
 					const labelName = this.getLabelFromSlotForAddress(slot, addr64k);
 					return labelName;
 				});
-				// Next
-				//opcodeAddress += opcode.length;
 			}
 		}
 	}

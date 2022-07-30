@@ -39,186 +39,195 @@
  38   4001 C9           	RET
  39   4002
  40   4002
- 41   4002 00 00 00...  	DEFS 0x8000-$
- 42   8000              SUB_8000:
- 43   8000 00           	NOP
- 44   8001 C9           	RET
- 45   8002 00 00 00...  	DEFS 0x8010-$
- 46   8010              LBL_8010:
- 47   8010 00 00        	DEFW 0
- 48   8012
- 49   8012
- 50   8012 00 00 00...  	DEFS 0x8100-$
- 51   8100              	; Simple calls to other banks
- 52   8100 CD 00 00     	CALL SUB_0000		; Found
- 53   8103
- 54   8103 CD 00 40     	CALL SUB_4000		; Found
- 55   8106
- 56   8106 CD 00 80     	CALL SUB_8000		; Found
- 57   8109
- 58   8109 C9           	RET
- 59   810A
- 60   810A
- 61   810A 00 00 00...  	DEFS 0xD000-$
- 62   D000              	; Same bank, misc
- 63   D000 CD 08 D0     	CALL SUB_D008
- 64   D003 18 FE        	JR $
- 65   D005
- 66   D005              LBL_D005:
- 67   D005 3E 08        	LD A,$08
- 68   D007
- 69   D007              .L1:
- 70   D007 00           	NOP
- 71   D008
- 72   D008              SUB_D008:
- 73   D008 DD 77 05     	LD (IX+5),A
- 74   D00B
- 75   D00B              .LOOP:
- 76   D00B FD 7E F9     	LD A,(IY-7)
- 77   D00E 28 FB        	JR Z,.LOOP
- 78   D010
- 79   D010 DD CB 00 7E  	BIT 7,(IX)
- 80   D014 20 04        	JR NZ,.L1
- 81   D016
- 82   D016 ED 4B 00 D1  	LD BC,(DATA_D100)
- 83   D01A
- 84   D01A              .L1:
- 85   D01A ED 53 02 D1  	LD (DATA_D102),DE
- 86   D01E FD 2A 04 D1  	LD IY,(DATA_D104)
- 87   D022 F2 26 D0     	JP P,.L2
- 88   D025
- 89   D025 C9           	RET
- 90   D026
- 91   D026              .L2:
- 92   D026 ED 44        	NEG
- 93   D028 28 DB        	JR Z,LBL_D005
- 94   D02A
- 95   D02A D2 07 D0     	JP NC,LBL_D005.L1
- 96   D02D
- 97   D02D C9           	RET
- 98   D02E
- 99   D02E 00 00 00...  	DEFS 0xD100 -$
-100   D100
-101   D100              DATA_D100:
-102   D100 BC BC        	DEFW 0xBCBC
-103   D102
-104   D102              DATA_D102:
-105   D102 DE DE        	DEFW 0xDEDE
-106   D104
-107   D104              DATA_D104:
-108   D104 11 11        	DEFW 0x1111
-109   D106
-110   D106
-111   D106 00 00 00...  	DEFS 0xD200-$
-112   D200              	; 2 subroutines merged
-113   D200 CD 07 D2     	CALL SUB_D207
-114   D203 CD 09 D2     	CALL SUB_D209
-115   D206 C9           	RET
-116   D207
-117   D207              SUB_D207:
-118   D207 3E 01        	LD A,$01
-119   D209              SUB_D209:
-120   D209 3E 02        	LD A,$02
-121   D20B C9           	RET
-122   D20C
-123   D20C
-124   D20C 00 00 00...  	DEFS 0xD300-$
-125   D300              	; 2 subroutines,sharing tail
-126   D300 CD 07 D3     	CALL SUB_D307
-127   D303 CD 0B D3     	CALL SUB_D30B
-128   D306 C9           	RET
-129   D307
-130   D307              SUB_D307:
-131   D307 3E 01        	LD A,$01
-132   D309 18 02        	JR SUB_D30B.L1
-133   D30B              SUB_D30B:
-134   D30B 3E 02        	LD A,$02
-135   D30D              .L1:
-136   D30D C9           	RET
-137   D30E
-138   D30E
-139   D30E 00 00 00...  	DEFS 0xD400-$
-140   D400              	; subroutine with jumps < subroutine address
-141   D400 CD 08 D4     	CALL SUB_D408
-142   D403 C9           	RET
-143   D404
-144   D404              LBL_D404:
-145   D404 3E 01        	LD A,$01
-146   D406
-147   D406              .L1:
-148   D406 3E 02        	LD A,$02
-149   D408
-150   D408              SUB_D408:
-151   D408 3E 03        	LD A,$03
-152   D40A
-153   D40A              .LOOP:
-154   D40A 3E 04        	LD A,$04
-155   D40C 28 FC        	JR Z,.LOOP
-156   D40E
-157   D40E 3E 05        	LD A,$05
-158   D410 20 02        	JR NZ,.L1
-159   D412
-160   D412 3E 06        	LD A,$06
-161   D414
-162   D414              .L1:
-163   D414 F2 18 D4     	JP P,.L2
-164   D417
-165   D417 C9           	RET
-166   D418
-167   D418              .L2:
-168   D418 ED 44        	NEG
-169   D41A 28 E8        	JR Z,LBL_D404
-170   D41C
-171   D41C D2 06 D4     	JP NC,LBL_D404.L1
-172   D41F
-173   D41F C9           	RET
-174   D420
-175   D420
-176   D420 00 00 00...  	DEFS 0xD500-$
-177   D500              	; subroutine with jumps < subroutine address, with additional JP
-178   D500 CD 09 D5     	CALL SUB_D509
-179   D503 C9           	RET
-180   D504
-181   D504              LBL_D504:
-182   D504 3E 01        	LD A,$01
-183   D506 C3 09 D5     	JP SUB_D509
-184   D509
-185   D509              SUB_D509:
-186   D509 3E 02        	LD A,$02
-187   D50B D2 04 D5     	JP NC,LBL_D504
-188   D50E
-189   D50E C9           	RET
-190   D50F
-191   D50F
-192   D50F 00 00 00...  	DEFS 0xD600-$
-193   D600              	; subroutine with jumps < subroutine address, with additional JP with hole
-194   D600 CD 0A D6     	CALL SUB_D60A
-195   D603 C9           	RET
-196   D604
-197   D604              LBL_D604:
-198   D604 3E 01        	LD A,$01
-199   D606 C3 0A D6     	JP SUB_D60A
-200   D609
-201   D609 00           	NOP	; "Hole"
-202   D60A
-203   D60A              SUB_D60A:
-204   D60A 3E 02        	LD A,$02
-205   D60C D2 04 D6     	JP NC,LBL_D604
-206   D60F
-207   D60F C9           	RET
-208   D610
-209   D610
-210   D610 00 00 00...  	DEFS 0xE000-$
-211   E000              	; Self modifying code
-212   E000 3E 01        	LD A,$1
-213   E002 32 0C E0     	LD (SUB_E000.L1+1),A
-214   E005 CD 09 E0     	CALL SUB_E000
-215   E008 C9           	RET
-216   E009
-217   E009              SUB_E000:
-218   E009 3E 02        	LD A,$02
-219   E00B              .L1:	; This does not split the nodes but is a referenced / otherLabels)
-220   E00B 06 00        	LD B,$00	; Modified
-221   E00D C9           	RET
-222   E00E
+ 41   4002 00 00 00...  	DEFS 0x6000-$
+ 42   6000              	; Self modifying code through bank border.
+ 43   6000              	; See also test at 0xE000.
+ 44   6000 3E 01        	LD A,$1
+ 45   6002 32 0B E0     	LD ($E00B),A
+ 46   6005 CD 09 E0     	CALL $E009
+ 47   6008 C9           	RET
+ 48   6009
+ 49   6009
+ 50   6009 00 00 00...  	DEFS 0x8000-$
+ 51   8000              SUB_8000:
+ 52   8000 00           	NOP
+ 53   8001 C9           	RET
+ 54   8002 00 00 00...  	DEFS 0x8010-$
+ 55   8010              LBL_8010:
+ 56   8010 00 00        	DEFW 0
+ 57   8012
+ 58   8012
+ 59   8012 00 00 00...  	DEFS 0x8100-$
+ 60   8100              	; Simple calls to other banks
+ 61   8100 CD 00 00     	CALL SUB_0000		; Found
+ 62   8103
+ 63   8103 CD 00 40     	CALL SUB_4000		; Found
+ 64   8106
+ 65   8106 CD 00 80     	CALL SUB_8000		; Found
+ 66   8109
+ 67   8109 C9           	RET
+ 68   810A
+ 69   810A
+ 70   810A 00 00 00...  	DEFS 0xD000-$
+ 71   D000              	; Same bank, misc
+ 72   D000 CD 08 D0     	CALL SUB_D008
+ 73   D003 18 FE        	JR $
+ 74   D005
+ 75   D005              LBL_D005:
+ 76   D005 3E 08        	LD A,$08
+ 77   D007
+ 78   D007              .L1:
+ 79   D007 00           	NOP
+ 80   D008
+ 81   D008              SUB_D008:
+ 82   D008 DD 77 05     	LD (IX+5),A
+ 83   D00B
+ 84   D00B              .LOOP:
+ 85   D00B FD 7E F9     	LD A,(IY-7)
+ 86   D00E 28 FB        	JR Z,.LOOP
+ 87   D010
+ 88   D010 DD CB 00 7E  	BIT 7,(IX)
+ 89   D014 20 04        	JR NZ,.L1
+ 90   D016
+ 91   D016 ED 4B 00 D1  	LD BC,(DATA_D100)
+ 92   D01A
+ 93   D01A              .L1:
+ 94   D01A ED 53 02 D1  	LD (DATA_D102),DE
+ 95   D01E FD 2A 04 D1  	LD IY,(DATA_D104)
+ 96   D022 F2 26 D0     	JP P,.L2
+ 97   D025
+ 98   D025 C9           	RET
+ 99   D026
+100   D026              .L2:
+101   D026 ED 44        	NEG
+102   D028 28 DB        	JR Z,LBL_D005
+103   D02A
+104   D02A D2 07 D0     	JP NC,LBL_D005.L1
+105   D02D
+106   D02D C9           	RET
+107   D02E
+108   D02E 00 00 00...  	DEFS 0xD100 -$
+109   D100
+110   D100              DATA_D100:
+111   D100 BC BC        	DEFW 0xBCBC
+112   D102
+113   D102              DATA_D102:
+114   D102 DE DE        	DEFW 0xDEDE
+115   D104
+116   D104              DATA_D104:
+117   D104 11 11        	DEFW 0x1111
+118   D106
+119   D106
+120   D106 00 00 00...  	DEFS 0xD200-$
+121   D200              	; 2 subroutines merged
+122   D200 CD 07 D2     	CALL SUB_D207
+123   D203 CD 09 D2     	CALL SUB_D209
+124   D206 C9           	RET
+125   D207
+126   D207              SUB_D207:
+127   D207 3E 01        	LD A,$01
+128   D209              SUB_D209:
+129   D209 3E 02        	LD A,$02
+130   D20B C9           	RET
+131   D20C
+132   D20C
+133   D20C 00 00 00...  	DEFS 0xD300-$
+134   D300              	; 2 subroutines,sharing tail
+135   D300 CD 07 D3     	CALL SUB_D307
+136   D303 CD 0B D3     	CALL SUB_D30B
+137   D306 C9           	RET
+138   D307
+139   D307              SUB_D307:
+140   D307 3E 01        	LD A,$01
+141   D309 18 02        	JR SUB_D30B.L1
+142   D30B              SUB_D30B:
+143   D30B 3E 02        	LD A,$02
+144   D30D              .L1:
+145   D30D C9           	RET
+146   D30E
+147   D30E
+148   D30E 00 00 00...  	DEFS 0xD400-$
+149   D400              	; subroutine with jumps < subroutine address
+150   D400 CD 08 D4     	CALL SUB_D408
+151   D403 C9           	RET
+152   D404
+153   D404              LBL_D404:
+154   D404 3E 01        	LD A,$01
+155   D406
+156   D406              .L1:
+157   D406 3E 02        	LD A,$02
+158   D408
+159   D408              SUB_D408:
+160   D408 3E 03        	LD A,$03
+161   D40A
+162   D40A              .LOOP:
+163   D40A 3E 04        	LD A,$04
+164   D40C 28 FC        	JR Z,.LOOP
+165   D40E
+166   D40E 3E 05        	LD A,$05
+167   D410 20 02        	JR NZ,.L1
+168   D412
+169   D412 3E 06        	LD A,$06
+170   D414
+171   D414              .L1:
+172   D414 F2 18 D4     	JP P,.L2
+173   D417
+174   D417 C9           	RET
+175   D418
+176   D418              .L2:
+177   D418 ED 44        	NEG
+178   D41A 28 E8        	JR Z,LBL_D404
+179   D41C
+180   D41C D2 06 D4     	JP NC,LBL_D404.L1
+181   D41F
+182   D41F C9           	RET
+183   D420
+184   D420
+185   D420 00 00 00...  	DEFS 0xD500-$
+186   D500              	; subroutine with jumps < subroutine address, with additional JP
+187   D500 CD 09 D5     	CALL SUB_D509
+188   D503 C9           	RET
+189   D504
+190   D504              LBL_D504:
+191   D504 3E 01        	LD A,$01
+192   D506 C3 09 D5     	JP SUB_D509
+193   D509
+194   D509              SUB_D509:
+195   D509 3E 02        	LD A,$02
+196   D50B D2 04 D5     	JP NC,LBL_D504
+197   D50E
+198   D50E C9           	RET
+199   D50F
+200   D50F
+201   D50F 00 00 00...  	DEFS 0xD600-$
+202   D600              	; subroutine with jumps < subroutine address, with additional JP with hole
+203   D600 CD 0A D6     	CALL SUB_D60A
+204   D603 C9           	RET
+205   D604
+206   D604              LBL_D604:
+207   D604 3E 01        	LD A,$01
+208   D606 C3 0A D6     	JP SUB_D60A
+209   D609
+210   D609 00           	NOP	; "Hole"
+211   D60A
+212   D60A              SUB_D60A:
+213   D60A 3E 02        	LD A,$02
+214   D60C D2 04 D6     	JP NC,LBL_D604
+215   D60F
+216   D60F C9           	RET
+217   D610
+218   D610
+219   D610 00 00 00...  	DEFS 0xE000-$
+220   E000              	; Self modifying code
+221   E000 3E 01        	LD A,$1
+222   E002 32 0C E0     	LD (SUB_E009.L1+1),A
+223   E005 CD 09 E0     	CALL SUB_E009
+224   E008 C9           	RET
+225   E009
+226   E009              SUB_E009:
+227   E009 3E 02        	LD A,$02
+228   E00B              .L1:	; This does not split the nodes but is a referenced / otherLabels)
+229   E00B 06 00        	LD B,$00	; Modified
+230   E00D C9           	RET
+231   E00E
 # file closed: main.asm

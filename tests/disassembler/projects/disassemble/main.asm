@@ -38,6 +38,15 @@ SUB_4000:
 	RET
 
 
+	DEFS 0x6000-$
+	; Self modifying code through bank border.
+	; See also test at 0xE000.
+	LD A,$1
+	LD ($E00B),A
+	CALL $E009
+	RET
+
+
 	DEFS 0x8000-$
 SUB_8000:
 	NOP
@@ -219,3 +228,4 @@ SUB_E009:
 .L1:	; This does not split the nodes but is a referenced / otherLabels)
 	LD B,$00	; Modified
 	RET
+
