@@ -4545,7 +4545,7 @@ suite('Disassembler', () => {
 			dng.setSlotBankInfo(0x4000, 0x7FFF, 1, true);
 			dng.setSlotBankInfo(0x8000, 0xFFFF, 3, false);
 			dng.setCurrentSlots([0, 1, 2]);	// A different bank in each slot
-			dng.readBinFile(0, './tests/disassembler/projects/disassemble/main.bin');
+			dng.readBinFile(0, './tests/disassembler/projects/disassemble_nodes/main.bin');
 			dng.funcGetLabel = (addr64k: number) => {
 				return undefined;
 			};
@@ -4863,7 +4863,8 @@ suite('Disassembler', () => {
 			]);
 			checkInstructions(node2, [
 				"LD A,$02",
-				"LD B,$00"
+				"LD B,$00",
+				"RET"
 			]);
 		});
 

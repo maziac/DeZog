@@ -42,7 +42,7 @@ SUB_4000:
 	; Self modifying code through bank border.
 	; See also test at 0xE000.
 	LD A,$1
-	LD ($E00B),A
+	LD ($E00C),A
 	CALL $E009
 	RET
 

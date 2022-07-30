@@ -43,7 +43,7 @@
  42   6000              	; Self modifying code through bank border.
  43   6000              	; See also test at 0xE000.
  44   6000 3E 01        	LD A,$1
- 45   6002 32 0B E0     	LD ($E00B),A
+ 45   6002 32 0C E0     	LD ($E00C),A
  46   6005 CD 09 E0     	CALL $E009
  47   6008 C9           	RET
  48   6009
