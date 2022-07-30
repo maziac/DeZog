@@ -70,43 +70,43 @@
  69   810A
  70   810A 00 00 00...  	DEFS 0xD000-$
  71   D000              	; Same bank, misc
- 72   D000 CD 08 D0     	CALL SUB_D008
- 73   D003 18 FE        	JR $
- 74   D005
- 75   D005              LBL_D005:
- 76   D005 3E 08        	LD A,$08
- 77   D007
- 78   D007              .L1:
- 79   D007 00           	NOP
- 80   D008
- 81   D008              SUB_D008:
- 82   D008 DD 77 05     	LD (IX+5),A
- 83   D00B
- 84   D00B              .LOOP:
- 85   D00B FD 7E F9     	LD A,(IY-7)
- 86   D00E 28 FB        	JR Z,.LOOP
- 87   D010
- 88   D010 DD CB 00 7E  	BIT 7,(IX)
- 89   D014 20 04        	JR NZ,.L1
- 90   D016
- 91   D016 ED 4B 00 D1  	LD BC,(DATA_D100)
- 92   D01A
- 93   D01A              .L1:
- 94   D01A ED 53 02 D1  	LD (DATA_D102),DE
- 95   D01E FD 2A 04 D1  	LD IY,(DATA_D104)
- 96   D022 F2 26 D0     	JP P,.L2
- 97   D025
- 98   D025 C9           	RET
- 99   D026
-100   D026              .L2:
-101   D026 ED 44        	NEG
-102   D028 28 DB        	JR Z,LBL_D005
-103   D02A
-104   D02A D2 07 D0     	JP NC,LBL_D005.L1
-105   D02D
-106   D02D C9           	RET
-107   D02E
-108   D02E 00 00 00...  	DEFS 0xD100 -$
+ 72   D000 CD 07 D0     	CALL SUB_D007
+ 73   D003 C9           	RET
+ 74   D004
+ 75   D004              LBL_D004:
+ 76   D004 3E 08        	LD A,$08
+ 77   D006
+ 78   D006              .L1:
+ 79   D006 00           	NOP
+ 80   D007
+ 81   D007              SUB_D007:
+ 82   D007 DD 77 05     	LD (IX+5),A
+ 83   D00A
+ 84   D00A              .LOOP:
+ 85   D00A FD 7E F9     	LD A,(IY-7)
+ 86   D00D 28 FB        	JR Z,.LOOP
+ 87   D00F
+ 88   D00F DD CB 00 7E  	BIT 7,(IX)
+ 89   D013 20 04        	JR NZ,.L1
+ 90   D015
+ 91   D015 ED 4B 00 D1  	LD BC,(DATA_D100)
+ 92   D019
+ 93   D019              .L1:
+ 94   D019 ED 53 02 D1  	LD (DATA_D102),DE
+ 95   D01D FD 2A 04 D1  	LD IY,(DATA_D104)
+ 96   D021 F2 25 D0     	JP P,.L2
+ 97   D024
+ 98   D024 C9           	RET
+ 99   D025
+100   D025              .L2:
+101   D025 ED 44        	NEG
+102   D027 28 DB        	JR Z,LBL_D004
+103   D029
+104   D029 D2 06 D0     	JP NC,LBL_D004.L1
+105   D02C
+106   D02C C9           	RET
+107   D02D
+108   D02D 00 00 00...  	DEFS 0xD100 -$
 109   D100
 110   D100              DATA_D100:
 111   D100 BC BC        	DEFW 0xBCBC

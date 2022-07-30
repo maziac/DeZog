@@ -69,16 +69,16 @@ LBL_8010:
 
 	DEFS 0xD000-$
 	; Same bank, misc
-	CALL SUB_D008
-	JR $
+	CALL SUB_D007
+	RET
 
-LBL_D005:
+LBL_D004:
 	LD A,$08
 
 .L1:
 	NOP
 
-SUB_D008:
+SUB_D007:
 	LD (IX+5),A
 
 .LOOP:
@@ -99,9 +99,9 @@ SUB_D008:
 
 .L2:
 	NEG
-	JR Z,LBL_D005
+	JR Z,LBL_D004
 
-	JP NC,LBL_D005.L1
+	JP NC,LBL_D004.L1
 
 	RET
 

@@ -7,21 +7,15 @@ import {NumberType} from '../../src/disassembler/numbertype';
 
 suite('Disassembler Opcode', () => {
 
-	setup( () => {
-		//Settings.Init(<any>undefined, '');
+	setup(() => {
+		Opcode.InitOpcodes();
 	});
-
-	/*
-		teardown( () => dc.stop() );
-	*/
 
 	test('Check all opcode numbers', () => {
 		const length = Opcode.Opcodes.length;
-//		const arr = Opcodes;
 
 		// Check opcode for each element
 		for(let i=0; i<length; i++) {
-//			console.log('n ' + i + ', ' + i.toString(16));
 			const opcode = Opcode.Opcodes[i];
 			assert(opcode != undefined);
 			if(!Array.isArray(opcode))

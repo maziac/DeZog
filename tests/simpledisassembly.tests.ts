@@ -1,8 +1,13 @@
+import { Opcode } from './../src/disassembler/opcode';
 import * as assert from 'assert';
 import {SimpleDisassembly} from '../src/disassembly/simpledisassembly';
 
 suite('Disassembly (SimpleDisassembly)', () => {
 
+	setup(() => {
+		Opcode.InitOpcodes();
+	});
+	
 	suite('SimpleDisassembly', () => {
 
 		suite('getDataDissassembly(false)', () => {

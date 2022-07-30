@@ -1,3 +1,5 @@
+import { Opcode } from './../src/disassembler/opcode';
+import { Format } from './../src/disassembler/format';
 
 import * as assert from 'assert';
 import {ZesaruxCpuHistory, DecodeZesaruxHistoryInfo} from '../src/remotes/zesarux/zesaruxcpuhistory';
@@ -36,6 +38,8 @@ suite('ZesaruxCpuHistory', () => {
 		Settings.launch = Settings.Init(cfg);
 		Z80RegistersClass.createRegisters();
 		Labels.readListFiles(cfg, new MemoryModelUnknown());	// To reset the labels
+		Format.hexFormat = 'h';
+		Opcode.InitOpcodes();
 	});
 
 	function createCpuHistory(): ZesaruxCpuHistory {

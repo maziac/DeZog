@@ -100,6 +100,8 @@ export class AsmNode {
 			// Check if already processed
 			if (alreadyProcessed.includes(predecessor))
 				continue;
+			// Mark as processed
+			alreadyProcessed.push(predecessor);
 			// Check if node is lower than target
 			if (predecessor.start < target.start)
 				continue;
@@ -109,8 +111,6 @@ export class AsmNode {
 			// Check recursive
 			if (predecessor.isLoopRoot(target, alreadyProcessed))
 				return true;
-			// Mark as processed
-			alreadyProcessed.push(predecessor);
 		}
 
 		// Nothing found

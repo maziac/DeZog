@@ -2,7 +2,6 @@ import * as assert from 'assert';
 import {writeFileSync} from 'fs';
 import {Disassembler} from '../../src/disassembler/disasm';
 import {Format} from '../../src/disassembler/format';
-import {MemAttribute} from '../../src/disassembler/memory';
 import {NumberType} from '../../src/disassembler/numbertype';
 import {Opcode} from '../../src/disassembler/opcode';
 import {AsmNode} from './../../src/disassembler/asmnode';
@@ -4667,19 +4666,19 @@ suite('Disassembler', () => {
 
 			dbgDisassembly((dng as any).nodes);
 
-			const node0 = dng.getNodeForAddress(startAddr-3)!;
+			const node0 = dng.getNodeForAddress(startAddr + 4)!;
 			assert.notEqual(node0, undefined);
 			checkInstructions(node0, [
 				"LD A,$08",
 			]);
 
-			const node0b = dng.getNodeForAddress(startAddr-1)!;
+			const node0b = dng.getNodeForAddress(startAddr + 6)!;
 			assert.notEqual(node0b, undefined);
 			checkInstructions(node0b, [
 				"NOP",
 			]);
 
-			const node1 = dng.getNodeForAddress(startAddr)!;
+			const node1 = dng.getNodeForAddress(startAddr + 0x0A)!;
 			assert.notEqual(node1, undefined);
 			checkInstructions(node1, [
 				"LD (IX+5),A",
