@@ -11,20 +11,34 @@
 
 
 	DEFS 0x0100-$
-	; 1 branch, local label
+	; 1 branch, glocal label
 	LD A,5
 	CP B
-	JR Z,L1
+	JR Z,LBL_0107
 
 	NEG
 
-L1:
+LBL_0107:
+	RET
+
+	DEFS 0x0180-$
+	; 1 branch, local label
+	CALL SUB_0184
+	RET
+
+SUB_0184:
+	LD A,5
+	CP B
+	JR Z,.LL1
+
+	NEG
+
+.LL1:
 	RET
 
 
 	DEFS 0x0200-$
 	; JR after RET
-SSUB_0200:
 	LD A,5
 	CP B
 	JR Z,SSUB_0209
@@ -39,22 +53,46 @@ SSUB_0209:
 	RET
 
 
+	DEFS 0x0280-$
+	; JR after RET, sub
+	CALL SSUB_0284
+	RET
+
+SSUB_0284:
+	LD A,5
+	CP B
+	JR Z,LLBL_028D
+
+	NEG
+	RET
+
+	NOP
+
+LLBL_028D:
+	NOP
+	RET
+
+
 	DEFS 0x0300-$
 	; Sub in sub
-SUBAA:
+	CALL SSUB_0307
+	CALL SSUB_0309
+	RET
+
+SSUB_0307:
 	LD A,5
-SUBA:
+SSUB_0309:
 	INC A
 	RET
 
-	CALL SUBA
-
-	JR $
 
 
 	DEFS 0x0400-$
 	; Complex jumping
-SSUB_0400:
+	CALL SSUB_0404
+	RET
+
+SSUB_0404:
 	LD A,5
 	JP Z,.LL2
 
@@ -88,7 +126,10 @@ SUBC:
 
 	DEFS 0x0600-$
 	; Loop
-SSUB_0600:
+	CALL SSUB_0604
+	RET
+
+SSUB_0604:
 	LD A,5
 
 .LLOOP:
@@ -100,7 +141,10 @@ SSUB_0600:
 
 	DEFS 0x0700-$
 	; Nested loops
-SSUB_0700:
+	CALL SSUB_0704
+	RET
+
+SSUB_0704:
 	LD A,5
 
 .LLOOP1:
@@ -118,7 +162,10 @@ SSUB_0700:
 
 	DEFS 0x0800-$
 	; Nested loops, same label
-SSUB_0800:
+	CALL SSUB_0804
+	RET
+
+SSUB_0804:
 	LD A,5
 
 .LLOOP:
@@ -146,7 +193,10 @@ SUB_REC:
 
 	DEFS 0x1100-$
 	; JP
-SUB_1100:
+	CALL SUB_1104
+	RET
+
+SUB_1104:
 	LD A,5
 	JP .LL1
 .LL1:

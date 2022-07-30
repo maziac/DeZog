@@ -4126,10 +4126,10 @@ suite('Disassembler', () => {
 			const node1 = dng.getNodeForAddress(startAddr)!;
 			assert.notEqual(node1, undefined);
 
-			assert.equal(node1.label, 'SSUB_0000');
+			assert.equal(node1.label, undefined);
 		});
 
-		test('1 branch, local label', () => {
+		test('1 branch, global label', () => {
 			const startAddr = 0x0100;
 			dng.getFlowGraph([startAddr]);
 			assert.equal(dngNodes.size, 3);
@@ -4141,14 +4141,31 @@ suite('Disassembler', () => {
 			const node3 = dng.getNodeForAddress(startAddr + 7)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(node1.label, 'SSUB_0100');
+			assert.equal(node1.label, undefined);
 			assert.equal(node2.label, undefined);
-			assert.equal(node3.label, '.LL1');
+			assert.equal(node3.label, 'LLBL_0107');
 		});
 
-		test('JR after RET, global label', () => {
+		test('1 branch, local label', () => {
+			const startAddr = 0x0180;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 5);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 4)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(startAddr + 0x0B)!;
+			assert.notEqual(node2, undefined);
+
+			assert.equal(node1.label, undefined);
+			assert.equal(node2.label, 'SSUB_0184');
+			assert.equal(node3.label, 'SSUB_0184.LL1');
+		});
+
+		test('JR after RET', () => {
 			const startAddr = 0x0200;
-			dng.getFlowGraph([startAddr, startAddr + 9]);
+			dng.getFlowGraph([startAddr]);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4156,90 +4173,103 @@ suite('Disassembler', () => {
 			const node2 = dng.getNodeForAddress(startAddr + 9)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(node1.label, 'SSUB_0200');
-			assert.equal(node2.label, 'SSUB_0209');
+			assert.equal(node1.label, undefined);
+			assert.equal(node2.label, 'LLBL_0209');
+		});
+
+		test('JR after RET, sub', () => {
+			const startAddr = 0x0280;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 5);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 0x0D)!;
+			assert.notEqual(node2, undefined);
+
+			assert.equal(node1.label, undefined);
+			assert.equal(node2.label, 'LLBL_028D');
 		});
 
 		test('Sub in sub', () => {
 			const startAddr = 0x0300;
-			dng.getFlowGraph([startAddr, startAddr + 4]);
-			assert.equal(dngNodes.size, 4);
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 5);
 
-			const node1 = dng.getNodeForAddress(startAddr)!;
+			const node1 = dng.getNodeForAddress(startAddr + 7)!;
 			assert.notEqual(node1, undefined);
-			const node2 = dng.getNodeForAddress(startAddr + 2)!;
+			const node2 = dng.getNodeForAddress(startAddr + 9)!;
 			assert.notEqual(node2, undefined);
-			const node3 = dng.getNodeForAddress(startAddr + 4)!;
-			assert.notEqual(node3, undefined);
-			const node4 = dng.getNodeForAddress(startAddr + 7)!;
-			assert.notEqual(node4, undefined);
 
-			assert.equal(node1.label, 'SSUB_0300');
-			assert.equal(node2.label, 'SSUB_0302');
-			assert.equal(node3.label, 'LLBL_0304');
-			assert.equal(node4.label, '.LLOOP');
+			assert.equal(node1.label, 'SSUB_0307');
+			assert.equal(node2.label, 'SSUB_0309');
 		});
 
 
 		test('Complex jumping', () => {
 			const startAddr = 0x0400;
 			dng.getFlowGraph([startAddr]);
-			assert.equal(dngNodes.size, 5);
+			assert.equal(dngNodes.size, 7);
 
-			const node1 = dng.getNodeForAddress(startAddr)!;
+			const node1 = dng.getNodeForAddress(startAddr + 4)!;
 			assert.notEqual(node1, undefined);
-			const node2 = dng.getNodeForAddress(startAddr + 5)!;
+			const node2 = dng.getNodeForAddress(startAddr + 9)!;
 			assert.notEqual(node2, undefined);
-			const node3 = dng.getNodeForAddress(startAddr + 6)!;
+			const node3 = dng.getNodeForAddress(startAddr + 0x0A)!;
 			assert.notEqual(node3, undefined);
-			const node4 = dng.getNodeForAddress(startAddr + 8)!;
+			const node4 = dng.getNodeForAddress(startAddr + 0x0C)!;
 			assert.notEqual(node4, undefined);
-			const node5 = dng.getNodeForAddress(startAddr + 0x0B)!;
+			const node5 = dng.getNodeForAddress(startAddr + 0x0F)!;
 			assert.notEqual(node5, undefined);
 
-			assert.equal(node1.label, 'SSUB_0400');
+			assert.equal(node1.label, 'SSUB_0404');
 			assert.equal(node2.label, undefined);
-			assert.equal(node3.label, '.LL1');
-			assert.equal(node4.label, '.LL2');
+			assert.equal(node3.label, 'SSUB_0404.LL1');
+			assert.equal(node4.label, 'SSUB_0404.LL2');
 			assert.equal(node5.label, undefined);
+		});
+
+		test('2 subs, sharing block', () => {
+			const startAddr = 0x0500;
+			assert.equal(false, true);
 		});
 
 		test('Loop', () => {
 			const startAddr = 0x0600;
 			dng.getFlowGraph([startAddr]);
-			assert.equal(dngNodes.size, 3);
+			assert.equal(dngNodes.size, 5);
 
-			const node1 = dng.getNodeForAddress(startAddr)!;
+			const node1 = dng.getNodeForAddress(startAddr + 4)!;
 			assert.notEqual(node1, undefined);
-			const node2 = dng.getNodeForAddress(startAddr + 2)!;
+			const node2 = dng.getNodeForAddress(startAddr + 6)!;
 			assert.notEqual(node2, undefined);
-			const node3 = dng.getNodeForAddress(startAddr + 5)!;
+			const node3 = dng.getNodeForAddress(startAddr + 9)!;
 			assert.notEqual(node3, undefined);
 
-			assert.equal(node1.label, 'SSUB_0600');
-			assert.equal(node2.label, '.LLOOP');
+			assert.equal(node1.label, 'SSUB_0604');
+			assert.equal(node2.label, 'SSUB_0604.LLOOP');
 			assert.equal(node3.label, undefined);
 		});
 
 		test('Nested loops', () => {
 			const startAddr = 0x0700;
 			dng.getFlowGraph([startAddr]);
-			assert.equal(dngNodes.size, 5);
+			assert.equal(dngNodes.size, 7);
 
-			const node1 = dng.getNodeForAddress(startAddr)!;
+			const node1 = dng.getNodeForAddress(startAddr + 4)!;
 			assert.notEqual(node1, undefined);
-			const node2 = dng.getNodeForAddress(startAddr + 2)!;
+			const node2 = dng.getNodeForAddress(startAddr + 6)!;
 			assert.notEqual(node2, undefined);
-			const node3 = dng.getNodeForAddress(startAddr + 3)!;
+			const node3 = dng.getNodeForAddress(startAddr + 7)!;
 			assert.notEqual(node3, undefined);
-			const node4 = dng.getNodeForAddress(startAddr + 6)!;
+			const node4 = dng.getNodeForAddress(startAddr + 0x0A)!;
 			assert.notEqual(node4, undefined);
-			const node5 = dng.getNodeForAddress(startAddr + 9)!;
+			const node5 = dng.getNodeForAddress(startAddr + 0x0D)!;
 			assert.notEqual(node5, undefined);
 
-			assert.equal(node1.label, 'SSUB_0700');
-			assert.equal(node2.label, '.LLOOP1');
-			assert.equal(node3.label, '.LLOOP2');
+			assert.equal(node1.label, 'SSUB_0704');
+			assert.equal(node2.label, 'SSUB_0704.LLOOP1');
+			assert.equal(node3.label, 'SSUB_0704.LLOOP2');
 			assert.equal(node4.label, undefined);
 			assert.equal(node5.label, undefined);
 		});
@@ -4247,19 +4277,19 @@ suite('Disassembler', () => {
 		test('Nested loops, same label', () => {
 			const startAddr = 0x0800;
 			dng.getFlowGraph([startAddr]);
-			assert.equal(dngNodes.size, 4);
+			assert.equal(dngNodes.size, 6);
 
-			const node1 = dng.getNodeForAddress(startAddr)!;
+			const node1 = dng.getNodeForAddress(startAddr + 4)!;
 			assert.notEqual(node1, undefined);
-			const node2 = dng.getNodeForAddress(startAddr + 2)!;
+			const node2 = dng.getNodeForAddress(startAddr + 6)!;
 			assert.notEqual(node2, undefined);
-			const node3 = dng.getNodeForAddress(startAddr + 6)!;
+			const node3 = dng.getNodeForAddress(startAddr + 0x0A)!;
 			assert.notEqual(node3, undefined);
-			const node4 = dng.getNodeForAddress(startAddr + 9)!;
+			const node4 = dng.getNodeForAddress(startAddr + 0x0D)!;
 			assert.notEqual(node4, undefined);
 
-			assert.equal(node1.label, 'SSUB_0800');
-			assert.equal(node2.label, '.LLOOP');
+			assert.equal(node1.label, 'SSUB_0804');
+			assert.equal(node2.label, 'SSUB_0804.LLOOP');
 			assert.equal(node3.label, undefined);
 			assert.equal(node4.label, undefined);
 		});
@@ -4284,16 +4314,16 @@ suite('Disassembler', () => {
 		test('JP', () => {
 			const startAddr = 0x1100;
 			dng.getFlowGraph([startAddr]);
-			assert.equal(dngNodes.size, 2);
+			assert.equal(dngNodes.size, 4);
 
-			const node1 = dng.getNodeForAddress(startAddr)!;
+			const node1 = dng.getNodeForAddress(startAddr + 4)!;
 			assert.notEqual(node1, undefined);
-			const node2 = dng.getNodeForAddress(startAddr + 5)!;
+			const node2 = dng.getNodeForAddress(startAddr + 9)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(node1.label, 'SSUB_1100');
+			assert.equal(node1.label, 'SSUB_1104');
 			assert.ok(node1.isSubroutine);
-			assert.equal(node2.label, '.LL1');
+			assert.equal(node2.label, 'SSUB_1104.LL1');
 			assert.ok(node2.isSubroutine);
 		});
 	});
@@ -4401,19 +4431,15 @@ suite('Disassembler', () => {
 			assert.equal(node4.callee?.start, 0xC000);
 		});
 
-		test('From slot 3', () => {
-			const startAddr = 0xC000;
+		test('From slot 3 (not used)', () => {
+			// Pathilogical case: we should not create something in unused memory.
+			const startAddr = 0xC100;
 			dng.getFlowGraph([startAddr]);
 			assert.equal(dngNodes.size, 1);	// A node is created although e.g. length is 0.
 
-			const node0000 = dng.getNodeForAddress(0x0000)!;
-			assert.equal(node0000, undefined);
-			const node4000 = dng.getNodeForAddress(0x4000)!;
-			assert.equal(node4000, undefined);
-			const node8000 = dng.getNodeForAddress(0x8000)!;
-			assert.equal(node8000, undefined);
-			const nodeC000 = dng.getNodeForAddress(0xC000)!;
-			assert.notEqual(nodeC000, undefined);
+			const nodeC100 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(nodeC100, undefined);
+			assert.notEqual(nodeC100.comments.length, 0);	// There should be a comment about unassigned memory.
 		});
 	});
 
@@ -4500,32 +4526,6 @@ suite('Disassembler', () => {
 			assert.equal(node1.comments.length, 0);
 			assert.equal(node1.instructions.length, 2);
 			assert.equal(node1.length, 3);
-		});
-	});
-
-
-	suite('adjustAddress', () => {
-
-		let dng: DisassemblerNextGen;
-		setup(() => {
-			dng = new DisassemblerNextGen();
-			dng.setMemory(0x1000, new Uint8Array([0, 0, 0, 0, 1, 1, 1, 2]));
-		});
-
-		test('adjustAddress', () => {
-
-			dng.memory.setAttributesAt(0x1004, 3, MemAttribute.CODE)
-			dng.memory.addAttributeAt(0x1004, MemAttribute.CODE_FIRST);
-
-			assert.equal((dng as any).adjustAddress(0x200), 0x200);
-			assert.equal((dng as any).adjustAddress(0x1001), 0x1001);
-			assert.equal((dng as any).adjustAddress(0x1003), 0x1003);
-			assert.equal((dng as any).adjustAddress(0x1004), 0x1004);
-			assert.equal((dng as any).adjustAddress(0x1005), 0x1004);
-			assert.equal((dng as any).adjustAddress(0x1006), 0x1004);
-			assert.equal((dng as any).adjustAddress(0x1007), 0x1007);
-			assert.equal((dng as any).adjustAddress(0x1008), 0x1008);
-			assert.equal((dng as any).adjustAddress(0x1009), 0x1009);
 		});
 	});
 

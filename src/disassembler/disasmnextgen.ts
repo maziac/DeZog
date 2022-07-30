@@ -189,16 +189,6 @@ export class DisassemblerNextGen {
 
 
 	/**
-	 * Returns a label consisting of the prefix + the address as hex.
-	 * @param addr e.g. 0x4AFE
-	 * @returns e.g. "LBL_4AFE"
-	 */
-	protected createLabelName(addr: number) {
-		return this.labelLblPrefix + Format.getHexString(addr, 4);
-	}
-
-
-	/**
 	 * Runs 2 passes.
 	 * First creates the shallow AsmNodes from all branches and calls addresses.
 	 * Then all attributes of the nodes are filled (e.g. all calls, callers).
@@ -244,7 +234,7 @@ export class DisassemblerNextGen {
 			const memAttr = this.memory.getAttributeAt(addr);
 			if (!(memAttr & MemAttribute.FLOW_ANALYZED)) {
 				// If not already analyzed
-				this.createNodeForAddress(addr, true);
+				this.createNodeForAddress(addr, false);
 			}
 		}
 	}
@@ -588,12 +578,14 @@ export class DisassemblerNextGen {
 
 			// Check for block start / global node (label)
 			if (blockNode == node) {
-				// Check if this is really the start, other
-				// Now check if it is a subroutine, if some other node
-				// called it.
-				const prefix = (blockNode.isSubroutine && blockNode.isStartingNode) ? this.labelSubPrefix : this.labelLblPrefix;
-				// Add global label name
-				node.label = prefix + Utility.getHexString(addr64k, 4);
+				// Assign label only if starting node
+				if (node.isStartingNode) {
+					// Now check if it is a subroutine, if some other node
+					// called it.
+					const prefix = (blockNode.isSubroutine && blockNode.isStartingNode) ? this.labelSubPrefix : this.labelLblPrefix;
+					// Add global label name
+					node.label = prefix + Utility.getHexString(addr64k, 4);
+				}
 
 				// Now dive into node and assign local names.
 				this.assignLocalLabels(node);
@@ -641,25 +633,41 @@ export class DisassemblerNextGen {
 			Utility.assert(blockNode);
 		}
 
-		// Number the local labels
-		Utility.assert(node.label);
-		let i = 1;
-		for (const localNode of localNodes) {
-			localNode.label = node.label + '.' + this.labelLocalLabelPrefix + i;
-			i++;
-		}
+		// Normally the node.label exists. But for the start of disassembly
+		// it may not be there. In that case, instead of local labels, normal
+		// labels are assigned.
+		if (node.label) {
+			// Local label
+			// Number the local labels
+			let i = 1;
+			for (const localNode of localNodes) {
+				localNode.label = node.label + '.' + this.labelLocalLabelPrefix + i;
+				i++;
+			}
 
-		// Number the local loops
-		if (loopNodes.length == 1) {
-			// Just one loop, omit index
-			loopNodes[0].label = node.label + '.' + this.labelLocalLoopPrefix;
+			// Number the local loops
+			if (loopNodes.length == 1) {
+				// Just one loop, omit index
+				loopNodes[0].label = node.label + '.' + this.labelLocalLoopPrefix;
+			}
+			else {
+				// Add index
+				let k = 1;
+				for (const loopNode of loopNodes) {
+					loopNode.label = node.label + '.' + this.labelLocalLoopPrefix + k;
+					k++;
+				}
+			}
 		}
 		else {
-			// Add index
-			let k = 1;
-			for (const node of loopNodes) {
-				node.label = node.label + '.' + this.labelLocalLoopPrefix + k;
-				k++;
+			// Global labels:
+			// Labels
+			for (const localNode of localNodes) {
+				localNode.label = this.labelLblPrefix + Utility.getHexString(localNode.start, 4);
+			}
+			// Loops
+			for (const loopNode of loopNodes) {
+				node.label = this.labelLblPrefix + Utility.getHexString(loopNode.start, 4);
 			}
 		}
 	}
