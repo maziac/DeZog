@@ -429,7 +429,6 @@ export class DisassemblerNextGen {
 				if (opcode.flags & OpcodeFlag.CALL) {
 					node.callee = branchNode;
 					branchNode.callers.push(node);
-					branchNode.isStartingNode = true;
 				}
 				else {
 					// No CALL, e.g. a JP etc.
@@ -539,11 +538,9 @@ export class DisassemblerNextGen {
 		let addr;
 		for (const node of sortedNodes) {
 			// Check for block start
-			//if (node.start != addr || node.callers.length > 0 || !blockBranches.includes(node)) {
-			if (node.start != addr || node.isStartingNode || !blockBranches.includes(node)) {
+			if (node.start != addr || node.callers.length > 0 || !blockBranches.includes(node)) {
 				blockNode = node;
 				addr = node.start;
-				//node.isStartingNode = true;
 				// Use all block branches
 				blockBranches = [];
 				node.getBranchesRecursive(blockBranches);
@@ -576,12 +573,11 @@ export class DisassemblerNextGen {
 			// Check for block start / global node (label)
 			if (blockNode == node) {
 				// Assign label only if starting node (callers or predecessors, predecessors is for the case that there is e.g. a loop from subroutine to an address prior to the subroutine).
-				if (node.isStartingNode || node.predecessors.length > 0)
-				//if (node.callers.length > 0 || node.predecessors.length > 0)
+				if (node.callers.length > 0 || node.predecessors.length > 0)
 				{
 					// Now check if it is a subroutine, if some other node
 					// called it.
-					const prefix = (blockNode.isSubroutine && blockNode.isStartingNode) ? this.labelSubPrefix : this.labelLblPrefix;
+					const prefix = (blockNode.isSubroutine && blockNode.callers.length > 0) ? this.labelSubPrefix : this.labelLblPrefix;
 					// Add global label name
 					node.label = prefix + Utility.getHexString(addr64k, 4);
 				}
