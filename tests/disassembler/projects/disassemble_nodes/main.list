@@ -76,7 +76,7 @@
  75   D004              LBL_D004:
  76   D004 3E 08        	LD A,$08
  77   D006
- 78   D006              .L1:
+ 78   D006              .LOOP:
  79   D006 00           	NOP
  80   D007
  81   D007              SUB_D007:
@@ -102,7 +102,7 @@
 101   D025 ED 44        	NEG
 102   D027 28 DB        	JR Z,LBL_D004
 103   D029
-104   D029 D2 06 D0     	JP NC,LBL_D004.L1
+104   D029 D2 06 D0     	JP NC,LBL_D004.LOOP
 105   D02C
 106   D02C C9           	RET
 107   D02D

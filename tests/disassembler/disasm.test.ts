@@ -4659,7 +4659,7 @@ suite('Disassembler', () => {
 			]);
 		});
 
-		test('Same bank, misc', () => {
+		test('Loop: Label prior to subroutine, misc references', () => {
 			const startAddr = 0xD000;
 			dng.getFlowGraph([startAddr]);
 			dng.disassembleNodes();
@@ -4678,50 +4678,62 @@ suite('Disassembler', () => {
 				"NOP",
 			]);
 
-			const node1 = dng.getNodeForAddress(startAddr + 0x0A)!;
+			const node1 = dng.getNodeForAddress(startAddr + 7)!;
 			assert.notEqual(node1, undefined);
 			checkInstructions(node1, [
 				"LD (IX+5),A",
 			]);
 
-			const node1b = dng.getNodeForAddress(startAddr+3)!;
+			const node1b = dng.getNodeForAddress(startAddr + 0x0A)!;
 			assert.notEqual(node1b, undefined);
 			checkInstructions(node1b, [
 				"LD A,(IY-7)",
-				"JR Z,.LLOOP",
+				"JR Z,SSUB_D007.LLOOP",
 			]);
 
-			const node2 = dng.getNodeForAddress(startAddr + 8)!;
+			const node2 = dng.getNodeForAddress(startAddr + 0x0F)!;
 			assert.notEqual(node2, undefined);
 			checkInstructions(node2, [
 				"BIT 7,(IX+0)",
-				"JR NZ,.LL1",
+				"JR NZ,SSUB_D007.LL1",
 			]);
 
-			const node3 = dng.getNodeForAddress(startAddr + 0x0E)!;
+			const node3 = dng.getNodeForAddress(startAddr + 0x15)!;
 			assert.notEqual(node3, undefined);
 			checkInstructions(node3, [
 				"LD BC,(DDATA_D100)",
 			]);
 
-			const node4 = dng.getNodeForAddress(startAddr + 0x12)!;
+			const node4 = dng.getNodeForAddress(startAddr + 0x19)!;
 			assert.notEqual(node4, undefined);
 			checkInstructions(node4, [
 				"LD (DDATA_D102),DE",
 				"LD IY,(DDATA_D104)",
-				"JP P,.LL2",
+				"JP P,SSUB_D007.LL2",
 			]);
 
-			const node5 = dng.getNodeForAddress(startAddr + 0x1D)!;
+			const node5 = dng.getNodeForAddress(startAddr + 0x24)!;
 			assert.notEqual(node5, undefined);
 			checkInstructions(node5, [
 				"RET",
 			]);
 
-			const node6 = dng.getNodeForAddress(startAddr + 0x1E)!;
+			const node6 = dng.getNodeForAddress(startAddr + 0x25)!;
 			assert.notEqual(node6, undefined);
 			checkInstructions(node6, [
 				"NEG",
+				"JR Z,LLBL_D004"
+			]);
+
+			const node7 = dng.getNodeForAddress(startAddr + 0x29)!;
+			assert.notEqual(node7, undefined);
+			checkInstructions(node7, [
+				"JP NC,LLBL_D004.LLOOP"
+			]);
+
+			const node8 = dng.getNodeForAddress(startAddr + 0x2C)!;
+			assert.notEqual(node8, undefined);
+			checkInstructions(node8, [
 				"RET"
 			]);
 		});

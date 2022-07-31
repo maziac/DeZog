@@ -68,14 +68,14 @@ LBL_8010:
 
 
 	DEFS 0xD000-$
-	; Same bank, misc
+	; Loop: Label prior to subroutine, misc references
 	CALL SUB_D007
 	RET
 
 LBL_D004:
 	LD A,$08
 
-.L1:
+.LOOP:
 	NOP
 
 SUB_D007:
@@ -101,7 +101,7 @@ SUB_D007:
 	NEG
 	JR Z,LBL_D004
 
-	JP NC,LBL_D004.L1
+	JP NC,LBL_D004.LOOP
 
 	RET
 

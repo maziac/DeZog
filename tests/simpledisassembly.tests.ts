@@ -1,13 +1,16 @@
+import { Format } from './../src/disassembler/format';
 import { Opcode } from './../src/disassembler/opcode';
 import * as assert from 'assert';
 import {SimpleDisassembly} from '../src/disassembly/simpledisassembly';
+
 
 suite('Disassembly (SimpleDisassembly)', () => {
 
 	setup(() => {
 		Opcode.InitOpcodes();
+		Format.hexFormat = 'h';
 	});
-	
+
 	suite('SimpleDisassembly', () => {
 
 		suite('getDataDissassembly(false)', () => {
