@@ -234,7 +234,7 @@ export class DisassemblerNextGen {
 			const memAttr = this.memory.getAttributeAt(addr);
 			if (!(memAttr & MemAttribute.FLOW_ANALYZED)) {
 				// If not already analyzed
-				this.createNodeForAddress(addr, false);
+				this.createNodeForAddress(addr);
 			}
 		}
 	}
@@ -246,11 +246,8 @@ export class DisassemblerNextGen {
 	 * The nodes are just empty containers which contain only the start address.
 	 * They will be filled in a secondary pass.
 	 * @param address The 64k start address.
-	 * @param startingNode Set to true for the first call (from createNodes).
-	 * Will set node.isStartingNode. Later also all called nodes will get
-	 * this set.
 	 */
-	protected createNodeForAddress(address: number, startingNode: boolean) {
+	protected createNodeForAddress(address: number) {
 		// Check if address/node already exists.
 		if (this.nodes.get(address)) {
 			// Node already exists
@@ -259,7 +256,6 @@ export class DisassemblerNextGen {
 
 		// Node does not exist, create  new one
 		const node = new AsmNode();
-		node.isStartingNode = startingNode;
 		node.start = address;
 		node.slot = this.addressesSlotBankInfo[address].slot;
 		this.nodes.set(address, node);
@@ -325,7 +321,7 @@ export class DisassemblerNextGen {
 		for (const addr of allBranchAddresses) {
 			// Check for bank border
 			if (!this.bankBorderPassed(node.slot, addr))
-				this.createNodeForAddress(addr, false);
+				this.createNodeForAddress(addr);
 		}
 
 		return node;
