@@ -4230,7 +4230,19 @@ suite('Disassembler', () => {
 
 		test('2 subs, sharing block', () => {
 			const startAddr = 0x0500;
-			assert.equal(false, true);
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 6);
+
+			const node1 = dng.getNodeForAddress(startAddr + 7)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 9)!;
+			assert.notEqual(node2, undefined);
+			const node3 = dng.getNodeForAddress(startAddr + 0x20)!;
+			assert.notEqual(node3, undefined);
+
+			assert.equal(node1.label, 'SSUB_0507');
+			assert.equal(node2.label, 'SSUB_0507.LL1');
+			assert.equal(node3.label, 'SSUB_0520');
 		});
 
 		test('Loop', () => {
