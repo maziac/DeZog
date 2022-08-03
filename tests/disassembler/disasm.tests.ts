@@ -4,9 +4,9 @@ import {Disassembler} from '../../src/disassembler/disasm';
 import {Format} from '../../src/disassembler/format';
 import {NumberType} from '../../src/disassembler/numbertype';
 import {Opcode} from '../../src/disassembler/opcode';
-import {AsmNode} from './../../src/disassembler/asmnode';
-import {DisassemblerNextGen} from './../../src/disassembler/disasmnextgen';
-import {Utility} from './../../src/misc/utility';
+import {AsmNode} from '../../src/disassembler/asmnode';
+import {DisassemblerNextGen} from '../../src/disassembler/disasmnextgen';
+import {Utility} from '../../src/misc/utility';
 
 
 
