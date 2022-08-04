@@ -1,3 +1,4 @@
+import {nodeModuleNameResolver} from 'typescript';
 import { Utility } from './../misc/utility';
 import {Opcode} from './opcode';
 
@@ -184,6 +185,44 @@ export class AsmNode {
 		this.isSubroutine = true;
 		for (const predec of this.predecessors) {
 			predec.markAsSubroutine();
+		}
+	}
+
+
+
+
+	/**
+	 * Returns all branches that are reachable from this node.
+	 * Including this.
+	 * All means:
+	 * - all from this.branchNodes and recursive.
+	 * - not from this.callee.
+	 * @param collectedNodes In this array all branches are pushed. When calling
+	 * this array might already contain nodes. If so, these nodes are ignored.
+	 * I.e. not added again to the branch.
+	 * @returns All branches.
+	 */
+	public getAllBranchNodes(collectedNodes: AsmNode[] = []): AsmNode[] {
+		this.getBranchesRecursive(collectedNodes);
+		return collectedNodes;
+	}
+
+
+	/**
+	 * Is a helper method for getAllBranchNodes().
+	 * Works recursively.
+	 * @param collectedNodes In this array all branches are pushed.
+	 */
+	protected getAllBranchNodesRecursive(collectedNodes: AsmNode[]) {
+		// Check if it we already used it
+		if (collectedNodes.includes(this))
+			return;
+		// Store
+		collectedNodes.push(this);
+
+		// Follow all branches
+		for (const branchNode of this.branchNodes) {
+			branchNode.getAllBranchNodesRecursive(collectedNodes);
 		}
 	}
 }

@@ -1,4 +1,5 @@
 import {readFileSync} from 'fs';
+import {collapseTextChangeRangesAcrossMultipleVersions} from 'typescript';
 import {Utility} from './../misc/utility';
 import {AsmNode} from './asmnode';
 import {Format} from './format';
@@ -188,7 +189,7 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**
+	/** SECTION getFlowGraph
 	 * Runs 2 passes.
 	 * First creates the shallow AsmNodes from all branches and calls addresses.
 	 * Then all attributes of the nodes are filled (e.g. all calls, callers).
@@ -222,7 +223,7 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**
+	/** ANCHOR createNodes
 	 * Creates all nodes in the this.nodes map.
 	 * @param addresses All 64k addresses to start from.
 	 */
@@ -328,7 +329,7 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**
+	/** ANCHOR fillNodes
 	 * In the second pass the nodes are filled.
 	 * I.e. the calls, the branches, the predecessors and the callers.
 	 * @param address The 64k start address.
@@ -503,7 +504,7 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**
+	/** ANCHOR markSubroutines
 	 * Mark all nodes as subroutine that end in a node that is already marked as a subroutine
 	 * (i.e. end with a RET, RET cc).
 	 */
@@ -519,7 +520,7 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**
+	/** ANCHOR partitionBlocks
 	 * Fills the this.blocks array. A block is a concatenated area of code that can be labelled with a global label.
 	 * Each nodes that are called by some other node are starting points of
 	 * subroutines.
@@ -555,7 +556,7 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**
+	/** ANCHOR assignNodeLabels
 	 * Assigns the labels to the nodes.
 	 * Local and global labels.
 	 * E.g. "SUB_04AD", "LBL_FF00", ".L1", ".L2", ".LOOP", ".LOOP1"
@@ -668,7 +669,7 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**
+	/** ANCHOR markSubroutines
 	 * For the opcode references (e.g. the 1234h in "LD A,(1234h)")
 	 * the this.opcodeReferences array has been filled with
 	 * opcodes and addresses.
@@ -736,6 +737,7 @@ export class DisassemblerNextGen {
 		}
 	}
 
+	// !SECTION
 
 	/**
 	 * Returns the label for the given address.
@@ -835,4 +837,158 @@ export class DisassemblerNextGen {
 	}
 
 
+	/**
+	 * Returns the labels call graph in dot syntax.
+	 * Every main label represents a bubble.
+	 * Arrows from one bubble to the other represents
+	 * calling the function.
+	 * @param addresses The addresses to print call graphs for.
+	 * @param depth The depth of the call graph. 1 = just the start address.
+	 * @returns The dot graphic as text.
+	 */
+	protected equLabelColor = 'lightgray';
+	public renderCallGraph(addresses: number[], startNodes:AsmNode[], depth: number): string {
+		// Color codes (not real colors) used to exchange the colors at the end.
+		const maincolor = '#FEFE01';
+		const fillcolor = '#FEFE02';
+		// Graph direction
+		const callGraphFormatString = "rankdir=TB;";
+
+		// Header
+		let text = 'digraph Callgraph {\n\n';
+		text += 'bgcolor="transparent"\n';
+		text += `node [color="${maincolor}", fontcolor="${maincolor}"];\n`;
+		text += `edge [color="${maincolor}"];\n`;
+		text += callGraphFormatString + '\n';
+
+		// Find all nodes belonging to the depth.
+		const calleeNodes: AsmNode[] = [];
+		for (const node of startNodes) {
+			this.getCallees(node, depth, calleeNodes);
+		}
+
+		// Now calculate statistics
+		const stats = {
+			maxCountBytes: 0,
+			minCountBytes: Number.MAX_SAFE_INTEGER
+		};
+		const nodesCountOfBytes = new Map<AsmNode, number>();
+		for (const node of calleeNodes) {
+			// Calculate size in bytes
+			const branchNodes = node.getAllBranchNodes();	// Note: is done here again, because branches/subroutines might overlap
+			let countBytes = 0;
+			branchNodes.forEach(branchNode => countBytes += branchNode.length);
+			nodesCountOfBytes.set(node, countBytes);
+			// Count max/min
+			if (countBytes > stats.maxCountBytes)
+				stats.maxCountBytes = countBytes;
+			if (countBytes < stats.minCountBytes)
+				stats.minCountBytes = countBytes;
+		}
+
+
+		// TODO: Calculate size (font size) max and min
+		const fontSizeMin = 13;
+		const fontSizeMax = 40;
+		const min = stats.minCountBytes;
+		const diff = stats.maxCountBytes - min;
+		const fontSizeFactor = (fontSizeMax - fontSizeMin) / diff;
+
+
+		// Now create a call graph for all these nodes
+		for (const node of calleeNodes) {
+			let colorString;
+			// Calculate font size dependent on count of bytes
+			const countBytes = nodesCountOfBytes.get(node)!;
+			const fontSize = fontSizeMin + fontSizeFactor * (countBytes - min);
+
+			// Output
+			const nodeName = this.nodeFormat(label.name, address, countBytes);
+			const hrefAddress = this.funcFormatLongAddress ? this.funcFormatLongAddress(address) : Format.getHexString(address, 4);
+			text += '"' + label.name + '" [fontsize="' + Math.round(fontSize) + '", label="' + nodeName + '", href="#' + hrefAddress + '"];\n';
+
+			for (const called of label.calls) {
+				// Get address of callee
+				const addr = DisLabel.getLabelAddress(called);
+				// Check if depth allows to show it
+				if (labels.get(addr)) {
+					// Yes
+					const calledName = DisLabel.getLabelName(called);
+					text += '"' + label.name + '" -> "' + calledName + '";\n';
+				}
+			}
+
+			// Output all main labels in different color
+			if (startAddresses.indexOf(label.address) >= 0) {
+				colorString = fillcolor;
+			}
+
+			// Color
+			if (colorString) {
+				const name = DisLabel.getLabelName(label);
+				text += '"' + name + '" [fillcolor="' + colorString + '", style=filled];\n';
+			}
+		}
+
+		// ending
+		text += '}\n';
+
+		// return
+		return text;
+	}
+
+
+	/**
+	 * Fills 'collectedNodes' with all nodes that are called from this or branched or called
+	 * nodes.
+	 * Is recursive.
+	 * @param node The node to check.
+	 * @param depth The calling depth to check.
+	 * @param calleeNodes The result of this operation. All found callees for that depth are added.
+	 * @param alreadyUsed Used internally.
+	 */
+	protected getCallees(node: AsmNode, depth: number, calleeNodes: AsmNode[], alreadyUsed: AsmNode[] = []) {
+		// Dig deeper?
+		if (depth <= 0)
+			return;
+		depth--;
+
+		// Check if already included in callees
+		if (calleeNodes.includes(node))
+			return;
+		calleeNodes.push(node);
+
+		// Get all branches recursively (without called nodes)
+		const priorSize = alreadyUsed.length;
+		const nodeBranches = node.getAllBranchNodes(alreadyUsed);
+
+		// Check if already processed
+		if (priorSize == alreadyUsed.length)
+			return;	// Nothing was added
+
+		// Loop all to check for callees
+		for (const branch of nodeBranches) {
+			const callee = branch.callee;
+			if (callee) {
+				if (!calleeNodes.includes(callee)) {
+					calleeNodes.push(callee);
+					this.getCallees(callee, depth, calleeNodes, alreadyUsed);
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * Does the formatting for the node in the dot file.
+	 * @param labelName E.g. "SUB_F7A9"
+	 * @param address E.g. 0xF7A9
+	 * @param size Size in bytes.
+	 * @returns E.g. "SUB_F7A9\n0xF7A9\nSize=34"
+	 */
+	protected nodeFormat(labelName: string, address: number, size: number): string {
+		//const nodeFormatString = "${label}\\n0x${address}\\nSize=${size}\\n";
+		const result = labelName+ "\\n" + Format.getHexFormattedString(address) + "\\nSize=" + size + "\\n";
+		return result;
+	}
 }
