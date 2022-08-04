@@ -118,11 +118,19 @@ All node that are called by another node are marked as 'isStartingNode'.
 5. **assignNodeLabels()**: Assigns labels to block starts and the recursive local labels. The prefix for a subroutine is determined by '(isSubroutine && isStartingNode) == true)'.
 6. **assignOpcodeReferenceLabels()**: The labels for the jumps and calls have been analyzed already. But there are still data references (e.g. "LD A,(nn)") that could point to code, e.g. for self modifying code. These are assigned 'otherLabels' here.
 
+Afterwards it depends if a disassembly, a flow chart or a call graph should b rendered.
 
+- disassembly:
+1. **disassembleNodes()**: Disassembles all instructions inside the nodes into text.
+2. **renderText()**: Creates the disassembly text. Code and data parts.
 
+- flow chart:
+1. **disassembleNodes()**: Same as above.
+2. **renderFlowChart()**: Generates the flowchart.
 
-
-
+- flow chart:
+1. **renderCallGraph()**: Generates the call graph.
+Note: No disassembly is required here.
 
 
 ### Special Problems
