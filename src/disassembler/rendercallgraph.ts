@@ -130,10 +130,14 @@ export class RenderCallGraph {
 	 */
 	protected getCallGraphRecursively(node: AsmNode, allSubs: Map<AsmNode, Subroutine>, depth: number, lines: string[], allUsedNodes: AsmNode[]) {
 		// Check if this need to be processed
-		if (depth <= 0 || allUsedNodes.includes(node))
+		if (allUsedNodes.includes(node))
+			return;
+		allUsedNodes.push(node);
+		
+		// Check depth
+		if (depth <= 0)
 			return;
 		depth--;
-		allUsedNodes.push(node);
 
 		// Get subroutine
 		const sub = allSubs.get(node)!;
@@ -207,13 +211,12 @@ export class RenderCallGraph {
 	 * @param nodeSubs A map with all potentially used node/subroutine associations.
 	 * @returns The dot graphic for all depths as text. Together with the slider to switch depths.
 	 */
-	public render(startNodes: AsmNode[], nodeSubs: Map<AsmNode,Subroutine>): string {
-		const depth = 6;
+	public render(startNodes: AsmNode[], nodeSubs: Map<AsmNode, Subroutine>, maxDepth: number): string {
 		// Prepare an array for each depth
 		const svgs: string[] = [];
 
 		// Loop all depths
-		for (let i = 1; i <= depth; i++) {
+		for (let depth = 1; depth <= maxDepth; depth++) {
 			// Render one call graph (for one deptH)
 			const rendered = this.renderForDepth(startNodes, nodeSubs, depth);
 			// Store

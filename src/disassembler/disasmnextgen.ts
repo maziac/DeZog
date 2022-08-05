@@ -830,30 +830,38 @@ export class DisassemblerNextGen {
 	/** Returns a map with all node subroutines associations used by the starting nodes.
 	 * Infinite depth.
 	 * @param startNodes The nodes the processing should start on.
-	 * @returns Map with nodes and subroutines.
+	 * @returns Map with nodes and subroutines and the depth
 	 */
-	public getSubroutinesFor(startNodes: AsmNode[]): Map<AsmNode, Subroutine> {
-		const allSubs = new Map<AsmNode, Subroutine>();
+	public getSubroutinesFor(startNodes: AsmNode[]): {depth: number, nodeSubs: Map<AsmNode, Subroutine>} {
+		const nodeSubs = new Map<AsmNode, Subroutine>();
+		let maxDepth = 0;
 		for (const node of startNodes) {
-			this.getSubroutinesRecursive(node, allSubs);
+			const depth = this.getSubroutinesRecursive(node, nodeSubs);
+			if (depth > maxDepth)
+				maxDepth = depth;
 		}
-		return allSubs;
+		return {depth: maxDepth, nodeSubs};
 	}
 
 
 	/** Helper method for getSubroutinesFor().
 	 * @param node The node to get all node/subroutines for.
 	 * @param allSubs This map gets filled with all subroutines and sub-subroutines used by node.
+	 * @returns The calling depth. Starts at 0 (=no called functions)
 	 */
-	public getSubroutinesRecursive(node: AsmNode, allSubs: Map<AsmNode, Subroutine>) {
+	public getSubroutinesRecursive(node: AsmNode, allSubs: Map<AsmNode, Subroutine>): number {
+		let maxDepth = -1;
 		let sub = allSubs.get(node);
 		if (!sub) {
 			// subroutine not yet known
 			sub = new Subroutine(node);
 			allSubs.set(node, sub);
 			for (const callee of sub.callees) {
-				this.getSubroutinesRecursive(callee, allSubs);
+				const depth = this.getSubroutinesRecursive(callee, allSubs);
+				if (depth > maxDepth)
+					maxDepth = depth;
 			}
 		}
+		return maxDepth + 1;
 	}
 }

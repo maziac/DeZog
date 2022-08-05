@@ -1,10 +1,8 @@
-import {AsmNode} from "../disassembler/asmnode";
 import {Disassembler} from "../disassembler/disasm";
 import {DisassemblerNextGen} from "../disassembler/disasmnextgen";
 import {NumberType} from '../disassembler/numbertype';
 import {Opcode} from "../disassembler/opcode";
 import {RenderCallGraph} from "../disassembler/rendercallgraph";
-import {Subroutine} from "../disassembler/subroutine";
 import {Labels} from "../labels/labels";
 import {ReverseEngineeringLabelParser} from "../labels/reverseengineeringlabelparser";
 import {Utility} from '../misc/utility';
@@ -346,11 +344,11 @@ export class AnalyzeDisassembler extends Disassembler {
 		const startNodes = startAddrs64k.map(addr64k => dasm.getNodeForAddress(addr64k)!);
 
 		// Create map with all nodes <-> subroutines relationships
-		const nodeSubs: Map<AsmNode, Subroutine> = dasm.getSubroutinesFor(startNodes);
+		const {depth, nodeSubs} = dasm.getSubroutinesFor(startNodes);
 
 		// Render for all depths
 		const callgraph = new RenderCallGraph(this.funcAssignLabels, this.funcFormatAddress);
-		const svgs = callgraph.render(startNodes, nodeSubs);
+		const svgs = callgraph.render(startNodes, nodeSubs, depth);
 
 		return svgs;
 	}
