@@ -1,16 +1,15 @@
 import {readFileSync} from 'fs';
-import {collapseTextChangeRangesAcrossMultipleVersions} from 'typescript';
 import {Utility} from './../misc/utility';
 import {AsmNode} from './asmnode';
 import {Format} from './format';
 import {MemAttribute, Memory} from './memory';
 import {NumberType} from './numbertype';
 import {Opcode, OpcodeFlag} from './opcode';
+import {Subroutine} from './subroutine';
 
 
 
-/**
- * The SlotBankInfo is set at the start for every address.
+/** The SlotBankInfo is set at the start for every address.
  * It depends on the used memory model.
  */
 interface SlotBankInfo {
@@ -21,8 +20,7 @@ interface SlotBankInfo {
 }
 
 
-/**
- * Combines an opcode and the address it references.
+/** Combines an opcode and the address it references.
  * Helper structure to collect all the addresses that the opcodes
  * reference.
  * At the end these are turned into labels.
@@ -38,8 +36,7 @@ interface OpcodeReference {
 }
 
 
-/**
- * The main Disassembler class.
+/** The main Disassembler class.
  */
 export class DisassemblerNextGen {
 
@@ -98,8 +95,7 @@ export class DisassemblerNextGen {
 	public labelIntrptPrefix = "INTRPT";
 
 
-	/**
-	 * Initializes the Opcode formatting.
+	/** Initializes the Opcode formatting.
 	 * Note: This does work only if Disassembler is a singleton.
 	 */
 	constructor() {
@@ -107,8 +103,7 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**
-	 * Sets the slot and bank info.
+	/** Sets the slot and bank info.
 	 * Has to be done before the disassembly.
 	 * Is not changed anymore.
 	 * @param addrStart The start address.
@@ -122,8 +117,7 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**
-	 * Sets the current slots.
+	/** Sets the current slots.
 	 * @param slots Array with the slots.
 	 */
 	public setCurrentSlots(slots: number[]) {
@@ -133,8 +127,7 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**
-	 * Define the memory area to disassemble.
+	/** Define the memory area to disassemble.
 	 * @param origin The start address of the memory area.
 	 * @param memory The memory area.
 	 */
@@ -147,8 +140,7 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**
-	 * Reads a memory area as binary from a file.
+	/**Reads a memory area as binary from a file.
 	 * @param origin The start address of the memory area.
 	 * @param path The file path to a binary file.
 	 */
@@ -669,7 +661,7 @@ export class DisassemblerNextGen {
 	}
 
 
-	/** ANCHOR markSubroutines
+	/** ANCHOR assignOpcodeReferenceLabels
 	 * For the opcode references (e.g. the 1234h in "LD A,(1234h)")
 	 * the this.opcodeReferences array has been filled with
 	 * opcodes and addresses.
@@ -739,8 +731,7 @@ export class DisassemblerNextGen {
 
 	// !SECTION
 
-	/**
-	 * Returns the label for the given address.
+	/** Returns the label for the given address.
 	 * It first checks with the given function this.funcGetLabel.
 	 * If nothing found it checks the this.nodes labels.
 	 * If still nothing found it checks this.otherLabels.
@@ -783,8 +774,7 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**
-	 * Disassembles one opcode together with a referenced label (if there
+	/** Disassembles one opcode together with a referenced label (if there
 	 * is one).
 	 * @param opcode The opcode to disassemble.
 	 * @returns A string that contains the disassembly, e.g. "LD A,(DATA_LBL1)"
@@ -837,158 +827,33 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**
-	 * Returns the labels call graph in dot syntax.
-	 * Every main label represents a bubble.
-	 * Arrows from one bubble to the other represents
-	 * calling the function.
-	 * @param addresses The addresses to print call graphs for.
-	 * @param depth The depth of the call graph. 1 = just the start address.
-	 * @returns The dot graphic as text.
+	/** Returns a map with all node subroutines associations used by the starting nodes.
+	 * Infinite depth.
+	 * @param startNodes The nodes the processing should start on.
+	 * @returns Map with nodes and subroutines.
 	 */
-	protected equLabelColor = 'lightgray';
-	public renderCallGraph(addresses: number[], startNodes:AsmNode[], depth: number): string {
-		// Color codes (not real colors) used to exchange the colors at the end.
-		const maincolor = '#FEFE01';
-		const fillcolor = '#FEFE02';
-		// Graph direction
-		const callGraphFormatString = "rankdir=TB;";
-
-		// Header
-		let text = 'digraph Callgraph {\n\n';
-		text += 'bgcolor="transparent"\n';
-		text += `node [color="${maincolor}", fontcolor="${maincolor}"];\n`;
-		text += `edge [color="${maincolor}"];\n`;
-		text += callGraphFormatString + '\n';
-
-		// Find all nodes belonging to the depth.
-		const calleeNodes: AsmNode[] = [];
+	public getSubroutinesFor(startNodes: AsmNode[]): Map<AsmNode, Subroutine> {
+		const allSubs = new Map<AsmNode, Subroutine>();
 		for (const node of startNodes) {
-			this.getCallees(node, depth, calleeNodes);
+			this.getSubroutinesRecursive(node, allSubs);
 		}
-
-		// Now calculate statistics
-		const stats = {
-			maxCountBytes: 0,
-			minCountBytes: Number.MAX_SAFE_INTEGER
-		};
-		const nodesCountOfBytes = new Map<AsmNode, number>();
-		for (const node of calleeNodes) {
-			// Calculate size in bytes
-			const branchNodes = node.getAllBranchNodes();	// Note: is done here again, because branches/subroutines might overlap
-			let countBytes = 0;
-			branchNodes.forEach(branchNode => countBytes += branchNode.length);
-			nodesCountOfBytes.set(node, countBytes);
-			// Count max/min
-			if (countBytes > stats.maxCountBytes)
-				stats.maxCountBytes = countBytes;
-			if (countBytes < stats.minCountBytes)
-				stats.minCountBytes = countBytes;
-		}
-
-
-		// TODO: Calculate size (font size) max and min
-		const fontSizeMin = 13;
-		const fontSizeMax = 40;
-		const min = stats.minCountBytes;
-		const diff = stats.maxCountBytes - min;
-		const fontSizeFactor = (fontSizeMax - fontSizeMin) / diff;
-
-
-		// Now create a call graph for all these nodes
-		for (const node of calleeNodes) {
-			let colorString;
-			// Calculate font size dependent on count of bytes
-			const countBytes = nodesCountOfBytes.get(node)!;
-			const fontSize = fontSizeMin + fontSizeFactor * (countBytes - min);
-
-			// Output
-			const nodeName = this.nodeFormat(label.name, address, countBytes);
-			const hrefAddress = this.funcFormatLongAddress ? this.funcFormatLongAddress(address) : Format.getHexString(address, 4);
-			text += '"' + label.name + '" [fontsize="' + Math.round(fontSize) + '", label="' + nodeName + '", href="#' + hrefAddress + '"];\n';
-
-			for (const called of label.calls) {
-				// Get address of callee
-				const addr = DisLabel.getLabelAddress(called);
-				// Check if depth allows to show it
-				if (labels.get(addr)) {
-					// Yes
-					const calledName = DisLabel.getLabelName(called);
-					text += '"' + label.name + '" -> "' + calledName + '";\n';
-				}
-			}
-
-			// Output all main labels in different color
-			if (startAddresses.indexOf(label.address) >= 0) {
-				colorString = fillcolor;
-			}
-
-			// Color
-			if (colorString) {
-				const name = DisLabel.getLabelName(label);
-				text += '"' + name + '" [fillcolor="' + colorString + '", style=filled];\n';
-			}
-		}
-
-		// ending
-		text += '}\n';
-
-		// return
-		return text;
+		return allSubs;
 	}
 
 
-	/**
-	 * Fills 'collectedNodes' with all nodes that are called from this or branched or called
-	 * nodes.
-	 * Is recursive.
-	 * @param node The node to check.
-	 * @param depth The calling depth to check.
-	 * @param calleeNodes The result of this operation. All found callees for that depth are added.
-	 * @param alreadyUsed Used internally.
+	/** Helper method for getSubroutinesFor().
+	 * @param node The node to get all node/subroutines for.
+	 * @param allSubs This map gets filled with all subroutines and sub-subroutines used by node.
 	 */
-	protected getCallees(node: AsmNode, depth: number, calleeNodes: AsmNode[], alreadyUsed: AsmNode[] = []) {
-		// Dig deeper?
-		if (depth <= 0)
-			return;
-		depth--;
-
-		// Check if already included in callees
-		if (calleeNodes.includes(node))
-			return;
-		calleeNodes.push(node);
-
-		// Get all branches recursively (without called nodes)
-		const priorSize = alreadyUsed.length;
-		const nodeBranches = node.getAllBranchNodes(alreadyUsed);
-
-		// Check if already processed
-		if (priorSize == alreadyUsed.length)
-			return;	// Nothing was added
-
-		// Loop all to check for callees
-		for (const branch of nodeBranches) {
-			const callee = branch.callee;
-			if (callee) {
-				if (!calleeNodes.includes(callee)) {
-					calleeNodes.push(callee);
-					this.getCallees(callee, depth, calleeNodes, alreadyUsed);
-				}
+	public getSubroutinesRecursive(node: AsmNode, allSubs: Map<AsmNode, Subroutine>) {
+		let sub = allSubs.get(node);
+		if (!sub) {
+			// subroutine not yet known
+			sub = new Subroutine(node);
+			allSubs.set(node, sub);
+			for (const callee of sub.callees) {
+				this.getSubroutinesRecursive(callee, allSubs);
 			}
 		}
-	}
-
-
-	/**
-	 * Does the formatting for the node in the dot file.
-	 * @param labelName E.g. "SUB_F7A9"
-	 * @param address E.g. 0xF7A9
-	 * @param size Size in bytes.
-	 * @returns E.g. "SUB_F7A9\n0xF7A9\nSize=34"
-	 */
-	protected nodeFormat(labelName: string, address: number, size: number): string {
-		//const nodeFormatString = "${label}\\n0x${address}\\nSize=${size}\\n";
-		const result = labelName+ "\\n" + Format.getHexFormattedString(address) + "\\nSize=" + size + "\\n";
-		return result;
 	}
 }

@@ -1,6 +1,10 @@
+import {AsmNode} from "../disassembler/asmnode";
 import {Disassembler} from "../disassembler/disasm";
+import {DisassemblerNextGen} from "../disassembler/disasmnextgen";
 import {NumberType} from '../disassembler/numbertype';
 import {Opcode} from "../disassembler/opcode";
+import {RenderCallGraph} from "../disassembler/rendercallgraph";
+import {Subroutine} from "../disassembler/subroutine";
 import {Labels} from "../labels/labels";
 import {ReverseEngineeringLabelParser} from "../labels/reverseengineeringlabelparser";
 import {Utility} from '../misc/utility';
@@ -325,6 +329,33 @@ export class AnalyzeDisassembler extends Disassembler {
 	 * @returns A string with the rendered call graph. To be used in a webview.
 	 */
 	public renderCallGraph(startLongAddrs: number[]): string {
+		const dasm = new DisassemblerNextGen();
+
+		// TODO: Need correct input
+		dasm.setSlotBankInfo(0, 0x10000, 0, true);
+		dasm.setCurrentSlots([0]);
+		dasm.memory = this.memory;
+
+		// Set start addresses
+		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
+
+		// Disassemble
+		dasm.getFlowGraph(startAddrs64k);
+
+		// Convert to start nodes
+		const startNodes = startAddrs64k.map(addr64k => dasm.getNodeForAddress(addr64k)!);
+
+		// Create map with all nodes <-> subroutines relationships
+		const nodeSubs: Map<AsmNode, Subroutine> = dasm.getSubroutinesFor(startNodes);
+
+		// Render for all depths
+		const callgraph = new RenderCallGraph((addr) => undefined, (addr) => addr.toString(16));
+		const svgs = callgraph.render(startNodes, nodeSubs);
+
+		return svgs;
+	}
+
+	public renderCallGraph2(startLongAddrs: number[]): string {
 		// Set start addresses
 		const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
 		for (const addr64k of startAddrs64k) {
@@ -343,7 +374,7 @@ export class AnalyzeDisassembler extends Disassembler {
 		for (let i = 1; i <= depth; i++) {
 
 			// In case not all start addresses have labels, invent labels, e.g. "0AF4h"
-			const chosenLabels = new Map<number, DisLabel|number>();
+			const chosenLabels = new Map<number, DisLabel | number>();
 			for (const addr64k of startAddrs64k) {
 				// Check for existing label
 				this.getGraphLabels(i, addr64k, chosenLabels);
