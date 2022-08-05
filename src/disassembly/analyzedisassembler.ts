@@ -349,7 +349,7 @@ export class AnalyzeDisassembler extends Disassembler {
 		const nodeSubs: Map<AsmNode, Subroutine> = dasm.getSubroutinesFor(startNodes);
 
 		// Render for all depths
-		const callgraph = new RenderCallGraph((addr) => undefined, (addr) => addr.toString(16));
+		const callgraph = new RenderCallGraph(this.funcAssignLabels, this.funcFormatAddress);
 		const svgs = callgraph.render(startNodes, nodeSubs);
 
 		return svgs;

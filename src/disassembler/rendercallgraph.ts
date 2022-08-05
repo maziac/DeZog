@@ -77,9 +77,9 @@ export class RenderCallGraph {
 		// Calculate size (font size) max and min
 		const fontSizeMin = 13;
 		const fontSizeMax = 40;
-		const min = stats.minSizeInBytes;
+		let min = stats.minSizeInBytes;
 		const diff = stats.maxSizeInBytes - min;
-		const fontSizeFactor = (fontSizeMax - fontSizeMin) / diff;
+		const fontSizeFactor = (diff > 0) ? (fontSizeMax - fontSizeMin) / diff : 0;
 
 
 		// Now create all the bubble definitions
@@ -91,8 +91,7 @@ export class RenderCallGraph {
 
 			// Find label
 			const address = node.start;
-			let labelName = this.funcGetLabel(address) || node.label;
-			Utility.assert(labelName);
+			let labelName = this.funcGetLabel(address) || node.label || '';
 
 			// Output
 			const dotId = this.getDotId(node);
@@ -175,7 +174,10 @@ export class RenderCallGraph {
 	 */
 	protected nodeFormat(labelName: string, address: number, size: number): string {
 		//const nodeFormatString = "${label}\\n0x${address}\\nSize=${size}\\n";
-		const result = labelName + "\\n" + Format.getHexFormattedString(address) + "\\nSize=" + size + "\\n";
+		let result = '';
+		if (labelName)
+			result += labelName + "\\n";
+		result += Format.getHexFormattedString(address) + "\\nSize=" + size + "\\n";
 		return result;
 	}
 
