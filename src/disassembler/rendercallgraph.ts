@@ -39,8 +39,9 @@ export class RenderCallGraph {
 	 */
 	public renderForDepth(startNodes: AsmNode[], nodeSubs: Map<AsmNode, Subroutine>, depth: number): string {
 		// Color codes (not real colors) used to exchange the colors at the end.
-		const maincolor = '#FEFE01';
-		const fillcolor = '#FEFE02';
+		const mainColor = '#FEFE01';
+		const fillColor = '#FEFE02';
+		const otherBankColor = '#FEFE03';
 		// Graph direction
 		const callGraphFormatString = "rankdir=TB;";
 
@@ -48,8 +49,8 @@ export class RenderCallGraph {
 		const lines: string[] = [];
 		lines.push('digraph Callgraph {');
 		lines.push('bgcolor="transparent"');
-		lines.push(`node [color="${maincolor}", fontcolor="${maincolor}"];`);
-		lines.push(`edge [color="${maincolor}"];`);
+		lines.push(`node [color="${mainColor}", fontcolor="${mainColor}"];`);
+		lines.push(`edge [color="${mainColor}"];`);
 		lines.push(callGraphFormatString);
 
 		// Create text recursively until depth is reached
@@ -86,8 +87,19 @@ export class RenderCallGraph {
 		for (const node of allUsedNodes) {
 			const sub = nodeSubs.get(node)!;
 			// Calculate font size dependent on count of bytes
-			const countBytes = sub.sizeInBytes;
-			const fontSize = fontSizeMin + fontSizeFactor * (countBytes - min);
+			let fontSize;
+			let color;
+			let countBytes;
+			if (node.bankBorder) {
+				// A bank border address
+				fontSize = fontSizeMin;
+				color = otherBankColor;
+			}
+			else {
+				// Normal case
+				countBytes = sub.sizeInBytes;
+				fontSize = fontSizeMin + fontSizeFactor * (countBytes - min);
+			}
 
 			// Find label
 			const address = node.start;
@@ -101,7 +113,10 @@ export class RenderCallGraph {
 
 			// Output all main labels in different color
 			if (startNodes.indexOf(node) >= 0) {
-				lines.push('"' + dotId + '" [fillcolor="' + fillcolor + '", style=filled];');
+				color = fillColor;
+			}
+			if (color) {
+				lines.push('"' + dotId + '" [fillcolor="' + color + '", style=filled];');
 			}
 		}
 
@@ -133,7 +148,7 @@ export class RenderCallGraph {
 		if (allUsedNodes.includes(node))
 			return;
 		allUsedNodes.push(node);
-		
+
 		// Check depth
 		if (depth <= 0)
 			return;
@@ -181,7 +196,9 @@ export class RenderCallGraph {
 		let result = '';
 		if (labelName)
 			result += labelName + "\\n";
-		result += Format.getHexFormattedString(address) + "\\nSize=" + size + "\\n";
+		result += Format.getHexFormattedString(address) + "\\n";
+		if (size != undefined)
+			result += "Size=" + size + "\\n";
 		return result;
 	}
 
@@ -195,6 +212,7 @@ export class RenderCallGraph {
 	protected adjustSvg(svg: string): string {
 		svg = svg.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
 		svg = svg.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
+		svg = svg.replace(/#FEFE03/gi, 'var(--vscode-editor-inactiveSelectionBackground)');
 		// Strip tooltip (title)
 		svg = svg.replace(/xlink:title=".*"/g, 'xlink:title=""'); // E.g. remove 'xlink:title="main"'
 		svg = svg.replace(/<title>.*<\/title>/g, ''); 	// E.g. "<title>b8035</title>"

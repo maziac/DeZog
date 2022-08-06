@@ -1,4 +1,5 @@
 import {readFileSync} from 'fs';
+import {BankType, MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {Utility} from './../misc/utility';
 import {AsmNode} from './asmnode';
 import {Format} from './format';
@@ -40,18 +41,18 @@ interface OpcodeReference {
  */
 export class DisassemblerNextGen {
 
-	/// A function that can be set to assign other than the standard
-	/// label names.
-	public funcGetLabel: (addr64k: number) => string | undefined;
 
-	/// A function that can be set to filter out certain addresses from the output.
-	/// Note: the addresses are still used for analysis but are simply skipped in the output ('disassembleMemory').
+	/// A function that is used to retrieve label names by the disassembler.
+	protected funcGetLabel: (addr64k: number) => string | undefined;
+
+	/// A function that is used to filter out certain addresses from the output by the disassembler.
 	// If false is returned the line for this address is not shown.
-	public funcFilterAddresses: (addr64k: number) => boolean;
+	protected funcFilterAddresses: (addr64k: number) => boolean;
 
 	/// A function that formats the long address printed at first in the disassembly.
-	/// Used to add bank information after the address. Using the current slot.
-	public funcFormatLongAddress: (addr64k: number) => string;
+	/// Used to add bank information after the address by the disassembler.
+	/// Uses the current slot.
+	protected funcFormatLongAddress: (addr64k: number) => string;
 
 	/// The memory area to disassemble.
 	public memory = new Memory();
@@ -96,10 +97,18 @@ export class DisassemblerNextGen {
 
 
 	/** Initializes the Opcode formatting.
-	 * Note: This does work only if Disassembler is a singleton.
+	 * @param funcGetLabel A function that is used to retrieve label names by the disassembler.
+	 * @param funcFilterAddresses A function that is used to filter out certain addresses from the output by the disassembler.
+	 * If false is returned the line for this address is not shown.
+	 * @param funcFormatLongAddress A function that formats the long address printed at first in the disassembly.
+	 * Used to add bank information after the address by the disassembler.
+	 * Uses the current slot.
 	 */
-	constructor() {
+	constructor(funcGetLabel: (addr64k: number) => string | undefined, funcFilterAddresses: (addr64k: number) => boolean, funcFormatLongAddress: (addr64k: number) => string) {
 		Opcode.InitOpcodes();
+		this.funcGetLabel = funcGetLabel;
+		this.funcFilterAddresses = funcFilterAddresses;
+		this.funcFormatLongAddress = funcFormatLongAddress;
 	}
 
 
@@ -111,9 +120,27 @@ export class DisassemblerNextGen {
 	 * @param slot The slot number for that range.
 	 * @param singleBank Set true if single bank. False if multiple banks or if bank/slot is not used.
 	 */
-	public setSlotBankInfo(addrStart: number, addrEnd: number, slot: number, singleBank: boolean) {
+	protected setSlotBankInfo(addrStart: number, addrEnd: number, slot: number, singleBank: boolean) {
 		for (let addr = addrStart; addr <= addrEnd; addr++)
 			this.addressesSlotBankInfo[addr] = {slot, singleBank};
+	}
+
+
+	/**
+	 * Sets the memory model.
+	 * Used to check if certain execution flows should be followed or not.
+	 * @param memModel The memory model obtained from the settings through the Remote.
+	 */
+	public setMemoryModel(memModel: MemoryModel) {
+		const slotLen = memModel.slotRanges.length;
+		for (let slot = 0; slot < slotLen; slot++) {
+			const range = memModel.slotRanges[slot];
+			// Now check if maybe unused
+			const [bankNr] = range.banks;
+			const bank = memModel.banks[bankNr];
+			const singleBank = (bank.bankType != BankType.UNUSED) && (range.banks.size == 1);
+			this.setSlotBankInfo(range.start, range.end, slot, singleBank);
+		}
 	}
 
 

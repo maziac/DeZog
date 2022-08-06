@@ -37,6 +37,9 @@ import {TextView} from './views/textview';
 import {ZxNextSpritePatternsView} from './views/zxnextspritepatternsview';
 import {ZxNextSpritesView} from './views/zxnextspritesview';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
+import {DisassemblerNextGen} from './disassembler/disasmnextgen';
+import {ReverseEngineeringLabelParser} from './labels/reverseengineeringlabelparser';
+import {RenderCallGraph} from './disassembler/rendercallgraph';
 
 
 
@@ -138,6 +141,19 @@ export class DebugSessionClass extends DebugSession {
 	protected scopes: Array<Scope>;
 
 
+	/// A function that is used to retrieve label names by the disassembler.
+	protected funcGetLabel: (addr64k: number) => string | undefined;
+
+	/// A function that is used to filter out certain addresses from the output by the disassembler.
+	// If false is returned the line for this address is not shown.
+	protected funcFilterAddresses: (addr64k: number) => boolean;
+
+	/// A function that formats the long address printed at first in the disassembly.
+	/// Used to add bank information after the address by the disassembler.
+	/// Uses the current slot.
+	protected funcFormatLongAddress: (addr64k: number) => string;
+
+
 	/**
 	 * Create and return the singleton object.
 	 */
@@ -165,6 +181,36 @@ export class DebugSessionClass extends DebugSession {
 				this.debugConsoleSavedText = '';
 			}
 		});
+
+
+		// Declare function for the disassembler.
+		this.funcGetLabel = (addr64k: number) => {
+			// Convert to long address
+			const longAddr = Z80Registers.createLongAddress(addr64k);
+			// Check if label already known
+			const labels = Labels.getLabelsForLongAddress(longAddr);
+			if (labels && labels.length > 0) {
+				return labels.join(' or ');
+			}
+			// Otherwise simple hex string, e.g. "C000"
+			//return 'L' + Utility.getHexString(addr64k, 4);
+			return undefined;
+		};
+
+		// No filtering for now.
+		this.funcFilterAddresses = undefined as any;
+
+		// Add bank info to the address.
+		this.funcFormatLongAddress = (addr64k: number) => {
+			// Convert to long address
+			const longAddr = Z80Registers.createLongAddress(addr64k);
+			// Formatting
+			let addrString = Utility.getHexString(addr64k, 4);
+			const shortName = Remote.memoryModel.getBankShortNameForAddress(longAddr);
+			if (shortName)
+				addrString += ReverseEngineeringLabelParser.bankSeparator + shortName;
+			return addrString;
+		};
 	}
 
 
@@ -3509,7 +3555,7 @@ E.g. use "-help -view" to put the help text in an own view.
 
 	/**
 	 * Checks if all lines/addresses are currently paged in.
-	 * And returns teh start and end address.
+	 * And returns the start and end address.
 	 * @param filename The absolute file path.
 	 * @param fromLineNr The line. Starts at 0.
 	 * @param toLineNr The line. Starts at 0.
@@ -3627,61 +3673,57 @@ E.g. use "-help -view" to put the help text in an own view.
 		Log.log('analyzeAtCursor');
 		try {
 			// Get all start addresses and check banks
-			const startAddrs: number[] = [];
+			const startLongAddrs: number[] = [];
 			for (const block of arr) {
 				const [fromAddr,] = this.checkFileLinesPagedIn(block.filename, block.fromLine, block.toLine);
-				startAddrs.push(fromAddr);
+				startLongAddrs.push(fromAddr);
 			}
 
-			// Get whole memory for analyzing
-			const data = await Remote.readMemoryDump(0, 0x10000);
-
-			// Create new instance to disassemble
-			const analyzer = new AnalyzeDisassembler();
-			analyzer.setMemoryModel(Remote.memoryModel);
-
-			// No automatic labels
-			analyzer.automaticAddresses = false;
-			analyzer.specialLabels = false;
-			analyzer.disassembleUnreferencedData = false;
-			// Do not find interrupt labels
-			analyzer.findInterrupts = false;
-
-			// Initialize disassembly
-			analyzer.initWithCodeAddresses(startAddrs, [{address: 0, data}]);
-			// Set labels for the start addresses
+			// Get window title from start adresses
 			let titles: string[] = [];
-			for (const longAddr of startAddrs) {
+			for (const longAddr of startLongAddrs) {
 				// Get label
 				const labels = Labels.getLabelsForLongAddress(longAddr);
 				let name;
 				if (labels && labels.length > 0) {
 					name = labels.join(' or ');
 				}
-				// Set label
-				if (name)
-					analyzer.setLabel(longAddr & 0xFFFF, name);
-				// Add to title
+				// Otherwise use hex address
 				if (!name)
 					name = Utility.getHexString(longAddr & 0xFFFF, 4) + 'h';
+				// Add to title
 				titles.push(name);
 			}
 			const title = titles.join(', ');
+
+			// Create new instance to disassemble
+			const analyzer = new DisassemblerNextGen(this.funcGetLabel,this.funcFilterAddresses,this.funcFormatLongAddress);
+			analyzer.setMemoryModel(Remote.memoryModel);
+			analyzer.setCurrentSlots(Remote.getSlots());
+			// Get whole memory for analyzing
+			const data = await Remote.readMemoryDump(0, 0x10000);
+			analyzer.setMemory(0, data);
+			// Start disassembly
+			const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
+			analyzer.getFlowGraph(startAddrs64k);
 
 			switch (type) {
 				case 'disassembly':
 					{
 						// Output disassembly
+						/*
 						const rendered = analyzer.renderSmartDisassembly(startAddrs);
 
 						// Output text to new view.
 						const view = new HtmlView('Smart Disassembly - ' + title, rendered);
 						await view.update();
+						*/
 					}
 					break;
 
 				case 'flowChart':
 					{
+						/*
 						// Output flow chart to view
 						const rendered = analyzer.renderFlowChart(startAddrs);
 
@@ -3691,15 +3733,19 @@ E.g. use "-help -view" to put the help text in an own view.
 
 						// Install mouse click handler
 						this.installSvgClickHandler(view);
+						*/
 					}
 					break;
 
 				case 'callGraph':
 					{
-						analyzer.enableStatistics = true;	// Required for call graphs
-						analyzer.nodeFormatString = "${label}\\n@${address}h\\n${size} bytes\\n";
+						// Convert to start nodes
+						const startNodes = startAddrs64k.map(addr64k => analyzer.getNodeForAddress(addr64k)!);
+						// Create map with all nodes <-> subroutines relationships
+						const {depth, nodeSubs} = analyzer.getSubroutinesFor(startNodes);
 						// Output call graph to view
-						const rendered = analyzer.renderCallGraph(startAddrs);
+						const callgraph = new RenderCallGraph(this.funcGetLabel, this.funcFormatLongAddress);
+						const rendered = callgraph.render(startNodes, nodeSubs, depth);
 
 						// Output text to new view.
 						const view = new HtmlView('Call Graph - ' + title, rendered);

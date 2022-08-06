@@ -93,7 +93,7 @@ export class AnalyzeDisassembler extends Disassembler {
 
 	/**
 	 * Sets the memory model.
-	 * Used to check if certain eexecution flows should be followed or not.
+	 * Used to check if certain execution flows should be followed or not.
 	 * @param memModel The memory model obtained from the settings through the Remote.
 	 */
 	public setMemoryModel(memModel: MemoryModel) {
@@ -327,9 +327,12 @@ export class AnalyzeDisassembler extends Disassembler {
 	 * @returns A string with the rendered call graph. To be used in a webview.
 	 */
 	public renderCallGraph(startLongAddrs: number[]): string {
+		/*
 		const dasm = new DisassemblerNextGen();
 
 		// TODO: Need correct input
+		dasm.funcGetLabel = this.funcAssignLabels;
+		dasm.funcFormatLongAddress = this.funcFormatAddress;
 		dasm.setSlotBankInfo(0, 0x10000, 0, true);
 		dasm.setCurrentSlots([0]);
 		dasm.memory = this.memory;
@@ -351,6 +354,8 @@ export class AnalyzeDisassembler extends Disassembler {
 		const svgs = callgraph.render(startNodes, nodeSubs, depth);
 
 		return svgs;
+		*/
+		return ''
 	}
 
 	public renderCallGraph2(startLongAddrs: number[]): string {
