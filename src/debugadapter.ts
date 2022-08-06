@@ -3724,10 +3724,10 @@ E.g. use "-help -view" to put the help text in an own view.
 
 				case 'flowChart':
 					{
-						// Convert to start nodes
-						const startNodes = startAddrs64k.map(addr64k => analyzer.getNodeForAddress(addr64k)!);
 						// Disassemble instructions
 						analyzer.disassembleNodes();
+						// Convert to start nodes
+						const startNodes = startAddrs64k.map(addr64k => analyzer.getNodeForAddress(addr64k)!);
 						// Output call graph to view
 						const flowChart = new RenderFlowChart(this.funcGetLabel, this.funcFormatLongAddress);
 						const rendered = flowChart.render(startNodes);

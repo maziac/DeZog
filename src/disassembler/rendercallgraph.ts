@@ -41,7 +41,8 @@ export class RenderCallGraph extends RenderBase {
 		// Loop over all callees
 		for (const called of calledNodes) {
 			const calledDotId = this.getDotId(called);
-			lines.push('"' + dotId + '" -> "' + calledDotId + '";');
+			const formatDirection = (called == node) ? ' [headport="n", tailport="s"]' : '';	// For self recursion
+			lines.push('"' + dotId + '" -> "' + calledDotId + '"' + formatDirection + ';');
 			// Dig deeper
 			this.getCallGraphRecursively(called, allSubs, depth, lines, allUsedNodes);
 		}

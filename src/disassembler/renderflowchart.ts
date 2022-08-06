@@ -56,7 +56,11 @@ export class RenderFlowChart extends RenderBase {
 				let i = 0;
 				for (const branch of node.branchNodes) {
 					const branchDotId = this.getDotId(branch);
-					const tailport = (i == 0) ? 's' : 'e';
+					//const tailport = (i == 0) ? 's' : 'e';
+					let tailport = 's';
+					// Override if pointing to itself, e.g. JR $, or looping, and not poitint to itself
+					if (branch != node && (i > 0 || node.start >= branch.start))
+						tailport = 'e';
 					lines.push(dotId + ' -> ' + branchDotId + ' [headport="n", tailport="' + tailport + '"];');
 					// Next
 					i++;
@@ -69,7 +73,7 @@ export class RenderFlowChart extends RenderBase {
 				}
 			}
 
-			// Check if end symbol i required
+			// Check if end symbol is required
 			if(endUsed)
 				lines.push(end + ' [label="end", shape=doublecircle];');
 		}

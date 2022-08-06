@@ -100,7 +100,7 @@ export class RenderBase {
 		<div id="sliderScale">
 			Scale:
 			<input id="slide" type="range"
-			min="5" max="200"
+			min="5" max="500"
 			step="5" value="100"
 			oninput="updateSliderScale(this.value)"
 			/>

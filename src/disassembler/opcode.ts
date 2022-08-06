@@ -1728,7 +1728,6 @@ export class Opcode {
 	 * or "JR Z,.sub1_lbl3".
 	 * @param func A function that returns a label for a (64k) address.
 	 */
-	// TODO: Rename to 'disassemble'.
 	public disassembleOpcode(funcGetLabel: (addr64k: number) => string) {
 		// Check if there is any value
 		if (this.valueType == NumberType.NONE) {
