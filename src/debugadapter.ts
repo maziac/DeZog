@@ -3769,11 +3769,19 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * When clicked the corresponding code block is selected.
 	 * @param view The view to install the click handler.
 	 */
+	// TODO: Maybe concatenate consecutive lines.
 	protected installSvgClickHandler(view: HtmlView) {
 		// Handler for mouse clicks: navigate to files/lines
 		view.on('click', async message => {
 			const addressesString: string = message.data;	// Format e.g. "#800A.4" or "8010.4;8012.4;8013.4;"
 			const longAddrString = addressesString.substring(1);	// Skip #
+			// Check if empty
+			if (longAddrString == '') {
+				// No associateed address found
+				this.showWarning('No associated file/line.');
+				return;
+			}
+
 			// Separate addresses
 			const addresses = longAddrString.split(';');
 			// Find associations with file/line
@@ -3819,7 +3827,7 @@ E.g. use "-help -view" to put the help text in an own view.
 					addrs.push(entry.lineNr);
 				}
 				else {
-					// No associateed file found
+					// No associated file found
 					this.showWarning('Address ' + addressString + ' has no associated file/line.');
 				}
 			}

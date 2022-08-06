@@ -27,8 +27,7 @@ export class RenderCallGraph {
 	}
 
 
-	/**
-	 * Renders the call graph.
+	/** ANCHOR Renders one depth of the call graph.
 	 * Every main label represents a bubble.
 	 * Arrows from one bubble to the other represents
 	 * calling the function.
@@ -108,8 +107,8 @@ export class RenderCallGraph {
 			// Output
 			const dotId = this.getDotId(node);
 			const nodeName = this.nodeFormat(labelName, address, countBytes);
-			const hrefAddress = this.funcFormatLongAddress ? this.funcFormatLongAddress(address) : Format.getHexString(address, 4);
-			lines.push('"' + dotId + '" [fontsize="' + Math.round(fontSize) + '", label="' + nodeName + '", href="#' + hrefAddress + '"];');
+			const hrefAddresses = this.getAllAddressesForSub(sub);
+			lines.push('"' + dotId + '" [fontsize="' + Math.round(fontSize) + '", label="' + nodeName + '", href="#' + hrefAddresses + '"];');
 
 			// Output all main labels in different color
 			if (startNodes.indexOf(node) >= 0) {
@@ -131,6 +130,25 @@ export class RenderCallGraph {
 
 		// return
 		return rendered;
+	}
+
+
+	/** Returns all addresses for a sub as string.
+	 * And concatenated with a ';'
+	 * @param sub The subroutine.
+	 * @returns E.g.  "#800A.4" or "8010.4;8012.4;8013.4;"
+	 */
+	protected getAllAddressesForSub(sub: Subroutine): string {
+		let s = '';
+		// Get addresses
+		const allAddresses = sub.getAllAddresses();
+		// Convert addresses to string
+		for (const addr of allAddresses) {
+			const hrefAddress = this.funcFormatLongAddress(addr);
+			s += hrefAddress + ';';
+		}
+		// Return
+		return s;
 	}
 
 
@@ -197,8 +215,12 @@ export class RenderCallGraph {
 		if (labelName)
 			result += labelName + "\\n";
 		result += Format.getHexFormattedString(address) + "\\n";
-		if (size != undefined)
-			result += "Size=" + size + "\\n";
+		if (size != undefined) {
+			if (size == 1)
+				result += "1 byte\\n";
+			else
+				result += size + " bytes\\n";
+		}
 		return result;
 	}
 
@@ -220,8 +242,7 @@ export class RenderCallGraph {
 	}
 
 
-	/**
-	 * Renders the call graph.
+	/** ANCHOR Renders all call graph depths.
 	 * Every main label represents a bubble.
 	 * Arrows from one bubble to the other represents
 	 * calling the function.

@@ -58,5 +58,18 @@ export class Subroutine {
 			this.processAllBranchNodes(branchNode);
 		}
 	}
+
+
+	/** Returns all addresses belonging to the subroutine.
+	 * @returns An array with all addresses.
+	 */
+	public getAllAddresses(): number[] {
+		const addrs: number[] = [];
+		for (const node of this.nodes) {
+			const nodeAddrs = node.getAllAddresses();
+			addrs.push(...nodeAddrs);
+		}
+		return addrs;
+	}
 }
 

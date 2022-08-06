@@ -23,6 +23,7 @@ export class AsmNode {
 	// If a path of the node is ended by a RET or RET cc than it is
 	// marked as a subroutine.
 	// Not only the topmost but all paths are marked.
+	// Is used only to distinguish label prefix "SUB" or "LBL".
 	public isSubroutine: boolean = false;
 
 	// Is set either if it is the first address given to decode
@@ -185,5 +186,23 @@ export class AsmNode {
 		for (const predec of this.predecessors) {
 			predec.markAsSubroutine();
 		}
+	}
+
+
+	/** Returns all addresses belonging to the node.
+	 * @returns An array with all addresses.
+	 */
+	public getAllAddresses(): number[] {
+		let addr = this.start;
+		const addrs: number[] = [];
+		for (const opcode of this.instructions) {
+			addrs.push(addr);
+			addr += opcode.length;
+		}
+		// At least add start address (e.g. if bank border node/length = 0)
+		//if (addrs.length == 0)
+		//	addrs.push(addr);
+		// Return
+		return addrs;
 	}
 }
