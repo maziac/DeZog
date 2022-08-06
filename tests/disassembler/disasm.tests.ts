@@ -3861,6 +3861,34 @@ suite('Disassembler', () => {
 			assert.equal(node4.callee, undefined);
 			assert.equal(node4.branchNodes.length, 0);
 		});
+
+		test('jr $', () => {
+			dng.getFlowGraph([0x0A00]);
+			assert.equal(dngNodes.size, 2);
+
+			const node1 = dng.getNodeForAddress(0x0A00)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(0x0A01)!;
+			assert.notEqual(node2, undefined);
+
+			assert.equal(node1.instructions.length, 1);
+			assert.equal(node1.length, 1);
+			assert.equal(node1.callers.length, 0);
+			assert.equal(node1.predecessors.length, 0);
+			assert.equal(node1.callee, undefined);
+			assert.equal(node1.branchNodes.length, 1);
+			assert.ok(node1.branchNodes.includes(node2));
+
+			assert.equal(node2.instructions.length, 1);
+			assert.equal(node2.length, 2);
+			assert.equal(node2.callers.length, 0);
+			assert.equal(node2.predecessors.length, 2);
+			assert.ok(node2.predecessors.includes(node1));
+			assert.ok(node2.predecessors.includes(node2));
+			assert.equal(node2.callee, undefined);
+			assert.equal(node2.branchNodes.length, 1);
+			assert.ok(node2.branchNodes.includes(node2));
+		});
 	});
 
 
@@ -4336,6 +4364,38 @@ suite('Disassembler', () => {
 			assert.ok(node1.isSubroutine);
 			assert.equal(node2.label, 'SSUB_1104.LL1');
 			assert.ok(node2.isSubroutine);
+		});
+
+		test('JR $', () => {
+			const startAddr = 0x1200;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 2);
+
+			const node1 = dng.getNodeForAddress(startAddr)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 1)!;
+			assert.notEqual(node2, undefined);
+
+			assert.equal(node1.label, undefined);
+			assert.ok(!node1.isSubroutine);
+			assert.equal(node2.label, 'LLBL_1201');
+			assert.ok(!node2.isSubroutine);
+		});
+
+		test('JR $ / CALL', () => {
+			const startAddr = 0x1300;
+			dng.getFlowGraph([startAddr]);
+			assert.equal(dngNodes.size, 4);
+
+			const node1 = dng.getNodeForAddress(startAddr + 4)!;
+			assert.notEqual(node1, undefined);
+			const node2 = dng.getNodeForAddress(startAddr + 5)!;
+			assert.notEqual(node2, undefined);
+
+			assert.equal(node1.label, 'LLBL_1304');
+			assert.ok(!node1.isSubroutine);
+			assert.equal(node2.label, 'LLBL_1304.LLOOP');
+			assert.ok(!node2.isSubroutine);
 		});
 	});
 

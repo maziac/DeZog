@@ -1,5 +1,6 @@
 import { AsmNode } from './../../src/disassembler/asmnode';
 import * as assert from 'assert';
+import {Opcode} from '../../src/disassembler/opcode';
 
 
 
@@ -214,6 +215,33 @@ suite('AsmNode', () => {
 			n2.predecessors.push(n1);
 
 			assert.ok(n2.otherReference());
+		});
+	});
+
+	suite('isRET', () => {
+
+		test('No RET, empty node', () => {
+			const n = new AsmNode();
+			assert.ok(!n.isRET());
+		});
+
+		test('No RET, one instruction', () => {
+			const n = new AsmNode();
+			n.instructions.push(new Opcode(0x00, "NOP"));	// NOP
+			assert.ok(!n.isRET());
+		});
+
+		test('RET, 1 instruction', () => {
+			const n = new AsmNode();
+			n.instructions.push(new Opcode(0xC9, "RET"));	// RET
+			assert.ok(n.isRET());
+		});
+
+		test('RET, 2 instructions', () => {
+			const n = new AsmNode();
+			n.instructions.push(new Opcode(0x00, "NOP"));	// NOP
+			n.instructions.push(new Opcode(0xC9, "RET"));	// RET
+			assert.ok(n.isRET());
 		});
 	});
 });

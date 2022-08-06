@@ -682,7 +682,7 @@ export class DisassemblerNextGen {
 			}
 			// Loops
 			for (const loopNode of loopNodes) {
-				node.label = this.labelLblPrefix + Utility.getHexString(loopNode.start, 4);
+				loopNode.label = this.labelLblPrefix + Utility.getHexString(loopNode.start, 4);
 			}
 		}
 	}
