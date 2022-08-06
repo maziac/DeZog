@@ -40,6 +40,7 @@ import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
 import {DisassemblerNextGen} from './disassembler/disasmnextgen';
 import {ReverseEngineeringLabelParser} from './labels/reverseengineeringlabelparser';
 import {RenderCallGraph} from './disassembler/rendercallgraph';
+import {RenderFlowChart} from './disassembler/renderflowchart';
 
 
 
@@ -3723,9 +3724,13 @@ E.g. use "-help -view" to put the help text in an own view.
 
 				case 'flowChart':
 					{
-						/*
-						// Output flow chart to view
-						const rendered = analyzer.renderFlowChart(startAddrs);
+						// Convert to start nodes
+						const startNodes = startAddrs64k.map(addr64k => analyzer.getNodeForAddress(addr64k)!);
+						// Disassemble instructions
+						analyzer.disassembleNodes();
+						// Output call graph to view
+						const flowChart = new RenderFlowChart(this.funcGetLabel, this.funcFormatLongAddress);
+						const rendered = flowChart.render(startNodes);
 
 						// Output text to new view.
 						const view = new HtmlView('Flow Chart - ' + title, rendered);
@@ -3733,7 +3738,6 @@ E.g. use "-help -view" to put the help text in an own view.
 
 						// Install mouse click handler
 						this.installSvgClickHandler(view);
-						*/
 					}
 					break;
 
@@ -3744,8 +3748,8 @@ E.g. use "-help -view" to put the help text in an own view.
 						// Create map with all nodes <-> subroutines relationships
 						const {depth, nodeSubs} = analyzer.getSubroutinesFor(startNodes);
 						// Output call graph to view
-						const callgraph = new RenderCallGraph(this.funcGetLabel, this.funcFormatLongAddress);
-						const rendered = callgraph.render(startNodes, nodeSubs, depth);
+						const callGraph = new RenderCallGraph(this.funcGetLabel, this.funcFormatLongAddress);
+						const rendered = callGraph.render(startNodes, nodeSubs, depth);
 
 						// Output text to new view.
 						const view = new HtmlView('Call Graph - ' + title, rendered);

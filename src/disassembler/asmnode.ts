@@ -1,5 +1,5 @@
 import { Utility } from './../misc/utility';
-import {Opcode} from './opcode';
+import {Opcode, OpcodeFlag} from './opcode';
 
 
 
@@ -147,6 +147,23 @@ export class AsmNode {
 	}
 
 
+	/** @returns Returns true if the last instruction is a RET, RETI, RETN or RET cc.
+	 */
+	public isRET() {
+		/*
+		const len = this.instructions.length;
+		if (len == 0)
+			return false;
+			*/
+		// Get last opcode
+		const lastOpcode = this.instructions.slice(-1)[0];
+		if (lastOpcode == undefined)
+			return false;
+		const isRET = (lastOpcode.flags & OpcodeFlag.RET);
+		return isRET;
+	}
+
+
 	/**
 	 * Checks if a node has no references (predecessors, calls) other
 	 * than the natural flow from the previous node.
@@ -204,5 +221,13 @@ export class AsmNode {
 		//	addrs.push(addr);
 		// Return
 		return addrs;
+	}
+
+
+	/** Returns an array with the disassembled text.
+	 * @returns instructions disassembled to array.
+	 */
+	public getAllDisassemblyLines(): string[] {
+		return this.instructions.map(opcode => opcode.disassembledText);
 	}
 }
