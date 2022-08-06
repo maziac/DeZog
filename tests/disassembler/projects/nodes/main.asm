@@ -115,7 +115,14 @@ SUB3:
 	INC A
 	RET
 
+
 	DEFS 0x0920-$
 	CALL SUB3
 
 	RET
+
+
+	DEFS 0x0A00-$
+	NOP
+
+	JR $
