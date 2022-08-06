@@ -3439,8 +3439,8 @@ suite('Disassembler', () => {
 		let dng: DisassemblerNextGen;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new DisassemblerNextGen();
-			dng.setSlotBankInfo(0, 0xFFFF, 0, true);
+			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
+			(dng as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 			dng.setCurrentSlots([0]);
 			dng.readBinFile(0, './tests/disassembler/projects/nodes/main.bin');
 			dngNodes = (dng as any).nodes;
@@ -3869,8 +3869,8 @@ suite('Disassembler', () => {
 		let dng: DisassemblerNextGen;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new DisassemblerNextGen();
-			dng.setSlotBankInfo(0, 0xFFFF, 0, true);
+			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
+			(dng as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 			dng.setCurrentSlots([0]);
 			dng.readBinFile(0, './tests/disassembler/projects/partition_blocks/main.bin');
 			dngNodes = (dng as any).nodes;
@@ -4106,14 +4106,14 @@ suite('Disassembler', () => {
 		let dng: DisassemblerNextGen;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new DisassemblerNextGen();
+			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
+			(dng as any).setSlotBankInfo(0, 0xFFFF, 0, true);
+			dng.setCurrentSlots([0]);
+			dng.readBinFile(0, './tests/disassembler/projects/assign_labels/main.bin');
 			dng.labelLblPrefix = 'LLBL_';
 			dng.labelSubPrefix = 'SSUB_';
 			dng.labelLocalLoopPrefix = 'LLOOP';
 			dng.labelLocalLabelPrefix = 'LL';
-			dng.setSlotBankInfo(0, 0xFFFF, 0, true);
-			dng.setCurrentSlots([0]);
-			dng.readBinFile(0, './tests/disassembler/projects/assign_labels/main.bin');
 			dngNodes = (dng as any).nodes;
 		});
 
@@ -4345,12 +4345,12 @@ suite('Disassembler', () => {
 		let dng: DisassemblerNextGen;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new DisassemblerNextGen();
-			dng.setSlotBankInfo(0x0000, 0x3FFF, 0, true);
-			dng.setSlotBankInfo(0x4000, 0x7FFF, 1, false);
-			dng.setSlotBankInfo(0x8000, 0xBFFF, 2, false);
-			dng.setSlotBankInfo(0xC000, 0xFFFF, 3, false);
-			dng.setCurrentSlots([0, 1, 2, 3]);	// A different bank in each slot
+			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
+			(dng as any).setSlotBankInfo(0x0000, 0x3FFF, 0, true);
+			(dng as any).setSlotBankInfo(0x4000, 0x7FFF, 1, false);
+			(dng as any).setSlotBankInfo(0x8000, 0xBFFF, 2, false);
+			(dng as any).setSlotBankInfo(0xC000, 0xFFFF, 3, false);
+			(dng as any).setCurrentSlots([0, 1, 2, 3]);	// A different bank in each slot
 			dng.readBinFile(0, './tests/disassembler/projects/bank_border/main.bin');
 			dngNodes = (dng as any).nodes;
 		});
@@ -4460,14 +4460,14 @@ suite('Disassembler', () => {
 		let dng: DisassemblerNextGen;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new DisassemblerNextGen();
-			dng.setSlotBankInfo(0x0000, 0x1FFF, 0, true);
-			dng.setSlotBankInfo(0x2000, 0x3FFF, 1, false);
-			dng.setSlotBankInfo(0x4000, 0x5FFF, 2, true);
-			dng.setSlotBankInfo(0x6000, 0x7FFF, 3, false);
-			dng.setSlotBankInfo(0x8000, 0x9FFF, 3, true);
-			dng.setSlotBankInfo(0xA000, 0xBFFF, 3, true);
-			dng.setSlotBankInfo(0xC000, 0xFFFF, 3, true);
+			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
+			(dng as any).setSlotBankInfo(0x0000, 0x1FFF, 0, true);
+			(dng as any).setSlotBankInfo(0x2000, 0x3FFF, 1, false);
+			(dng as any).setSlotBankInfo(0x4000, 0x5FFF, 2, true);
+			(dng as any).setSlotBankInfo(0x6000, 0x7FFF, 3, false);
+			(dng as any).setSlotBankInfo(0x8000, 0x9FFF, 3, true);
+			(dng as any).setSlotBankInfo(0xA000, 0xBFFF, 3, true);
+			(dng as any).setSlotBankInfo(0xC000, 0xFFFF, 3, true);
 			dng.setCurrentSlots([0, 1, 2, 3, 4, 5, 6]);	// A different bank in each slot
 			dng.readBinFile(0, './tests/disassembler/projects/flow_through_slot/main.bin');
 			dngNodes = (dng as any).nodes;
@@ -4546,20 +4546,17 @@ suite('Disassembler', () => {
 		let dng: DisassemblerNextGen;
 		//let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new DisassemblerNextGen();
+			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
+			(dng as any).setSlotBankInfo(0x0000, 0x3FFF, 0, true);
+			(dng as any).setSlotBankInfo(0x4000, 0x7FFF, 1, true);
+			(dng as any).setSlotBankInfo(0x8000, 0xFFFF, 3, false);
+			dng.setCurrentSlots([0, 1, 2]);	// A different bank in each slot
+			dng.readBinFile(0, './tests/disassembler/projects/disassemble_nodes/main.bin');
 			dng.labelLblPrefix = 'LLBL_';
 			dng.labelSubPrefix = 'SSUB_';
 			dng.labelLocalLoopPrefix = 'LLOOP';
 			dng.labelLocalLabelPrefix = 'LL';
 			dng.labelDataLblPrefix = "DDATA_";
-			dng.setSlotBankInfo(0x0000, 0x3FFF, 0, true);
-			dng.setSlotBankInfo(0x4000, 0x7FFF, 1, true);
-			dng.setSlotBankInfo(0x8000, 0xFFFF, 3, false);
-			dng.setCurrentSlots([0, 1, 2]);	// A different bank in each slot
-			dng.readBinFile(0, './tests/disassembler/projects/disassemble_nodes/main.bin');
-			dng.funcGetLabel = (addr64k: number) => {
-				return undefined;
-			};
 			Format.hexFormat = '$';
 		});
 
