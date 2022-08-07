@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.7.2
+- Fixed #94: watch block of memory show same memory position multiple times
+
 # 2.7.1
 - Fixed #93 problem stepping over "DEC/INC (IX+n)"
 
