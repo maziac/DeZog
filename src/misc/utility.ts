@@ -11,6 +11,8 @@ import * as jsonc from 'jsonc-parser';
 import {HexNumber} from '../settings/settingscustommemory';
 
 
+// SECTION[epic=Utility]
+
 
 /**
  * A collection of useful functions.
@@ -1523,8 +1525,7 @@ export class Utility {
 	}
 
 
-	/**
-	 * Own assert function that additionally does a log
+	/** ANCHOR assert: Own assert function that additionally does a log
 	 * in case of a wrong assumption.
 	 */
 	public static assert(test: any, message?: string) {
@@ -1606,3 +1607,4 @@ export class Utility {
 	}
 }
 
+// !SECTION

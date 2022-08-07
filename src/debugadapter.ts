@@ -3706,7 +3706,6 @@ E.g. use "-help -view" to put the help text in an own view.
 			analyzer.setMemory(0, data);
 			// Start disassembly
 			const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
-			analyzer.getFlowGraph(startAddrs64k);
 
 			switch (type) {
 				case 'disassembly':
@@ -3725,6 +3724,7 @@ E.g. use "-help -view" to put the help text in an own view.
 				case 'flowChart':
 					{
 						// Disassemble instructions
+						analyzer.getFlowGraph(startAddrs64k, false);
 						analyzer.disassembleNodes();
 						// Convert to start nodes
 						const startNodes = startAddrs64k.map(addr64k => analyzer.getNodeForAddress(addr64k)!);
@@ -3743,6 +3743,8 @@ E.g. use "-help -view" to put the help text in an own view.
 
 				case 'callGraph':
 					{
+						// Disassemble
+						analyzer.getFlowGraph(startAddrs64k);
 						// Convert to start nodes
 						const startNodes = startAddrs64k.map(addr64k => analyzer.getNodeForAddress(addr64k)!);
 						// Create map with all nodes <-> subroutines relationships

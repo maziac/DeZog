@@ -215,14 +215,15 @@ export class DisassemblerNextGen {
 	 * At the end the complete flow graph is setup in the this.nodes
 	 * map.
 	 * @param addresses All 64k addresses to start flow graphs from.
+	 * @param followCalls true if calls should be followed. Set this to false for flow charts.
 	 */
-	public getFlowGraph(addresses: number[]) {
+	public getFlowGraph(addresses: number[], followCalls: boolean = true) {
 		this.memory.resetAttributeFlag(MemAttribute.
 			FLOW_ANALYZED);
 		this.nodes.clear();
 
 		// Create the nodes
-		this.createNodes(addresses);
+		this.createNodes(addresses, followCalls);
 
 		// Now fill the nodes.
 		this.fillNodes();
@@ -245,8 +246,9 @@ export class DisassemblerNextGen {
 	/** ANCHOR createNodes
 	 * Creates all nodes in the this.nodes map.
 	 * @param addresses All 64k addresses to start from.
+	 * @param followCalls true if calls should be followed. Set this to false for flow charts.
 	 */
-	protected createNodes(addresses: number[]) {
+	protected createNodes(addresses: number[], followCalls: boolean) {
 		// Create all (shallow) AsmNodes
 		const sortedAdresses = [...addresses];
 		sortedAdresses.sort((a, b) => a - b);
@@ -254,7 +256,7 @@ export class DisassemblerNextGen {
 			const memAttr = this.memory.getAttributeAt(addr);
 			if (!(memAttr & MemAttribute.FLOW_ANALYZED)) {
 				// If not already analyzed
-				this.createNodeForAddress(addr);
+				this.createNodeForAddress(addr, followCalls);
 			}
 		}
 	}
@@ -266,8 +268,9 @@ export class DisassemblerNextGen {
 	 * The nodes are just empty containers which contain only the start address.
 	 * They will be filled in a secondary pass.
 	 * @param address The 64k start address.
+	 * @param followCalls true if calls should be followed. Set this to false for flow charts.
 	 */
-	protected createNodeForAddress(address: number) {
+	protected createNodeForAddress(address: number, followCalls: boolean) {
 		// Check if address/node already exists.
 		if (this.nodes.get(address)) {
 			// Node already exists
@@ -313,9 +316,10 @@ export class DisassemblerNextGen {
 				}
 
 				// Now the branch
-				const branchAddress = opcode.value;
-				allBranchAddresses.push(branchAddress);
-
+				if (followCalls || !(opcode.flags & OpcodeFlag.CALL)) {
+					const branchAddress = opcode.value;
+					allBranchAddresses.push(branchAddress);
+				}
 				// Leave loop
 				break;
 			}
@@ -341,7 +345,7 @@ export class DisassemblerNextGen {
 		for (const addr of allBranchAddresses) {
 			// Check for bank border
 			if (!this.bankBorderPassed(node.slot, addr))
-				this.createNodeForAddress(addr);
+				this.createNodeForAddress(addr, followCalls);
 		}
 
 		return node;
@@ -378,6 +382,7 @@ export class DisassemblerNextGen {
 	protected fillNode(node: AsmNode) {
 		let address = node.start;
 		const nodeSlot = node.slot;
+		const addrReferences = [NumberType.DATA_LBL, NumberType.CODE_LOCAL_LBL, NumberType.CODE_LOCAL_LOOP, NumberType.CODE_LBL, NumberType.CODE_SUB, NumberType.CODE_RST];
 
 		// Loop over node's addresses
 		while (true) {
@@ -415,7 +420,7 @@ export class DisassemblerNextGen {
 			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED);
 
 			// Check for referenced data addresses
-			if (opcode.valueType == NumberType.DATA_LBL) {
+			if (addrReferences.includes(opcode.valueType)) {
 				// Then collect the address for later usage
 				const opcRef: OpcodeReference = {
 					opcode,
