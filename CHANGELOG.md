@@ -15,6 +15,9 @@
 - Break decoration color changed to red.
 - "disableBanking" option removed from "sjasmplus" launch.json configuration.
 
+# 2.7.2
+- Fixed #94: watch block of memory show same memory position multiple times
+
 # 2.7.1
 - Fixed disassembly of instructions: INC (IX+n), DEC (IX+n), INC (IY+n) and DEC (IY+n). #93 Stepping over.
 

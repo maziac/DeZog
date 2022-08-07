@@ -789,7 +789,7 @@ export class MemDumpVar extends ShallowVar {
 	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
 		start = start || 0;
 		count = count || (this.totalCount - start);
-		let addr = this.addr + start;
+		let addr = this.addr + start * this.elemSize;
 		const elemSize = this.elemSize;
 		const memArray = new Array<DebugProtocol.Variable>();
 		const format = this.formatString();
