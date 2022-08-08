@@ -1,3 +1,4 @@
+import {unchangedTextChangeRange} from "typescript";
 import {AsmNode} from "./asmnode";
 import {Format} from "./format";
 import {RenderBase} from "./renderbase";
@@ -17,6 +18,7 @@ export class RenderFlowChart extends RenderBase {
 		// Color codes (not real colors) used to exchange the colors at the end.
 		const mainColor = '#FEFE01';
 		const fillColor = '#FEFE02';
+		const otherBankColor = '#FEFE03';
 
 		// Header
 		const lines: string[] = [];
@@ -36,7 +38,7 @@ export class RenderFlowChart extends RenderBase {
 
 			// Start
 			const startDotId = this.getDotId(startNode);
-			const startHrefAddresses = this.getAllRefAddressesFor(startNode);
+			const startHrefAddresses = this.getAllRefAddressesFor(startNode);	// TODO: just use start address
 			const start = startDotId + 'start';
 
 			lines.push(start + ' [label="' + labelName + '", fillcolor="' + fillColor + '", style=filled, shape=tab, href="#' + startHrefAddresses + '"];');
@@ -46,12 +48,31 @@ export class RenderFlowChart extends RenderBase {
 
 			// Print all nodes belonging to the subroutine
 			for (const node of sub.nodes) {
-				// Get disassembly text of node.
-				const instrTexts = node.getAllDisassemblyLines().join('\\l') + '\\l';
-				// Print disassembly
 				const dotId = this.getDotId(node);
+				let instrTexts: string;
+				// Bank border ?
+				if (node.bankBorder) {
+					lines.push(dotId + ' [fillcolor="' + otherBankColor + '", style=filled];');
+					instrTexts = 'Other\\lBank\\l';
+				}
+				else {
+					// Get disassembly text of node.
+					instrTexts = node.getAllDisassemblyLines().join('\\l') + '\\l';
+				}
+				// Print disassembly
 				const hrefAddresses = this.getAllRefAddressesFor(node);
 				lines.push(dotId + ' [label="' + instrTexts + '", href="#' + hrefAddresses + '"];');
+
+				// Check if someone calls node
+				if (node != startNode && node.callers.length > 0) {
+					//TODO: verbinden mit obiger start dot Ausgabe. Ich bracuh nur die heir unten
+					const nodeAddr = node.start;
+					const nodeLabelName = this.funcGetLabel(nodeAddr) || node.label || Format.getHexFormattedString(nodeAddr);
+					const callerDotId = 'caller' + dotId;
+					lines.push(callerDotId + ' [label="' + nodeLabelName + '", fillcolor="' + fillColor + '", style=filled, shape=box];');
+					lines.push(callerDotId + ' -> ' + dotId + ' [headport="n", tailport="s"];');
+				}
+
 				// Print connection to branches
 				let i = 0;
 				for (const branch of node.branchNodes) {
