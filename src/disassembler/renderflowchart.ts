@@ -60,7 +60,7 @@ export class RenderFlowChart extends RenderBase {
 					let tailport = 's';
 					// Override if pointing to itself, e.g. JR $, or looping, and not poitint to itself
 					if (branch != node && (i > 0 || node.start >= branch.start))
-						tailport = 'e';
+						tailport = '_'; // east or west (or center)
 					lines.push(dotId + ' -> ' + branchDotId + ' [headport="n", tailport="' + tailport + '"];');
 					// Next
 					i++;
