@@ -3724,7 +3724,7 @@ E.g. use "-help -view" to put the help text in an own view.
 				case 'flowChart':
 					{
 						// Disassemble instructions
-						analyzer.getFlowGraph(startAddrs64k, false);
+						analyzer.getFlowGraph(startAddrs64k);
 						analyzer.disassembleNodes();
 						// Convert to start nodes
 						const startNodes = startAddrs64k.map(addr64k => analyzer.getNodeForAddress(addr64k)!);
