@@ -14,7 +14,13 @@ export class RenderText extends RenderBase {
 	 * @returns The text for the complete disassembly.
 	 */
 
-	public async render(startNodes: AsmNode[]): Promise<string> {
+	public renderSync(startNodes: AsmNode[]): string {
+
+
+		for (const node of startNodes) {
+		}
+
+
 		// Color codes (not real colors) used to exchange the colors at the end.
 		const mainColor = '#FEFE01';
 		const emphasizeColor = '#FEFE02';
@@ -107,6 +113,6 @@ export class RenderText extends RenderBase {
 		lines.push('}');
 
 		// Return
-		return this.renderLines(lines);
+		return "";
 	}
 }

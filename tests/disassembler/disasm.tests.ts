@@ -3889,6 +3889,20 @@ suite('Disassembler', () => {
 			assert.equal(node2.branchNodes.length, 1);
 			assert.ok(node2.branchNodes.includes(node2));
 		});
+
+
+		test('getNodesForAddresses', () => {
+			const n1 = new AsmNode();
+			const n2 = new AsmNode();
+			const n3 = new AsmNode();
+			dngNodes.set(0x0100, n1);
+			dngNodes.set(0x0200, n2);
+			dngNodes.set(0x0300, n3);
+			const addrNodes = dng.getNodesForAddresses([0x200, 0x300, 0x400]);
+			assert.equal(addrNodes.length, 2);
+			assert.ok(addrNodes.includes(n2));
+			assert.ok(addrNodes.includes(n3));
+		});
 	});
 
 

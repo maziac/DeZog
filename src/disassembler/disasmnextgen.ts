@@ -196,13 +196,28 @@ export class DisassemblerNextGen {
 		return false;
 	}
 
-	/**
-	 * Returns the node for a given address.
+	/** Returns the node for a given address.
 	 * @param addr64k The 64k address.
 	 * @returns The AsmNode or undefined.
 	 */
 	public getNodeForAddress(addr64k: number): AsmNode | undefined{
 		return this.nodes.get(addr64k);
+	}
+
+
+	/** Returns the nodes for the given addresses.
+	 * @param addrs64k An array with addresses.
+	 * @returns The corresponding nodes. If a node does not exist for an address
+	 * it is not included in the returned array.
+	 */
+	public getNodesForAddresses(addrs64k: number[]): AsmNode[] {
+		const addrNodes: AsmNode[] = [];
+		for (const addr64k of addrs64k) {
+			const node = this.nodes.get(addr64k);
+			if (node)
+				addrNodes.push(node);
+		}
+		return addrNodes;
 	}
 
 

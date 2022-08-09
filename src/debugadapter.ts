@@ -41,6 +41,7 @@ import {DisassemblerNextGen} from './disassembler/disasmnextgen';
 import {ReverseEngineeringLabelParser} from './labels/reverseengineeringlabelparser';
 import {RenderCallGraph} from './disassembler/rendercallgraph';
 import {RenderFlowChart} from './disassembler/renderflowchart';
+import {RenderText} from './disassembler/rendertext';
 
 
 
@@ -3706,28 +3707,29 @@ E.g. use "-help -view" to put the help text in an own view.
 			analyzer.setMemory(0, data);
 			// Start disassembly
 			const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
+			analyzer.getFlowGraph(startAddrs64k);
+			// Convert to start nodes
+			const startNodes = analyzer.getNodesForAddresses(startAddrs64k);
 
 			switch (type) {
 				case 'disassembly':
 					{
-						// Output disassembly
-						/*
-						const rendered = analyzer.renderSmartDisassembly(startAddrs);
+						// Disassemble instructions
+						analyzer.disassembleNodes();
+						// Output call graph to view
+						const flowChart = new RenderText(this.funcGetLabel, this.funcFormatLongAddress);
+						const rendered = flowChart.renderSync(startNodes);
 
 						// Output text to new view.
 						const view = new HtmlView('Smart Disassembly - ' + title, rendered);
 						await view.update();
-						*/
 					}
 					break;
 
 				case 'flowChart':
 					{
 						// Disassemble instructions
-						analyzer.getFlowGraph(startAddrs64k);
 						analyzer.disassembleNodes();
-						// Convert to start nodes
-						const startNodes = startAddrs64k.map(addr64k => analyzer.getNodeForAddress(addr64k)!);
 						// Output call graph to view
 						const flowChart = new RenderFlowChart(this.funcGetLabel, this.funcFormatLongAddress);
 						const rendered = await flowChart.render(startNodes);
@@ -3743,10 +3745,6 @@ E.g. use "-help -view" to put the help text in an own view.
 
 				case 'callGraph':
 					{
-						// Disassemble
-						analyzer.getFlowGraph(startAddrs64k);
-						// Convert to start nodes
-						const startNodes = startAddrs64k.map(addr64k => analyzer.getNodeForAddress(addr64k)!);
 						// Create map with all nodes <-> subroutines relationships
 						const {depth, nodeSubs} = analyzer.getSubroutinesFor(startNodes);
 						// Output call graph to view
