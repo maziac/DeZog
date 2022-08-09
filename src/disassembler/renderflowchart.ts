@@ -31,21 +31,9 @@ export class RenderFlowChart extends RenderBase {
 			// Get complete sub
 			const sub = new Subroutine(startNode);
 
-			// Find label
-			const address = startNode.start;
-			const labelName = this.funcGetLabel(address) || startNode.label || Format.getHexFormattedString(address);
-
-			// Start
-			const startDotId = this.getDotId(startNode);
-			const startHrefAddresses = this.getAllRefAddressesFor(startNode);	// TODO: just use start address
-			const start = startDotId + 'start';
-
-			lines.push(start + ' [label="' + labelName + '", fillcolor="' + emphasizeColor + '", style=filled, shape=tab, href="#' + startHrefAddresses + '"];');
-			lines.push(start + ' -> ' + startDotId + ';');
-			const end = startDotId + 'end';
-			let endUsed = false;
-
 			// Print all nodes belonging to the subroutine
+			let endUsed = false;
+			let end;
 			for (const node of sub.nodes) {
 				const dotId = this.getDotId(node);
 				let instrTexts: string;
@@ -63,12 +51,21 @@ export class RenderFlowChart extends RenderBase {
 				lines.push(dotId + ' [label="' + instrTexts + '", href="#' + hrefAddresses + '"];');
 
 				// Check if someone calls node
-				if (node != startNode && node.callers.length > 0) {
-					//TODO: verbinden mit obiger start dot Ausgabe. Ich bracuh nur die heir unten
+				if (node == startNode || node.callers.length > 0) {
+					let shape = 'box';
+					let href = '';
 					const nodeAddr = node.start;
+					if (node == startNode) {
+						// Shape start node differently
+						shape = 'tab';
+						// Add href to start
+						href = 'href="#' + this.funcFormatLongAddress(nodeAddr) + '"';
+						// Define end
+						end = 'end' + dotId;
+					}
 					const nodeLabelName = this.funcGetLabel(nodeAddr) || node.label || Format.getHexFormattedString(nodeAddr);
 					const callerDotId = 'caller' + dotId;
-					lines.push(callerDotId + ' [label="' + nodeLabelName + '", fillcolor="' + emphasizeColor + '", style=filled, shape=box];');
+					lines.push(callerDotId + ' [label="' + nodeLabelName + '", fillcolor="' + emphasizeColor + '", style=filled, shape="' + shape + '", ' + href + '];');
 					lines.push(callerDotId + ' -> ' + dotId + ' [headport="n", tailport="s"];');
 				}
 
@@ -93,7 +90,7 @@ export class RenderFlowChart extends RenderBase {
 					i++;
 				}
 				// Check for RET
-				if (node.isRET()) {
+				if (node.isRET() && (end != undefined)) {
 					// Connection to end
 					lines.push(dotId + ' -> ' + end + ';');
 					endUsed = true;
