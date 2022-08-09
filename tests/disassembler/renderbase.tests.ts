@@ -11,7 +11,7 @@ suite('Disassembler - RenderBase', () => {
 	let r: any;
 	setup(() => {
 		r = new RenderBase(
-			addr64k => 'R' + Utility.getHexString(addr64k, 4),
+			addr64k => 'R' + Utility.getHexString(addr64k, 4),	// Not used in tests.
 			addr64k => 'LONG' + Utility.getHexString(addr64k, 4)
 		);
 	});
