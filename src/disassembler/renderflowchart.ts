@@ -1,4 +1,3 @@
-import {unchangedTextChangeRange} from "typescript";
 import {AsmNode} from "./asmnode";
 import {Format} from "./format";
 import {RenderBase} from "./renderbase";
@@ -17,7 +16,7 @@ export class RenderFlowChart extends RenderBase {
 	public render(startNodes: AsmNode[]): string {
 		// Color codes (not real colors) used to exchange the colors at the end.
 		const mainColor = '#FEFE01';
-		const fillColor = '#FEFE02';
+		const emphasizeColor = '#FEFE02';
 		const otherBankColor = '#FEFE03';
 
 		// Header
@@ -41,7 +40,7 @@ export class RenderFlowChart extends RenderBase {
 			const startHrefAddresses = this.getAllRefAddressesFor(startNode);	// TODO: just use start address
 			const start = startDotId + 'start';
 
-			lines.push(start + ' [label="' + labelName + '", fillcolor="' + fillColor + '", style=filled, shape=tab, href="#' + startHrefAddresses + '"];');
+			lines.push(start + ' [label="' + labelName + '", fillcolor="' + emphasizeColor + '", style=filled, shape=tab, href="#' + startHrefAddresses + '"];');
 			lines.push(start + ' -> ' + startDotId + ';');
 			const end = startDotId + 'end';
 			let endUsed = false;
@@ -69,7 +68,7 @@ export class RenderFlowChart extends RenderBase {
 					const nodeAddr = node.start;
 					const nodeLabelName = this.funcGetLabel(nodeAddr) || node.label || Format.getHexFormattedString(nodeAddr);
 					const callerDotId = 'caller' + dotId;
-					lines.push(callerDotId + ' [label="' + nodeLabelName + '", fillcolor="' + fillColor + '", style=filled, shape=box];');
+					lines.push(callerDotId + ' [label="' + nodeLabelName + '", fillcolor="' + emphasizeColor + '", style=filled, shape=box];');
 					lines.push(callerDotId + ' -> ' + dotId + ' [headport="n", tailport="s"];');
 				}
 
@@ -77,12 +76,19 @@ export class RenderFlowChart extends RenderBase {
 				let i = 0;
 				for (const branch of node.branchNodes) {
 					const branchDotId = this.getDotId(branch);
-					//const tailport = (i == 0) ? 's' : 'e';
-					let tailport = 's';
+					// Color 2nd branch differently
+					let dotBranchLabel = '';
+					if (i > 0) {
+						// TODO: Test if labelling arrows is senseful or overloaded
+						const branchLabel = this.funcGetLabel(branch.start) || branch.label || Format.getHexFormattedString(branch.start);
+						if (branchLabel)
+							dotBranchLabel = 'label="' + branchLabel + '", fontcolor="' + mainColor + '" ';
+					}
 					// Override if pointing to itself, e.g. JR $, or looping, and not poitint to itself
+					let tailport = 's';
 					if (branch != node && (i > 0 || node.start >= branch.start))
 						tailport = '_'; // east or west (or center)
-					lines.push(dotId + ' -> ' + branchDotId + ' [headport="n", tailport="' + tailport + '"];');
+					lines.push(dotId + ' -> ' + branchDotId + ' [' + dotBranchLabel + 'headport="n", tailport="' + tailport + '"];');
 					// Next
 					i++;
 				}
