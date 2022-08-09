@@ -67,8 +67,8 @@ export class RenderBase {
 		svg = svg.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
 		svg = svg.replace(/#FEFE03/gi, 'var(--vscode-editor-inactiveSelectionBackground)');
 		// Strip tooltip (title)
-		svg = svg.replace(/xlink:title=".*"/g, 'xlink:title=""'); // E.g. remove 'xlink:title="main"'
-		svg = svg.replace(/<title>.*<\/title>/g, ''); 	// E.g. "<title>b8035</title>"
+		svg = svg.replace(/xlink:title="[^"]*"/g, 'xlink:title=""'); // E.g. remove 'xlink:title="main"'
+		svg = svg.replace(/<title>[^<]*<\/title>/g, ''); 	// E.g. "<title>b8035</title>"
 		return svg;
 	}
 
