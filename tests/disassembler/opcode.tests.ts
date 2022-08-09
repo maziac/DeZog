@@ -1,4 +1,4 @@
-import { OpcodeFlag } from './../../src/disassembler/opcode';
+import { OpcodeFlag } from '../../src/disassembler/opcode';
 import * as assert from 'assert';
 import {Opcode} from '../../src/disassembler/opcode';
 import {NumberType} from '../../src/disassembler/numbertype';

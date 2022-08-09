@@ -98,7 +98,7 @@ suite('AsmNode', () => {
 	});
 
 
-	suite('isLoop', () => {
+	suite('isLoopRoot', () => {
 
 		test('Simple', () => {
 			const n1 = new AsmNode();
@@ -242,6 +242,148 @@ suite('AsmNode', () => {
 			n.instructions.push(new Opcode(0x00, "NOP"));	// NOP
 			n.instructions.push(new Opcode(0xC9, "RET"));	// RET
 			assert.ok(n.isRET());
+		});
+	});
+
+	suite('getAllAddresses', () => {
+		test('AsmNode, 0 instructions', () => {
+			const n = new AsmNode();
+			n.start = 0x8000;
+			assert.equal(n.getAllAddresses().length, 0);
+		});
+
+		test('AsmNode, 1 instruction', () => {
+			const n = new AsmNode();
+			n.start = 0x8000;
+			n.instructions.push(new Opcode(0x3E, "LD A,#n"));	// LD A,n
+			const addrs = n.getAllAddresses();
+			assert.equal(addrs.length, 1);
+			assert.equal(addrs[0], 0x8000);
+		});
+
+		test('AsmNode, 2 instructions', () => {
+			const n = new AsmNode();
+			n.start = 0x8000;
+			n.instructions.push(new Opcode(0x3E, "LD A,#n"));	// LD A,n
+			n.instructions.push(new Opcode(0xC1, "POP BC"));	// POP BC
+			const addrs = n.getAllAddresses();
+			assert.equal(addrs.length, 2);
+			assert.equal(addrs[0], 0x8000);
+			assert.equal(addrs[1], 0x8002);
+		});
+	});
+
+
+	suite('getBranchesRecursive', () => {
+		test('no branch', () => {
+			const n = new AsmNode();
+			const branches: AsmNode[] = [];
+			n.getBranchesRecursive(branches);
+			assert.equal(branches.length, 0);
+		});
+
+		test('1 branch', () => {
+			const n1 = new AsmNode();
+			const n2 = new AsmNode();
+			const unrelated = new AsmNode();
+			n1.branchNodes.push(n2);
+			const branches: AsmNode[] = [unrelated];
+			n1.getBranchesRecursive(branches);
+			assert.equal(branches.length, 2);
+			assert.ok(branches.includes(n2));
+			assert.ok(branches.includes(unrelated));
+		});
+
+		test('1 branch, already included', () => {
+			const n1 = new AsmNode();
+			const n2 = new AsmNode();
+			const unrelated = new AsmNode();
+			n1.branchNodes.push(n2);
+			const branches: AsmNode[] = [unrelated, n2];
+			n1.getBranchesRecursive(branches);
+			assert.equal(branches.length, 2);
+			assert.ok(branches.includes(n2));
+			assert.ok(branches.includes(unrelated));
+		});
+
+		test('3 branches, recursive', () => {
+			const n1 = new AsmNode();
+			const n2 = new AsmNode();
+			const n3 = new AsmNode();
+			n1.branchNodes.push(n2);
+			n2.branchNodes.push(n3);
+			n3.branchNodes.push(n1);
+			const branches: AsmNode[] = [];
+			n1.getBranchesRecursive(branches);
+			assert.equal(branches.length, 3);
+			assert.ok(branches.includes(n1));
+			assert.ok(branches.includes(n2));
+			assert.ok(branches.includes(n3));
+		});
+	});
+
+
+	suite('markAsSubroutine', () => {
+		test('not predecessor', () => {
+			const n1 = new AsmNode();
+			const n2 = new AsmNode();
+			n1.branchNodes.push(n2);
+			n2.predecessors.push(n1);
+			n1.markAsSubroutine();
+			assert.ok(n1.isSubroutine);
+			assert.ok(!n2.isSubroutine);
+		});
+
+		test('predecessor', () => {
+			const n1 = new AsmNode();
+			const n2 = new AsmNode();
+			n1.branchNodes.push(n2);
+			n2.predecessors.push(n1);
+			n2.markAsSubroutine();
+			assert.ok(n1.isSubroutine);
+			assert.ok(n2.isSubroutine);
+		});
+
+		test('already marked', () => {
+			const n1 = new AsmNode();
+			const n2 = new AsmNode();
+			n1.branchNodes.push(n2);
+			n2.predecessors.push(n1);
+			n2.isSubroutine = true;
+			n2.markAsSubroutine();
+			assert.ok(!n1.isSubroutine);
+			assert.ok(n2.isSubroutine);
+		});
+	});
+
+	suite('getAllDisassemblyLines', () => {
+		test('different instructions', () => {
+			const n1 = new AsmNode();
+
+			// No instructions
+			assert.equal(n1.getAllDisassemblyLines().length, 0);
+
+			// 1 instruction
+			const opc1 = new Opcode(0x00, "FIRST");
+			n1.instructions.push(opc1);
+			let lines = n1.getAllDisassemblyLines()
+			assert.equal(lines.length, 1);
+			assert.equal(lines[0], undefined);
+
+			// Now disassembled
+			opc1.disassembleOpcode(() => '');
+			lines = n1.getAllDisassemblyLines()
+			assert.equal(lines.length, 1);
+			assert.equal(lines[0], "FIRST");
+
+			// 2 instructions
+			const opc2 = new Opcode(0x00, "SECOND");
+			opc2.disassembleOpcode(() => '');
+			n1.instructions.push(opc2);
+			lines = n1.getAllDisassemblyLines()
+			assert.equal(lines.length, 2);
+			assert.equal(lines[0], "FIRST");
+			assert.equal(lines[1], "SECOND");
 		});
 	});
 });

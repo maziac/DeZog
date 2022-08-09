@@ -126,7 +126,7 @@ export class AsmNode {
 	 * @param targets One or more target nodes.
 	 * @return false if no target is reachable.
 	 */
-	protected isReachable(targets: AsmNode[], alreadyProcessed: AsmNode[] = []) {
+	protected isReachable(targets: AsmNode[], alreadyProcessed: AsmNode[] = []): boolean {
 		// Check if already checked
 		if (alreadyProcessed.includes(this))
 			return false;

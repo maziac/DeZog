@@ -35,7 +35,7 @@ export class Opcode {
 	/// The code (byte value) of the opcode
 	public code: number;	/// Used to test if all codes are in the right place.
 
-	/// The name of the opcode, e.g. "LD A,%d"
+	/// The name of the opcode, e.g. "LD A,#n"
 	public name: string;
 	/// An optional comment, e.g. "; ZX Next opcode"
 	protected comment: string;
