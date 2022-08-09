@@ -2,7 +2,8 @@ import {AsmNode} from "./asmnode";
 import {Subroutine} from "./subroutine";
 
 // From: https://github.com/aduh95/viz.js
-const renderGraphviz = require('@aduh95/viz.js/sync');	// I couldn't transfer this into an "import" statement
+//const renderGraphviz = require('@aduh95/viz.js/sync');	// I couldn't transfer this into an "import" statement
+const dot2svg = require("@aduh95/viz.js/async");
 
 
 /** Base class with common functions for RenderFlowChart and RenderCallGraph.
@@ -161,14 +162,37 @@ export class RenderBase {
 
 
 	/** Renders the givens lines with graphviz.
+	 * Renders synchronously.
 	 * @param lines The string array to render.
 	 * @return The adjusted SVG text.
 	 */
-	protected renderLines(lines: string[]): string {
+	/*
+	protected renderLinesSync(lines: string[]): string {
 		const text = lines.join('\n');
 
 		// Render
 		let rendered = renderGraphviz(text);
+		// Adjust
+		rendered = this.adjustSvg(rendered);
+
+		// return
+		return rendered;
+	}
+	*/
+
+
+	/** Renders the givens lines with graphviz.
+	 * Renders asynchronously.
+	 * This is faster: about 70% of the synchronous version.
+	 * For both, asynchronous and synchronous, the first rendertakes longer.
+	 * @param lines The string array to render.
+	 * @return The adjusted SVG text.
+	 */
+	protected async renderLines(lines: string[]): Promise<string> {
+		const text = lines.join('\n');
+
+		// Render
+		let rendered = await dot2svg(text);
 		// Adjust
 		rendered = this.adjustSvg(rendered);
 

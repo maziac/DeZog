@@ -5,14 +5,15 @@ import {Subroutine} from "./subroutine";
 
 
 
-/** Class to render a flow chart.
+/** Class to render disassembly text.
  */
-export class RenderFlowChart extends RenderBase {
+export class RenderText extends RenderBase {
 
-	/** ANCHOR Renders all flow charts.
+	/** ANCHOR Renders the disassembly text.
 	 * @param startNodes The nodes to print flow charts for.
-	 * @returns The dot graphic for all flow charts as text. Together with a slider for scaling.
+	 * @returns The text for the complete disassembly.
 	 */
+
 	public async render(startNodes: AsmNode[]): Promise<string> {
 		// Color codes (not real colors) used to exchange the colors at the end.
 		const mainColor = '#FEFE01';

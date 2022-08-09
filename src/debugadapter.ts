@@ -3730,7 +3730,7 @@ E.g. use "-help -view" to put the help text in an own view.
 						const startNodes = startAddrs64k.map(addr64k => analyzer.getNodeForAddress(addr64k)!);
 						// Output call graph to view
 						const flowChart = new RenderFlowChart(this.funcGetLabel, this.funcFormatLongAddress);
-						const rendered = flowChart.render(startNodes);
+						const rendered = await flowChart.render(startNodes);
 
 						// Output text to new view.
 						const view = new HtmlView('Flow Chart - ' + title, rendered);
@@ -3751,8 +3751,9 @@ E.g. use "-help -view" to put the help text in an own view.
 						const {depth, nodeSubs} = analyzer.getSubroutinesFor(startNodes);
 						// Output call graph to view
 						const callGraph = new RenderCallGraph(this.funcGetLabel, this.funcFormatLongAddress);
-						const rendered = callGraph.render(startNodes, nodeSubs, depth);
-
+						console.time();
+						const rendered = await callGraph.render(startNodes, nodeSubs, depth);
+						console.timeEnd();
 						// Output text to new view.
 						const view = new HtmlView('Call Graph - ' + title, rendered);
 						await view.update();

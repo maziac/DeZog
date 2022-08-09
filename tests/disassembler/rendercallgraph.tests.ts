@@ -1,6 +1,4 @@
 import * as assert from 'assert';
-import {Opcode} from '../../src/disassembler/opcode';
-import {AsmNode} from '../../src/disassembler/asmnode';
 import {Utility} from '../../src/misc/utility';
 import {RenderCallGraph} from '../../src/disassembler/rendercallgraph';
 import {Format} from '../../src/disassembler/format';

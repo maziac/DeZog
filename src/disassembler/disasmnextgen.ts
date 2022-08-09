@@ -149,8 +149,6 @@ export class DisassemblerNextGen {
 	 */
 	public setCurrentSlots(slots: number[]) {
 		this.slots = slots;
-		const i = 5;
-		console.log(i.toString());
 	}
 
 

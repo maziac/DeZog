@@ -99,8 +99,8 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// Note: Weinand: "VS Code runs extensions on the node version that is built into electron (on which VS Code is based). This cannot be changed."
-	const version = process.version;
-	console.log(version);
+	//const version = process.version;
+	//console.log(version);
 
 	context.subscriptions.push(vscode.debug.onDidTerminateDebugSession(s => {
 		console.log(`terminated: ${s.type} ${s.name}`);

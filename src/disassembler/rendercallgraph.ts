@@ -80,14 +80,14 @@ export class RenderCallGraph extends RenderBase {
 	 * @param nodeSubs A map with all potentially used node/subroutine associations.
 	 * @returns The dot graphic for all depths as text. Together with the slider to switch depths.
 	 */
-	public render(startNodes: AsmNode[], nodeSubs: Map<AsmNode, Subroutine>, maxDepth: number): string {
+	public async render(startNodes: AsmNode[], nodeSubs: Map<AsmNode, Subroutine>, maxDepth: number): Promise<string> {
 		// Prepare an array for each depth
 		const svgs: string[] = [];
 
 		// Loop all depths
 		for (let depth = 1; depth <= maxDepth; depth++) {
 			// Render one call graph (for one deptH)
-			const rendered = this.renderForDepth(startNodes, nodeSubs, depth);
+			const rendered = await this.renderForDepth(startNodes, nodeSubs, depth);
 			// Store
 			svgs.push(rendered);
 		}
@@ -105,7 +105,7 @@ export class RenderCallGraph extends RenderBase {
 	 * @param depth The depth of the call graph. 1 = just the start address.
 	 * @returns The dot graphic as text.
 	 */
-	public renderForDepth(startNodes: AsmNode[], nodeSubs: Map<AsmNode, Subroutine>, depth: number): string {
+	public async renderForDepth(startNodes: AsmNode[], nodeSubs: Map<AsmNode, Subroutine>, depth: number): Promise<string> {
 		// Color codes (not real colors) used to exchange the colors at the end.
 		const mainColor = '#FEFE01';
 		const fillColor = '#FEFE02';
