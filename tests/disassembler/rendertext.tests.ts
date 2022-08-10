@@ -26,49 +26,49 @@ suite('Disassembler - RenderText', () => {
 		test('formatAddressLabel', () => {
 			r.clmnsAddress = 12;
 			let s = r.formatAddressLabel(0x1234, 'LABEL1');
-			assert.equal(s, 'LONG1234    LABEL1:');
+			assert.equal(s, '1234.1      LABEL1:');
 
 			r.clmnsAddress = 3;
 			s = r.formatAddressLabel(0x1234, 'LABEL1');
-			assert.equal(s, 'LONG1234 LABEL1:');
+			assert.equal(s, '1234.1 LABEL1:');
 		});
 
 		test('formatAddressInstruction', () => {
 			r.clmnsAddress = 12;
 			r.clmnsBytes = 8;
 			let s = r.formatAddressInstruction(0x1234, [], 'LD A,5');
-			assert.equal(s, 'LONG1234            LD A,5');
+			assert.equal(s, '1234.1              LD A,5');
 
 			r.clmnsAddress = 3;
 			s = r.formatAddressInstruction(0x1234, [], 'LD A,5');
-			assert.equal(s, 'LONG1234         LD A,5');
+			assert.equal(s, '1234.1         LD A,5');
 
 			r.clmnsAddress = 3;
 			s = r.formatAddressInstruction(0x1234, [0xAF], 'LD A,5');
-			assert.equal(s, 'LONG1234 AF      LD A,5');
+			assert.equal(s, '1234.1 AF      LD A,5');
 
 			r.clmnsAddress = 3;
 			s = r.formatAddressInstruction(0x1234, [0xAF, 0x02], 'LD A,5');
-			assert.equal(s, 'LONG1234 AF 02   LD A,5');
+			assert.equal(s, '1234.1 AF 02   LD A,5');
 
 			r.clmnsAddress = 3;
 			s = r.formatAddressInstruction(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
-			assert.equal(s, 'LONG1234 AF ...  LD A,5');
+			assert.equal(s, '1234.1 AF ...  LD A,5');
 
 			r.clmnsAddress = 3;
 			r.clmnsBytes = 9;
 			s = r.formatAddressInstruction(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
-			assert.equal(s, 'LONG1234 AF 0...  LD A,5');
+			assert.equal(s, '1234.1 AF 0...  LD A,5');
 
 			r.clmnsAddress = 3;
 			r.clmnsBytes = 10;
 			s = r.formatAddressInstruction(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
-			assert.equal(s, 'LONG1234 AF 02 45  LD A,5');
+			assert.equal(s, '1234.1 AF 02 45  LD A,5');
 
 			r.clmnsAddress = 3;
 			r.clmnsBytes = 11;
 			s = r.formatAddressInstruction(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
-			assert.equal(s, 'LONG1234 AF 02 45   LD A,5');
+			assert.equal(s, '1234.1 AF 02 45   LD A,5');
 		});
 	});
 
@@ -81,10 +81,10 @@ suite('Disassembler - RenderText', () => {
 
 	suite('renderAllNodes', () => {
 		// Disassemble
-		function disassemble(startAddrs64k: number[], fileName: string): string {
+		function disassemble(startAddrs64k: number[]): string {
 			(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 			disasm.setCurrentSlots([0]);
-			disasm.readBinFile(0, './tests/disassembler/projects/' + fileName);
+			disasm.readBinFile(0, './tests/disassembler/projects/render_text/main.bin');
 
 			disasm.getFlowGraph(startAddrs64k);
 			const startNodes = disasm.getNodesForAddresses(startAddrs64k);
@@ -104,7 +104,7 @@ suite('Disassembler - RenderText', () => {
 		});
 
 		test('simple node', () => {
-			const text = disassemble([0x0000], 'nodes/main.bin');
+			const text = disassemble([0x0000]);
 
 			assert.equal(c(text), c(
 				`0000.1 E5     PUSH HL
@@ -118,7 +118,7 @@ suite('Disassembler - RenderText', () => {
 		});
 
 		test('1 branch', () => {
-			const text = disassemble([0x0100, 0x0105, 0x0107], 'nodes/main.bin');
+			const text = disassemble([0x0100, 0x0105, 0x0107]);
 
 			assert.equal(c(text), c(
 				`; Data: $0000-$00FF
@@ -136,7 +136,7 @@ suite('Disassembler - RenderText', () => {
 
 		test('label', () => {
 			disasm.funcGetLabel = (addr64k) => (addr64k == 0x107) ? 'MYLABEL' : undefined;
-			const text = disassemble([0x0100, 0x0105, 0x0107], 'nodes/main.bin');
+			const text = disassemble([0x0100, 0x0105, 0x0107]);
 
 			assert.equal(c(text), c(
 				`; Data: $0000-$00FF
@@ -153,7 +153,7 @@ suite('Disassembler - RenderText', () => {
 		});
 
 		test('2 calls, same sub', () => {
-			const text = disassemble([0x0700, 0x0705, 0x0708, 0x0709], 'nodes/main.bin');
+			const text = disassemble([0x0700, 0x0705, 0x0708, 0x0709]);
 
 			assert.equal(c(text), c(
 				`; Data: $0000-$06FF
@@ -172,7 +172,7 @@ suite('Disassembler - RenderText', () => {
 		});
 
 		test('opcode reference', () => {
-			const text = disassemble([0x0700, 0x0705, 0x0708, 0x0709], 'nodes/main.bin');
+			const text = disassemble([0x0700, 0x0705, 0x0708, 0x0709]);
 
 			assert.equal(c(text), c(
 				`; Data: $0000-$06FF
