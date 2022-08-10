@@ -18,7 +18,7 @@ suite('Disassembler - RenderText', () => {
 		);
 		r = new RenderText(disasm);
 		r.clmnsAddress = 7;
-		r.clmnsBytes = 7;
+		r.clmnsBytes = 10;
 		Format.hexFormat = '$';
 	});
 
@@ -80,24 +80,33 @@ suite('Disassembler - RenderText', () => {
 
 
 	suite('renderAllNodes', () => {
-		setup(() => {
+		// Disassemble
+		function disassemble(startAddrs64k: number[], fileName: string): string {
 			(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 			disasm.setCurrentSlots([0]);
-			disasm.readBinFile(0, './tests/disassembler/projects/nodes/main.bin');
-		});
+			disasm.readBinFile(0, './tests/disassembler/projects/' + fileName);
+
+			disasm.getFlowGraph(startAddrs64k);
+			const startNodes = disasm.getNodesForAddresses(startAddrs64k);
+			disasm.disassembleNodes();
+			const text = r.renderAllNodes(startNodes);
+			return text;
+		}
+
+		// Compresses the string.
+		function c(text: string): string {
+			const s = text.replace(/ +/g, ' ');
+			return s;
+		}
 
 		test('empty', () => {
 			assert.equal(r.renderAllNodes([]), '');
 		});
 
 		test('simple node', () => {
-			const startAddrs64k = [0x0000];
-			disasm.getFlowGraph(startAddrs64k);
-			const startNodes = disasm.getNodesForAddresses(startAddrs64k);
-			disasm.disassembleNodes();
-			const text = r.renderAllNodes(startNodes);
+			const text = disassemble([0x0000], 'nodes/main.bin');
 
-			assert.equal(text,
+			assert.equal(c(text), c(
 				`0000.1 E5     PUSH HL
 0001.1 23     INC HL
 0002.1 78     LD A,B
@@ -105,18 +114,14 @@ suite('Disassembler - RenderText', () => {
 0004.1 77     LD (HL),A
 0005.1 E1     POP HL
 0006.1 C9     RET
-`);
+`));
 		});
 
 		test('1 branch', () => {
-			const startAddrs64k = [0x0100, 0x0105, 0x0107];
-			disasm.getFlowGraph(startAddrs64k);
-			const startNodes = disasm.getNodesForAddresses(startAddrs64k);
-			disasm.disassembleNodes();
-			const text = r.renderAllNodes(startNodes);
+			const text = disassemble([0x0100, 0x0105, 0x0107], 'nodes/main.bin');
 
-			assert.equal(text,
-				`; Data: $0100-$01FF
+			assert.equal(c(text), c(
+				`; Data: $0000-$00FF
 
 0100.1 3E 05  LD A,$05
 0102.1 B8     CP B
@@ -126,8 +131,65 @@ suite('Disassembler - RenderText', () => {
 
 0107.1 LBL_0107:
 0107.1 C9     RET
-`);
+`));
 		});
+
+		test('label', () => {
+			disasm.funcGetLabel = (addr64k) => (addr64k == 0x107) ? 'MYLABEL' : undefined;
+			const text = disassemble([0x0100, 0x0105, 0x0107], 'nodes/main.bin');
+
+			assert.equal(c(text), c(
+				`; Data: $0000-$00FF
+
+0100.1 3E 05  LD A,$05
+0102.1 B8     CP B
+0103.1 28 02  JR Z,MYLABEL
+
+0105.1 ED 44  NEG
+
+0107.1 MYLABEL:
+0107.1 C9     RET
+`));
+		});
+
+		test('2 calls, same sub', () => {
+			const text = disassemble([0x0700, 0x0705, 0x0708, 0x0709], 'nodes/main.bin');
+
+			assert.equal(c(text), c(
+				`; Data: $0000-$06FF
+
+0700.1 3E 05    LD A,$05
+0702.1 CD 09 07 CALL SUB_0709
+
+0705.1 CD 09 07 CALL SUB_0709
+
+0708.1 C9       RET
+
+0709.1       SUB_0709:
+0709.1 C6 02    ADD A,$02
+070B.1 C9       RET
+`));
+		});
+
+		test('opcode reference', () => {
+			const text = disassemble([0x0700, 0x0705, 0x0708, 0x0709], 'nodes/main.bin');
+
+			assert.equal(c(text), c(
+				`; Data: $0000-$06FF
+
+0700.1 3E 05    LD A,$05
+0702.1 CD 09 07 CALL SUB_0709
+
+0705.1 CD 09 07 CALL SUB_0709
+
+0708.1 C9       RET
+
+0709.1       SUB_0709:
+0709.1 C6 02    ADD A,$02
+070B.1 C9       RET
+`));
+		});
+
 
 	});
 });

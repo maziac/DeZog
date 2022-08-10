@@ -120,7 +120,7 @@ export class RenderText extends RenderBase {
 			// Print data between nodes
 			const dataLen = nodeAddr - addr64k;
 			if (dataLen > 0) {
-				this.printData(lines, nodeAddr, dataLen);
+				this.printData(lines, addr64k, dataLen);
 				lines.push('');
 				addr64k = nodeAddr;
 			}
