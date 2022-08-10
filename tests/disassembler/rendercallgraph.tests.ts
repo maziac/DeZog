@@ -1,7 +1,8 @@
 import * as assert from 'assert';
 import {Utility} from '../../src/misc/utility';
-import {RenderCallGraph} from '../../src/disassembler/rendercallgraph';
 import {Format} from '../../src/disassembler/format';
+import {DisassemblerNextGen} from '../../src/disassembler/disasmnextgen';
+import {RenderCallGraph} from '../../src/disassembler/rendercallgraph';
 
 
 
@@ -9,10 +10,12 @@ suite('Disassembler - RenderCallGraph', () => {
 
 	let r: any;
 	setup(() => {
-		r = new RenderCallGraph(
-			addr64k => 'R' + Utility.getHexString(addr64k, 4),
+		const disasm = new DisassemblerNextGen(
+			addr64k => 'R' + Utility.getHexString(addr64k, 4),	// Not used in tests.
+			() => false,	// Not used in tests.
 			addr64k => 'LONG' + Utility.getHexString(addr64k, 4)
 		);
+		r = new RenderCallGraph(disasm);
 		Format.hexFormat = '$';
 	});
 

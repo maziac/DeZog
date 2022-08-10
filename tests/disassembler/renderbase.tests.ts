@@ -3,6 +3,7 @@ import {Opcode} from '../../src/disassembler/opcode';
 import {AsmNode} from '../../src/disassembler/asmnode';
 import {Utility} from '../../src/misc/utility';
 import {RenderBase} from '../../src/disassembler/renderbase';
+import {DisassemblerNextGen} from '../../src/disassembler/disasmnextgen';
 
 
 
@@ -10,10 +11,12 @@ suite('Disassembler - RenderBase', () => {
 
 	let r: any;
 	setup(() => {
-		r = new RenderBase(
+		const disasm = new DisassemblerNextGen(
 			addr64k => 'R' + Utility.getHexString(addr64k, 4),	// Not used in tests.
+			() => false,	// Not used in tests.
 			addr64k => 'LONG' + Utility.getHexString(addr64k, 4)
 		);
+		r = new RenderBase(disasm);
 	});
 
 	suite('misc', () => {

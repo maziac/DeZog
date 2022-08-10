@@ -3,15 +3,7 @@ import {MAX_MEM_SIZE} from '../../src/disassembler/basememory';
 import {Memory} from '../../src/disassembler/memory';
 
 
-suite('Disassembler Memory', () => {
-
-	setup( () => {
-		//Settings.Init(<any>undefined, '');
-	});
-
-/*
-	teardown( () => dc.stop() );
-*/
+suite('Disassembler - Memory', () => {
 
 	test('Constructor', () => {
 		let mem = new Memory();
@@ -112,5 +104,4 @@ suite('Disassembler Memory', () => {
 			assert.equal(mem.getValueAt(addr), 0);
 		}
 	});
-
 });
