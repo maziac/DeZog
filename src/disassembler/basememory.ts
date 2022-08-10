@@ -83,4 +83,16 @@ export class BaseMemory {
 		const word = 256 * this.getValueAt(address) + this.getValueAt(address + 1);
 		return word;
 	}
+
+
+	/** Returns a subarray (a view) on the UInt8Array for memory.
+	 * @param addr64k The address.
+	 * @param len The data length.
+	 * @returns A nw view on the memory array.
+	 */
+	public getData(addr64k: number, len: number): Uint8Array {
+		const i = addr64k - this.startAddress;
+		const part = this.memory.subarray(i, i + len);
+		return part;
+	}
 }
