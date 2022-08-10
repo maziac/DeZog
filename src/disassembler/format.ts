@@ -1,4 +1,6 @@
 import * as assert from 'assert';
+import {SlipDecoder} from 'serialport';
+import {isReturnStatement} from 'typescript';
 import {BaseMemory} from './basememory';
 
 
@@ -20,6 +22,35 @@ export class Format {
 	public static getPaddedValue(value: number, countDigits: number): string {
 		const str = value.toString();
 		return str.padStart(countDigits, '0');
+	}
+
+
+	/** Formats a string to be exactly of 'len' size.
+	 * If the string is longer then '...' is set at the end.
+	 * If the string is smaller then the rest is padded with ' '.
+	 * @param s The string. E.g. "abcdefgh".
+	 * @param len The len for formatting. E.g. 7, 9 or 6.
+	 * @returns Eg. "abcdefgh", "abcdefgh  ", "abc..."
+	 */
+	public static getLimitedString(s: string, len: number): string {
+		const sLen = s.length;
+		if (sLen > len) {
+			// Show '...' at the end
+			let appendString = '...';
+			let appendLen = appendString.length;
+			let i = len - appendLen;
+			if (i < 0) {
+				appendLen += i;	// Shorten
+				appendString = appendString.substring(0, appendLen);
+				i = 0;
+			}
+			s = s.substring(0, i) + appendString;
+		}
+		else {
+			// Pad string
+			s = s.padEnd(len);
+		}
+		return s;
 	}
 
 
