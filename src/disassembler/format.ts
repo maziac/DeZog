@@ -1,6 +1,4 @@
 import * as assert from 'assert';
-import {SlipDecoder} from 'serialport';
-import {isReturnStatement} from 'typescript';
 import {BaseMemory} from './basememory';
 
 

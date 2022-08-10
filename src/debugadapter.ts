@@ -3717,8 +3717,8 @@ E.g. use "-help -view" to put the help text in an own view.
 						// Disassemble instructions
 						analyzer.disassembleNodes();
 						// Output call graph to view
-						const flowChart = new RenderText(this.funcGetLabel, this.funcFormatLongAddress);
-						const rendered = flowChart.renderSync(startNodes);
+						const textDisassembly = new RenderText(analyzer);
+						const rendered = textDisassembly.renderSync(startNodes);
 
 						// Output text to new view.
 						const view = new HtmlView('Smart Disassembly - ' + title, rendered);
@@ -3731,7 +3731,7 @@ E.g. use "-help -view" to put the help text in an own view.
 						// Disassemble instructions
 						analyzer.disassembleNodes();
 						// Output call graph to view
-						const flowChart = new RenderFlowChart(this.funcGetLabel, this.funcFormatLongAddress);
+						const flowChart = new RenderFlowChart(analyzer);
 						const rendered = await flowChart.render(startNodes);
 
 						// Output text to new view.
@@ -3748,7 +3748,7 @@ E.g. use "-help -view" to put the help text in an own view.
 						// Create map with all nodes <-> subroutines relationships
 						const {depth, nodeSubs} = analyzer.getSubroutinesFor(startNodes);
 						// Output call graph to view
-						const callGraph = new RenderCallGraph(this.funcGetLabel, this.funcFormatLongAddress);
+						const callGraph = new RenderCallGraph(analyzer);
 						console.time();
 						const rendered = await callGraph.render(startNodes, nodeSubs, depth);
 						console.timeEnd();

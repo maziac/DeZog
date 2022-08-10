@@ -59,11 +59,11 @@ export class RenderFlowChart extends RenderBase {
 						// Shape start node differently
 						shape = 'tab';
 						// Add href to start
-						href = 'href="#' + this.funcFormatLongAddress(nodeAddr) + '"';
+						href = 'href="#' + this.disasm.funcFormatLongAddress(nodeAddr) + '"';
 						// Define end
 						end = 'end' + dotId;
 					}
-					const nodeLabelName = this.funcGetLabel(nodeAddr) || node.label || Format.getHexFormattedString(nodeAddr);
+					const nodeLabelName = this.disasm.funcGetLabel(nodeAddr) || node.label || Format.getHexFormattedString(nodeAddr);
 					const callerDotId = 'caller' + dotId;
 					lines.push(callerDotId + ' [label="' + nodeLabelName + '", fillcolor="' + emphasizeColor + '", style=filled, shape="' + shape + '", ' + href + '];');
 					lines.push(callerDotId + ' -> ' + dotId + ' [headport="n", tailport="s"];');
@@ -77,7 +77,7 @@ export class RenderFlowChart extends RenderBase {
 					let dotBranchLabel = '';
 					if (i > 0) {
 						// TODO: Test if labelling arrows is senseful or overloaded
-						const branchLabel = this.funcGetLabel(branch.start) || branch.label || Format.getHexFormattedString(branch.start);
+						const branchLabel = this.disasm.funcGetLabel(branch.start) || branch.label || Format.getHexFormattedString(branch.start);
 						if (branchLabel)
 							dotBranchLabel = 'label="' + branchLabel + '", fontcolor="' + mainColor + '" ';
 					}

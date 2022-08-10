@@ -86,7 +86,7 @@ export class RenderCallGraph extends RenderBase {
 
 		// Loop all depths
 		for (let depth = 1; depth <= maxDepth; depth++) {
-			// Render one call graph (for one deptH)
+			// Render one call graph (for one depth)
 			const rendered = await this.renderForDepth(startNodes, nodeSubs, depth);
 			// Store
 			svgs.push(rendered);
@@ -171,7 +171,7 @@ export class RenderCallGraph extends RenderBase {
 
 			// Find label
 			const address = node.start;
-			const labelName = this.funcGetLabel(address) || node.label || '';
+			const labelName = this.disasm.funcGetLabel(address) || node.label || '';
 
 			// Output
 			const dotId = this.getDotId(node);

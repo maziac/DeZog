@@ -1,9 +1,6 @@
-import {prototype} from "events";
-import {addSyntheticLeadingComment} from "typescript";
 import {AsmNode} from "./asmnode";
 import {Format} from "./format";
 import {RenderBase} from "./renderbase";
-import {Subroutine} from "./subroutine";
 
 
 
@@ -30,7 +27,7 @@ export class RenderText extends RenderBase {
 		for (const node of nodes) {
 			// Get label
 			const nodeAddr = node.start;
-			const nodeLabelName = this.funcGetLabel(nodeAddr) || node.label; // TODO: otherLabels.get()
+			const nodeLabelName = this.disasm.funcGetLabel(nodeAddr) || node.label; // TODO: otherLabels.get()
 
 			// Print label
 			if (nodeLabelName) {
@@ -49,7 +46,7 @@ export class RenderText extends RenderBase {
 	 * @returns A complete line, e.g. "C000.B1 LABEL1:"
 	 */
 	protected formatAddressLabel(addr64k: number, text: string): string {
-		const addrString = (this.funcFormatLongAddress(addr64k)).padEnd(this.clmnsAddress - 1) + ' ';
+		const addrString = (this.disasm.funcFormatLongAddress(addr64k)).padEnd(this.clmnsAddress - 1) + ' ';
 		const s = addrString + text + ':';
 		return s;
 	}
@@ -62,13 +59,26 @@ export class RenderText extends RenderBase {
 	 * @param text A text to add. Usually the decoded instruction.
 	 * @returns A complete line, e.g. "C000.B1 3E 05    LD A,5"
 	 */
-	protected formatAddressInstruction(addr64k: number, bytes: number[], text: string): string {
-		const addrString = this.funcFormatLongAddress(addr64k).padEnd(this.clmnsAddress - 1);
-		const hexBytes = bytes.map(value => value.toString(16).toUpperCase().padStart(2, '0'));
-		let bytesString = hexBytes.join(' ');
+	protected formatAddressInstruction(addr64k: number, bytes: Uint8Array, text: string): string {
+		const addrString = this.disasm.funcFormatLongAddress(addr64k).padEnd(this.clmnsAddress - 1);
+		let bytesString = '';
+		bytes.forEach(value =>
+			bytesString += value.toString(16).toUpperCase().padStart(2, '0') + ' '
+		);
+		bytesString = bytesString.substring(0, bytesString.length - 1);
 		bytesString = Format.getLimitedString(bytesString, this.clmnsBytes - 2);
 		const s = addrString + ' ' + bytesString + '  ' + text;
 		return s;
+	}
+
+
+	/** Adds a disassembly data block.
+	 * @param lines Array of lines. The new text liens are pushed here.
+	 * @param add64k The address to start.
+	 * @param dataLen The length of the data to print.
+	 */
+	protected printData(lines: string[], addr64k: number, dataLen: number) {
+		lines.push('; Data: ' + Format.getHexFormattedString(addr64k, 4) + '-' + Format.getHexFormattedString(addr64k + dataLen - 1, 4));
 	}
 
 
@@ -78,106 +88,68 @@ export class RenderText extends RenderBase {
 	 * @returns The text for the complete disassembly.
 	 */
 
-	public renderSync2(startNodes: AsmNode[]): string {
+	public renderSync2(startNodes: AsmNode[], maxDepth: number): string {
+		// Prepare an array for each depth
+		const texts: string[] = [];
 
-
-		for (const node of startNodes) {
-
+		// Loop all depths
+		for (let depth = 1; depth <= maxDepth; depth++) {
+			// Render one call graph (for one deptH)
+			const rendered = ''; //this.renderForDepth(startNodes, nodeSubs, depth);
+			// Store
+			texts.push(rendered);
 		}
 
+		return this.addControls(texts);
+	}
 
-		// Color codes (not real colors) used to exchange the colors at the end.
-		const mainColor = '#FEFE01';
-		const emphasizeColor = '#FEFE02';
-		const otherBankColor = '#FEFE03';
 
-		// Header
+	/** ANCHOR Renders all given nodes to text.
+	 * @param nodes The nodes to disassemble.
+	 * @returns The disassembly text.
+	 */
+	public renderAllNodes(nodes: AsmNode[]): string {
 		const lines: string[] = [];
-		lines.push('digraph FlowChart {');
-		// Appearance
-		lines.push('bgcolor=transparent;');
-		lines.push(`node [shape=box, color="${mainColor}", fontcolor="${mainColor}"];`);
-		lines.push(`edge [color="${mainColor}"];`);
 
-		for (const startNode of startNodes) {
-			// Get complete sub
-			const sub = new Subroutine(startNode);
+		// Loop over all nodes
+		let addr64k = 0x0000;
+		for (const node of nodes) {
+			// Get node address
+			const nodeAddr = node.start;
 
-			// Print all nodes belonging to the subroutine
-			let endUsed = false;
-			let end;
-			for (const node of sub.nodes) {
-				const dotId = this.getDotId(node);
-				let instrTexts: string;
-				// Bank border ?
-				if (node.bankBorder) {
-					lines.push(dotId + ' [fillcolor="' + otherBankColor + '", style=filled];');
-					instrTexts = 'Other\\lBank\\l';
-				}
-				else {
-					// Get disassembly text of node.
-					instrTexts = node.getAllDisassemblyLines().join('\\l') + '\\l';
-				}
-				// Print disassembly
-				const hrefAddresses = this.getAllRefAddressesFor(node);
-				lines.push(dotId + ' [label="' + instrTexts + '", href="#' + hrefAddresses + '"];');
-
-				// Check if someone calls node
-				if (node == startNode || node.callers.length > 0) {
-					let shape = 'box';
-					let href = '';
-					const nodeAddr = node.start;
-					if (node == startNode) {
-						// Shape start node differently
-						shape = 'tab';
-						// Add href to start
-						href = 'href="#' + this.funcFormatLongAddress(nodeAddr) + '"';
-						// Define end
-						end = 'end' + dotId;
-					}
-					const nodeLabelName = this.funcGetLabel(nodeAddr) || node.label || Format.getHexFormattedString(nodeAddr);
-					const callerDotId = 'caller' + dotId;
-					lines.push(callerDotId + ' [label="' + nodeLabelName + '", fillcolor="' + emphasizeColor + '", style=filled, shape="' + shape + '", ' + href + '];');
-					lines.push(callerDotId + ' -> ' + dotId + ' [headport="n", tailport="s"];');
-				}
-
-				// Print connection to branches
-				let i = 0;
-				for (const branch of node.branchNodes) {
-					const branchDotId = this.getDotId(branch);
-					// Color 2nd branch differently
-					let dotBranchLabel = '';
-					if (i > 0) {
-						// TODO: Test if labelling arrows is senseful or overloaded
-						const branchLabel = this.funcGetLabel(branch.start) || branch.label || Format.getHexFormattedString(branch.start);
-						if (branchLabel)
-							dotBranchLabel = 'label="' + branchLabel + '", fontcolor="' + mainColor + '" ';
-					}
-					// Override if pointing to itself, e.g. JR $, or looping, and not poitint to itself
-					let tailport = 's';
-					if (branch != node && (i > 0 || node.start >= branch.start))
-						tailport = '_'; // east or west (or center)
-					lines.push(dotId + ' -> ' + branchDotId + ' [' + dotBranchLabel + 'headport="n", tailport="' + tailport + '"];');
-					// Next
-					i++;
-				}
-				// Check for RET
-				if (node.isRET() && (end != undefined)) {
-					// Connection to end
-					lines.push(dotId + ' -> ' + end + ';');
-					endUsed = true;
-				}
+			// Print data between nodes
+			const dataLen = nodeAddr - addr64k;
+			if (dataLen > 0) {
+				this.printData(lines, nodeAddr, dataLen);
+				lines.push('');
+				addr64k = nodeAddr;
 			}
 
-			// Check if end symbol is required
-			if(endUsed)
-				lines.push(end + ' [label="end", shape=doublecircle];');
+			// Disassemble node
+			for (const opcode of node.instructions) {
+				// Check if label exists
+				const label = this.disasm.getLabelForAddr64k(addr64k);
+				if (label) {
+					const labelText = this.formatAddressLabel(addr64k, label);
+					lines.push(labelText);
+				}
+
+				// Now disassemble instruction
+				const len = opcode.length;
+				const bytes = this.disasm.memory.getData(addr64k, len);
+				const instructionText = this.formatAddressInstruction(addr64k, bytes, opcode.disassembledText);
+				lines.push(instructionText);
+
+				// Next
+				addr64k += len;
+			}
+
+			// Separate blocks
+			lines.push('');
 		}
 
-		// Ending
-		lines.push('}');
-
 		// Return
-		return "";
+		const text = lines.join('\n');
+		return text;
 	}
 }

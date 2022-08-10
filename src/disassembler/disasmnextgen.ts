@@ -43,16 +43,16 @@ export class DisassemblerNextGen {
 
 
 	/// A function that is used to retrieve label names by the disassembler.
-	protected funcGetLabel: (addr64k: number) => string | undefined;
+	public funcGetLabel: (addr64k: number) => string | undefined;
 
 	/// A function that is used to filter out certain addresses from the output by the disassembler.
 	// If false is returned the line for this address is not shown.
-	protected funcFilterAddresses: (addr64k: number) => boolean;
+	public funcFilterAddresses: (addr64k: number) => boolean;
 
 	/// A function that formats the long address printed at first in the disassembly.
 	/// Used to add bank information after the address by the disassembler.
 	/// Uses the current slot.
-	protected funcFormatLongAddress: (addr64k: number) => string;
+	public funcFormatLongAddress: (addr64k: number) => string;
 
 	/// The memory area to disassemble.
 	public memory = new Memory();
@@ -209,14 +209,19 @@ export class DisassemblerNextGen {
 	 * @param addrs64k An array with addresses.
 	 * @returns The corresponding nodes. If a node does not exist for an address
 	 * it is not included in the returned array.
+	 * The returned array is sorted by address from low to high.
 	 */
 	public getNodesForAddresses(addrs64k: number[]): AsmNode[] {
+		// Convert to nodes
 		const addrNodes: AsmNode[] = [];
 		for (const addr64k of addrs64k) {
 			const node = this.nodes.get(addr64k);
 			if (node)
 				addrNodes.push(node);
 		}
+		// Sort
+		addrNodes.sort((a, b) => a.start - b.start);
+		// Return
 		return addrNodes;
 	}
 
@@ -903,5 +908,25 @@ export class DisassemblerNextGen {
 			}
 		}
 		return maxDepth + 1;
+	}
+
+
+	/** Returns the label used at a specific address.
+	 * Check first this.funcGetLabel, then this.nodes and then
+	 * this.otherLabels.
+	 * @param addr64k The address.
+	 * @returns A string with the label or undefined.
+	 */
+	public getLabelForAddr64k(addr64k: number): string | undefined {
+		let label = this.funcGetLabel(addr64k);
+		if (label)
+			return label;
+		const node = this.nodes.get(addr64k);
+		if(node)
+			label = node.label;
+		if (label)
+			return label;
+		label = this.otherLabels.get(addr64k);
+		return label;
 	}
 }

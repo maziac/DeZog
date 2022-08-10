@@ -1,4 +1,5 @@
 import {AsmNode} from "./asmnode";
+import {DisassemblerNextGen} from "./disasmnextgen";
 import {Subroutine} from "./subroutine";
 
 // From: https://github.com/aduh95/viz.js
@@ -9,20 +10,14 @@ const dot2svg = require("@aduh95/viz.js/async");
 /** Base class with common functions for RenderFlowChart and RenderCallGraph.
  */
 export class RenderBase {
+	// The used disassembler. Is passed with the constructor.
+	protected disasm: DisassemblerNextGen;
 
-	/// A function to assign other than the standard
-	/// label names.
-	protected funcGetLabel: (addr64k: number) => string | undefined;
-
-	/// A function that formats the long address printed at first in the disassembly.
-	/// Used to add bank information after the address. Using the current slot.
-	protected funcFormatLongAddress: (addr64k: number) => string;
 
 	/** Constructor.
 	 */
-	constructor(funcGetLabel: (addr64k: number) => string | undefined, funcFormatLongAddress: (addr64k: number) => string) {
-		this.funcGetLabel = funcGetLabel;
-		this.funcFormatLongAddress = funcFormatLongAddress;
+	constructor(disasm: DisassemblerNextGen) {
+		this.disasm = disasm;
 	}
 
 
@@ -49,7 +44,7 @@ export class RenderBase {
 		const allAddresses = subOrNode.getAllAddresses();
 		// Convert addresses to string
 		for (const addr of allAddresses) {
-			const hrefAddress = this.funcFormatLongAddress(addr);
+			const hrefAddress = this.disasm.funcFormatLongAddress(addr);
 			s += hrefAddress + ';';
 		}
 		// Return
