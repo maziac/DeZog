@@ -81,7 +81,8 @@ suite('Disassembler - RenderText', () => {
 	suite('render', () => {
 		// Compresses the string.
 		function c(text: string): string {
-			const s = text.replace(/ +/g, ' ');
+			let s = text.replace(/ +/g, ' ');
+			s = s.replace(/<[^>]*>/g, '');
 			return s;
 		}
 
@@ -273,6 +274,18 @@ suite('Disassembler - RenderText', () => {
 			}
 
 			suite('depths', () => {
+				test('depth = 0', () => {
+					const text = disassembleDepth([0x4000], 0);
+
+					assert.equal(c(text), c(
+						`; Data: $0000-$3FFF
+
+4000.1 CD 04 40   CALL SUB_4004
+
+4003.1 C9         RET
+`));
+				});
+
 				test('depth = 1', () => {
 					const text = disassembleDepth([0x4000], 1);
 
@@ -282,6 +295,11 @@ suite('Disassembler - RenderText', () => {
 4000.1 CD 04 40   CALL SUB_4004
 
 4003.1 C9         RET
+
+4004.1          SUB_4004:
+4004.1 CD 08 40   CALL SUB_4008
+
+4007.1 C9         RET
 `));
 				});
 
@@ -299,6 +317,11 @@ suite('Disassembler - RenderText', () => {
 4004.1 CD 08 40   CALL SUB_4008
 
 4007.1 C9         RET
+
+4008.1          SUB_4008:
+4008.1 CD 0C 40   CALL SUB_400C
+
+400B.1 C9         RET
 `));
 				});
 
@@ -321,10 +344,13 @@ suite('Disassembler - RenderText', () => {
 4008.1 CD 0C 40   CALL SUB_400C
 
 400B.1 C9         RET
+
+400C.1          SUB_400C:
+400C.1 C9         RET
 `));
 				});
 
-				test('depth = 4', () => {
+				test('depth = 4, (max is 3)', () => {
 					const text = disassembleDepth([0x4000], 4);
 
 					assert.equal(c(text), c(
@@ -349,33 +375,8 @@ suite('Disassembler - RenderText', () => {
 `));
 				});
 
-				test('depth = 5, (max is 4)', () => {
-					const text = disassembleDepth([0x4000], 5);
-
-					assert.equal(c(text), c(
-						`; Data: $0000-$3FFF
-
-4000.1 CD 04 40   CALL SUB_4004
-
-4003.1 C9         RET
-
-4004.1          SUB_4004:
-4004.1 CD 08 40   CALL SUB_4008
-
-4007.1 C9         RET
-
-4008.1          SUB_4008:
-4008.1 CD 0C 40   CALL SUB_400C
-
-400B.1 C9         RET
-
-400C.1          SUB_400C:
-400C.1 C9         RET
-`));
-				});
-
-				test('depth = 4, different call order', () => {
-					const text = disassembleDepth([0x4100], 4);
+				test('depth = 3, different call order', () => {
+					const text = disassembleDepth([0x4100], 3);
 
 					assert.equal(c(text), c(
 						`; Data: $0000-$40FF

@@ -19,12 +19,15 @@ export class RenderText extends RenderBase {
 	/** Returns a formatted line with address and label.
 	 * With right clmns spaces.
 	 * @param addr64k The address for the line. Is converted into a long address.
-	 * @param text A text to add. Usually the decoded instruction.
+	 * @param label A text to add. Usually the decoded instruction.
 	 * @returns A complete line, e.g. "C000.B1 LABEL1:"
 	 */
-	protected formatAddressLabel(addr64k: number, text: string): string {
+	protected formatAddressLabel(addr64k: number, label: string): string {
 		const addrString = (this.disasm.funcFormatLongAddress(addr64k)).padEnd(this.clmnsAddress - 1) + ' ';
-		const s = addrString + text + ':';
+		// Make non local labels bold
+		if (!label.startsWith('.'))
+			label = '<b>' + label + '</b>';
+		const s = addrString + label + ':';
 		return s;
 	}
 
