@@ -73,8 +73,6 @@ export class RenderText extends RenderBase {
 		for (let depth = 1; depth <= maxDepth; depth++) {
 			// Render
 			const rendered = this.renderForDepth(startNodes, depth);
-			console.log('-------');
-			console.log(rendered);
 			// Store
 			const html = '<pre>' + rendered + '</pre>';
 			texts.push(html);

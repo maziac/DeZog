@@ -78,8 +78,6 @@ export class Subroutine {
 	 * @param usedNodes An array with all addresses.
 	 */
 	public getAllNodesRecursively(depth: number, usedNodes: Set<AsmNode>) {
-		console.log('getAllNodesRecursively', depth);
-
 		// Add own nodes
 		this.nodes.forEach(node => usedNodes.add(node));
 
