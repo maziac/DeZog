@@ -85,7 +85,7 @@ export class RenderCallGraph extends RenderBase {
 		const svgs: string[] = [];
 
 		// Loop all depths
-		for (let depth = 1; depth <= maxDepth; depth++) {
+		for (let depth = 0; depth <= maxDepth; depth++) {
 			// Render one call graph (for one depth)
 			const rendered = await this.renderForDepth(startNodes, nodeSubs, depth);
 			// Store

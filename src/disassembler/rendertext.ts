@@ -70,7 +70,7 @@ export class RenderText extends RenderBase {
 		const texts: string[] = [];
 
 		// Loop all depths
-		for (let depth = 1; depth <= maxDepth; depth++) {
+		for (let depth = 0; depth <= maxDepth; depth++) {
 			// Render
 			const rendered = this.renderForDepth(startNodes, depth);
 			// Store

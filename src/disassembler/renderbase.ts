@@ -110,12 +110,13 @@ export class RenderBase {
 
 		// Add depth slider only if there is a choice
 		if (len > 1) {
+			const maxDepth = len - 1;
 			html += `
 		<script>
 			function updateSliderDepth(slideValue) {
 				const sliderValue = document.getElementById("sliderDepthValue");
 				sliderValue.value = slideValue;
-				for (let i = 1; i <= ${len}; i++) {
+				for (let i = 0; i <= ${maxDepth}; i++) {
 					const svg = document.getElementById("svg"+i);
 					svg.hidden = (i != slideValue);
 				}
@@ -124,12 +125,12 @@ export class RenderBase {
 		<div id="sliderDepth">
 			Depth:
 			<input id="slide" type="range"
-			min="1" max="${len}"
-			step="1" value="${len}"
+			min="0" max="${maxDepth}"
+			step="1" value="${maxDepth}"
 			oninput="updateSliderDepth(this.value)"
 			/>
 			<output id="sliderDepthValue">
-				${len}
+				${maxDepth}
 			</output>
 		</div>
 		<br>
@@ -143,8 +144,8 @@ export class RenderBase {
 			if (enableScaleSlider)
 				item = item.replace(/width=.+height=\S+/, '');
 			// Add div: id = svg1/svg2/...svgN
-			const depth = i + 1;
-			const hidden = (depth == len) ? '' : 'hidden';
+			const depth = i;
+			const hidden = (depth == len - 1) ? '' : 'hidden';
 			html += `
 		<div id="svg${depth}" ${hidden}>
 		${item}
