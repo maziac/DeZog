@@ -1,6 +1,7 @@
 import {AsmNode} from "./asmnode";
 import {Format} from "./format";
 import {RenderBase} from "./renderbase";
+import {Subroutine} from "./subroutine";
 
 
 
@@ -13,30 +14,6 @@ export class RenderText extends RenderBase {
 	public clmnsBytes = 4 * 3 + 1;	///< 4* length of hex-byte
 	public clmnsOpcodeFirstPart = 4 + 1;	///< First part of the opcodes, e.g. "LD" in "LD A,7" // TODO : Still required?
 	public clmsnOpcodeTotal = 5 + 6 + 1;		///< Total length of the opcodes. After this an optional comment may start. // TODO : Still required?
-
-
-	/** ANCHOR Renders the disassembly text.
-	 * @param nodes The nodes to disassemble.
-	 * It is expected that this array is sorted by address from low to high.
-	 * @returns The text for the complete disassembly.
-	 */
-
-	public renderSync(nodes: AsmNode[]): string {
-		const lines: string[] = [];
-		// Simply loop all nodes
-		for (const node of nodes) {
-			// Get label
-			const nodeAddr = node.start;
-			const nodeLabelName = this.disasm.funcGetLabel(nodeAddr) || node.label; // TODO: otherLabels.get()
-
-			// Print label
-			if (nodeLabelName) {
-				//lines.push(
-			}
-		}
-
-		return '';
-	}
 
 
 	/** Returns a formatted line with address and label.
@@ -82,36 +59,61 @@ export class RenderText extends RenderBase {
 	}
 
 
-	/** ANCHOR Renders the disassembly text.
+	/** ANCHOR Renders the disassembly text for different depths.
 	 * @param startNodes The nodes to disassemble.
-	 * It is expected that this array is sorted by address from low to high.
-	 * @returns The text for the complete disassembly.
+	 * @param maxDepth All depths [1..maxDepth] are being rendered.
+	 * @returns The html for display.
 	 */
 
-	public renderSync2(startNodes: AsmNode[], maxDepth: number): string {
+	public renderSync(startNodes: AsmNode[], maxDepth: number): string {
 		// Prepare an array for each depth
 		const texts: string[] = [];
 
 		// Loop all depths
 		for (let depth = 1; depth <= maxDepth; depth++) {
-			// Render one call graph (for one deptH)
-			const rendered = ''; //this.renderForDepth(startNodes, nodeSubs, depth);
+			// Render
+			const rendered = this.renderForDepth(startNodes, depth);
+			console.log('-------');
+			console.log(rendered);
 			// Store
-			texts.push(rendered);
+			const html = '<pre>' + rendered + '</pre>';
+			texts.push(html);
 		}
 
-		return this.addControls(texts);
+		return this.addControls(texts, false);
 	}
 
 
+	/** ANCHOR Renders for a particular depth.
+	 * @param startNodes The nodes to disassemble.
+	 * @param depth The depth to render.
+	 * @returns The disassembled text.
+	 */
+	public renderForDepth(startNodes: AsmNode[], depth: number): string {
+		// Get all nodes for the depth
+		const nodesForDepth = new Set<AsmNode>();
+		for (const node of startNodes) {
+			const sub = new Subroutine(node);
+			sub.getAllNodesRecursively(depth, nodesForDepth);
+		}
+		// Render
+		const rendered = this.renderNodes(nodesForDepth);
+		return rendered;
+	}
+
+
+
 	/** ANCHOR Renders all given nodes to text.
-	 * @param nodes The nodes to disassemble.
+	 * @param nodeSet The nodes to disassemble. The nodes will be sorted by start address.
 	 * @returns The disassembly text.
 	 */
-	public renderAllNodes(nodes: AsmNode[]): string {
-		const lines: string[] = [];
+	public renderNodes(nodeSet: Set<AsmNode>): string {
+		// Sort the nodes
+		const nodes = Array.from(nodeSet);
+		nodes.sort((a, b) => a.start - b.start);
 
 		// Loop over all nodes
+		const lines: string[] = [];
 		let addr64k = 0x0000;
 		for (const node of nodes) {
 			// Get node address

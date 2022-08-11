@@ -3706,6 +3706,8 @@ E.g. use "-help -view" to put the help text in an own view.
 			const data = await Remote.readMemoryDump(0, 0x10000);
 			analyzer.setMemory(0, data);
 			// Start disassembly
+			//const addrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
+			//const startAddrs64k = [...new Set(addrs64k)];	// Make all unique values
 			const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
 			analyzer.getFlowGraph(startAddrs64k);
 			// Convert to start nodes
@@ -3716,9 +3718,11 @@ E.g. use "-help -view" to put the help text in an own view.
 					{
 						// Disassemble instructions
 						analyzer.disassembleNodes();
+						// Get max depth
+						const {depth, } = analyzer.getSubroutinesFor(startNodes);	// TODO: Probably this could be implemented smarter, the complete map is not used, only the depth.
 						// Output call graph to view
 						const textDisassembly = new RenderText(analyzer);
-						const rendered = textDisassembly.renderSync(startNodes);
+						const rendered = textDisassembly.renderSync(startNodes, depth);
 
 						// Output text to new view.
 						const view = new HtmlView('Smart Disassembly - ' + title, rendered);

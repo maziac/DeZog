@@ -106,6 +106,7 @@ export class RenderFlowChart extends RenderBase {
 		lines.push('}');
 
 		// Return
-		return this.renderLines(lines);
+		const rendered = await this.renderLines(lines);
+		return this.addControls([rendered]);
 	}
 }

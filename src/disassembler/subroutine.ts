@@ -71,5 +71,27 @@ export class Subroutine {
 		}
 		return addrs;
 	}
+
+
+	/** Returns all addresses belonging to the subroutine.
+	 * @param depth The depth to check.  1 = just node, 2 = node + node callees, etc.
+	 * @param usedNodes An array with all addresses.
+	 */
+	public getAllNodesRecursively(depth: number, usedNodes: Set<AsmNode>) {
+		console.log('getAllNodesRecursively', depth);
+
+		// Add own nodes
+		this.nodes.forEach(node => usedNodes.add(node));
+
+		// Dig into calls
+		depth--;
+		if (depth > 0) {
+			for (const callee of this.callees) {
+				// Create sub for node
+				const calledSub = new Subroutine(callee);
+				calledSub.getAllNodesRecursively(depth, usedNodes);
+			}
+		}
+	}
 }
 
