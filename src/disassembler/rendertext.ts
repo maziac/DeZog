@@ -98,7 +98,7 @@ export class RenderText extends RenderBase {
 			sub.getAllNodesRecursively(depth, nodesForDepth);
 		}
 		// Render
-		const rendered = this.renderNodes(nodesForDepth);
+		const rendered = this.renderNodes(nodesForDepth, startNodes);
 		return rendered;
 	}
 
@@ -106,9 +106,12 @@ export class RenderText extends RenderBase {
 
 	/** ANCHOR Renders all given nodes to text.
 	 * @param nodeSet The nodes to disassemble. The nodes will be sorted by start address.
+	 * @param startNodes The start node labels are rendered in a different color.
 	 * @returns The disassembly text.
 	 */
-	public renderNodes(nodeSet: Set<AsmNode>): string {
+	public renderNodes(nodeSet: Set<AsmNode>, startNodes: AsmNode[]= []): string {
+		const fillColor = '#FEFE02';
+
 		// Sort the nodes
 		const nodes = Array.from(nodeSet);
 		nodes.sort((a, b) => a.start - b.start);
@@ -129,11 +132,16 @@ export class RenderText extends RenderBase {
 			}
 
 			// Disassemble node
+			let i = 0;
 			for (const opcode of node.instructions) {
 				// Check if label exists
 				const label = this.disasm.getLabelForAddr64k(addr64k);
 				if (label) {
-					const labelText = this.formatAddressLabel(addr64k, label);
+					let labelText = this.formatAddressLabel(addr64k, label);
+					if (i == 0) {
+						// Color the node label
+						labelText = '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-foreground);font-weight:bold">' + labelText + '</span>';
+					}
 					lines.push(labelText);
 				}
 
