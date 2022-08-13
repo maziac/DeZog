@@ -386,6 +386,43 @@ suite('Disassembler - RenderText', () => {
 130D.1 C9          RET
 `));
 			});
+
+			test('code and data, no reference', () => {
+				const text = disassemble([0x5001, 0x5004, 0x5007]);
+				assert.equal(c(text), c(
+					`5001.1 CD 07 50 CALL SUB_5007
+
+5004.1 C9 RET
+
+5007.1 SUB_5007:
+5007.1 00 NOP
+5008.1 C9 RET
+`));
+			});
+
+			test('code and data', () => {
+				const text = disassemble([0x5101, 0x5104, 0x5107]);
+				assert.equal(c(text), c(
+					`5100.1 DATA_5100:
+5100.1 7F DEFB 7F ; ASCII: 
+
+5101.1 CD 07 51 CALL SUB_5107
+
+5104.1 C9 RET
+
+5105.1 DATA_5105:
+5105.1 2B 1A DEFB 2B 1A ; ASCII: +?
+
+5107.1 SUB_5107:
+5107.1 3A 00 51 LD A,(DATA_5100)
+510A.1 2A 05 51 LD HL,(DATA_5105)
+510D.1 ED 5B... LD DE,(DATA_5120)
+5111.1 C9 RET
+
+5120.1 DATA_5120:
+5120.1 01 02... DEFB 01 02 03 04 05 06 07 08 ; ASCII: ????????
+`));
+			});
 		});
 
 		suite('renderForDepth', () => {

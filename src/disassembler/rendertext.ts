@@ -163,8 +163,13 @@ export class RenderText extends RenderBase {
 		let prevLabelAddress;
 		while (addr < endAddr) {
 			// Find next label
-			const label = this.disasm.getLabelForAddr64k(addr);
+			let label = this.disasm.getOtherLabel(addr);
 			if (label) {
+				// Check if another name exists
+				const funcLabel = this.disasm.funcGetLabel(addr);
+				if (funcLabel)
+					label = funcLabel;
+
 				// Check if we need to print previous data
 				if (prevLabelAddress) {
 					// Yes.
@@ -299,6 +304,12 @@ export class RenderText extends RenderBase {
 
 			// Separate blocks
 			lines.push('');
+		}
+
+		// Print data after last node
+		const dataLen = 0x10000 - addr64k;
+		if (dataLen > 0) {
+			this.printData(lines, addr64k, dataLen);
 		}
 
 		// Return

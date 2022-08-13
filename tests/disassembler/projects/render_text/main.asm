@@ -153,6 +153,47 @@ SUB4204:
 
 SUB4307:
 	LD A,5
-	
+
 SUB4309:
 	RET
+
+
+
+	DEFS 0x5000-$
+	; code and data, no reference
+
+DATA5000:
+	DEFB 0x7F
+
+	CALL SUB5007
+
+	RET
+
+DATA5005:	DEFW 0x1A2B
+
+SUB5007:
+	NOP
+	RET
+
+
+	DEFS 0x5100-$
+	; code and data
+
+DATA5100:
+	DEFB 0x7F
+
+	CALL SUB5107
+
+	RET
+
+DATA5105:	DEFW 0x1A2B
+
+SUB5107:
+	LD A,(DATA5100)
+	LD HL,(DATA5105)
+	ld DE,(DATA5120)
+	RET
+
+	DEFS 0x5120-$
+DATA5120:	DEFB 1, 2, 3, 4, 5, 6, 7, 8
+

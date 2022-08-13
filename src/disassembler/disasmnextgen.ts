@@ -922,11 +922,21 @@ export class DisassemblerNextGen {
 		if (label)
 			return label;
 		const node = this.nodes.get(addr64k);
-		if(node)
+		if (node)
 			label = node.label;
 		if (label)
 			return label;
 		label = this.otherLabels.get(addr64k);
+		return label;
+	}
+
+
+	/** Returns the other label entry
+	 * @param addr64k The address.
+	 * @returns A string with the label or undefined.
+	 */
+	public getOtherLabel(addr64k: number): string | undefined {
+		const label = this.otherLabels.get(addr64k);
 		return label;
 	}
 }
