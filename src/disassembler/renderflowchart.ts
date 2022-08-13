@@ -81,7 +81,7 @@ export class RenderFlowChart extends RenderBase {
 						if (branchLabel)
 							dotBranchLabel = 'label="' + branchLabel + '", fontcolor="' + mainColor + '" ';
 					}
-					// Override if pointing to itself, e.g. JR $, or looping, and not poitint to itself
+					// Override if pointing to itself, e.g. JR $, or looping, and not pointing to itself
 					let tailport = 's';
 					if (branch != node && (i > 0 || node.start >= branch.start))
 						tailport = '_'; // east or west (or center)

@@ -15,6 +15,8 @@ export class RenderText extends RenderBase {
 	public clmnsOpcodeFirstPart = 4 + 1;	///< First part of the opcodes, e.g. "LD" in "LD A,7" // TODO : Still required?
 	public clmsnOpcodeTotal = 5 + 6 + 1;		///< Total length of the opcodes. After this an optional comment may start. // TODO : Still required?
 
+	// The max. number of bytes to print in a data DEFB area per line.
+	public defbMaxBytesPerLine = 8;
 
 	/** Returns a formatted line with address and label.
 	 * With right clmns spaces.
@@ -39,7 +41,7 @@ export class RenderText extends RenderBase {
 	 * @param text A text to add. Usually the decoded instruction.
 	 * @returns A complete line, e.g. "C000.B1 3E 05    LD A,5"
 	 */
-	protected formatAddressInstruction(addr64k: number, bytes: Uint8Array, text: string): string {
+	protected formatAddressPlusText(addr64k: number, bytes: Uint8Array, text: string): string {
 		const addrString = this.disasm.funcFormatLongAddress(addr64k).padEnd(this.clmnsAddress - 1);
 		let bytesString = '';
 		bytes.forEach(value =>
@@ -52,13 +54,136 @@ export class RenderText extends RenderBase {
 	}
 
 
+
+	/** Surrounds the text with html <span></span> to change the background color
+	 * to emphasize the item.
+	 * @param text The text to surround.
+	 * @returns E.g. '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-foreground);font-weight:bold">8000 main:'</span>'
+	 */
+	protected htmlWithColor(text: string): string {
+		const html = '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-foreground);font-weight:bold">' + text + '</span>';
+		return html;
+	}
+
+
+	/** Surrounds the text with html <a></a> with href that points to the given address.
+	 * @param text The text to surround.
+	 * @param addr64k The address to add as a reference.
+	 * @returns E.g. '<a href="#8000">8000 main:</a>'
+	 */
+	protected htmlWithReference(text: string, addr64k: number): string {
+		const href = 'href="#' + this.disasm.funcFormatLongAddress(addr64k) + '"';
+		const html = '<a ' + href + '>' + text + '</a>';
+		return html;
+	}
+
+
+	/**
+	 * Formats a series of bytes into a comment string.
+	 * @param bytes The data to print.
+	 * @returns All hex data is converted to ASCII. Non-printable cahracters are displayed as '?'.
+	 * E.g. 'mystring'
+	 */
+	protected getDefbComment(bytes: Uint8Array): string {
+		let result = '';
+		for (const byte of bytes) {
+			// Check if printable ASCII
+			const printable = (byte >= 0x20) && (byte < 0x80);
+			// Add to string
+			if (printable) {
+				const c = String.fromCharCode(byte);
+				result += c;
+			}
+			else {
+				// Non-printable
+				result += '?'
+			}
+		}
+		// Return
+		return "ASCII: " + result;
+	}
+
+
+	/** Returns a line of DEFB data.
+	 * @param bytes The data to print.
+	 * @returns E.g. 'DEFB C0 AF 01'
+	 */
+	protected getDefbLine(bytes: Uint8Array) {
+		let bytesString = '';
+		bytes.forEach(value => {
+			bytesString += ' ' + Format.getHexFormattedString(value, 2);
+		});
+		return 'DEFB' + bytesString;
+	}
+
+
+	/** Returns a complete line of data.
+	 * With address and comment.
+	 * @param addr64k The start address.
+	 * @param len The amount of bytes.
+	 * @returns E.g. '8000.1 C0 AF...  DEFB C0 AF 01 CE  ; ASCII: ????'
+	 */
+	protected getCompleteDataLine(addr64k: number, len: number) {
+		const bytes: Uint8Array = this.disasm.memory.getData(addr64k, len);
+		let text = this.getDefbLine(bytes);
+		text += this.getDefbComment(bytes);
+		const line = this.formatAddressPlusText(addr64k, bytes, text);
+		return line;
+	}
+
+
+	/** Creates a string with address and label information.
+	 * The label is colored, if it is a start node
+	 */
+	protected getAddressLabel(addr64k: number, label: string): string {
+		let labelText = this.formatAddressLabel(addr64k, label);
+		// Add href
+		labelText = this.htmlWithReference(labelText, addr64k);
+		return labelText;
+	}
+
+
 	/** Adds a disassembly data block.
 	 * @param lines Array of lines. The new text liens are pushed here.
 	 * @param add64k The address to start.
 	 * @param dataLen The length of the data to print.
 	 */
 	protected printData(lines: string[], addr64k: number, dataLen: number) {
-		lines.push('; Data: ' + Format.getHexFormattedString(addr64k, 4) + '-' + Format.getHexFormattedString(addr64k + dataLen - 1, 4));
+		let len = dataLen;
+		let addr = addr64k;
+		let endAddr = addr64k + len;
+		if (endAddr > 0x1000)
+			endAddr = 0x1000;
+
+		// Loop for all lines
+		let i = 0;
+		while (addr < endAddr) {
+			// Check if there is any label in the data
+			const bytesInLine = Math.min(this.defbMaxBytesPerLine, len);
+			let label;
+			for (; i < bytesInLine; i++) {
+				label = this.disasm.getLabelForAddr64k(addr + i);
+				if (label)
+					break;
+			}
+
+			// Print data until label
+			if (i > 0) {
+				const line = this.getCompleteDataLine(addr, i);
+				lines.push(line);
+				// Next
+				addr += i;
+				len -= i;
+				i = 0;
+			}
+
+			// Print label
+			if (label) {
+				const addressLabel = this.getAddressLabel(addr, label);
+				lines.push(addressLabel);
+				i++;	// Skip this address the next loop
+			}
+		}
 	}
 
 
@@ -103,16 +228,13 @@ export class RenderText extends RenderBase {
 	}
 
 
-
 	/** ANCHOR Renders all given nodes to text.
 	 * @param nodeSet The nodes to disassemble. The nodes will be sorted by start address.
 	 * @param startNodes The start node labels are rendered in a different color.
 	 * @returns The disassembly text.
 	 */
 	public renderNodes(nodeSet: Set<AsmNode>, startNodes: AsmNode[]= []): string {
-		const fillColor = '#FEFE02';
-
-		// Sort the nodes
+			// Sort the nodes
 		const nodes = Array.from(nodeSet);
 		nodes.sort((a, b) => a.start - b.start);
 
@@ -137,19 +259,24 @@ export class RenderText extends RenderBase {
 				// Check if label exists
 				const label = this.disasm.getLabelForAddr64k(addr64k);
 				if (label) {
-					let labelText = this.formatAddressLabel(addr64k, label);
+					let labelText = this.getAddressLabel(addr64k, label);
 					if (i == 0) {
-						// Color the node label
-						labelText = '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-foreground);font-weight:bold">' + labelText + '</span>';
+						// Check if it is a start node
+						if (startNodes.includes(node)) {
+							// Color the node label
+							labelText = this.htmlWithColor(labelText);
+						}
 					}
+					// Store
 					lines.push(labelText);
 				}
 
 				// Now disassemble instruction
 				const len = opcode.length;
 				const bytes = this.disasm.memory.getData(addr64k, len);
-				const instructionText = this.formatAddressInstruction(addr64k, bytes, opcode.disassembledText);
-				lines.push(instructionText);
+				const instructionText = this.formatAddressPlusText(addr64k, bytes, opcode.disassembledText);
+				const hrefInstrText = this.htmlWithReference(instructionText, addr64k);
+				lines.push(hrefInstrText);
 
 				// Next
 				addr64k += len;

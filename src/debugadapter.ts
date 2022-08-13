@@ -3725,8 +3725,11 @@ E.g. use "-help -view" to put the help text in an own view.
 						const rendered = textDisassembly.renderSync(startNodes, depth);
 
 						// Output text to new view.
-						const view = new HtmlView('Smart Disassembly - ' + title, rendered);
+						const view = new HtmlView('Smart Disassembly - ' + title, rendered, 'a { text-decoration: none; color: inherit; }');
 						await view.update();
+
+						// Install mouse click handler
+						this.installHtmlClickHandler(view); // TODO: Do this for all ?
 					}
 					break;
 
@@ -3743,7 +3746,7 @@ E.g. use "-help -view" to put the help text in an own view.
 						await view.update();
 
 						// Install mouse click handler
-						this.installSvgClickHandler(view);
+						this.installHtmlClickHandler(view);
 					}
 					break;
 
@@ -3761,7 +3764,7 @@ E.g. use "-help -view" to put the help text in an own view.
 						await view.update();
 
 						// Install mouse click handler
-						this.installSvgClickHandler(view);
+						this.installHtmlClickHandler(view);
 					}
 					break;
 			}
@@ -3774,19 +3777,22 @@ E.g. use "-help -view" to put the help text in an own view.
 
 
 	/**
-	 * Installs the click handler for the flow chart and call graph (SVG) views.
+	 * Installs the click handler for the flow chart, call graph and smart disassembly html views.
 	 * When clicked the corresponding code block is selected.
 	 * @param view The view to install the click handler.
 	 */
 	// TODO: Maybe concatenate consecutive lines.
-	protected installSvgClickHandler(view: HtmlView) {
+	protected installHtmlClickHandler(view: HtmlView) {
 		// Handler for mouse clicks: navigate to files/lines
 		view.on('click', async message => {
-			const addressesString: string = message.data;	// Format e.g. "#800A.4" or "8010.4;8012.4;8013.4;"
-			const longAddrString = addressesString.substring(1);	// Skip #
+			const addressesString: string = message.data;	// Format e.g. "#800A.4" or "8010.4;8012.4;8013.4;" or for the renderText: "vscode-webview://....#8000"
+			const k = addressesString.lastIndexOf('#');
+			if (k < 0)
+				return;
+			const longAddrString = addressesString.substring(k + 1);	// Skip #
 			// Check if empty
 			if (longAddrString == '') {
-				// No associateed address found
+				// No associated address found
 				this.showWarning('No associated file/line.');
 				return;
 			}
@@ -3818,7 +3824,8 @@ E.g. use "-help -view" to put the help text in an own view.
 					// In that case the current bank is paged.
 					if (addressString.includes('.')) {
 						this.showError(e.message);
-						throw e;	// Rethrow if a bank was explicitly given
+						//throw e;	// Rethrow if a bank was explicitly given
+						return;
 					}
 					// Otherwise take the current address and warn
 					const addr64k = parseInt(addressString, 16);	// Convert hex, e.g. ("C000h")

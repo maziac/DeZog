@@ -13,16 +13,22 @@ export class HtmlView extends TextView {
 	// and the corresponding function is called.
 	protected messageHandler = new Map<string, (message: any) => void>();
 
+
 	/**
 	 * Sets the html code to display the text.
 	 * @param body The html body code to display.
+	 * @param headStyle An optional style that is added to the head section.
+	 * E.g. 'a { text-decoration: none; }'
 	 */
-	protected setHtml(body: string) {
+	protected setHtml(body: string, headStyle: string) {
 		const format = `<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+    ${headStyle}
+    </style>
 </head>
 
 <script>
