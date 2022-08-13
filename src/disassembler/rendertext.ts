@@ -81,7 +81,7 @@ export class RenderText extends RenderBase {
 	/**
 	 * Formats a series of bytes into a comment string.
 	 * @param bytes The data to print.
-	 * @returns All hex data is converted to ASCII. Non-printable cahracters are displayed as '?'.
+	 * @returns All hex data is converted to ASCII. Non-printable characters are displayed as '?'.
 	 * E.g. 'mystring'
 	 */
 	protected getDefbComment(bytes: Uint8Array): string {
@@ -144,7 +144,10 @@ export class RenderText extends RenderBase {
 
 
 	/** Adds a disassembly data block.
-	 * @param lines Array of lines. The new text liens are pushed here.
+	 * It prints only data with labels.
+	 * I.e. for each found label it prints at least 8 bytes of data
+	 * (= 1 line).
+	 * @param lines Array of lines. The new text lines are pushed here.
 	 * @param add64k The address to start.
 	 * @param dataLen The length of the data to print.
 	 */
@@ -156,33 +159,41 @@ export class RenderText extends RenderBase {
 			endAddr = 0x1000;
 
 		// Loop for all lines
-		let i = 0;
+		let prevLabelAddress;
 		while (addr < endAddr) {
-			// Check if there is any label in the data
-			const bytesInLine = Math.min(this.defbMaxBytesPerLine, len);
-			let label;
-			for (; i < bytesInLine; i++) {
-				label = this.disasm.getLabelForAddr64k(addr + i);
-				if (label)
-					break;
-			}
-
-			// Print data until label
-			if (i > 0) {
-				const line = this.getCompleteDataLine(addr, i);
-				lines.push(line);
-				// Next
-				addr += i;
-				len -= i;
-				i = 0;
-			}
-
-			// Print label
+			// Find next label
+			const label = this.disasm.getLabelForAddr64k(addr);
 			if (label) {
+				// Check if we need to print previous data
+				if (prevLabelAddress) {
+					// Yes.
+					let len = addr - prevLabelAddress;
+					if (len > this.defbMaxBytesPerLine)
+						len = this.defbMaxBytesPerLine;
+					const line = this.getCompleteDataLine(prevLabelAddress, len);
+					lines.push(line);
+				}
+
+				// Print new label
 				const addressLabel = this.getAddressLabel(addr, label);
 				lines.push(addressLabel);
-				i++;	// Skip this address the next loop
+
+				// Next
+				prevLabelAddress = addr;
 			}
+
+			// Next
+			addr++;
+		}
+
+		// Print last label data
+		if (prevLabelAddress) {
+			// Yes.
+			let len = addr - prevLabelAddress;
+			if (len > this.defbMaxBytesPerLine)
+				len = this.defbMaxBytesPerLine;
+			const line = this.getCompleteDataLine(prevLabelAddress, len);
+			lines.push(line);
 		}
 	}
 

@@ -72,13 +72,36 @@ suite('Disassembler - RenderText', () => {
 		});
 	});
 
-	suite('printData', () => {
+	suite('render data', () => {
+		test('getDefbComment', () => {
+			assert.ok(r.getDefbComment(new Uint8Array([]), 'ASCII: '));
+			assert.ok(r.getDefbComment(new Uint8Array([65]), 'ASCII: A'));
+			assert.ok(r.getDefbComment(new Uint8Array([65, 66]), 'ASCII: AB'));
+			assert.ok(r.getDefbComment(new Uint8Array([65, 66, 0]), 'ASCII: AB?'));
+		});
+
+		test('getDefbLine', () => {
+			assert.ok(r.getDefbLine(new Uint8Array([]), 'DEFB:'));
+			assert.ok(r.getDefbLine(new Uint8Array([65]), 'DEFB: 31'));
+			assert.ok(r.getDefbLine(new Uint8Array([65, 66]), 'DEFB: 31 32'));
+			assert.ok(r.getDefbLine(new Uint8Array([65, 66, 0]), 'DEFB: 31 32 00'));
+			assert.ok(r.getDefbLine(new Uint8Array([0x0A, 0xFC]), 'DEFB: 0A FC'));
+		});
+
+		test('getCompleteDataLine', () => {
+			assert.ok(false);
+		});
+
+		test('getAddressLabel', () => {
+			assert.ok(false);
+		});
+
 		test('printData', () => {
 			assert.ok(false);
 		});
 	});
 
-	suite('render', () => {
+	suite('render code', () => {
 		// Compresses the string.
 		function c(text: string): string {
 			let s = text.replace(/ +/g, ' ');
