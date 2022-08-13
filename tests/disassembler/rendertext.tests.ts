@@ -22,93 +22,214 @@ suite('Disassembler - RenderText', () => {
 		Format.hexFormat = '$';
 	});
 
+	// Strip html.
+	function stripHtml(text: string): string {
+		const s = text.replace(/<[^>]*>/g, '');
+		return s;
+	}
+	// Compresses the string.
+	function c(text: string): string {
+		let s = text.replace(/ +/g, ' ');
+		s = stripHtml(s);
+		return s;
+	}
+
+
 	suite('misc', () => {
 		test('formatAddressLabel', () => {
 			r.clmnsAddress = 12;
 			let s = r.formatAddressLabel(0x1234, 'LABEL1');
-			assert.equal(s, '1234.1      LABEL1:');
+			assert.equal(stripHtml(s), '1234.1      LABEL1:');
 
 			r.clmnsAddress = 3;
 			s = r.formatAddressLabel(0x1234, 'LABEL1');
-			assert.equal(s, '1234.1 LABEL1:');
+			assert.equal(stripHtml(s), '1234.1 LABEL1:');
 		});
 
 		test('formatAddressInstruction', () => {
 			r.clmnsAddress = 12;
 			r.clmnsBytes = 8;
-			let s = r.formatAddressInstruction(0x1234, [], 'LD A,5');
-			assert.equal(s, '1234.1              LD A,5');
+			let s = r.formatAddressPlusText(0x1234, [], 'LD A,5');
+			assert.equal(stripHtml(s), '1234.1              LD A,5');
 
 			r.clmnsAddress = 3;
-			s = r.formatAddressInstruction(0x1234, [], 'LD A,5');
-			assert.equal(s, '1234.1         LD A,5');
+			s = r.formatAddressPlusText(0x1234, [], 'LD A,5');
+			assert.equal(stripHtml(s), '1234.1         LD A,5');
 
 			r.clmnsAddress = 3;
-			s = r.formatAddressInstruction(0x1234, [0xAF], 'LD A,5');
-			assert.equal(s, '1234.1 AF      LD A,5');
+			s = r.formatAddressPlusText(0x1234, [0xAF], 'LD A,5');
+			assert.equal(stripHtml(s), '1234.1 AF      LD A,5');
 
 			r.clmnsAddress = 3;
-			s = r.formatAddressInstruction(0x1234, [0xAF, 0x02], 'LD A,5');
-			assert.equal(s, '1234.1 AF 02   LD A,5');
+			s = r.formatAddressPlusText(0x1234, [0xAF, 0x02], 'LD A,5');
+			assert.equal(stripHtml(s), '1234.1 AF 02   LD A,5');
 
 			r.clmnsAddress = 3;
-			s = r.formatAddressInstruction(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
-			assert.equal(s, '1234.1 AF ...  LD A,5');
+			s = r.formatAddressPlusText(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
+			assert.equal(stripHtml(s), '1234.1 AF ...  LD A,5');
 
 			r.clmnsAddress = 3;
 			r.clmnsBytes = 9;
-			s = r.formatAddressInstruction(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
-			assert.equal(s, '1234.1 AF 0...  LD A,5');
+			s = r.formatAddressPlusText(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
+			assert.equal(stripHtml(s), '1234.1 AF 0...  LD A,5');
 
 			r.clmnsAddress = 3;
 			r.clmnsBytes = 10;
-			s = r.formatAddressInstruction(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
-			assert.equal(s, '1234.1 AF 02 45  LD A,5');
+			s = r.formatAddressPlusText(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
+			assert.equal(stripHtml(s), '1234.1 AF 02 45  LD A,5');
 
 			r.clmnsAddress = 3;
 			r.clmnsBytes = 11;
-			s = r.formatAddressInstruction(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
-			assert.equal(s, '1234.1 AF 02 45   LD A,5');
+			s = r.formatAddressPlusText(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
+			assert.equal(stripHtml(s), '1234.1 AF 02 45   LD A,5');
+		});
+
+		test('formatAddressPlusText', () => {
+			r.clmnsAddress = 12;
+			r.clmnsBytes = 8;
+			let s = r.formatAddressPlusText(0x1234, [], ';');
+			assert.equal(c(s), c('1234.1 ;'));
+			s = r.formatAddressPlusText(0x1234, [0x00], 'NOP');
+			assert.equal(c(s), c('1234.1 00 NOP'));
+			s = r.formatAddressPlusText(0x1234, [0x3E, 0x05], 'LD A,5');
+			assert.equal(c(s), c('1234.1 3E 05 LD A,5'));
 		});
 	});
 
 	suite('render data', () => {
 		test('getDefbComment', () => {
-			assert.ok(r.getDefbComment(new Uint8Array([]), 'ASCII: '));
-			assert.ok(r.getDefbComment(new Uint8Array([65]), 'ASCII: A'));
-			assert.ok(r.getDefbComment(new Uint8Array([65, 66]), 'ASCII: AB'));
-			assert.ok(r.getDefbComment(new Uint8Array([65, 66, 0]), 'ASCII: AB?'));
+			assert.equal(r.getDefbComment(new Uint8Array([])), 'ASCII: ');
+			assert.equal(r.getDefbComment(new Uint8Array([65])), 'ASCII: A');
+			assert.equal(r.getDefbComment(new Uint8Array([65, 66])), 'ASCII: AB');
+			assert.equal(r.getDefbComment(new Uint8Array([65, 66, 0])), 'ASCII: AB?');
 		});
 
 		test('getDefbLine', () => {
-			assert.ok(r.getDefbLine(new Uint8Array([]), 'DEFB:'));
-			assert.ok(r.getDefbLine(new Uint8Array([65]), 'DEFB: 31'));
-			assert.ok(r.getDefbLine(new Uint8Array([65, 66]), 'DEFB: 31 32'));
-			assert.ok(r.getDefbLine(new Uint8Array([65, 66, 0]), 'DEFB: 31 32 00'));
-			assert.ok(r.getDefbLine(new Uint8Array([0x0A, 0xFC]), 'DEFB: 0A FC'));
-		});
+			assert.equal(r.getDefbLine(new Uint8Array([])), 'DEFB');
+			assert.equal(r.getDefbLine(new Uint8Array([65])), 'DEFB 41');
+			assert.equal(r.getDefbLine(new Uint8Array([65, 66])), 'DEFB 41 42');
+			assert.equal(r.getDefbLine(new Uint8Array([65, 66, 0])), 'DEFB 41 42 00');
+			assert.equal(r.getDefbLine(new Uint8Array([0x0A, 0xFC])), 'DEFB 0A FC');
+	});
 
 		test('getCompleteDataLine', () => {
-			assert.ok(false);
+			r.clmnsBytes = 8;
+			disasm.memory.setMemory(0x1000, new Uint8Array([]));
+			assert.equal(c(r.getCompleteDataLine(0x1000, 0)), '1000.1 DEFB ; ASCII: ');
+
+			disasm.memory.setMemory(0x1000, new Uint8Array([65]));
+			assert.equal(c(r.getCompleteDataLine(0x1000, 1)), '1000.1 41 DEFB 41 ; ASCII: A');
+
+			disasm.memory.setMemory(0x1000, new Uint8Array([65, 66]));
+			assert.equal(c(r.getCompleteDataLine(0x1000, 2)), '1000.1 41 42 DEFB 41 42 ; ASCII: AB');
+
+			disasm.memory.setMemory(0x1000, new Uint8Array([65, 66, 0]));
+			assert.equal(c(r.getCompleteDataLine(0x1000, 3)), '1000.1 41 ... DEFB 41 42 00 ; ASCII: AB?');
+
+			disasm.memory.setMemory(0x1000, new Uint8Array([0x0A, 0xFC]));
+			assert.equal(c(r.getCompleteDataLine(0x1000, 2)), '1000.1 0A FC DEFB 0A FC ; ASCII: ??');
 		});
 
 		test('getAddressLabel', () => {
-			assert.ok(false);
+			assert.equal(c(r.getAddressLabel(0x1000, 'LBL')), '1000.1 LBL:');
 		});
 
-		test('printData', () => {
-			assert.ok(false);
+		suite('printData', () => {
+			test('no label', () => {
+				const lines: string[] = [];
+				r.printData(lines, 0x1000, 4);
+				assert.equal(c(lines.join('\n')), '');
+			});
+
+			test('1 label', () => {
+				r.clmnsBytes = 8;
+				const lines: string[] = [];
+				(disasm as any).otherLabels.set(0x1000, 'LBL');
+				r.printData(lines, 0x1000, 4);
+				assert.equal(c(lines.join('\n')), `1000.1 LBL:
+1000.1 00 ... DEFB 00 00 00 00 ; ASCII: ????
+`);
+
+				lines.length = 0;
+				disasm.memory.setMemory(0x1000, new Uint8Array([0x41, 0x42]));
+				r.printData(lines, 0x1000, 2);
+				assert.equal(c(lines.join('\n')), `1000.1 LBL:
+1000.1 41 42 DEFB 41 42 ; ASCII: AB
+`);
+			});
+
+			test('1 label, more data', () => {
+				r.clmnsBytes = 8;
+				const lines: string[] = [];
+				disasm.memory.setMemory(0x1000, new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8,
+					9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
+				(disasm as any).otherLabels.set(0x1000, 'LBL');
+				r.printData(lines, 0x1000, 20);
+				assert.equal(c(lines.join('\n')), `1000.1 LBL:
+1000.1 01 ... DEFB 01 02 03 04 05 06 07 08 ; ASCII: ????????
+`);
+			});
+
+			test('1 label, offset', () => {
+				r.clmnsBytes = 8;
+				const lines: string[] = [];
+				disasm.memory.setMemory(0x1000, new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8,
+					9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
+				(disasm as any).otherLabels.set(0x1001, 'LBL');
+				r.printData(lines, 0x1000, 20);
+				assert.equal(c(lines.join('\n')), `1001.1 LBL:
+1001.1 02 ... DEFB 02 03 04 05 06 07 08 09 ; ASCII: ????????
+`);
+			});
+
+			test('2 labels, distance = 1', () => {
+				r.clmnsBytes = 8;
+				const lines: string[] = [];
+				disasm.memory.setMemory(0x1000, new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8,
+					9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
+				(disasm as any).otherLabels.set(0x1001, 'LBL1');
+				(disasm as any).otherLabels.set(0x1002, 'LBL2');
+				r.printData(lines, 0x1000, 20);
+				assert.equal(c(lines.join('\n')), `1001.1 LBL1:
+1001.1 02 DEFB 02 ; ASCII: ?
+1002.1 LBL2:
+1002.1 03 ... DEFB 03 04 05 06 07 08 09 0A ; ASCII: ????????
+`);
+			});
+
+			test('2 labels, distance <= 8', () => {
+				r.clmnsBytes = 8;
+				const lines: string[] = [];
+				disasm.memory.setMemory(0x1000, new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8,
+					9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
+				(disasm as any).otherLabels.set(0x1001, 'LBL1');
+				(disasm as any).otherLabels.set(0x1003, 'LBL2');
+				r.printData(lines, 0x1000, 20);
+				assert.equal(c(lines.join('\n')), `1001.1 LBL1:
+1001.1 02 03 DEFB 02 03 ; ASCII: ??
+1003.1 LBL2:
+1003.1 04 ... DEFB 04 05 06 07 08 09 0A 0B ; ASCII: ????????
+`);
+			});
+
+			test('2 labels, distance > 8', () => {
+				r.clmnsBytes = 8;
+				const lines: string[] = [];
+				disasm.memory.setMemory(0x1000, new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8,
+					9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
+				(disasm as any).otherLabels.set(0x1001, 'LBL1');
+				(disasm as any).otherLabels.set(0x100A, 'LBL2');
+				r.printData(lines, 0x1000, 20);
+				assert.equal(c(lines.join('\n')), `1001.1 LBL1:
+1001.1 02 ... DEFB 02 03 04 05 06 07 08 09 ; ASCII: ????????
+100A.1 LBL2:
+100A.1 0B ... DEFB 0B 0C 0D 0E 0F 10 11 12 ; ASCII: ????????
+`);
+			});
 		});
 	});
 
 	suite('render code', () => {
-		// Compresses the string.
-		function c(text: string): string {
-			let s = text.replace(/ +/g, ' ');
-			s = s.replace(/<[^>]*>/g, '');
-			return s;
-		}
-
 		suite('renderNodes', () => {
 			// Disassemble
 			function disassemble(startAddrs64k: number[]): string {
@@ -145,9 +266,7 @@ suite('Disassembler - RenderText', () => {
 				const text = disassemble([0x0100, 0x0105, 0x0107]);
 
 				assert.equal(c(text), c(
-					`; Data: $0000-$00FF
-
-0100.1 3E 05  LD A,$05
+					`0100.1 3E 05  LD A,$05
 0102.1 B8     CP B
 0103.1 28 02  JR Z,LBL_0107
 
@@ -163,9 +282,7 @@ suite('Disassembler - RenderText', () => {
 				const text = disassemble([0x0100, 0x0105, 0x0107]);
 
 				assert.equal(c(text), c(
-					`; Data: $0000-$00FF
-
-0100.1 3E 05  LD A,$05
+					`0100.1 3E 05  LD A,$05
 0102.1 B8     CP B
 0103.1 28 02  JR Z,MYLABEL
 
@@ -180,9 +297,7 @@ suite('Disassembler - RenderText', () => {
 				const text = disassemble([0x0700, 0x0705, 0x0708, 0x0709]);
 
 				assert.equal(c(text), c(
-					`; Data: $0000-$06FF
-
-0700.1 3E 05    LD A,$05
+					`0700.1 3E 05    LD A,$05
 0702.1 CD 09 07 CALL SUB_0709
 
 0705.1 CD 09 07 CALL SUB_0709
@@ -199,9 +314,7 @@ suite('Disassembler - RenderText', () => {
 				const text = disassemble([0x0709, 0x0708, 0x0700, 0x0705]);
 
 				assert.equal(c(text), c(
-					`; Data: $0000-$06FF
-
-0700.1 3E 05    LD A,$05
+					`0700.1 3E 05    LD A,$05
 0702.1 CD 09 07 CALL SUB_0709
 
 0705.1 CD 09 07 CALL SUB_0709
@@ -217,9 +330,7 @@ suite('Disassembler - RenderText', () => {
 			test('self modifying label in sub', () => {
 				const text = disassemble([0x1000, 0x1008, 0x1009]);
 				assert.equal(c(text), c(
-					`; Data: $0000-$0FFF
-
-1000.1 3E 06     LD A,$06
+					`1000.1 3E 06     LD A,$06
 1002.1 32 0B 10  LD (SUB_1009.CODE_100A+1),A
 1005.1 CD 09 10  CALL SUB_1009
 
@@ -236,9 +347,7 @@ suite('Disassembler - RenderText', () => {
 			test('self modifying label at sub', () => {
 				const text = disassemble([0x1100, 0x1108, 0x1109]);
 				assert.equal(c(text), c(
-					`; Data: $0000-$10FF
-
-1100.1 3E 06     LD A,$06
+					`1100.1 3E 06     LD A,$06
 1102.1 32 0A 11  LD (SUB_1109+1),A
 1105.1 CD 09 11  CALL SUB_1109
 
@@ -253,9 +362,7 @@ suite('Disassembler - RenderText', () => {
 			test('self modifying label wo sub', () => {
 				const text = disassemble([0x1200]);
 				assert.equal(c(text), c(
-					`; Data: $0000-$11FF
-
-1200.1 3E 06     LD A,$06
+					`1200.1 3E 06     LD A,$06
 1202.1 32 07 12  LD (CODE_1206+1),A
 1205.1 00        NOP
 1206.1       CODE_1206:
@@ -267,13 +374,12 @@ suite('Disassembler - RenderText', () => {
 			test('referencing data', () => {
 				const text = disassemble([0x1300, 0x130A]);
 				assert.equal(c(text), c(
-					`; Data: $0000-$12FF
-
-1300.1 3E 06       LD A,$06
+					`1300.1 3E 06       LD A,$06
 1302.1 2A 08 13    LD HL,(DATA_1308)
 1305.1 C3 0A 13    JP LBL_130A
 
-; Data: $1308-$1309 TODO: Need to define the right output
+1308.1 DATA_1308:
+1308.1 34 12 DEFB 34 12 ; ASCII: 4?
 
 130A.1           LBL_130A:
 130A.1 11 DE DE    LD DE,$DEDE
@@ -301,9 +407,7 @@ suite('Disassembler - RenderText', () => {
 					const text = disassembleDepth([0x4000], 0);
 
 					assert.equal(c(text), c(
-						`; Data: $0000-$3FFF
-
-4000.1 CD 04 40   CALL SUB_4004
+						`4000.1 CD 04 40   CALL SUB_4004
 
 4003.1 C9         RET
 `));
@@ -313,9 +417,7 @@ suite('Disassembler - RenderText', () => {
 					const text = disassembleDepth([0x4000], 1);
 
 					assert.equal(c(text), c(
-						`; Data: $0000-$3FFF
-
-4000.1 CD 04 40   CALL SUB_4004
+						`4000.1 CD 04 40   CALL SUB_4004
 
 4003.1 C9         RET
 
@@ -330,9 +432,7 @@ suite('Disassembler - RenderText', () => {
 					const text = disassembleDepth([0x4000], 2);
 
 					assert.equal(c(text), c(
-						`; Data: $0000-$3FFF
-
-4000.1 CD 04 40   CALL SUB_4004
+						`4000.1 CD 04 40   CALL SUB_4004
 
 4003.1 C9         RET
 
@@ -352,9 +452,7 @@ suite('Disassembler - RenderText', () => {
 					const text = disassembleDepth([0x4000], 3);
 
 					assert.equal(c(text), c(
-						`; Data: $0000-$3FFF
-
-4000.1 CD 04 40   CALL SUB_4004
+						`4000.1 CD 04 40   CALL SUB_4004
 
 4003.1 C9         RET
 
@@ -377,9 +475,7 @@ suite('Disassembler - RenderText', () => {
 					const text = disassembleDepth([0x4000], 4);
 
 					assert.equal(c(text), c(
-						`; Data: $0000-$3FFF
-
-4000.1 CD 04 40   CALL SUB_4004
+						`4000.1 CD 04 40   CALL SUB_4004
 
 4003.1 C9         RET
 
@@ -402,9 +498,7 @@ suite('Disassembler - RenderText', () => {
 					const text = disassembleDepth([0x4100], 3);
 
 					assert.equal(c(text), c(
-						`; Data: $0000-$40FF
-
-4100.1 CD 08 41   CALL SUB_4108
+						`4100.1 CD 08 41   CALL SUB_4108
 
 4103.1 C9         RET
 
@@ -428,9 +522,7 @@ suite('Disassembler - RenderText', () => {
 				const text = disassembleDepth([0x4200], 10);
 
 				assert.equal(c(text), c(
-					`; Data: $0000-$41FF
-
-4200.1 CD 04 42   CALL SUB_4204
+					`4200.1 CD 04 42   CALL SUB_4204
 
 4203.1 C9         RET
 
@@ -445,9 +537,7 @@ suite('Disassembler - RenderText', () => {
 				const text = disassembleDepth([0x4300], 10);
 
 				assert.equal(c(text), c(
-					`; Data: $0000-$42FF
-
-4300.1 CD 07 43   CALL SUB_4307
+					`4300.1 CD 07 43   CALL SUB_4307
 
 4303.1 CD 09 43   CALL SUB_4309
 

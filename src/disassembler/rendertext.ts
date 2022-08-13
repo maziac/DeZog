@@ -111,7 +111,7 @@ export class RenderText extends RenderBase {
 	protected getDefbLine(bytes: Uint8Array) {
 		let bytesString = '';
 		bytes.forEach(value => {
-			bytesString += ' ' + Format.getHexFormattedString(value, 2);
+			bytesString += ' ' + value.toString(16).toUpperCase().padStart(2, '0');
 		});
 		return 'DEFB' + bytesString;
 	}
@@ -126,7 +126,7 @@ export class RenderText extends RenderBase {
 	protected getCompleteDataLine(addr64k: number, len: number) {
 		const bytes: Uint8Array = this.disasm.memory.getData(addr64k, len);
 		let text = this.getDefbLine(bytes);
-		text += this.getDefbComment(bytes);
+		text += ' ; ' + this.getDefbComment(bytes);
 		const line = this.formatAddressPlusText(addr64k, bytes, text);
 		return line;
 	}
@@ -152,11 +152,12 @@ export class RenderText extends RenderBase {
 	 * @param dataLen The length of the data to print.
 	 */
 	protected printData(lines: string[], addr64k: number, dataLen: number) {
+		const linesSize = lines.length;
 		let len = dataLen;
 		let addr = addr64k;
 		let endAddr = addr64k + len;
-		if (endAddr > 0x1000)
-			endAddr = 0x1000;
+		if (endAddr > 0x10000)
+			endAddr = 0x10000;
 
 		// Loop for all lines
 		let prevLabelAddress;
@@ -195,6 +196,10 @@ export class RenderText extends RenderBase {
 			const line = this.getCompleteDataLine(prevLabelAddress, len);
 			lines.push(line);
 		}
+
+		// Add new line only if something was added.
+		if (linesSize != lines.length)
+			lines.push('');
 	}
 
 
@@ -260,7 +265,6 @@ export class RenderText extends RenderBase {
 			const dataLen = nodeAddr - addr64k;
 			if (dataLen > 0) {
 				this.printData(lines, addr64k, dataLen);
-				lines.push('');
 				addr64k = nodeAddr;
 			}
 
