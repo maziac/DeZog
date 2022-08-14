@@ -192,11 +192,49 @@
 191   5107              SUB5107:
 192   5107 3A 00 51     	LD A,(DATA5100)
 193   510A 2A 05 51     	LD HL,(DATA5105)
-194   510D ED 5B 20 51  	ld DE,(DATA5120)
+194   510D ED 5B 20 51  	LD DE,(DATA5120)
 195   5111 C9           	RET
 196   5112
 197   5112 00 00 00...  	DEFS 0x5120-$
 198   5120 01 02 03 04  DATA5120:	DEFB 1, 2, 3, 4, 5, 6, 7, 8
 198   5124 05 06 07 08
 199   5128
+200   5128
+201   5128 00 00 00...  	DEFS 0x5200-$
+202   5200              	; self mod in other call
+203   5200 3A 08 52     	LD A,(SUB5207.SELF_MOD+1)
+204   5203
+205   5203 CD 0A 52     	CALL SUB520A
+206   5206
+207   5206 C9           	RET
+208   5207
+209   5207              SUB5207:
+210   5207              .SELF_MOD:
+211   5207 06 06        	LD B,6
+212   5209 C9           	RET
+213   520A
+214   520A              SUB520A:
+215   520A C9           	RET
+216   520B
+217   520B
+218   520B 00 00 00...  	DEFS 0x5300-$
+219   5300              	; Different depths, self mod in call
+220   5300 32 0B 53     	LD (SUB530A.SELF_MOD+1),A
+221   5303 32 0D 53     	LD (SUB530A.SELF_MOD2+1),A
+222   5306
+223   5306 CD 0F 53     	CALL SUB530F
+224   5309 C9           	RET
+225   530A
+226   530A              SUB530A:
+227   530A              .SELF_MOD:
+228   530A 06 06        	LD B,6
+229   530C              .SELF_MOD2:
+230   530C 0E 09        	LD C,9
+231   530E C9           	RET
+232   530F
+233   530F              SUB530F:
+234   530F CD 0A 53     	CALL SUB530A
+235   5312
+236   5312 C9           	RET
+237   5313
 # file closed: main.asm

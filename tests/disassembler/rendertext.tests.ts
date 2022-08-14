@@ -602,6 +602,68 @@ suite('Disassembler - RenderText', () => {
 4309.1 C9         RET
 `));
 			});
+
+			test('self mod in other call', () => {
+				const text = disassembleDepth([0x5200], 10);
+
+				assert.equal(c(text), c(
+					`5200.1 3A 08 52 LD A,(DATA_5208)
+5203.1 CD 0A 52 CALL SUB_520A
+
+5206.1 C9 RET
+
+5208.1 DATA_5208:
+5208.1 06 C9 DEFB 06 C9 ; ASCII: ??
+
+520A.1 SUB_520A:
+520A.1 C9 RET
+`));
+			});
+
+			test('depth = 1, self mod in call', () => {
+				const text = disassembleDepth([0x5300], 1);
+
+				assert.equal(c(text), c(
+					`5300.1 32 0B 53 LD (SUB_530A+1),A
+5303.1 32 0D 53 LD (SUB_530A.CODE_530C+1),A
+5306.1 CD 0F 53 CALL SUB_530F
+
+5309.1 C9 RET
+
+530A.1 SUB_530A:
+530A.1 06 06    DEFB 06 06 ; ASCII: ??
+530C.1 SUB_530A.CODE_530C:
+530C.1 0E 09 C9 DEFB 0E 09 C9 ; ASCII: ???
+
+530F.1 SUB_530F:
+530F.1 CD 0A 53 CALL SUB_530A
+
+5312.1 C9       RET
+`));
+			});
+
+			test('depth = 2, self mod in call', () => {
+				const text = disassembleDepth([0x5300], 2);
+
+				assert.equal(c(text), c(
+					`5300.1 32 0B 53 LD (SUB_530A+1),A
+5303.1 32 0D 53 LD (SUB_530A.CODE_530C+1),A
+5306.1 CD 0F 53 CALL SUB_530F
+
+5309.1 C9 RET
+
+530A.1 SUB_530A:
+530A.1 06 06    LD B,$06
+530C.1 SUB_530A.CODE_530C:
+530C.1 0E 09    LD C,$09
+530E.1 C9       RET
+
+530F.1 SUB_530F:
+530F.1 CD 0A 53 CALL SUB_530A
+
+5312.1 C9       RET
+`));
+			});
 		});
 	});
 });
