@@ -203,6 +203,7 @@ export class RenderText extends RenderBase {
 			const label = this.disasm.getLabelForAddr64k(dataAddr)!;
 			//Utility.assert(label);
 			if (label) {
+				// Is e.g. not defined if in different bank.
 				const addressLabel = this.getAddressLabel(dataAddr, label);
 				lines.push(addressLabel);
 			}
@@ -236,7 +237,7 @@ export class RenderText extends RenderBase {
 		const texts: string[] = [];
 
 		// Loop all depths
-		for (let depth = 0; depth <= maxDepth; depth++) {
+		for (let depth = maxDepth; depth <= maxDepth; depth++) {	// TODO
 			// Render
 			const rendered = this.renderForDepth(startNodes, depth);
 			// Store
@@ -273,7 +274,7 @@ export class RenderText extends RenderBase {
 	 */
 	public renderNodes(nodeSet: Set<AsmNode>, startNodes: AsmNode[]= []): string {
 		// Sort the nodes
-		const nodes = Array.from(nodeSet);
+		const nodes = Array.from(nodeSet).filter(node => (node.length > 0));	// Filter nodes in other banks
 		nodes.sort((a, b) => a.start - b.start);
 
 		// Now get all data references (for the nodes = for the depth)
