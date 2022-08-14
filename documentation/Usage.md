@@ -4,6 +4,7 @@ This document describes the features of DeZog and how they can be used.
 
 If watched inside vscode you can use "CTRL-F" to search for certain topics.
 
+//TODO: all one level up
 ## Support
 
 If you like DeZog please consider supporting it.
@@ -20,6 +21,33 @@ If you like DeZog please consider supporting it.
 If you would like to contribute, e.g. by adding a new assembler or adding other remotes/emulators, see "Contribution" [here](https://github.com/maziac/DeZog/blob/master/README.md#contribution).
 
 
+## References
+
+<!-- All lower case, when reference, upper case can be used -->
+[z80-sample-program-dont-use]: https://github.com/maziac/z80-sample-program
+or
+
+[z80 sample program]: https://github.com/maziac/z80-sample-program
+
+[zesarux]: https://github.com/chernandezba/zesarux
+[cspect]: http://www.cspect.org
+[mame]: https://www.mamedev.org
+[sjasmplus]: https://github.com/z00m128/sjasmplus
+[savannah-z80asm]: https://savannah.nongnu.org/projects/z80asm/
+[z88dk-z80asm]: https://github.com/z88dk/z88dk
+
+
+- [Z80 Sample Program on github][z80-sample-program-dont-use]
+- or [Z80 Sample Program]
+- [Z80 sample program]
+- or [CSpect]
+- [ZEsarUX]
+- [zesarux]
+- [sjasmplus]
+- [Savannah-z80asm]
+- [z88dk-z80asm]
+- [MAME]
+- TODO: Add more references
 
 ## Migration from a previous DeZog version
 
@@ -562,7 +590,8 @@ It's the easiest setup. You just need DeZog (and vscode):
 ~~~
 
 'zsim' is a very simple Z80/ZX Spectrum simulator.
-It allows to test programs that does not make use of special HW features like the [z80-sample-program](https://github.com/maziac/z80-sample-program).
+It allows to test programs that does not make use of special HW features like the [z80-sample-program].
+
 
 'zsim' is basically just a Z80 simulator. But you can add a few ZX Spectrum related features so that it is possible to use for debugging ZX48 and ZX128 programs.
 
