@@ -161,22 +161,26 @@ export class RenderText extends RenderBase {
 	 * @param dataLen The length of the data to print.
 	 */
 	protected printData(lines: string[], addr64k: number, dataLen: number) {
-		const prevLineLength = lines.length;
-		let addr = addr64k;
+		// Find first address in 'dataReferences'
+		let dataAddr = this.dataReferences.at(-1);	// Last item
+		if (dataAddr == undefined)
+			return;
+
+		// Pop until first address in area is found
+		while (dataAddr < addr64k) {
+			dataAddr = this.dataReferences.pop();
+			if (dataAddr == undefined)
+				return;
+		}
+
+		// Get end address
 		let endAddr = addr64k + dataLen;
 		if (endAddr > 0x10000)
 			endAddr = 0x10000;
 
-		// Find first address in 'dataReferences'
-		let dataAddr = this.dataReferences. .at(-1);	// Last item
-		while (dataAddr) {
-			if (dataAddr < addr) {
-				this.dataReferences.pop();
-				continue;
-			}
-			if (dataAddr >= endAddr)
-				break;
-
+		// Continue until area is left
+		const prevLineLength = lines.length;
+		while (dataAddr < endAddr) {
 			// Label is in printed area
 			this.dataReferences.pop();
 			// Check distance to next label:
@@ -194,12 +198,16 @@ export class RenderText extends RenderBase {
 			// Print the label
 			const label = this.disasm.getLabelForAddr64k(dataAddr)!;
 			Utility.assert(label);
-			const addressLabel = this.getAddressLabel(addr, label);
+			const addressLabel = this.getAddressLabel(dataAddr, label);
 			lines.push(addressLabel);
 
 			// Print the data
 			const line = this.getCompleteDataLine(dataAddr, countBytes);
 			lines.push(line);
+
+			// Check for end
+			if (nextDataAddr == undefined)
+				break;
 
 			// Next
 			dataAddr = nextDataAddr;

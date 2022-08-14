@@ -19,8 +19,7 @@ suite('Disassembler - RenderText', () => {
 		r = new RenderText(disasm);
 		r.clmnsAddress = 7;
 		r.clmnsBytes = 10;
-		(r as any).dataReferences = [];
-		(r as any).dataReferencesIndex = 0;
+		r.dataReferences = [];
 		Format.hexFormat = '$';
 	});
 
@@ -147,14 +146,16 @@ suite('Disassembler - RenderText', () => {
 				r.clmnsBytes = 8;
 				let lines: string[] = [];
 				(disasm as any).otherLabels.set(0x1000, 'LBL');
-				(r as any).dataReferences.push(0x1000);
+				r.dataReferences.push(0x1000);
 				r.printData(lines, 0x1000, 4);
 				assert.equal(c(lines.join('\n')), `1000.1 LBL:
 1000.1 00 ... DEFB 00 00 00 00 ; ASCII: ????
 `);
 
 				lines = [];
-				disasm.memory.setMemory(0x1000, new Uint8Array([0x41, 0x42])); (r as any).dataReferencesIndex = 0;
+				disasm.memory.setMemory(0x1000, new Uint8Array([0x41, 0x42]));
+				(disasm as any).otherLabels.set(0x1000, 'LBL');
+				r.dataReferences.push(0x1000);
 				r.printData(lines, 0x1000, 2);
 				assert.equal(c(lines.join('\n')), `1000.1 LBL:
 1000.1 41 42 DEFB 41 42 ; ASCII: AB
@@ -167,7 +168,7 @@ suite('Disassembler - RenderText', () => {
 				disasm.memory.setMemory(0x1000, new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8,
 					9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
 				(disasm as any).otherLabels.set(0x1000, 'LBL');
-				(r as any).dataReferences.push(0x1000);
+				r.dataReferences.push(0x1000);
 				r.printData(lines, 0x1000, 20);
 				assert.equal(c(lines.join('\n')), `1000.1 LBL:
 1000.1 01 ... DEFB 01 02 03 04 05 06 07 08 ; ASCII: ????????
@@ -180,7 +181,7 @@ suite('Disassembler - RenderText', () => {
 				disasm.memory.setMemory(0x1000, new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8,
 					9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
 				(disasm as any).otherLabels.set(0x1001, 'LBL');
-				(r as any).dataReferences.push(0x1001);
+				r.dataReferences.push(0x1001);
 				r.printData(lines, 0x1000, 20);
 				assert.equal(c(lines.join('\n')), `1001.1 LBL:
 1001.1 02 ... DEFB 02 03 04 05 06 07 08 09 ; ASCII: ????????
@@ -194,8 +195,9 @@ suite('Disassembler - RenderText', () => {
 					9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
 				(disasm as any).otherLabels.set(0x1001, 'LBL1');
 				(disasm as any).otherLabels.set(0x1002, 'LBL2');
-				(r as any).dataReferences.push(0x1001);
-				(r as any).dataReferences.push(0x1002);
+				r.dataReferences.push(0x1001);
+				r.dataReferences.push(0x1002);
+				r.dataReferences.sort((a, b) => b - a);
 				r.printData(lines, 0x1000, 20);
 				assert.equal(c(lines.join('\n')), `1001.1 LBL1:
 1001.1 02 DEFB 02 ; ASCII: ?
@@ -211,8 +213,9 @@ suite('Disassembler - RenderText', () => {
 					9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
 				(disasm as any).otherLabels.set(0x1001, 'LBL1');
 				(disasm as any).otherLabels.set(0x1003, 'LBL2');
-				(r as any).dataReferences.push(0x1001);
-				(r as any).dataReferences.push(0x1003);
+				r.dataReferences.push(0x1001);
+				r.dataReferences.push(0x1003);
+				r.dataReferences.sort((a, b) => b - a);
 				r.printData(lines, 0x1000, 20);
 				assert.equal(c(lines.join('\n')), `1001.1 LBL1:
 1001.1 02 03 DEFB 02 03 ; ASCII: ??
@@ -228,8 +231,9 @@ suite('Disassembler - RenderText', () => {
 					9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
 				(disasm as any).otherLabels.set(0x1001, 'LBL1');
 				(disasm as any).otherLabels.set(0x100A, 'LBL2');
-				(r as any).dataReferences.push(0x1001);
-				(r as any).dataReferences.push(0x100A);
+				r.dataReferences.push(0x1001);
+				r.dataReferences.push(0x100A);
+				r.dataReferences.sort((a, b) => b - a);
 				r.printData(lines, 0x1000, 20);
 				assert.equal(c(lines.join('\n')), `1001.1 LBL1:
 1001.1 02 ... DEFB 02 03 04 05 06 07 08 09 ; ASCII: ????????
