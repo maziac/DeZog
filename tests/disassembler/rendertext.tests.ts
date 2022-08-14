@@ -665,5 +665,37 @@ suite('Disassembler - RenderText', () => {
 `));
 			});
 		});
+
+
+		suite('Strange disassemblies', () => {
+			// This contains e.g. code that will lead to strange disassemblies.
+			// Code that is probably wrong, but anyhow need to give some
+			// disassembly result.
+
+			// Disassemble
+			function disassemble(startAddrs64k: number[]): string {
+				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
+				disasm.setCurrentSlots([0]);
+				disasm.readBinFile(0, './tests/disassembler/projects/render_text_strange/main.bin');
+
+				disasm.getFlowGraph(startAddrs64k);
+				const startNodes = disasm.getNodesForAddresses(startAddrs64k);
+				disasm.disassembleNodes();
+				const text = r.renderNodes(startNodes);
+				return text;
+			}
+
+			test('jump into opcode', () => {
+				const text = disassemble([0x0000]);
+
+				assert.equal(c(text), c(
+					`0000.1 00 NOP
+0001.1 3E 05 LD A,$05
+0003.1 00 NOP
+0004.1 00 NOP
+0005.1 C3 02 00 JP 0002.1
+`));
+			});
+		});
 	});
 });

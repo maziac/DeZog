@@ -506,7 +506,7 @@ export class DisassemblerNextGen {
 	 * Connects node with the node at address.
 	 * If no node exists at address a new (bank border) node is created
 	 * and connected.
-	 * Method is only intended for use in 'fillNode'-
+	 * Method is only intended for use in 'fillNode'.
 	 * @param slot The slot of the start node.
 	 * @param address The address to check if in same slot.
 	 * @return An AsmNode, either from the this.nodes map or a new created one.
@@ -772,7 +772,7 @@ export class DisassemblerNextGen {
 		}
 
 		// Check for CODE and adjust address.
-		let suffix = '';
+		let suffixDiff = 0;
 		let attr = this.memory.getAttributeAt(addr64k);
 		if (attr & MemAttribute.CODE) {
 			// Adjust address (in case it does not point to the start of instruction)
@@ -781,9 +781,7 @@ export class DisassemblerNextGen {
 				addr64k--;
 				attr = this.memory.getAttributeAt(addr64k);
 			}
-			const diff = origAddress - addr64k;
-			if (diff > 0)
-				suffix = '+' + diff;
+			suffixDiff = origAddress - addr64k;
 		}
 		// Find label
 		let label = this.funcGetLabel(addr64k);
@@ -799,29 +797,16 @@ export class DisassemblerNextGen {
 		//   JP LBL+1
 		if (!label) {
 			// In that case just return the address (with bank)
-			return this.funcFormatLongAddress(addr64k);
+			return this.funcFormatLongAddress(addr64k + suffixDiff);
 		}
 
-		return label! + suffix;
-	}
+		// Suffix?
+		if (suffixDiff != 0)
+			label += '+' + suffixDiff;
 
-
-	/** Disassembles one opcode together with a referenced label (if there
-	 * is one).
-	 * @param opcode The opcode to disassemble.
-	 * @returns A string that contains the disassembly, e.g. "LD A,(DATA_LBL1)"
-	 * or "JR Z,.sub1_lbl3".
-	 */
-	// TODO: REMOVE
-	/*
-	public disassembleOpcode(opcode: Opcode) {
-		opcode.disassembleOpcode((addr64k: number) => {
-			// Return an existing label for the address or invent one.
-			const labelName = this.getLabelForAddress(addr64k);
-			return labelName;
-		});
+		// Return
+		return label;
 	}
-	*/
 
 
 	/**
