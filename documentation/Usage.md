@@ -1,10 +1,11 @@
 # Usage of DeZog - the VS Code Z80 Debug Adapter
 
+
 This document describes the features of DeZog and how they can be used.
 
 If watched inside vscode you can use "CTRL-F" to search for certain topics.
 
-//TODO: all one level up
+
 ## Support
 
 If you like DeZog please consider supporting it.
@@ -23,11 +24,12 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 
 ## References
 
-<!-- All lower case, when reference, upper case can be used -->
-[z80-sample-program-dont-use]: https://github.com/maziac/z80-sample-program
-or
+<!-- When reference, upper or lower case can be used -->
 
-[z80 sample program]: https://github.com/maziac/z80-sample-program
+[z80-sample-program]: https://github.com/maziac/z80-sample-program
+[z80-peripherals-sample]: https://github.com/maziac/z80-peripherals-sample
+[dezogif]: https://github.com/maziac/dezogif
+[DZRP]: https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md
 
 [zesarux]: https://github.com/chernandezba/zesarux
 [cspect]: http://www.cspect.org
@@ -35,30 +37,32 @@ or
 [sjasmplus]: https://github.com/z00m128/sjasmplus
 [savannah-z80asm]: https://savannah.nongnu.org/projects/z80asm/
 [z88dk-z80asm]: https://github.com/z88dk/z88dk
+[NEX File Format]: https://wiki.specnext.dev/NEX_file_format
+[ZX Spectrum Next]: https://www.specnext.com
+[zxnext]: https://www.specnext.com
 
-
-- [Z80 Sample Program on github][z80-sample-program-dont-use]
-- or [Z80 Sample Program]
-- [Z80 sample program]
-- or [CSpect]
+- [Z80-Sample-Program]
+- [Z80-Peripherals-Sample]
+- [DeZogIf]
+- [CSpect]
 - [ZEsarUX]
-- [zesarux]
+- [MAME]
 - [sjasmplus]
 - [Savannah-z80asm]
 - [z88dk-z80asm]
-- [MAME]
-- TODO: Add more references
+- [ZX Spectrum Next]
+- [NEX File Format]
 
 ## Migration from a previous DeZog version
 
-If you installed DeZog before [here](https://github.com/maziac/DeZog/blob/master/documentation/Migration.md) are a few tips to migrate to the current version.
+If you installed DeZog before, [here](https://github.com/maziac/DeZog/blob/master/documentation/Migration.md) are a few tips to migrate to the current version.
 
 
 ## Supported Assemblers
 
-- [sjasmplus](https://github.com/z00m128/sjasmplus) maintained by [Peter Ped Helcmanovsky](https://github.com/ped7g)
-- [Savannah-z80asm](https://savannah.nongnu.org/projects/z80asm/) (or z80asm) by Bas Wijnen
-- [z88dk-z80asm](https://github.com/z88dk/z88dk) (or z88dk)
+- [sjasmplus] maintained by [Peter Ped Helcmanovsky](https://github.com/ped7g)
+- [Savannah-z80asm] (or z80asm) by Bas Wijnen
+- [z88dk-z80asm] (or z88dk)
 
 Futhermore, if you like to use the [fasmg](https://flatassembler.net) assembler, although it is not supported out-of-the-box, you find a description how to use it [here](https://sinclairzxworld.com/viewtopic.php?f=6&t=4572) (by [stevexyz](https://github.com/stevexyz)).
 
@@ -199,7 +203,7 @@ A typical configuration looks like this:
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
     - "cspect": Use of CSpect emulator with the DeZog plugin. See [CSpect](#cspect).
     - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [ZX Next / Serial Interface](#zx-next--serial-interface).
-- sjasmplus (or z80asm or z88dk): The assembled configuration. An array of list files. Typically it includes only one. But if you e.g. have a
+- [sjasmplus] (or z80asm or z88dk): The assembled configuration. An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Assembler Configuration](#assembler-configuration) section.
 - startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=true). Please note: If this is set to true and a .tap file is loaded it will stop at address 0x0000 as this is where ZEsarUX tape load emulation starts.
@@ -298,9 +302,9 @@ For a full description of the .nex file format see:
 ### Assembler Configuration
 
 Depending on your assembler you use different configuration names:
-- 'sjasmplus' for sjasmplus
-- 'z80asm' for the Savannah-z80asm
-- 'z88dk' for z88dk-z80asm
+- 'sjasmplus' for [sjasmplus]
+- 'z80asm' for the [Savannah-z80asm]
+- 'z88dk' for [z88dk-z80asm]
 - 'revEng' for reverse engineering
 
 You basically define which listfile is used (or several list files) and depending on the assembler you may need to add certain parameters.
@@ -315,7 +319,7 @@ To distinguish them I will call them
 a) the **Savannah-z80asm** (or z80asm) from Bas Wijnen, see https://savannah.nongnu.org/projects/z80asm/ and the
 b) the **z88dk-z80asm** (or z88dk) hosted here https://github.com/z88dk/z88dk (Note: on the site they host even another z80asm project which is a respawn of the original one.)
 
-DeZog supports the list file formats of both of them and additionally the sjasmplus sld format (https://github.com/z00m128/sjasmplus).
+DeZog supports the list file formats of both of them and additionally the sjasmplus [SLD format](https://z00m128.github.io/sjasmplus/documentation.html#c_sld_data).
 
 
 #### Background info: The list file
@@ -786,7 +790,7 @@ Notes:
 
 ### ZEsarUX
 
-The setup is slightly more complicated as it involves communication with another program: the ZEsarUX emulator.
+The setup is slightly more complicated as it involves communication with another program: the [ZEsarUX] emulator.
 
 ~~~
 ┌───────────────┐              ┌─────────────────┐          ┌────────────────────┐
@@ -880,7 +884,7 @@ Please note: Normally you can set the commandline option also directly in the ZE
 
 ### CSpect
 
-For this setup you need 2 additional programs: the CSpect emulator and the DeZog/CSpect Plugin.
+For this setup you need 2 additional programs: the [CSpect] emulator and the DeZog/CSpect Plugin.
 
 ~~~
 ┌───────────────┐              ┌─────────────────┐          ┌────────────────────┐
@@ -907,7 +911,7 @@ For this setup you need 2 additional programs: the CSpect emulator and the DeZog
 
 
 The remote type is "cspect".
-CSpect needs to run before the debug session starts and needs to be connected via a socket interface ([DZRP](https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md)).
+CSpect needs to run before the debug session starts and needs to be connected via a socket interface ([DZRP]).
 CSpect does not offer a socket interface to DeZog by itself it needs the help of the [Dezog CSpect Plugin](https://github.com/maziac/DeZogPlugin).
 
 Since CSpect v2.15.2 the DeZogPlugin is included with CSpect.
@@ -957,7 +961,7 @@ A few explanations:
 
 #### Overview
 
-The serial interface is the most complex setup as it requires communication with a real ZX Spectrum Next (HW):
+The serial interface is the most complex setup as it requires communication with a real [ZX Spectrum Next] (HW):
 
 ~~~
                                                        ┌──────────────────────────┐
@@ -985,14 +989,8 @@ The serial interface is the most complex setup as it requires communication with
 ~~~
 
 Since version 2.6.0 DeZog can directly talk to the USB/UART interface of your OS.
-<!-- Instead it uses another program, the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) which offers a socket and translates all communication to the serial interface USB/UART.
-(Background: The reason for this additional program is that the node.js serialport binary package tends to break with new releases of vscode, see [here](https://cultivatehq.com/posts/how-we-built-a-visual-studio-code-extension-for-iot-prototyping/) for more details.)
--->
 
-The serial interface needs to be connected to the UART of a [ZX Spectrum Next](https://www.specnext.com).
-<!--
-In order to communicate with the ZX Next special SW needs to run on the Next, the [dezogif](https://github.com/maziac/dezogif).
--->
+The serial interface needs to be connected to the UART of a [ZX Spectrum Next].
 
 Here is an example launch.json configuration for macOS:
 ~~~json
@@ -1022,9 +1020,9 @@ Prerequisites:
 
 
 Setup a debug session:
-1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif](https://github.com/maziac/dezogif) project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/tree/main/releases) section. You need to download the correct ```enNextMf.rom``` for the core version you are using. Currently 03.01.10 and 03.01.05 are supported.
+1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif] project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/tree/main/releases) section. You need to download the correct ```enNextMf.rom``` for the core version you are using. Currently 03.01.10 and 03.01.05 are supported.
 (Don't forget to make a backup of the original ```enNextMf.rom```.)
-2. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program](https://github.com/maziac/z80-sample-program)).
+2. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program]).
 3. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferable Joy 2).
 4. On the ZX Next press the yellow NMI button once to initialize the debugger on the ZX Next.
 ![](images/dezog_zxnext_main.jpg)
@@ -1035,7 +1033,7 @@ Setup a debug session:
 You should see that the debugged program is transmitted to the ZX Next: the border colors change similar as when you would load a program from tape.
 ![](images/dezog_zxnext_loading.jpg)
 
-Please use the [z80-sample-program](https://github.com/maziac/z80-sample-program) for your first tries. It already contains a working "ZXNext" launch.json configuration.
+Please use the [z80-sample-program] for your first tries. It already contains a working "ZXNext" launch.json configuration.
 You just need to change the "serial" property.
 
 You can now step through your code and set breakpoints.
@@ -1209,7 +1207,7 @@ For the debugged program this means
 
 ### MAME - Multiple Machine Arcade Emulator
 
-Support for MAME is new and at the moment only experimental.
+Support for [MAME] is new and at the moment only experimental.
 MAME implements a gdbstub that can be accessed from DeZog via a socket.
 Therefore it is necessary to start MAME (v0.242) with e.g. these options:
 ~~~bash
@@ -2030,7 +2028,7 @@ Please see [here](https://github.com/maziac/DeZog/blob/master/documentation/Unit
 - **ZEsarUX** (found with v8.1)
     - **Windows** only: Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session. If that is true for you as well you can experiment with the "[loadDelay](#zesarux)" option which adds an additional delay at startup. This mitigates the problem.
 The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).
-    - Watchpoint (**WPMEM** aka memory breakpoints) and reverse debugging: There is a subtle problem with the memory breakpoints in ZEsarUX. The cpu-history command (used when reverse debugging) does access the memory the same way as the Z80 cpu emulation does. Thus a read might fire a memory breakpoint in the same way. This results in breaks of the program execution when you would not expect it. The memory read is 4 byte at PC (program counter) and 2 bytes at SP. Often you don't even notice because you don't place a watchpoint (WPMEM) at those places but in case you guard your **stack** with WPMEM you need to be aware of it: You shouldn't guard the top of the stack directly but at least grant 2 extra bytes at the top of the stack that are unguarded. See the [z80-sample-program](https://github.com/maziac/z80-sample-program) for placing the WPMEM correctly.
+    - Watchpoint (**WPMEM** aka memory breakpoints) and reverse debugging: There is a subtle problem with the memory breakpoints in ZEsarUX. The cpu-history command (used when reverse debugging) does access the memory the same way as the Z80 cpu emulation does. Thus a read might fire a memory breakpoint in the same way. This results in breaks of the program execution when you would not expect it. The memory read is 4 byte at PC (program counter) and 2 bytes at SP. Often you don't even notice because you don't place a watchpoint (WPMEM) at those places but in case you guard your **stack** with WPMEM you need to be aware of it: You shouldn't guard the top of the stack directly but at least grant 2 extra bytes at the top of the stack that are unguarded. See the [z80-sample-program] for placing the WPMEM correctly.
 - **CSpect** (found with v2.13.0)
     - The Watchpoints API does not work and therefore Watchpoints are disabled.
 

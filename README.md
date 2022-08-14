@@ -10,6 +10,30 @@ If you like DeZog please consider supporting it.
 	<img src="assets/button_donate_pp.png" />
 </a>
 
+<!-- References -->
+
+[z80-sample-program]: https://github.com/maziac/z80-sample-program
+[z80-peripherals-sample]: https://github.com/maziac/z80-peripherals-sample
+[dezogif]: https://github.com/maziac/dezogif
+[DZRP]: https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md
+
+[ASM Code Lens]: https://github.com/maziac/asm-code-lens
+[Z80 Instruction Set]: https://github.com/maziac/z80-instruction-set
+[Hex Hover Converter]: https://github.com/maziac/hex-hover-converter
+[ZX SNA File Viewer]: https://github.com/maziac/sna-fileviewer
+[ZX NEX File Viewer]: https://github.com/maziac/nex-fileviewer
+
+[zesarux]: https://github.com/chernandezba/zesarux
+[cspect]: http://www.cspect.org
+[mame]: https://www.mamedev.org
+[sjasmplus]: https://github.com/z00m128/sjasmplus
+[savannah-z80asm]: https://savannah.nongnu.org/projects/z80asm/
+[z88dk-z80asm]: https://github.com/z88dk/z88dk
+[NEX File Format]: https://wiki.specnext.dev/NEX_file_format
+[ZX Spectrum Next]: https://www.specnext.com
+[zx next]: https://www.specnext.com
+[zxnext]: https://www.specnext.com
+
 
 # DeZog - The Z80 Debugger
 
@@ -67,9 +91,9 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 
 ## Features
 
-- supports [ZEsarUX](https://github.com/chernandezba/zesarux) emulator
-- supports [CSpect](http://www.cspect.org) emulator
-- experimental support for [MAME](https://www.mamedev.org)
+- supports [ZEsarUX]( emulator
+- supports [CSpect] emulator
+- experimental support for [MAME]
 - can be used with the internal simulator (does not require ZEsarUX or CSpect))
 - reads .list and .sld files
 	- supports stepping through source code
@@ -106,7 +130,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 
 ## Constraints
 
-- supports ZEsarUX, CSpect, ZX Next HW and the internal simulator (and MAME/experimental)
+- supports [ZEsarUX], [CSpect], [ZX Next] HW and the internal simulator (and MAME/experimental)
 - build output must
 	- create a .list or SLD file (support for sjasmplus, Savannah's z80asm, z88dk).
 	- create a .sna, .nex or object file containing the binary
@@ -149,17 +173,15 @@ If you own a ZX Next you also have the option to debug your SW directly on the N
 In Visual Studio Code simply install "DeZog" (maziac.dezog) from the Marketplace.
 
 There are a few other extensions that are not required to work with DeZog but may help:
-- [ASM Code Lens](https://github.com/maziac/asm-code-lens):
+- [ASM Code Lens]:
 	- Z80 assembler syntax highlighting
 	- completions, references, jump to label, renaming
-- [Z80 Instruction Set](https://github.com/maziac/z80-instruction-set):
+- [Z80 Instruction Set]:
 	- shows the opcode, affected flags and a description on hovering over a Z80 instruction
-- [Hex Hover Converter](https://github.com/maziac/hex-hover-converter):
+- [Hex Hover Converter]:
 	- converts numbers into their decimal, hexadecimal and binary format on hovering
-- [ZX SNA File Viewer](https://github.com/maziac/sna-fileviewer):
-	- A viewer for the ZX Spectrum snapshot (.sna) format (in marketplace search for "snafile")
-- [ZX NEX File Viewer](https://github.com/maziac/nex-fileviewer):
-	- A viewer for the ZX Spectrum Next (.nex) file format (in marketplace search for "nexfile")
+- [ZX SNA File Viewer]/[ZX NEX File Viewer]:
+	- Viewer for the ZX Spectrum snapshot (.sna) format and the ZX Spectrum Next (.nex) file format (in marketplace search for "snafile" and "nexfile")
 
 
 All can be installed directly inside vscode from the market place.
@@ -219,11 +241,11 @@ For the "What's New" feature the [vscode-whats-new](https://github.com/alefragna
 ## Acknowledgements
 
 I would like to thank a few people for their support
-- Cesar Hernandez Bano for developing the great [ZEsarUX](https://github.com/chernandezba/zesarux) emulator which very early offered the possibility to remotely connect to it. And for being patient with all my request for the ZRCP protocol. Without ZEsarUX I wouldn't have started DeZog at all. So, if you like DeZog thank Cesar.
-- Mike Dailly for the wonderful [CSpect](http://www.cspect.org) emulator, for opening the debug interface to plugins and for giving support to use it properly.
+- Cesar Hernandez Bano for developing the great [ZEsarUX] emulator which very early offered the possibility to remotely connect to it. And for being patient with all my request for the ZRCP protocol. Without ZEsarUX I wouldn't have started DeZog at all. So, if you like DeZog thank Cesar.
+- Mike Dailly for the wonderful [CSpect] emulator, for opening the debug interface to plugins and for giving support to use it properly.
 - [Molly Howell/DrGoldfire](https://bitbucket.org/DrGoldfire/z80.js/src/master/) for the Z80 CPU simulation code.
 - [Kris Borowinski](https://github.com/kborowinski) for his tireless efforts testing DeZog.
-- [Peter Ped Helcmanovsky](https://github.com/ped7g) for his support to get the display of the relative-sprites correct and for the changes he implemented for DeZog in sjasmplus in the SLD format.
+- [Peter Ped Helcmanovsky](https://github.com/ped7g) for his support to get the display of the relative-sprites correct and for the changes he implemented for DeZog in [sjasmplus] in the SLD format.
 - Cesar Wagener Moriana, [Dean Belfield](https://github.com/breakintoprogram), [Daren May](https://github.com/darenm), [Patricia Curtis](https://luckyredfish.com/who-am-i/) and [A MAN IN HIS TECHNO SHED](https://amaninhistechnoshed.com/a-man-in-his-technoshed/) for writing tutorials.
 - [Luciano Martorella](https://github.com/lmartorella) for his contribution of the custom memory model.
 
