@@ -1,3 +1,4 @@
+import {Utility} from "../misc/utility";
 import {AsmNode} from "./asmnode";
 import {Format} from "./format";
 import {RenderBase} from "./renderbase";
@@ -17,6 +18,12 @@ export class RenderText extends RenderBase {
 
 	// The max. number of bytes to print in a data DEFB area per line.
 	public defbMaxBytesPerLine = 8;
+
+	// Helper array. During processing this array is filled with all the instruction's
+	// data references. 'dataReferencesIndex' points to the currently in use address.
+	protected dataReferences: number[] = [];
+	protected dataReferencesIndex: number;
+
 
 	/** Returns a formatted line with address and label.
 	 * With right clmns spaces.
@@ -134,6 +141,9 @@ export class RenderText extends RenderBase {
 
 	/** Creates a string with address and label information.
 	 * The label is colored, if it is a start node
+	 * @param E.g. E.g. 0x8000
+	 * @param label E.g. "LABEL1"
+	 * @returns E.g. "<a href="#8000">C0001.1 LABEL1:</a>"
 	 */
 	protected getAddressLabel(addr64k: number, label: string): string {
 		let labelText = this.formatAddressLabel(addr64k, label);
@@ -163,13 +173,8 @@ export class RenderText extends RenderBase {
 		let prevLabelAddress;
 		while (addr < endAddr) {
 			// Find next label
-			let label = this.disasm.getOtherLabel(addr);
+			let label = this.getLabelForAddr64k(addr); // TODO: optimize
 			if (label) {
-				// Check if another name exists
-				const funcLabel = this.disasm.funcGetLabel(addr);
-				if (funcLabel)
-					label = funcLabel;
-
 				// Check if we need to print previous data
 				if (prevLabelAddress) {
 					// Yes.
@@ -205,6 +210,34 @@ export class RenderText extends RenderBase {
 		// Add new line only if something was added.
 		if (linesSize != lines.length)
 			lines.push('');
+	}
+
+
+	/** Returns the label used at a specific address.
+	 * Uses this.dataReferences for the test.
+	 * I.e. only references for the current depth are taken into account.
+	 * @param addr64k The address.
+	 * @returns A string with the label or undefined.
+	 */
+	public getLabelForAddr64k(addr64k: number): string | undefined {
+		// Check if a data reference exists (includes also references to CODE)
+		let dataAddr;
+		while (this.dataReferencesIndex < this.dataReferences.length) {
+			dataAddr = this.dataReferences[this.dataReferencesIndex];
+			if (dataAddr >= addr64k) {
+				if (dataAddr == addr64k) {
+					// Label is exactly equal
+					const label = this.disasm.getLabelForAddr64k(addr64k);
+					Utility.assert(label);
+					return label;
+				}
+				break;
+			}
+			// Next
+			this.dataReferencesIndex++;
+		}
+		// Not found
+		return undefined;
 	}
 
 
@@ -255,9 +288,17 @@ export class RenderText extends RenderBase {
 	 * @returns The disassembly text.
 	 */
 	public renderNodes(nodeSet: Set<AsmNode>, startNodes: AsmNode[]= []): string {
-			// Sort the nodes
+		// Sort the nodes
 		const nodes = Array.from(nodeSet);
 		nodes.sort((a, b) => a.start - b.start);
+
+		// Now get all data references (for the nodes = for the depth)
+		this.dataReferences = [];
+		this.dataReferencesIndex = 0;
+		for (const node of nodes) {
+			this.dataReferences.push(...node.dataReferences);
+		}
+		this.dataReferences.sort((a, b) => a - b); // 0 = lowest
 
 		// Loop over all nodes
 		const lines: string[] = [];

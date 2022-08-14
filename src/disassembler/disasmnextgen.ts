@@ -25,7 +25,6 @@ interface SlotBankInfo {
  */
 export class DisassemblerNextGen {
 
-
 	/// A function that is used to retrieve label names by the disassembler.
 	public funcGetLabel: (addr64k: number) => string | undefined;
 
@@ -377,7 +376,8 @@ export class DisassemblerNextGen {
 	protected fillNode(node: AsmNode) {
 		let address = node.start;
 		const nodeSlot = node.slot;
-		const addrReferences = [NumberType.DATA_LBL, NumberType.CODE_LOCAL_LBL, NumberType.CODE_LOCAL_LOOP, NumberType.CODE_LBL, NumberType.CODE_SUB, NumberType.CODE_RST];
+		//const addrReferences = [NumberType.DATA_LBL, NumberType.CODE_LOCAL_LBL, NumberType.CODE_LOCAL_LOOP, NumberType.CODE_LBL, NumberType.CODE_SUB, NumberType.CODE_RST];
+		const addrReferences = [NumberType.DATA_LBL];	// TODO: Optimize, just one entry.
 
 		// Loop over node's addresses
 		while (true) {
