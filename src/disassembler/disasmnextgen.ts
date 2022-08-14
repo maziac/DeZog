@@ -296,7 +296,7 @@ export class DisassemblerNextGen {
 			}
 
 			// Get opcode
-			const refOpcode = Opcode.getOpcodeAt(this.memory, address);	// TODO: getOpcodeAt should already return a clone.
+			const refOpcode = Opcode.getOpcodeAt(this.memory, address);
 			const opcode = {...refOpcode};
 			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED | MemAttribute.CODE);
 			this.memory.addAttributeAt(address, MemAttribute.CODE_FIRST);
