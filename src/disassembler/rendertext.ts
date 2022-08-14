@@ -1,4 +1,3 @@
-import {Utility} from "../misc/utility";
 import {AsmNode} from "./asmnode";
 import {Format} from "./format";
 import {RenderBase} from "./renderbase";
@@ -184,7 +183,12 @@ export class RenderText extends RenderBase {
 			// Label is in printed area
 			this.dataReferences.pop();
 			// Check distance to next label:
-			const nextDataAddr = this.dataReferences.at(-1);	// Last item
+			let nextDataAddr = this.dataReferences.at(-1);	// Last item
+			while (nextDataAddr == dataAddr) {
+				// Skip same addresses
+				this.dataReferences.pop();
+				nextDataAddr = this.dataReferences.at(-1);
+			}
 			let countBytes = this.defbMaxBytesPerLine;
 			if (nextDataAddr != undefined) {
 				const diffToNext = nextDataAddr - dataAddr;
@@ -197,9 +201,11 @@ export class RenderText extends RenderBase {
 
 			// Print the label
 			const label = this.disasm.getLabelForAddr64k(dataAddr)!;
-			Utility.assert(label);
-			const addressLabel = this.getAddressLabel(dataAddr, label);
-			lines.push(addressLabel);
+			//Utility.assert(label);
+			if (label) {
+				const addressLabel = this.getAddressLabel(dataAddr, label);
+				lines.push(addressLabel);
+			}
 
 			// Print the data
 			const line = this.getCompleteDataLine(dataAddr, countBytes);

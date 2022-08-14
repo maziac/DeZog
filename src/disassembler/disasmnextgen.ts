@@ -759,7 +759,6 @@ export class DisassemblerNextGen {
 	 * If nothing found it checks the this.nodes labels.
 	 * If still nothing found it checks this.otherLabels.
 	 * If nothing is found the address in hex is returned.
-	 * //If not found there it just returns undefined.
 	 * @param addr64k The 64k address.
 	 * @param slot The slot where the access origined. I.e. if there is a bank
 	 * border not the label but a pure hex address is shown.
@@ -792,7 +791,17 @@ export class DisassemblerNextGen {
 			label = this.nodes.get(addr64k)?.label;
 		if (!label)
 			label = this.otherLabels.get(addr64k);
-		Utility.assert(label);
+
+		// Note: it can still happen that a label is not found. One case is that
+		// There e.g. is:
+		// LBL:  LD A,6
+		// and somewhere else is:
+		//   JP LBL+1
+		if (!label) {
+			// In that case just return the address (with bank)
+			return this.funcFormatLongAddress(addr64k);
+		}
+
 		return label! + suffix;
 	}
 
