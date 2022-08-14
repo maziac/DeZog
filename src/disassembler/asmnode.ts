@@ -53,6 +53,13 @@ export class AsmNode {
 	// Could be 0 (e.g. RET), 1 (e.g. CALL cc nn) or 2 (e.g. JP Z,nn).
 	public branchNodes: AsmNode[] = [];
 
+	// All addresses that are directly referenced by instructions, other than the jumps/calls.
+	// E.g. "LD A,(nn)".
+	// Note that in case of a reference into a CODE area, the address might be decreased to the next
+	// CODE_FIRST byte. E.g. the reference in the instruction might be "LD A,($8001)"
+	// but the stored reference might be $8000.
+	public dataReferences: number[] = [];
+
 	// If true the node has no "natural" successor. I.e. the last instruction
 	// was a JP (branchNodes.length = 1) or RET (branchNodes.length = 0).
 	public stop: boolean = false;

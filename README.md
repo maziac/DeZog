@@ -12,16 +12,16 @@ If you like DeZog please consider supporting it.
 
 <!-- References -->
 
-[z80-sample-program]: https://github.com/maziac/z80-sample-program
-[z80-peripherals-sample]: https://github.com/maziac/z80-peripherals-sample
-[dezogif]: https://github.com/maziac/dezogif
-[DZRP]: https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md
-
 [ASM Code Lens]: https://github.com/maziac/asm-code-lens
 [Z80 Instruction Set]: https://github.com/maziac/z80-instruction-set
 [Hex Hover Converter]: https://github.com/maziac/hex-hover-converter
 [ZX SNA File Viewer]: https://github.com/maziac/sna-fileviewer
 [ZX NEX File Viewer]: https://github.com/maziac/nex-fileviewer
+
+[z80-sample-program]: https://github.com/maziac/z80-sample-program
+[z80-peripherals-sample]: https://github.com/maziac/z80-peripherals-sample
+[dezogif]: https://github.com/maziac/dezogif
+[DZRP]: https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md
 
 [zesarux]: https://github.com/chernandezba/zesarux
 [cspect]: http://www.cspect.org

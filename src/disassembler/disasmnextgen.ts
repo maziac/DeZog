@@ -21,22 +21,6 @@ interface SlotBankInfo {
 }
 
 
-/** Combines an opcode and the address it references.
- * Helper structure to collect all the addresses that the opcodes
- * reference.
- * At the end these are turned into labels.
- * E.g. "LD A,(1234h)": The 1234h will be stored in refAddress.
- */
-interface OpcodeReference {
-	// The Opcode
-	opcode: Opcode;
-	// The address of the opcode
-	opcodeAddress: number;
-	// The address that it refers to
-	refAddress: number;
-}
-
-
 /** The main Disassembler class.
  */
 export class DisassemblerNextGen {
@@ -81,8 +65,6 @@ export class DisassemblerNextGen {
 	// It also contains references into code areas for self modifying code.
 	protected otherLabels = new Map<number, string>();
 
-	// This is a helper array that collects the opcodes and the reference of the opcode.
-	protected opcodeReferences: OpcodeReference[] = [];
 
 	/// Label prefixes
 	public labelSubPrefix = "SUB_";
@@ -434,13 +416,20 @@ export class DisassemblerNextGen {
 
 			// Check for referenced data addresses
 			if (addrReferences.includes(opcode.valueType)) {
-				// Then collect the address for later usage
-				const opcRef: OpcodeReference = {
-					opcode,
-					opcodeAddress: address,
-					refAddress: opcode.value
+				// Adjust address if pointing to CODE (Note: is already checked that this is no bank border address):
+				// Check for DATA or CODE
+				let adjAddr64k = opcode.value;
+				let attr = this.memory.getAttributeAt(adjAddr64k);
+				if (attr & MemAttribute.CODE) {
+					// CODE
+					// Adjust address (in case it does not point to the start of instruction)
+					while (!(attr & MemAttribute.CODE_FIRST)) {
+						adjAddr64k--;
+						attr = this.memory.getAttributeAt(adjAddr64k);
+					}
 				}
-				this.opcodeReferences.push(opcRef);
+				// Then collect the address for later usage
+				node.dataReferences.push(adjAddr64k);
 			}
 
 			// Store
@@ -714,23 +703,14 @@ export class DisassemblerNextGen {
 	 * this.otherLabels.
 	 */
 	protected assignOpcodeReferenceLabels() {
-		// Loop over all collected addresses
-		for (const opcRef of this.opcodeReferences) {
-			// Check first if bank border crossed
-			let addr64k = opcRef.refAddress;
-			const slot = this.addressesSlotBankInfo[opcRef.opcodeAddress].slot;
-			if (this.bankBorderPassed(slot, addr64k))
-				continue;	// Does not create a label
-
-			// Check for DATA or CODE
-			let attr = this.memory.getAttributeAt(addr64k);
-			if (attr & MemAttribute.CODE) {
-				// CODE
-				// Adjust address (in case it does not point to the start of instruction)
-				while (!(attr & MemAttribute.CODE_FIRST)) {
-					addr64k--;
-					attr = this.memory.getAttributeAt(addr64k);
-				}
+		// Loop over all nodes
+		for (const [, node] of this.nodes) {
+			const slot = node.slot;
+			// Loop over all data references of that node
+			for (let addr64k of node.dataReferences) {
+				// Check first if bank border crossed
+				if (this.bankBorderPassed(slot, addr64k))
+					continue;	// Does not create a label
 
 				// Check if there is already a label
 				let label = this.funcGetLabel(addr64k);
@@ -738,37 +718,35 @@ export class DisassemblerNextGen {
 					label = this.nodes.get(addr64k)?.label;
 				if (!label)
 					label = this.otherLabels.get(addr64k);
+
 				if (!label) {
-					// Now create a new label
-					// Get the block node
-					const blockNode = this.blocks[addr64k];
-					Utility.assert(blockNode);
-					label = blockNode.label;
-					if (label) {
-						// Create a new local label, e.g. "SUB_C000.CODE_C00B"
-						label += '.' + this.labelCodePrefix + Utility.getHexString(addr64k, 4);
+					// Check for DATA or CODE
+					let attr = this.memory.getAttributeAt(addr64k);
+					if (attr & MemAttribute.CODE) {
+						// CODE
+						// Now create a new label
+						// Get the block node
+						const blockNode = this.blocks[addr64k];
+						Utility.assert(blockNode);
+						label = blockNode.label;
+						if (label) {
+							// Create a new local label, e.g. "SUB_C000.CODE_C00B"
+							label += '.' + this.labelCodePrefix + Utility.getHexString(addr64k, 4);
+						}
+						else {
+							// Create a new label, e.g. "CODE_C00B"
+							label = this.labelCodePrefix + Utility.getHexString(addr64k, 4);
+						}
+						// And store
+						this.otherLabels.set(addr64k, label);
 					}
 					else {
-						// Create a new label, e.g. "CODE_C00B"
-						label = this.labelCodePrefix + Utility.getHexString(addr64k, 4);
+						// DATA
+						// Now create a new label
+						label = this.labelDataLblPrefix + Utility.getHexString(addr64k, 4);
+						// And store
+						this.otherLabels.set(addr64k, label);
 					}
-					// And store
-					this.otherLabels.set(addr64k, label);
-				}
-			}
-			else {
-				// DATA
-				// Check if label already exists.
-				let label = this.funcGetLabel(addr64k);
-				if (!label)
-					label = this.nodes.get(addr64k)?.label;
-				if (!label)
-					label = this.otherLabels.get(addr64k);
-				if (!label) {
-					// Now create a new label
-					label = this.labelDataLblPrefix + Utility.getHexString(addr64k, 4);
-					// And store
-					this.otherLabels.set(addr64k, label);
 				}
 			}
 		}
