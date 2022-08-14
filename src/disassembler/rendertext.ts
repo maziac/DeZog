@@ -22,7 +22,6 @@ export class RenderText extends RenderBase {
 	// Helper array. During processing this array is filled with all the instruction's
 	// data references. 'dataReferencesIndex' points to the currently in use address.
 	protected dataReferences: number[] = [];
-	protected dataReferencesIndex: number;
 
 
 	/** Returns a formatted line with address and label.
@@ -162,82 +161,53 @@ export class RenderText extends RenderBase {
 	 * @param dataLen The length of the data to print.
 	 */
 	protected printData(lines: string[], addr64k: number, dataLen: number) {
-		const linesSize = lines.length;
-		let len = dataLen;
+		const prevLineLength = lines.length;
 		let addr = addr64k;
-		let endAddr = addr64k + len;
+		let endAddr = addr64k + dataLen;
 		if (endAddr > 0x10000)
 			endAddr = 0x10000;
 
-		// Loop for all lines
-		let prevLabelAddress;
-		while (addr < endAddr) {
-			// Find next label
-			let label = this.getLabelForAddr64k(addr); // TODO: optimize
-			if (label) {
-				// Check if we need to print previous data
-				if (prevLabelAddress) {
-					// Yes.
-					let len = addr - prevLabelAddress;
-					if (len > this.defbMaxBytesPerLine)
-						len = this.defbMaxBytesPerLine;
-					const line = this.getCompleteDataLine(prevLabelAddress, len);
-					lines.push(line);
-				}
-
-				// Print new label
-				const addressLabel = this.getAddressLabel(addr, label);
-				lines.push(addressLabel);
-
-				// Next
-				prevLabelAddress = addr;
+		// Find first address in 'dataReferences'
+		let dataAddr = this.dataReferences. .at(-1);	// Last item
+		while (dataAddr) {
+			if (dataAddr < addr) {
+				this.dataReferences.pop();
+				continue;
 			}
+			if (dataAddr >= endAddr)
+				break;
+
+			// Label is in printed area
+			this.dataReferences.pop();
+			// Check distance to next label:
+			const nextDataAddr = this.dataReferences.at(-1);	// Last item
+			let countBytes = this.defbMaxBytesPerLine;
+			if (nextDataAddr != undefined) {
+				const diffToNext = nextDataAddr - dataAddr;
+				if (countBytes > diffToNext)
+					countBytes = diffToNext;
+			}
+			const diffToEnd = endAddr - dataAddr;
+			if (countBytes > diffToEnd)
+				countBytes = diffToEnd;
+
+			// Print the label
+			const label = this.disasm.getLabelForAddr64k(dataAddr)!;
+			Utility.assert(label);
+			const addressLabel = this.getAddressLabel(addr, label);
+			lines.push(addressLabel);
+
+			// Print the data
+			const line = this.getCompleteDataLine(dataAddr, countBytes);
+			lines.push(line);
 
 			// Next
-			addr++;
-		}
-
-		// Print last label data
-		if (prevLabelAddress) {
-			// Yes.
-			let len = addr - prevLabelAddress;
-			if (len > this.defbMaxBytesPerLine)
-				len = this.defbMaxBytesPerLine;
-			const line = this.getCompleteDataLine(prevLabelAddress, len);
-			lines.push(line);
+			dataAddr = nextDataAddr;
 		}
 
 		// Add new line only if something was added.
-		if (linesSize != lines.length)
+		if (prevLineLength != lines.length)
 			lines.push('');
-	}
-
-
-	/** Returns the label used at a specific address.
-	 * Uses this.dataReferences for the test.
-	 * I.e. only references for the current depth are taken into account.
-	 * @param addr64k The address.
-	 * @returns A string with the label or undefined.
-	 */
-	public getLabelForAddr64k(addr64k: number): string | undefined {
-		// Check if a data reference exists (includes also references to CODE)
-		let dataAddr;
-		while (this.dataReferencesIndex < this.dataReferences.length) {
-			dataAddr = this.dataReferences[this.dataReferencesIndex];
-			if (dataAddr >= addr64k) {
-				if (dataAddr == addr64k) {
-					// Label is exactly equal
-					const label = this.disasm.getLabelForAddr64k(addr64k);
-					Utility.assert(label);
-					return label;
-				}
-				break;
-			}
-			// Next
-			this.dataReferencesIndex++;
-		}
-		// Not found
-		return undefined;
 	}
 
 
@@ -294,11 +264,10 @@ export class RenderText extends RenderBase {
 
 		// Now get all data references (for the nodes = for the depth)
 		this.dataReferences = [];
-		this.dataReferencesIndex = 0;
 		for (const node of nodes) {
 			this.dataReferences.push(...node.dataReferences);
 		}
-		this.dataReferences.sort((a, b) => a - b); // 0 = lowest
+		this.dataReferences.sort((a, b) => b - a); // 0 = highest
 
 		// Loop over all nodes
 		const lines: string[] = [];
