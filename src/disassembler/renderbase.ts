@@ -86,7 +86,7 @@ export class RenderBase {
 			function updateSliderScale(slideValue) {
 				const sliderValue = document.getElementById("sliderScaleValue");
 				sliderValue.value = slideValue + " %";
-				for (let i = 1; i <= ${len}; i++) {
+				for (let i = 0; i < ${len}; i++) {
 					const svg = document.getElementById("svg"+i);
 					svg.style.width = slideValue + "%";
 					svg.style.height = slideValue + "%";
