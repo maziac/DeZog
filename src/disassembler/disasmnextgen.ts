@@ -911,4 +911,27 @@ export class DisassemblerNextGen {
 		const label = this.otherLabels.get(addr64k);
 		return label;
 	}
+
+
+	/** Checks if 2 addresses belong to the same block.
+	 * @param addr64kA First address.
+	 * @param addr64kB Second address.
+	 * @returns true if both addresses belong to the same block.
+	 */
+	/*
+	public sameBlock(addr64kA: number, addr64kB: number) {
+		const blockNodeA = this.blocks[addr64kA];
+		const blockNodeB = this.blocks[addr64kB];
+		return (blockNodeA == blockNodeB);
+	}
+	*/
+	
+
+	/** Returns the block  nodethe address belongs to.
+	 * @param addr64k An address.
+	 * @returns The corresponding block.
+	 */
+	public getBlockNode(addr64k: number): AsmNode {
+		return this.nodes[addr64k];
+	}
 }

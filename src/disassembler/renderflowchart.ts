@@ -69,6 +69,9 @@ export class RenderFlowChart extends RenderBase {
 					lines.push(callerDotId + ' -> ' + dotId + ' [headport="n", tailport="s"];');
 				}
 
+				// Get block node
+				const blockNode = this.disasm.getBlockNode(node.start);
+
 				// Print connection to branches
 				let i = 0;
 				for (const branch of node.branchNodes) {
@@ -77,7 +80,22 @@ export class RenderFlowChart extends RenderBase {
 					let dotBranchLabel = '';
 					if (i > 0) {
 						// TODO: Test if labelling arrows is senseful or overloaded
-						const branchLabel = this.disasm.funcGetLabel(branch.start) || branch.label || Format.getHexFormattedString(branch.start);
+						let branchLabel = this.disasm.funcGetLabel(branch.start) || branch.label;
+						if (branchLabel) {
+							// Check if in same block (i.e. local label)
+							if (blockNode == this.disasm.getBlockNode(branch.start)) {
+								// Simplify to local address
+								const i = branchLabel.lastIndexOf('.');
+								if (i >= 0)
+									branchLabel = branchLabel.substring(i);
+							}
+						}
+						else {
+							// Just use address
+							branchLabel = Format.getHexFormattedString(branch.start);
+						}
+
+						// Change into dot syntax
 						if (branchLabel)
 							dotBranchLabel = 'label="' + branchLabel + '", fontcolor="' + mainColor + '", ';
 					}
