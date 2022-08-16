@@ -25,7 +25,7 @@
 	],
 	"engines": {
 		"vscode": "^1.70.0",
-		"node": "^18.7.3"
+		"node": "^16.16.0"
 	},
 	"icon": "assets/icon.png",
 	"categories": [
