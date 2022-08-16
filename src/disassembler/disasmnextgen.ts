@@ -822,12 +822,32 @@ export class DisassemblerNextGen {
 	public disassembleNodes() {
 		// Loop over all nodes
 		for (const [, node] of this.nodes) {
+			// Get block node
+			const blockNode = this.blocks[node.start];
 			// Loop over all instructions/opcodes
+			let blockNodeLabel;
 			const slot = this.addressesSlotBankInfo[node.start].slot;
 			for (const opcode of node.instructions) {
 				opcode.disassembleOpcode((addr64k: number) => {
 					// Return an existing label for the address or just the address
-					const labelName = this.getLabelFromSlotForAddress(slot, addr64k);
+					let labelName = this.getLabelFromSlotForAddress(slot, addr64k);
+					if (labelName) {
+						// Check if it is possible to simplify to local label
+						const blockNodeTarget = this.blocks[addr64k];
+						if (blockNodeTarget && blockNodeTarget.start != addr64k && blockNode == blockNodeTarget) {
+							// Get block node label
+							if (!blockNodeLabel) {
+								blockNodeLabel = this.funcGetLabel(blockNode.start) || blockNode.label;
+								Utility.assert(blockNodeLabel);
+							}
+							// Check if label starts with blockNodeLabel
+							if (labelName.startsWith(blockNodeLabel + '.')) {
+								// Simplify to local address
+								const i = blockNodeLabel.length;
+								labelName = labelName.substring(i);
+							}
+						}
+					}
 					return labelName;
 				});
 			}
@@ -925,7 +945,7 @@ export class DisassemblerNextGen {
 		return (blockNodeA == blockNodeB);
 	}
 	*/
-	
+
 
 	/** Returns the block  nodethe address belongs to.
 	 * @param addr64k An address.

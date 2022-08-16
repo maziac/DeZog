@@ -184,19 +184,15 @@ export class DebugSessionClass extends DebugSession {
 			}
 		});
 
-
 		// Declare function for the disassembler.
 		this.funcGetLabel = (addr64k: number) => {
 			// Convert to long address
 			const longAddr = Z80Registers.createLongAddress(addr64k);
 			// Check if label already known
 			const labels = Labels.getLabelsForLongAddress(longAddr);
-			if (labels && labels.length > 0) {
-				return labels.join(' or ');
-			}
-			// Otherwise simple hex string, e.g. "C000"
-			//return 'L' + Utility.getHexString(addr64k, 4);
-			return undefined;
+			if (labels.length == 0)
+				return undefined;
+			return labels[0];	// Just return first label
 		};
 
 		// No filtering for now.
