@@ -395,7 +395,7 @@ interface SubStructItems {
 
 
 /**
- * The StructVar class is a container class which holds other properties (the elements of the
+ * The SubStructVar class is a container class which can hold other properties (the elements of the
  * struct). I.e. SubStructVars.
  * The StructVar is the parent object which also holds the memory contents.
  * The SubStructVars refer to it.
@@ -417,7 +417,8 @@ export class SubStructVar extends ShallowVar {
 	 * @param struct 'b'=byte, 'w'=word or 'bw' for byte and word.
 	 * @param props An array of names of the direct properties of the struct.
 	 * @param list The list of variables. The constructor adds the 2 pseudo variables to it.
-	 * @param parentStruct The parent object which holds the memory. If undefined createpropArray is not called.
+	 * @param parentStruct The parent object which holds the memory. If undefined createPropArray is not called.
+	 * This is the parent of all SubStructVars, i.e. a pointer to StructVar.
 	 */
 	public constructor(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct?: StructVar) {
 		super();
@@ -449,32 +450,26 @@ export class SubStructVar extends ShallowVar {
 		}
 
 		// Sort map by indices
-		const sortedMap = new Map([...unsortedMap.entries()].sort(
+		const sortedArray = [...unsortedMap.entries()].sort(
 			(a, b) => a[0] - b[0]	// Sort numbers (first element)
-		));
+		);
 		// Add an end marker
-		sortedMap.set(-1, '');
+		let afterLastIndex = sortedArray[0][0];
+		afterLastIndex += elemSize;
+		sortedArray.push([afterLastIndex, 'unused']);
 		// Get all lengths of the leafs and dive into nodes
 		let prevName;
 		let prevIndex;
-		let lastIndex = relIndex + elemSize;
-		for (const [index, name] of sortedMap) {
+		for (const [index, name] of sortedArray) {
 			if (prevName) {
-				let len;
-				if (name) {
-					// Create diff of the relative addresses
-					len = index - prevIndex;
-				}
-				else {
-					// Treat last element different
-					// Create diff to the size
-					len = lastIndex - prevIndex;
-				}
+				// Create diff of the relative addresses
+				const len = index - prevIndex;
 				// Check for leaf or node
 				const fullName = struct + '.' + prevName;
 				const subProps = Labels.getSubLabels(fullName);
-				const memIndex = prevIndex;
+				const memIndex = relIndex + prevIndex;
 				const address = parentStruct.getAddress() + memIndex;
+				console.log(fullName + ': ' + memIndex, relIndex, prevIndex, address.toString(16));
 				const item: SubStructItems = {
 					address,
 					elemSize: 0,
@@ -483,7 +478,7 @@ export class SubStructVar extends ShallowVar {
 				};
 				if (subProps.length > 0) {
 					// Node
-					item.itemRef = list.addObject(new SubStructVar(prevIndex, 1, len, fullName, subProps, list, parentStruct));
+					item.itemRef = list.addObject(new SubStructVar(relIndex, 1, len, fullName, subProps, list, parentStruct));
 				}
 				else {
 					// Leaf
@@ -670,7 +665,7 @@ export class StructVar extends SubStructVar {
 			let subRelIndex = 0;
 			for (let i = 0; i < count; i++) {
 				let labelVar;
-				const address = this.getAddress() + i * elemSize;
+				const address = this.getAddress() + relIndex;
 				const name = '[' + i + ']';
 				const item: SubStructItems = {
 					address,

@@ -15,6 +15,9 @@
 - Break decoration color changed to red.
 - "disableBanking" option removed from "sjasmplus" launch.json configuration.
 
+# 2.7.3
+- Fixed #95: bug in watch structures
+
 # 2.7.2
 - Fixed #94: watch block of memory show same memory position multiple times
 
