@@ -79,7 +79,7 @@ export class RenderFlowChart extends RenderBase {
 						// TODO: Test if labelling arrows is senseful or overloaded
 						const branchLabel = this.disasm.funcGetLabel(branch.start) || branch.label || Format.getHexFormattedString(branch.start);
 						if (branchLabel)
-							dotBranchLabel = 'label="' + branchLabel + '", fontcolor="' + mainColor + '" ';
+							dotBranchLabel = 'label="' + branchLabel + '", fontcolor="' + mainColor + '", ';
 					}
 					// Override if pointing to itself, e.g. JR $, or looping, and not pointing to itself
 					let tailport = 's';

@@ -756,8 +756,8 @@ export class DisassemblerNextGen {
 
 	/** Returns the label for the given address.
 	 * It first checks with the given function this.funcGetLabel.
-	 * If nothing found it checks the this.nodes labels.
-	 * If still nothing found it checks this.otherLabels.
+	 * If nothing is found it checks the this.nodes labels.
+	 * If still nothing is found it checks this.otherLabels.
 	 * If nothing is found the address in hex is returned.
 	 * @param addr64k The 64k address.
 	 * @param slot The slot where the access origined. I.e. if there is a bank
