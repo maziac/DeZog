@@ -14,7 +14,7 @@ import {SimpleDisassembly} from '../disassembly/simpledisassembly';
  * Variables know how to retrieve the data from the remote.
  */
 export class ShallowVar {
-	// Static bools to remember if some data type has been changed.
+	// Static booleans to remember if some data type has been changed.
 	// Is used to inform vscode about changes.
 	public static pcChanged = false;
 	public static spChanged = false;
@@ -469,7 +469,7 @@ export class SubStructVar extends ShallowVar {
 				const subProps = Labels.getSubLabels(fullName);
 				const memIndex = relIndex + prevIndex;
 				const address = parentStruct.getAddress() + memIndex;
-				console.log(fullName + ': ' + memIndex, relIndex, prevIndex, address.toString(16));
+				//console.log(fullName + ': ' + memIndex, relIndex, prevIndex, address.toString(16));
 				const item: SubStructItems = {
 					address,
 					elemSize: 0,
