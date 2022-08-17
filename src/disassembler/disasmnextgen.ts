@@ -9,6 +9,9 @@ import {Opcode, OpcodeFlag} from './opcode';
 import {Subroutine} from './subroutine';
 
 
+// Type used as passed argument for labels.
+export type AddressLabel = [number, string];
+
 
 /** The SlotBankInfo is set at the start for every address.
  * It depends on the used memory model.
@@ -181,7 +184,7 @@ export class DisassemblerNextGen {
 	 * @param addr64k The 64k address.
 	 * @returns The AsmNode or undefined.
 	 */
-	public getNodeForAddress(addr64k: number): AsmNode | undefined{
+	public getNodeForAddress(addr64k: number): AsmNode | undefined {
 		return this.nodes.get(addr64k);
 	}
 
@@ -214,14 +217,18 @@ export class DisassemblerNextGen {
 	 * At the end the complete flow graph is setup in the this.nodes
 	 * map.
 	 * @param addresses All 64k addresses to start flow graphs from.
+	 * @param labels Address (64k) label pairs. From the (list) file parsing.
 	 */
-	public getFlowGraph(addresses: number[]) {
+	public getFlowGraph(addresses: number[], labels: AddressLabel[] = []) { // TODO: define wo default
 		this.memory.resetAttributeFlag(MemAttribute.
 			FLOW_ANALYZED);
 		this.nodes.clear();
 
 		// Create the nodes
 		this.createNodes(addresses);
+
+		// Now create nodes for the labels
+		this.createNodesForLabels(labels);
 
 		// Now fill the nodes.
 		this.fillNodes();
@@ -343,6 +350,36 @@ export class DisassemblerNextGen {
 		}
 
 		return node;
+	}
+
+
+	/** Creates extra nodes for the labels.
+	 * Creates nodes only at already analyzed memory and only if it is CODE_FIRST.
+	 * Labels pointing to data or not at the start of an instruction are ignored.
+	 * @param labels The Labels to consider.
+	 */
+	protected createNodesForLabels(addr64kLabels: AddressLabel[]) {
+		for (const [addr64k, label] of addr64kLabels) {
+			// Check for CODE_FIRST
+			const attr = this.memory.getAttributeAt(addr64k);
+			if (attr & MemAttribute.CODE_FIRST) {
+				// Is a code label
+				// Check if start of node
+				let node = this.nodes.get(addr64k);
+				if (!node) {
+					// Create new node
+					node = new AsmNode();
+					node.start = addr64k;
+					this.nodes.set(addr64k, node);
+				}
+				// Use the label name
+				node.label = label;
+			}
+			else if (!(attr & MemAttribute.CODE_FIRST)) {	// Not a code label, i.e. a data label
+				// Otherwise add to otherLabels
+				// TODO
+			}
+		}
 	}
 
 
@@ -600,13 +637,15 @@ export class DisassemblerNextGen {
 			// Check for block start / global node (label)
 			if (blockNode == node) {
 				// Assign label only if starting node (callers or predecessors, predecessors is for the case that there is e.g. a loop from subroutine to an address prior to the subroutine).
-				if (node.callers.length > 0 || node.predecessors.length > 0)
-				{
-					// Now check if it is a subroutine, if some other node
-					// called it.
-					const prefix = (blockNode.isSubroutine && blockNode.callers.length > 0) ? this.labelSubPrefix : this.labelLblPrefix;
-					// Add global label name
-					node.label = prefix + Utility.getHexString(addr64k, 4);
+				if (!node.label) {
+					// Only if not already assigned
+					if (node.callers.length > 0 || node.predecessors.length > 0) {
+						// Now check if it is a subroutine, if some other node
+						// called it.
+						const prefix = (blockNode.isSubroutine && blockNode.callers.length > 0) ? this.labelSubPrefix : this.labelLblPrefix;
+						// Add global label name
+						node.label = prefix + Utility.getHexString(addr64k, 4);
+					}
 				}
 
 				// Now dive into node and assign local names.
@@ -823,13 +862,15 @@ export class DisassemblerNextGen {
 		// Loop over all nodes
 		for (const [, node] of this.nodes) {
 			// Get block node
-			const blockNode = this.blocks[node.start];
+		//	const blockNode = this.blocks[node.start];
 			// Loop over all instructions/opcodes
-			let blockNodeLabel;
+			//let blockNodeLabel;
 			const slot = this.addressesSlotBankInfo[node.start].slot;
 			for (const opcode of node.instructions) {
 				opcode.disassembleOpcode((addr64k: number) => {
 					// Return an existing label for the address or just the address
+					const labelName = this.getLabelFromSlotForAddress(slot, addr64k);
+					/* TODO: REMOVE:
 					let labelName = this.getLabelFromSlotForAddress(slot, addr64k);
 					if (labelName) {
 						// Check if it is possible to simplify to local label
@@ -848,6 +889,7 @@ export class DisassemblerNextGen {
 							}
 						}
 					}
+					*/
 					return labelName;
 				});
 			}

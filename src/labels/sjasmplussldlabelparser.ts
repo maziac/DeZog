@@ -275,11 +275,10 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Check data type
 		switch (type) {
 			case 'L': // Address labels or EQU
-				// A label looks like this: "module@1.main.2.local.2,module@1,main.2,local.2"
-				// First: Full label name.
-				// 2nd: Module.
-				// 3rd: The label without the local label(if any)
-				// 4th: The local label (if there is).
+				// 0: module name
+				// 1: main label
+				// 2: local label
+				// 3: optional usage traits, i.e. +equ, +macro, +reloc, +reloc_high, +used, +module, +endmod, +struct_def, +struct_data
 				{
 					// Split
 					const lbls = label.split(',');

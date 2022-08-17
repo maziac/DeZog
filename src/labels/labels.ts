@@ -100,7 +100,7 @@ export class LabelsClass {
 
 	/// Map with a key with a label that contains other maps recursively.
 	/// I.e. a dotted label like 'a.b.c.d' can be referenced through
-	/// through 'a' which will contain another map which can be referneced by 'b'
+	/// through 'a' which will contain another map which can be referenced by 'b'
 	/// and so on.
 	/// Used for displaying structs in the watches window.
 	protected labelsHierarchy = new Map<string, any>();
@@ -703,8 +703,7 @@ export class LabelsClass {
 	}
 
 
-	/**
-	 * Handles an issue (error, warning) reported by a parser.
+	/** Handles an issue (error, warning) reported by a parser.
 	 * Shows the problem in the PROBLEMs pane, i.e. in the diagnostics.
 	 * @param issue The issue reported. Contains file and line number.
 	 */
@@ -714,11 +713,23 @@ export class LabelsClass {
 	}
 
 
-	/**
-	 * Returns the the files to watch.
+	/** Returns the the files to watch.
 	 */
 	public getWatchedFiles() {
 		return this.watchedFiles
+	}
+
+
+	/** Returns the labels and long addresses.
+	 * Returns only exactly one label entry, the first one.
+	 * @returns A map with addresses/labels.
+	 */
+	public getLabelsMap(): Map<number, string> {
+		const map = new Map<number, string>();
+		for (const [address, labels] of this.labelsForLongAddress) {
+			map.set(address, labels[0]);
+		}
+		return map;
 	}
 }
 

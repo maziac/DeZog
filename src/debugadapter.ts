@@ -37,7 +37,7 @@ import {TextView} from './views/textview';
 import {ZxNextSpritePatternsView} from './views/zxnextspritepatternsview';
 import {ZxNextSpritesView} from './views/zxnextspritesview';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
-import {DisassemblerNextGen} from './disassembler/disasmnextgen';
+import {AddressLabel, DisassemblerNextGen} from './disassembler/disasmnextgen';
 import {ReverseEngineeringLabelParser} from './labels/reverseengineeringlabelparser';
 import {RenderCallGraph} from './disassembler/rendercallgraph';
 import {RenderFlowChart} from './disassembler/renderflowchart';
@@ -3704,8 +3704,11 @@ E.g. use "-help -view" to put the help text in an own view.
 			// Start disassembly
 			//const addrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
 			//const startAddrs64k = [...new Set(addrs64k)];	// Make all unique values
+
+			// Collect all long address labels and convert to 64k
+			const labels = this.get64kLabels();
 			const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
-			analyzer.getFlowGraph(startAddrs64k);
+			analyzer.getFlowGraph(startAddrs64k, labels);
 			// Convert to start nodes
 			const startNodes = analyzer.getNodesForAddresses(startAddrs64k);
 
@@ -3769,6 +3772,27 @@ E.g. use "-help -view" to put the help text in an own view.
 			this.debugConsoleAppendLine("Error: " + e.message);
 			return;
 		}
+	}
+
+
+	/** Get all Labels for the currently mapped in banks.
+	 * @returns an array of 64k adresses with associated label string.
+	 */
+	protected get64kLabels(): AddressLabel[] {
+		// Get address and one label
+		const addressLabels = Labels.getLabelsMap();
+		// Filter map by existing address
+		const slots = Remote.getSlots();
+		const addr64kLabels: AddressLabel[] = [];
+		for (const [address, label] of addressLabels) {
+			const addr64k = address & 0xFFFF;
+			const longAddress = Z80Registers.createLongAddress(addr64k, slots);
+			// Check if right bank
+			if (address == longAddress) {
+				addr64kLabels.push([addr64k, label]);
+			}
+		}
+		return addr64kLabels;
 	}
 
 
@@ -4054,6 +4078,8 @@ E.g. use "-help -view" to put the help text in an own view.
 		}
 		this.fileWatchers = [];
 	}
+
+
 }
 
 
