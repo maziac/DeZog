@@ -252,7 +252,7 @@ suite('Disassembler - RenderText', () => {
 				disasm.setCurrentSlots([0]);
 				disasm.readBinFile(0, './tests/disassembler/projects/render_text/main.bin');
 
-				disasm.getFlowGraph(startAddrs64k);
+				disasm.getFlowGraph(startAddrs64k, []);
 				const startNodes = disasm.getNodesForAddresses(startAddrs64k);
 				disasm.disassembleNodes();
 				const text = r.renderNodes(startNodes);
@@ -447,7 +447,7 @@ suite('Disassembler - RenderText', () => {
 				disasm.setCurrentSlots([0]);
 				disasm.readBinFile(0, './tests/disassembler/projects/render_text/main.bin');
 
-				disasm.getFlowGraph(startAddrs64k);
+				disasm.getFlowGraph(startAddrs64k, []);
 				const startNodes = disasm.getNodesForAddresses(startAddrs64k);
 				disasm.disassembleNodes();
 				const text = r.renderForDepth(startNodes, depth);
@@ -678,7 +678,7 @@ suite('Disassembler - RenderText', () => {
 				disasm.setCurrentSlots([0]);
 				disasm.readBinFile(0, './tests/disassembler/projects/render_text_strange/main.bin');
 
-				disasm.getFlowGraph(startAddrs64k);
+				disasm.getFlowGraph(startAddrs64k, []);
 				const startNodes = disasm.getNodesForAddresses(startAddrs64k);
 				disasm.disassembleNodes();
 				const text = r.renderNodes(startNodes);

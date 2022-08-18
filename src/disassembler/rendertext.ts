@@ -294,7 +294,7 @@ export class RenderText extends RenderBase {
 
 			// Print data between nodes
 			const dataLen = nodeAddr - addr64k;
-			Utility.assert(dataLen < 0);
+			Utility.assert(dataLen >= 0);
 			if (dataLen > 0) {
 				this.printData(lines, addr64k, dataLen);
 				addr64k = nodeAddr;

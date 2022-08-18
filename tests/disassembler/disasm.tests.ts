@@ -34,6 +34,16 @@ suite('Disassembler', () => {
 	}
 
 
+	// Function that cann strip the main label form a local label.
+	function ll(label: string): string {
+		const localLabel = label.replace(/\w+\./, '.');
+		return localLabel;
+		// const k = label.indexOf('.');
+		// if (k >= 0)
+		// 	return label.substring(k);
+		// return label;
+	}
+
 	/// Called for each test.
 	setup(() => {
 		dasm = new Disassembler() as any; 	// 'as any' allows access to protected methods
@@ -3450,7 +3460,7 @@ suite('Disassembler', () => {
 		});
 
 		test('Simple', () => {
-			dng.getFlowGraph([0x0000]);
+			dng.getFlowGraph([0x0000], []);
 			assert.equal(dngNodes.size, 1);
 			let node = dng.getNodeForAddress(0x0000)!;
 			assert.notEqual(node, undefined);
@@ -3463,7 +3473,7 @@ suite('Disassembler', () => {
 		});
 
 		test('Simple, multiple addresses', () => {
-			dng.getFlowGraph([6, 5, 4, 3, 2, 1, 0]);
+			dng.getFlowGraph([6, 5, 4, 3, 2, 1, 0], []);
 			assert.equal(dngNodes.size, 1);
 			let node = dng.getNodeForAddress(0x0000)!;
 			assert.notEqual(node, undefined);
@@ -3476,7 +3486,7 @@ suite('Disassembler', () => {
 		});
 
 		test('Branch', () => {
-			dng.getFlowGraph([0x0100]);
+			dng.getFlowGraph([0x0100], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(0x0100)!;
@@ -3515,7 +3525,7 @@ suite('Disassembler', () => {
 		});
 
 		test('JR after RET', () => {
-			dng.getFlowGraph([0x0200]);
+			dng.getFlowGraph([0x0200], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(0x0200)!;
@@ -3552,7 +3562,7 @@ suite('Disassembler', () => {
 		});
 
 		test('LOOP', () => {
-			dng.getFlowGraph([0x0300]);
+			dng.getFlowGraph([0x0300], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(0x0300)!;
@@ -3591,7 +3601,7 @@ suite('Disassembler', () => {
 		});
 
 		test('LOOP self', () => {
-			dng.getFlowGraph([0x0400]);
+			dng.getFlowGraph([0x0400], []);
 			assert.equal(dngNodes.size, 2);
 
 			const node2 = dng.getNodeForAddress(0x0400)!;
@@ -3619,7 +3629,7 @@ suite('Disassembler', () => {
 		});
 
 		test('2 subs, same block', () => {
-			dng.getFlowGraph([0x0500, 0x520]);
+			dng.getFlowGraph([0x0500, 0x520], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(0x0500)!;
@@ -3656,7 +3666,7 @@ suite('Disassembler', () => {
 		});
 
 		test('2 subs, same block, reverse', () => {
-			dng.getFlowGraph([0x0520, 0x500]);
+			dng.getFlowGraph([0x0520, 0x500], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(0x0500)!;
@@ -3693,7 +3703,7 @@ suite('Disassembler', () => {
 		});
 
 		test('Simple call', () => {
-			dng.getFlowGraph([0x0600]);
+			dng.getFlowGraph([0x0600], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(0x0600)!;
@@ -3729,7 +3739,7 @@ suite('Disassembler', () => {
 		});
 
 		test('2 calls, same sub', () => {
-			dng.getFlowGraph([0x0700]);
+			dng.getFlowGraph([0x0700], []);
 			assert.equal(dngNodes.size, 4);
 
 			const node1 = dng.getNodeForAddress(0x0700)!;
@@ -3777,7 +3787,7 @@ suite('Disassembler', () => {
 		});
 
 		test('Recursive call', () => {
-			dng.getFlowGraph([0x0800]);
+			dng.getFlowGraph([0x0800], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(0x0800)!;
@@ -3816,7 +3826,7 @@ suite('Disassembler', () => {
 		});
 
 		test('Subroutine inside subroutine', () => {
-			dng.getFlowGraph([0x0900, 0x0920]);
+			dng.getFlowGraph([0x0900, 0x0920], []);
 			assert.equal(dngNodes.size, 4);
 
 			const node1 = dng.getNodeForAddress(0x0900)!;
@@ -3863,7 +3873,7 @@ suite('Disassembler', () => {
 		});
 
 		test('jr $', () => {
-			dng.getFlowGraph([0x0A00]);
+			dng.getFlowGraph([0x0A00], []);
 			assert.equal(dngNodes.size, 2);
 
 			const node1 = dng.getNodeForAddress(0x0A00)!;
@@ -3936,7 +3946,7 @@ suite('Disassembler', () => {
 
 		test('Simple block', () => {
 			const startAddr = 0x0000;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 1);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -3952,7 +3962,7 @@ suite('Disassembler', () => {
 
 		test('1 branch', () => {
 			const startAddr = 0x0100;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -3968,7 +3978,7 @@ suite('Disassembler', () => {
 
 		test('JR after RET (2 blocks)', () => {
 			const startAddr = 0x0200;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -3996,7 +4006,7 @@ suite('Disassembler', () => {
 
 		test('Sub in sub', () => {
 			const startAddr = 0x0300;
-			dng.getFlowGraph([startAddr, startAddr + 4]);
+			dng.getFlowGraph([startAddr, startAddr + 4], []);
 			assert.equal(dngNodes.size, 4);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4031,7 +4041,7 @@ suite('Disassembler', () => {
 
 		test('Complex jumping', () => {
 			const startAddr = 0x0400;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 5)
 			const node1 = dng.getNodeForAddress(startAddr)!;
 			assert.notEqual(node1, undefined);
@@ -4048,7 +4058,7 @@ suite('Disassembler', () => {
 
 		test('2 subs, sharing block', () => {
 			const startAddr = 0x0500;
-			dng.getFlowGraph([startAddr, startAddr + 0x20]);
+			dng.getFlowGraph([startAddr, startAddr + 0x20], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4080,7 +4090,7 @@ suite('Disassembler', () => {
 
 		test('Loop', () => {
 			const startAddr = 0x0600;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4098,7 +4108,7 @@ suite('Disassembler', () => {
 
 		test('Recursive call', () => {
 			const startAddr = 0x1000;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4116,7 +4126,7 @@ suite('Disassembler', () => {
 
 		test('JP', () => {
 			const startAddr = 0x1100;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 2);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4161,7 +4171,7 @@ suite('Disassembler', () => {
 
 		test('Simple', () => {
 			const startAddr = 0x0000;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 1);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4172,7 +4182,7 @@ suite('Disassembler', () => {
 
 		test('1 branch, global label', () => {
 			const startAddr = 0x0100;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4189,7 +4199,7 @@ suite('Disassembler', () => {
 
 		test('1 branch, local label', () => {
 			const startAddr = 0x0180;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 5);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4201,12 +4211,12 @@ suite('Disassembler', () => {
 
 			assert.equal(node1.label, undefined);
 			assert.equal(node2.label, 'SSUB_0184');
-			assert.equal(node3.label, 'SSUB_0184.LL1');
+			assert.equal(node3.label, ll('SSUB_0184.LL1'));
 		});
 
 		test('JR after RET', () => {
 			const startAddr = 0x0200;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4220,7 +4230,7 @@ suite('Disassembler', () => {
 
 		test('JR after RET, sub', () => {
 			const startAddr = 0x0280;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 5);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4234,7 +4244,7 @@ suite('Disassembler', () => {
 
 		test('Sub in sub', () => {
 			const startAddr = 0x0300;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 5);
 
 			const node1 = dng.getNodeForAddress(startAddr + 7)!;
@@ -4249,7 +4259,7 @@ suite('Disassembler', () => {
 
 		test('Complex jumping', () => {
 			const startAddr = 0x0400;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 7);
 
 			const node1 = dng.getNodeForAddress(startAddr + 4)!;
@@ -4265,14 +4275,14 @@ suite('Disassembler', () => {
 
 			assert.equal(node1.label, 'SSUB_0404');
 			assert.equal(node2.label, undefined);
-			assert.equal(node3.label, 'SSUB_0404.LL1');
-			assert.equal(node4.label, 'SSUB_0404.LL2');
+			assert.equal(node3.label, ll('SSUB_0404.LL1'));
+			assert.equal(node4.label, ll('SSUB_0404.LL2'));
 			assert.equal(node5.label, undefined);
 		});
 
 		test('2 subs, sharing block', () => {
 			const startAddr = 0x0500;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 6);
 
 			const node1 = dng.getNodeForAddress(startAddr + 7)!;
@@ -4283,13 +4293,13 @@ suite('Disassembler', () => {
 			assert.notEqual(node3, undefined);
 
 			assert.equal(node1.label, 'SSUB_0507');
-			assert.equal(node2.label, 'SSUB_0507.LL1');
+			assert.equal(node2.label, ll('SSUB_0507.LL1'));
 			assert.equal(node3.label, 'SSUB_0520');
 		});
 
 		test('Loop', () => {
 			const startAddr = 0x0600;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 5);
 
 			const node1 = dng.getNodeForAddress(startAddr + 4)!;
@@ -4300,13 +4310,13 @@ suite('Disassembler', () => {
 			assert.notEqual(node3, undefined);
 
 			assert.equal(node1.label, 'SSUB_0604');
-			assert.equal(node2.label, 'SSUB_0604.LLOOP');
+			assert.equal(node2.label, ll('SSUB_0604.LLOOP'));
 			assert.equal(node3.label, undefined);
 		});
 
 		test('Nested loops', () => {
 			const startAddr = 0x0700;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 7);
 
 			const node1 = dng.getNodeForAddress(startAddr + 4)!;
@@ -4321,15 +4331,15 @@ suite('Disassembler', () => {
 			assert.notEqual(node5, undefined);
 
 			assert.equal(node1.label, 'SSUB_0704');
-			assert.equal(node2.label, 'SSUB_0704.LLOOP1');
-			assert.equal(node3.label, 'SSUB_0704.LLOOP2');
+			assert.equal(node2.label, ll('SSUB_0704.LLOOP1'));
+			assert.equal(node3.label, ll('SSUB_0704.LLOOP2'));
 			assert.equal(node4.label, undefined);
 			assert.equal(node5.label, undefined);
 		});
 
 		test('Nested loops, same label', () => {
 			const startAddr = 0x0800;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 6);
 
 			const node1 = dng.getNodeForAddress(startAddr + 4)!;
@@ -4342,14 +4352,14 @@ suite('Disassembler', () => {
 			assert.notEqual(node4, undefined);
 
 			assert.equal(node1.label, 'SSUB_0804');
-			assert.equal(node2.label, 'SSUB_0804.LLOOP');
+			assert.equal(node2.label, ll('SSUB_0804.LLOOP'));
 			assert.equal(node3.label, undefined);
 			assert.equal(node4.label, undefined);
 		});
 
 		test('Recursive call', () => {
 			const startAddr = 0x1000;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 3);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4366,7 +4376,7 @@ suite('Disassembler', () => {
 
 		test('JP', () => {
 			const startAddr = 0x1100;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 4);
 
 			const node1 = dng.getNodeForAddress(startAddr + 4)!;
@@ -4376,13 +4386,13 @@ suite('Disassembler', () => {
 
 			assert.equal(node1.label, 'SSUB_1104');
 			assert.ok(node1.isSubroutine);
-			assert.equal(node2.label, 'SSUB_1104.LL1');
+			assert.equal(node2.label, ll('SSUB_1104.LL1'));
 			assert.ok(node2.isSubroutine);
 		});
 
 		test('JR $', () => {
 			const startAddr = 0x1200;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 2);
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4398,7 +4408,7 @@ suite('Disassembler', () => {
 
 		test('JR $ / CALL', () => {
 			const startAddr = 0x1300;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 4);
 
 			const node1 = dng.getNodeForAddress(startAddr + 4)!;
@@ -4408,7 +4418,7 @@ suite('Disassembler', () => {
 
 			assert.equal(node1.label, 'LLBL_1304');
 			assert.ok(!node1.isSubroutine);
-			assert.equal(node2.label, 'LLBL_1304.LLOOP');
+			assert.equal(node2.label, ll('LLBL_1304.LLOOP'));
 			assert.ok(!node2.isSubroutine);
 		});
 	});
@@ -4431,7 +4441,7 @@ suite('Disassembler', () => {
 
 		test('From slot 0', () => {
 			const startAddr = 0x0100;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 6);
 
 			const node0000 = dng.getNodeForAddress(0x0000)!;
@@ -4460,7 +4470,7 @@ suite('Disassembler', () => {
 
 		test('From slot 1', () => {
 			const startAddr = 0x4100;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 7);
 
 			const node0000 = dng.getNodeForAddress(0x0000)!;
@@ -4489,7 +4499,7 @@ suite('Disassembler', () => {
 
 		test('From slot 2', () => {
 			const startAddr = 0x8100;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 7);
 
 			const node0000 = dng.getNodeForAddress(0x0000)!;
@@ -4519,7 +4529,7 @@ suite('Disassembler', () => {
 		test('From slot 3 (not used)', () => {
 			// Pathilogical case: we should not create something in unused memory.
 			const startAddr = 0xC100;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 1);	// A node is created although e.g. length is 0.
 
 			const nodeC100 = dng.getNodeForAddress(startAddr)!;
@@ -4549,7 +4559,7 @@ suite('Disassembler', () => {
 
 		test('Flow through to unassigned or other bank', () => {
 			const startAddr = 0x1FFE;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 1);
 
 			const node1 = dng.getNodeForAddress(0x1FFE)!;
@@ -4564,7 +4574,7 @@ suite('Disassembler', () => {
 
 		test('Flow through from multi bank to single bank', () => {
 			const startAddr = 0x3FFE;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 1);
 
 			const node1 = dng.getNodeForAddress(0x3FFE)!;
@@ -4577,7 +4587,7 @@ suite('Disassembler', () => {
 		test('Flow through with opcode to unassigned or other bank', () => {
 			// Now the opcode is split between the banks.
 			const startAddr = 0x5FFF;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 1);
 
 			const node1 = dng.getNodeForAddress(0x5FFF)!;
@@ -4591,7 +4601,7 @@ suite('Disassembler', () => {
 		test('Flow through with opcode from multi bank to single bank', () => {
 			// Now the opcode is split between the banks.
 			const startAddr = 0x7FFF;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 1);
 
 			const node1 = dng.getNodeForAddress(0x7FFF)!;
@@ -4603,7 +4613,7 @@ suite('Disassembler', () => {
 
 		test('Flow through single bank to single bank', () => {
 			const startAddr = 0x9FFE;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 1);
 
 			const node1 = dng.getNodeForAddress(0x9FFE)!;
@@ -4675,7 +4685,7 @@ suite('Disassembler', () => {
 
 		test('From single bank to multi bank', () => {
 			const startAddr = 0x0100;
-			dng.getFlowGraph([startAddr, 0x0000, 0x4000, 0x8000]);
+			dng.getFlowGraph([startAddr, 0x0000, 0x4000, 0x8000], []);
 			dng.disassembleNodes();
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4714,7 +4724,7 @@ suite('Disassembler', () => {
 
 		test('From multi bank to single bank', () => {
 			const startAddr = 0x8100;
-			dng.getFlowGraph([startAddr, 0x0000, 0x4000, 0x8000]);
+			dng.getFlowGraph([startAddr, 0x0000, 0x4000, 0x8000], []);
 			dng.disassembleNodes();
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
@@ -4744,7 +4754,7 @@ suite('Disassembler', () => {
 
 		test('Loop: Label prior to subroutine, misc references', () => {
 			const startAddr = 0xD000;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			dng.disassembleNodes();
 
 			dbgDisassembly((dng as any).nodes);
@@ -4771,14 +4781,14 @@ suite('Disassembler', () => {
 			assert.notEqual(node1b, undefined);
 			checkInstructions(node1b, [
 				"LD A,(IY-7)",
-				"JR Z,SSUB_D007.LLOOP",
+				ll("JR Z,SSUB_D007.LLOOP"),
 			]);
 
 			const node2 = dng.getNodeForAddress(startAddr + 0x0F)!;
 			assert.notEqual(node2, undefined);
 			checkInstructions(node2, [
 				"BIT 7,(IX+0)",
-				"JR NZ,SSUB_D007.LL1",
+				ll("JR NZ,SSUB_D007.LL1"),
 			]);
 
 			const node3 = dng.getNodeForAddress(startAddr + 0x15)!;
@@ -4792,7 +4802,7 @@ suite('Disassembler', () => {
 			checkInstructions(node4, [
 				"LD (DDATA_D102),DE",
 				"LD IY,(DDATA_D104)",
-				"JP P,SSUB_D007.LL2",
+				ll("JP P,SSUB_D007.LL2"),
 			]);
 
 			const node5 = dng.getNodeForAddress(startAddr + 0x24)!;
@@ -4811,7 +4821,7 @@ suite('Disassembler', () => {
 			const node7 = dng.getNodeForAddress(startAddr + 0x29)!;
 			assert.notEqual(node7, undefined);
 			checkInstructions(node7, [
-				"JP NC,LLBL_D004.LLOOP"
+				ll("JP NC,LLBL_D004.LLOOP")
 			]);
 
 			const node8 = dng.getNodeForAddress(startAddr + 0x2C)!;
@@ -4822,14 +4832,9 @@ suite('Disassembler', () => {
 		});
 
 
-
-
-
-
-
 		test('2 subroutines merged', () => {
 			const startAddr = 0xD200;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			dng.disassembleNodes();
 
 			dbgDisassembly((dng as any).nodes);
@@ -4853,7 +4858,7 @@ suite('Disassembler', () => {
 
 		test('2 subroutines merged, sharing tail', () => {
 			const startAddr = 0xD300;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			dng.disassembleNodes();
 
 			dbgDisassembly((dng as any).nodes);
@@ -4868,11 +4873,11 @@ suite('Disassembler', () => {
 
 			const node3 = dng.getNodeForAddress(startAddr + 0x0D)!;
 			assert.notEqual(node3, undefined);
-			assert.equal(node3.label, 'SSUB_D30B.LL1');
+			assert.equal(node3.label, ll('SSUB_D30B.LL1'));
 
 			checkInstructions(node1, [
 				"LD A,$01",
-				"JR SSUB_D30B.LL1"
+				ll("JR SSUB_D30B.LL1")
 			]);
 			checkInstructions(node2, [
 				"LD A,$02"
@@ -4885,7 +4890,7 @@ suite('Disassembler', () => {
 
 		test('Subroutine with jumps < subroutine address, with additional JP', () => {
 			const startAddr = 0xD500;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			dng.disassembleNodes();
 
 			dbgDisassembly((dng as any).nodes);
@@ -4911,7 +4916,7 @@ suite('Disassembler', () => {
 
 		test('Subroutine with jumps < subroutine address, with additional JP with hole', () => {
 			const startAddr = 0xD600;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			dng.disassembleNodes();
 
 			dbgDisassembly((dng as any).nodes);
@@ -4937,7 +4942,7 @@ suite('Disassembler', () => {
 
 		test('Self modifying code', () => {
 			const startAddr = 0xE000;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			dng.disassembleNodes();
 
 			dbgDisassembly((dng as any).nodes);
@@ -4964,7 +4969,7 @@ suite('Disassembler', () => {
 
 		test('Self modifying code through bank border', () => {
 			const startAddr = 0x6000;
-			dng.getFlowGraph([startAddr]);
+			dng.getFlowGraph([startAddr], []);
 			dng.disassembleNodes();
 
 			dbgDisassembly((dng as any).nodes);

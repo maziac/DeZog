@@ -219,7 +219,7 @@ export class DisassemblerNextGen {
 	 * @param addresses All 64k addresses to start flow graphs from.
 	 * @param labels Address (64k) label pairs. From the (list) file parsing.
 	 */
-	public getFlowGraph(addresses: number[], labels: AddressLabel[] = []) { // TODO: define wo default
+	public getFlowGraph(addresses: number[], labels: AddressLabel[]) {
 		this.nodes.clear();
 
 		// Create the nodes
