@@ -59,6 +59,9 @@ export class Opcode {
 	// The disassembled text of the opcode. E.g. "LD A,(DATA_LBL0400)".
 	public disassembledText: string;
 
+	// An associated address. Not really used, is more a debug feature.
+	public addr64k: number;
+
 
 	/// Call this to use lower case or upper case opcodes.
 	public static makeLowerCase() {
@@ -1425,6 +1428,30 @@ export class Opcode {
 	}
 
 
+	/** toString: For debugging.
+	 * Prints the address and the disassembledText.
+	 * If not available the normal text.
+	 * @returns E.g. "40A0 LD A,6"
+	 */
+	public toString() {
+		// Address
+		let text = '';
+		if (this.addr64k)
+			text += Format.getHexFormattedString(this.addr64k);
+		else
+			text += '????';
+		text += ' ';
+
+		// Dissasembly
+		if (this.disassembledText)
+			text += this.disassembledText;
+		else
+			text += this.name;
+
+		return text;
+	}
+
+
 	/**
 	 * Creates a copy object,
 	 * @returns A new object with same values.
@@ -1721,11 +1748,10 @@ export class Opcode {
 	}
 
 
-	/**
-	 * Disassembles one opcode together with a referenced label (if there
+	/** Disassembles one opcode together with a referenced label (if there
 	 * is one).
-	 * @returns A string that contains the disassembly, e.g. "LD A,(DATA_LBL1)"
-	 * or "JR Z,.sub1_lbl3".
+	 * At the end the this.disassembledText is updated accordingly.
+	 * E.g. "LD A,(DATA_LBL1)" or "JR Z,.sub1_lbl3".
 	 * @param func A function that returns a label for a (64k) address.
 	 */
 	public disassembleOpcode(funcGetLabel: (addr64k: number) => string) {
@@ -1899,6 +1925,21 @@ class OpcodeIndexImmediate extends Opcode {
 		const dasm2 = util.format(dasm.mnemonic, valueName);
 		return {mnemonic: dasm2, comment};
 	}
+
+
+	/** Disassembles one opcode together with a referenced label (if there
+	 * is one).
+	 * At the end the this.disassembledText is updated accordingly.
+	 * E.g. "LD A,(DATA_LBL1)" or "JR Z,.sub1_lbl3".
+	 * @param func A function that returns a label for a (64k) address.
+	 */
+	public disassembleOpcode(funcGetLabel: (addr64k: number) => string) {
+		super.disassembleOpcode(funcGetLabel);
+		// Results e.g. in "LD (IX+6),%s"
+
+		const valueName = Format.getHexFormattedString(this.secondValue, 2);
+		this.disassembledText = util.format(this.disassembledText, valueName);
+	}
 }
 
 
@@ -2014,6 +2055,20 @@ class OpcodeNext_nextreg_n_a extends OpcodeNext {	// NOSONAR
 		const opCodeString = util.format(this.name, regname);
 		return {mnemonic: opCodeString, comment: this.comment};
 	}
+
+
+
+	/** Disassembles one opcode together with a referenced label (if there
+	 * is one).
+	 * At the end the this.disassembledText is updated accordingly.
+	 * E.g. "LD A,(DATA_LBL1)" or "JR Z,.sub1_lbl3".
+	 * @param func A function that returns a label for a (64k) address.
+	 */
+	public disassembleOpcode(funcGetLabel: (addr64k: number) => string) {
+		const regName = OpcodeNext_nextreg_n_a.getRegisterName(this.value);
+		this.disassembledText = util.format(this.name, regName);
+	}
+
 
 	/**
 	 * Returns the corresponding next feature register name.
@@ -2131,6 +2186,23 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 		const opCodeString = util.format(this.name, regname, valuename);
 		return {mnemonic: opCodeString, comment: this.comment};
 	}
+
+
+
+	/** Disassembles one opcode together with a referenced label (if there
+	 * is one).
+	 * At the end the this.disassembledText is updated accordingly.
+	 * E.g. "LD A,(DATA_LBL1)" or "JR Z,.sub1_lbl3".
+	 * @param func A function that returns a label for a (64k) address.
+	 */
+	public disassembleOpcode(funcGetLabel: (addr64k: number) => string) {
+		const regId = this.value;
+		const regValue = this.value2;
+		const regName = OpcodeNext_nextreg_n_a.getRegisterName(regId);
+		const valueName = OpcodeNext_nextreg_n_n.getRegisterValueName(regId, regValue);
+		this.disassembledText = util.format(this.name, regName, valueName);
+	}
+
 
 	/**
 	 * Returns the corresponding value name for a value for a next feature register name.
