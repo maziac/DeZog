@@ -220,17 +220,19 @@ export class DisassemblerNextGen {
 	 * @param labels Address (64k) label pairs. From the (list) file parsing.
 	 */
 	public getFlowGraph(addresses: number[], labels: AddressLabel[] = []) { // TODO: define wo default
-		this.memory.resetAttributeFlag(MemAttribute.
-			FLOW_ANALYZED);
 		this.nodes.clear();
 
 		// Create the nodes
+		this.memory.resetAttributeFlag(MemAttribute.
+			FLOW_ANALYZED);
 		this.createNodes(addresses);
 
 		// Now create nodes for the labels
 		this.createNodesForLabels(labels);
 
 		// Now fill the nodes.
+		this.memory.resetAttributeFlag(MemAttribute.
+			FLOW_ANALYZED);
 		this.fillNodes();
 
 		// Find nodes that are subroutines.
@@ -441,8 +443,9 @@ export class DisassemblerNextGen {
 			}
 
 			const memAttr = this.memory.getAttributeAt(address);
-			// Check if memory exists
-			if (!(memAttr & MemAttribute.ASSIGNED)) {
+			// Check if memory exists or already analyzed
+			if (!(memAttr & MemAttribute.ASSIGNED) || memAttr & MemAttribute.FLOW_ANALYZED) {
+				// Captures also the case that a jump is done in a code area and the address does not start with CODE_FIRST.
 				break;
 			}
 
@@ -701,21 +704,23 @@ export class DisassemblerNextGen {
 			// Local label
 			// Number the local labels
 			let i = 1;
+			const preLabel = '.';	// Just local label
+			// const preLabel = node.label + '.';	// Full label
 			for (const localNode of localNodes) {
-				localNode.label = node.label + '.' + this.labelLocalLabelPrefix + i;
+				localNode.label = preLabel + this.labelLocalLabelPrefix + i;
 				i++;
 			}
 
 			// Number the local loops
 			if (loopNodes.length == 1) {
 				// Just one loop, omit index
-				loopNodes[0].label = node.label + '.' + this.labelLocalLoopPrefix;
+				loopNodes[0].label = preLabel + this.labelLocalLoopPrefix;
 			}
 			else {
 				// Add index
 				let k = 1;
 				for (const loopNode of loopNodes) {
-					loopNode.label = node.label + '.' + this.labelLocalLoopPrefix + k;
+					loopNode.label = preLabel + this.labelLocalLoopPrefix + k;
 					k++;
 				}
 			}
@@ -866,32 +871,16 @@ export class DisassemblerNextGen {
 			// Loop over all instructions/opcodes
 			//let blockNodeLabel;
 			const slot = this.addressesSlotBankInfo[node.start].slot;
+			let addr64k = node.start;
 			for (const opcode of node.instructions) {
 				opcode.disassembleOpcode((addr64k: number) => {
 					// Return an existing label for the address or just the address
 					const labelName = this.getLabelFromSlotForAddress(slot, addr64k);
-					/* TODO: REMOVE:
-					let labelName = this.getLabelFromSlotForAddress(slot, addr64k);
-					if (labelName) {
-						// Check if it is possible to simplify to local label
-						const blockNodeTarget = this.blocks[addr64k];
-						if (blockNodeTarget && blockNodeTarget.start != addr64k && blockNode == blockNodeTarget) {
-							// Get block node label
-							if (!blockNodeLabel) {
-								blockNodeLabel = this.funcGetLabel(blockNode.start) || blockNode.label;
-								Utility.assert(blockNodeLabel);
-							}
-							// Check if label starts with blockNodeLabel
-							if (labelName.startsWith(blockNodeLabel + '.')) {
-								// Simplify to local address
-								const i = blockNodeLabel.length;
-								labelName = labelName.substring(i);
-							}
-						}
-					}
-					*/
+
 					return labelName;
 				});
+				opcode.addr64k = addr64k;
+				addr64k += opcode.length;
 			}
 		}
 	}

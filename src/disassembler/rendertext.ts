@@ -1,3 +1,4 @@
+import {Utility} from "../misc/utility";
 import {AsmNode} from "./asmnode";
 import {Format} from "./format";
 import {RenderBase} from "./renderbase";
@@ -293,6 +294,7 @@ export class RenderText extends RenderBase {
 
 			// Print data between nodes
 			const dataLen = nodeAddr - addr64k;
+			Utility.assert(dataLen < 0);
 			if (dataLen > 0) {
 				this.printData(lines, addr64k, dataLen);
 				addr64k = nodeAddr;
