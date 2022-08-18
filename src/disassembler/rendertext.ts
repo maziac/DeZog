@@ -299,7 +299,8 @@ export class RenderText extends RenderBase {
 			}
 			else if (dataLen < 0) {
 				// Can happen if CODE_FIRST is not aligned
-				lines.push("; NOTE: At " + Utility.getHexString(nodeAddr, 4) + "h there are different interpretations of instructions possible.");
+				// TODO: HIGHLIGHT the NOTE
+				lines.push("; NOTE: At " + Utility.getHexString(nodeAddr, 4) + "h the disassembly is ambiguous.");
 			}
 			addr64k = nodeAddr;
 

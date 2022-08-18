@@ -703,7 +703,7 @@ suite('Disassembler - RenderText', () => {
 0104.1 00 NOP
 0105.1 C3 02 01 JP 0102.1
 
-; NOTE: At 0102h there are different interpretations of instructions possible.
+; NOTE: At 0102h the disassembly is ambiguous.
 `));
 			});
 
@@ -727,7 +727,7 @@ suite('Disassembler - RenderText', () => {
 
 0208.1 01 10 21 LD BC,$2110
 
-; NOTE: At 020Ah there are different interpretations of instructions possible.
+; NOTE: At 020Ah the disassembly is ambiguous.
 020A.1 SUB_020A:
 020A.1 21 00 80 LD HL,$8000
 020D.1 00 NOP
@@ -761,7 +761,7 @@ suite('Disassembler - RenderText', () => {
 030F.1 00 NOP
 0310.1 C9 RET
 
-; NOTE: At 030Ah there are different interpretations of instructions possible.
+; NOTE: At 030Ah the disassembly is ambiguous.
 `));
 				});
 			});
