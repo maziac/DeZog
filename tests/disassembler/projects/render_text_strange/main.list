@@ -2,12 +2,55 @@
  1    0000
  2    0000
  3    0000              	DEFS 0x0000
- 4    0000              	;jump into opcode
- 5    0000 00           	NOP
- 6    0001              LBL0001:
- 7    0001 3E 05        	LD A,5
- 8    0003 00           	NOP
- 9    0004 00           	NOP
-10    0005 C3 02 00     	JP LBL0001+1
-11    0008
+ 4    0000
+ 5    0000 00 00 00...  	DEFS 0x0008-$
+ 6    0008              	; RST 8
+ 7    0008 C9           	RET
+ 8    0009
+ 9    0009 00 00 00...  	DEFS 0x0100-$
+10    0100              	; jump into opcode
+11    0100 00           	NOP
+12    0101              LBL0101:
+13    0101 3E 05        	LD A,5
+14    0103 00           	NOP
+15    0104 00           	NOP
+16    0105 C3 02 01     	JP LBL0101+1
+17    0108
+18    0108
+19    0108 00 00 00...  	DEFS 0x0200-$
+20    0200              	; depend on order, RST first
+21    0200 CD 07 02     	CALL SUB_0207
+22    0203 CD 0A 02     	CALL SUB_020A
+23    0206 C9           	RET
+24    0207
+25    0207              SUB_0207:
+26    0207 CF           	RST 8
+27    0208 01 10        	DEFB  01, 16
+28    020A
+29    020A              SUB_020A:
+30    020A 21 00 80     	LD HL,$8000
+31    020D 00           	NOP
+32    020E 00           	NOP
+33    020F 00           	NOP
+34    0210 C9           	RET
+35    0211
+36    0211
+37    0211 00 00 00...  	DEFS 0x0300-$
+38    0300              	; depend on order, call after RST first
+39    0300 CD 0A 03     	CALL SUB_030A
+40    0303 CD 07 03     	CALL SUB_0307
+41    0306 C9           	RET
+42    0307
+43    0307              SUB_0307:
+44    0307 CF           	RST 8
+45    0308 01 10        	DEFB  01, 16
+46    030A
+47    030A              SUB_030A:
+48    030A 21 00 80     	LD HL,$8000
+49    030D 00           	NOP
+50    030E 00           	NOP
+51    030F 00           	NOP
+52    0310 C9           	RET
+53    0311
+54    0311
 # file closed: main.asm

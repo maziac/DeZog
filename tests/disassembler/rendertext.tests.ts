@@ -3,6 +3,8 @@ import {Utility} from '../../src/misc/utility';
 import {Format} from '../../src/disassembler/format';
 import {RenderText} from '../../src/disassembler/rendertext';
 import {DisassemblerNextGen} from '../../src/disassembler/disasmnextgen';
+import {Subroutine} from '../../src/disassembler/subroutine';
+import {AsmNode} from '../../src/disassembler/asmnode';
 
 
 
@@ -679,22 +681,89 @@ suite('Disassembler - RenderText', () => {
 				disasm.readBinFile(0, './tests/disassembler/projects/render_text_strange/main.bin');
 
 				disasm.getFlowGraph(startAddrs64k, []);
-				const startNodes = disasm.getNodesForAddresses(startAddrs64k);
 				disasm.disassembleNodes();
-				const text = r.renderNodes(startNodes);
+				// Get all nodes for the depth
+				const nodes = new Set<AsmNode>();
+				const startNodes = disasm.getNodesForAddresses(startAddrs64k);
+				for (const node of startNodes) {
+					const sub = new Subroutine(node);
+					sub.getAllNodesRecursively(65536, nodes);
+				}
+				const text = r.renderNodes(nodes);
 				return text;
 			}
 
 			test('jump into opcode', () => {
-				const text = disassemble([0x0000]);
+				const text = disassemble([0x0100]);
 
 				assert.equal(c(text), c(
-					`0000.1 00 NOP
-0001.1 3E 05 LD A,$05
-0003.1 00 NOP
-0004.1 00 NOP
-0005.1 C3 02 00 JP 0002.1
+					`0100.1 00 NOP
+0101.1 3E 05 LD A,$05
+0103.1 00 NOP
+0104.1 00 NOP
+0105.1 C3 02 01 JP 0102.1
+
+; NOTE: At 0102h there are different interpretations of instructions possible.
 `));
+			});
+
+
+			suite('depend on order', () => {
+				test('RST first', () => {
+					const text = disassemble([0x0200]);
+
+					assert.equal(c(text), c(
+						`0008.1 SUB_0008:
+0008.1 C9 RET
+
+0200.1 CD 07 02 CALL LBL_0207
+
+0203.1 CD 0A 02 CALL SUB_020A
+
+0206.1 C9 RET
+
+0207.1 LBL_0207:
+0207.1 CF RST $08
+
+0208.1 01 10 21 LD BC,$2110
+
+; NOTE: At 020Ah there are different interpretations of instructions possible.
+020A.1 SUB_020A:
+020A.1 21 00 80 LD HL,$8000
+020D.1 00 NOP
+020E.1 00 NOP
+020F.1 00 NOP
+0210.1 C9 RET
+`));
+				});
+
+				test('call after RST first', () => {
+					const text = disassemble([0x0300]);
+
+					assert.equal(c(text), c(
+						`0008.1 SUB_0008:
+0008.1 C9 RET
+
+0300.1 CD 0A 03 CALL 030A.1
+
+0303.1 CD 07 03 CALL SUB_0307
+
+0306.1 C9 RET
+
+0307.1 SUB_0307:
+0307.1 CF RST $08
+
+0308.1 01 10 21 LD BC,$2110
+030B.1 00 NOP
+030C.1 80 ADD A,B
+030D.1 00 NOP
+030E.1 00 NOP
+030F.1 00 NOP
+0310.1 C9 RET
+
+; NOTE: At 030Ah there are different interpretations of instructions possible.
+`));
+				});
 			});
 		});
 	});

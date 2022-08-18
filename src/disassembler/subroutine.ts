@@ -85,9 +85,11 @@ export class Subroutine {
 		depth--;
 		if (depth >= 0) {
 			for (const callee of this.callees) {
-				// Create sub for node
-				const calledSub = new Subroutine(callee);
-				calledSub.getAllNodesRecursively(depth, usedNodes);
+				if (!usedNodes.has(callee)) {
+					// Create sub for node
+					const calledSub = new Subroutine(callee);
+					calledSub.getAllNodesRecursively(depth, usedNodes);
+				}
 			}
 		}
 	}

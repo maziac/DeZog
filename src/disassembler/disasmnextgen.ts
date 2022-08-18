@@ -260,7 +260,8 @@ export class DisassemblerNextGen {
 		sortedAdresses.sort((a, b) => a - b);
 		for (const addr of sortedAdresses) {
 			const memAttr = this.memory.getAttributeAt(addr);
-			if (!(memAttr & MemAttribute.FLOW_ANALYZED)) {
+			if (!(memAttr & MemAttribute.FLOW_ANALYZED))
+			{
 				// If not already analyzed
 				this.createNodeForAddress(addr);
 			}
@@ -306,7 +307,7 @@ export class DisassemblerNextGen {
 
 			// Get opcode
 			const refOpcode = Opcode.getOpcodeAt(this.memory, address);
-			const opcode = {...refOpcode};
+			const opcode = refOpcode.clone();
 			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED | MemAttribute.CODE);
 			this.memory.addAttributeAt(address, MemAttribute.CODE_FIRST);
 
@@ -364,7 +365,8 @@ export class DisassemblerNextGen {
 		for (const [addr64k, label] of addr64kLabels) {
 			// Check for CODE_FIRST
 			const attr = this.memory.getAttributeAt(addr64k);
-			if (attr & MemAttribute.CODE_FIRST) {
+			//if (attr & MemAttribute.CODE_FIRST) {
+			if (attr & MemAttribute.CODE) {
 				// Is a code label
 				// Check if start of node
 				let node = this.nodes.get(addr64k);

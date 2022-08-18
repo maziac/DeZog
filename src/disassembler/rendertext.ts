@@ -275,7 +275,7 @@ export class RenderText extends RenderBase {
 	 */
 	public renderNodes(nodeSet: Set<AsmNode>, startNodes: AsmNode[]= []): string {
 		// Sort the nodes
-		const nodes = Array.from(nodeSet).filter(node => (node.length > 0));	// Filter nodes in other banks
+		const nodes = Array.from(nodeSet); //.filter(node => (node.length > 0));	// Filter nodes in other banks
 		nodes.sort((a, b) => a.start - b.start);
 
 		// Now get all data references (for the nodes = for the depth)
@@ -294,11 +294,14 @@ export class RenderText extends RenderBase {
 
 			// Print data between nodes
 			const dataLen = nodeAddr - addr64k;
-			Utility.assert(dataLen >= 0);
 			if (dataLen > 0) {
 				this.printData(lines, addr64k, dataLen);
-				addr64k = nodeAddr;
 			}
+			else if (dataLen < 0) {
+				// Can happen if CODE_FIRST is not aligned
+				lines.push("; NOTE: At " + Utility.getHexString(nodeAddr, 4) + "h there are different interpretations of instructions possible.");
+			}
+			addr64k = nodeAddr;
 
 			// Disassemble node
 			let i = 0;
