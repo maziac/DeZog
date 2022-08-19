@@ -725,9 +725,10 @@ suite('Disassembler - RenderText', () => {
 0207.1 LBL_0207:
 0207.1 CF RST $08
 
+; NOTE: The disassembly is ambiguous at $0208.
 0208.1 01 10 21 LD BC,$2110
 
-; NOTE: At 020Ah the disassembly is ambiguous.
+; NOTE: The disassembly is ambiguous at $020A.
 020A.1 SUB_020A:
 020A.1 21 00 80 LD HL,$8000
 020D.1 00 NOP
@@ -746,22 +747,17 @@ suite('Disassembler - RenderText', () => {
 
 0300.1 CD 0A 03 CALL 030A.1
 
-0303.1 CD 07 03 CALL SUB_0307
+0303.1 CD 07 03 CALL LBL_0307
 
 0306.1 C9 RET
 
-0307.1 SUB_0307:
+0307.1 LBL_0307:
 0307.1 CF RST $08
 
+; NOTE: The disassembly is ambiguous at $0308.
 0308.1 01 10 21 LD BC,$2110
-030B.1 00 NOP
-030C.1 80 ADD A,B
-030D.1 00 NOP
-030E.1 00 NOP
-030F.1 00 NOP
-0310.1 C9 RET
 
-; NOTE: At 030Ah the disassembly is ambiguous.
+; NOTE: The disassembly is ambiguous at $030A.
 `));
 				});
 			});

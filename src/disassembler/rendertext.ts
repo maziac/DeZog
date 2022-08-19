@@ -1,4 +1,3 @@
-import {Utility} from "../misc/utility";
 import {AsmNode} from "./asmnode";
 import {Format} from "./format";
 import {RenderBase} from "./renderbase";
@@ -292,16 +291,24 @@ export class RenderText extends RenderBase {
 			// Get node address
 			const nodeAddr = node.start;
 
+			// Print comments
+			if (node.comments.length > 0) {
+				const comments = node.comments.map(comment => '; NOTE: ' + comment);
+				lines.push(...comments);
+			}
+
 			// Print data between nodes
 			const dataLen = nodeAddr - addr64k;
 			if (dataLen > 0) {
 				this.printData(lines, addr64k, dataLen);
 			}
+/*
 			else if (dataLen < 0) {
 				// Can happen if CODE_FIRST is not aligned
 				// TODO: HIGHLIGHT the NOTE
 				lines.push("; NOTE: At " + Utility.getHexString(nodeAddr, 4) + "h the disassembly is ambiguous.");
 			}
+*/
 			addr64k = nodeAddr;
 
 			// Disassemble node

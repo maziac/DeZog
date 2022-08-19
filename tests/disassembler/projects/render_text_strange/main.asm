@@ -52,3 +52,20 @@ SUB_030A:
 	RET
 
 
+	DEFS 0x0400-$
+	; depend on order, loop
+	CALL SUB_0407
+	RET
+
+SUB_0407:
+	RST 8
+	DEFB  01, 16
+
+SUB_040A:
+	LD HL,$8000
+	NOP
+	NOP
+	JR Z,SUB_040A
+	RET
+
+

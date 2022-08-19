@@ -53,4 +53,21 @@
 52    0310 C9           	RET
 53    0311
 54    0311
+55    0311 00 00 00...  	DEFS 0x0400-$
+56    0400              	; depend on order, loop
+57    0400 CD 04 04     	CALL SUB_0407
+58    0403 C9           	RET
+59    0404
+60    0404              SUB_0407:
+61    0404 CF           	RST 8
+62    0405 01 10        	DEFB  01, 16
+63    0407
+64    0407              SUB_040A:
+65    0407 21 00 80     	LD HL,$8000
+66    040A 00           	NOP
+67    040B 00           	NOP
+68    040C 28 F9        	JR Z,SUB_040A
+69    040E C9           	RET
+70    040F
+71    040F
 # file closed: main.asm

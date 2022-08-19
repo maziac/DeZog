@@ -269,6 +269,45 @@ export class DisassemblerNextGen {
 	}
 
 
+	/** Creates a node in the map.
+	 * Sets also address and slot.
+	 * @param addr64k The address of the node.
+	 * @returns The node
+	 */
+	protected createNodeInMap(addr64k: number): AsmNode {
+		const node = new AsmNode();
+		node.start = addr64k;
+		node.slot = this.addressesSlotBankInfo[addr64k].slot;
+		this.nodes.set(addr64k, node);
+		return node;
+	}
+
+
+	/** Returns the address that correspondents to a prior CODE_FIRST.
+	 * @param addr64k The address
+	 * @return The adjusted address
+	 */
+	protected getAddressForCodeFirst(addr64k: number): number {
+		// Adjust address (in case it does not point to the start of instruction)
+		while (true) {
+			const attr = this.memory.getAttributeAt(addr64k);
+			if (attr & MemAttribute.CODE_FIRST)
+				break;
+			addr64k--;
+		}
+		return addr64k;
+	}
+
+
+	/** Adds comment to node that disassembly is ambiguous.
+	 * Ambiguous nodes have only one or none instructions.
+	 * @param node The node.
+	 */
+	protected addAmbiguousComment(ambiguousNode: AsmNode) {
+		ambiguousNode.comments.push('The disassembly is ambiguous at ' + Format.getHexFormattedString(ambiguousNode.start, 4) + '.');
+	}
+
+
 	/**
 	 * Follows the execution path of an address recursively.
 	 * It fills up the this.nodes map with nodes.
@@ -277,6 +316,7 @@ export class DisassemblerNextGen {
 	 * @param address The 64k start address.
 	 */
 	protected createNodeForAddress(address: number) {
+		console.log('createNodeForAddress', address.toString(16));
 		// Check if address/node already exists.
 		if (this.nodes.get(address)) {
 			// Node already exists
@@ -284,19 +324,39 @@ export class DisassemblerNextGen {
 		}
 
 		// Node does not exist, create  new one
-		const node = new AsmNode();
-		node.start = address;
-		node.slot = this.addressesSlotBankInfo[address].slot;
-		this.nodes.set(address, node);
+		const node = this.createNodeInMap(address);
 
 		const allBranchAddresses: number[] = [];
 
+		let lastAddress: number | undefined;
 		while (true) {
+
+			console.log(' ', address.toString(16)); // TODO
 
 			const memAttr = this.memory.getAttributeAt(address);
 			// Check if already analyzed
 			if (memAttr & MemAttribute.FLOW_ANALYZED) {
 				// Was already analyzed, skip
+				if (memAttr & MemAttribute.CODE_FIRST)
+					break;
+				let ambiguousNode = node;
+				// But if for some reason this does not end at CODE_FIRST, then
+				if (lastAddress != undefined) {
+					// Create node at last address
+					ambiguousNode = this.createNodeInMap(lastAddress);
+				}
+				// Add comment
+				this.addAmbiguousComment(ambiguousNode);
+				// Add also an ambiguous node at the other disassembly
+				// Adjust address
+				const adjAddr64k = this.getAddressForCodeFirst(address);
+				let otherNode = this.nodes.get(adjAddr64k);
+				if (!otherNode) {
+				 	// Create new node
+					otherNode = this.createNodeInMap(adjAddr64k);
+				}
+				// Add comment
+				this.addAmbiguousComment(otherNode);
 				break;
 			}
 
@@ -312,6 +372,7 @@ export class DisassemblerNextGen {
 			this.memory.addAttributeAt(address, MemAttribute.CODE_FIRST);
 
 			// Next address
+			lastAddress = address;
 			address += opcode.length;
 
 			// Check for branch
@@ -346,8 +407,9 @@ export class DisassemblerNextGen {
 		}
 
 		// Now dive into branches
-		for (const addr of allBranchAddresses) {
+		for (let i = allBranchAddresses.length - 1; i >= 0;i--) {
 			// Check for bank border
+			const addr = allBranchAddresses[i];
 			if (!this.bankBorderPassed(node.slot, addr))
 				this.createNodeForAddress(addr);
 		}
@@ -465,10 +527,7 @@ export class DisassemblerNextGen {
 				if (attr & MemAttribute.CODE) {
 					// CODE
 					// Adjust address (in case it does not point to the start of instruction)
-					while (!(attr & MemAttribute.CODE_FIRST)) {
-						adjAddr64k--;
-						attr = this.memory.getAttributeAt(adjAddr64k);
-					}
+					adjAddr64k = this.getAddressForCodeFirst(adjAddr64k);
 				}
 				// Then collect the address for later usage
 				node.dataReferences.push(adjAddr64k);
@@ -477,13 +536,21 @@ export class DisassemblerNextGen {
 			// Store
 			node.instructions.push(opcode);
 
+			// Check if there are any nodes on the opcode address but CODE_FIRST
+			let ambiguousNode;
+			for (let i = 1; i < opcode.length; i++) {
+				ambiguousNode = this.nodes.get(address + i);
+				if (ambiguousNode)
+					break;
+			}
+
 			// Next address
 			address += opcode.length;
 
 			// Check for branch
 			if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
 				// First natural flow, i.e. the next address.
-				if (!(opcode.flags & OpcodeFlag.STOP)) {
+				if (!(opcode.flags & OpcodeFlag.STOP) && !ambiguousNode) {
 					const followingNode = this.getNodeForFill(nodeSlot, address);
 					Utility.assert(followingNode);
 					node.branchNodes.push(followingNode);
@@ -533,14 +600,14 @@ export class DisassemblerNextGen {
 				followingNode.predecessors.push(node);
 				break;
 			}
+
+			// Break if ambiguous disassembly
+			if (ambiguousNode)
+				break;
 		}
 
 		// Set length
 		node.length = address - node.start;
-		// Comment
-		if (node.length == 0) {
-			node.comments.push('Probably an error: The subroutine starts in unassigned memory.');
-		}
 	}
 
 
