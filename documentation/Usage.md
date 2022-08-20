@@ -380,6 +380,8 @@ Then for the launch.json file you simply have to set the path to the SLD file. E
 }]
 ~~~
 
+Note: You normally shouldn't require ```srcDirs```for sjasmplus as the sld file uses unique paths for all files.
+
 
 **Savannah-z80asm configuration:**
 
