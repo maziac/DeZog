@@ -127,8 +127,10 @@ export interface CustomMemoryBank {
 	 * Optional. If specified, set the slot as ROM.
 	 * The content is the path of the ROM content.
 	 * File content should be in raw format (i.e. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).
+	 * If the data is loaded otherwise ("loadObj") it is possible to set this simply to true
+	 * to indicate that memory can't be written by the Z80.
 	 */
-	rom?: string;
+	rom?: string | boolean;
 
 	/**
 	 * Optional offset of the ROM file/content

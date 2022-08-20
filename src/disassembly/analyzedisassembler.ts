@@ -100,6 +100,7 @@ export class AnalyzeDisassembler extends Disassembler {
 			const range = memModel.slotRanges[slot];
 			// Now check if maybe unused
 			const [bankNr] = range.banks;
+			Utility.assert(bankNr != undefined);
 			const bank = memModel.banks[bankNr];
 			const singleBank = (bank.bankType != BankType.UNUSED) && (range.banks.size == 1);
 			this.setSlotBankInfo(range.start, range.end, slot, singleBank);

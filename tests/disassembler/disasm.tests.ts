@@ -4526,8 +4526,9 @@ suite('Disassembler', () => {
 			assert.equal(node4.callee?.start, 0xC000);
 		});
 
+		/** Test makes no sense:
 		test('From slot 3 (not used)', () => {
-			// Pathilogical case: we should not create something in unused memory.
+			// Pathological case: we should not create something in unused memory.
 			const startAddr = 0xC100;
 			dng.getFlowGraph([startAddr], []);
 			assert.equal(dngNodes.size, 1);	// A node is created although e.g. length is 0.
@@ -4536,6 +4537,7 @@ suite('Disassembler', () => {
 			assert.notEqual(nodeC100, undefined);
 			assert.notEqual(nodeC100.comments.length, 0);	// There should be a comment about unassigned memory.
 		});
+		*/
 	});
 
 

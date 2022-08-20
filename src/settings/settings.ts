@@ -538,8 +538,10 @@ export class Settings {
 				for (const bank of slotRange.banks) {
 					// Create abs paths
 					if (bank.rom != undefined) {
-						const path = UnifiedPath.getUnifiedPath(bank.rom);
-						bank.rom = Utility.getAbsFilePath(path, rootFolder);
+						if (typeof bank.rom == 'string') {
+							const path = UnifiedPath.getUnifiedPath(bank.rom);
+							bank.rom = Utility.getAbsFilePath(path, rootFolder);
+						}
 					}
 					// Convert rom offset from hex-string to number
 					bank.romOffset = Utility.convertHexNumber(bank.romOffset);

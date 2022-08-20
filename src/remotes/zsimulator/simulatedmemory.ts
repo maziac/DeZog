@@ -149,11 +149,13 @@ export class SimulatedMemory implements Serializable {
 				// Check for rom
 				let rom = bank.rom;
 				if (rom) {
-					// Read file
-					const romData = this.readRomFile(rom);	// Note: is already a unified path
-					// Use data
-					const offs = bank.romOffset || 0;
-					memBank.set(romData.slice(offs, offs + memBank.length));
+					if (typeof rom == 'string') {
+						// Read file
+						const romData = this.readRomFile(rom);	// Note: is already a unified path
+						// Use data
+						const offs = bank.romOffset || 0;
+						memBank.set(romData.slice(offs, offs + memBank.length));
+					}
 				}
 			}
 		}
@@ -477,6 +479,8 @@ export class SimulatedMemory implements Serializable {
 
 	// Read 1 byte.
 	// This is used by the Z80 CPU.
+	// Note: no special check is done reading UNUSED memory. As this cannot be
+	// written a read will always return the default value (0).
 	public read8(addr64k: number): number {
 		// Check for watchpoint access
 		const wp = this.watchPointMemory[addr64k];

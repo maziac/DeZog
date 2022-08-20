@@ -69,7 +69,7 @@ export interface BankInfo {
 	 * The path of the ROM content.
 	 * File content should be in raw format (e.g. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).
 	 */
-	rom?: string;
+	rom?: boolean | string;
 
 	/**
 	 * Optional offset of the ROM file/content
@@ -241,11 +241,12 @@ export class MemoryModel {
 	 */
 	protected createUnusedBanks() {
 		// Assign banks to unassigned memory (above max bank number)
-		let unassignedIndex = this.banks.length;
+		let unassignedBankIndex = this.banks.length;
 		for (let i = 0; i < this.slotRanges.length; i++) {
 			const slot = this.initialSlots[i];
 			if (slot == -1) {
 				const slotRange = this.slotRanges[i];
+				slotRange.banks.add(unassignedBankIndex);	// Even unused slots get a number.
 				const start = slotRange.start;
 				const end = slotRange.end;
 				const size = end + 1 - start;
@@ -256,10 +257,10 @@ export class MemoryModel {
 					bankType: BankType.UNUSED
 				};
 				this.banks.push(bankInfo);
-				this.initialSlots[i] = unassignedIndex;
+				this.initialSlots[i] = unassignedBankIndex;
 				this.slotAddress64kAssociation.fill(i, start, end + 1);
 				// Next
-				unassignedIndex++;
+				unassignedBankIndex++;
 			}
 		}
 	}
@@ -318,7 +319,7 @@ export class MemoryModel {
 		const bankNumbers: number[] = [];
 		let indexStart: number;
 		let indexOrRange = bank.index;
-		const bankType = (bank.rom == undefined) ? BankType.RAM : BankType.ROM;
+		const bankType = (bank.rom || typeof bank.rom == 'string') ? BankType.ROM : BankType.RAM;
 		// Check for bank range
 		if (typeof indexOrRange == 'number') {
 			// Just one bank
@@ -415,8 +416,7 @@ export class MemoryModel {
 			}
 			else {
 				// Use bank
-				const bank = this.banks[bankNr];
-				name = bank.name;
+				name = this.getBankName(bankNr);
 			}
 			// Store
 			const slotRange = this.slotRanges[i];
@@ -424,6 +424,19 @@ export class MemoryModel {
 		}
 		// Return
 		return pages;
+	}
+
+
+	/** Returns the name of a bank.
+	 * @param bankNr The bank number.
+	 * @return E.g. "ROM0"
+	 */
+	protected getBankName(bankNr: number): string {
+		const bank = this.banks[bankNr];
+		if (bank)
+			return bank.name;
+		// Unknown
+		return "UNKNOWN" + bankNr;
 	}
 
 
@@ -492,8 +505,10 @@ export class MemoryModel {
 		else {
 			// No bank given, check if it is a banked slot
 			const banks = this.getBanksFor(addr64k);
-			if (banks.size == 0)
-				throw Error("Address " + Utility.getHexString(addr64k, 4) + " has no mapped bank.");
+			Utility.assert(banks);
+			Utility.assert(banks.size > 0);
+			//if (banks.size == 0)
+			//	throw Error("Address " + Utility.getHexString(addr64k, 4) + " has no mapped bank.");
 			if (banks.size > 1)
 				throw Error("Address " + Utility.getHexString(addr64k, 4) + " is in an address range with banked memory but lacks bank information.");
 			const values = banks.values().next();
