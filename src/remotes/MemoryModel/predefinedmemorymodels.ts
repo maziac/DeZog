@@ -370,6 +370,8 @@ export class MemoryModelColecoVision extends MemoryModel {
 						{
 							index: 0,
 							name: 'BIOS',
+							shortName: 'BIOS',
+							rom: true
 						}
 					]
 				},
@@ -400,6 +402,7 @@ export class MemoryModelColecoVision extends MemoryModel {
 							index: 3,
 							name: 'Cartridge ROM',
 							shortName: 'CR',
+							rom: true
 						}
 					]
 				}

@@ -1,6 +1,6 @@
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
-import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelColecoVision, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
 import {AsmConfigBase, SjasmplusConfig} from '../settings/settings';
 import {LabelParserBase} from './labelparserbase';
 import {SourceFileEntry} from './labels';
@@ -482,12 +482,15 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			}
 		}
 
-		// Check for ZX48K
-		if (destMemModel instanceof MemoryModelZx48k) {
-			this.funcConvertBank = (address: number, bank: number) => {
-				if (address < 0x4000)
-					return 0; // ROM
-				return 1;	// RAM
+		// Check for ZX48K, ZX16K, Coleco Vision
+		if (destMemModel instanceof MemoryModelZx48k
+			|| destMemModel instanceof MemoryModelZx16k
+			|| destMemModel instanceof MemoryModelColecoVision) {
+			this.funcConvertBank = (address: number /*, bank: number*/) => {
+				// Get slot
+				const slot = destMemModel.slotAddress64kAssociation[address];
+				const bank = destMemModel.initialSlots[slot];
+				return bank;
 			};
 			return;
 		}
@@ -561,7 +564,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		this.sendWarning("Unsupported memory model mapping, sjasmplus '" + SjasmplusMemoryModel[srcMemModel] + "' to target '" + destMemModel.name + "'. slots/banks might not be associated correctly.");
 		// Simply map all addresses (regardless of the bank) of the assembler onto the
 		// initial banks of the memory model.
-		this.funcConvertBank = (address: number /*, bank: number*/) => {
+		this.funcConvertBank = (address: number /*, bank: number*/) => {	// NOSONAR
 			// Get slot
 			const slot = destMemModel.slotAddress64kAssociation[address];
 			const bank = destMemModel.initialSlots[slot];

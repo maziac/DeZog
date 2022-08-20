@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
 import {BankType, MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
-import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelColecoVision, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 import {Z80Registers, Z80RegistersClass} from '../src/remotes/z80registers';
 import {Settings} from '../src/settings/settings';
 
@@ -137,8 +137,8 @@ suite('MemoryModel', () => {
 		test('empty slot range', () => {
 			const mm = new MemoryModel({slots: []}) as any;
 			assert.equal(mm.slotRanges.length, 1);
-			assert.equal(mm.slotRanges[0].banks.size, 0);
-			assert.equal(mm.getBanksFor(0x1000).size, 0);
+			assert.equal(mm.slotRanges[0].banks.size, 1);
+			assert.equal(mm.getBanksFor(0x1000).size, 1);
 		});
 
 		test('A few banks', () => {
@@ -197,22 +197,22 @@ suite('MemoryModel', () => {
 
 			assert.equal(mm.slotRanges.length, 5);
 
-			assert.equal(mm.slotRanges[0].banks.size, 0);
+			assert.equal(mm.slotRanges[0].banks.size, 1);
 			assert.equal(mm.slotRanges[1].banks.size, 2);
-			assert.equal(mm.slotRanges[2].banks.size, 0);
+			assert.equal(mm.slotRanges[2].banks.size, 1);
 			assert.equal(mm.slotRanges[3].banks.size, 11);
-			assert.equal(mm.slotRanges[4].banks.size, 0);
+			assert.equal(mm.slotRanges[4].banks.size, 1);
 
-			assert.equal(mm.getBanksFor(0x0000).size, 0);
-			assert.equal(mm.getBanksFor(0x0FFF).size, 0);
+			assert.equal(mm.getBanksFor(0x0000).size, 1);
+			assert.equal(mm.getBanksFor(0x0FFF).size, 1);
 			assert.equal(mm.getBanksFor(0x1000).size, 2);
 			assert.equal(mm.getBanksFor(0x7FFF).size, 2);
-			assert.equal(mm.getBanksFor(0x8000).size, 0);
-			assert.equal(mm.getBanksFor(0x9FFF).size, 0);
+			assert.equal(mm.getBanksFor(0x8000).size, 1);
+			assert.equal(mm.getBanksFor(0x9FFF).size, 1);
 			assert.equal(mm.getBanksFor(0xA000).size, 11);
 			assert.equal(mm.getBanksFor(0xBFFF).size, 11);
-			assert.equal(mm.getBanksFor(0xC000).size, 0);
-			assert.equal(mm.getBanksFor(0xFFFF).size, 0);
+			assert.equal(mm.getBanksFor(0xC000).size, 1);
+			assert.equal(mm.getBanksFor(0xFFFF).size, 1);
 		});
 	});
 
@@ -960,6 +960,78 @@ suite('MemoryModel', () => {
 			assert.equal(memBanks[7].end, 0xFFFF);
 			assert.equal(memBanks[7].name, "BANK6");
 		});
+
+		test('COLECOVISION', () => {
+			const mm = new MemoryModelColecoVision() as any;
+			assert.equal(mm.slotRanges.length, 6);
+			assert.equal(mm.slotRanges[0].start, 0x0000);
+			assert.equal(mm.slotRanges[0].end, 0x1FFF);
+			assert.equal(mm.slotRanges[0].ioMMu, undefined);
+			assert.equal(mm.slotRanges[1].start, 0x2000);
+			assert.equal(mm.slotRanges[1].end, 0x5FFF);
+			assert.equal(mm.slotRanges[1].ioMMu, undefined);
+			assert.equal(mm.slotRanges[2].start, 0x6000);
+			assert.equal(mm.slotRanges[2].end, 0x6FFF);
+			assert.equal(mm.slotRanges[2].ioMMu, undefined);
+			assert.equal(mm.slotRanges[3].start, 0x7000);
+			assert.equal(mm.slotRanges[3].end, 0x73FF);
+			assert.equal(mm.slotRanges[3].ioMMu, undefined);
+			assert.equal(mm.slotRanges[4].start, 0x7400);
+			assert.equal(mm.slotRanges[4].end, 0x7FFF);
+			assert.equal(mm.slotRanges[4].ioMMu, undefined);
+			assert.equal(mm.slotRanges[5].start, 0x8000);
+			assert.equal(mm.slotRanges[5].end, 0xFFFF);
+			assert.equal(mm.slotRanges[5].ioMMu, undefined);
+
+			assert.equal(mm.initialSlots.length, 6);
+			assert.equal(mm.initialSlots[0], 0);
+			assert.equal(mm.initialSlots[1], 1);
+			assert.equal(mm.initialSlots[2], 4);	// UNUSED
+			assert.equal(mm.initialSlots[3], 2);
+			assert.equal(mm.initialSlots[4], 5);	// UNUSED
+			assert.equal(mm.initialSlots[5], 3);
+
+			assert.equal(mm.banks.length, 6);
+			assert.equal(mm.banks[0].name, "BIOS");
+			assert.equal(mm.banks[1].name, "Expansion port");
+			assert.equal(mm.banks[2].name, "RAM (1k)");
+			assert.equal(mm.banks[3].name, "Cartridge ROM");
+			assert.equal(mm.banks[4].name, "UNUSED");
+			assert.equal(mm.banks[5].name, "UNUSED");
+			assert.equal(mm.banks[0].shortName, "BIOS");
+			assert.equal(mm.banks[1].shortName, "EXP");
+			assert.equal(mm.banks[2].shortName, "RAM");
+			assert.equal(mm.banks[3].shortName, "CR");
+			assert.equal(mm.banks[4].shortName, "");
+			assert.equal(mm.banks[5].shortName, "");
+			assert.equal(mm.banks[0].bankType, BankType.ROM);
+			assert.equal(mm.banks[1].bankType, BankType.RAM);
+			assert.equal(mm.banks[2].bankType, BankType.RAM);
+			assert.equal(mm.banks[3].bankType, BankType.ROM);
+			assert.equal(mm.banks[4].bankType, BankType.UNUSED);
+			assert.equal(mm.banks[5].bankType, BankType.UNUSED);
+
+			const memBanks = mm.getMemoryBanks([0, 1, 4, 2, 5, 3]);
+			assert.equal(memBanks.length, 6);
+			assert.equal(memBanks[0].start, 0x0000);
+			assert.equal(memBanks[0].end, 0x1FFF);
+			assert.equal(memBanks[0].name, "BIOS");
+			assert.equal(memBanks[1].start, 0x2000);
+			assert.equal(memBanks[1].end, 0x5FFF);
+			assert.equal(memBanks[1].name, "Expansion port");
+			assert.equal(memBanks[2].start, 0x6000);
+			assert.equal(memBanks[2].end, 0x6FFF);
+			assert.equal(memBanks[2].name, "UNUSED");
+			assert.equal(memBanks[3].start, 0x7000);
+			assert.equal(memBanks[3].end, 0x73FF);
+			assert.equal(memBanks[3].name, "RAM (1k)");
+			assert.equal(memBanks[4].start, 0x7400);
+			assert.equal(memBanks[4].end, 0x7FFF);
+			assert.equal(memBanks[4].name, "UNUSED");
+			assert.equal(memBanks[5].start, 0x8000);
+			assert.equal(memBanks[5].end, 0xFFFF);
+			assert.equal(memBanks[5].name, "Cartridge ROM");
+		});
 	});
 
 
@@ -1084,7 +1156,7 @@ suite('MemoryModel', () => {
 			}, Error);
 
 			assert.throws(() => {
-				mm.parseBank(0x0000, '');
+				mm.parseBank(0x0000, 'abcd');
 			}, Error);
 		});
 
@@ -1222,10 +1294,8 @@ suite('MemoryModel', () => {
 				mm.parseBank(0x8000, 'R0');
 			}, Error);
 
-			assert.throws(() => {
-				// "Address has no mapped bank ..."
-				mm.parseBank(0x4000, '');
-			}, Error);
+			// Should not throw:
+			mm.parseBank(0x4000, '');
 
 			assert.throws(() => {
 				// "... lacks bank info ..."
