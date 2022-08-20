@@ -354,6 +354,8 @@ E.g.:
 sjasmplus --sld=main.sld --fullpath main.asm
 ~~~
 
+Note: the ```--fullpath``` does not change the sld output but shows the full path in case of errors.
+
 Inside one of your asm files you need to set a few more options:
 - Use ```DEVICE something``` to set a device. Otherwise the SLD file will be empty. You can e.g. use ```ZXSPECTRUM48```, ```ZXSPECTRUM128```, ```ZXSPECTRUMNEXT```.
 - If you use a non ZX Spectrum like device, e.g. a pure Z80 system without any banking, then you need to choose: **```NOSLOT64K```** If you would not set any device it will default to NONE which will let sjasmplus not create any data in the sld file.
@@ -410,7 +412,7 @@ Same as sjasmplus but use: ```z80asm```, e.g.:
 }]
 ~~~
 
-For 'path', 'srcDirs' nad 'excludeFiles' see z80asm configuration.
+For 'path', 'srcDirs' and 'excludeFiles' see z80asm configuration.
 
 - mapFile: The map file is required to correctly parse the label values and to get correct file/line to address associations.
 - mainFile: The relative path of the file used to create the list file.
