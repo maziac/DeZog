@@ -3,6 +3,7 @@ import {ZSimRemote} from '../src/remotes/zsimulator/zsimremote';
 import {Settings} from '../src/settings/settings';
 import {Utility} from '../src/misc/utility';
 import {Z80RegistersClass} from '../src/remotes/z80registers';
+import {MemoryModelColecoVision} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
 
 
@@ -314,5 +315,33 @@ suite('ZSimRemote', () => {
 
 	});
 
+	suite('COLECOVISION', () => {
+
+		setup(() => {
+			Utility.setExtensionPath('.');
+			const cfg: any = {
+				remoteType: 'zsim',
+				zsim: {
+					vsyncInterrupt: false,
+					memoryModel: "COLECOVISION"
+				},
+				history: {
+					reverseDebugInstructionCount: 0,
+					spotCount: 0,
+					codeCoverageEnabled: false
+				}
+			};
+			Settings.launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters();
+			zsim = new ZSimRemote();
+		});
+
+		test('Check Memory Model', () => {
+			// @ts-ignore: protected access
+			zsim.configureMachine(Settings.launch.zsim);
+
+			assert.ok(zsim.memoryModel instanceof MemoryModelColecoVision);
+		});
+	});
 });
 

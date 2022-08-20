@@ -18,7 +18,7 @@ import {CustomCode} from './customcode';
 import {BeeperBuffer, ZxBeeper} from './zxbeeper';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
-import {MemoryModelAllRam, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelColecoVision, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
 import {ZxUlaScreen} from './zxulascreen';
 
 
@@ -218,6 +218,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * - "ZX48": ROM and RAM as of the ZX Spectrum 48K.
 	 * - "ZX128": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
 	 * - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
+   	 * - "COLECOVISION": Memory map for the Coleco Vision (8k slots, no banking).
 	 * - "CUSTOM": User defined memory.
 	 */
 	protected configureMachine(zsim: ZSimType) {
@@ -302,6 +303,13 @@ export class ZSimRemote extends DzrpRemote {
 					this.ports.registerSpecificOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
 					this.ports.registerSpecificOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
 					this.ports.registerSpecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
+				}
+				break;
+			case "COLECOVISION":
+				{
+					// ZX 48K
+					// Memory Model
+					this.memoryModel = new MemoryModelColecoVision();
 				}
 				break;
 			case "CUSTOM":

@@ -701,6 +701,7 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
 	- "ZX48K": ROM and RAM as of the ZX Spectrum 48K.
 	- "ZX128K": Paged memory as of the ZX Spectrum 128K (16k slots/banks).
 	- "ZXNEXT": Paged memory as of the ZX Next (8k slots/banks).
+    - "COLECOVISION": Memory map for the Coleco Vision (8k slots, no banking).
     - "CUSTOM": For a custom memory layout. See [customMemory](#custommemory).
 - "ulaScreen": true/false. Defaults to false. If enabled it shows the contents of the ZX Spectrum screen.
 ![](images/zsim_ula_screen.jpg)

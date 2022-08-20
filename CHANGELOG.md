@@ -14,6 +14,7 @@
 - Restart behavior changed because of issue #91. A restart **with a new or changed configuration** will now terminate the current session without restarting.
 - Break decoration color changed to red.
 - "disableBanking" option removed from "sjasmplus" launch.json configuration.
+- ZEsarUX: "Coleco Vision" memory model added.
 
 # 2.7.3
 - Fixed #95: bug in watch structures

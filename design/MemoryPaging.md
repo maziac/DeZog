@@ -56,7 +56,7 @@ A slot can be paged but does not have to.
 Paging means that different memory banks can be paged into a slot.
 E.g. slot 1 could either contain bank 4, bank 7 or bank 12.
 If a slot is pageable and what banks are usable depends on the MemoryModel used.
-E.g. ZX16K and ZX128K use different MemoryModels: Zx16MemoryModel and ZX128MemoryModel.
+E.g. ZX16K and ZX128K use different MemoryModels: MemoryModelZx16k and MemoryModelZx128k.
 
 The term bank is used here for memory that can be bank switched but also for memory that can't. E.g. the ZX48K has 2 banks: 16k ROM and 48k RAM.
 
