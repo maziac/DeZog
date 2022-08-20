@@ -6,9 +6,9 @@ import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, RemoteBreakpoint} from '../remotebase';
 import {ZesaruxCpuHistory, DecodeZesaruxHistoryInfo} from './zesaruxcpuhistory';
 import {Z80RegistersClass, Z80Registers} from '../z80registers';
-import {DecodeZesaruxRegisters, DecodeZesaruxRegistersZx128k, DecodeZesaruxRegistersZx16k, DecodeZesaruxRegistersZx48k, DecodeZesaruxRegistersZxNext} from './decodezesaruxdata';
+import {DecodeZesaruxRegisters, DecodeZesaruxRegistersColecovision, DecodeZesaruxRegistersZx128k, DecodeZesaruxRegistersZx16k, DecodeZesaruxRegistersZx48k, DecodeZesaruxRegistersZxNext} from './decodezesaruxdata';
 import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
-import {PromiseCallbacks} from '../../misc/promisecallbacks';import {MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
+import {PromiseCallbacks} from '../../misc/promisecallbacks';import {MemoryModelColecoVision, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
 
 
 
@@ -205,30 +205,35 @@ export class ZesaruxRemote extends RemoteBase {
 				// Distinguished are only: 48k, 128k and tbblue.
 				const mtResp = await zSocket.sendAwait('get-current-machine') as string;
 				const machineType = mtResp.toLowerCase();
-				if (machineType.indexOf("tbblue") >= 0 || machineType.indexOf("zx spectrum next") >= 0) {
+				if (machineType.includes("tbblue") || machineType.includes("zx spectrum next")) {
 					// "ZX Spectrum Next" since zesarux 9.2.
 					// 8x8k banks
 					Z80Registers.decoder = new DecodeZesaruxRegistersZxNext();
-					this.memoryModel = new MemoryModelZxNext()
+					this.memoryModel = new MemoryModelZxNext();
 				}
-				else if (machineType.indexOf("128k") >= 0) {
+				else if (machineType.includes("128k")) {
 					// 4x16k banks
 					Z80Registers.decoder = new DecodeZesaruxRegistersZx128k();
-					this.memoryModel = new MemoryModelZx128k()
+					this.memoryModel = new MemoryModelZx128k();
 				}
-				else if (machineType.indexOf("48k") >= 0) {
+				else if (machineType.includes("48k")) {
 					// 4x16k banks
 					Z80Registers.decoder = new DecodeZesaruxRegistersZx48k();
-					this.memoryModel = new MemoryModelZx48k()
+					this.memoryModel = new MemoryModelZx48k();
 				}
-				else if (machineType.indexOf("16k") >= 0) {
+				else if (machineType.includes("16k")) {
 					// 4x16k banks
 					Z80Registers.decoder = new DecodeZesaruxRegistersZx16k();
-					this.memoryModel = new MemoryModelZx16k()
+					this.memoryModel = new MemoryModelZx16k();
+				}
+				else if (machineType.includes("colecovision")) {
+					// 4 Banks
+					Z80Registers.decoder = new DecodeZesaruxRegistersColecovision();
+					this.memoryModel = new MemoryModelColecoVision();
 				}
 				else {
 					// For all others:
-					Z80Registers.decoder = new DecodeZesaruxRegisters(0);
+					Z80Registers.decoder = new DecodeZesaruxRegisters(1);
 					this.memoryModel = new MemoryModelUnknown();
 				}
 				// Init

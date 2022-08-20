@@ -242,8 +242,9 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	// ZX48K:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001"
 	// ZX16K:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001"
 	// Others are simply the bank number.
+	// coleco:  "MMU=80008001000a000b0004000500000001"
 	public parseSlots(data: string): number[] {
-		return [];
+		return [0];	// Correspondents to MemoryModelUnknown
 	}
 }
 
@@ -349,5 +350,18 @@ export class DecodeZesaruxRegistersZx16k extends DecodeZesaruxRegisters {
 		// ZX16K:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001"
 		// But because it is fixed, it can be ignored.
 		return [0, 1, 2];
+	}
+}
+
+
+// Decoder for the Coleco Vision.
+export class DecodeZesaruxRegistersColecovision extends DecodeZesaruxRegisters {
+	constructor() {
+		super(6);	// 6 slots: BIOS, EXP. PORT, Unassigned, RAM, Unassigned, Cartridge
+	}
+
+	public parseSlots(data: string): number[] {
+		// The slots are fixed so we don't need to parse.
+		return [0, 1, 4, 2, 5, 3];
 	}
 }
