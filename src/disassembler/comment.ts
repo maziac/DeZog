@@ -1,6 +1,7 @@
 /**
  * Used for commenting labels (addresses) in the disassembly.
  */
+// TODO: Remove class
 export class Comment {
 	/// The line before the statement.
 	public linesBefore: Array<string>;
