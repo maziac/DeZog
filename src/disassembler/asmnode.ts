@@ -64,9 +64,6 @@ export class AsmNode {
 	// was a JP (branchNodes.length = 1) or RET (branchNodes.length = 0).
 	public stop: boolean = false;
 
-	// Comments are added here.
-	public comments: string[] = [];
-
 	// The global or local name of the node.
 	// Can also be undefined.
 	// E.g. "SUB_04AD", "LBL_FF00", ".L1", ".L2", ".LOOP", ".LOOP1"

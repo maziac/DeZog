@@ -1,6 +1,7 @@
 import {AsmNode} from "./asmnode";
 import {Format} from "./format";
 import {RenderBase} from "./renderbase";
+import {RenderedLines} from "./renderedlines";
 import {Subroutine} from "./subroutine";
 
 
@@ -159,7 +160,7 @@ export class RenderText extends RenderBase {
 	 * @param add64k The address to start.
 	 * @param dataLen The length of the data to print.
 	 */
-	protected printData(lines: string[], addr64k: number, dataLen: number) {
+	protected printData(lines: RenderedLines, addr64k: number, dataLen: number) {
 		// Find first address in 'dataReferences'
 		let dataAddr = this.dataReferences.at(-1);	// Last item
 		if (dataAddr == undefined)
@@ -178,7 +179,6 @@ export class RenderText extends RenderBase {
 			endAddr = 0x10000;
 
 		// Continue until area is left
-		const prevLineLength = lines.length;
 		while (dataAddr < endAddr) {
 			// Label is in printed area
 			this.dataReferences.pop();
@@ -205,12 +205,12 @@ export class RenderText extends RenderBase {
 			if (label) {
 				// Is e.g. not defined if in different bank.
 				const addressLabel = this.getAddressLabel(dataAddr, label);
-				lines.push(addressLabel);
+				lines.addLine(addressLabel);
 			}
 
 			// Print the data
 			const line = this.getCompleteDataLine(dataAddr, countBytes);
-			lines.push(line);
+			lines.addLine(line);
 
 			// Check for end
 			if (nextDataAddr == undefined)
@@ -221,8 +221,7 @@ export class RenderText extends RenderBase {
 		}
 
 		// Add new line only if something was added.
-		if (prevLineLength != lines.length)
-			lines.push('');
+		lines.addNewline();
 	}
 
 
@@ -272,7 +271,8 @@ export class RenderText extends RenderBase {
 	 * @param startNodes The start node labels are rendered in a different color.
 	 * @returns The disassembly text.
 	 */
-	public renderNodes(nodeSet: Set<AsmNode>, startNodes: AsmNode[]= []): string {
+	public renderNodes(nodeSet: Set<AsmNode>, startNodes: AsmNode[] = []): string {
+		const comments = this.disasm.comments;
 		// Sort the nodes
 		const nodes = Array.from(nodeSet); //.filter(node => (node.length > 0));	// Filter nodes in other banks
 		nodes.sort((a, b) => a.start - b.start);
@@ -285,17 +285,11 @@ export class RenderText extends RenderBase {
 		this.dataReferences.sort((a, b) => b - a); // 0 = highest
 
 		// Loop over all nodes
-		const lines: string[] = [];
+		const lines = new RenderedLines();
 		let addr64k = 0x0000;
 		for (const node of nodes) {
 			// Get node address
 			const nodeAddr = node.start;
-
-			// Print comments
-			if (node.comments.length > 0) {
-				const comments = node.comments.map(comment => '; NOTE: ' + comment);
-				lines.push(...comments);
-			}
 
 			// Print data between nodes
 			const dataLen = nodeAddr - addr64k;
@@ -314,6 +308,13 @@ export class RenderText extends RenderBase {
 			// Disassemble node
 			let i = 0;
 			for (const opcode of node.instructions) {
+				// First print comment(s)
+				const cmnts = comments.getCommentsForAddresses(addr64k, opcode.length);
+				if (cmnts.length > 0) {
+					lines.addNewline();
+					cmnts.forEach(c => lines.addLine('; Note: ' + c));
+				}
+
 				// Check if label exists
 				const label = this.disasm.getLabelForAddr64k(addr64k);
 				if (label) {
@@ -326,7 +327,7 @@ export class RenderText extends RenderBase {
 						}
 					}
 					// Store
-					lines.push(labelText);
+					lines.addLine(labelText);
 				}
 
 				// Now disassemble instruction
@@ -334,14 +335,14 @@ export class RenderText extends RenderBase {
 				const bytes = this.disasm.memory.getData(addr64k, len);
 				const instructionText = this.formatAddressPlusText(addr64k, bytes, opcode.disassembledText);
 				const hrefInstrText = this.htmlWithReference(instructionText, addr64k);
-				lines.push(hrefInstrText);
+				lines.addLine(hrefInstrText);
 
 				// Next
 				addr64k += len;
 			}
 
 			// Separate blocks
-			lines.push('');
+			lines.addNewline();
 		}
 
 		// Print data after last node
@@ -351,7 +352,7 @@ export class RenderText extends RenderBase {
 		}
 
 		// Return
-		const text = lines.join('\n');
+		const text = lines.getText();
 		return text;
 	}
 }

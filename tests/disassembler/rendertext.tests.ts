@@ -698,12 +698,31 @@ suite('Disassembler - RenderText', () => {
 
 				assert.equal(c(text), c(
 					`0100.1 00 NOP
+
+; Note: The disassembly is ambiguous at $0102.
 0101.1 3E 05 LD A,$05
 0103.1 00 NOP
 0104.1 00 NOP
-0105.1 C3 02 01 JP 0102.1
 
-; NOTE: At 0102h the disassembly is ambiguous.
+; Note: The disassembly is ambiguous at $0102.
+0105.1 C3 02 01 JP 0102.1
+`));
+			});
+
+
+			test('jump into opcode 2', () => {
+				const text = disassemble([0x0100, 0x0101, 0x103]);
+
+				assert.equal(c(text), c(
+					`0100.1 00 NOP
+
+; Note: The disassembly is ambiguous at $0102.
+0101.1 3E 05 LD A,$05
+0103.1 00 NOP
+0104.1 00 NOP
+
+; Note: The disassembly is ambiguous at $0102.
+0105.1 C3 02 01 JP 0102.1
 `));
 			});
 
@@ -716,21 +735,20 @@ suite('Disassembler - RenderText', () => {
 						`0008.1 SUB_0008:
 0008.1 C9 RET
 
-0200.1 CD 07 02 CALL LBL_0207
+0200.1 CD 07 02 CALL SUB_0207
 
-0203.1 CD 0A 02 CALL SUB_020A
+; Note: The disassembly is ambiguous at $020A.
+0203.1 CD 0A 02 CALL 020A.1
 
 0206.1 C9 RET
 
-0207.1 LBL_0207:
+0207.1 SUB_0207:
 0207.1 CF RST $08
 
-; NOTE: The disassembly is ambiguous at $0208.
+; Note: The disassembly is ambiguous at $020A.
 0208.1 01 10 21 LD BC,$2110
-
-; NOTE: The disassembly is ambiguous at $020A.
-020A.1 SUB_020A:
-020A.1 21 00 80 LD HL,$8000
+020B.1 00 NOP
+020C.1 80 ADD A,B
 020D.1 00 NOP
 020E.1 00 NOP
 020F.1 00 NOP
@@ -745,7 +763,7 @@ suite('Disassembler - RenderText', () => {
 						`0008.1 SUB_0008:
 0008.1 C9 RET
 
-0300.1 CD 0A 03 CALL 030A.1
+0300.1 CD 0A 03 CALL SUB_030A
 
 0303.1 CD 07 03 CALL LBL_0307
 
@@ -754,10 +772,15 @@ suite('Disassembler - RenderText', () => {
 0307.1 LBL_0307:
 0307.1 CF RST $08
 
-; NOTE: The disassembly is ambiguous at $0308.
+; Note: The disassembly is ambiguous at $030A.
 0308.1 01 10 21 LD BC,$2110
 
-; NOTE: The disassembly is ambiguous at $030A.
+030A.1 SUB_030A:
+030A.1 21 00 80 LD HL,$8000
+030D.1 00 NOP
+030E.1 00 NOP
+030F.1 00 NOP
+0310.1 C9 RET
 `));
 				});
 			});

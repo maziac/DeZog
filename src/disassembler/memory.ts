@@ -152,4 +152,24 @@ export class Memory extends BaseMemory {
 			address++;
 		}
 	}
+
+
+	/** Returns the address in a range that has the given attribute set.
+	 * If attribute is not found, undefined is returned
+	 * @param addr64k The start address.
+	 * @param addr64k The start address.
+	 * @param len The number of bytes to check.
+	 * @return The first address with attribute set or undefined.
+	 */
+	public searchAddrWithAttribute(searchAttr: MemAttribute, addr64k: number, len: number): number | undefined {
+		for (let i = 0; i < len; i++) {
+			const attr = this.memoryAttr[addr64k];
+			if (attr & searchAttr)
+				return addr64k;
+			// Next
+			addr64k++;
+		}
+		// Nothing found
+		return undefined;
+	}
 }

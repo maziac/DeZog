@@ -4545,6 +4545,7 @@ suite('Disassembler', () => {
 
 		let dng: DisassemblerNextGen;
 		let dngNodes: Map<number, AsmNode>;
+		let comments: Map<number, string[]>;
 		setup(() => {
 			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
 			(dng as any).setSlotBankInfo(0x0000, 0x1FFF, 0, true);
@@ -4557,6 +4558,7 @@ suite('Disassembler', () => {
 			dng.setCurrentSlots([0, 1, 2, 3, 4, 5, 6]);	// A different bank in each slot
 			dng.readBinFile(0, './tests/disassembler/projects/flow_through_slot/main.bin');
 			dngNodes = (dng as any).nodes;
+			comments = (dng as any).comments.addrComments;
 		});
 
 		test('Flow through to unassigned or other bank', () => {
@@ -4566,12 +4568,12 @@ suite('Disassembler', () => {
 
 			const node1 = dng.getNodeForAddress(0x1FFE)!;
 			assert.notEqual(node1, undefined);
-			assert.equal(node1.comments.length, 0);
+			assert.equal(comments.size, 0);
 
 			const successor = node1.branchNodes[0];
 			assert.equal(successor.start, 0x2000);
 			assert.equal(successor.length, 0);
-			assert.notEqual(successor.comments.length, 0);
+			assert.notEqual(comments.size, 0);
 		});
 
 		test('Flow through from multi bank to single bank', () => {
@@ -4581,7 +4583,7 @@ suite('Disassembler', () => {
 
 			const node1 = dng.getNodeForAddress(0x3FFE)!;
 			assert.notEqual(node1, undefined);
-			assert.equal(node1.comments.length, 0);
+			assert.equal(comments.size, 0);
 			assert.equal(node1.instructions.length, 2);
 			assert.equal(node1.length, 3);
 		});
@@ -4594,7 +4596,8 @@ suite('Disassembler', () => {
 
 			const node1 = dng.getNodeForAddress(0x5FFF)!;
 			assert.notEqual(node1, undefined);
-			assert.equal(node1.comments.length, 1);
+			assert.equal(comments.size, 1);
+			assert.notEqual(comments.get(0x5FFF), undefined);
 
 			assert.equal(node1.branchNodes.length, 0);
 		});
@@ -4608,7 +4611,7 @@ suite('Disassembler', () => {
 
 			const node1 = dng.getNodeForAddress(0x7FFF)!;
 			assert.notEqual(node1, undefined);
-			assert.equal(node1.comments.length, 0);
+			assert.equal(comments.size, 0);
 			assert.equal(node1.instructions.length, 2);
 			assert.equal(node1.length, 3);
 		});
@@ -4620,7 +4623,7 @@ suite('Disassembler', () => {
 
 			const node1 = dng.getNodeForAddress(0x9FFE)!;
 			assert.notEqual(node1, undefined);
-			assert.equal(node1.comments.length, 0);
+			assert.equal(comments.size, 0);
 			assert.equal(node1.instructions.length, 2);
 			assert.equal(node1.length, 3);
 		});

@@ -2,6 +2,7 @@ import {readFileSync} from 'fs';
 import {BankType, MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {Utility} from './../misc/utility';
 import {AsmNode} from './asmnode';
+import {Comments} from './comments';
 import {Format} from './format';
 import {MemAttribute, Memory} from './memory';
 import {NumberType} from './numbertype';
@@ -67,17 +68,20 @@ export class DisassemblerNextGen {
 	// It also contains references into code areas for self modifying code.
 	protected otherLabels = new Map<number, string>();
 
+	// The assembly comments are stored here.
+	public comments = new Comments();
+
 
 	/// Label prefixes
 	public labelSubPrefix = "SUB_";
 	public labelLblPrefix = "LBL_";
-	public labelRstPrefix = "RST_";
+	public labelRstPrefix = "RST_";	// TODO: Not used?
 	public labelDataLblPrefix = "DATA_";
 	public labelCodePrefix = "CODE_";	// Is used if data is read /written to a CODE section. For local (e.g. "SUB_C000.CODE_C00B") and global (e.g. "CODE_C00B").
 	public labelLocalLabelPrefix = "L";	// "_L"
 	public labelLocalLoopPrefix = "LOOP";	// "_LOOP"
 
-	public labelIntrptPrefix = "INTRPT";
+	public labelIntrptPrefix = "INTRPT";	// TODO: Not used?
 
 
 	/** Initializes the Opcode formatting.
@@ -299,110 +303,111 @@ export class DisassemblerNextGen {
 	}
 
 
-	/** Adds comment to node that disassembly is ambiguous.
-	 * Ambiguous nodes have only one or none instructions.
-	 * @param node The node.
-	 */
-	protected addAmbiguousComment(ambiguousNode: AsmNode) {
-		ambiguousNode.comments.push('The disassembly is ambiguous at ' + Format.getHexFormattedString(ambiguousNode.start, 4) + '.');
-	}
-
-
 	/**
 	 * Follows the execution path of an address recursively.
 	 * It fills up the this.nodes map with nodes.
 	 * The nodes are just empty containers which contain only the start address.
 	 * They will be filled in a secondary pass.
-	 * @param address The 64k start address.
+	 * A node is not created if it would start on an already FLOW_ANALYZED address.
+	 * A created flow at least would contain one opcode. Even if that opcode is ambiguous.
+	 * (Ambiguity: this is to show the user at least one possibly disassembly and let him decide.)
+	 * @param addr64k The 64k start address.
 	 */
-	protected createNodeForAddress(address: number) {
-		console.log('createNodeForAddress', address.toString(16));
+	protected createNodeForAddress(addr64k: number) {
+		//console.log('createNodeForAddress', address.toString(16));
 		// Check if address/node already exists.
-		if (this.nodes.get(address)) {
+		if (this.nodes.get(addr64k)) {
 			// Node already exists
 			return;
 		}
 
+		// Check if we reach an area that was already analyzed
+		const memAttr = this.memory.getAttributeAt(addr64k);
+		// Check if already analyzed
+		if (memAttr & MemAttribute.FLOW_ANALYZED) {
+			// Does it fit the already done disassembly?
+			if (memAttr & MemAttribute.CODE_FIRST) {
+				// Yes, so just create a new node
+				this.createNodeInMap(addr64k);
+				// No analyzes required (was done already)
+				return;
+			}
+			// Not CODE_FIRST: A disassembly at an offset took place -> error
+			this.comments.addAmbiguousComment(addr64k, addr64k);
+			// Do not create a node
+			return;
+		}
+
+		// Check if memory exists
+		if (!(memAttr & MemAttribute.ASSIGNED)) {
+			// Add a comment
+			this.comments.addBranchToUnassignedMemory(addr64k); // TODO: Create a testcase
+			// Do not create a node
+			return;
+		}
+
 		// Node does not exist, create  new one
-		const node = this.createNodeInMap(address);
+		const node = this.createNodeInMap(addr64k);
 
 		const allBranchAddresses: number[] = [];
 
-		let lastAddress: number | undefined;
 		while (true) {
 
-			console.log(' ', address.toString(16)); // TODO
+			//console.log(' ', address.toString(16)); // TODO
 
-			const memAttr = this.memory.getAttributeAt(address);
-			// Check if already analyzed
-			if (memAttr & MemAttribute.FLOW_ANALYZED) {
-				// Was already analyzed, skip
-				if (memAttr & MemAttribute.CODE_FIRST)
-					break;
-				let ambiguousNode = node;
-				// But if for some reason this does not end at CODE_FIRST, then
-				if (lastAddress != undefined) {
-					// Create node at last address
-					ambiguousNode = this.createNodeInMap(lastAddress);
-				}
-				// Add comment
-				this.addAmbiguousComment(ambiguousNode);
-				// Add also an ambiguous node at the other disassembly
-				// Adjust address
-				const adjAddr64k = this.getAddressForCodeFirst(address);
-				let otherNode = this.nodes.get(adjAddr64k);
-				if (!otherNode) {
-				 	// Create new node
-					otherNode = this.createNodeInMap(adjAddr64k);
-				}
-				// Add comment
-				this.addAmbiguousComment(otherNode);
+			// Get opcode and opcode length
+			const refOpcode = Opcode.getOpcodeAt(this.memory, addr64k);
+			// Check if opcode addresses (other that starting address) have already been analyzed
+			const flowAddr = this.memory.searchAddrWithAttribute(MemAttribute.FLOW_ANALYZED, addr64k + 1, refOpcode.length - 1);
+			// Set memory as analyzed
+			this.memory.addAttributesAt(addr64k, refOpcode.length, MemAttribute.FLOW_ANALYZED | MemAttribute.CODE);
+			this.memory.addAttributeAt(addr64k, MemAttribute.CODE_FIRST);
+			// Now check
+			if (flowAddr != undefined) {
+				// Some analyzes has been done already that assumed that the opcode starts at a different address.
+				this.comments.addAmbiguousComment(addr64k, flowAddr);
+				// The disassembly will stop after that opcode.
 				break;
 			}
-
-			// Check if memory exists
-			if (!(memAttr & MemAttribute.ASSIGNED)) {
-				break;
-			}
-
-			// Get opcode
-			const refOpcode = Opcode.getOpcodeAt(this.memory, address);
-			const opcode = refOpcode.clone();
-			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED | MemAttribute.CODE);
-			this.memory.addAttributeAt(address, MemAttribute.CODE_FIRST);
 
 			// Next address
-			lastAddress = address;
-			address += opcode.length;
+			addr64k += refOpcode.length;
+			const memAttrNext = this.memory.getAttributeAt(addr64k);
+			// Check if already analyzed
+			if (memAttrNext & MemAttribute.FLOW_ANALYZED) {
+				// Everything fine. Code has been already analyzed. Stop.
+				break;
+			}
 
 			// Check for branch
-			if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
+			const flags = refOpcode.flags;
+			if (flags & OpcodeFlag.BRANCH_ADDRESS) {
 				// First natural flow, i.e. the next address.
-				if (!(opcode.flags & OpcodeFlag.STOP)) {
-					allBranchAddresses.push(address);
+				if (!(refOpcode.flags & OpcodeFlag.STOP)) {
+					allBranchAddresses.push(addr64k);
 				}
 
 				// Now the branch
-				const branchAddress = opcode.value;
+				const branchAddress = refOpcode.value;
 				allBranchAddresses.push(branchAddress);
 				// Leave loop
 				break;
 			}
 
 			// Check for RET cc
-			if (opcode.flags & OpcodeFlag.RET && opcode.flags & OpcodeFlag.CONDITIONAL) {
+			if (flags & OpcodeFlag.RET && flags & OpcodeFlag.CONDITIONAL) {
 				// Follow natural flow
-				allBranchAddresses.push(address);
+				allBranchAddresses.push(addr64k);
 				break;
 			}
 
 			// Check for RET or JP
-			if (opcode.flags & OpcodeFlag.STOP) {
+			if (flags & OpcodeFlag.STOP) {
 				break;
 			}
 
 			// Check for bank border
-			if (this.bankBorderPassed(node.slot, address))
+			if (this.bankBorderPassed(node.slot, addr64k))
 				break;	// Bank border
 		}
 
@@ -477,7 +482,7 @@ export class DisassemblerNextGen {
 	 * @param node The node to work on.
 	 */
 	protected fillNode(node: AsmNode) {
-		let address = node.start;
+		let addr64k = node.start;
 		const nodeSlot = node.slot;
 		//const addrReferences = [NumberType.DATA_LBL, NumberType.CODE_LOCAL_LBL, NumberType.CODE_LOCAL_LOOP, NumberType.CODE_LBL, NumberType.CODE_SUB, NumberType.CODE_RST];
 		const addrReferences = [NumberType.DATA_LBL];	// TODO: Optimize, just one entry.
@@ -486,37 +491,29 @@ export class DisassemblerNextGen {
 		while (true) {
 
 			// Check for bank border
-			if (this.bankBorderPassed(nodeSlot, address)) {
+			if (this.bankBorderPassed(nodeSlot, addr64k)) {	// TODO: Kann auch ans Ende, das erst mal niemals true
 				// Bank border, flows through into another bank.
 				// Check that address is exactly at first address of slot
-				const currSlotBank = this.addressesSlotBankInfo[address];
+				const currSlotBank = this.addressesSlotBankInfo[addr64k];
 				if (!currSlotBank.singleBank) {
-					const prevSlotBank = this.addressesSlotBankInfo[address - 1];
+					const prevSlotBank = this.addressesSlotBankInfo[addr64k - 1];
 					if (currSlotBank.slot == prevSlotBank.slot) {
 						// The last opcode was partly already inside the banked slot.
-						node.comments.push('The last opcode spreads over 2 different banks. This could be wrong. The disassembly stops here.');
+						this.comments.addOpcodeSpreadsOverBanks(addr64k);
 						break;
 					}
 				}
 				// Create a "fake" AsmNode that is not included in the map.
 				// Just an end-object for the caller.
-				const fakeNode = this.getNodeForFill(nodeSlot, address);
+				const fakeNode = this.getNodeForFill(nodeSlot, addr64k, addr64k);
 				node.branchNodes.push(fakeNode);
 				fakeNode.predecessors.push(node);
 				break;
 			}
 
-			const memAttr = this.memory.getAttributeAt(address);
-			// Check if memory exists or already analyzed
-			if (!(memAttr & MemAttribute.ASSIGNED) || memAttr & MemAttribute.FLOW_ANALYZED) {
-				// Captures also the case that a jump is done in a code area and the address does not start with CODE_FIRST.
-				break;
-			}
-
 			// Get opcode
-			const refOpcode = Opcode.getOpcodeAt(this.memory, address);
+			const refOpcode = Opcode.getOpcodeAt(this.memory, addr64k);
 			const opcode = refOpcode.clone();
-			this.memory.addAttributesAt(address, opcode.length, MemAttribute.FLOW_ANALYZED);
 
 			// Check for referenced data addresses
 			if (addrReferences.includes(opcode.valueType)) {
@@ -536,22 +533,15 @@ export class DisassemblerNextGen {
 			// Store
 			node.instructions.push(opcode);
 
-			// Check if there are any nodes on the opcode address but CODE_FIRST
-			let ambiguousNode;
-			for (let i = 1; i < opcode.length; i++) {
-				ambiguousNode = this.nodes.get(address + i);
-				if (ambiguousNode)
-					break;
-			}
-
 			// Next address
-			address += opcode.length;
+			const lastAddr64k = addr64k;
+			addr64k += opcode.length;
 
 			// Check for branch
 			if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
 				// First natural flow, i.e. the next address.
-				if (!(opcode.flags & OpcodeFlag.STOP) && !ambiguousNode) {
-					const followingNode = this.getNodeForFill(nodeSlot, address);
+				if (!(opcode.flags & OpcodeFlag.STOP)) {
+					const followingNode = this.getNodeForFill(nodeSlot, lastAddr64k, addr64k);
 					Utility.assert(followingNode);
 					node.branchNodes.push(followingNode);
 					followingNode.predecessors.push(node);
@@ -559,7 +549,7 @@ export class DisassemblerNextGen {
 
 				// Now the branch
 				const branchAddress = opcode.value;
-				const branchNode = this.getNodeForFill(nodeSlot, branchAddress);
+				const branchNode = this.getNodeForFill(nodeSlot, lastAddr64k, branchAddress);
 
 				// Check if it is a call
 				if (opcode.flags & OpcodeFlag.CALL) {
@@ -594,20 +584,22 @@ export class DisassemblerNextGen {
 			}
 
 			// Also stop if next node starts
-			const followingNode = this.nodes.get(address)!;
+			const followingNode = this.nodes.get(addr64k)!;
 			if (followingNode) {
 				node.branchNodes.push(followingNode);
 				followingNode.predecessors.push(node);
 				break;
 			}
 
+			// Check if opcode is ambiguous
+			const flowAddr = this.memory.searchAddrWithAttribute(MemAttribute.CODE_FIRST, lastAddr64k + 1, opcode.length - 1);
 			// Break if ambiguous disassembly
-			if (ambiguousNode)
+			if (flowAddr != undefined)
 				break;
 		}
 
 		// Set length
-		node.length = address - node.start;
+		node.length = addr64k - node.start;
 	}
 
 
@@ -616,24 +608,33 @@ export class DisassemblerNextGen {
 	 * If no node exists at address a new (bank border) node is created
 	 * and connected.
 	 * Method is only intended for use in 'fillNode'.
-	 * @param slot The slot of the start node.
-	 * @param address The address to check if in same slot.
+	 * @param originSlot The slot of the start node (origin).
+	 * @param originAddress The originating address. E.g. the previous address or the address
+	 * of the JP or CALL instruction.
+	 * @param targetAddress The address to check if in same slot.
 	 * @return An AsmNode, either from the this.nodes map or a new created one.
 	 */
-	protected getNodeForFill(nodeSlot: number, address: number): AsmNode {
+	protected getNodeForFill(originSlot: number, originAddress: number, targetAddress: number): AsmNode {
 		let otherNode;
-		if (this.bankBorderPassed(nodeSlot, address)) {
+		if (this.bankBorderPassed(originSlot, targetAddress)) {
 			// Node does not exist. I.e. it is a node that is reached through
 			// a bank border and need to be created.
 			otherNode = new AsmNode();
-			otherNode.start = address;
+			otherNode.start = targetAddress;
 			otherNode.bankBorder = true;
-			otherNode.comments.push('The address is in a different bank. As the current paged bank might be the wrong one the program flow is not followed further.');
+			this.comments.addDifferentBankAccessComment(originAddress, targetAddress);
 		}
 		else {
 			// The bank should already exist
-			otherNode = this.nodes.get(address)!;
-			Utility.assert(otherNode);
+			otherNode = this.nodes.get(targetAddress)!;
+			//Utility.assert(otherNode);
+			// Note: For ambiguous code it can happen that there is no node for an address
+			if (!otherNode) {
+				// Node does not exist, so create one that can be returned
+				otherNode = new AsmNode();
+				otherNode.start = targetAddress;
+				this.comments.addAmbiguousComment(originAddress, targetAddress);
+			}
 		}
 		return otherNode;
 	}

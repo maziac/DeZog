@@ -3668,6 +3668,8 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * @param arr An array with the blocks to analyze. Usually just the start line.
 	 */
 	public async analyzeAtCursor(type: 'disassembly' | 'flowChart' | 'callGraph', arr: Array<{filename: string, fromLine: number, toLine: number}>): Promise<void> {
+		await this.analyzeAtCursor2(type, arr);	// TODO: REMOVE
+
 		Log.log('analyzeAtCursor');
 		try {
 			// Get all start addresses and check banks
@@ -3760,6 +3762,101 @@ E.g. use "-help -view" to put the help text in an own view.
 						console.timeEnd();
 						// Output text to new view.
 						const view = new HtmlView('Call Graph - ' + title, rendered);
+						await view.update();
+
+						// Install mouse click handler
+						this.installHtmlClickHandler(view);
+					}
+					break;
+			}
+		}
+		catch (e) {
+			this.debugConsoleAppendLine("Error: " + e.message);
+			return;
+		}
+	}
+
+
+	public async analyzeAtCursor2(type: 'disassembly' | 'flowChart' | 'callGraph', arr: Array<{filename: string, fromLine: number, toLine: number}>): Promise<void> {
+		Log.log('analyzeAtCursor2');
+		try {
+			// Get all start addresses and check banks
+			const startAddrs: number[] = [];
+			for (const block of arr) {
+				const [fromAddr,] = this.checkFileLinesPagedIn(block.filename, block.fromLine, block.toLine);
+				startAddrs.push(fromAddr);
+			}
+
+			// Get whole memory for analyzing
+			const data = await Remote.readMemoryDump(0, 0x10000);
+
+			// Create new instance to disassemble
+			const analyzer = new AnalyzeDisassembler();
+			analyzer.setMemoryModel(Remote.memoryModel);
+
+			// No automatic labels
+			analyzer.automaticAddresses = false;
+			analyzer.specialLabels = false;
+			analyzer.disassembleUnreferencedData = false;
+			// Do not find interrupt labels
+			analyzer.findInterrupts = false;
+
+			// Initialize disassembly
+			analyzer.initWithCodeAddresses(startAddrs, [{address: 0, data}]);
+			// Set labels for the start addresses
+			let titles: string[] = [];
+			for (const longAddr of startAddrs) {
+				// Get label
+				const labels = Labels.getLabelsForLongAddress(longAddr);
+				let name;
+				if (labels && labels.length > 0) {
+					name = labels.join(' or ');
+				}
+				// Set label
+				if (name)
+					analyzer.setLabel(longAddr & 0xFFFF, name);
+				// Add to title
+				if (!name)
+					name = Utility.getHexString(longAddr & 0xFFFF, 4) + 'h';
+				titles.push(name);
+			}
+			const title = titles.join(', ');
+
+			switch (type) {
+				case 'disassembly':
+					{
+						// Output disassembly
+						const rendered = analyzer.renderSmartDisassembly(startAddrs);
+
+						// Output text to new view.
+						const view = new HtmlView('Smart Disassembly 2 - ' + title, rendered);
+						await view.update();
+					}
+					break;
+
+				case 'flowChart':
+					{
+						// Output flow chart to view
+						const rendered = analyzer.renderFlowChart(startAddrs);
+
+						// Output text to new view.
+						const view = new HtmlView('Flow Chart 2 - ' + title, rendered);
+						await view.update();
+
+						// Install mouse click handler
+						this.installHtmlClickHandler(view);
+					}
+					break;
+
+				case 'callGraph':
+					{
+						analyzer.enableStatistics = true;	// Required for call graphs
+						analyzer.nodeFormatString = "${label}\\n@${address}h\\n${size} bytes\\n";
+						// Output call graph to view
+						const rendered = analyzer.renderCallGraph(startAddrs);
+
+						// Output text to new view.
+						const view = new HtmlView('Call Graph 2 - ' + title, rendered);
 						await view.update();
 
 						// Install mouse click handler
