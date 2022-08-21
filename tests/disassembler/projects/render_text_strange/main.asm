@@ -1,4 +1,4 @@
-
+	; Memory beginning at 0xC000 is UNUSED, i.e. not ASSIGNED.
 
 	DEFS 0x0000
 
@@ -69,3 +69,8 @@ SUB_040A:
 	RET
 
 
+	DEFS 0x0500-$
+	; jp to unassigned
+	JP 0xC000
+	NOP
+	RET

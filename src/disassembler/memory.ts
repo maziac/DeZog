@@ -145,6 +145,7 @@ export class Memory extends BaseMemory {
 	 * @param length The size of the memory area to change.
 	 * @param attr The attribute to set (e.g. CODE or DATA)
 	 */
+	// TODO: Remove?
 	public clrAssignedAttributesAt(address: number, length: number) {
 		for (let i = 0; i < length; i++) {
 			if (this.memoryAttr[address] != MemAttribute.UNUSED)

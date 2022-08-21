@@ -90,10 +90,12 @@ export class Comments {
 
 
 	/** Adds comment that disassembly did a branch to unassigned memory.
-	 * @param addr64k The address to add the comment to.
+	 * @param originAddress The originating address. E.g. the previous address or the address
+	 * of the JP or CALL instruction.
+	 * @param targetAddress The address in the other bank
 	 */
-	public addBranchToUnassignedMemory(addr64k: number) {
-		this.addCommentForAddress(addr64k, 'The disassembly branches into unassigned memory at ' + Format.getHexFormattedString(addr64k, 4) + '.');
+	public addBranchToUnassignedMemory(originAddress: number, targetAddress: number) {
+		this.addCommentForAddress(originAddress, 'The disassembly branches into unassigned memory at ' + Format.getHexFormattedString(targetAddress, 4) + '.');
 	}
 
 

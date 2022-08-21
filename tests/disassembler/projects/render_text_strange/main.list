@@ -1,5 +1,5 @@
 # file opened: main.asm
- 1    0000
+ 1    0000              	; Memory beginning at 0xC000 is UNUSED, i.e. not ASSIGNED.
  2    0000
  3    0000              	DEFS 0x0000
  4    0000
@@ -70,4 +70,9 @@
 69    040E C9           	RET
 70    040F
 71    040F
+72    040F 00 00 00...  	DEFS 0x0500-$
+73    0500              	; jp to unassigned
+74    0500 C3 00 C0     	JP 0xC000
+75    0503 00           	NOP
+76    0504 C9           	RET
 # file closed: main.asm

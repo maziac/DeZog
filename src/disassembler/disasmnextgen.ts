@@ -1,4 +1,3 @@
-import {readFileSync} from 'fs';
 import {BankType, MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {Utility} from './../misc/utility';
 import {AsmNode} from './asmnode';
@@ -153,16 +152,6 @@ export class DisassemblerNextGen {
 	}
 
 
-	/**Reads a memory area as binary from a file.
-	 * @param origin The start address of the memory area.
-	 * @param path The file path to a binary file.
-	 */
-	public readBinFile(origin: number, path: string) {
-		const bin = readFileSync(path);
-		this.setMemory(origin, bin);
-	}
-
-
 	/**
 	 * Checks for bank border.
 	 * A bank border is recognized if the address64k's slot is different that the
@@ -235,8 +224,6 @@ export class DisassemblerNextGen {
 		this.createNodesForLabels(labels);
 
 		// Now fill the nodes.
-		this.memory.resetAttributeFlag(MemAttribute.
-			FLOW_ANALYZED);
 		this.fillNodes();
 
 		// Find nodes that are subroutines.
@@ -312,8 +299,9 @@ export class DisassemblerNextGen {
 	 * A created flow at least would contain one opcode. Even if that opcode is ambiguous.
 	 * (Ambiguity: this is to show the user at least one possibly disassembly and let him decide.)
 	 * @param addr64k The 64k start address.
+	 * @param origin The 64k address this call origined from (e.g. a CALL)
 	 */
-	protected createNodeForAddress(addr64k: number) {
+	protected createNodeForAddress(addr64k: number, origin?: number) {
 		//console.log('createNodeForAddress', address.toString(16));
 		// Check if address/node already exists.
 		if (this.nodes.get(addr64k)) {
@@ -340,8 +328,9 @@ export class DisassemblerNextGen {
 
 		// Check if memory exists
 		if (!(memAttr & MemAttribute.ASSIGNED)) {
-			// Add a comment
-			this.comments.addBranchToUnassignedMemory(addr64k); // TODO: Create a testcase
+			// A comment is useful only if origin was given
+			if(origin != undefined)
+				this.comments.addBranchToUnassignedMemory(origin, addr64k);
 			// Do not create a node
 			return;
 		}
@@ -349,7 +338,7 @@ export class DisassemblerNextGen {
 		// Node does not exist, create  new one
 		const node = this.createNodeInMap(addr64k);
 
-		const allBranchAddresses: number[] = [];
+		const allBranchAddresses: number[][] = [];	// Array of target, origin pairs
 
 		while (true) {
 
@@ -371,6 +360,7 @@ export class DisassemblerNextGen {
 			}
 
 			// Next address
+			const lastAddress = addr64k;
 			addr64k += refOpcode.length;
 			const memAttrNext = this.memory.getAttributeAt(addr64k);
 
@@ -379,12 +369,13 @@ export class DisassemblerNextGen {
 			if (flags & OpcodeFlag.BRANCH_ADDRESS) {
 				// First natural flow, i.e. the next address.
 				if (!(refOpcode.flags & OpcodeFlag.STOP)) {
-					allBranchAddresses.push(addr64k);
+					allBranchAddresses.push([addr64k, lastAddress]);
 				}
 
 				// Now the branch
 				const branchAddress = refOpcode.value;
-				allBranchAddresses.push(branchAddress);
+				allBranchAddresses.push([branchAddress, lastAddress]);
+
 				// Leave loop
 				break;
 			}
@@ -392,7 +383,7 @@ export class DisassemblerNextGen {
 			// Check for RET cc
 			if (flags & OpcodeFlag.RET && flags & OpcodeFlag.CONDITIONAL) {
 				// Follow natural flow
-				allBranchAddresses.push(addr64k);
+				allBranchAddresses.push([addr64k, lastAddress]);
 				break;
 			}
 
@@ -413,10 +404,10 @@ export class DisassemblerNextGen {
 		}
 
 		// Now dive into branches
-		for (const addr of allBranchAddresses) {
+		for (const [targetAddr, origin] of allBranchAddresses) {
 			// Check for bank border
-			if (!this.bankBorderPassed(node.slot, addr))
-				this.createNodeForAddress(addr);
+			if (!this.bankBorderPassed(node.slot, targetAddr))
+				this.createNodeForAddress(targetAddr, origin);
 		}
 
 		return node;
@@ -632,12 +623,22 @@ export class DisassemblerNextGen {
 			// The bank should already exist
 			otherNode = this.nodes.get(targetAddress)!;
 			//Utility.assert(otherNode);
-			// Note: For ambiguous code it can happen that there is no node for an address
+			// Several reason a node does not exist:
+			// - For ambiguous code it can happen that there is no node for an address
+			// - A jump to code in UNASSIGNED memory also has no node.
 			if (!otherNode) {
 				// Node does not exist, so create one that can be returned
 				otherNode = new AsmNode();
 				otherNode.start = targetAddress;
-				this.comments.addAmbiguousComment(originAddress, targetAddress);
+				const attr = this.memory.getAttributeAt(targetAddress);
+				if (attr & MemAttribute.ASSIGNED) {
+					// So it is because of ambiguous code
+					this.comments.addAmbiguousComment(originAddress, targetAddress);
+				}
+				else {
+					// Memory was not ASSIGNED
+					this.comments.addBranchToUnassignedMemory(originAddress, targetAddress);
+				}
 			}
 		}
 		return otherNode;

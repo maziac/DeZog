@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {readFileSync} from 'fs';
 import {Utility} from '../../src/misc/utility';
 import {Format} from '../../src/disassembler/format';
 import {RenderText} from '../../src/disassembler/rendertext';
@@ -31,11 +32,21 @@ suite('Disassembler - RenderText', () => {
 		const s = text.replace(/<[^>]*>/g, '');
 		return s;
 	}
+
 	// Compresses the string.
 	function c(text: string): string {
 		let s = text.replace(/ +/g, ' ');
 		s = stripHtml(s);
 		return s;
+	}
+
+	/** Reads a memory area as binary from a file.
+	 * @param dng The disassembler object.
+	 * @param path The file path to a binary file.
+	 */
+	function readBinFile(dng: DisassemblerNextGen, path: string) {
+		const bin = new Uint8Array(readFileSync(path));
+		dng.setMemory(0, bin);
 	}
 
 
@@ -253,7 +264,7 @@ suite('Disassembler - RenderText', () => {
 			function disassemble(startAddrs64k: number[]): string {
 				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 				disasm.setCurrentSlots([0]);
-				disasm.readBinFile(0, './tests/disassembler/projects/render_text/main.bin');
+				readBinFile(disasm, './tests/disassembler/projects/render_text/main.bin');
 
 				disasm.getFlowGraph(startAddrs64k, []);
 				const startNodes = disasm.getNodesForAddresses(startAddrs64k);
@@ -448,7 +459,7 @@ suite('Disassembler - RenderText', () => {
 			function disassembleDepth(startAddrs64k: number[], depth: number): string {
 				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 				disasm.setCurrentSlots([0]);
-				disasm.readBinFile(0, './tests/disassembler/projects/render_text/main.bin');
+				readBinFile(disasm, './tests/disassembler/projects/render_text/main.bin');
 
 				disasm.getFlowGraph(startAddrs64k, []);
 				const startNodes = disasm.getNodesForAddresses(startAddrs64k);
@@ -679,7 +690,7 @@ suite('Disassembler - RenderText', () => {
 			function disassemble(startAddrs64k: number[]): string {
 				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 				disasm.setCurrentSlots([0]);
-				disasm.readBinFile(0, './tests/disassembler/projects/render_text_strange/main.bin');
+				readBinFile(disasm, './tests/disassembler/projects/render_text_strange/main.bin');
 
 				disasm.getFlowGraph(startAddrs64k, []);
 				disasm.disassembleNodes();
@@ -757,6 +768,7 @@ suite('Disassembler - RenderText', () => {
 `));
 				});
 
+
 				test('call after RST first', () => {
 					const text = disassemble([0x0300]);
 
@@ -784,6 +796,63 @@ suite('Disassembler - RenderText', () => {
 0310.1 C9 RET
 `));
 				});
+
+
+				test('loop', () => {
+					const text = disassemble([0x0400]);
+
+					assert.equal(c(text), c(
+						`0008.1 SUB_0008:
+0008.1 C9 RET
+
+0200.1 CD 07 02 CALL SUB_0207
+
+0203.1 CD 0A 02 CALL SUB_020A
+
+0206.1 C9 RET
+
+0207.1 SUB_0207:
+0207.1 CF RST $08
+
+; Note: The disassembly is ambiguous at $020A.
+0208.1 01 10 21 LD BC,$2110
+
+020A.1 SUB_020A:
+020A.1 21 00 80 LD HL,$8000
+020D.1 00 NOP
+020E.1 00 NOP
+020F.1 00 NOP
+0210.1 C9 RET
+`));
+				});
+			});
+
+			test('jp to unassigned', () => {
+				const text = disassemble([0x0500]);
+
+				assert.equal(c(text), c(
+					`0008.1 SUB_0008:
+0008.1 C9 RET
+
+; Note: The disassembly is ambiguous at $030A.
+0300.1 CD 0A 03 CALL 030A.1
+
+0303.1 CD 07 03 CALL SUB_0307
+
+0306.1 C9 RET
+
+0307.1 SUB_0307:
+0307.1 CF RST $08
+
+; Note: The disassembly is ambiguous at $030A.
+0308.1 01 10 21 LD BC,$2110
+030B.1 00 NOP
+030C.1 80 ADD A,B
+030D.1 00 NOP
+030E.1 00 NOP
+030F.1 00 NOP
+0310.1 C9 RET
+`));
 			});
 		});
 	});

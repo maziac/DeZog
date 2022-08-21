@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import {writeFileSync} from 'fs';
+import {readFileSync, writeFileSync} from 'fs';
 import {Disassembler} from '../../src/disassembler/disasm';
 import {Format} from '../../src/disassembler/format';
 import {NumberType} from '../../src/disassembler/numbertype';
@@ -7,7 +7,6 @@ import {Opcode} from '../../src/disassembler/opcode';
 import {AsmNode} from '../../src/disassembler/asmnode';
 import {DisassemblerNextGen} from '../../src/disassembler/disasmnextgen';
 import {Utility} from '../../src/misc/utility';
-
 
 
 let dasm: any;
@@ -43,6 +42,17 @@ suite('Disassembler', () => {
 		// 	return label.substring(k);
 		// return label;
 	}
+
+
+	/** Reads a memory area as binary from a file.
+	 * @param dng The disassembler object.
+	 * @param path The file path to a binary file.
+	 */
+	function readBinFile(dng: DisassemblerNextGen, path: string) {
+		const bin = new Uint8Array(readFileSync(path));
+		dng.setMemory(0, bin);
+	}
+
 
 	/// Called for each test.
 	setup(() => {
@@ -3452,12 +3462,13 @@ suite('Disassembler', () => {
 			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
 			(dng as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 			dng.setCurrentSlots([0]);
-			dng.readBinFile(0, './tests/disassembler/projects/nodes/main.bin');
+			readBinFile(dng,'./tests/disassembler/projects/nodes/main.bin');
 			dngNodes = (dng as any).nodes;
 			/* To view in the WATCH pane use e.g.:
 			Array.from(dngNodes.values()).map(v => v.start.toString(16).toUpperCase().padStart(4, '0') + ': ' + v.label)
 			*/
 		});
+
 
 		test('Simple', () => {
 			dng.getFlowGraph([0x0000], []);
@@ -3924,7 +3935,7 @@ suite('Disassembler', () => {
 			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
 			(dng as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 			dng.setCurrentSlots([0]);
-			dng.readBinFile(0, './tests/disassembler/projects/partition_blocks/main.bin');
+			readBinFile(dng,'./tests/disassembler/projects/partition_blocks/main.bin');
 			dngNodes = (dng as any).nodes;
 		});
 
@@ -4161,7 +4172,7 @@ suite('Disassembler', () => {
 			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
 			(dng as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 			dng.setCurrentSlots([0]);
-			dng.readBinFile(0, './tests/disassembler/projects/assign_labels/main.bin');
+			readBinFile(dng,'./tests/disassembler/projects/assign_labels/main.bin');
 			dng.labelLblPrefix = 'LLBL_';
 			dng.labelSubPrefix = 'SSUB_';
 			dng.labelLocalLoopPrefix = 'LLOOP';
@@ -4435,7 +4446,7 @@ suite('Disassembler', () => {
 			(dng as any).setSlotBankInfo(0x8000, 0xBFFF, 2, false);
 			(dng as any).setSlotBankInfo(0xC000, 0xFFFF, 3, false);
 			(dng as any).setCurrentSlots([0, 1, 2, 3]);	// A different bank in each slot
-			dng.readBinFile(0, './tests/disassembler/projects/bank_border/main.bin');
+			readBinFile(dng,'./tests/disassembler/projects/bank_border/main.bin');
 			dngNodes = (dng as any).nodes;
 		});
 
@@ -4556,7 +4567,7 @@ suite('Disassembler', () => {
 			(dng as any).setSlotBankInfo(0xA000, 0xBFFF, 3, true);
 			(dng as any).setSlotBankInfo(0xC000, 0xFFFF, 3, true);
 			dng.setCurrentSlots([0, 1, 2, 3, 4, 5, 6]);	// A different bank in each slot
-			dng.readBinFile(0, './tests/disassembler/projects/flow_through_slot/main.bin');
+			readBinFile(dng,'./tests/disassembler/projects/flow_through_slot/main.bin');
 			dngNodes = (dng as any).nodes;
 			comments = (dng as any).comments.addrComments;
 		});
@@ -4668,7 +4679,7 @@ suite('Disassembler', () => {
 			(dng as any).setSlotBankInfo(0x4000, 0x7FFF, 1, true);
 			(dng as any).setSlotBankInfo(0x8000, 0xFFFF, 3, false);
 			dng.setCurrentSlots([0, 1, 2]);	// A different bank in each slot
-			dng.readBinFile(0, './tests/disassembler/projects/disassemble_nodes/main.bin');
+			readBinFile(dng,'./tests/disassembler/projects/disassemble_nodes/main.bin');
 			dng.labelLblPrefix = 'LLBL_';
 			dng.labelSubPrefix = 'SSUB_';
 			dng.labelLocalLoopPrefix = 'LLOOP';
