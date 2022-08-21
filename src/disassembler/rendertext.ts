@@ -179,7 +179,6 @@ export class RenderText extends RenderBase {
 		// Find first address in 'dataReferences'
 		let dataAddr = this.dataReferences.at(-1);	// Last item
 		if (dataAddr == undefined) {
-			this.printComments(lines, addr64k, dataLen);
 			return;
 		}
 
@@ -187,7 +186,6 @@ export class RenderText extends RenderBase {
 		while (dataAddr < addr64k) {
 			dataAddr = this.dataReferences.pop();
 			if (dataAddr == undefined) {
-				this.printComments(lines, addr64k, dataLen);
 				return;
 			}
 		}
@@ -228,7 +226,6 @@ export class RenderText extends RenderBase {
 			}
 
 			// Print the data
-			this.printComments(lines, dataAddr, countBytes);
 			const line = this.getCompleteDataLine(dataAddr, countBytes);
 			lines.addLine(line);
 
