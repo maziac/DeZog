@@ -723,9 +723,23 @@ export class DisassemblerNextGen {
 				if (!node.label) {
 					// Only if not already assigned
 					if (node.callers.length > 0 || node.predecessors.length > 0) {
-						// Now check if it is a subroutine, if some other node
-						// called it.
-						const prefix = (blockNode.isSubroutine && blockNode.callers.length > 0) ? this.labelSubPrefix : this.labelLblPrefix;
+						let prefix;
+						// First check if it is a subroutine
+						if (blockNode.isSubroutine) {
+							// Now check for RST addresses
+							if (blockNode.start & ~0b00111000) {
+								// Is normal CALL
+								prefix = this.labelSubPrefix;
+							}
+							else {
+								// Is RST
+								prefix = this.labelRstPrefix;
+							}
+						}
+						else {
+							// Use normal label
+							prefix = this.labelLblPrefix;
+						}
 						// Add global label name
 						node.label = prefix + Utility.getHexString(addr64k, 4);
 					}

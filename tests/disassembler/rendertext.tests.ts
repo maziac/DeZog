@@ -322,6 +322,40 @@ suite('Disassembler - RenderText', () => {
 `));
 			});
 
+			test('RST', () => {
+				const text = disassemble([0x0200, 0x0201, 0x0202, 0x0203, 0x0204, 0x0205, 0x0206, 0x0207, 0x0208, 0x020B]);
+
+				assert.equal(c(text), c(
+					`0200.1 C7 RST $00
+
+0201.1 CF RST $08
+
+0202.1 D7 RST $10
+
+0203.1 DF RST $18
+
+0204.1 E7 RST $20
+
+0205.1 EF RST $28
+
+0206.1 F7 RST $30
+
+0207.1 FF RST $38
+
+0208.1 CD 40 00 CALL SUB_0040
+
+020B.1 C9 RET
+`));
+			});
+
+			test('RST not used', () => {
+				const text = disassemble([0x0300]);
+
+				assert.equal(c(text), c(
+					`0300.1 C3 20 00 JP LBL_0020
+`));
+			});
+
 			test('2 calls, same sub', () => {
 				const text = disassemble([0x0700, 0x0705, 0x0708, 0x0709]);
 

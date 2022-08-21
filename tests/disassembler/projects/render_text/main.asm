@@ -11,6 +11,41 @@
 	RET
 
 
+	DEFS 0x0008-$
+RST_8:
+	RET
+
+	DEFS 0x0010-$
+RST_10:
+	RET
+
+	DEFS 0x0018-$
+RST_18:
+	RET
+
+	DEFS 0x0020-$
+RST_20:
+	NOP
+	JR $
+
+	DEFS 0x0028-$
+RST_28:
+	RET
+
+	DEFS 0x0030-$
+RST_30:
+	RET
+
+	DEFS 0x0038-$
+RST_38:
+	RET
+
+	DEFS 0x0040-$
+SUB_0040:
+	RET
+
+
+
 	DEFS 0x0100-$
 	; 1 branch
 	LD A,5
@@ -21,6 +56,25 @@
 
 L1:
 	RET
+
+
+	DEFS 0x0200-$
+	; RST
+	RST 0h
+	RST 8h
+	RST 10h
+	RST 18h
+	RST 20h
+	RST 28h
+	RST 30h
+	RST 38h
+	CALL SUB_0040
+	RET
+
+
+	DEFS 0x0300-$
+	; RST not used
+	JP 20h
 
 
 	DEFS 0x0700-$
