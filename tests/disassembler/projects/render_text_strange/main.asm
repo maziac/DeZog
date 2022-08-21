@@ -72,5 +72,4 @@ SUB_040A:
 	DEFS 0x0500-$
 	; jp to unassigned
 	JP 0xC000
-	NOP
-	RET
+

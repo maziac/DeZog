@@ -299,9 +299,8 @@ export class DisassemblerNextGen {
 	 * A created flow at least would contain one opcode. Even if that opcode is ambiguous.
 	 * (Ambiguity: this is to show the user at least one possibly disassembly and let him decide.)
 	 * @param addr64k The 64k start address.
-	 * @param origin The 64k address this call origined from (e.g. a CALL)
 	 */
-	protected createNodeForAddress(addr64k: number, origin?: number) {
+	protected createNodeForAddress(addr64k: number) {
 		//console.log('createNodeForAddress', address.toString(16));
 		// Check if address/node already exists.
 		if (this.nodes.get(addr64k)) {
@@ -328,9 +327,7 @@ export class DisassemblerNextGen {
 
 		// Check if memory exists
 		if (!(memAttr & MemAttribute.ASSIGNED)) {
-			// A comment is useful only if origin was given
-			if(origin != undefined)
-				this.comments.addBranchToUnassignedMemory(origin, addr64k);
+			// A comment is created elsewhere.
 			// Do not create a node
 			return;
 		}
@@ -338,7 +335,7 @@ export class DisassemblerNextGen {
 		// Node does not exist, create  new one
 		const node = this.createNodeInMap(addr64k);
 
-		const allBranchAddresses: number[][] = [];	// Array of target, origin pairs
+		const allBranchAddresses: number[] = [];
 
 		while (true) {
 
@@ -360,7 +357,6 @@ export class DisassemblerNextGen {
 			}
 
 			// Next address
-			const lastAddress = addr64k;
 			addr64k += refOpcode.length;
 			const memAttrNext = this.memory.getAttributeAt(addr64k);
 
@@ -369,12 +365,12 @@ export class DisassemblerNextGen {
 			if (flags & OpcodeFlag.BRANCH_ADDRESS) {
 				// First natural flow, i.e. the next address.
 				if (!(refOpcode.flags & OpcodeFlag.STOP)) {
-					allBranchAddresses.push([addr64k, lastAddress]);
+					allBranchAddresses.push(addr64k);
 				}
 
 				// Now the branch
 				const branchAddress = refOpcode.value;
-				allBranchAddresses.push([branchAddress, lastAddress]);
+				allBranchAddresses.push(branchAddress);
 
 				// Leave loop
 				break;
@@ -383,7 +379,7 @@ export class DisassemblerNextGen {
 			// Check for RET cc
 			if (flags & OpcodeFlag.RET && flags & OpcodeFlag.CONDITIONAL) {
 				// Follow natural flow
-				allBranchAddresses.push([addr64k, lastAddress]);
+				allBranchAddresses.push(addr64k);
 				break;
 			}
 
@@ -404,10 +400,10 @@ export class DisassemblerNextGen {
 		}
 
 		// Now dive into branches
-		for (const [targetAddr, origin] of allBranchAddresses) {
+		for (const targetAddr of allBranchAddresses) {
 			// Check for bank border
 			if (!this.bankBorderPassed(node.slot, targetAddr))
-				this.createNodeForAddress(targetAddr, origin);
+				this.createNodeForAddress(targetAddr);
 		}
 
 		return node;
