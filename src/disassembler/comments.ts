@@ -34,16 +34,6 @@ export class Comments {
 	}
 
 
-	/** Returns an array of comments for an address.
-	 * @param addr64k The address.
-	 * @returns The string array with comments. Can be an empty array but not undefined.
-	 */
-	// TODO: REMOVE?
-	public getCommentsForAddress(addr64k: number): string[] {
-		const lines = this.addrComments.get(addr64k) || [];
-		return lines;
-	}
-
 	/** Returns the comments in an address range.
 	 * @param addr64k The address.
 	 * @param len The range of addresses to check. [addr64k, addr64k+len-1]
@@ -71,12 +61,7 @@ export class Comments {
 	public addAmbiguousComment(originAddress: number, targetAddress: number) {
 		this.addCommentForAddress(originAddress, 'The disassembly is ambiguous at ' + Format.getHexFormattedString(targetAddress, 4) + '.');
 	}
-	/*
-	public addAmbiguousComment(...addrs64k) {
-		const addrsString = addrs64k.map(addr64k => Format.getHexFormattedString(addr64k, 4)).join(' and ');
-		this.addCommentForAddress(addrs64k[0], 'The disassembly is ambiguous at ' + addrsString + '.');
-	}
-	*/
+	
 
 	/** Adds comment that disassembly tries to access a different bank.
 	 * As the contents of that bank is not known the program flow is not followed.

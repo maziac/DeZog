@@ -137,24 +137,6 @@ export class Memory extends BaseMemory {
 	}
 
 
-	/**
-	 * Sets all attributes in the given address range to ASSIGNED if they
-	 * are not UNUSED. I.e. all attributes like CODE or DATA are removed
-	 * but UNUSED areas are kept UNUSED.
-	 * @param address The memory address
-	 * @param length The size of the memory area to change.
-	 * @param attr The attribute to set (e.g. CODE or DATA)
-	 */
-	// TODO: Remove?
-	public clrAssignedAttributesAt(address: number, length: number) {
-		for (let i = 0; i < length; i++) {
-			if (this.memoryAttr[address] != MemAttribute.UNUSED)
-				this.memoryAttr[address] = MemAttribute.ASSIGNED;
-			address++;
-		}
-	}
-
-
 	/** Returns the address in a range that has the given attribute set.
 	 * If attribute is not found, undefined is returned
 	 * @param addr64k The start address.

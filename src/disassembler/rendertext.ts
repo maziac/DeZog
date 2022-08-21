@@ -13,8 +13,6 @@ export class RenderText extends RenderBase {
 	/// Column areas. E.g. area for the bytes shown before each command
 	public clmnsAddress = 5;		///< size for the address at the beginning of each line.
 	public clmnsBytes = 4 * 3 + 1;	///< 4* length of hex-byte
-	public clmnsOpcodeFirstPart = 4 + 1;	///< First part of the opcodes, e.g. "LD" in "LD A,7" // TODO : Still required?
-	public clmsnOpcodeTotal = 5 + 6 + 1;		///< Total length of the opcodes. After this an optional comment may start. // TODO : Still required?
 
 	// The max. number of bytes to print in a data DEFB area per line.
 	public defbMaxBytesPerLine = 8;
@@ -312,13 +310,6 @@ export class RenderText extends RenderBase {
 			if (dataLen > 0) {
 				this.printData(lines, addr64k, dataLen);
 			}
-/*
-			else if (dataLen < 0) {
-				// Can happen if CODE_FIRST is not aligned
-				// TODO: HIGHLIGHT the NOTE
-				lines.push("; NOTE: At " + Utility.getHexString(nodeAddr, 4) + "h the disassembly is ambiguous.");
-			}
-*/
 			addr64k = nodeAddr;
 
 			// Disassemble node

@@ -210,21 +210,6 @@ export class AsmNode {
 	}
 
 
-	/**
-	 * Mark as subroutine. Also recursively the successors.
-	 * Returns immediately if already marked as subroutine.
-	 */
-	// TODO : not required
-	public markSuccessorsAsSubroutine() {
-		if (this.isSubroutine)
-			return;
-		this.isSubroutine = true;
-		for (const succ of this.branchNodes) {
-			succ.markSuccessorsAsSubroutine();
-		}
-	}
-
-
 	/** Returns all addresses belonging to the node.
 	 * @returns An array with all addresses.
 	 */

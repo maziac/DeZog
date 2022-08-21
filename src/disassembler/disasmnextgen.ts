@@ -74,7 +74,7 @@ export class DisassemblerNextGen {
 	/// Label prefixes
 	public labelSubPrefix = "SUB_";
 	public labelLblPrefix = "LBL_";
-	public labelRstPrefix = "RST_";	// TODO: Not used?
+	public labelRstPrefix = "RST_";
 	public labelDataLblPrefix = "DATA_";
 	public labelCodePrefix = "CODE_";	// Is used if data is read /written to a CODE section. For local (e.g. "SUB_C000.CODE_C00B") and global (e.g. "CODE_C00B").
 	public labelLocalLabelPrefix = "L";	// "_L"
@@ -301,7 +301,6 @@ export class DisassemblerNextGen {
 	 * @param addr64k The 64k start address.
 	 */
 	protected createNodeForAddress(addr64k: number) {
-		//console.log('createNodeForAddress', address.toString(16));
 		// Check if address/node already exists.
 		if (this.nodes.get(addr64k)) {
 			// Node already exists
@@ -338,8 +337,6 @@ export class DisassemblerNextGen {
 		const allBranchAddresses: number[] = [];
 
 		while (true) {
-
-			//console.log(' ', address.toString(16)); // TODO
 
 			// Get opcode and opcode length
 			const refOpcode = Opcode.getOpcodeAt(this.memory, addr64k);
@@ -419,8 +416,7 @@ export class DisassemblerNextGen {
 		for (const [addr64k, label] of addr64kLabels) {
 			// Check for CODE_FIRST
 			const attr = this.memory.getAttributeAt(addr64k);
-			//if (attr & MemAttribute.CODE_FIRST) {
-			if (attr & MemAttribute.CODE) {
+			if (attr & MemAttribute.CODE_FIRST) {
 				// Is a code label
 				// Check if start of node
 				let node = this.nodes.get(addr64k);
@@ -433,9 +429,9 @@ export class DisassemblerNextGen {
 				// Use the label name
 				node.label = label;
 			}
-			else if (!(attr & MemAttribute.CODE_FIRST)) {	// Not a code label, i.e. a data label
+			else {
 				// Otherwise add to otherLabels
-				// TODO
+				this.otherLabels.set(addr64k, label);
 			}
 		}
 	}
@@ -471,8 +467,6 @@ export class DisassemblerNextGen {
 	protected fillNode(node: AsmNode) {
 		let addr64k = node.start;
 		const nodeSlot = node.slot;
-		//const addrReferences = [NumberType.DATA_LBL, NumberType.CODE_LOCAL_LBL, NumberType.CODE_LOCAL_LOOP, NumberType.CODE_LBL, NumberType.CODE_SUB, NumberType.CODE_RST];
-		const addrReferences = [NumberType.DATA_LBL];	// TODO: Optimize, just one entry.
 
 		// Loop over node's addresses
 		while (true) {
@@ -482,7 +476,7 @@ export class DisassemblerNextGen {
 			const opcode = refOpcode.clone();
 
 			// Check for referenced data addresses
-			if (addrReferences.includes(opcode.valueType)) {
+			if (opcode.valueType == NumberType.DATA_LBL) {
 				// Adjust address if pointing to CODE (Note: is already checked that this is no bank border address):
 				// Check for DATA or CODE
 				let adjAddr64k = opcode.value;
