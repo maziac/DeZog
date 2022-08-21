@@ -32,7 +32,7 @@ export class RenderText extends RenderBase {
 		const addrString = (this.disasm.funcFormatLongAddress(addr64k)).padEnd(this.clmnsAddress - 1) + ' ';
 		// Make non local labels bold
 		if (!label.startsWith('.'))
-			label = '<b>' + label + '</b>';
+			label = '<b><span style="color:var(--vscode-editorBracketHighlight-foreground3)">' + label + '</span></b>';
 		const s = addrString + label + ':';
 		return s;
 	}
@@ -65,7 +65,7 @@ export class RenderText extends RenderBase {
 	 * @returns E.g. '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-foreground);font-weight:bold">8000 main:'</span>'
 	 */
 	protected htmlWithColor(text: string): string {
-		const html = '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-foreground);font-weight:bold">' + text + '</span>';
+		const html = '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-selectionForeground);font-weight:bold">' + text + '</span>';
 		return html;
 	}
 
@@ -160,7 +160,16 @@ export class RenderText extends RenderBase {
 		const cmnts = this.disasm.comments.getCommentsForAddresses(addr64k, len);
 		if (cmnts.length > 0) {
 			lines.addNewline();
-			cmnts.forEach(c => lines.addLine('; Note: ' + c));
+			cmnts.forEach(c =>
+				lines.addLine('<span style="color:var(--vscode-editorBracketHighlight-foreground1);font-weight:bold">; Note: ' + c + '</span>'));
+			/* light/dark
+			--vscode-editorBracketHighlight-foreground1:  blue/yellow(orange)
+			--vscode-editorBracketHighlight-foreground2:  green/magenta(pink)
+			--vscode-editorBracketHighlight-foreground3:  brown/blue(light)
+			--vscode-editorBracketHighlight-foreground4:  /transparent
+			--vscode-editorBracketHighlight-foreground5:  /transparent
+			--vscode-editorBracketHighlight-foreground6:  /transparent
+			*/
 		}
 	}
 
