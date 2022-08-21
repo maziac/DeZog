@@ -11,34 +11,49 @@
 
 
 	DEFS 0x1FFE-$
-	; Reach into a not assigned area
+	; Flow through to unassigned or other bank
 	LD A,5
-	; Does not matter what follows here
+	; Flows into a multibank => warning
 	NOP
 
 	DEFS 0x3FFE-$
-	; Reach into a not assigned area
+	; Flow through from multi bank to single bank
 	LD A,5
 	; Is disassembled because it ends in a single bank
 	RET
 
 	DEFS 0x5FFF-$
-	; Reach into a not assigned area. Now with opcode that starts in one ban and ends in another.
+	; Flow through with opcode to unassigned or other bank
 	LD A,5
 	; Does not matter what follows here
 
 
 	DEFS 0x7FFF-$
-	; Reach into a not assigned area. Now with opcode that starts in one ban and ends in another. This works because other bank is a single bank.
+	; Flow through with opcode from multi bank to single bank.
+	; This works because other bank is a single bank.
 	LD A,5
 	; Is disassembled because it ends in a single bank
 	RET
 
 
 	DEFS 0x9FFE-$
-	; Starts in a single bank and ends in another single bank
+	; Flow through single bank to single bank
 	LD A,5
 	; Is disassembled because it ends in a single bank
 	RET
 
+
+	DEFS 0xAFFE-$
+	; Continue in other single bank
+	LD A,5
+	; Flows into a single bank => no warning
+	NOP
+	RET
+
+
+	DEFS 0xBFFF-$
+	; Opcode continues in other single bank
+	LD A,5
+	; Flows into a single bank => no warning
+	RET
 

@@ -12,35 +12,50 @@
 11    0000
 12    0000
 13    0000 00 00 00...  	DEFS 0x1FFE-$
-14    1FFE              	; Reach into a not assigned area
+14    1FFE              	; Flow through to unassigned or other bank
 15    1FFE 3E 05        	LD A,5
-16    2000              	; Does not matter what follows here
+16    2000              	; Flows into a multibank => warning
 17    2000 00           	NOP
 18    2001
 19    2001 00 00 00...  	DEFS 0x3FFE-$
-20    3FFE              	; Reach into a not assigned area
+20    3FFE              	; Flow through from multi bank to single bank
 21    3FFE 3E 05        	LD A,5
 22    4000              	; Is disassembled because it ends in a single bank
 23    4000 C9           	RET
 24    4001
 25    4001 00 00 00...  	DEFS 0x5FFF-$
-26    5FFF              	; Reach into a not assigned area. Now with opcode that starts in one ban and ends in another.
+26    5FFF              	; Flow through with opcode to unassigned or other bank
 27    5FFF 3E 05        	LD A,5
 28    6001              	; Does not matter what follows here
 29    6001
 30    6001
 31    6001 00 00 00...  	DEFS 0x7FFF-$
-32    7FFF              	; Reach into a not assigned area. Now with opcode that starts in one ban and ends in another. This works because other bank is a single bank.
-33    7FFF 3E 05        	LD A,5
-34    8001              	; Is disassembled because it ends in a single bank
-35    8001 C9           	RET
-36    8002
+32    7FFF              	; Flow through with opcode from multi bank to single bank.
+33    7FFF              	; This works because other bank is a single bank.
+34    7FFF 3E 05        	LD A,5
+35    8001              	; Is disassembled because it ends in a single bank
+36    8001 C9           	RET
 37    8002
-38    8002 00 00 00...  	DEFS 0x9FFE-$
-39    9FFE              	; Starts in a single bank and ends in another single bank
-40    9FFE 3E 05        	LD A,5
-41    A000              	; Is disassembled because it ends in a single bank
-42    A000 C9           	RET
-43    A001
+38    8002
+39    8002 00 00 00...  	DEFS 0x9FFE-$
+40    9FFE              	; Flow through single bank to single bank
+41    9FFE 3E 05        	LD A,5
+42    A000              	; Is disassembled because it ends in a single bank
+43    A000 C9           	RET
 44    A001
+45    A001
+46    A001 00 00 00...  	DEFS 0xAFFE-$
+47    AFFE              	; Continue in other single ban
+48    AFFE 3E 05        	LD A,5
+49    B000              	; Flows into a single bank => no warning
+50    B000 00           	NOP
+51    B001 C9           	RET
+52    B002
+53    B002
+54    B002 00 00 00...  	DEFS 0xBFFF-$
+55    BFFF              	; Opcode continues in other single bank
+56    BFFF 3E 05        	LD A,5
+57    C001              	; Flows into a single bank => no warning
+58    C001 C9           	RET
+59    C002
 # file closed: main.asm

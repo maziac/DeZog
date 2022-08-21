@@ -44,23 +44,11 @@ export class Comments {
 		return lines;
 	}
 
-	/** Calls a function for each comment in an address range.
-	 * If there is no comment the function is not called at all.
+	/** Returns the comments in an address range.
 	 * @param addr64k The address.
 	 * @param len The range of addresses to check. [addr64k, addr64k+len-1]
-	 * @param func The function to call on each comment.
-	 */ // TODO: Remvoe process...
-	public processCommentsForAddresses(addr64k: number, len: number, func: (comment: string) => void) {
-		const addrEnd = addr64k + len;
-		for (let addr = addr64k; addr < addrEnd; addr++) {
-			const lines = this.addrComments.get(addr);
-			if (lines) {
-				// Process each comment (calls the given function on each comment)
-				lines.forEach(func);
-			}
-		}
-	}
-
+	 * @returns A string array with comments or an empty array.
+	 */
 	public getCommentsForAddresses(addr64k: number, len: number): string[] {
 		const comments: string[] = [];
 		const addrEnd = addr64k + len;
@@ -114,5 +102,15 @@ export class Comments {
 	 */
 	public addOpcodeSpreadsOverBanks(addr64k: number) {
 		this.addCommentForAddress(addr64k, 'The opcode at ' + Format.getHexFormattedString(addr64k, 4) + ' spreads over 2 different banks. This could be wrong. The disassembly stops here.');
+	}
+
+
+	/** Adds comment that disassembly would continue in another bank and
+	 * therefore is stopped.
+	 * @param addr64k The address to add the comment to. This is the
+	 * address of the previous opcode.
+	 */
+	public addONextOpcodeInOtherBank(addr64k: number) {
+		this.addCommentForAddress(addr64k, 'The opcode that would follow the opcode at ' + Format.getHexFormattedString(addr64k, 4) + ' would start in a different bank. This could be wrong. The disassembly stops here.');
 	}
 }

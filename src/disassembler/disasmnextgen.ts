@@ -490,27 +490,6 @@ export class DisassemblerNextGen {
 		// Loop over node's addresses
 		while (true) {
 
-			// Check for bank border
-			if (this.bankBorderPassed(nodeSlot, addr64k)) {	// TODO: Kann auch ans Ende, das erst mal niemals true
-				// Bank border, flows through into another bank.
-				// Check that address is exactly at first address of slot
-				const currSlotBank = this.addressesSlotBankInfo[addr64k];
-				if (!currSlotBank.singleBank) {
-					const prevSlotBank = this.addressesSlotBankInfo[addr64k - 1];
-					if (currSlotBank.slot == prevSlotBank.slot) {
-						// The last opcode was partly already inside the banked slot.
-						this.comments.addOpcodeSpreadsOverBanks(addr64k);
-						break;
-					}
-				}
-				// Create a "fake" AsmNode that is not included in the map.
-				// Just an end-object for the caller.
-				const fakeNode = this.getNodeForFill(nodeSlot, addr64k, addr64k);
-				node.branchNodes.push(fakeNode);
-				fakeNode.predecessors.push(node);
-				break;
-			}
-
 			// Get opcode
 			const refOpcode = Opcode.getOpcodeAt(this.memory, addr64k);
 			const opcode = refOpcode.clone();
@@ -596,6 +575,31 @@ export class DisassemblerNextGen {
 			// Break if ambiguous disassembly
 			if (flowAddr != undefined)
 				break;
+
+			// Check for bank border
+			if (this.bankBorderPassed(nodeSlot, addr64k)) {
+				// Bank border, flows through into another bank.
+				// Check that address is exactly at first address of slot
+				const currSlotBank = this.addressesSlotBankInfo[addr64k];
+				if (!currSlotBank.singleBank) {
+					const prevSlotBank = this.addressesSlotBankInfo[addr64k - 1];
+					if (currSlotBank.slot == prevSlotBank.slot) {
+						// The last opcode was partly already inside the banked slot.
+						this.comments.addOpcodeSpreadsOverBanks(lastAddr64k);
+					}
+					// No else: the error will be created in 'getNodeFill'
+					// else {
+					// 	// Just the next opcode is in new bank
+					// 	this.comments.addONextOpcodeInOtherBank(lastAddr64k);
+					// }
+				}
+				// Create a "fake" AsmNode that is not included in the map.
+				// Just an end-object for the caller.
+				const fakeNode = this.getNodeForFill(nodeSlot, lastAddr64k, addr64k);
+				node.branchNodes.push(fakeNode);
+				fakeNode.predecessors.push(node);
+				break;
+			}
 		}
 
 		// Set length

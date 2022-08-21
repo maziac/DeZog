@@ -152,6 +152,21 @@ export class RenderText extends RenderBase {
 	}
 
 
+	/** Print comments for addresses.
+	 * If comments do exist.
+	 * @param lines The comments are put in here.
+	 * @param addr64k The address.
+	 * @param len The range of addresses to check. [addr64k, addr64k+len-1]
+	 */
+	protected printComments(lines: RenderedLines, addr64k: number, len: number) {
+		const cmnts = this.disasm.comments.getCommentsForAddresses(addr64k, len);
+		if (cmnts.length > 0) {
+			lines.addNewline();
+			cmnts.forEach(c => lines.addLine('; Note: ' + c));
+		}
+	}
+
+
 	/** Adds a disassembly data block.
 	 * It prints only data with labels.
 	 * I.e. for each found label it prints at least 8 bytes of data
@@ -163,14 +178,18 @@ export class RenderText extends RenderBase {
 	protected printData(lines: RenderedLines, addr64k: number, dataLen: number) {
 		// Find first address in 'dataReferences'
 		let dataAddr = this.dataReferences.at(-1);	// Last item
-		if (dataAddr == undefined)
+		if (dataAddr == undefined) {
+			this.printComments(lines, addr64k, dataLen);
 			return;
+		}
 
 		// Pop until first address in area is found
 		while (dataAddr < addr64k) {
 			dataAddr = this.dataReferences.pop();
-			if (dataAddr == undefined)
+			if (dataAddr == undefined) {
+				this.printComments(lines, addr64k, dataLen);
 				return;
+			}
 		}
 
 		// Get end address
@@ -209,6 +228,7 @@ export class RenderText extends RenderBase {
 			}
 
 			// Print the data
+			this.printComments(lines, dataAddr, countBytes);
 			const line = this.getCompleteDataLine(dataAddr, countBytes);
 			lines.addLine(line);
 
@@ -272,7 +292,6 @@ export class RenderText extends RenderBase {
 	 * @returns The disassembly text.
 	 */
 	public renderNodes(nodeSet: Set<AsmNode>, startNodes: AsmNode[] = []): string {
-		const comments = this.disasm.comments;
 		// Sort the nodes
 		const nodes = Array.from(nodeSet); //.filter(node => (node.length > 0));	// Filter nodes in other banks
 		nodes.sort((a, b) => a.start - b.start);
@@ -309,11 +328,7 @@ export class RenderText extends RenderBase {
 			let i = 0;
 			for (const opcode of node.instructions) {
 				// First print comment(s)
-				const cmnts = comments.getCommentsForAddresses(addr64k, opcode.length);
-				if (cmnts.length > 0) {
-					lines.addNewline();
-					cmnts.forEach(c => lines.addLine('; Note: ' + c));
-				}
+				this.printComments(lines, addr64k, opcode.length);
 
 				// Check if label exists
 				const label = this.disasm.getLabelForAddr64k(addr64k);

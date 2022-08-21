@@ -4416,10 +4416,10 @@ suite('Disassembler', () => {
 			const node2 = dng.getNodeForAddress(startAddr + 5)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(node1.label, 'LLBL_1304');
-			assert.ok(!node1.isSubroutine);
-			assert.equal(node2.label, ll('LLBL_1304.LLOOP'));
-			assert.ok(!node2.isSubroutine);
+			assert.equal(node1.label, 'SSUB_1304');
+			assert.ok(node1.isSubroutine);
+			assert.equal(node2.label, ll('SSUB_1304.LLOOP'));
+			assert.ok(node2.isSubroutine);
 		});
 	});
 
@@ -4568,12 +4568,13 @@ suite('Disassembler', () => {
 
 			const node1 = dng.getNodeForAddress(0x1FFE)!;
 			assert.notEqual(node1, undefined);
-			assert.equal(comments.size, 0);
+			assert.equal(comments.size, 1);
+			assert.notEqual(comments.get(0x1FFE), undefined);
+			assert.equal(node1.length, 2);
+			assert.equal(node1.branchNodes.length, 1);
 
-			const successor = node1.branchNodes[0];
-			assert.equal(successor.start, 0x2000);
-			assert.equal(successor.length, 0);
-			assert.notEqual(comments.size, 0);
+			const successor = node1.branchNodes[0]
+			assert.equal(successor.bankBorder, true);
 		});
 
 		test('Flow through from multi bank to single bank', () => {
@@ -4599,7 +4600,11 @@ suite('Disassembler', () => {
 			assert.equal(comments.size, 1);
 			assert.notEqual(comments.get(0x5FFF), undefined);
 
-			assert.equal(node1.branchNodes.length, 0);
+			assert.equal(node1.length, 2);
+			assert.equal(node1.branchNodes.length, 1);
+
+			const successor = node1.branchNodes[0]
+			assert.equal(successor.bankBorder, true);
 		});
 
 
@@ -4625,6 +4630,29 @@ suite('Disassembler', () => {
 			assert.notEqual(node1, undefined);
 			assert.equal(comments.size, 0);
 			assert.equal(node1.instructions.length, 2);
+			assert.equal(node1.length, 3);
+		});
+
+		test('Continue in other single bank', () => {
+			const startAddr = 0xAFFE;
+			dng.getFlowGraph([startAddr], []);
+			assert.equal(dngNodes.size, 1);
+
+			const node1 = dng.getNodeForAddress(0xAFFE)!;
+			assert.notEqual(node1, undefined);
+			assert.equal(comments.size, 0);
+			assert.equal(node1.length, 4);
+
+		});
+
+		test('Opcode continues in other single bank', () => {
+			const startAddr = 0xBFFF;
+			dng.getFlowGraph([startAddr], []);
+			assert.equal(dngNodes.size, 1);
+
+			const node1 = dng.getNodeForAddress(0xBFFF)!;
+			assert.notEqual(node1, undefined);
+			assert.equal(comments.size, 0);
 			assert.equal(node1.length, 3);
 		});
 	});
