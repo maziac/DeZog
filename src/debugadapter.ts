@@ -462,14 +462,6 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async initializeRequest(response: DebugProtocol.InitializeResponse, _args: DebugProtocol.InitializeRequestArguments): Promise<void> {
 
-		// Check if DeZog is already running
-		if (!response.success) {	// TODO: Remove this
-			response.success = false;
-			response.message = 'DeZog is already active. Only 1 instance is allowed.';
-			this.sendResponse(response);
-			return;
-		}
-
 		//const dbgSession = vscode.debug.activeDebugSession;
 		// build and return the capabilities of this debug adapter:
 		response.body = response.body || {};
@@ -3714,6 +3706,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			// Convert to start nodes
 			const startNodes = analyzer.getNodesForAddresses(startAddrs64k);
 
+			let view;
 			switch (type) {
 				case 'disassembly':
 					{
@@ -3726,11 +3719,8 @@ E.g. use "-help -view" to put the help text in an own view.
 						const rendered = textDisassembly.renderSync(startNodes, depth);
 
 						// Output text to new view.
-						const view = new HtmlView('Smart Disassembly - ' + title, rendered, 'a { text-decoration: none; color: inherit; }');
+						view = new HtmlView('Smart Disassembly - ' + title, rendered, 'a { text-decoration: none; color: inherit; }');
 						await view.update();
-
-						// Install mouse click handler
-						this.installHtmlClickHandler(view); // TODO: Do this for all ?
 					}
 					break;
 
@@ -3743,11 +3733,8 @@ E.g. use "-help -view" to put the help text in an own view.
 						const rendered = await flowChart.render(startNodes);
 
 						// Output text to new view.
-						const view = new HtmlView('Flow Chart - ' + title, rendered);
+						view = new HtmlView('Flow Chart - ' + title, rendered);
 						await view.update();
-
-						// Install mouse click handler
-						this.installHtmlClickHandler(view);
 					}
 					break;
 
@@ -3761,14 +3748,18 @@ E.g. use "-help -view" to put the help text in an own view.
 						const rendered = await callGraph.render(startNodes, nodeSubs, depth);
 						console.timeEnd();
 						// Output text to new view.
-						const view = new HtmlView('Call Graph - ' + title, rendered);
+						view = new HtmlView('Call Graph - ' + title, rendered);
 						await view.update();
-
-						// Install mouse click handler
-						this.installHtmlClickHandler(view);
 					}
 					break;
+
+				default:
+					Utility.assert(false);
+					return;
 			}
+
+			// Install mouse click handler
+			this.installHtmlClickHandler(view);
 		}
 		catch (e) {
 			this.debugConsoleAppendLine("Error: " + e.message);
