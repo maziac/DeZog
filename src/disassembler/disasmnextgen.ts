@@ -413,9 +413,8 @@ export class DisassemblerNextGen {
 		}
 
 		// Now dive into branches
-		for (let i = allBranchAddresses.length - 1; i >= 0;i--) { // TODO: change order
+		for (const addr of allBranchAddresses) {
 			// Check for bank border
-			const addr = allBranchAddresses[i];
 			if (!this.bankBorderPassed(node.slot, addr))
 				this.createNodeForAddress(addr);
 		}

@@ -738,8 +738,7 @@ suite('Disassembler - RenderText', () => {
 
 0200.1 CD 07 02 CALL SUB_0207
 
-; Note: The disassembly is ambiguous at $020A.
-0203.1 CD 0A 02 CALL 020A.1
+0203.1 CD 0A 02 CALL SUB_020A
 
 0206.1 C9 RET
 
@@ -748,8 +747,9 @@ suite('Disassembler - RenderText', () => {
 
 ; Note: The disassembly is ambiguous at $020A.
 0208.1 01 10 21 LD BC,$2110
-020B.1 00 NOP
-020C.1 80 ADD A,B
+
+020A.1 SUB_020A:
+020A.1 21 00 80 LD HL,$8000
 020D.1 00 NOP
 020E.1 00 NOP
 020F.1 00 NOP
@@ -764,7 +764,8 @@ suite('Disassembler - RenderText', () => {
 						`0008.1 SUB_0008:
 0008.1 C9 RET
 
-0300.1 CD 0A 03 CALL SUB_030A
+; Note: The disassembly is ambiguous at $030A.
+0300.1 CD 0A 03 CALL 030A.1
 
 0303.1 CD 07 03 CALL SUB_0307
 
@@ -775,9 +776,8 @@ suite('Disassembler - RenderText', () => {
 
 ; Note: The disassembly is ambiguous at $030A.
 0308.1 01 10 21 LD BC,$2110
-
-030A.1 SUB_030A:
-030A.1 21 00 80 LD HL,$8000
+030B.1 00 NOP
+030C.1 80 ADD A,B
 030D.1 00 NOP
 030E.1 00 NOP
 030F.1 00 NOP
