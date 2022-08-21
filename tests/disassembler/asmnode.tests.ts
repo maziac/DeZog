@@ -329,7 +329,7 @@ suite('AsmNode', () => {
 			const n2 = new AsmNode();
 			n1.branchNodes.push(n2);
 			n2.predecessors.push(n1);
-			n1.markAsSubroutine();
+			n1.markPredecessorsAsSubroutine();
 			assert.ok(n1.isSubroutine);
 			assert.ok(!n2.isSubroutine);
 		});
@@ -339,7 +339,7 @@ suite('AsmNode', () => {
 			const n2 = new AsmNode();
 			n1.branchNodes.push(n2);
 			n2.predecessors.push(n1);
-			n2.markAsSubroutine();
+			n2.markPredecessorsAsSubroutine();
 			assert.ok(n1.isSubroutine);
 			assert.ok(n2.isSubroutine);
 		});
@@ -350,7 +350,7 @@ suite('AsmNode', () => {
 			n1.branchNodes.push(n2);
 			n2.predecessors.push(n1);
 			n2.isSubroutine = true;
-			n2.markAsSubroutine();
+			n2.markPredecessorsAsSubroutine();
 			assert.ok(!n1.isSubroutine);
 			assert.ok(n2.isSubroutine);
 		});

@@ -50,7 +50,7 @@ export class AsmNode {
 	public callee: AsmNode | undefined;
 
 	// The following nodes. I.e. all branch addresses except calls.
-	// Could be 0 (e.g. RET), 1 (e.g. CALL cc nn) or 2 (e.g. JP Z,nn).
+	// Could be empty (e.g. RET), 1 (e.g. CALL cc nn) or 2 (e.g. JP Z,nn).
 	public branchNodes: AsmNode[] = [];
 
 	// All addresses that are directly referenced by instructions, other than the jumps/calls.
@@ -200,12 +200,26 @@ export class AsmNode {
 	 * Mark as subroutine. Also recursively the predecessors.
 	 * Returns immediately if already marked as subroutine.
 	 */
-	public markAsSubroutine() {
+	public markPredecessorsAsSubroutine() {
 		if (this.isSubroutine)
 			return;
 		this.isSubroutine = true;
 		for (const predec of this.predecessors) {
-			predec.markAsSubroutine();
+			predec.markPredecessorsAsSubroutine();
+		}
+	}
+
+
+	/**
+	 * Mark as subroutine. Also recursively the successors.
+	 * Returns immediately if already marked as subroutine.
+	 */
+	public markSuccessorsAsSubroutine() {
+		if (this.isSubroutine)
+			return;
+		this.isSubroutine = true;
+		for (const succ of this.branchNodes) {
+			succ.markSuccessorsAsSubroutine();
 		}
 	}
 

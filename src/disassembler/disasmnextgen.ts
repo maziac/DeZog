@@ -643,14 +643,23 @@ export class DisassemblerNextGen {
 	/** ANCHOR markSubroutines
 	 * Mark all nodes as subroutine that end in a node that is already marked as a subroutine
 	 * (i.e. end with a RET, RET cc).
+	 * Mark also all nodes that are called and there successors.
 	 */
 	protected markSubroutines() {
 		// Loop all nodes
 		for (const [, node] of this.nodes) {
+			// If a node was marked as subroutine (because of RET) then
+			// mark also all predecessors.
 			if (node.isSubroutine) {
 				// Mark recursively
 				for (const predec of node.predecessors)
-					predec.markAsSubroutine();
+					predec.markPredecessorsAsSubroutine();
+			}
+			else {
+				// Now mark all nodes (and their successors) if they have callers
+				if (node.callers.length) {
+					node.markSuccessorsAsSubroutine();
+				}
 			}
 		}
 	}

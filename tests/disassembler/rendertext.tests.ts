@@ -765,11 +765,11 @@ suite('Disassembler - RenderText', () => {
 
 0300.1 CD 0A 03 CALL SUB_030A
 
-0303.1 CD 07 03 CALL LBL_0307
+0303.1 CD 07 03 CALL SUB_0307
 
 0306.1 C9 RET
 
-0307.1 LBL_0307:
+0307.1 SUB_0307:
 0307.1 CF RST $08
 
 ; Note: The disassembly is ambiguous at $030A.
