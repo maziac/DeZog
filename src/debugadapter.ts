@@ -3962,15 +3962,38 @@ E.g. use "-help -view" to put the help text in an own view.
 				const selections: vscode.Selection[] = [];
 				let visibleStart = Number.MAX_SAFE_INTEGER;
 				let visibleEnd = 0;
-				for (const lineNr of lineNrs) {
+
+				// Find consecutive lines
+				lineNrs.sort((a, b) => a - b);
+				const compressed: number[][] = [];
+				let i = 0;
+				while (i < lineNrs.length) {
+					// Search until a gap of more than 1 line
+					let lineNr = lineNrs[i];
+					let k = i + 1;
+					for (; k < lineNrs.length; k++) {
+						lineNr++;
+						if (lineNr != lineNrs[k])
+							break;
+					}
+					compressed.push([lineNrs[i], lineNrs[k - 1]]);
+					// Next
+					i = k;
+				}
+
+				// Create selections
+				for (const lineStartEnd of compressed) {
+					// Start/end
+					const lineStart = lineStartEnd[0];
+					const lineEnd = lineStartEnd[1];
 					// Set selection
 					const clmEnd = (selectWholeLine) ? Number.MAX_SAFE_INTEGER : 0;
-					selections.push(new vscode.Selection(lineNr, 0, lineNr, clmEnd));
+					selections.push(new vscode.Selection(lineStart, 0, lineEnd, clmEnd));
 					// Extend visible range
-					if (lineNr < visibleStart)
-						visibleStart = lineNr;
-					if (lineNr > visibleEnd)
-						visibleEnd = lineNr;
+					if (lineStart < visibleStart)
+						visibleStart = lineStart;
+					if (lineEnd > visibleEnd)
+						visibleEnd = lineEnd;
 				}
 				// Extend visible range
 				visibleStart -= 3;
