@@ -657,9 +657,9 @@ export class DisassemblerNextGen {
 					predec.markPredecessorsAsSubroutine();
 			}
 			else {
-				// Now mark all nodes (and their successors) if they have callers
+				// Now mark node if it has callers
 				if (node.callers.length) {
-					node.markSuccessorsAsSubroutine();
+					node.isSubroutine = true;
 				}
 			}
 		}

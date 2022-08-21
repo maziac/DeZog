@@ -214,6 +214,7 @@ export class AsmNode {
 	 * Mark as subroutine. Also recursively the successors.
 	 * Returns immediately if already marked as subroutine.
 	 */
+	// TODO : not required
 	public markSuccessorsAsSubroutine() {
 		if (this.isSubroutine)
 			return;

@@ -4236,7 +4236,7 @@ suite('Disassembler', () => {
 			assert.notEqual(node2, undefined);
 
 			assert.equal(node1.label, undefined);
-			assert.equal(node2.label, 'LLBL_0209');
+			assert.equal(node2.label, 'SSUB_0209');
 		});
 
 		test('JR after RET, sub', () => {
@@ -4250,7 +4250,7 @@ suite('Disassembler', () => {
 			assert.notEqual(node2, undefined);
 
 			assert.equal(node1.label, undefined);
-			assert.equal(node2.label, 'LLBL_028D');
+			assert.equal(node2.label, 'SSUB_028D');
 		});
 
 		test('Sub in sub', () => {
@@ -4266,7 +4266,6 @@ suite('Disassembler', () => {
 			assert.equal(node1.label, 'SSUB_0307');
 			assert.equal(node2.label, 'SSUB_0309');
 		});
-
 
 		test('Complex jumping', () => {
 			const startAddr = 0x0400;
@@ -4430,7 +4429,7 @@ suite('Disassembler', () => {
 			assert.equal(node1.label, 'SSUB_1304');
 			assert.ok(node1.isSubroutine);
 			assert.equal(node2.label, ll('SSUB_1304.LLOOP'));
-			assert.ok(node2.isSubroutine);
+			assert.ok(!node2.isSubroutine);
 		});
 	});
 
@@ -4685,6 +4684,7 @@ suite('Disassembler', () => {
 			dng.labelLocalLoopPrefix = 'LLOOP';
 			dng.labelLocalLabelPrefix = 'LL';
 			dng.labelDataLblPrefix = "DDATA_";
+			dng.labelRstPrefix = "RRST_";
 			Format.hexFormat = '$';
 		});
 
@@ -4737,8 +4737,8 @@ suite('Disassembler', () => {
 			checkInstructions(node1, [
 				"LD A,$05",
 				"LD DE,$0000",
-				"LD HL,(SSUB_0000)",
-				"CALL SSUB_0000"
+				"LD HL,(RRST_0000)",
+				"CALL RRST_0000"
 			]);
 
 			const node2 = dng.getNodeForAddress(startAddr + 0x0B)!;
@@ -4774,7 +4774,7 @@ suite('Disassembler', () => {
 			const node1 = dng.getNodeForAddress(startAddr)!;
 			assert.notEqual(node1, undefined);
 			checkInstructions(node1, [
-				"CALL SSUB_0000"
+				"CALL RRST_0000"
 			]);
 
 			const node2 = dng.getNodeForAddress(startAddr + 3)!;
