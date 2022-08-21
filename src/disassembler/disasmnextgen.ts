@@ -373,11 +373,6 @@ export class DisassemblerNextGen {
 			// Next address
 			addr64k += refOpcode.length;
 			const memAttrNext = this.memory.getAttributeAt(addr64k);
-			// Check if already analyzed
-			if (memAttrNext & MemAttribute.FLOW_ANALYZED) {
-				// Everything fine. Code has been already analyzed. Stop.
-				break;
-			}
 
 			// Check for branch
 			const flags = refOpcode.flags;
@@ -401,6 +396,12 @@ export class DisassemblerNextGen {
 				break;
 			}
 
+			// Check if already analyzed
+			if (memAttrNext & MemAttribute.FLOW_ANALYZED) {
+				// Everything fine. Code has been already analyzed. Stop.
+				break;
+			}
+
 			// Check for RET or JP
 			if (flags & OpcodeFlag.STOP) {
 				break;
@@ -412,7 +413,7 @@ export class DisassemblerNextGen {
 		}
 
 		// Now dive into branches
-		for (let i = allBranchAddresses.length - 1; i >= 0;i--) {
+		for (let i = allBranchAddresses.length - 1; i >= 0;i--) { // TODO: change order
 			// Check for bank border
 			const addr = allBranchAddresses[i];
 			if (!this.bankBorderPassed(node.slot, addr))
