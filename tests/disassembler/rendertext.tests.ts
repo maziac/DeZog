@@ -435,7 +435,7 @@ suite('Disassembler - RenderText', () => {
 			});
 
 			test('referencing data', () => {
-				const text = disassemble([0x1300, 0x130A]);
+				const text = disassemble([0x1300, 0x130A, 0x130D]);
 				assert.equal(c(text), c(
 					`1300.1 3E 06       LD A,$06
 1302.1 2A 08 13    LD HL,(DATA_1308)
@@ -446,7 +446,9 @@ suite('Disassembler - RenderText', () => {
 
 130A.1           LBL_130A:
 130A.1 11 DE DE    LD DE,$DEDE
-130D.1 C9          RET
+
+130D.1 .LOOP:
+130D.1 18 FE JR .LOOP
 `));
 			});
 
@@ -778,7 +780,7 @@ suite('Disassembler - RenderText', () => {
 					const text = disassemble([0x0200]);
 
 					assert.equal(c(text), c(
-						`0008.1 SUB_0008:
+						`0008.1 RST_0008:
 0008.1 C9 RET
 
 0200.1 CD 07 02 CALL SUB_0207
@@ -807,7 +809,7 @@ suite('Disassembler - RenderText', () => {
 					const text = disassemble([0x0300]);
 
 					assert.equal(c(text), c(
-						`0008.1 SUB_0008:
+						`0008.1 RST_0008:
 0008.1 C9 RET
 
 ; Note: The disassembly is ambiguous at $030A.
@@ -836,7 +838,7 @@ suite('Disassembler - RenderText', () => {
 					const text = disassemble([0x0400]);
 
 					assert.equal(c(text), c(
-						`0008.1 SUB_0008:
+						`0008.1 RST_0008:
 0008.1 C9 RET
 
 0400.1 CD 04 04 CALL SUB_0404

@@ -140,7 +140,7 @@ LBL_DATA:
 
 LBL_CONT:
 	LD DE,0xDEDE
-	RET
+	JR $
 
 
 
