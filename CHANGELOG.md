@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.7.4
+- Fixed #96: srcPath appears to need an absolute path
+
 # 2.7.3
 - Fixed #95: bug in watch structures
 
