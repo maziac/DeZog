@@ -3,8 +3,8 @@
 The disassembly used in Dezog is derived from the [z80dismblr](https://github.com/maziac/z80dismblr) project.
 DeZog uses 2 kinds of disassemblies:
 1. The SimpleDisassembly: a brute force disassembly used in the VARIABLEs pane and for the 'dasm' command.
-It is "brute force" because it disassembles a small amount (about 10) of instructions and just converts the opcodes into instructions.
-2. A more intelligent i.e. "smart" disassembly (AnalyzeDisassembler and DisassemblyClass) which uses z80dismblr features to distinguish code labels from data labels etc. E.g. the disassembly will not necessarily go on with the disassembly after a RET is found.
+It is "brute force" because it disassembles a small amount (about 10) of instructions and just converts the opcodes into instructions no matter if this is really code. E.g. also a data area would be disassembled to code.
+2. A more intelligent i.e. "smart" disassembly (SmartDisassembler) which follows the execution path to distinguish code labels from data labels and allows also a flow chart and call graph generation.
 
 This document discusses the 2nd (smart) disassembly.
 
@@ -15,14 +15,13 @@ This document discusses the 2nd (smart) disassembly.
 | reverse engineered list file (rev-eng.list)| The list file maintained by the user. Code that the user has reverse engineered and understood is out here. Normally the user will copy part of the disassembly here, change the labels to meaningful names and add comments. |
 
 
-
 # Analysis
 
 The different types of analysis are discussed here:
 Flowchart, call graph, smart disassembly and parameter.
 
 
-## Smart Disassembly (z80dismblr)
+## Smart Disassembly
 
 Basically the disassembler works on own 'memory', a 64k address block.
 The memory can have attributes attached to each address.
@@ -33,14 +32,9 @@ If it gets known that the memory location is used for code it gets the CODE flag
 If it is the first byte of an opcode additionally it receives the CODE_FIRST flag.
 If it is data it gets the DATA flag.
 
-Note: as these are flags, combinations are unlikely, but possible. e.g. an address with CODE could also have the DATA attribute if it is e.g. self-modifying code.
+Note: as these are flags combinations are possible. E.g. an address with could have attributes CODE, CODE_FIRST, ASSIGNED and FLOW_ANALYZED set.
 
-The other important structure is the 'addressQueue' which holds a number of known addresses that have been stepped through. I.e. addresses that for sure share the CODE|CODE_FIRST attribute.
-
-When starting a disassembly these addresses are used as entry points into the disassembly.
-
-The original z80dismblr works only on 64k without paging/memory banks.
-There are some strategies to overcome the limitation.
+When starting a disassembly the former stepped addresses are used as entry points into the disassembly.
 
 The disassembly takes a little time, not much but too much to do it on every step.
 
@@ -59,32 +53,10 @@ I.e. if something looks strange the user can reload the disassembly.
 
 (On a reload only the call stack history is cleared but the current call stack is used for disassembly.)
 
-
-### AnalyzeDisassembler and DisassemblyClass
-
-The AnalyzeDisassembler and the DisassemblyClass are derived from the Disassembler (z80dismblr).
-It modifies the behavior to be more suited for DeZog and (interactive) reverse engineering.
-
-It hooks into the disassembler to change the output:
-- funcAssignLabels: to assign labels for addresses. These labels are taken from the Labels instance (which was built from the reverse engineering list file).
-- funcFilterAddresses: removes any line from the disassembly output that is already available in the  reverse engineering list file.
-- funcFormatAddress: Formats the addresses in the output. Used to add the bank information to the hex address.
-
-The DebugAdapter calls the DisassemblyClass to check for a new memory fetch and disassembly by calling 'setNewAddresses' on each stackTraceRequest.
-
-Breakpoints:
-When the disassembly text changes it is also necessary to remove the breakpoints from the disassembly and to add the adjusted values after the new disassembly is available because the line numbers might have been changed.
-
-At the end it is also required to update the decorations for the code coverage info.
-
-There is an additional button in the disasm.list editor that allows the user to manually fetch memory and do a disassembly.
-The button is disabled when a disassembly just happened and enabled on each step no disassembly is done.
-This is achieved via the context variable 'dezog:disassembler:refreshEnabled' used in package.json and in the Debug Adapter.
-
-
-On debug session termination the disassembly list file itself stays there and is not removed. Maybe the user would want to continue with reverse engineering after the debug session.
-But the breakpoints associated with the disassembly list files are removed.
-Otherwise these would show up as error (not associated breakpoints), and would be removed, at the next start of an debug session.
+The disassembly is aware of memory banks. It uses the memory model to know which memory banks exist.
+If a call is made from one bank into another the call is only followed if the slot is single banked.
+I.e. if the bank for that slot is not ambiguous or in other words that slot can handle only one bank.
+Otherwise the flow analysis stops here with a comment.
 
 
 ### General Approach
@@ -111,12 +83,13 @@ Here are the general steps taken to do a complete disassembly:
 
 1. **createNodes()**: Creates all nodes that are present in the this.nodes map.
 The nodes at this point only contain the start address.
-2. **fillNodes()**: The nodes are filled with info (e.g. callees, callers, predecessors, successors, ...). Additional nodes are created for 'bank border' calls. I.e. calls that would cross a bank to a multi-bank slot.
-3. **markSubroutines()**: nodes are searched to find nodes with RET, RET CC, RET or RETN. These nodes and their predecessor nodes are marked as a subroutine.
+2. **this.createNodesForLabels(labels)**: Creates nodes for already existing labels. But only if instructions exist on these addresses.
+3. **fillNodes()**: The nodes are filled with info (e.g. callees, callers, predecessors, successors, ...). Additional nodes are created for 'bank border' calls. I.e. calls that would cross a bank to a multi-bank slot.
+4. **markSubroutines()**: nodes are searched to find nodes with RET, RET CC, RET or RETN. These nodes and their predecessor nodes are marked as a subroutine.
 All node that are called by another node are marked as 'isStartingNode'.
-4. **partitionBlocks()**: All nodes are searched (from low address to high). All recursive branches of that node are added to the same block if they do not include a "hole" or are not a new stating node.
-5. **assignNodeLabels()**: Assigns labels to block starts and the recursive local labels. The prefix for a subroutine is determined by '(isSubroutine && isStartingNode) == true)'.
-6. **assignOpcodeReferenceLabels()**: The labels for the jumps and calls have been analyzed already. But there are still data references (e.g. "LD A,(nn)") that could point to code, e.g. for self modifying code. These are assigned 'otherLabels' here.
+5. **partitionBlocks()**: All nodes are searched (from low address to high). All recursive branches of that node are added to the same block if they do not include a "hole" or are not a new stating node.
+6. **assignNodeLabels()**: Assigns labels to block starts and the recursive local labels. The prefix for a subroutine is determined by '(isSubroutine && isStartingNode) == true)'.
+7. **assignOpcodeReferenceLabels()**: The labels for the jumps and calls have been analyzed already. But there are still data references (e.g. "LD A,(nn)") that could point to code, e.g. for self modifying code. These are assigned 'otherLabels' here.
 
 Afterwards it depends if a disassembly, a flow chart or a call graph should b rendered.
 
@@ -142,23 +115,13 @@ There are a few special problems to solve in the disassembly and sometimes no re
 The RST instruction is often used such that it is followed by one or more bytes that re ready by the RST sub routine.
 The disassembler cannot analyze this. For one it would require a dynamic analysis and furthermore it can also be unclear which RST sub routine is used in case several ROMs can be page in.
 
-For now the disassembly simply goes no after the RST instruction. This could lead into a wrong disassembly, e.g. a (1 byte) instruction is decoded that is not existing or, even more problematic), e.g. a non-existing 3 byte instruction is decoded so that also the following instruction is wrongly decoded.
+For now the disassembly simply goes on after the RST instruction. This could lead into a wrong disassembly, e.g. a (1 byte) instruction is decoded that is not existing or, even more problematic), e.g. a non-existing 3 byte instruction is decoded so that also the following instruction is wrongly decoded.
 
-It would be nice if at least the user could correct the disassembly.
-One possible solution could to interpret the RST in the rev-eng.list file.
-If e.g.
-~~~asm
-	RST 8
-	defb 5
-~~~
-
-I.e. data after a RST instruction then the rev-eng parser could mark this memory and pass it to the disassembler.
-So the disassembler could also mark as DATA and skip to the next instruction.
-
-Problem:
-This is a new concept for the parser and also for the disassembler and this information need to be passed from parser to disassembler.
-
-To be decided yet.
+TODO:
+Therefore it is possible in the Settings for the disassemble to specify long addresses for caller routines (i.e. RST and CALL).
+If a CALL/RST calls such an address the PC is adjusted by a given offset.
+Although this is normally only used for RST it could also help on subroutines that use a similar concept.
+Also it is possible to define different addresses for different banks. E.g. in a ZX128K the 2 ROMs may use different offsets.
 
 
 #### Branching into Paged Banks
@@ -214,6 +177,15 @@ The involved files are:
 - grammar/asm_disassembly.json
 
 
+## Smart Disassembly - disasm.list
+
+The smart disassembly done via right click and the smart disassembly done for disassembling code areas without source file (disasm.list) use the same concept but the rendering is slightly different.
+
+The first one renders html that also allows some highlighting and links to source code. This html code is not syntax highlighted by asm-code-lens.
+
+The disasm.list is rendered to text.
+
+
 ## Flow Chart Analysis
 
 The flow chart analysis is based on the smart disassembly.
@@ -233,7 +205,7 @@ Involved functions are: 'renderCallGraph', 'getGraphLabels' and 'getCallGraph'.
 
 
 
-## Much simplified parameter analysis
+# Much simplified parameter analysis
 
 The parameter analysis with symbolic execution is difficult and, without loops, is also quite limited especially when it comes to stack manipulations.
 
@@ -296,7 +268,10 @@ Note: Special instructions to consider:
 	LD SP,HL
 ~~~
 
-## Parameter Analysis
+
+# Parameter Analysis - not implemented
+
+Note: This is a thought experiment how symbolic analysis could be implemented.
 
 Apart from call graph and flow chart analysis there is also a symbol execution analysis which is somewhere between static and dynamic analysis.
 
@@ -388,7 +363,7 @@ L2:
 ~~~
 
 
-### Registers
+## Registers
 
 If a register is set there are several possibilities how a registers gets its symbolic value.
 
@@ -400,7 +375,7 @@ If a register is set there are several possibilities how a registers gets its sy
 	The input is merged. The 'known' is changed to false.
 	See also the more advanced explanation below.
 
-#### Symbolic calculations with 2 inputs
+### Symbolic calculations with 2 inputs
 
 The symbolic values calculations below apply to all map entries, not only memory.
 (E.g. "ADD A,B")
@@ -434,7 +409,7 @@ I.e. no matter what operands are used in the calculation, the result is unknown.
 
 
 
-### Memory and I/O
+## Memory and I/O
 
 Memory like "($80000)" or "(HL)" is also handled as registers.
 I.e. in the same map.
@@ -499,7 +474,7 @@ Examples:
 ~~~
 
 
-### Stack
+## Stack
 
 NOTE: A good stack analysis would require algebra on the symbolic or concrete values which is ot done because it would also require a loop analysis.
 
@@ -585,7 +560,7 @@ This would require better symbolic algebra.
 
 
 
-### Branches
+## Branches
 
 If the execution branches there are several possibilities how a particular register value is set.
 
@@ -671,7 +646,7 @@ If, at the end,
 
 
 
-### Examples:
+## Examples:
 
 ~~~asm
 	INC A	; Symbol(A) = input-A, unknown
