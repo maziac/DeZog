@@ -912,4 +912,69 @@ suite('Utility', () => {
 			assert.equal(Utility.convertHexNumber("0x10000"), 65536);
 		});
 	});
+
+
+
+	suite('getRelFilePath', () => {
+		suite('unix', () => {
+			test('rootpath part of file path', () => {
+				Utility.setRootPath('/abc');
+				assert.equal(Utility.getRelFilePath('/abc/file'), 'file');
+
+				Utility.setRootPath('/');
+				assert.equal(Utility.getRelFilePath('/abc/file'), 'abc/file');
+
+				Utility.setRootPath('/abc/def');
+				assert.equal(Utility.getRelFilePath('/abc/def/file'), 'file');
+
+				Utility.setRootPath('/abc/def/');
+				assert.equal(Utility.getRelFilePath('/abc/def/file'), 'file');
+			});
+
+			test('..', () => {
+				Utility.setRootPath('/abcd');
+				assert.equal(Utility.getRelFilePath('/abc/file'), '../abc/file');
+
+				Utility.setRootPath('/abc/def/ghi');
+				assert.equal(Utility.getRelFilePath('/abc/file'), '../../file');
+			});
+		});
+
+		suite('windows', () => {
+			test('rootpath part of file path', () => {
+				Utility.setRootPath('c:/abc');
+				assert.equal(Utility.getRelFilePath('c:/abc/file'), 'file');
+
+				Utility.setRootPath('c:/');
+				assert.equal(Utility.getRelFilePath('c:/abc/file'), 'abc/file');
+
+				Utility.setRootPath('c:');
+				assert.equal(Utility.getRelFilePath('c:/abc/file'), 'abc/file');
+
+				Utility.setRootPath('c:/abc/def');
+				assert.equal(Utility.getRelFilePath('c:/abc/def/file'), 'file');
+
+				Utility.setRootPath('c:/abc/def/');
+				assert.equal(Utility.getRelFilePath('c:/abc/def/file'), 'file');
+			});
+
+			test('..', () => {
+				Utility.setRootPath('c:/abcd');
+				assert.equal(Utility.getRelFilePath('c:/abc/file'), '../abc/file');
+
+				Utility.setRootPath('c:/abc/def/ghi');
+				assert.equal(Utility.getRelFilePath('c:/abc/file'), '../../file');
+			});
+
+			test('mixed drive letters', () => {
+				Utility.setRootPath('c:/abcd');
+				assert.equal(Utility.getRelFilePath('C:/abc/file'), '../abc/file');
+
+				Utility.setRootPath('C:/abc/def/');
+				assert.equal(Utility.getRelFilePath('c:/abc/def/file'), 'file');
+			});
+		});
+	});
+
+
 });
