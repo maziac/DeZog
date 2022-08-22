@@ -1069,8 +1069,7 @@ export class ZesaruxRemote extends RemoteBase {
 			if (bank != -1) {
 				// Yes, it's a long address
 				// Check for ZX128K: ZEsarUX uses different wording:
-				const className = this.memoryModel.constructor.name
-				if (className == "MemoryModelZx128k") {
+				if (this.memoryModel instanceof MemoryModelZx128k) {
 					// ZX128K:
 					// 0000-3FFF:	ROM
 					// 4000-BFFF: 	-
@@ -1086,7 +1085,7 @@ export class ZesaruxRemote extends RemoteBase {
 						condition += ' and RAM=' + bank;
 					}
 				}
-				else if (className == "MemoryModelZxNext") {
+				else if (this.memoryModel instanceof MemoryModelZxNext) {
 					// ZXNext
 					const slot = Z80Registers.getSlotFromAddress(address);
 					// Treat ROM banks special for ZEsarUX
