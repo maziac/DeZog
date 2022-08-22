@@ -1,5 +1,5 @@
 import {AsmNode} from "./asmnode";
-import {DisassemblerNextGen} from "./disasmnextgen";
+import {SmartDisassembler} from "./smartdisassembler";
 import {Subroutine} from "./subroutine";
 
 // From: https://github.com/aduh95/viz.js
@@ -11,12 +11,12 @@ const dot2svg = require("@aduh95/viz.js/async");
  */
 export class RenderBase {
 	// The used disassembler. Is passed with the constructor.
-	protected disasm: DisassemblerNextGen;
+	protected disasm: SmartDisassembler;
 
 
 	/** Constructor.
 	 */
-	constructor(disasm: DisassemblerNextGen) {
+	constructor(disasm: SmartDisassembler) {
 		this.disasm = disasm;
 	}
 

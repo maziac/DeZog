@@ -37,7 +37,7 @@ import {TextView} from './views/textview';
 import {ZxNextSpritePatternsView} from './views/zxnextspritepatternsview';
 import {ZxNextSpritesView} from './views/zxnextspritesview';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
-import {AddressLabel, DisassemblerNextGen} from './disassembler/disasmnextgen';
+import {AddressLabel, SmartDisassembler} from './disassembler/smartdisassembler';
 import {ReverseEngineeringLabelParser} from './labels/reverseengineeringlabelparser';
 import {RenderCallGraph} from './disassembler/rendercallgraph';
 import {RenderFlowChart} from './disassembler/renderflowchart';
@@ -3689,7 +3689,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			const title = titles.join(', ');
 
 			// Create new instance to disassemble
-			const analyzer = new DisassemblerNextGen(this.funcGetLabel,this.funcFilterAddresses,this.funcFormatLongAddress);
+			const analyzer = new SmartDisassembler(this.funcGetLabel,this.funcFilterAddresses,this.funcFormatLongAddress);
 			analyzer.setMemoryModel(Remote.memoryModel);
 			analyzer.setCurrentSlots(Remote.getSlots());
 			// Get whole memory for analyzing

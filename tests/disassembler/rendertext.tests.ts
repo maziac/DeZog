@@ -3,7 +3,7 @@ import {readFileSync} from 'fs';
 import {Utility} from '../../src/misc/utility';
 import {Format} from '../../src/disassembler/format';
 import {RenderText} from '../../src/disassembler/rendertext';
-import {DisassemblerNextGen} from '../../src/disassembler/disasmnextgen';
+import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
 import {Subroutine} from '../../src/disassembler/subroutine';
 import {AsmNode} from '../../src/disassembler/asmnode';
 import {RenderedLines} from '../../src/disassembler/renderedlines';
@@ -12,10 +12,10 @@ import {RenderedLines} from '../../src/disassembler/renderedlines';
 
 suite('Disassembler - RenderText', () => {
 
-	let disasm: DisassemblerNextGen;
+	let disasm: SmartDisassembler;
 	let r: any;
 	setup(() => {
-		disasm = new DisassemblerNextGen(
+		disasm = new SmartDisassembler(
 			addr64k => undefined,
 			() => false,
 			addr64k => Utility.getHexString(addr64k, 4) + '.1'
@@ -44,7 +44,7 @@ suite('Disassembler - RenderText', () => {
 	 * @param dng The disassembler object.
 	 * @param path The file path to a binary file.
 	 */
-	function readBinFile(dng: DisassemblerNextGen, path: string) {
+	function readBinFile(dng: SmartDisassembler, path: string) {
 		const bin = new Uint8Array(readFileSync(path));
 		dng.setMemory(0, bin);
 	}

@@ -1,5 +1,5 @@
 import {BankType, MemoryModel} from '../remotes/MemoryModel/memorymodel';
-import {Utility} from './../misc/utility';
+import {Utility} from '../misc/utility';
 import {AsmNode} from './asmnode';
 import {Comments} from './comments';
 import {Format} from './format';
@@ -26,7 +26,7 @@ interface SlotBankInfo {
 
 /** The main Disassembler class.
  */
-export class DisassemblerNextGen {
+export class SmartDisassembler {
 
 	/// A function that is used to retrieve label names by the disassembler.
 	public funcGetLabel: (addr64k: number) => string | undefined;

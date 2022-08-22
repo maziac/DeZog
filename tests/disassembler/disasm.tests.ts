@@ -5,7 +5,7 @@ import {Format} from '../../src/disassembler/format';
 import {NumberType} from '../../src/disassembler/numbertype';
 import {Opcode} from '../../src/disassembler/opcode';
 import {AsmNode} from '../../src/disassembler/asmnode';
-import {DisassemblerNextGen} from '../../src/disassembler/disasmnextgen';
+import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
 import {Utility} from '../../src/misc/utility';
 
 
@@ -48,7 +48,7 @@ suite('Disassembler', () => {
 	 * @param dng The disassembler object.
 	 * @param path The file path to a binary file.
 	 */
-	function readBinFile(dng: DisassemblerNextGen, path: string) {
+	function readBinFile(dng: SmartDisassembler, path: string) {
 		const bin = new Uint8Array(readFileSync(path));
 		dng.setMemory(0, bin);
 	}
@@ -3456,10 +3456,10 @@ suite('Disassembler', () => {
 
 	suite('nodes', () => {
 
-		let dng: DisassemblerNextGen;
+		let dng: SmartDisassembler;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
+			dng = new SmartDisassembler(addr => undefined, addr => true, addr => addr.toString(16));
 			(dng as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 			dng.setCurrentSlots([0]);
 			readBinFile(dng,'./tests/disassembler/projects/nodes/main.bin');
@@ -3929,10 +3929,10 @@ suite('Disassembler', () => {
 
 	suite('partitionBlocks', () => {
 
-		let dng: DisassemblerNextGen;
+		let dng: SmartDisassembler;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
+			dng = new SmartDisassembler(addr => undefined, addr => true, addr => addr.toString(16));
 			(dng as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 			dng.setCurrentSlots([0]);
 			readBinFile(dng,'./tests/disassembler/projects/partition_blocks/main.bin');
@@ -4166,10 +4166,10 @@ suite('Disassembler', () => {
 
 	suite('assignLabels', () => {
 
-		let dng: DisassemblerNextGen;
+		let dng: SmartDisassembler;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
+			dng = new SmartDisassembler(addr => undefined, addr => true, addr => addr.toString(16));
 			(dng as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 			dng.setCurrentSlots([0]);
 			readBinFile(dng,'./tests/disassembler/projects/assign_labels/main.bin');
@@ -4436,10 +4436,10 @@ suite('Disassembler', () => {
 
 	suite('bank border', () => {
 
-		let dng: DisassemblerNextGen;
+		let dng: SmartDisassembler;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
+			dng = new SmartDisassembler(addr => undefined, addr => true, addr => addr.toString(16));
 			(dng as any).setSlotBankInfo(0x0000, 0x3FFF, 0, true);
 			(dng as any).setSlotBankInfo(0x4000, 0x7FFF, 1, false);
 			(dng as any).setSlotBankInfo(0x8000, 0xBFFF, 2, false);
@@ -4553,11 +4553,11 @@ suite('Disassembler', () => {
 
 	suite('Flow through slot', () => {
 
-		let dng: DisassemblerNextGen;
+		let dng: SmartDisassembler;
 		let dngNodes: Map<number, AsmNode>;
 		let comments: Map<number, string[]>;
 		setup(() => {
-			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
+			dng = new SmartDisassembler(addr => undefined, addr => true, addr => addr.toString(16));
 			(dng as any).setSlotBankInfo(0x0000, 0x1FFF, 0, true);
 			(dng as any).setSlotBankInfo(0x2000, 0x3FFF, 1, false);
 			(dng as any).setSlotBankInfo(0x4000, 0x5FFF, 2, true);
@@ -4670,10 +4670,10 @@ suite('Disassembler', () => {
 
 	suite('disassembleNodes', () => {
 
-		let dng: DisassemblerNextGen;
+		let dng: SmartDisassembler;
 		//let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new DisassemblerNextGen(addr => undefined, addr => true, addr => addr.toString(16));
+			dng = new SmartDisassembler(addr => undefined, addr => true, addr => addr.toString(16));
 			(dng as any).setSlotBankInfo(0x0000, 0x3FFF, 0, true);
 			(dng as any).setSlotBankInfo(0x4000, 0x7FFF, 1, true);
 			(dng as any).setSlotBankInfo(0x8000, 0xFFFF, 3, false);

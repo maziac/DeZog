@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import {Utility} from '../../src/misc/utility';
 import {Format} from '../../src/disassembler/format';
-import {DisassemblerNextGen} from '../../src/disassembler/disasmnextgen';
+import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
 import {RenderCallGraph} from '../../src/disassembler/rendercallgraph';
 
 
@@ -10,7 +10,7 @@ suite('Disassembler - RenderCallGraph', () => {
 
 	let r: any;
 	setup(() => {
-		const disasm = new DisassemblerNextGen(
+		const disasm = new SmartDisassembler(
 			addr64k => 'R' + Utility.getHexString(addr64k, 4),	// Not used in tests.
 			() => false,	// Not used in tests.
 			addr64k => 'LONG' + Utility.getHexString(addr64k, 4)
