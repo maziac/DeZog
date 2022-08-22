@@ -871,16 +871,29 @@ export class Utility {
 	 * @returns A relative path
 	 */
 	public static getRelFilePath(absFilePath: string): string {
-		//const filePath = path.relative(Utility.rootPath || '', absFilePath);
-		let filePath = absFilePath;
+		// If window paths, then make sure both path start with lower case letters for comparison. rootPath does already.
+		let filePath = UnifiedPath.getUnifiedPath(absFilePath);
 		let rootPath = Utility.rootPath;
 		if (rootPath) {
 			if (!rootPath.endsWith('/'))
 				rootPath += '/';
-			// If window paths, then make sure both path start with lower case letters for comparison. rootPath does already.
-			const lcFilePath = UnifiedPath.getUnifiedPath(filePath);
-			if (lcFilePath.startsWith(rootPath))
-				filePath = filePath.substring(rootPath.length);
+			const rootArr = rootPath.split('/');
+			const fileArr = filePath.split('/');
+			let i = 0;
+			const len = rootArr.length - 1;
+			while (i < len) {
+				if (rootArr[i] != fileArr[0])
+					break;
+				fileArr.shift();	// Remove similar path parts
+				i++;
+			}
+			// Add unmatched dirs
+			for (; i < len; i++) {
+				fileArr.unshift('..');
+			}
+
+			// Reconstruct
+			filePath = UnifiedPath.join(...fileArr);
 		}
 		return filePath;
 	}
@@ -929,7 +942,7 @@ export class Utility {
 	 * @param srcPath E.g. "src/main.asm"
 	 * @param srcDirs E.g. [ "src", "includes" ]
 	 */
-	public static getRelSourceFilePath(srcPath: string, srcDirs: Array<string>) {
+	public static getRelSourceFilePath(srcPath: string, srcDirs: Array<string>): string {
 		srcPath = UnifiedPath.getUnifiedPath(srcPath);
 		if (UnifiedPath.isAbsolute(srcPath))
 			return Utility.getRelFilePath(srcPath);

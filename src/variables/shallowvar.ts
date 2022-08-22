@@ -470,7 +470,7 @@ export class SubStructVar extends ShallowVar {
 				const subProps = Labels.getSubLabels(fullName);
 				const memIndex = relIndex + prevIndex;
 				const address = parentStruct.getAddress() + memIndex;
-				console.log(fullName + ': ' + memIndex, relIndex, prevIndex, address.toString(16));
+				//console.log(fullName + ': ' + memIndex, relIndex, prevIndex, address.toString(16));
 				const item: SubStructItems = {
 					address,
 					elemSize: 0,
