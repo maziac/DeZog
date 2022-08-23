@@ -22,6 +22,48 @@ export class RenderText extends RenderBase {
 	protected dataReferences: number[] = [];
 
 
+	/** Formatting of a label at the start of a line ("LABEL:")
+	 * @param label E.g. "LABEL"
+	 * @return E.g. "<b>LABEL</b>"
+	 * Override.
+	 */
+	protected emphasizeLabel(label: string): string {
+		return label;
+	}
+
+
+
+	/** Surrounds the text with html <span></span> to change the background color
+	 * to emphasize the item.
+	 * @param text The text to surround.
+	 * @returns E.g. '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-foreground);font-weight:bold">8000 main:'</span>'
+	 * Override.
+	 */
+	protected emphasizeStartLabel(text: string): string {
+		return text;
+	}
+
+
+	/** Surrounds the text with html <span></span> to emphasize the comment.
+	 * @param comment The text to surround. E.g. "; Note: bla bla"
+	 * @returns E.g. '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-selectionForeground);font-weight:bold">; Note: bla bla</span>'
+	 * Override.
+	 */
+	protected emphasizeComment(comment: string): string {
+		return comment;
+	}
+
+
+	/** Surrounds the text with html <a></a> with href that points to the given address.
+	 * @param text The text to surround.
+	 * @param addr64k The address to add as a reference.
+	 * @returns E.g. '<a href="#8000">8000 main:</a>'
+	 */
+	protected addReferences(text: string, addr64k: number): string {
+		return text;
+	}
+
+
 	/** Returns a formatted line with address and label.
 	 * With right clmns spaces.
 	 * @param addr64k The address for the line. Is converted into a long address.
@@ -32,7 +74,7 @@ export class RenderText extends RenderBase {
 		const addrString = (this.disasm.funcFormatLongAddress(addr64k)).padEnd(this.clmnsAddress - 1) + ' ';
 		// Make non local labels bold
 		if (!label.startsWith('.'))
-			label = '<b><span style="color:var(--vscode-editorBracketHighlight-foreground3)">' + label + '</span></b>';
+			label = this.emphasizeLabel(label);
 		const s = addrString + label + ':';
 		return s;
 	}
@@ -55,30 +97,6 @@ export class RenderText extends RenderBase {
 		bytesString = Format.getLimitedString(bytesString, this.clmnsBytes - 2);
 		const s = addrString + ' ' + bytesString + '  ' + text;
 		return s;
-	}
-
-
-
-	/** Surrounds the text with html <span></span> to change the background color
-	 * to emphasize the item.
-	 * @param text The text to surround.
-	 * @returns E.g. '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-foreground);font-weight:bold">8000 main:'</span>'
-	 */
-	protected htmlWithColor(text: string): string {
-		const html = '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-selectionForeground);font-weight:bold">' + text + '</span>';
-		return html;
-	}
-
-
-	/** Surrounds the text with html <a></a> with href that points to the given address.
-	 * @param text The text to surround.
-	 * @param addr64k The address to add as a reference.
-	 * @returns E.g. '<a href="#8000">8000 main:</a>'
-	 */
-	protected htmlWithReference(text: string, addr64k: number): string {
-		const href = 'href="#' + this.disasm.funcFormatLongAddress(addr64k) + '"';
-		const html = '<a ' + href + '>' + text + '</a>';
-		return html;
 	}
 
 
@@ -145,7 +163,7 @@ export class RenderText extends RenderBase {
 	protected getAddressLabel(addr64k: number, label: string): string {
 		let labelText = this.formatAddressLabel(addr64k, label);
 		// Add href
-		labelText = this.htmlWithReference(labelText, addr64k);
+		labelText = this.addReferences(labelText, addr64k);
 		return labelText;
 	}
 
@@ -161,15 +179,7 @@ export class RenderText extends RenderBase {
 		if (cmnts.length > 0) {
 			lines.addNewline();
 			cmnts.forEach(c =>
-				lines.addLine('<span style="color:var(--vscode-editorBracketHighlight-foreground1);font-weight:bold">; Note: ' + c + '</span>'));
-			/* light/dark
-			--vscode-editorBracketHighlight-foreground1:  blue/yellow(orange)
-			--vscode-editorBracketHighlight-foreground2:  green/magenta(pink)
-			--vscode-editorBracketHighlight-foreground3:  brown/blue(light)
-			--vscode-editorBracketHighlight-foreground4:  /transparent
-			--vscode-editorBracketHighlight-foreground5:  /transparent
-			--vscode-editorBracketHighlight-foreground6:  /transparent
-			*/
+				lines.addLine(this.emphasizeComment(c)));
 		}
 	}
 
@@ -179,7 +189,7 @@ export class RenderText extends RenderBase {
 	 * I.e. for each found label it prints at least 8 bytes of data
 	 * (= 1 line).
 	 * @param lines Array of lines. The new text lines are pushed here.
-	 * @param add64k The address to start.
+	 * @param addr64k The address to start.
 	 * @param dataLen The length of the data to print.
 	 */
 	protected printData(lines: RenderedLines, addr64k: number, dataLen: number) {
@@ -249,26 +259,16 @@ export class RenderText extends RenderBase {
 	}
 
 
-	/** ANCHOR Renders the disassembly text for different depths.
+	/** ANCHOR Renders the disassembly text.
 	 * @param startNodes The nodes to disassemble.
-	 * @param maxDepth All depths [1..maxDepth] are being rendered.
-	 * @returns The html for display.
+	 * @param depth The (max) depth to render.
+	 * @returns The disassembled text.
 	 */
 
-	public renderSync(startNodes: AsmNode[], maxDepth: number): string {
-		// Prepare an array for each depth
-		const texts: string[] = [];
-
-		// Loop all depths
-		for (let depth = maxDepth; depth <= maxDepth; depth++) {	// TODO
-			// Render
-			const rendered = this.renderForDepth(startNodes, depth);
-			// Store
-			const html = '<pre>' + rendered + '</pre>';
-			texts.push(html);
-		}
-
-		return this.addControls(texts, false);
+	public renderSync(startNodes: AsmNode[], depth: number): string {
+		// Render
+		const rendered = this.renderForDepth(startNodes, depth);
+		return rendered;
 	}
 
 
@@ -335,7 +335,7 @@ export class RenderText extends RenderBase {
 						// Check if it is a start node
 						if (startNodes.includes(node)) {
 							// Color the node label
-							labelText = this.htmlWithColor(labelText);
+							labelText = this.emphasizeStartLabel(labelText);
 						}
 					}
 					// Store
@@ -346,7 +346,7 @@ export class RenderText extends RenderBase {
 				const len = opcode.length;
 				const bytes = this.disasm.memory.getData(addr64k, len);
 				const instructionText = this.formatAddressPlusText(addr64k, bytes, opcode.disassembledText);
-				const hrefInstrText = this.htmlWithReference(instructionText, addr64k);
+				const hrefInstrText = this.addReferences(instructionText, addr64k);
 				lines.addLine(hrefInstrText);
 
 				// Next

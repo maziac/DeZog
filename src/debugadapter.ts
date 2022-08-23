@@ -41,7 +41,7 @@ import {AddressLabel, SmartDisassembler} from './disassembler/smartdisassembler'
 import {ReverseEngineeringLabelParser} from './labels/reverseengineeringlabelparser';
 import {RenderCallGraph} from './disassembler/rendercallgraph';
 import {RenderFlowChart} from './disassembler/renderflowchart';
-import {RenderText} from './disassembler/rendertext';
+import {RenderHtml} from './disassembler/renderhtml';
 
 
 
@@ -3654,8 +3654,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	}
 
 
-	/**
-	 * Does an analyze (flowchart, call graph) of the given address(es).
+	/** ANCHOR Does an analyze (flowchart, call graph) of the given address(es).
 	 * @param type The analyze type: (smart) 'disassembly', 'flowChart' or 'callGraph'.
 	 * @param arr An array with the blocks to analyze. Usually just the start line.
 	 */
@@ -3715,7 +3714,7 @@ E.g. use "-help -view" to put the help text in an own view.
 						// Get max depth
 						const {depth, } = analyzer.getSubroutinesFor(startNodes);	// TODO: Probably this could be implemented smarter, the complete map is not used, only the depth.
 						// Output call graph to view
-						const textDisassembly = new RenderText(analyzer);
+						const textDisassembly = new RenderHtml(analyzer);
 						const rendered = textDisassembly.renderSync(startNodes, depth);
 
 						// Output text to new view.
@@ -3767,7 +3766,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		}
 	}
 
-
+	// TODO: REMOVE
 	public async analyzeAtCursor2(type: 'disassembly' | 'flowChart' | 'callGraph', arr: Array<{filename: string, fromLine: number, toLine: number}>): Promise<void> {
 		Log.log('analyzeAtCursor2');
 		try {
@@ -3889,7 +3888,6 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * When clicked the corresponding code block is selected.
 	 * @param view The view to install the click handler.
 	 */
-	// TODO: Maybe concatenate consecutive lines.
 	protected installHtmlClickHandler(view: HtmlView) {
 		// Handler for mouse clicks: navigate to files/lines
 		view.on('click', async message => {
@@ -3909,7 +3907,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			const addresses = longAddrString.split(';');
 			// Find associations with file/line
 			const fileLines = new Map<string, number[]>();
-			let selectWholeLine = false;
+			let selectWholeLine = true; // false; TODO: what's the use?
 			addresses.reverse();
 			if (addresses[0] == '') {
 				// Remove first (empty) object
