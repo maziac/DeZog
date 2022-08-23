@@ -1,5 +1,8 @@
 import {Format} from "../disassembler/format";
+import {RenderText} from "../disassembler/rendertext";
+import {AddressLabel, SmartDisassembler} from "../disassembler/smartdisassembler";
 import {Labels} from "../labels/labels";
+import {ReverseEngineeringLabelParser} from "../labels/reverseengineeringlabelparser";
 import {Utility} from '../misc/utility';
 import {Z80Registers} from "../remotes/z80registers";
 import {Settings} from '../settings/settings';
@@ -31,7 +34,43 @@ const TmpDasmFileName = 'disasm.list';
  * Therefore the stack addresses are stored in a different array. This array is cleared when the refresh button is pressed.
  * I.e. if something looks strange the user can reload the disassembly.
  */
-export class DisassemblyClass extends AnalyzeDisassembler {
+export class DisassemblyClass extends SmartDisassembler {
+
+	/// A function that is used to retrieve label names by the disassembler.
+	public static funcGetLabel: (addr64k: number) => string | undefined = (addr64k: number) => {
+		// Convert to long address
+		const longAddr = Z80Registers.createLongAddress(addr64k);
+		// Check if label already known
+		const labels = Labels.getLabelsForLongAddress(longAddr);
+		if (labels.length == 0)
+			return undefined;
+		return labels[0];	// Just return first label
+	};
+
+	/// A function that is used to filter out certain addresses from the output by the disassembler.
+	// If false is returned the line for this address is not shown.
+	public static funcFilterAddresses: (addr64k: number) => boolean = (addr64k: number) => {
+		// Convert to long address
+		const longAddr = Z80Registers.createLongAddress(addr64k);
+		// Check if label has a file associated
+		const entry = Labels.getSourceFileEntryForAddress(longAddr);
+		return (entry == undefined || entry.size == 0);	// Filter only non-existing addresses or addresses with no code
+	};
+
+	/// A function that formats the long address printed at first in the disassembly.
+	/// Used to add bank information after the address by the disassembler.
+	/// Uses the current slot.
+	public static funcFormatLongAddress: (addr64k: number) => string = (addr64k: number) => {
+		// Convert to long address
+		const longAddr = Z80Registers.createLongAddress(addr64k);
+		// Formatting
+		let addrString = Utility.getHexString(addr64k, 4);
+		const shortName = Remote.memoryModel.getBankShortNameForAddress(longAddr);
+		if (shortName)
+			addrString += ReverseEngineeringLabelParser.bankSeparator + shortName;
+		return addrString;
+	};
+
 
 	/**
 	 * Create the disassembler singleton.
@@ -56,6 +95,26 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 	}
 
 
+	/** Get all Labels for the currently mapped in banks.
+	 * @returns an array of 64k adresses with associated label string.
+	 */
+	public static get64kLabels(): AddressLabel[] {
+		// Get address and one label
+		const addressLabels = Labels.getLabelsMap();
+		// Filter map by existing address
+		const addr64kLabels: AddressLabel[] = [];
+		for (const [address, label] of addressLabels) {
+			const addr64k = address & 0xFFFF;
+			const longAddress = Z80Registers.createLongAddress(addr64k, this.slots);
+			// Check if right bank
+			if (address == longAddress) {
+				addr64kLabels.push([addr64k, label]);
+			}
+		}
+		return addr64kLabels;
+	}
+
+
 	/// An array of last PC addresses (long).
 	protected longPcAddressesHistory: number[] = [];
 
@@ -67,28 +126,8 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 	 * Constructor.
 	 */
 	constructor() {
-		super();
-
-		// Initialize for DeZog
-		this.automaticAddresses = false;
-		this.specialLabels = false;
-		this.commentsInDisassembly = false;
-		this.enableStatistics = false;
-		this.equsInDisassembly = false;
-		this.orgInDisassembly = false;
-		this.numberOfLinesBetweenBlocks = 2;
-		this.numberOfDefbBytes = 4;
-		this.addDefbComments = true;
-		this.ignoreIncompleteOpcodes = true;
-
-		// Filter any address that is already present in the list file(s).
-		this.funcFilterAddresses = (addr64k: number) => {
-			// Convert to long address
-			const longAddr = Z80Registers.createLongAddress(addr64k);
-			// Check if label has a file associated
-			const entry = Labels.getSourceFileEntryForAddress(longAddr);
-			return (entry == undefined || entry.size == 0);	// Filter only non-existing addresses or addresses with no code
-		};
+		super(DisassemblyClass.funcGetLabel, DisassemblyClass.funcFilterAddresses, DisassemblyClass.funcFormatLongAddress);
+		this.setMemoryModel(Remote.memoryModel);
 	}
 
 
@@ -208,18 +247,25 @@ export class DisassemblyClass extends AnalyzeDisassembler {
 			const csAddrs64k = this.getOnlyPagedInAddresses(this.longCallStackAddresses);
 			addrs64k.push(...csAddrs64k);
 
-			// Set addresses for the memory
-			this.setAddressQueue(addrs64k);
-			this.setStartAddressesWithoutLabel(addrs64k);
+			// Collect all long address labels and convert to 64k
+			const labels = this.get64kLabels();
 
 			// Disassemble
-			//Disassembly.disassemble(2);
-			Disassembly.disassemble(65536);
+			this.getFlowGraph(addrs64k, labels);
+			this.disassembleNodes();
+
+			// Convert to start nodes
+			const startNodes = this.getNodesForAddresses(addrs64k);
+			// Get max depth
+			const {depth, } = this.getSubroutinesFor(startNodes);	// TODO: Probably this could be implemented smarter, the complete map is not used, only the depth.
+
+			// Render text
+			const renderer = new RenderText(this);
+			const text = renderer.renderSync(startNodes, depth);
 		}
 
 		return disasmRequired;
 	}
-
 
 
 	/**

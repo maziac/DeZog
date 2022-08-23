@@ -143,19 +143,6 @@ export class DebugSessionClass extends DebugSession {
 	protected scopes: Array<Scope>;
 
 
-	/// A function that is used to retrieve label names by the disassembler.
-	protected funcGetLabel: (addr64k: number) => string | undefined;
-
-	/// A function that is used to filter out certain addresses from the output by the disassembler.
-	// If false is returned the line for this address is not shown.
-	protected funcFilterAddresses: (addr64k: number) => boolean;
-
-	/// A function that formats the long address printed at first in the disassembly.
-	/// Used to add bank information after the address by the disassembler.
-	/// Uses the current slot.
-	protected funcFormatLongAddress: (addr64k: number) => string;
-
-
 	/**
 	 * Create and return the singleton object.
 	 */
@@ -183,32 +170,6 @@ export class DebugSessionClass extends DebugSession {
 				this.debugConsoleSavedText = '';
 			}
 		});
-
-		// Declare function for the disassembler.
-		this.funcGetLabel = (addr64k: number) => {
-			// Convert to long address
-			const longAddr = Z80Registers.createLongAddress(addr64k);
-			// Check if label already known
-			const labels = Labels.getLabelsForLongAddress(longAddr);
-			if (labels.length == 0)
-				return undefined;
-			return labels[0];	// Just return first label
-		};
-
-		// No filtering for now.
-		this.funcFilterAddresses = undefined as any;
-
-		// Add bank info to the address.
-		this.funcFormatLongAddress = (addr64k: number) => {
-			// Convert to long address
-			const longAddr = Z80Registers.createLongAddress(addr64k);
-			// Formatting
-			let addrString = Utility.getHexString(addr64k, 4);
-			const shortName = Remote.memoryModel.getBankShortNameForAddress(longAddr);
-			if (shortName)
-				addrString += ReverseEngineeringLabelParser.bankSeparator + shortName;
-			return addrString;
-		};
 	}
 
 
@@ -3688,18 +3649,15 @@ E.g. use "-help -view" to put the help text in an own view.
 			const title = titles.join(', ');
 
 			// Create new instance to disassemble
-			const analyzer = new SmartDisassembler(this.funcGetLabel,this.funcFilterAddresses,this.funcFormatLongAddress);
+			const analyzer = new SmartDisassembler(DisassemblyClass.funcGetLabel, DisassemblyClass.funcFilterAddresses, DisassemblyClass.funcFormatLongAddress);
 			analyzer.setMemoryModel(Remote.memoryModel);
 			analyzer.setCurrentSlots(Remote.getSlots());
 			// Get whole memory for analyzing
 			const data = await Remote.readMemoryDump(0, 0x10000);
 			analyzer.setMemory(0, data);
-			// Start disassembly
-			//const addrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
-			//const startAddrs64k = [...new Set(addrs64k)];	// Make all unique values
 
 			// Collect all long address labels and convert to 64k
-			const labels = this.get64kLabels();
+			const labels = DisassemblyClass.get64kLabels();
 			const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
 			analyzer.getFlowGraph(startAddrs64k, labels);
 			// Convert to start nodes
@@ -3714,8 +3672,8 @@ E.g. use "-help -view" to put the help text in an own view.
 						// Get max depth
 						const {depth, } = analyzer.getSubroutinesFor(startNodes);	// TODO: Probably this could be implemented smarter, the complete map is not used, only the depth.
 						// Output call graph to view
-						const textDisassembly = new RenderHtml(analyzer);
-						const rendered = textDisassembly.renderSync(startNodes, depth);
+						const renderer = new RenderHtml(analyzer);
+						const rendered = renderer.renderSync(startNodes, depth);
 
 						// Output text to new view.
 						view = new HtmlView('Smart Disassembly - ' + title, rendered, 'a { text-decoration: none; color: inherit; }');
@@ -3859,27 +3817,6 @@ E.g. use "-help -view" to put the help text in an own view.
 			this.debugConsoleAppendLine("Error: " + e.message);
 			return;
 		}
-	}
-
-
-	/** Get all Labels for the currently mapped in banks.
-	 * @returns an array of 64k adresses with associated label string.
-	 */
-	protected get64kLabels(): AddressLabel[] {
-		// Get address and one label
-		const addressLabels = Labels.getLabelsMap();
-		// Filter map by existing address
-		const slots = Remote.getSlots();
-		const addr64kLabels: AddressLabel[] = [];
-		for (const [address, label] of addressLabels) {
-			const addr64k = address & 0xFFFF;
-			const longAddress = Z80Registers.createLongAddress(addr64k, slots);
-			// Check if right bank
-			if (address == longAddress) {
-				addr64kLabels.push([addr64k, label]);
-			}
-		}
-		return addr64kLabels;
 	}
 
 
