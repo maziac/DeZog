@@ -37,8 +37,7 @@ import {TextView} from './views/textview';
 import {ZxNextSpritePatternsView} from './views/zxnextspritepatternsview';
 import {ZxNextSpritesView} from './views/zxnextspritesview';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
-import {AddressLabel, SmartDisassembler} from './disassembler/smartdisassembler';
-import {ReverseEngineeringLabelParser} from './labels/reverseengineeringlabelparser';
+import {SmartDisassembler} from './disassembler/smartdisassembler';
 import {RenderCallGraph} from './disassembler/rendercallgraph';
 import {RenderFlowChart} from './disassembler/renderflowchart';
 import {RenderHtml} from './disassembler/renderhtml';
@@ -3649,7 +3648,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			const title = titles.join(', ');
 
 			// Create new instance to disassemble
-			const analyzer = new SmartDisassembler(DisassemblyClass.funcGetLabel, DisassemblyClass.funcFilterAddresses, DisassemblyClass.funcFormatLongAddress);
+			const analyzer = new SmartDisassembler();
 			analyzer.setMemoryModel(Remote.memoryModel);
 			analyzer.setCurrentSlots(Remote.getSlots());
 			// Get whole memory for analyzing
@@ -3657,7 +3656,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			analyzer.setMemory(0, data);
 
 			// Collect all long address labels and convert to 64k
-			const labels = DisassemblyClass.get64kLabels();
+			const labels = analyzer.get64kLabels();
 			const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
 			analyzer.getFlowGraph(startAddrs64k, labels);
 			// Convert to start nodes

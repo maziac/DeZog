@@ -3459,7 +3459,10 @@ suite('Disassembler', () => {
 		let dng: SmartDisassembler;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new SmartDisassembler(addr => undefined, addr => true, addr => addr.toString(16));
+			dng = new SmartDisassembler();
+			dng.funcGetLabel = addr => undefined;
+			dng.funcFilterAddresses = addr => true;
+			dng.funcFormatLongAddress = addr => addr.toString(16);
 			(dng as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 			dng.setCurrentSlots([0]);
 			readBinFile(dng,'./tests/disassembler/projects/nodes/main.bin');

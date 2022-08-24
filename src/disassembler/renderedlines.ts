@@ -7,6 +7,13 @@ export class RenderedLines {
 	// The lines in an array.
 	protected lines: string[] = [];
 
+	
+	/** @returns The length of the array.
+	 */
+	public length() {
+		return this.lines.length;
+	}
+
 
 	/** Adds a newline.
 	 * But only if previous line is no newline.

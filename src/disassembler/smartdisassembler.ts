@@ -7,6 +7,10 @@ import {MemAttribute, Memory} from './memory';
 import {NumberType} from './numbertype';
 import {Opcode, OpcodeFlag} from './opcode';
 import {Subroutine} from './subroutine';
+import {Z80Registers} from '../remotes/z80registers';
+import {Labels} from '../labels/labels';
+import {ReverseEngineeringLabelParser} from '../labels/reverseengineeringlabelparser';
+import {Remote} from '../remotes/remotebase';
 
 
 // Type used as passed argument for labels.
@@ -27,18 +31,6 @@ interface SlotBankInfo {
 /** The main Disassembler class.
  */
 export class SmartDisassembler {
-
-	/// A function that is used to retrieve label names by the disassembler.
-	public funcGetLabel: (addr64k: number) => string | undefined;
-
-	/// A function that is used to filter out certain addresses from the output by the disassembler.
-	// If false is returned the line for this address is not shown.
-	public funcFilterAddresses: (addr64k: number) => boolean;
-
-	/// A function that formats the long address printed at first in the disassembly.
-	/// Used to add bank information after the address by the disassembler.
-	/// Uses the current slot.
-	public funcFormatLongAddress: (addr64k: number) => string;
 
 	/// The memory area to disassemble.
 	public memory = new Memory();
@@ -70,6 +62,9 @@ export class SmartDisassembler {
 	// The assembly comments are stored here.
 	public comments = new Comments();
 
+	// Map with the long address to line number relationship and vice versa.
+	protected addrLineMap = new Map<number, number>();
+	protected lineAddrArray = new Array<number | undefined>();
 
 	/// Label prefixes
 	public labelSubPrefix = "SUB_";
@@ -91,11 +86,53 @@ export class SmartDisassembler {
 	 * Used to add bank information after the address by the disassembler.
 	 * Uses the current slot.
 	 */
-	constructor(funcGetLabel: (addr64k: number) => string | undefined, funcFilterAddresses: (addr64k: number) => boolean, funcFormatLongAddress: (addr64k: number) => string) {
+	constructor() {
 		Opcode.InitOpcodes();
-		this.funcGetLabel = funcGetLabel;
-		this.funcFilterAddresses = funcFilterAddresses;
-		this.funcFormatLongAddress = funcFormatLongAddress;
+	}
+
+
+	/**The function that is used to retrieve label names by the disassembler.
+	 * @param addr64k The 64k address.
+	 * @returns The corresponding first label found. Or undefined.
+	 */
+	public funcGetLabel(addr64k: number): string | undefined {
+		// Convert to long address
+		const longAddr = Z80Registers.createLongAddress(addr64k);
+		// Check if label already known
+		const labels = Labels.getLabelsForLongAddress(longAddr);
+		if (labels.length == 0)
+			return undefined;
+		return labels[0];	// Just return first label
+	}
+
+
+	/** The function that is used to filter out certain addresses from the output by the disassembler.
+	 * If false is returned the line for this address is not shown.
+	 * @param addr64k The 64k address.
+	 * @returns true (show line) / false (do not show line)
+	 */
+
+	public funcFilterAddresses(addr64k: number): boolean {
+		// Convert to long address
+		const longAddr = Z80Registers.createLongAddress(addr64k);
+		// Check if label has a file associated
+		const entry = Labels.getSourceFileEntryForAddress(longAddr);
+		return (entry == undefined || entry.size == 0);	// Filter only non-existing addresses or addresses with no code
+	}
+
+
+	/// A function that formats the long address printed at first in the disassembly.
+	/// Used to add bank information after the address by the disassembler.
+	/// Uses the current slot.
+	public funcFormatLongAddress(addr64k: number): string {
+		// Convert to long address
+		const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
+		// Formatting
+		let addrString = Utility.getHexString(addr64k, 4);
+		const shortName = Remote.memoryModel.getBankShortNameForAddress(longAddr);
+		if (shortName)
+			addrString += ReverseEngineeringLabelParser.bankSeparator + shortName;
+		return addrString;
 	}
 
 
@@ -136,6 +173,26 @@ export class SmartDisassembler {
 	 */
 	public setCurrentSlots(slots: number[]) {
 		this.slots = slots;
+	}
+
+
+	/** Get all Labels for the currently mapped in banks.
+	 * @returns an array of 64k adresses with associated label string.
+	 */
+	public get64kLabels(): AddressLabel[] {
+		// Get address and one label
+		const addressLabels = Labels.getLabelsMap();
+		// Filter map by existing address
+		const addr64kLabels: AddressLabel[] = [];
+		for (const [address, label] of addressLabels) {
+			const addr64k = address & 0xFFFF;
+			const longAddress = Z80Registers.createLongAddress(addr64k, this.slots);
+			// Check if right bank
+			if (address == longAddress) {
+				addr64kLabels.push([addr64k, label]);
+			}
+		}
+		return addr64kLabels;
 	}
 
 
@@ -716,7 +773,8 @@ export class SmartDisassembler {
 				// Assign label only if starting node (callers or predecessors, predecessors is for the case that there is e.g. a loop from subroutine to an address prior to the subroutine).
 				if (!node.label) {
 					// Only if not already assigned
-					if (node.callers.length > 0 || node.predecessors.length > 0) {
+					//if (node.callers.length > 0 || node.predecessors.length > 0)
+					{
 						let prefix;
 						// First check if it is a subroutine
 						if (blockNode.isSubroutine) {

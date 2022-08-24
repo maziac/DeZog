@@ -2,6 +2,7 @@ import {AsmNode} from "./asmnode";
 import {Format} from "./format";
 import {RenderBase} from "./renderbase";
 import {RenderedLines} from "./renderedlines";
+import {SmartDisassembler} from "./smartdisassembler";
 import {Subroutine} from "./subroutine";
 
 
@@ -20,6 +21,26 @@ export class RenderText extends RenderBase {
 	// Helper array. During processing this array is filled with all the instruction's
 	// data references. 'dataReferencesIndex' points to the currently in use address.
 	protected dataReferences: number[] = [];
+
+
+	/** A function that is called on every disassembled line.
+	 * It will associate the code lines with addresses.
+	 * Only used for the normal text disassembly.
+	 * Not by call graph, flow chart or html disassembly.
+	 * Is set by the constructor.
+	 * @param line The file's line number (starting at 0).
+	 * @param addr64k The address.
+	 * @param bytesCount The number of bytes. Every address will be associated with the line number.
+	 */
+	protected funcLineAddressAssociation?: (lineNr: number, addr64k: number, bytesCount: number) => void;
+
+
+	/** Constructor.
+	 */
+	constructor(disasm: SmartDisassembler, funcLineAddressAssociation?: (lineNr: number, addr64k: number, bytesCount: number) => void) {
+		super(disasm);
+		this.funcLineAddressAssociation = funcLineAddressAssociation;
+	}
 
 
 	/** Formatting of a label at the start of a line ("LABEL:")
@@ -179,7 +200,7 @@ export class RenderText extends RenderBase {
 		if (cmnts.length > 0) {
 			lines.addNewline();
 			cmnts.forEach(c =>
-				lines.addLine(this.emphasizeComment(c)));
+				lines.addLine(this.emphasizeComment('; Note: ' + c)));
 		}
 	}
 
@@ -324,6 +345,9 @@ export class RenderText extends RenderBase {
 			// Disassemble node
 			let i = 0;
 			for (const opcode of node.instructions) {
+				// Associate next line
+				this.funcLineAddressAssociation?.(lines.length(), addr64k, opcode.length);
+
 				// First print comment(s)
 				this.printComments(lines, addr64k, opcode.length);
 

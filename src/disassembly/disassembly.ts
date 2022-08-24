@@ -1,14 +1,11 @@
 import {Format} from "../disassembler/format";
 import {RenderText} from "../disassembler/rendertext";
-import {AddressLabel, SmartDisassembler} from "../disassembler/smartdisassembler";
-import {Labels} from "../labels/labels";
-import {ReverseEngineeringLabelParser} from "../labels/reverseengineeringlabelparser";
-import {Utility} from '../misc/utility';
+import {SmartDisassembler} from "../disassembler/smartdisassembler";
+import {Utility} from "../misc/utility";
 import {Z80Registers} from "../remotes/z80registers";
 import {Settings} from '../settings/settings';
 import {MemAttribute} from './../disassembler/memory';
 import {Remote} from './../remotes/remotebase';
-import {AnalyzeDisassembler} from './analyzedisassembler';
 
 
 /// The filename used for the temporary disassembly. ('./.tmp/disasm.list')
@@ -36,42 +33,6 @@ const TmpDasmFileName = 'disasm.list';
  */
 export class DisassemblyClass extends SmartDisassembler {
 
-	/// A function that is used to retrieve label names by the disassembler.
-	public static funcGetLabel: (addr64k: number) => string | undefined = (addr64k: number) => {
-		// Convert to long address
-		const longAddr = Z80Registers.createLongAddress(addr64k);
-		// Check if label already known
-		const labels = Labels.getLabelsForLongAddress(longAddr);
-		if (labels.length == 0)
-			return undefined;
-		return labels[0];	// Just return first label
-	};
-
-	/// A function that is used to filter out certain addresses from the output by the disassembler.
-	// If false is returned the line for this address is not shown.
-	public static funcFilterAddresses: (addr64k: number) => boolean = (addr64k: number) => {
-		// Convert to long address
-		const longAddr = Z80Registers.createLongAddress(addr64k);
-		// Check if label has a file associated
-		const entry = Labels.getSourceFileEntryForAddress(longAddr);
-		return (entry == undefined || entry.size == 0);	// Filter only non-existing addresses or addresses with no code
-	};
-
-	/// A function that formats the long address printed at first in the disassembly.
-	/// Used to add bank information after the address by the disassembler.
-	/// Uses the current slot.
-	public static funcFormatLongAddress: (addr64k: number) => string = (addr64k: number) => {
-		// Convert to long address
-		const longAddr = Z80Registers.createLongAddress(addr64k);
-		// Formatting
-		let addrString = Utility.getHexString(addr64k, 4);
-		const shortName = Remote.memoryModel.getBankShortNameForAddress(longAddr);
-		if (shortName)
-			addrString += ReverseEngineeringLabelParser.bankSeparator + shortName;
-		return addrString;
-	};
-
-
 	/**
 	 * Create the disassembler singleton.
 	 */
@@ -95,44 +56,85 @@ export class DisassemblyClass extends SmartDisassembler {
 	}
 
 
-	/** Get all Labels for the currently mapped in banks.
-	 * @returns an array of 64k adresses with associated label string.
-	 */
-	public static get64kLabels(): AddressLabel[] {
-		// Get address and one label
-		const addressLabels = Labels.getLabelsMap();
-		// Filter map by existing address
-		const addr64kLabels: AddressLabel[] = [];
-		for (const [address, label] of addressLabels) {
-			const addr64k = address & 0xFFFF;
-			const longAddress = Z80Registers.createLongAddress(addr64k, this.slots);
-			// Check if right bank
-			if (address == longAddress) {
-				addr64kLabels.push([addr64k, label]);
-			}
-		}
-		return addr64kLabels;
-	}
-
-
 	/// An array of last PC addresses (long).
 	protected longPcAddressesHistory: number[] = [];
 
 	/// An array of (long) addresses from the callstack. The addresses might overlap with the longPcAddressesHistory array.
 	protected longCallStackAddresses: number[] = [];
 
+	/// Stores last disassembled text.
+	protected disassemblyText: string = '';
+
 
 	/**
 	 * Constructor.
 	 */
 	constructor() {
-		super(DisassemblyClass.funcGetLabel, DisassemblyClass.funcFilterAddresses, DisassemblyClass.funcFormatLongAddress);
-		this.setMemoryModel(Remote.memoryModel);
+		super();
+	}
+
+
+	/** Returns the last disassembled text.
+	 * @returns text from last call to RenderText.renderSync().
+	 */
+	public getDisassemblyText(): string {
+		return this.disassemblyText;
+	}
+
+
+	/** Returns the line number for a given address.
+	 * @param longAddress The long address.
+	 * @returns The corresponding line number (beginning at 0) or undefined if no such line exists.
+	 */
+	public getLineForAddress(longAddress: number): number | undefined {
+		return this.addrLineMap.get(longAddress);
 	}
 
 
 	/**
-	 * Fetches the complete 64k memory from the Remote.
+	 * Returns the line numbers for given addresses.
+	 * @param addresses An array with addresses.
+	 * @returns An array with corresponding lines.
+	 */
+	public getLinesForAddresses(addresses: Set<number>): number[] {
+		const lines = new Array<number>();
+		const map = this.addrLineMap;
+		// Check whichever has lower number of elements
+		if (addresses.size > map.size) {
+			// Loop over map
+			map.forEach((value, key) => {
+				if (addresses.has(key))
+					lines.push(value);
+			});
+		}
+		else {
+			// Loop over addresses
+			for (const address of addresses) {
+				const line = map.get(address);
+				if (line)
+					lines.push(line);
+			}
+		}
+		return lines;
+	}
+
+
+	/**
+	 * Returns the address for a given line number.
+	 * @param lineNr The line number starting at 0.
+	 * @returns The long address or -1 if none exists for the line.
+	 */
+	public getAddressForLine(lineNr: number): number {
+		if (lineNr >= this.lineAddrArray.length)
+			return -1;
+		const longAddr = this.lineAddrArray[lineNr];
+		if (longAddr == undefined)
+			return -1;
+		return longAddr;
+	}
+
+
+	/** Fetches the complete 64k memory from the Remote.
 	 * Note: Could maybe be optimized to fetch only changed slots.
 	 * On the other hand: the disassembly that takes place afterwards
 	 * is much slower.
@@ -145,8 +147,7 @@ export class DisassemblyClass extends SmartDisassembler {
 	}
 
 
-	/**
-	 * Compare if the slots (the banking) has changed.
+	/** Compare if the slots (the banking) has changed.
 	 * @param slots The other slot configuration.
 	 * @returns true if the slots are different.
 	 */
@@ -165,8 +166,7 @@ export class DisassemblyClass extends SmartDisassembler {
 	}
 
 
-	/**
-	 * Clears the stored call stack addresses and
+	/** Clears the stored call stack addresses and
 	 * clears the slots so that on next call to 'setNewAddresses'
 	 * new memory is loaded and a new disassembly is done.
 	 * Done on a manual refresh.
@@ -177,8 +177,7 @@ export class DisassemblyClass extends SmartDisassembler {
 	}
 
 
-	/**
-	 * Called when a stack trace request is done. Ie. when a new PC with call stack
+	/** Called when a stack trace request is done. Ie. when a new PC with call stack
 	 * is available.
 	 * The first call stack address is the current PC.
 	 * IF the slots have changed beforehand new memory is fetched from the Remote.
@@ -260,16 +259,31 @@ export class DisassemblyClass extends SmartDisassembler {
 			const {depth, } = this.getSubroutinesFor(startNodes);	// TODO: Probably this could be implemented smarter, the complete map is not used, only the depth.
 
 			// Render text
-			const renderer = new RenderText(this);
-			const text = renderer.renderSync(startNodes, depth);
+			const renderer = new RenderText(this,
+				(lineNr: number, addr64k: number, bytesCount: number) => {
+					// Convert to long address
+					const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
+					// Add to arrays;
+					while (this.lineAddrArray.length <= lineNr)
+						this.lineAddrArray.push(longAddr);
+					// Add all bytes
+					this.addrLineMap.set(longAddr, lineNr);
+					for (let i = 1; i < bytesCount; i++) {
+						addr64k++;
+						if (addr64k > 0xFFFF)
+							break;	// Overflow from 0xFFFF
+						const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
+						this.addrLineMap.set(longAddr, lineNr);
+					}
+				});
+			this.disassemblyText = renderer.renderSync(startNodes, depth);
 		}
 
 		return disasmRequired;
 	}
 
 
-	/**
-	 * Adds addresses of the PC history if they are currently paged in.
+	/** Adds addresses of the PC history if they are currently paged in.
 	 * @param src The source array with long addresses. Only addresses are added to target that
 	 * are currently paged in.
 	 * @returns An array with 64k addresses.
@@ -289,7 +303,6 @@ export class DisassemblyClass extends SmartDisassembler {
 		}
 		return result;
 	}
-
 }
 
 

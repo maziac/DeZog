@@ -7,7 +7,7 @@ import {Subroutine} from "./subroutine";
 const dot2svg = require("@aduh95/viz.js/async");
 
 
-/** Base class with common functions for RenderFlowChart and RenderCallGraph.
+/** Base class with common functions for RenderFlowChart, RenderCallGraph and RenderText (RenderHtml)
  */
 export class RenderBase {
 	// The used disassembler. Is passed with the constructor.
