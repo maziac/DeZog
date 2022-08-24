@@ -15,11 +15,10 @@ suite('Disassembler - RenderText', () => {
 	let disasm: SmartDisassembler;
 	let r: any;
 	setup(() => {
-		disasm = new SmartDisassembler(
-			addr64k => undefined,
-			() => false,
-			addr64k => Utility.getHexString(addr64k, 4) + '.1'
-		);
+		disasm = new SmartDisassembler();
+		disasm.funcGetLabel = addr64k => undefined;
+		disasm.funcFilterAddresses = addr64k => true;
+		disasm.funcFormatLongAddress = addr64k => Utility.getHexString(addr64k, 4) + '.1';
 		r = new RenderText(disasm);
 		r.clmnsAddress = 7;
 		r.clmnsBytes = 10;
@@ -281,7 +280,8 @@ suite('Disassembler - RenderText', () => {
 				const text = disassemble([0x0000]);
 
 				assert.equal(c(text), c(
-					`0000.1 E5     PUSH HL
+					`0000.1 RST_0000:
+0000.1 E5     PUSH HL
 0001.1 23     INC HL
 0002.1 78     LD A,B
 0003.1 3C     INC A
@@ -295,13 +295,14 @@ suite('Disassembler - RenderText', () => {
 				const text = disassemble([0x0100, 0x0105, 0x0107]);
 
 				assert.equal(c(text), c(
-					`0100.1 3E 05  LD A,$05
+					`0100.1 SUB_0100:
+0100.1 3E 05  LD A,$05
 0102.1 B8     CP B
-0103.1 28 02  JR Z,LBL_0107
+0103.1 28 02  JR Z,.L1
 
 0105.1 ED 44  NEG
 
-0107.1 LBL_0107:
+0107.1 .L1:
 0107.1 C9     RET
 `));
 			});
@@ -311,7 +312,8 @@ suite('Disassembler - RenderText', () => {
 				const text = disassemble([0x0100, 0x0105, 0x0107]);
 
 				assert.equal(c(text), c(
-					`0100.1 3E 05  LD A,$05
+					`0100.1 SUB_0100:
+0100.1 3E 05  LD A,$05
 0102.1 B8     CP B
 0103.1 28 02  JR Z,MYLABEL
 
@@ -326,7 +328,8 @@ suite('Disassembler - RenderText', () => {
 				const text = disassemble([0x0200, 0x0201, 0x0202, 0x0203, 0x0204, 0x0205, 0x0206, 0x0207, 0x0208, 0x020B]);
 
 				assert.equal(c(text), c(
-					`0200.1 C7 RST $00
+					`0200.1 SUB_0200:
+0200.1 C7 RST $00
 
 0201.1 CF RST $08
 
@@ -352,7 +355,8 @@ suite('Disassembler - RenderText', () => {
 				const text = disassemble([0x0300]);
 
 				assert.equal(c(text), c(
-					`0300.1 C3 20 00 JP LBL_0020
+					`0300.1 LBL_0300:
+0300.1 C3 20 00 JP LBL_0020
 `));
 			});
 
@@ -360,7 +364,8 @@ suite('Disassembler - RenderText', () => {
 				const text = disassemble([0x0700, 0x0705, 0x0708, 0x0709]);
 
 				assert.equal(c(text), c(
-					`0700.1 3E 05    LD A,$05
+					`0700.1 SUB_0700:
+0700.1 3E 05    LD A,$05
 0702.1 CD 09 07 CALL SUB_0709
 
 0705.1 CD 09 07 CALL SUB_0709
@@ -373,11 +378,12 @@ suite('Disassembler - RenderText', () => {
 `));
 			});
 
-			test('Different order', () => {
+			test('different order', () => {
 				const text = disassemble([0x0709, 0x0708, 0x0700, 0x0705]);
 
 				assert.equal(c(text), c(
-					`0700.1 3E 05    LD A,$05
+					`0700.1 SUB_0700:
+0700.1 3E 05    LD A,$05
 0702.1 CD 09 07 CALL SUB_0709
 
 0705.1 CD 09 07 CALL SUB_0709
@@ -393,7 +399,8 @@ suite('Disassembler - RenderText', () => {
 			test('self modifying label in sub', () => {
 				const text = disassemble([0x1000, 0x1008, 0x1009]);
 				assert.equal(c(text), c(
-					`1000.1 3E 06     LD A,$06
+					`1000.1 SUB_1000:
+1000.1 3E 06     LD A,$06
 1002.1 32 0B 10  LD (SUB_1009.CODE_100A+1),A
 1005.1 CD 09 10  CALL SUB_1009
 
@@ -410,7 +417,8 @@ suite('Disassembler - RenderText', () => {
 			test('self modifying label at sub', () => {
 				const text = disassemble([0x1100, 0x1108, 0x1109]);
 				assert.equal(c(text), c(
-					`1100.1 3E 06     LD A,$06
+					`1100.1 SUB_1100:
+1100.1 3E 06     LD A,$06
 1102.1 32 0A 11  LD (SUB_1109+1),A
 1105.1 CD 09 11  CALL SUB_1109
 
@@ -425,10 +433,11 @@ suite('Disassembler - RenderText', () => {
 			test('self modifying label wo sub', () => {
 				const text = disassemble([0x1200]);
 				assert.equal(c(text), c(
-					`1200.1 3E 06     LD A,$06
-1202.1 32 07 12  LD (CODE_1206+1),A
+					`1200.1 SUB_1200:
+1200.1 3E 06     LD A,$06
+1202.1 32 07 12  LD (SUB_1200.CODE_1206+1),A
 1205.1 00        NOP
-1206.1       CODE_1206:
+1206.1       SUB_1200.CODE_1206:
 1206.1 0E 07     LD C,$07
 1208.1 C9        RET
 `));
@@ -437,7 +446,8 @@ suite('Disassembler - RenderText', () => {
 			test('referencing data', () => {
 				const text = disassemble([0x1300, 0x130A, 0x130D]);
 				assert.equal(c(text), c(
-					`1300.1 3E 06       LD A,$06
+					`1300.1 LBL_1300:
+1300.1 3E 06       LD A,$06
 1302.1 2A 08 13    LD HL,(DATA_1308)
 1305.1 C3 0A 13    JP LBL_130A
 
@@ -455,7 +465,8 @@ suite('Disassembler - RenderText', () => {
 			test('code and data, no reference', () => {
 				const text = disassemble([0x5001, 0x5004, 0x5007]);
 				assert.equal(c(text), c(
-					`5001.1 CD 07 50 CALL SUB_5007
+					`5001.1 SUB_5001:
+5001.1 CD 07 50 CALL SUB_5007
 
 5004.1 C9 RET
 
@@ -471,6 +482,7 @@ suite('Disassembler - RenderText', () => {
 					`5100.1 DATA_5100:
 5100.1 7F DEFB 7F ; ASCII: 
 
+5101.1 SUB_5101:
 5101.1 CD 07 51 CALL SUB_5107
 
 5104.1 C9 RET
@@ -509,7 +521,8 @@ suite('Disassembler - RenderText', () => {
 					const text = disassembleDepth([0x4000], 0);
 
 					assert.equal(c(text), c(
-						`4000.1 CD 04 40   CALL SUB_4004
+						`4000.1 SUB_4000:
+4000.1 CD 04 40   CALL SUB_4004
 
 4003.1 C9         RET
 `));
@@ -519,7 +532,8 @@ suite('Disassembler - RenderText', () => {
 					const text = disassembleDepth([0x4000], 1);
 
 					assert.equal(c(text), c(
-						`4000.1 CD 04 40   CALL SUB_4004
+						`4000.1 SUB_4000:
+4000.1 CD 04 40   CALL SUB_4004
 
 4003.1 C9         RET
 
@@ -534,7 +548,8 @@ suite('Disassembler - RenderText', () => {
 					const text = disassembleDepth([0x4000], 2);
 
 					assert.equal(c(text), c(
-						`4000.1 CD 04 40   CALL SUB_4004
+						`4000.1 SUB_4000:
+4000.1 CD 04 40   CALL SUB_4004
 
 4003.1 C9         RET
 
@@ -554,7 +569,8 @@ suite('Disassembler - RenderText', () => {
 					const text = disassembleDepth([0x4000], 3);
 
 					assert.equal(c(text), c(
-						`4000.1 CD 04 40   CALL SUB_4004
+						`4000.1 SUB_4000:
+4000.1 CD 04 40   CALL SUB_4004
 
 4003.1 C9         RET
 
@@ -577,7 +593,8 @@ suite('Disassembler - RenderText', () => {
 					const text = disassembleDepth([0x4000], 4);
 
 					assert.equal(c(text), c(
-						`4000.1 CD 04 40   CALL SUB_4004
+						`4000.1 SUB_4000:
+4000.1 CD 04 40   CALL SUB_4004
 
 4003.1 C9         RET
 
@@ -600,7 +617,8 @@ suite('Disassembler - RenderText', () => {
 					const text = disassembleDepth([0x4100], 3);
 
 					assert.equal(c(text), c(
-						`4100.1 CD 08 41   CALL SUB_4108
+						`4100.1 SUB_4100:
+4100.1 CD 08 41   CALL SUB_4108
 
 4103.1 C9         RET
 
@@ -624,7 +642,8 @@ suite('Disassembler - RenderText', () => {
 				const text = disassembleDepth([0x4200], 10);
 
 				assert.equal(c(text), c(
-					`4200.1 CD 04 42   CALL SUB_4204
+					`4200.1 SUB_4200:
+4200.1 CD 04 42   CALL SUB_4204
 
 4203.1 C9         RET
 
@@ -639,7 +658,8 @@ suite('Disassembler - RenderText', () => {
 				const text = disassembleDepth([0x4300], 10);
 
 				assert.equal(c(text), c(
-					`4300.1 CD 07 43   CALL SUB_4307
+					`4300.1 SUB_4300:
+4300.1 CD 07 43   CALL SUB_4307
 
 4303.1 CD 09 43   CALL SUB_4309
 
@@ -657,7 +677,8 @@ suite('Disassembler - RenderText', () => {
 				const text = disassembleDepth([0x5200], 10);
 
 				assert.equal(c(text), c(
-					`5200.1 3A 08 52 LD A,(DATA_5208)
+					`5200.1 SUB_5200:
+5200.1 3A 08 52 LD A,(DATA_5208)
 5203.1 CD 0A 52 CALL SUB_520A
 
 5206.1 C9 RET
@@ -674,7 +695,8 @@ suite('Disassembler - RenderText', () => {
 				const text = disassembleDepth([0x5300], 1);
 
 				assert.equal(c(text), c(
-					`5300.1 32 0B 53 LD (SUB_530A+1),A
+					`5300.1 SUB_5300:
+5300.1 32 0B 53 LD (SUB_530A+1),A
 5303.1 32 0D 53 LD (SUB_530A.CODE_530C+1),A
 5306.1 CD 0F 53 CALL SUB_530F
 
@@ -696,7 +718,8 @@ suite('Disassembler - RenderText', () => {
 				const text = disassembleDepth([0x5300], 2);
 
 				assert.equal(c(text), c(
-					`5300.1 32 0B 53 LD (SUB_530A+1),A
+					`5300.1 SUB_5300:
+5300.1 32 0B 53 LD (SUB_530A+1),A
 5303.1 32 0D 53 LD (SUB_530A.CODE_530C+1),A
 5306.1 CD 0F 53 CALL SUB_530F
 
@@ -745,7 +768,8 @@ suite('Disassembler - RenderText', () => {
 				const text = disassemble([0x0100]);
 
 				assert.equal(c(text), c(
-					`0100.1 00 NOP
+					`0100.1  LBL_0100:
+0100.1 00 NOP
 
 ; Note: The disassembly is ambiguous at $0102.
 0101.1 3E 05 LD A,$05
@@ -762,7 +786,8 @@ suite('Disassembler - RenderText', () => {
 				const text = disassemble([0x0100, 0x0101, 0x103]);
 
 				assert.equal(c(text), c(
-					`0100.1 00 NOP
+					`0100.1  LBL_0100:
+0100.1 00 NOP
 
 ; Note: The disassembly is ambiguous at $0102.
 0101.1 3E 05 LD A,$05
@@ -783,6 +808,7 @@ suite('Disassembler - RenderText', () => {
 						`0008.1 RST_0008:
 0008.1 C9 RET
 
+0200.1 SUB_0200:
 0200.1 CD 07 02 CALL SUB_0207
 
 0203.1 CD 0A 02 CALL SUB_020A
@@ -813,6 +839,7 @@ suite('Disassembler - RenderText', () => {
 0008.1 C9 RET
 
 ; Note: The disassembly is ambiguous at $030A.
+0300.1 SUB_0300:
 0300.1 CD 0A 03 CALL 030A.1
 
 0303.1 CD 07 03 CALL SUB_0307
@@ -841,6 +868,7 @@ suite('Disassembler - RenderText', () => {
 						`0008.1 RST_0008:
 0008.1 C9 RET
 
+0400.1 SUB_0400:
 0400.1 CD 04 04 CALL SUB_0404
 
 0403.1 C9 RET
@@ -868,7 +896,8 @@ suite('Disassembler - RenderText', () => {
 
 				assert.equal(c(text), c(
 					`; Note: The disassembly branches into unassigned memory at $C000.
-0500.1 C3 00 C0 JP C000.1
+0500.1               LBL_0500:
+0500.1 C3 00 C0         JP C000.1
 `));
 			});
 		});
