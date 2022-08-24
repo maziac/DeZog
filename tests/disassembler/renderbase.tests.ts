@@ -11,11 +11,10 @@ suite('Disassembler - RenderBase', () => {
 
 	let r: any;
 	setup(() => {
-		const disasm = new SmartDisassembler(
-			addr64k => 'R' + Utility.getHexString(addr64k, 4),	// Not used in tests.
-			() => false,	// Not used in tests.
-			addr64k => 'LONG' + Utility.getHexString(addr64k, 4)
-		);
+		const disasm = new SmartDisassembler();
+		disasm.funcGetLabel = addr64k => undefined;
+		disasm.funcFilterAddresses = addr64k => true;
+		disasm.funcFormatLongAddress = addr64k => 'LONG' + Utility.getHexString(addr64k, 4);
 		r = new RenderBase(disasm);
 	});
 

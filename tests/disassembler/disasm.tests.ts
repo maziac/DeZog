@@ -4172,7 +4172,10 @@ suite('Disassembler', () => {
 		let dng: SmartDisassembler;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new SmartDisassembler(addr => undefined, addr => true, addr => addr.toString(16));
+			dng = new SmartDisassembler();
+			dng.funcGetLabel = addr64k => undefined;
+			dng.funcFilterAddresses = addr64k => true;
+			dng.funcFormatLongAddress = addr64k => addr64k.toString(16);
 			(dng as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 			dng.setCurrentSlots([0]);
 			readBinFile(dng,'./tests/disassembler/projects/assign_labels/main.bin');
@@ -4180,6 +4183,7 @@ suite('Disassembler', () => {
 			dng.labelSubPrefix = 'SSUB_';
 			dng.labelLocalLoopPrefix = 'LLOOP';
 			dng.labelLocalLabelPrefix = 'LL';
+			dng.labelRstPrefix = 'RRST_';
 			dngNodes = (dng as any).nodes;
 		});
 
@@ -4191,7 +4195,7 @@ suite('Disassembler', () => {
 			const node1 = dng.getNodeForAddress(startAddr)!;
 			assert.notEqual(node1, undefined);
 
-			assert.equal(node1.label, undefined);
+			assert.equal(node1.label, 'RRST_0000');
 		});
 
 		test('1 branch, global label', () => {
@@ -4206,9 +4210,9 @@ suite('Disassembler', () => {
 			const node3 = dng.getNodeForAddress(startAddr + 7)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(node1.label, undefined);
+			assert.equal(node1.label, 'SSUB_0100');
 			assert.equal(node2.label, undefined);
-			assert.equal(node3.label, 'LLBL_0107');
+			assert.equal(node3.label, '.LL1');
 		});
 
 		test('1 branch, local label', () => {
@@ -4223,7 +4227,7 @@ suite('Disassembler', () => {
 			const node3 = dng.getNodeForAddress(startAddr + 0x0B)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(node1.label, undefined);
+			assert.equal(node1.label, 'SSUB_0180');
 			assert.equal(node2.label, 'SSUB_0184');
 			assert.equal(node3.label, ll('SSUB_0184.LL1'));
 		});
@@ -4238,7 +4242,7 @@ suite('Disassembler', () => {
 			const node2 = dng.getNodeForAddress(startAddr + 9)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(node1.label, undefined);
+			assert.equal(node1.label, 'SSUB_0200');
 			assert.equal(node2.label, 'SSUB_0209');
 		});
 
@@ -4252,7 +4256,7 @@ suite('Disassembler', () => {
 			const node2 = dng.getNodeForAddress(startAddr + 0x0D)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(node1.label, undefined);
+			assert.equal(node1.label, 'SSUB_0280');
 			assert.equal(node2.label, 'SSUB_028D');
 		});
 
@@ -4413,9 +4417,9 @@ suite('Disassembler', () => {
 			const node2 = dng.getNodeForAddress(startAddr + 1)!;
 			assert.notEqual(node2, undefined);
 
-			assert.equal(node1.label, undefined);
+			assert.equal(node1.label, 'LLBL_1200');
 			assert.ok(!node1.isSubroutine);
-			assert.equal(node2.label, 'LLBL_1201');
+			assert.equal(node2.label, '.LLOOP');
 			assert.ok(!node2.isSubroutine);
 		});
 
@@ -4676,7 +4680,10 @@ suite('Disassembler', () => {
 		let dng: SmartDisassembler;
 		//let dngNodes: Map<number, AsmNode>;
 		setup(() => {
-			dng = new SmartDisassembler(addr => undefined, addr => true, addr => addr.toString(16));
+			dng = new SmartDisassembler();
+			dng.funcGetLabel = addr64k => undefined;
+			dng.funcFilterAddresses = addr64k => true;
+			dng.funcFormatLongAddress = addr64k => addr64k.toString(16);
 			(dng as any).setSlotBankInfo(0x0000, 0x3FFF, 0, true);
 			(dng as any).setSlotBankInfo(0x4000, 0x7FFF, 1, true);
 			(dng as any).setSlotBankInfo(0x8000, 0xFFFF, 3, false);
@@ -4996,7 +5003,7 @@ suite('Disassembler', () => {
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
 			assert.notEqual(node1, undefined);
-			assert.equal(node1.label, undefined);
+			assert.equal(node1.label, 'SSUB_E000');
 
 			const node2 = dng.getNodeForAddress(startAddr + 9)!;
 			assert.notEqual(node2, undefined);
@@ -5023,7 +5030,7 @@ suite('Disassembler', () => {
 
 			const node1 = dng.getNodeForAddress(startAddr)!;
 			assert.notEqual(node1, undefined);
-			assert.equal(node1.label, undefined);
+			assert.equal(node1.label, 'SSUB_6000');
 
 			checkInstructions(node1, [
 				"LD A,$01",

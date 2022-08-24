@@ -12,11 +12,10 @@ suite('Disassembler - RenderHtml', () => {
 	let disasm: SmartDisassembler;
 	let r: any;
 	setup(() => {
-		disasm = new SmartDisassembler(
-			addr64k => undefined,
-			() => false,
-			addr64k => Utility.getHexString(addr64k, 4) + '.1'
-		);
+		disasm = new SmartDisassembler();
+		disasm.funcGetLabel = addr64k => undefined;
+		disasm.funcFilterAddresses = addr64k => true;
+		disasm.funcFormatLongAddress = addr64k => Utility.getHexString(addr64k, 4) + '.1';
 		r = new RenderHtml(disasm);
 		r.clmnsAddress = 7;
 		r.clmnsBytes = 10;
