@@ -275,6 +275,9 @@ export class DecorationClass {
 		}
 		// Additionally clear array
 		this.unassignedCodeCoverageAddresses.clear();
+		// And break saved values
+		this.breakPcLong = undefined;
+		this.breakText = undefined;
 	}
 
 
