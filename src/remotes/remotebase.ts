@@ -689,8 +689,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns {name, callerAddr}
 	 * if there was a CALL or RST
 	 * - name: The label name or the hex string of the called address
-	 * - callerAddr: The caller address of the subroutine.
-	 *   A long address.
+	 * - callerAddr: The long caller address of the subroutine.
 	 */
 	protected async getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number} | undefined> {
 		// Get the 3 bytes before address.
@@ -811,7 +810,7 @@ export class RemoteBase extends EventEmitter {
 				// Optimization: Memory is only retrieved if the value changed.
 				// E.g. if a lot of 0x0000 have to be retrieved this actual memory is
 				// fetched only once.
-				type = await this.getStackEntryType(valueString);
+				type = await this.getStackEntryType(valueString);	// Long address
 				prevValueString = valueString;
 			}
 			if (type) {

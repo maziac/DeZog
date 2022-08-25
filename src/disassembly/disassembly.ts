@@ -74,6 +74,16 @@ export class DisassemblyClass extends SmartDisassembler {
 	}
 
 
+	/** Adds the long address to this.longPcAddressesHistory
+	 * if not existing already.
+	 * @param pcLong The new long pc value.
+	 */
+	public pushLongPcAddress(pcLong: number) {
+		if(!this.longPcAddressesHistory.includes(pcLong))
+			this.longPcAddressesHistory.push(pcLong);
+	}
+
+
 	/** Returns the last disassembled text.
 	 * @returns text from last call to RenderText.renderSync().
 	 */
@@ -191,7 +201,14 @@ export class DisassemblyClass extends SmartDisassembler {
 		// Check if addresses passed
 		const len = longCallStackAddresses.length;
 		if (len > 0) {
-			// Note: the current PC address (and the call stack addresses) are for sure paged in, i.e. the conversion to a bank is not necessary.
+			// Note: the current PC address is for sure paged in
+			// The other call stack addresses most probably are but there is some chance
+			// that they are in a different bank.
+			// We need to check if they can be disassembled safely.
+			// This is if the address is in a simple bank slot.
+			// Even if PC is the same slot this does not 100% assure that caller was in same bank.
+			// So e.g. for the ZXNext the whole call stack could not be used.
+			// TODO: change implementation
 			pcAddr64k = longCallStackAddresses[0] & 0xFFFF;
 		}
 
@@ -199,7 +216,7 @@ export class DisassemblyClass extends SmartDisassembler {
 		const slots = Z80Registers.getSlots();
 		if (this.slotsChanged(slots)) {
 			this.setCurrentSlots(slots);
-			await this.fetch64kMemory();
+			await this.fetch64kMemory();	// Clears also attributes
 			disasmRequired = true;
 		}
 		else {
@@ -222,7 +239,7 @@ export class DisassemblyClass extends SmartDisassembler {
 			const attr = this.memory.getAttributeAt(pcAddr64k);
 			if (!(attr & MemAttribute.CODE_FIRST)) {
 				// Is an unknown address, add it
-				this.longPcAddressesHistory.push(longCallStackAddresses[0]);
+				this.pushLongPcAddress(longCallStackAddresses[0]);
 				disasmRequired = true;
 			}
 		}
@@ -230,12 +247,14 @@ export class DisassemblyClass extends SmartDisassembler {
 		// Check if call stack addresses need to be added
 		for (let i = 1; i < len; i++) {
 			const longAddr = longCallStackAddresses[i];
-			const addr = longAddr & 0xFFFF;
-			const attr = this.memory.getAttributeAt(addr);
-			if (!(attr & MemAttribute.CODE_FIRST)) {
-				// Is an unknown address, add it
-				this.longCallStackAddresses.push(longAddr);
-				disasmRequired = true;
+			const addr64k = longAddr & 0xFFFF;
+			if (this.isSingleBankSlot(addr64k)) {
+				const attr = this.memory.getAttributeAt(addr64k);
+				if (!(attr & MemAttribute.CODE_FIRST)) {
+					// Is an unknown address, add it
+					this.longCallStackAddresses.push(longAddr);
+					disasmRequired = true;
+				}
 			}
 		}
 
@@ -302,6 +321,18 @@ export class DisassemblyClass extends SmartDisassembler {
 			}
 		}
 		return result;
+	}
+
+
+	/** Checks if an address belongs to a single bank slot.
+	 * @param addr64k A 64k address.
+	 * @returns true: if single bank slot or unassigned, false: if multibank slot
+	 */
+	protected isSingleBankSlot(addr64k: number): boolean {
+		const addressSlotBank = this.addressesSlotBankInfo[addr64k];
+		if (!addressSlotBank)
+			return true;	// Undefined = not multislot
+		return addressSlotBank.singleBank;
 	}
 }
 

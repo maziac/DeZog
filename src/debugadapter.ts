@@ -377,6 +377,7 @@ export class DebugSessionClass extends DebugSession {
 			this.removeAllListeners();	// Don't react on events anymore
 			// Disconnect
 			if (Remote) {
+				console.log('Remote.disconnect()');
 				await Remote.disconnect();
 			}
 		}
@@ -734,8 +735,13 @@ export class DebugSessionClass extends DebugSession {
 				}
 				else {
 					if (Settings.launch.startAutomatically) {
+						// Delay call because the breakpoints are set afterwards.
 						setTimeout(() => {
-							// Delay call because the breakpoints are set afterwards.
+							// Save start address for a possibly later disassembly.
+							// Note: for !startAutomatically it is not required because the stackTraceRequest will do the same.
+							const pcLong = Remote.getPCLong();
+							Disassembly.pushLongPcAddress(pcLong);
+							// Do a "continue"
 							this.handleRequest(undefined, async () => {
 								// Normal operation
 								return this.remoteContinue();
