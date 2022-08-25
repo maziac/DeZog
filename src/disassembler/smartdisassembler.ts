@@ -1012,8 +1012,6 @@ export class SmartDisassembler {
 	public disassembleNodes() {
 		// Loop over all nodes
 		for (const [, node] of this.nodes) {
-			// Get block node
-		//	const blockNode = this.blocks[node.start];
 			// Loop over all instructions/opcodes
 			//let blockNodeLabel;
 			const slot = this.addressesSlotBankInfo[node.start].slot;
@@ -1022,7 +1020,6 @@ export class SmartDisassembler {
 				opcode.disassembleOpcode((addr64k: number) => {
 					// Return an existing label for the address or just the address
 					const labelName = this.getLabelFromSlotForAddress(slot, addr64k);
-
 					return labelName;
 				});
 				opcode.addr64k = addr64k;

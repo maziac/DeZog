@@ -18,6 +18,7 @@ const renderGraphviz = require('@aduh95/viz.js/sync');	// I couldn't transfer th
 /**
  * This class is especially used to create call graphs and flow charts.
  */
+// TODO: Remove class
 export class AnalyzeDisassembler extends Disassembler {
 	// Map with the long address to line number relationship and vice versa.
 	protected addrLineMap = new Map<number, number>();

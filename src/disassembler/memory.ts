@@ -17,10 +17,12 @@ export enum MemAttribute {
 	/// All bytes of an opcode will get this attribute.
 	//CODE_STOP = 0x08,
 	/// Data area
-	DATA = 0x10,	// TODO: UNUSED
+	DATA = 0x10,
 	/// A RET(I) has been found at the end of the flow for that address.
-	RET_ANALYZED = 0x20,	// TODO: UNUSED
-	/// Flow has been already analyzed
+	RET_ANALYZED = 0x20,
+
+	/// Indicates if flow has been already analyzed,
+	/// Set/read only by createNodes/createNodeForAddress().
 	FLOW_ANALYZED = 0x40,
 }
 

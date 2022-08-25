@@ -342,11 +342,12 @@ export class RenderText extends RenderBase {
 			}
 			addr64k = nodeAddr;
 
+			// Associate line and address
+//			this.funcLineAddressAssociation?.(lines.length(), addr64k, 1); // Doesn'T seem necessary, would be for the label only.
+
 			// Disassemble node
 			let i = 0;
 			for (const opcode of node.instructions) {
-				// Associate next line
-				this.funcLineAddressAssociation?.(lines.length(), addr64k, opcode.length);
 
 				// First print comment(s)
 				this.printComments(lines, addr64k, opcode.length);
@@ -366,12 +367,16 @@ export class RenderText extends RenderBase {
 					lines.addLine(labelText);
 				}
 
+				// Associate line and address
+				this.funcLineAddressAssociation?.(lines.length(), addr64k, opcode.length);
+
 				// Now disassemble instruction
 				const len = opcode.length;
 				const bytes = this.disasm.memory.getData(addr64k, len);
 				const instructionText = this.formatAddressPlusText(addr64k, bytes, opcode.disassembledText);
 				const hrefInstrText = this.addReferences(instructionText, addr64k);
 				lines.addLine(hrefInstrText);
+
 
 				// Next
 				addr64k += len;
