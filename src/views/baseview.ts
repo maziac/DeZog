@@ -124,8 +124,7 @@ export class BaseView {
 	protected vscodePanel: vscode.WebviewPanel;
 
 
-	/**
-	 * Creates the basic view.
+	/** Creates the basic view.
 	 * @param addToStaticViews Adds the view to the static views list so that
 	 * it will get an update event. This is the default for debug windows.
 	 * Other (independent) views can set this to false.
@@ -152,8 +151,7 @@ export class BaseView {
 	}
 
 
-	/**
-	 * Dispose the view (called e.g. on close).
+	/** Dispose the view (called e.g. on close).
 	 * Use this to clean up additional stuff.
 	 * Normally not required.
 	 */
@@ -163,12 +161,11 @@ export class BaseView {
 			BaseView.staticViews.splice(index, 1);
 		}
 		// Do not use panel anymore
-		this.vscodePanel=undefined as any;
+		this.vscodePanel = undefined as any;
 	}
 
 
-	/**
-	 * The web view posted a message to this view.
+	/** The web view posted a message to this view.
 	 * @param message The message. message.command contains the command as a string.
 	 * This needs to be created inside the web view.
 	 */
@@ -185,20 +182,18 @@ export class BaseView {
 	 * @param baseView The webview to post to. Can be omitted, default is 'this'.
 	 */
 	protected sendMessageToWebView(message: any, baseView: BaseView=this) {
-		baseView.vscodePanel.webview.postMessage(message);
+		baseView.vscodePanel?.webview.postMessage(message);
 	}
 
 
-	/**
-	 * View is informed that a register has changed (manually).
+	/** View is informed that a register has changed (manually).
 	 */
 	public async updateRegisterChanged(): Promise<void> {
 		// Overwrite this.
 	}
 
 
-	/**
-	 * Retrieves the memory content and displays it.
+	/** Retrieves the memory content and displays it.
 	 * @param reason The reason is a data object that contains additional information.
 	 * E.g. for 'step' it contains { step: true };
 	 */
@@ -207,8 +202,7 @@ export class BaseView {
 	}
 
 
-	/**
-	 * Updates the html. E.g. after the change of a value.
+	/** Updates the html. E.g. after the change of a value.
 	 * Without getting the memory from the Remote.
 	 */
 	protected updateWithoutRemote() {
@@ -216,8 +210,7 @@ export class BaseView {
 	}
 
 
-	/**
-	 * Put webview to the foreground.
+	/** Put webview to the foreground.
 	 */
 	public reveal() {
 		this.vscodePanel.reveal();

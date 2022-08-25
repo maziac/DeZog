@@ -359,12 +359,11 @@ export class DebugSessionClass extends DebugSession {
 	 * - when the ZEsarUX socket connection is terminated
 	 */
 	protected async disconnectAll(): Promise<void> {
-		console.log('disconnectAll, this.running=', this.running);	// TODO: REMOVE
+		console.log('disconnectAll, this.running =', this.running);	// TODO: REMOVE
 		// Test if running
 		if (!this.running)
 			return;
 		this.running = false;
-		console.log('disconnectAll started');	// TODO: REMOVE
 
 		try {
 			// Dispose file watchers

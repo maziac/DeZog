@@ -748,20 +748,21 @@ export class ZSimRemote extends DzrpRemote {
 
 			// Check if meanwhile a manual break happened
 			if (this.stopCpu) {
-				// Manual break: Create reason string
-				breakNumber = BREAK_REASON_NUMBER.MANUAL_BREAK;
-				longBreakAddress = 0;
-				breakReasonString = await this.constructBreakReasonString(breakNumber, longBreakAddress, '', '');
+				// Can be undefined on disconnect, if disposed
+				if (this.funcContinueResolve) {
+					// Manual break: Create reason string
+					breakNumber = BREAK_REASON_NUMBER.MANUAL_BREAK;
+					longBreakAddress = 0;
+					breakReasonString = await this.constructBreakReasonString(breakNumber, longBreakAddress, '', '');
 
-				// Send Notification
-				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
-				Utility.assert(this.funcContinueResolve);
-				if (this.funcContinueResolve)
+					// Send Notification
+					//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
 					this.funcContinueResolve({
 						reasonNumber: breakNumber,
 						reasonString: breakReasonString,
 						longAddr: longBreakAddress,
 					});
+				}
 				return;
 			}
 		}

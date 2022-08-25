@@ -251,6 +251,8 @@ export class ZSimulationView extends BaseView {
 	public disposeView() {
 		clearInterval(this.displayTimer);
 		this.displayTimer = undefined as any;
+		// Do not use panel anymore
+		this.vscodePanel = undefined as any;
 	}
 
 
