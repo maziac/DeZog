@@ -93,10 +93,11 @@ export class RenderText extends RenderBase {
 	 */
 	protected formatAddressLabel(addr64k: number, label: string): string {
 		const addrString = (this.disasm.funcFormatLongAddress(addr64k)).padEnd(this.clmnsAddress - 1) + ' ';
+		label += ':';
 		// Make non local labels bold
 		if (!label.startsWith('.'))
 			label = this.emphasizeLabel(label);
-		const s = addrString + label + ':';
+		const s = addrString + label;
 		return s;
 	}
 
@@ -342,30 +343,26 @@ export class RenderText extends RenderBase {
 			}
 			addr64k = nodeAddr;
 
-			// Associate line and address
-//			this.funcLineAddressAssociation?.(lines.length(), addr64k, 1); // Doesn'T seem necessary, would be for the label only.
+			// Check if label exists
+			let emphasizeStartNode = startNodes.includes(node);
+			const label = this.disasm.getLabelForAddr64k(addr64k);
+			if (label) {
+				let labelText = this.getAddressLabel(addr64k, label);
+				// Color the node label
+				if (emphasizeStartNode) {
+					labelText = this.emphasizeStartLabel(labelText);
+					// Emphasizing finished
+					emphasizeStartNode = false;
+				}
+				// Store
+				lines.addLine(labelText);
+			}
 
 			// Disassemble node
-			let i = 0;
 			for (const opcode of node.instructions) {
 
 				// First print comment(s)
 				this.printComments(lines, addr64k, opcode.length);
-
-				// Check if label exists
-				const label = this.disasm.getLabelForAddr64k(addr64k);
-				if (label) {
-					let labelText = this.getAddressLabel(addr64k, label);
-					if (i == 0) {
-						// Check if it is a start node
-						if (startNodes.includes(node)) {
-							// Color the node label
-							labelText = this.emphasizeStartLabel(labelText);
-						}
-					}
-					// Store
-					lines.addLine(labelText);
-				}
 
 				// Associate line and address
 				this.funcLineAddressAssociation?.(lines.length(), addr64k, opcode.length);
@@ -374,7 +371,12 @@ export class RenderText extends RenderBase {
 				const len = opcode.length;
 				const bytes = this.disasm.memory.getData(addr64k, len);
 				const instructionText = this.formatAddressPlusText(addr64k, bytes, opcode.disassembledText);
-				const hrefInstrText = this.addReferences(instructionText, addr64k);
+				let hrefInstrText = this.addReferences(instructionText, addr64k);
+				if (emphasizeStartNode) {
+					hrefInstrText = this.emphasizeStartLabel(hrefInstrText);
+					// Emphasizing finished
+					emphasizeStartNode = false;
+				}
 				lines.addLine(hrefInstrText);
 
 

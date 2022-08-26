@@ -464,7 +464,8 @@ export class SmartDisassembler {
 	}
 
 
-	/** Creates extra nodes for the labels.
+	/** ANCHOR createNodesForLabels
+	 * Creates extra nodes for the labels.
 	 * Creates nodes only at already analyzed memory and only if it is CODE_FIRST.
 	 * Labels pointing to data or not at the start of an instruction are ignored.
 	 * @param labels The Labels to consider.
@@ -773,7 +774,7 @@ export class SmartDisassembler {
 				// Assign label only if starting node (callers or predecessors, predecessors is for the case that there is e.g. a loop from subroutine to an address prior to the subroutine).
 				if (!node.label) {
 					// Only if not already assigned
-					//if (node.callers.length > 0 || node.predecessors.length > 0)
+					if (node.callers.length > 0 || node.predecessors.length > 0)
 					{
 						let prefix;
 						// First check if it is a subroutine

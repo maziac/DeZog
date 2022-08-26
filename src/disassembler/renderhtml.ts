@@ -68,7 +68,7 @@ export class RenderHtml extends RenderText {
 		const texts: string[] = [];
 
 		// Loop all depths
-		for (let depth = maxDepth; depth <= maxDepth; depth++) {	// TODO
+		for (let depth = 0; depth <= maxDepth; depth++) {
 			// Render
 			const rendered = this.renderForDepth(startNodes, depth);
 			// Store
