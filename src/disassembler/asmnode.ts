@@ -24,6 +24,7 @@ export class AsmNode {
 	// marked as a subroutine.
 	// Not only the topmost but all paths are marked.
 	// Is used only to distinguish label prefix "SUB" or "LBL".
+	// A block is also marked if it is target of a CALL.
 	public isSubroutine: boolean = false;
 
 	// Is set either if it is the first address given to decode

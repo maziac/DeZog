@@ -1,5 +1,4 @@
 import {AsmNode} from "./asmnode";
-import {Format} from "./format";
 import {RenderText} from "./rendertext";
 
 
@@ -181,6 +180,15 @@ export class RenderHtml extends RenderText {
 	}
 
 
+	/** Returns a radom colr as a string with some transparency.
+	 * @returns E.g. "hsla(131, 0.75, 0.8, 0.5)"
+	 */
+	protected getRndColor() {
+		//return 'red';
+		return `hsla(${Math.floor(360 * Math.random())}, ${Math.floor(50 + 50 * Math.random())}%, ${Math.floor(50 + 50 * Math.random())}%, 0.25)`;
+	}
+
+
 	/** ANCHOR Renders the disassembly text for different depths.
 	 * @param startNodes The nodes to disassemble.
 	 * @param maxDepth All depths [1..maxDepth] are being rendered.
@@ -202,29 +210,89 @@ export class RenderHtml extends RenderText {
 	}
 
 
-	/** ANCHOR Renders for a particular depth and adds the arrows (for branches).
-	 * @param startNodes The nodes to disassemble.
-	 * @param depth The depth to render.
-	 * @returns The disassembled text.
+	/** ANCHOR Renders all given nodes to text.
+	 * @param nodeSet The nodes to disassemble. The nodes will be sorted by start address.
+	 * @param startNodes The start node labels are rendered in a different color.
+	 * @returns The disassembly text.
 	 */
-	public renderForDepth(startNodes: AsmNode[], depth: number): string {
-		// Normal rendering
-		let rendered = '<pre>' + super.renderForDepth(startNodes, depth) + '</pre>';
+	public renderNodes(nodeSet: Set<AsmNode>, startNodes: AsmNode[] = []): string {
+		// Call super
+		let rendered = '<pre>' + super.renderNodes(nodeSet, startNodes) + '</pre>';
 
-		// Now add lines
+		// Now add arrows
 		rendered += `
 			<script>
+			`;
 
+		// Sort the nodes	// TODO: Optimize, was doe already by super.renderNodes
+		const nodes = Array.from(nodeSet); //.filter(node => (node.length > 0));	// Filter nodes in other banks
+		nodes.sort((a, b) => a.start - b.start);
+
+		// Colors for the arrows
+		// const arrowColors = ['coral', 'yellow', 'white', 'red', 'green'];
+		// const arrowColorLength = arrowColors.length;
+		// let arrowColorIndex = 0;
+
+		// Loop all nodes and branches
+		for (const node of nodes) {
+			// Check if node branches
+			if (node.branchNodes.length > 1) {
+				// Get node address as source
+				let addr64k = node.start;
+				const len = node.instructions.length - 1;
+				for (let i = 0; i < len; i++)
+					addr64k += node.instructions[i].length;
+				const src = this.getHtmlId(addr64k, 'S');
+				// Get target
+				const tgtAddr64k = node.branchNodes[1].start;
+				const tgt = this.getHtmlId(tgtAddr64k, 'T');
+
+				// Add arrow
+				rendered += `
 				new LeaderLine(
-					document.getElementById('S.810c'),
-					document.getElementById('T.810b'),
+					document.getElementById('${src}'),
+					document.getElementById('${tgt}'),
 					{
 						path: 'grid',
 						startSocket: 'right',
-						endSocket: 'right'
+						endSocket: 'right',
+						color: '${this.getRndColor()}'
 					}
 				);
+				`;
+			}
 
+			// Check if node calls
+			if (node.callee) {
+				// Get node address as source
+				let addr64k = node.start;
+				const len = node.instructions.length - 1;
+				for (let i = 0; i < len; i++)
+					addr64k += node.instructions[i].length;
+				const src = this.getHtmlId(addr64k, 'S');
+				// Get target
+				const tgtAddr64k = node.callee.start;
+				const tgt = this.getHtmlId(tgtAddr64k, 'T');
+
+				// Add arrow
+				const gravity = 20 + 200*Math.random();
+				rendered += `
+				new LeaderLine(
+					document.getElementById('${src}'),
+					document.getElementById('${tgt}'),
+					{
+						path: 'grid',
+						startSocket: 'right',
+						endSocket: 'right',
+						dash: true,
+						color: '${this.getRndColor()}',
+						startSocketGravity: [${gravity}, 0]
+					}
+				);
+				`;
+			}
+		}
+		rendered += `
    				//# sourceURL=Arrows.js
 			</script>
 		`;
