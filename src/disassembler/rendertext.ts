@@ -119,7 +119,7 @@ export class RenderText extends RenderBase {
 	/** Returns a formatted line with address and label.
 	 * With right clmns spaces.
 	 * @param addr64k The address for the line. Is converted into a long address.
-	 * @param label A text to add. Usually the decoded instruction.
+	 * @param label The label, e.g "LBL_C000".
 	 * @returns A complete line, e.g. "C000.B1 LABEL1:"
 	 */
 	protected formatAddressLabel(addr64k: number, label: string): string {

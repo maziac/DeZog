@@ -3624,7 +3624,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * @param arr An array with the blocks to analyze. Usually just the start line.
 	 */
 	public async analyzeAtCursor(type: 'disassembly' | 'flowChart' | 'callGraph', arr: Array<{filename: string, fromLine: number, toLine: number}>): Promise<void> {
-		await this.analyzeAtCursor2(type, arr);	// TODO: REMOVE
+	//	await this.analyzeAtCursor2(type, arr);	// TODO: REMOVE
 
 		Log.log('analyzeAtCursor');
 		try {

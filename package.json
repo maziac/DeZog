@@ -57,6 +57,7 @@
 		"glob": "^8.0.3",
 		"intel-hex": "^0.1.2",
 		"jsonc-parser": "^3.1.0",
+		"leader-line": "^1.0.7",
 		"node-gzip": "^1.1.2",
 		"posthtml": "^0.16.6",
 		"posthtml-toc": "^1.0.3",

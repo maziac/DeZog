@@ -1,3 +1,5 @@
+import * as vscode from 'vscode';
+import {PackageInfo} from '../whatsnew/packageinfo';
 import {TextView} from './textview';
 
 
@@ -22,11 +24,19 @@ export class HtmlView extends TextView {
 	 * E.g. 'a { text-decoration: none; }'
 	 */
 	protected setHtml(body: string, additionalHead: string) {
-		const format = `<!DOCTYPE html>
+		// Get local path extension to set as root (to allow accessing other files)
+		const extPath = PackageInfo.extension.extensionPath;
+		const resourcePath = vscode.Uri.file(extPath);
+		const vscodeResPath = this.vscodePanel.webview.asWebviewUri(resourcePath).toString();
+
+		//		<base href="${vscodeResPath}/" >
+		// Create html
+		const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<base href="${vscodeResPath}/">
     ${additionalHead}
 </head>
 
@@ -61,8 +71,9 @@ ${body}
 </body>
 </html>
 `;
+
 		// Add html body
-		this.vscodePanel.webview.html = format;
+		this.vscodePanel.webview.html = html;
 	}
 
 
