@@ -15,9 +15,11 @@ export class RenderFlowChart extends RenderBase {
 	 */
 	public async render(startNodes: AsmNode[]): Promise<string> {
 		// Color codes (not real colors) used to exchange the colors at the end.
-		const mainColor = '#FEFE01';
-		const emphasizeColor = '#FEFE02';
-		const otherBankColor = '#FEFE03';
+		const mainColor = '#00FEFE';
+		const emphasizeColor = '#01FEFE';
+		const otherBankColor = '#02FEFE';
+		const instructionColor = '#03FEFE';
+		const arrowColor = '#04FEFE';
 
 		// Header
 		const lines: string[] = [];
@@ -44,11 +46,11 @@ export class RenderFlowChart extends RenderBase {
 				}
 				else {
 					// Get disassembly text of node.
-					instrTexts = node.getAllDisassemblyLines().join('\\l') + '\\l';
+					instrTexts = node.getAllDisassemblyLines().join('  \\l') + '  \\l';
 				}
 				// Print disassembly
 				const hrefAddresses = this.getAllRefAddressesFor(node);
-				lines.push(dotId + ' [label="' + instrTexts + '", href="#' + hrefAddresses + '"];');
+				lines.push(dotId + ' [label="' + instrTexts + '", fontcolor = "' + instructionColor + '", href="#' + hrefAddresses + '"];');
 
 				// Check if someone calls node
 				if (node == startNode || node.callers.length > 0) {
@@ -97,7 +99,7 @@ export class RenderFlowChart extends RenderBase {
 
 						// Change into dot syntax
 						if (branchLabel)
-							dotBranchLabel = 'label="' + branchLabel + '", fontcolor="' + mainColor + '", ';
+							dotBranchLabel = 'label="' + branchLabel + '", fontcolor="' + arrowColor + '", ';
 					}
 					// Override if pointing to itself, e.g. JR $, or looping, and not pointing to itself
 					let tailport = 's';

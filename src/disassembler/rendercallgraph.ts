@@ -107,9 +107,9 @@ export class RenderCallGraph extends RenderBase {
 	 */
 	public async renderForDepth(startNodes: AsmNode[], nodeSubs: Map<AsmNode, Subroutine>, depth: number): Promise<string> {
 		// Color codes (not real colors) used to exchange the colors at the end.
-		const mainColor = '#FEFE01';
-		const fillColor = '#FEFE02';
-		const otherBankColor = '#FEFE03';
+		const mainColor = '#00FEFE';
+		const fillColor = '#01FEFE';
+		const otherBankColor = '#02FEFE';
 		// Graph direction
 		const callGraphFormatString = "rankdir=TB;";
 
