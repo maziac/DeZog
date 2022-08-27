@@ -8,11 +8,12 @@ import {RenderText} from "./rendertext";
 export class RenderHtml extends RenderText {
 
 	/** Returns the css for the html, define additional colors.
-	 * @param additional An (optional) additional string to add to the style.
 	 * @returns The html style.
 	 */
-	public getHtmlStyle(additional: string = '') {
-		return super.getHtmlStyle(`
+	public getHtmlHeader(): string {
+		let header = super.getHtmlHeader();
+		header += `
+	<style>
 		body.vscode-light {
 			--dezog-fg-color-emphasize-label: #001080;
 			--dezog-bg-color-emphasize-startlabel: lightblue;
@@ -60,9 +61,12 @@ export class RenderHtml extends RenderText {
 		.data {
 			color:var(--dezog-fg-color-emphasize-data);
 		}
+    </style>
 
-		${additional}
-		`);
+
+
+	`;
+		return header;
 	}
 
 	/** Surrounds the text with html <span></span> to change the background color

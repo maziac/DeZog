@@ -23,11 +23,11 @@ export class RenderBase {
 
 	/** Returns the css for the html, i.e. the custom colors
 	 * dependent on theme.
-	 * @param additional An (optional) additional string to add to the style.
 	 * @returns The html style.
 	 */
-	public getHtmlStyle(additional: string = '') {
+	public getHtmlHeader(): string {
 		return `
+    <style>
 		* {
 			font-family: var(--vscode-editor-font-family);
 			font-weight: var(--vscode-editor-font-weight);
@@ -57,9 +57,9 @@ export class RenderBase {
 			--dezog-emphasize-color3: #0000FF;
 			--dezog-emphasize-color4: #001080;
 		}
+    </style>
 
-		${additional}
-		`;
+	`;
 	}
 
 
