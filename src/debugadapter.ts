@@ -3680,7 +3680,7 @@ E.g. use "-help -view" to put the help text in an own view.
 						const rendered = renderer.renderSync(startNodes, depth);
 
 						// Output text to new view.
-						view = new HtmlView('Smart Disassembly - ' + title, rendered, 'a { text-decoration: none; color: inherit; }');
+						view = new HtmlView('Smart Disassembly - ' + title, rendered, renderer.getHtmlStyle('a { text-decoration: none; color: inherit; }'));
 						await view.update();
 					}
 					break;
@@ -3694,7 +3694,7 @@ E.g. use "-help -view" to put the help text in an own view.
 						const rendered = await flowChart.render(startNodes);
 
 						// Output text to new view.
-						view = new HtmlView('Flow Chart - ' + title, rendered);
+						view = new HtmlView('Flow Chart - ' + title, rendered, flowChart.getHtmlStyle());
 						await view.update();
 					}
 					break;
@@ -3709,7 +3709,7 @@ E.g. use "-help -view" to put the help text in an own view.
 						const rendered = await callGraph.render(startNodes, nodeSubs, depth);
 						console.timeEnd();
 						// Output text to new view.
-						view = new HtmlView('Call Graph - ' + title, rendered);
+						view = new HtmlView('Call Graph - ' + title, rendered, callGraph.getHtmlStyle());
 						await view.update();
 					}
 					break;

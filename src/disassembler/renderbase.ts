@@ -21,6 +21,36 @@ export class RenderBase {
 	}
 
 
+	/** Returns the css for the html, i.e. the custom colors
+	 * dependent on theme.
+	 * @param additional An (optional) additional string to add to the style.
+	 * @returns The html style.
+	 */
+	public getHtmlStyle(additional: string = '') {
+		return `
+		body.vscode-light {
+			--dezog-fg-color: var(--vscode-editor-foreground);
+			--dezog-bg-emphasize-color1: var(--vscode-editor-selectionBackground);
+			--dezog-bg-emphasize-color2: var(--vscode-editor-inactiveSelectionBackground);
+		}
+
+		body.vscode-dark {
+			--dezog-fg-color: var(--vscode-editor-foreground);
+			--dezog-bg-emphasize-color1: var(--vscode-editor-selectionBackground);
+			--dezog-bg-emphasize-color2: var(--vscode-editor-inactiveSelectionBackground);
+		}
+
+		body.vscode-high-contrast {	/* Same as vscode-light */
+			--dezog-fg-color: var(--vscode-editor-foreground);
+			--dezog-bg-emphasize-color1: var(--vscode-editor-selectionBackground);
+			--dezog-bg-emphasize-color2: var(--vscode-editor-inactiveSelectionBackground);
+		}
+
+		${additional}
+		`;
+	}
+
+
 	/** Returns an ID for the node that can be used inside the dot graphics.
 	 * The dot ID is just made of the node's address.
 	 * Note: Bank border passed nodes may return the same id/address.
@@ -59,9 +89,9 @@ export class RenderBase {
 	 * @return The changed/stripped SVG.
 	 */
 	protected adjustSvg(svg: string): string {
-		svg = svg.replace(/#FEFE01/gi, 'var(--vscode-editor-foreground)');
-		svg = svg.replace(/#FEFE02/gi, 'var(--vscode-editor-selectionBackground)');
-		svg = svg.replace(/#FEFE03/gi, 'var(--vscode-editor-inactiveSelectionBackground)');
+		svg = svg.replace(/#FEFE01/gi, 'var(--dezog-fg-color)');
+		svg = svg.replace(/#FEFE02/gi, 'var(--dezog-bg-emphasize-color1)');
+		svg = svg.replace(/#FEFE03/gi, 'var(--dezog-bg-emphasize-color2)');
 		// Strip tooltip (title)
 		svg = svg.replace(/xlink:title="[^"]*"/g, 'xlink:title=""'); // E.g. remove 'xlink:title="main"'
 		svg = svg.replace(/<title>[^<]*<\/title>/g, ''); 	// E.g. "<title>b8035</title>"
