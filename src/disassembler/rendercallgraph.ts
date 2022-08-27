@@ -110,6 +110,7 @@ export class RenderCallGraph extends RenderBase {
 		const mainColor = '#00FEFE';
 		const fillColor = '#01FEFE';
 		const otherBankColor = '#02FEFE';
+		const labelColor = '#04FEFE';
 		// Graph direction
 		const callGraphFormatString = "rankdir=TB;";
 
@@ -177,7 +178,7 @@ export class RenderCallGraph extends RenderBase {
 			const dotId = this.getDotId(node);
 			const nodeName = this.nodeFormat(labelName, address, countBytes);
 			const hrefAddresses = this.getAllRefAddressesFor(sub);
-			lines.push('"' + dotId + '" [fontsize="' + Math.round(fontSize) + '", label="' + nodeName + '", href="#' + hrefAddresses + '"];');
+			lines.push('"' + dotId + '" [fontsize="' + Math.round(fontSize) + '", label="' + nodeName + '", fontcolor="' + labelColor + '", href="#' + hrefAddresses + '"];');
 
 			// Output all main labels in different color
 			if (startNodes.indexOf(node) >= 0) {

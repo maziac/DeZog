@@ -19,7 +19,7 @@ export class RenderFlowChart extends RenderBase {
 		const emphasizeColor = '#01FEFE';
 		const otherBankColor = '#02FEFE';
 		const instructionColor = '#03FEFE';
-		const arrowColor = '#04FEFE';
+		const labelColor = '#04FEFE';
 
 		// Header
 		const lines: string[] = [];
@@ -99,7 +99,7 @@ export class RenderFlowChart extends RenderBase {
 
 						// Change into dot syntax
 						if (branchLabel)
-							dotBranchLabel = 'label="' + branchLabel + '", fontcolor="' + arrowColor + '", ';
+							dotBranchLabel = 'label="' + branchLabel + '", fontcolor="' + labelColor + '", ';
 					}
 					// Override if pointing to itself, e.g. JR $, or looping, and not pointing to itself
 					let tailport = 's';

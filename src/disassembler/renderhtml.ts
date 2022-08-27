@@ -24,7 +24,7 @@ export class RenderHtml extends RenderText {
 
 		body.vscode-dark {
 			--dezog-fg-color-emphasize-label: #9CDCFE;
-			--dezog-bg-color-emphasize-startlabel: blue;
+			--dezog-bg-color-emphasize-startlabel: navy;
 			--dezog-fg-color-emphasize-comment: #6A9955;
 			--dezog-fg-color-emphasize-bytes: #B5CEA8;
 			--dezog-fg-color-emphasize-instruction: #569CD6;
