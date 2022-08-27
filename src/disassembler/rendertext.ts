@@ -75,10 +75,41 @@ export class RenderText extends RenderBase {
 	}
 
 
+	/** Formatting of an instruction, e.g. "CALL nnnn"
+	 * @param instruction E.g. "CALL $0893"
+	 * @return E.g. "<b>CALL $0893</b>"
+	 * Override.
+	 */
+	protected emphasizeAddrBytes(instruction: string): string {
+		return instruction;
+	}
+
+
+	/** Formatting of the address and the bytes of the list(ing).
+	 * @param addrBytes E.g. "0893 01 34 AF"
+	 * @return E.g. "<b>0893 01 34 AF</b>"
+	 * Override.
+	 */
+	protected emphasizeInstruction(addrBytes: string): string {
+		return addrBytes;
+	}
+
+
+	/** Formatting of the dat output.
+	 * @param data E.g. "DEFB 01 34 AF"
+	 * @return E.g. "<b>DEFB 01 34 AF</b>"
+	 * Override.
+	 */
+	protected emphasizeData(data: string): string {
+		return data;
+	}
+
+
 	/** Surrounds the text with html <a></a> with href that points to the given address.
 	 * @param text The text to surround.
 	 * @param addr64k The address to add as a reference.
 	 * @returns E.g. '<a href="#8000">8000 main:</a>'
+	 * Override.
 	 */
 	protected addReferences(text: string, addr64k: number): string {
 		return text;
@@ -93,11 +124,7 @@ export class RenderText extends RenderBase {
 	 */
 	protected formatAddressLabel(addr64k: number, label: string): string {
 		const addrString = (this.disasm.funcFormatLongAddress(addr64k)).padEnd(this.clmnsAddress - 1) + ' ';
-		label += ':';
-		// Make non local labels bold
-		if (!label.startsWith('.'))
-			label = this.emphasizeLabel(label);
-		const s = addrString + label;
+		const s = this.emphasizeAddrBytes(addrString) + this.emphasizeLabel(label + ':');
 		return s;
 	}
 
@@ -107,9 +134,10 @@ export class RenderText extends RenderBase {
 	 * @param addr64k The address for the line. Is converted into a long address.
 	 * @param bytes The byte to add for the line. Can be empty.
 	 * @param text A text to add. Usually the decoded instruction.
-	 * @returns A complete line, e.g. "C000.B1 3E 05    LD A,5"
+	 * @param comment An optional comment text.
+	 * @returns A complete line, e.g. "C000.B1 3E 05    LD A,5 ; Comment"
 	 */
-	protected formatAddressPlusText(addr64k: number, bytes: Uint8Array, text: string): string {
+	protected formatAddressPlusText(addr64k: number, bytes: Uint8Array, text: string, comment?: string): string {
 		const addrString = this.disasm.funcFormatLongAddress(addr64k).padEnd(this.clmnsAddress - 1);
 		let bytesString = '';
 		bytes.forEach(value =>
@@ -117,7 +145,9 @@ export class RenderText extends RenderBase {
 		);
 		bytesString = bytesString.substring(0, bytesString.length - 1);
 		bytesString = Format.getLimitedString(bytesString, this.clmnsBytes - 2);
-		const s = addrString + ' ' + bytesString + '  ' + text;
+		let s = this.emphasizeAddrBytes(addrString + ' ' + bytesString) + '  ' + this.emphasizeInstruction(text);
+		if (comment)
+			s += ' ' + this.emphasizeComment('; ' + comment);
 		return s;
 	}
 
@@ -169,9 +199,9 @@ export class RenderText extends RenderBase {
 	 */
 	protected getCompleteDataLine(addr64k: number, len: number) {
 		const bytes: Uint8Array = this.disasm.memory.getData(addr64k, len);
-		let text = this.getDefbLine(bytes);
-		text += ' ; ' + this.getDefbComment(bytes);
-		const line = this.formatAddressPlusText(addr64k, bytes, text);
+		const text = this.emphasizeData(this.getDefbLine(bytes));
+		const comment = this.getDefbComment(bytes);
+		const line = this.formatAddressPlusText(addr64k, bytes, text, comment);
 		return line;
 	}
 

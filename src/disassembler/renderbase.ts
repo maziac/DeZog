@@ -28,6 +28,12 @@ export class RenderBase {
 	 */
 	public getHtmlStyle(additional: string = '') {
 		return `
+		* {
+			font-family: var(--vscode-editor-font-family);
+			font-weight: var(--vscode-editor-font-weight);
+			font-size: var(--vscode-editor-font-size);
+		}
+
 		body.vscode-light {
 			--dezog-fg-color: var(--vscode-editor-foreground);
 			--dezog-bg-emphasize-color1: var(--vscode-editor-selectionBackground);

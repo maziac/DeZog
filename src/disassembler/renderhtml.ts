@@ -17,26 +17,62 @@ export class RenderHtml extends RenderText {
 			--dezog-fg-color-emphasize-label: #001080;
 			--dezog-bg-color-emphasize-startlabel: lightblue;
 			--dezog-fg-color-emphasize-comment: #008000;
-			--dezog-fg-color-bytes: ##098658;
-			--dezog-fg-color-instruction: #0000FF;
+			--dezog-fg-color-emphasize-bytes: ##098658;
+			--dezog-fg-color-emphasize-instruction: #0000FF;
+			--dezog-fg-color-emphasize-data: #098658
 		}
 
 		body.vscode-dark {
 			--dezog-fg-color-emphasize-label: #9CDCFE;
 			--dezog-bg-color-emphasize-startlabel: blue;
 			--dezog-fg-color-emphasize-comment: #6A9955;
-			--dezog-fg-color-bytes: #B5CEA8;
-			--dezog-fg-color-instruction: #569CD6;
+			--dezog-fg-color-emphasize-bytes: #B5CEA8;
+			--dezog-fg-color-emphasize-instruction: #569CD6;
+			--dezog-fg-color-emphasize-data: #B5CEA8
 		}
 
 		body.vscode-high-contrast {	/* Same as vscode-light */
-			--dezog-fg-color-emphasize-label: blue;
+			--dezog-fg-color-emphasize-label: #001080;
 			--dezog-bg-color-emphasize-startlabel: lightblue;
-			--dezog-fg-color-emphasize-comment: yellow;
+			--dezog-fg-color-emphasize-comment: #008000;
+			--dezog-fg-color-emphasize-bytes: ##098658;
+			--dezog-fg-color-emphasize-instruction: #0000FF;
+			--dezog-fg-color-emphasize-data: #098658
+		}
+
+		.startlabel {
+			background:var(--dezog-bg-color-emphasize-startlabel);
+			font-weight:bold;
+		}
+		.label {
+			color:var(--dezog-fg-color-emphasize-label);
+		}
+		.comment {
+			color:var(--dezog-fg-color-emphasize-comment);
+			font-weight:bold;
+		}
+		.bytes {
+			color:var(--dezog-fg-color-emphasize-bytes);
+		}
+		.instruction {
+			color:var(--dezog-fg-color-emphasize-instruction);
+		}
+		.data {
+			color:var(--dezog-fg-color-emphasize-data);
 		}
 
 		${additional}
 		`);
+	}
+
+	/** Surrounds the text with html <span></span> to change the background color
+	 * to emphasize the item.
+	 * @param text The text to surround.
+	 * @returns E.g. '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-foreground);font-weight:bold">8000 main:'</span>'
+	 */
+	protected emphasizeStartLabel(text: string): string {
+		const html = '<span class="startlabel">' + text + '</span>';
+		return html;
 	}
 
 
@@ -45,18 +81,7 @@ export class RenderHtml extends RenderText {
 	 * @return E.g. "<b>LABEL</b>"
 	 */
 	protected emphasizeLabel(label: string): string {
-		return '<b><span style="color:var(--dezog-fg-color-emphasize-label)">' + label + '</span></b>';
-	}
-
-
-	/** Surrounds the text with html <span></span> to change the background color
-	 * to emphasize the item.
-	 * @param text The text to surround.
-	 * @returns E.g. '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-foreground);font-weight:bold">8000 main:'</span>'
-	 */
-	protected emphasizeStartLabel(text: string): string {
-		const html = '<span style="background:var(--dezog-bg-color-emphasize-startlabel);font-weight:bold">' + text + '</span>';
-		return html;
+		return '<span class="label">' + label + '</span>';
 	}
 
 
@@ -65,8 +90,36 @@ export class RenderHtml extends RenderText {
 	 * @returns E.g. '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-selectionForeground);font-weight:bold">; Note: bla bla</span>'
 	 */
 	protected emphasizeComment(comment: string): string {
-		const html = '<span style="color:var(--dezog-fg-color-emphasize-comment);font-weight:bold">' + comment + '</span>';
+		const html = '<span class="comment">' + comment + '</span>';
 		return html;
+	}
+
+
+	/** Formatting of an instruction, e.g. "CALL nnnn"
+	 * @param instruction E.g. "CALL $0893"
+	 * @return E.g. "<b>CALL $0893</b>"
+	 */
+	protected emphasizeAddrBytes(instruction: string): string {
+		return '<span class="bytes">' + instruction + '</span>';
+	}
+
+
+	/** Formatting of the address and the bytes of the list(ing).
+	 * @param addrBytes E.g. "0893 01 34 AF"
+	 * @return E.g. "<b>0893 01 34 AF</b>"
+	 */
+	protected emphasizeInstruction(instruction: string): string {
+		return '<span class="instruction">' + instruction + '</span>';
+	}
+
+
+	/** Formatting of the dat output.
+	 * @param data E.g. "DEFB 01 34 AF"
+	 * @return E.g. "<b>DEFB 01 34 AF</b>"
+	 * Override.
+	 */
+	protected emphasizeData(data: string): string {
+		return '<span class="data">' + data + '</span>';
 	}
 
 
