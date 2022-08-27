@@ -278,7 +278,7 @@ export class RenderHtml extends RenderText {
 				const gravity = 20 + 200*Math.random();
 				rendered += `
 				new LeaderLine(
-					document.getElementById('${src}'),
+					LeaderLine.mouseHoverAnchor(document.getElementById('${src}'), {style: {backgroundColor: null}, hoverStyle: {backgroundColor: null}}),
 					document.getElementById('${tgt}'),
 					{
 						path: 'grid',
