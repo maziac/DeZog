@@ -87,7 +87,6 @@ export class HelpView extends BaseView {
 	<meta charset="utf-8" >
 	<title>DeZog Help</title>
 	<base href="\${vscodeResPath}/">
-</head>
 
 <style>
 table {
@@ -124,6 +123,7 @@ th {
 }
 
 </style>
+</head>
 
 <body>
 

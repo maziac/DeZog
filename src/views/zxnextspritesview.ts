@@ -802,14 +802,10 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				height:2em;
 			}
 			.classRow0 {
-				//background:#2C3E50;
 				background:var(--vscode-panel-background);
-				//background:var(--vscode-titleBar-activeBackground);
 			}
 			.classRow1 {
-				//background:#566573;
 				background:var(--vscode-panel-dropBackground);
-				//background:var(--vscode-titleBar-inactiveBackground);
 			}
 		</style>
 		<table  style="text-align: center" border="1" cellpadding="0">
