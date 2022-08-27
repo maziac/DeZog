@@ -7,12 +7,45 @@ import {RenderText} from "./rendertext";
  */
 export class RenderHtml extends RenderText {
 
+	/** Returns the css for the html, define additional colors.
+	 * @param additional An (optional) additional string to add to the style.
+	 * @returns The html style.
+	 */
+	public getHtmlStyle(additional: string = '') {
+		return super.getHtmlStyle(`
+		body.vscode-light {
+			--dezog-fg-color-emphasize-label: #001080;
+			--dezog-bg-color-emphasize-startlabel: lightblue;
+			--dezog-fg-color-emphasize-comment: #008000;
+			--dezog-fg-color-bytes: ##098658;
+			--dezog-fg-color-instruction: #0000FF;
+		}
+
+		body.vscode-dark {
+			--dezog-fg-color-emphasize-label: #9CDCFE;
+			--dezog-bg-color-emphasize-startlabel: blue;
+			--dezog-fg-color-emphasize-comment: #6A9955;
+			--dezog-fg-color-bytes: #B5CEA8;
+			--dezog-fg-color-instruction: #569CD6;
+		}
+
+		body.vscode-high-contrast {	/* Same as vscode-light */
+			--dezog-fg-color-emphasize-label: blue;
+			--dezog-bg-color-emphasize-startlabel: lightblue;
+			--dezog-fg-color-emphasize-comment: yellow;
+		}
+
+		${additional}
+		`);
+	}
+
+
 	/** Formatting of a label at the start of a line ("LABEL:")
 	 * @param label E.g. "LABEL"
 	 * @return E.g. "<b>LABEL</b>"
 	 */
 	protected emphasizeLabel(label: string): string {
-		return '<b><span style="color:var(--vscode-editorBracketHighlight-foreground3)">' + label + '</span></b>';
+		return '<b><span style="color:var(--dezog-fg-color-emphasize-label)">' + label + '</span></b>';
 	}
 
 
@@ -22,7 +55,7 @@ export class RenderHtml extends RenderText {
 	 * @returns E.g. '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-foreground);font-weight:bold">8000 main:'</span>'
 	 */
 	protected emphasizeStartLabel(text: string): string {
-		const html = '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-selectionForeground);font-weight:bold">' + text + '</span>';
+		const html = '<span style="background:var(--dezog-bg-color-emphasize-startlabel);font-weight:bold">' + text + '</span>';
 		return html;
 	}
 
@@ -32,15 +65,7 @@ export class RenderHtml extends RenderText {
 	 * @returns E.g. '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-selectionForeground);font-weight:bold">; Note: bla bla</span>'
 	 */
 	protected emphasizeComment(comment: string): string {
-		const html = '<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-selectionForeground);font-weight:bold">' + comment + '</span>';
-		/* light/dark
-		--vscode-editorBracketHighlight-foreground1:  blue/yellow(orange)
-		--vscode-editorBracketHighlight-foreground2:  green/magenta(pink)
-		--vscode-editorBracketHighlight-foreground3:  brown/blue(light)
-		--vscode-editorBracketHighlight-foreground4:  /transparent
-		--vscode-editorBracketHighlight-foreground5:  /transparent
-		--vscode-editorBracketHighlight-foreground6:  /transparent
-		*/
+		const html = '<span style="color:var(--dezog-fg-color-emphasize-comment);font-weight:bold">' + comment + '</span>';
 		return html;
 	}
 
