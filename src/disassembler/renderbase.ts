@@ -36,26 +36,26 @@ export class RenderBase {
 
 		body.vscode-light {
 			--dezog-fg-color: var(--vscode-editor-foreground);
-			--dezog-bg-emphasize-color1: var(--vscode-editor-selectionBackground);
-			--dezog-bg-emphasize-color2: var(--vscode-editor-inactiveSelectionBackground);
-			--dezog-bg-emphasize-color3: #0000FF;
-			--dezog-bg-emphasize-color4: #001080;
+			--dezog-emphasize-color1: var(--vscode-editor-selectionBackground);
+			--dezog-emphasize-color2: var(--vscode-editor-inactiveSelectionBackground);
+			--dezog-emphasize-color3: #0000FF;
+			--dezog-emphasize-color4: #001080;
 		}
 
 		body.vscode-dark {
 			--dezog-fg-color: var(--vscode-editor-foreground);
-			--dezog-bg-emphasize-color1: var(--vscode-editor-selectionBackground);
-			--dezog-bg-emphasize-color2: var(--vscode-editor-inactiveSelectionBackground);
-			--dezog-bg-emphasize-color3: #569CD6;
-			--dezog-bg-emphasize-color4: #9CDCFE;
+			--dezog-emphasize-color1: var(--vscode-editor-selectionBackground);
+			--dezog-emphasize-color2: var(--vscode-editor-inactiveSelectionBackground);
+			--dezog-emphasize-color3: #569CD6;
+			--dezog-emphasize-color4: #9CDCFE;
 		}
 
 		body.vscode-high-contrast {	/* Same as vscode-light */
 			--dezog-fg-color: var(--vscode-editor-foreground);
-			--dezog-bg-emphasize-color1: var(--vscode-editor-selectionBackground);
-			--dezog-bg-emphasize-color2: var(--vscode-editor-inactiveSelectionBackground);
-			--dezog-bg-emphasize-color3: #0000FF;
-			--dezog-bg-emphasize-color4: #001080;
+			--dezog-emphasize-color1: var(--vscode-editor-selectionBackground);
+			--dezog-emphasize-color2: var(--vscode-editor-inactiveSelectionBackground);
+			--dezog-emphasize-color3: #0000FF;
+			--dezog-emphasize-color4: #001080;
 		}
 
 		${additional}
@@ -102,10 +102,10 @@ export class RenderBase {
 	 */
 	protected adjustSvg(svg: string): string {
 		svg = svg.replace(/#00FEFE/gi, 'var(--dezog-fg-color)');
-		svg = svg.replace(/#01FEFE/gi, 'var(--dezog-bg-emphasize-color1)');
-		svg = svg.replace(/#02FEFE/gi, 'var(--dezog-bg-emphasize-color2)');
-		svg = svg.replace(/#03FEFE/gi, 'var(--dezog-bg-emphasize-color3)');
-		svg = svg.replace(/#04FEFE/gi, 'var(--dezog-bg-emphasize-color4)');
+		svg = svg.replace(/#01FEFE/gi, 'var(--dezog-emphasize-color1)');
+		svg = svg.replace(/#02FEFE/gi, 'var(--dezog-emphasize-color2)');
+		svg = svg.replace(/#03FEFE/gi, 'var(--dezog-emphasize-color3)');
+		svg = svg.replace(/#04FEFE/gi, 'var(--dezog-emphasize-color4)');
 		// Strip tooltip (title)
 		svg = svg.replace(/xlink:title="[^"]*"/g, 'xlink:title=""'); // E.g. remove 'xlink:title="main"'
 		svg = svg.replace(/<title>[^<]*<\/title>/g, ''); 	// E.g. "<title>b8035</title>"
