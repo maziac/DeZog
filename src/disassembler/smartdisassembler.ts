@@ -944,54 +944,6 @@ export class SmartDisassembler {
 	}
 
 
-	/** ANCHOR calculateIndentation
-	 * Calculates the indentation of all node blocks.
-	 * Is required only if the disassembly should be printed.
-	 */
-	public calculateIndentation() {
-		// Sort the nodes
-		const nodes = [...this.nodes.values()]; //.filter(node => (node.length > 0));	// Filter nodes in other banks
-		nodes.sort((a, b) => a.start - b.start);	// TODO: maybe I can sort the this.nodes map once only for all who need it.
-
-		// Loop over all nodes
-		let indentation = 0;
-		let blockArray: AsmNode[] = [];
-		for (const node of nodes) {
-			const addr64k = node.start;
-			const nextBlockAddr64k = addr64k + node.length;
-			// Get the block
-			const blockNode = this.blocks[addr64k];
-			// Skip nodes that do not start a block
-			if (node == blockNode) {
-				// Start new array for block
-				blockArray = [];
-			}
-
-			// Add current node
-			blockArray.push(node);
-
-			// Loop branch addresses (no calls)
-			for (const branchNode of node.branchNodes) {
-				const tgtAddr64k = branchNode.start;
-				// Filter natural flow
-				if (tgtAddr64k == nextBlockAddr64k)
-					continue;
-				// Filter if target address is not in block
-				if (blockNode != this.blocks[tgtAddr64k])
-					continue;
-				// Not natural flow
-				this.indentBlocks(blockArray, node, branchNode);
-
-			}
-		}
-	}
-
-	protected indentBlocks(blocknodes: AsmNode[], srcNode: AsmNode, tgtNode: AsmNode) {
-		const srcAddr64k = srcNode.start;
-		const tgtAddr64k = tgtNode.start;
-	}
-
-
 	// !SECTION
 
 	/** Returns the label for the given address.
