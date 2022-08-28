@@ -1,4 +1,5 @@
 import {AsmNode} from "./asmnode";
+import {Format} from "./format";
 import {RenderText} from "./rendertext";
 
 
@@ -151,6 +152,12 @@ export class RenderHtml extends RenderText {
 		const id = this.getHtmlId(addr64k, 'T');
 		return '<span id="' + id + '">' + s + '</span>';
 	}
+	protected formatAddressLabel2(addr64k: number, label: string): string {
+		const addrString = (this.disasm.funcFormatLongAddress(addr64k)).padEnd(this.clmnsAddress - 1) + ' ';
+		const s = this.emphasizeAddrBytes(addrString) + this.emphasizeLabel(label + ':');
+		return s;
+	}
+
 
 
 	/** Adds an id.
@@ -161,10 +168,35 @@ export class RenderHtml extends RenderText {
 	 * @returns A complete line, e.g. ""<span id="L.c000">C000.B1 3E 05    LD A,5 ; Comment</span>"
 	 */
 	protected formatAddressPlusText(addr64k: number, bytes: Uint8Array, text: string, comment?: string): string {
-		const s = super.formatAddressPlusText(addr64k, bytes, text, comment);
 		const id = this.getHtmlId(addr64k, 'S');	// TODO: Should be optimized: not every address line is a source (branches)
-		return '<span id="' + id + '">' + s + '</span>';
+		const addrString = this.disasm.funcFormatLongAddress(addr64k).padEnd(this.clmnsAddress - 1);
+		let bytesString = '';
+		bytes.forEach(value =>
+			bytesString += value.toString(16).toUpperCase().padStart(2, '0') + ' '
+		);
+		bytesString = bytesString.substring(0, bytesString.length - 1);
+		bytesString = Format.getLimitedString(bytesString, this.clmnsBytes - 2);
+		let s = this.emphasizeAddrBytes(addrString + ' ' + bytesString) + '  <span id="' + id + '">' + this.emphasizeInstruction(text) + '</span>';
+		if (comment)
+			s += ' ' + this.emphasizeComment('; ' + comment);
+		return s;
+
 	}
+	protected formatAddressPlusText2(addr64k: number, bytes: Uint8Array, text: string, comment?: string): string {
+		const addrString = this.disasm.funcFormatLongAddress(addr64k).padEnd(this.clmnsAddress - 1);
+		let bytesString = '';
+		bytes.forEach(value =>
+			bytesString += value.toString(16).toUpperCase().padStart(2, '0') + ' '
+		);
+		bytesString = bytesString.substring(0, bytesString.length - 1);
+		bytesString = Format.getLimitedString(bytesString, this.clmnsBytes - 2);
+		let s = this.emphasizeAddrBytes(addrString + ' ' + bytesString) + '  ' + this.emphasizeInstruction(text);
+		if (comment)
+			s += ' ' + this.emphasizeComment('; ' + comment);
+		return s;
+	}
+
+
 
 
 	/** Returns the html ID of a html object, e.g. a <span>.
@@ -185,7 +217,7 @@ export class RenderHtml extends RenderText {
 	 */
 	protected getRndColor() {
 		//return 'red';
-		return `hsla(${Math.floor(360 * Math.random())}, ${Math.floor(50 + 50 * Math.random())}%, ${Math.floor(50 + 50 * Math.random())}%, 0.25)`;
+		return `hsla(${Math.floor(360 * Math.random())}, ${Math.floor(50 + 50 * Math.random())}%, ${Math.floor(50 + 50 * Math.random())}%, 0.5)`;
 	}
 
 
@@ -224,7 +256,7 @@ export class RenderHtml extends RenderText {
 			<script>
 			`;
 
-		// Sort the nodes	// TODO: Optimize, was doe already by super.renderNodes
+		// Sort the nodes	// TODO: Optimize, was done already by super.renderNodes()
 		const nodes = Array.from(nodeSet); //.filter(node => (node.length > 0));	// Filter nodes in other banks
 		nodes.sort((a, b) => a.start - b.start);
 
@@ -245,18 +277,34 @@ export class RenderHtml extends RenderText {
 				const src = this.getHtmlId(addr64k, 'S');
 				// Get target
 				const tgtAddr64k = node.branchNodes[1].start;
-				const tgt = this.getHtmlId(tgtAddr64k, 'T');
+				const tgt = this.getHtmlId(tgtAddr64k, 'S');
 
 				// Add arrow
+				let distance = Math.abs(addr64k - tgtAddr64k);
+				//if (distance > 30)
+				//	distance = 30;
+				let gravity;
+				let side;
+				if (addr64k < tgtAddr64k) {
+					// Forward
+					gravity = 10 * Math.random() + 20 * distance;
+					side ='right';
+				}
+				else {
+					// Backward
+					gravity = -10 * Math.random() - 3 * distance;
+					side = 'left';
+				}
 				rendered += `
 				new LeaderLine(
 					document.getElementById('${src}'),
 					document.getElementById('${tgt}'),
 					{
-						path: 'grid',
-						startSocket: 'right',
-						endSocket: 'right',
-						color: '${this.getRndColor()}'
+						startSocket: '${side}',
+						endSocket: '${side}',
+						color: '${this.getRndColor()}',
+						startSocketGravity: [${gravity}, 0],
+						endSocketGravity: [${gravity}, 0]
 					}
 				);
 				`;

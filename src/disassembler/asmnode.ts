@@ -70,6 +70,13 @@ export class AsmNode {
 	// E.g. "SUB_04AD", "LBL_FF00", ".L1", ".L2", ".LOOP", ".LOOP1"
 	public label: string;
 
+	// The indentation of the block. Is used to print an indented block.
+	// Calculation:
+	// If an instruction is branching to another address and all instructions
+	// in-between do not branch outside this range, then all blocks get an
+	// indentation.
+	public indentation: number = 0;
+
 
 	/**
 	 * For debugging in the watch window.

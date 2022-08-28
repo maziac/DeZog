@@ -376,7 +376,8 @@ export class RenderText extends RenderBase {
 			// Check if label exists
 			let emphasizeStartNode = startNodes.includes(node);
 			const label = this.disasm.getLabelForAddr64k(addr64k);
-			if (label) {
+			if (label) // && !label.includes('.'))
+			{
 				let labelText = this.getAddressLabel(addr64k, label);
 				// Color the node label
 				if (emphasizeStartNode) {
