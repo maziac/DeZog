@@ -325,8 +325,19 @@ export class RenderHtml extends RenderText {
 				// Add arrow
 				const gravity = 20 + 200*Math.random();
 				rendered += `
+				src = document.getElementById('${src}');
+				gotoElement = document.createElement('span')
+				gotoElement.innerHTML = "→";
+				src.appendChild(gotoElement);
+				gotoElement.addEventListener('click', function(event) {
+					const src = document.getElementById('${src}');
+					historyStackAdd(src);
+					const tgt = document.getElementById('${tgt}');
+					scrollTo(tgt);
+				});
+
 				new LeaderLine(
-					LeaderLine.mouseHoverAnchor(document.getElementById('${src}'), {style: {backgroundColor: null}, hoverStyle: {backgroundColor: null}}),
+					LeaderLine.mouseHoverAnchor(src, {style: {backgroundColor: null}, hoverStyle: {backgroundColor: null}}),
 					document.getElementById('${tgt}'),
 					{
 						path: 'grid',
@@ -346,5 +357,87 @@ export class RenderHtml extends RenderText {
 		`;
 
 		return rendered;
+	}
+
+
+	/** Additionally adds a back button.
+	 * @param enableScaleSlider true to enable/false to disable the scale slider
+	 * @param htmls The SVG/html code of all depths.
+	 * @returns Html code with the added sliders. The depth slider is only added if htmls contains
+	 * more than 1 items.
+	 */
+	protected addControls(htmls: string[], enableScaleSlider = true): string {
+		// Add button
+		let html = `
+		<script>
+			const historyStack = [];
+			let historyStackIndex;
+
+			function clearHistoryStack() {
+				historyStack.length = 0;
+				historyStackIndex = 0;
+			}
+
+			function scrollTo(tgt) {
+				if(tgt) {
+					tgt.scrollIntoView({
+						behavior: "smooth",
+						block: "start",
+						inline: "nearest"
+					});
+				}
+			}
+
+			function backButtonPressed() {
+				historyStackIndex--;
+				const tgt = historyStack[historyStackIndex];
+				scrollTo(tgt);
+				// Possibly disable back button
+				if(historyStackIndex == 0)
+					document.getElementById("backButton").disabled = true;
+				// Enable fwd button
+				document.getElementById("fwdButton").disabled = false;
+			}
+
+			function fwdButtonPressed() {
+				historyStackIndex++;
+				const tgt = historyStack[historyStackIndex];
+				scrollTo(tgt);
+				// Enable back button
+				document.getElementById("backButton").disabled = false;
+				// Possibly disable fwd button
+				if(historyStackIndex == historyStack.length-1)
+					document.getElementById("fwdButton").disabled = true;
+			}
+
+			function historyStackAdd(tgt) {
+				// Clear any possible additional stack items
+				historyStack.length = historyStackIndex;
+				// Add item
+				historyStack.push(tgt);
+				historyStackIndex++;
+				// Enable back button
+				document.getElementById("backButton").disabled = false;
+				// Disable fwd button
+				document.getElementById("fwdButton").disabled = true;
+			}
+
+			// Init
+			clearHistoryStack();
+
+			//# sourceURL=HistoryStack.js
+		</script>
+
+		<span style="position:fixed">
+			<button id="backButton" onclick="backButtonPressed()"><</button>
+			<button id="fwdButton" onclick="fwdButtonPressed()">></button>
+		</span>
+		<br>
+		`;
+
+		// Call super
+		html += super.addControls(htmls, enableScaleSlider);
+
+		return html;
 	}
 }

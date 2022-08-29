@@ -113,8 +113,7 @@ export class RenderBase {
 	}
 
 
-	/**
-	 * Adds a slider to scale the SVG and a slider to control the call depth.
+	/** Adds a slider to scale the SVG and a slider to control the call depth.
 	 * @param enableScaleSlider true to enable/false to disable the scale slider
 	 * @param htmls The SVG/html code of all depths.
 	 * @returns Html code with the added sliders. The depth slider is only added if htmls contains
@@ -136,6 +135,7 @@ export class RenderBase {
 					svg.style.height = slideValue + "%";
 				}
 			}
+			//# sourceURL=updateSliderScale.js
 		</script>
 		<div id="sliderScale">
 			Scale:
@@ -165,6 +165,7 @@ export class RenderBase {
 					svg.hidden = (i != slideValue);
 				}
 			}
+			//# sourceURL=updateSliderDepth.js
 		</script>
 		<div id="sliderDepth">
 			Depth:

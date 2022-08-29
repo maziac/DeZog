@@ -952,7 +952,7 @@ export class SmartDisassembler {
 	 * If still nothing is found it checks this.otherLabels.
 	 * If nothing is found the address in hex is returned.
 	 * @param addr64k The 64k address.
-	 * @param slot The slot where the access origined. I.e. if there is a bank
+	 * @param slot The slot where the access originated. I.e. if there is a bank
 	 * border not the label but a pure hex address is shown.
 	 * @returns The label as string e.g. "SUB_0604.LOOP" or "LBL_0788+1" (in case address points to 0x0789 inside an instruction) or "$C000".
 	 */
