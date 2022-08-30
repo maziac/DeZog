@@ -203,12 +203,12 @@ export class RenderHtml extends RenderText {
 	 * @param addr64k The address of the label. Only labels have IDs.
 	 * @param type 'S' = Source, for e.g. JP nnnn.
 	 * 'T' = Target, the target, i.e. a label.
-	 * @return E.g. "L.C0AF"
+	 * @return E.g. "L_C0AF"
 	 */
 	protected getHtmlId(addr64k: number, type: 'S' | 'T'): string {
 		//const longAddrString = this.disasm.funcFormatLongAddress(addr64k);
 		//return 'L.' + longAddrString;
-		return type + '.' + addr64k.toString(16);
+		return type + '_' + addr64k.toString(16);
 	}
 
 
@@ -323,31 +323,53 @@ export class RenderHtml extends RenderText {
 				const tgt = this.getHtmlId(tgtAddr64k, 'T');
 
 				// Add arrow
-				const gravity = 20 + 200*Math.random();
+				const gravity = 20 + 200 * Math.random();
 				rendered += `
 				src = document.getElementById('${src}');
 				gotoElement = document.createElement('span')
 				gotoElement.innerHTML = "→";
 				src.appendChild(gotoElement);
-				gotoElement.addEventListener('click', function(event) {
+				let L${src};
+
+				gotoElement.addEventListener('click', () => {
 					const src = document.getElementById('${src}');
 					historyStackAdd(src);
 					const tgt = document.getElementById('${tgt}');
 					scrollTo(tgt);
 				});
 
-				new LeaderLine(
-					LeaderLine.mouseHoverAnchor(src, {style: {backgroundColor: null}, hoverStyle: {backgroundColor: null}}),
-					document.getElementById('${tgt}'),
-					{
-						path: 'grid',
-						startSocket: 'right',
-						endSocket: 'right',
-						dash: true,
-						color: '${this.getRndColor()}',
-						startSocketGravity: [${gravity}, 0]
+				// Mouse enters the CALL object: show line
+				gotoElement.addEventListener('mouseenter', () => {
+					// Get line
+					if(!L${src}) {
+						// Create line
+						const src = document.getElementById('${src}');
+						const tgt = document.getElementById('${tgt}');
+						L${src} = new LeaderLine(src, tgt,
+							{
+								hide: true,
+								path: 'grid',
+								startSocket: 'right',
+								endSocket: 'right',
+								dash: true,
+								color: '${this.getRndColor()}',
+								startSocketGravity: [${gravity}, 0]
+							}
+						);
 					}
-				);
+					// Show line
+					L${src}.show('draw', {duration: 500, timing: 'ease-in'});
+				});
+
+				// Mouse leaves the CALL object: hide line
+				gotoElement.addEventListener('mouseleave', () => {
+					// check if line exists
+					if(L${src}) {
+						// Hide line
+						L${src}.hide('fade', {duration: 2000, timing: 'ease-out'});
+					}
+				});
+
 				`;
 			}
 		}
