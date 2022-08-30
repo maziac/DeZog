@@ -251,16 +251,12 @@ export class RenderHtml extends RenderText {
 		// Call super
 		let rendered = '<pre>' + super.renderNodes(nodeSet, startNodes) + '</pre>';
 
-		// Now add arrows
-
 		// Sort the nodes	// TODO: Optimize, was done already by super.renderNodes()
 		const nodes = Array.from(nodeSet); //.filter(node => (node.length > 0));	// Filter nodes in other banks
 		nodes.sort((a, b) => a.start - b.start);
 
-		// Colors for the arrows
-		// const arrowColors = ['coral', 'yellow', 'white', 'red', 'green'];
-		// const arrowColorLength = arrowColors.length;
-		// let arrowColorIndex = 0;
+		// Asymptotic function for gravity
+		const asymptotic = (x) => x / (x + 20);
 
 		// Loop all nodes and branches
 		let localArrows = '';
@@ -280,18 +276,16 @@ export class RenderHtml extends RenderText {
 
 				// Add arrow
 				let distance = Math.abs(addr64k - tgtAddr64k);
-				//if (distance > 30)
-				//	distance = 30;
-				let gravity;
+				let gravity;	// gravity is multiplied by fontSize (e.g. 14)
 				let side;
 				if (addr64k < tgtAddr64k) {
 					// Forward
-					gravity = 10 * Math.random() + 20 * distance;
+					gravity = 200 / 14 * asymptotic(3 * distance);
 					side ='right';
 				}
 				else {
 					// Backward
-					gravity = -10 * Math.random() - 3 * distance;
+					gravity = - 60 / 14 * asymptotic(distance);
 					side = 'left';
 				}
 				localArrows += `
@@ -302,8 +296,8 @@ export class RenderHtml extends RenderText {
 						startSocket: '${side}',
 						endSocket: '${side}',
 						color: '${this.getRndColor()}',
-						startSocketGravity: [${gravity}, 0],
-						endSocketGravity: [${gravity}, 0]
+						startSocketGravity: [fontSize * ${gravity}, 0],
+						endSocketGravity: [fontSize * ${gravity}, 0]
 					}
 				);
 				`;
@@ -322,7 +316,7 @@ export class RenderHtml extends RenderText {
 				const tgt = this.getHtmlId(tgtAddr64k, 'T');
 
 				// Add arrow
-				const gravity = 20 + 200 * Math.random();
+				const gravity = 1.5 + 15 * Math.random();
 				const color = this.getRndColor();
 				callArrows += `
 				createCallSource('${src}','${tgt}', '${color}', ${gravity});
@@ -333,6 +327,10 @@ export class RenderHtml extends RenderText {
 		// Combine
 		rendered += `
 			<script>
+
+				// Fontsize
+				const fontSizeString = window.getComputedStyle(document.body).getPropertyValue('--vscode-editor-font-size');
+				const fontSize = parseInt(fontSizeString);
 
 				// Show the line with animation.
 				function showLine(srcObj) {
@@ -359,7 +357,7 @@ export class RenderHtml extends RenderText {
 							endSocket: 'right',
 							dash: true,
 							color: srcObj.lineColor,
-							startSocketGravity: [srcObj.lineGravity, 0]
+							startSocketGravity: [fontSize * srcObj.lineGravity, 0]
 						}
 					);
 					// Show line
