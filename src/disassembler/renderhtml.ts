@@ -252,9 +252,6 @@ export class RenderHtml extends RenderText {
 		let rendered = '<pre>' + super.renderNodes(nodeSet, startNodes) + '</pre>';
 
 		// Now add arrows
-		rendered += `
-			<script>
-			`;
 
 		// Sort the nodes	// TODO: Optimize, was done already by super.renderNodes()
 		const nodes = Array.from(nodeSet); //.filter(node => (node.length > 0));	// Filter nodes in other banks
@@ -266,6 +263,8 @@ export class RenderHtml extends RenderText {
 		// let arrowColorIndex = 0;
 
 		// Loop all nodes and branches
+		let localArrows = '';
+		let callArrows = '';
 		for (const node of nodes) {
 			// Check if node branches
 			if (node.branchNodes.length > 1) {
@@ -295,7 +294,7 @@ export class RenderHtml extends RenderText {
 					gravity = -10 * Math.random() - 3 * distance;
 					side = 'left';
 				}
-				rendered += `
+				localArrows += `
 				new LeaderLine(
 					document.getElementById('${src}'),
 					document.getElementById('${tgt}'),
@@ -324,56 +323,75 @@ export class RenderHtml extends RenderText {
 
 				// Add arrow
 				const gravity = 20 + 200 * Math.random();
-				rendered += `
-				src = document.getElementById('${src}');
-				gotoElement = document.createElement('span')
-				gotoElement.innerHTML = "→";
-				src.appendChild(gotoElement);
-				let L${src};
-
-				gotoElement.addEventListener('click', () => {
-					const src = document.getElementById('${src}');
-					historyStackAdd(src);
-					const tgt = document.getElementById('${tgt}');
-					scrollTo(tgt);
-				});
-
-				// Mouse enters the CALL object: show line
-				gotoElement.addEventListener('mouseenter', () => {
-					// Get line
-					if(!L${src}) {
-						// Create line
-						const src = document.getElementById('${src}');
-						const tgt = document.getElementById('${tgt}');
-						L${src} = new LeaderLine(src, tgt,
-							{
-								hide: true,
-								path: 'grid',
-								startSocket: 'right',
-								endSocket: 'right',
-								dash: true,
-								color: '${this.getRndColor()}',
-								startSocketGravity: [${gravity}, 0]
-							}
-						);
-					}
-					// Show line
-					L${src}.show('draw', {duration: 500, timing: 'ease-in'});
-				});
-
-				// Mouse leaves the CALL object: hide line
-				gotoElement.addEventListener('mouseleave', () => {
-					// check if line exists
-					if(L${src}) {
-						// Hide line
-						L${src}.hide('fade', {duration: 2000, timing: 'ease-out'});
-					}
-				});
-
+				const color = this.getRndColor();
+				callArrows += `
+				createCallSource('${src}','${tgt}', '${color}', ${gravity});
 				`;
 			}
 		}
+
+		// Combine
 		rendered += `
+			<script>
+
+				// Creates an arrow and the mouse click, enter and leave
+				// event listeners to show/hide the arrow and to scroll
+				// to the target.
+				// @param src E.g. 'S08fb'
+				// @param tgt E.g. 'T80a2'
+				// @param color E.g. 'hsla(131, 0.75, 0.8, 0.5)'
+				// @param gravity E.g. 80
+				function createCallSource(src, tgt, color, gravity) {
+					const srcObj = document.getElementById(src);
+					gotoElement = document.createElement('span')
+					gotoElement.innerHTML = "→";
+					srcObj.appendChild(gotoElement);
+
+					gotoElement.addEventListener('click', () => {
+						historyStackAdd(srcObj);
+						const tgtObj = document.getElementById(tgt);
+						scrollTo(tgtObj);
+					});
+
+					// Mouse enters the CALL object: show line
+					gotoElement.addEventListener('mouseenter', () => {
+						// Get line
+						if(!srcObj.line) {
+							// Create line
+							const tgtObj = document.getElementById(tgt);
+							srcObj.line = new LeaderLine(srcObj, tgtObj,
+								{
+									hide: true,
+									path: 'grid',
+									startSocket: 'right',
+									endSocket: 'right',
+									dash: true,
+									color,
+									startSocketGravity: [gravity, 0]
+								}
+							);
+						}
+						// Show line
+						srcObj.line.show('draw', {duration: 500, timing: 'ease-in'});
+					});
+
+					// Mouse leaves the CALL object: hide line
+					gotoElement.addEventListener('mouseleave', () => {
+						// check if line exists
+						if(srcObj.line) {
+							// Hide line
+							srcObj.line.hide('fade', {duration: 2000, timing: 'ease-out'});
+						}
+					});
+				}
+
+
+				// Wait for HTML document to get ready
+				window.addEventListener('load', () => {
+					${localArrows}
+					${callArrows}
+				});
+
    				//# sourceURL=Arrows.js
 			</script>
 		`;
