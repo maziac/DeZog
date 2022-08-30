@@ -334,9 +334,62 @@ export class RenderHtml extends RenderText {
 		rendered += `
 			<script>
 
-				// Creates an arrow and the mouse click, enter and leave
+				// Show the line with animation.
+				function showLine(srcObj) {
+					srcObj.line.show('draw', {duration: 500, timing: 'ease-in'});
+				}
+
+				// Is the first "mouseenter" handler.
+				// Removes itself and install the "real" mouse click, enter and leave
 				// event listeners to show/hide the arrow and to scroll
 				// to the target.
+				function firstMouseEnterHandler(event) {
+					// Get object
+					const srcObj = event.currentTarget;
+					// Remove mouse event handler
+					srcObj.removeEventListener('mouseenter', firstMouseEnterHandler);
+
+					// Create line
+					const tgtObj = document.getElementById(srcObj.lineTgt);
+					srcObj.line = new LeaderLine(srcObj, tgtObj,
+						{
+							hide: true,
+							path: 'grid',
+							startSocket: 'right',
+							endSocket: 'right',
+							dash: true,
+							color: srcObj.lineColor,
+							startSocketGravity: [srcObj.lineGravity, 0]
+						}
+					);
+					// Show line
+					showLine(srcObj);
+
+					// Install real handlers
+					srcObj.addEventListener('click', () => {
+						historyStackAdd(srcObj);
+						scrollTo(tgtObj);
+					});
+
+					// Mouse enters the CALL object: show line
+					srcObj.addEventListener('mouseenter', () => {
+						// Show line
+						showLine(srcObj);
+					});
+
+					// Mouse leaves the CALL object: hide line
+					srcObj.addEventListener('mouseleave', () => {
+						// Hide line
+						srcObj.line.hide('fade', {duration: 2000, timing: 'ease-out'});
+					});
+				}
+
+
+				// Creates "→" object inside the source object
+				// and installs a first "mouseenter" handler.
+				// This is intended to operate fast.
+				// The more heavy other event handlers are installed later when the
+				// first "mouseenter" handler is activated.
 				// @param src E.g. 'S08fb'
 				// @param tgt E.g. 'T80a2'
 				// @param color E.g. 'hsla(131, 0.75, 0.8, 0.5)'
@@ -346,45 +399,13 @@ export class RenderHtml extends RenderText {
 					gotoElement = document.createElement('span')
 					gotoElement.innerHTML = "→";
 					srcObj.appendChild(gotoElement);
-
-					gotoElement.addEventListener('click', () => {
-						historyStackAdd(srcObj);
-						const tgtObj = document.getElementById(tgt);
-						scrollTo(tgtObj);
-					});
-
-					// Mouse enters the CALL object: show line
-					gotoElement.addEventListener('mouseenter', () => {
-						// Get line
-						if(!srcObj.line) {
-							// Create line
-							const tgtObj = document.getElementById(tgt);
-							srcObj.line = new LeaderLine(srcObj, tgtObj,
-								{
-									hide: true,
-									path: 'grid',
-									startSocket: 'right',
-									endSocket: 'right',
-									dash: true,
-									color,
-									startSocketGravity: [gravity, 0]
-								}
-							);
-						}
-						// Show line
-						srcObj.line.show('draw', {duration: 500, timing: 'ease-in'});
-					});
-
-					// Mouse leaves the CALL object: hide line
-					gotoElement.addEventListener('mouseleave', () => {
-						// check if line exists
-						if(srcObj.line) {
-							// Hide line
-							srcObj.line.hide('fade', {duration: 2000, timing: 'ease-out'});
-						}
-					});
+					// Append properties
+					gotoElement.lineTgt = tgt;
+					gotoElement.lineColor = color;
+					gotoElement.lineGravity = gravity;
+					// Install first "mouseenter" handler
+					gotoElement.addEventListener('mouseenter', firstMouseEnterHandler);
 				}
-
 
 				// Wait for HTML document to get ready
 				window.addEventListener('load', () => {
