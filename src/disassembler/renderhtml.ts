@@ -8,6 +8,13 @@ import {RenderText} from "./rendertext";
  */
 export class RenderHtml extends RenderText {
 
+	// Used as prefix for all IDs of a certain depth.
+	protected depth: number;
+
+	// A map that stores the color used for arrows for each address.
+	protected addressColor = new Map<number, string>();
+
+
 	/** Returns the css for the html, define additional colors.
 	 * @returns The html style.
 	 */
@@ -188,42 +195,32 @@ export class RenderHtml extends RenderText {
 		return s;
 
 	}
-	protected formatAddressPlusText2(addr64k: number, bytes: Uint8Array, text: string, comment?: string): string {
-		const addrString = this.disasm.funcFormatLongAddress(addr64k).padEnd(this.clmnsAddress - 1);
-		let bytesString = '';
-		bytes.forEach(value =>
-			bytesString += value.toString(16).toUpperCase().padStart(2, '0') + ' '
-		);
-		bytesString = bytesString.substring(0, bytesString.length - 1);
-		bytesString = Format.getLimitedString(bytesString, this.clmnsBytes - 2);
-		let s = this.emphasizeAddrBytes(addrString + ' ' + bytesString) + '  ' + this.emphasizeInstruction(text);
-		if (comment)
-			s += ' ' + this.emphasizeComment('; ' + comment);
-		return s;
-	}
-
-
 
 
 	/** Returns the html ID of a html object, e.g. a <span>.
 	 * @param addr64k The address of the label. Only labels have IDs.
 	 * @param type 'S' = Source, for e.g. JP nnnn.
 	 * 'T' = Target, the target, i.e. a label.
-	 * @return E.g. "L_C0AF"
+	 * @return E.g. "D1_L_C0AF" (i.e. includes also depth)
 	 */
 	protected getHtmlId(addr64k: number, type: 'S' | 'T'): string {
-		//const longAddrString = this.disasm.funcFormatLongAddress(addr64k);
-		//return 'L.' + longAddrString;
-		return type + '_' + addr64k.toString(16);
+		return 'D' + this.depth + '_' + type + '_' + addr64k.toString(16);
 	}
 
 
-	/** Returns a radom colr as a string with some transparency.
+	/** Returns a random color as a string with some transparency.
+	 * @param addr64k The source address for which the color should be created.
+	 * Colors are random but each address will get the same color, to assure that
+	 * all depths will have same colors at same addresses.
 	 * @returns E.g. "hsla(131, 0.75, 0.8, 0.5)"
 	 */
-	protected getRndColor() {
-		//return 'red';
-		return `hsla(${Math.floor(360 * Math.random())}, ${Math.floor(50 + 50 * Math.random())}%, ${Math.floor(50 + 50 * Math.random())}%, 0.5)`;
+	protected getRndColor(addr64k: number) {
+		let color = this.addressColor.get(addr64k);
+		if (!color) {
+			color = `hsla(${Math.floor(360 * Math.random())}, ${Math.floor(50 + 50 * Math.random())}%, ${Math.floor(50 + 50 * Math.random())}%, 0.5)`;
+			this.addressColor.set(addr64k, color);
+		}
+		return color;
 	}
 
 
@@ -238,102 +235,18 @@ export class RenderHtml extends RenderText {
 		const htmls: string[] = [];
 
 		// Loop all depths
-		for (let depth = maxDepth; depth <= maxDepth; depth++) {	// TODO
+		for (let depth = 0; depth <= maxDepth; depth++) {	// TODO
+		//for (let depth = maxDepth - 1; depth <= maxDepth; depth++) {	// TODO
+			// Set depth as prefix for html id
+			this.depth = depth;
 			// Render and store
 			const html = this.renderForDepth(startNodes, depth);
 			htmls.push(html);
 		}
 
-		return this.addControls(htmls, false);
-	}
-
-
-	/** ANCHOR Renders all given nodes to text.
-	 * @param nodeSet The nodes to disassemble. The nodes will be sorted by start address.
-	 * @param startNodes The start node labels are rendered in a different color.
-	 * @returns The disassembly text.
-	 */
-	public renderNodes(nodeSet: Set<AsmNode>, startNodes: AsmNode[] = []): string {
-		// Call super
-		let rendered = '<pre>' + super.renderNodes(nodeSet, startNodes) + '</pre>';
-
-		// Sort the nodes	// TODO: Optimize, was done already by super.renderNodes()
-		const nodes = Array.from(nodeSet); //.filter(node => (node.length > 0));	// Filter nodes in other banks
-		nodes.sort((a, b) => a.start - b.start);
-
-		// Asymptotic function for gravity
-		const asymptotic = (x) => x / (x + 20);
-
-		// Loop all nodes and branches
-		let localArrows = '';
-		let callArrows = '';
-		for (const node of nodes) {
-			// Check if node branches
-			if (node.branchNodes.length > 1) {
-				// Get node address as source
-				let addr64k = node.start;
-				const len = node.instructions.length - 1;
-				for (let i = 0; i < len; i++)
-					addr64k += node.instructions[i].length;
-				const src = this.getHtmlId(addr64k, 'S');
-				// Get target
-				const tgtAddr64k = node.branchNodes[1].start;
-				const tgt = this.getHtmlId(tgtAddr64k, 'S');
-
-				// Add arrow
-				let distance = Math.abs(addr64k - tgtAddr64k);
-				let gravity;	// gravity is multiplied by fontSize (e.g. 14)
-				let side;
-				if (addr64k < tgtAddr64k) {
-					// Forward
-					gravity = 200 / 14 * asymptotic(3 * distance);
-					side ='right';
-				}
-				else {
-					// Backward
-					gravity = - 60 / 14 * asymptotic(distance);
-					side = 'left';
-				}
-				localArrows += `
-				new LeaderLine(
-					document.getElementById('${src}'),
-					document.getElementById('${tgt}'),
-					{
-						startSocket: '${side}',
-						endSocket: '${side}',
-						color: '${this.getRndColor()}',
-						startSocketGravity: [fontSize * ${gravity}, 0],
-						endSocketGravity: [fontSize * ${gravity}, 0]
-					}
-				);
-				`;
-			}
-
-			// Check if node calls
-			if (node.callee) {
-				// Get node address as source
-				let addr64k = node.start;
-				const len = node.instructions.length - 1;
-				for (let i = 0; i < len; i++)
-					addr64k += node.instructions[i].length;
-				const src = this.getHtmlId(addr64k, 'S');
-				// Get target
-				const tgtAddr64k = node.callee.start;
-				const tgt = this.getHtmlId(tgtAddr64k, 'T');
-
-				// Add arrow
-				const gravity = 1.5 + 15 * Math.random();
-				const color = this.getRndColor();
-				callArrows += `
-				createCallSource('${src}','${tgt}', '${color}', ${gravity});
-				`;
-			}
-		}
-
-		// Combine
-		rendered += `
+		let html = this.addControls(htmls, false);
+		html += `
 			<script>
-
 				// Fontsize
 				const fontSizeString = window.getComputedStyle(document.body).getPropertyValue('--vscode-editor-font-size');
 				const fontSize = parseInt(fontSizeString);
@@ -398,7 +311,7 @@ export class RenderHtml extends RenderText {
 				// @param tgt E.g. 'T80a2'
 				// @param color E.g. 'hsla(131, 0.75, 0.8, 0.5)'
 				// @param gravity E.g. 80
-				function createCallSource(src, tgt, color, gravity) {
+				function createGlobalBranchSource(src, tgt, color, gravity) {
 					const srcObj = document.getElementById(src);
 					gotoElement = document.createElement('span')
 					gotoElement.innerHTML = "→";
@@ -411,15 +324,185 @@ export class RenderHtml extends RenderText {
 					gotoElement.addEventListener('mouseenter', firstMouseEnterHandler);
 				}
 
+				// The map that holds all local arrows for all depths.
+				const arrowsForDepth = new Map();
+				// The map that holds all functions to initialize the arrow arrays for each depth.
+				funcForDepth = new Map();
+
+				// Enables or disables the lines for a certain depth.
+				// If lines are created the first time they are created first.
+				// @param depth Enable/disable for which depth. Starts at 0.
+				// @param enable true/false. false to disable.
+				function enableLocalArrows(depth, enable) {
+					let arrows = arrowsForDepth.get(depth);
+					if(!arrows) {	// Assumes that the first call is used to enable the lines.
+						// Create new array
+						arrows = [];
+						arrowsForDepth.set(depth, arrows);
+						// Create lines for the first time
+						const func = funcForDepth.get(depth);
+						func(arrows);
+						return;
+					}
+
+					// Enable/disable
+					if(enable) {
+						for(const arrow of arrows)
+							arrow.show('none');
+					}
+					else {
+						for(const arrow of arrows)
+							arrow.hide('none');
+					}
+				}
+
+				// The currently displayed slider depth value
+				let currentDepthValue=${maxDepth};
+
+				// Function that will be called when the slider changes.
+				function sliderDepthChanged(slideValue) {
+					// Call original function first
+				//	updateSliderDepth(slideValue);
+					// Now also update the lines
+					// Hide previous
+					enableLocalArrows(currentDepthValue, false);
+					// Show current
+					enableLocalArrows(slideValue, true);
+					// Use new value
+					currentDepthValue = slideValue;
+				}
+
+
+				// Exchange function that is called by the slider with own function.
+				const sliderObject = document.getElementById("slide");
+				sliderObject.addEventListener('input', () => {
+					sliderDepthChanged(parseInt(sliderObject.value));
+				});
+
+
+				// Show lines the first time when document is loaded
+				window.addEventListener('load', () => {
+					enableLocalArrows(${maxDepth}, true);
+				});
+
+   				//# sourceURL=renderhtmlInit.js
+			</script>
+			`;
+		return html;
+	}
+
+
+	/** ANCHOR Renders all given nodes to text.
+	 * @param nodeSet The nodes to disassemble. The nodes will be sorted by start address.
+	 * @param startNodes The start node labels are rendered in a different color.
+	 * @returns The disassembly text.
+	 */
+	public renderNodes(nodeSet: Set<AsmNode>, startNodes: AsmNode[] = []): string {
+		// Call super
+		let rendered = '<pre>' + super.renderNodes(nodeSet, startNodes) + '</pre>';
+
+		// Sort the nodes	// TODO: Optimize, was done already by super.renderNodes()
+		const nodes = Array.from(nodeSet); //.filter(node => (node.length > 0));	// Filter nodes in other banks
+		nodes.sort((a, b) => a.start - b.start);
+
+		// Asymptotic function for gravity
+		const asymptotic = (x) => x / (x + 20);
+
+		// Loop all nodes and branches
+		let localArrows = '';
+		let callArrows = '';
+		for (const node of nodes) {
+			// Note: CALLs and branches are put together:
+			// Everything that branches/calls outside the block will get an interactive
+			// line that needs to be hovered before shown and can be clicked.
+			// Everything in the block (i.e. local) will be shown directly.
+			const allBranches = [...node.branchNodes];
+			if (node.callee)
+				allBranches.push(node.callee);
+
+			// Check all branches
+			const blockNode = this.disasm.getBlockNode(node.start);
+			for (const branchNode of allBranches) {
+				// Skip all branch nodes that are anyhow not seen
+				if (!nodes.includes(branchNode))
+					continue;
+
+				// Check if local
+				const isLocal = (blockNode == this.disasm.getBlockNode(branchNode.start));
+				// Get start and end addresses
+				const lastInstr = node.instructions.length - 1;	// Note: there must be at least one instruction otherwise there would be no branch.
+				const nextAddr = node.start + node.length;
+				const tgtAddr64k = branchNode.start;
+				// Check if "natural" flow
+				if (isLocal && nextAddr == tgtAddr64k)
+					continue;
+				const addr64k = nextAddr - node.instructions[lastInstr].length;
+				const src = this.getHtmlId(addr64k, 'S');
+				// Get target
+				const tgt = this.getHtmlId(tgtAddr64k, 'S');
+				const distance = Math.abs(addr64k - tgtAddr64k);
+
+				// Check if same block
+				if (isLocal) {
+					// Same block (local):
+
+					// Add arrow
+					let gravity;	// gravity is multiplied by fontSize (e.g. 14)
+					let side;
+					if (addr64k < tgtAddr64k) {
+						// Forward
+						gravity = 200 / 14 * asymptotic(3 * distance);
+						side = 'right';
+					}
+					else {
+						// Backward
+						gravity = - 60 / 14 * asymptotic(distance);
+						side = 'left';
+					}
+					localArrows += `
+						arrows.push(new LeaderLine(
+							document.getElementById('${src}'),
+							document.getElementById('${tgt}'),
+							{
+								startSocket: '${side}',
+								endSocket: '${side}',
+								color: '${this.getRndColor(addr64k)}',
+								startSocketGravity: [fontSize * ${gravity}, 0],
+								endSocketGravity: [fontSize * ${gravity}, 0]
+							}
+						));
+						`;
+				}
+				else {
+					// CALL or JP to non-local address:
+					// Add arrow
+					//const gravity = 1.5 + 15 * Math.random();
+					const gravity = 1.5 + 200 / 14 * asymptotic(2 * distance);
+					const color = this.getRndColor(addr64k);
+					callArrows += `
+						createGlobalBranchSource('${src}','${tgt}', '${color}', ${gravity});
+						`;
+				}
+			}
+		}
+
+		// Combine
+		rendered += `
+			<script>
 				// Wait for HTML document to get ready
 				window.addEventListener('load', () => {
-					${localArrows}
+					funcForDepth.set(${this.depth}, (arrows) => {
+							${localArrows}
+						}
+					);
+
 					${callArrows}
 				});
 
-   				//# sourceURL=Arrows.js
+   				//# sourceURL=Arrows${this.depth}.js
 			</script>
 		`;
+		console.log(rendered);
 
 		return rendered;
 	}

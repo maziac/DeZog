@@ -162,6 +162,8 @@ export class RenderBase {
 			const maxDepth = len - 1;
 			html += `
 		<script>
+			// Called when the slider changes.
+			// @param slideValue A string with the value.
 			function updateSliderDepth(slideValue) {
 				const sliderValue = document.getElementById("sliderDepthValue");
 				sliderValue.value = slideValue;

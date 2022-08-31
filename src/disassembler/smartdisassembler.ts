@@ -50,7 +50,7 @@ export class SmartDisassembler {
 	protected nodes = new Map<number, AsmNode>();
 
 	// Blocks (subroutines are put into this array. I.e. all addresses
-	// that share the same block.
+	// that share the same block.)
 	protected blocks = new Array<AsmNode>(0x10000);
 
 	// This map contains data labels (strings) that are referenced by instructions.
@@ -308,8 +308,7 @@ export class SmartDisassembler {
 		sortedAdresses.sort((a, b) => a - b);
 		for (const addr of sortedAdresses) {
 			const memAttr = this.memory.getAttributeAt(addr);
-			if (!(memAttr & MemAttribute.FLOW_ANALYZED))
-			{
+			if (!(memAttr & MemAttribute.FLOW_ANALYZED)) {
 				// If not already analyzed
 				this.createNodeForAddress(addr);
 			}
@@ -774,8 +773,7 @@ export class SmartDisassembler {
 				// Assign label only if starting node (callers or predecessors, predecessors is for the case that there is e.g. a loop from subroutine to an address prior to the subroutine).
 				if (!node.label) {
 					// Only if not already assigned
-					if (node.callers.length > 0 || node.predecessors.length > 0)
-					{
+					if (node.callers.length > 0 || node.predecessors.length > 0) {
 						let prefix;
 						// First check if it is a subroutine
 						if (blockNode.isSubroutine) {
@@ -1123,11 +1121,11 @@ export class SmartDisassembler {
 	*/
 
 
-	/** Returns the block  nodethe address belongs to.
+	/** Returns the block node the address belongs to.
 	 * @param addr64k An address.
-	 * @returns The corresponding block.
+	 * @returns The corresponding block node.
 	 */
 	public getBlockNode(addr64k: number): AsmNode {
-		return this.nodes[addr64k];
+		return this.blocks[addr64k];
 	}
 }
