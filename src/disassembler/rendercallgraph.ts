@@ -118,8 +118,8 @@ export class RenderCallGraph extends RenderBase {
 		const lines: string[] = [];
 		lines.push('digraph Callgraph {');
 		lines.push('bgcolor="transparent"');
-		lines.push(`node [color="${mainColor}", fontcolor="${mainColor}"];`);
-		lines.push(`edge [color="${mainColor}"];`);
+		lines.push(`node [fontname=Arial color="${mainColor}", fontcolor="${mainColor}"];`);
+		lines.push(`edge [fontname=Arial color="${mainColor}"];`);
 		lines.push(callGraphFormatString);
 
 		// Create text recursively until depth is reached

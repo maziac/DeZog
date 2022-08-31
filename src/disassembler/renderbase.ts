@@ -28,12 +28,6 @@ export class RenderBase {
 	public getHtmlHeader(): string {
 		return `
     <style>
-		* {
-			font-family: var(--vscode-editor-font-family);
-			font-weight: var(--vscode-editor-font-weight);
-			font-size: var(--vscode-editor-font-size);
-		}
-
 		body.vscode-light {
 			--dezog-fg-color: var(--vscode-editor-foreground);
 			--dezog-emphasize-color1: var(--vscode-editor-selectionBackground);
@@ -61,6 +55,17 @@ export class RenderBase {
 
 	`;
 	}
+	/*
+	Note: Setting
+		* {
+			font-family: var(--vscode-editor-font-family);
+			font-weight: var(--vscode-editor-font-weight);
+			font-size: var(--vscode-editor-font-size);
+		}
+	for some reason overrides the SVG text settings. In that case
+	the layout might screw up.
+	Therefore it is not set.
+	*/
 
 
 	/** Returns an ID for the node that can be used inside the dot graphics.

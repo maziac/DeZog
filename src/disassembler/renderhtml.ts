@@ -16,6 +16,12 @@ export class RenderHtml extends RenderText {
 		let header = super.getHtmlHeader();
 		header += `
 	<style>
+		* {
+			font-family: var(--vscode-editor-font-family);
+			font-weight: var(--vscode-editor-font-weight);
+			font-size: var(--vscode-editor-font-size);
+		}
+
 		body.vscode-light {
 			--dezog-fg-color-emphasize-label: #001080;
 			--dezog-bg-color-emphasize-startlabel: lightblue;
@@ -435,6 +441,9 @@ export class RenderHtml extends RenderText {
 			function clearHistoryStack() {
 				historyStack.length = 0;
 				historyStackIndex = 0;
+				// Disable both buttons
+				document.getElementById("backButton").disabled = true;
+				document.getElementById("fwdButton").disabled = true;
 			}
 
 			function scrollTo(tgt) {
@@ -455,7 +464,8 @@ export class RenderHtml extends RenderText {
 				if(historyStackIndex == 0)
 					document.getElementById("backButton").disabled = true;
 				// Enable fwd button
-				document.getElementById("fwdButton").disabled = false;
+				if(historyStackIndex < historyStack.length-1)
+					document.getElementById("fwdButton").disabled = false;
 			}
 
 			function fwdButtonPressed() {
@@ -481,13 +491,16 @@ export class RenderHtml extends RenderText {
 				document.getElementById("fwdButton").disabled = true;
 			}
 
-			// Init
-			clearHistoryStack();
+			// Wait for HTML document to get ready
+			window.addEventListener('load', () => {
+				// Init
+				clearHistoryStack();
+			});
 
 			//# sourceURL=HistoryStack.js
 		</script>
 
-		<span style="position:fixed">
+		<span style="position:fixed;right:20px">
 			<button id="backButton" onclick="backButtonPressed()"><</button>
 			<button id="fwdButton" onclick="fwdButtonPressed()">></button>
 		</span>

@@ -25,9 +25,9 @@ export class RenderFlowChart extends RenderBase {
 		const lines: string[] = [];
 		lines.push('digraph FlowChart {');
 		// Appearance
-		lines.push('bgcolor=transparent;');
-		lines.push(`node [shape=box, color="${mainColor}", fontcolor="${mainColor}"];`);
-		lines.push(`edge [color="${mainColor}"];`);
+		lines.push('graph[bgcolor=transparent];');
+		lines.push(`node [shape=box fontname=Arial color="${mainColor}" fontcolor="${mainColor}"];`);
+		lines.push(`edge [fontname=Arial color="${mainColor}"];`);
 
 		for (const startNode of startNodes) {
 			// Get complete sub
@@ -41,16 +41,16 @@ export class RenderFlowChart extends RenderBase {
 				let instrTexts: string;
 				// Bank border ?
 				if (node.bankBorder) {
-					lines.push(dotId + ' [fillcolor="' + otherBankColor + '", style=filled];');
-					instrTexts = 'Other  \\lBank\\l';
+					lines.push(dotId + ' [fillcolor="' + otherBankColor + '" style=filled];');
+					instrTexts = 'Other\\lBank';
 				}
 				else {
 					// Get disassembly text of node.
-					instrTexts = node.getAllDisassemblyLines().join('  \\l') + '  \\l';
+					instrTexts = node.getAllDisassemblyLines().join('\\l') ;
 				}
 				// Print disassembly
 				const hrefAddresses = this.getAllRefAddressesFor(node);
-				lines.push(dotId + ' [label="' + instrTexts + '", fontcolor = "' + instructionColor + '", href="#' + hrefAddresses + '"];');
+				lines.push(dotId + ' [label="' + instrTexts + '" fontcolor="' + instructionColor + '" href="#' + hrefAddresses + '"];');
 
 				// Check if someone calls node
 				if (node == startNode || node.callers.length > 0) {
@@ -67,8 +67,8 @@ export class RenderFlowChart extends RenderBase {
 					}
 					const nodeLabelName = this.disasm.funcGetLabel(nodeAddr) || node.label || Format.getHexFormattedString(nodeAddr);
 					const callerDotId = 'caller' + dotId;
-					lines.push(callerDotId + ' [label="' + nodeLabelName + '", fillcolor="' + emphasizeColor + '", style=filled, shape="' + shape + '", ' + href + '];');
-					lines.push(callerDotId + ' -> ' + dotId + ' [headport="n", tailport="s"];');
+					lines.push(callerDotId + ' [label="' + nodeLabelName + '" fillcolor="' + emphasizeColor + '" style=filled, shape=' + shape + ' ' + href + '];');
+					lines.push(callerDotId + ' -> ' + dotId + ' [headport=n tailport=s];');
 				}
 
 				// Get block node
@@ -81,7 +81,6 @@ export class RenderFlowChart extends RenderBase {
 					// Color 2nd branch differently
 					let dotBranchLabel = '';
 					if (i > 0) {
-						// TODO: Test if labelling arrows is senseful or overloaded
 						let branchLabel = this.disasm.funcGetLabel(branch.start) || branch.label;
 						if (branchLabel) {
 							// Check if in same block (i.e. local label)
@@ -99,13 +98,13 @@ export class RenderFlowChart extends RenderBase {
 
 						// Change into dot syntax
 						if (branchLabel)
-							dotBranchLabel = 'label="' + branchLabel + '", fontcolor="' + labelColor + '", ';
+							dotBranchLabel = 'label="' + branchLabel + '" fontcolor="' + labelColor + '" ';
 					}
 					// Override if pointing to itself, e.g. JR $, or looping, and not pointing to itself
 					let tailport = 's';
 					if (branch != node && (i > 0 || node.start >= branch.start))
 						tailport = '_'; // east or west (or center)
-					lines.push(dotId + ' -> ' + branchDotId + ' [' + dotBranchLabel + 'headport="n", tailport="' + tailport + '"];');
+					lines.push(dotId + ' -> ' + branchDotId + ' [' + dotBranchLabel + 'headport=n tailport=' + tailport + '];');
 					// Next
 					i++;
 				}
@@ -119,7 +118,7 @@ export class RenderFlowChart extends RenderBase {
 
 			// Check if end symbol is required
 			if(endUsed)
-				lines.push(end + ' [label="end", shape=doublecircle];');
+				lines.push(end + ' [label=end, shape=doublecircle];');
 		}
 
 		// Ending
