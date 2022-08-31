@@ -1243,7 +1243,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param "Breakpoint fired: PC=811EH" or undefined (prints nothing)
 	 */
 	public decorateBreak(breakReason: string) {
-		if (!breakReason)
+		if (!breakReason || !Remote)
 			return;
 		// Get PC
 		const pc = Remote.getPCLong();
@@ -1532,6 +1532,11 @@ export class DebugSessionClass extends DebugSession {
 				else {
 					// Normal Step-Over
 					breakReason = await Remote.stepOver();
+				}
+
+				// Check if debug session is stopped
+				if (!this.running) {
+					return new StoppedEvent('disconected', DebugSessionClass.THREAD_ID);
 				}
 
 				// Check for pause request

@@ -1,7 +1,6 @@
 import {CpuHistoryClass} from '../cpuhistory';
 import {HistoryInstructionInfo} from '../decodehistinfo';
 import {Settings} from '../../settings/settings';
-import {Utility} from '../../misc/utility';
 
 
 /**
@@ -150,7 +149,8 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 
 
 	/**
-	 * Emits 'historySpot' to signal that the files should be decorated.* Variables:
+	 * Emits 'historySpot' to signal that the files should be decorated.
+	 * Variables:
 	 * - historyIndex: Read index (in ring buffer). Current position in history.
 	 * - historyWriteIndex: Write index (in ring buffer). Last written position.
 	 *
@@ -170,7 +170,9 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 
 		// Before historyIndex
 		const len = this.history.length;
-		Utility.assert(len > 0);
+		if (len == 0)
+			return;	// Catch situation at the start when nothing has been executed yet.
+
 		let startIndex = this.historyIndex;	// historyIndex could be -1
 		if (startIndex < 0)
 			startIndex = this.historyWriteIndex;

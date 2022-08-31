@@ -32,7 +32,7 @@ export class TextView extends BaseView {
 	 * E.g. 'a { text-decoration: none; }'
 	 */
 	protected setHtml(text: string, headStyle: string) {
-		const format = `<!DOCTYPE html>
+		const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
@@ -53,7 +53,6 @@ ${text}
 </html>
 `;
 		// Add html body
-		const html = format;
 		this.vscodePanel.webview.html = html;
 	}
 }

@@ -237,6 +237,8 @@ Furthermore DeZog includes slightly modified sources of the Z80.js simulator. It
 
 For the "What's New" feature the [vscode-whats-new](https://github.com/alefragnani/vscode-whats-new) project from Alessandro Fragnani aka [alefragni](https://github.com/alefragnani) has been incorporated. The project is MIT licensed.
 
+For the other included SW see the 'dependencies' section in [package.json](https://github.com/maziac/DeZog/blob/main/package.json)
+
 
 ## Acknowledgements
 
