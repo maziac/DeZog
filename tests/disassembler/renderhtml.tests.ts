@@ -25,7 +25,7 @@ suite('Disassembler - RenderHtml', () => {
 
 	// Compresses the string.
 	function c(text: string): string {
-		let s = text.replace(/ +/g, ' ');
+		let s = text.replace(/[ \t]+/g, ' ');
 		return s;
 	}
 
@@ -79,30 +79,38 @@ suite('Disassembler - RenderHtml', () => {
 
 		test('start label, label and references', () => {
 			const html = disassembleDepth([0x0100], 10);
+			// Check for <script>
+			const k = html.indexOf('<script>');
+			assert.ok(k > 0, "Script expected in html.");
+			// Check html before script
+			const html2 = html.substring(0, k);
+			assert.equal(c(html2), c(
+				`<pre><span class="startlabel"><a href="#0100.1"><span class="bytes">0100.1 00 </span> <span id="D10_100"><span class="instruction">NOP</span></span></a></span>
+<a href="#0101.1"><span class="bytes">0101.1 CD 05 01</span> <span id="D10_101"><span class="instruction">CALL SUB_0105</span></span></a>
 
-			assert.equal(c(html), c(
-				`<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-selectionForeground);font-weight:bold"><a href="#0100.1">0100.1 <b><span style="color:var(--vscode-editorBracketHighlight-foreground3)">SUB_0100</span></b>:</a></span>
-<a href="#0100.1">0100.1 00 NOP</a>
-<a href="#0101.1">0101.1 CD 05 01 CALL SUB_0105</a>
+<a href="#0104.1"><span class="bytes">0104.1 C9 </span> <span id="D10_104"><span class="instruction">RET</span></span></a>
 
-<a href="#0104.1">0104.1 C9 RET</a>
-
-<a href="#0105.1">0105.1 <b><span style="color:var(--vscode-editorBracketHighlight-foreground3)">SUB_0105</span></b>:</a>
-<a href="#0105.1">0105.1 C9 RET</a>
-`));
+<a href="#0105.1"><span class="bytes">0105.1 </span><span class="label">SUB_0105:</span></a>
+<a href="#0105.1"><span class="bytes">0105.1 C9 </span> <span id="D10_105"><span class="instruction">RET</span></span></a>
+</pre>
+ `));
 		});
 
 		test('Note', () => {
 			const html = disassembleDepth([0x0200], 10);
+			// Check for <script>
+			const k = html.indexOf('<script>');
+			assert.ok(k > 0, "Script expected in html.");
+			// Check html before script
+			const html2 = html.substring(0, k);
+			assert.equal(c(html2), c(
+				`<pre><span class="comment">; Note: The disassembly is ambiguous at $0201.</span>
+<span class="startlabel"><a href="#0200.1"><span class="bytes">0200.1 01 34 12</span> <span id="D10_200"><span class="instruction">LD BC,$1234</span></span></a></span>
 
-			assert.equal(c(html), c(
-				`<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-selectionForeground);font-weight:bold">; Note: The disassembly is ambiguous at $0201.</span>
-<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-selectionForeground);font-weight:bold"><a href="#0200.1">0200.1 <b><span style="color:var(--vscode-editorBracketHighlight-foreground3)">LBL_0200</span></b>:</a></span>
-<a href="#0200.1">0200.1 01 34 12 LD BC,$1234</a>
-
-<span style="background:var(--vscode-editor-selectionBackground);color:var(--vscode-editor-selectionForeground);font-weight:bold">; Note: The disassembly is ambiguous at $0201.</span>
-<a href="#0203.1">0203.1 C3 01 02 JP LBL_0200+1</a>
-`));
+<span class="comment">; Note: The disassembly is ambiguous at $0201.</span>
+<a href="#0203.1"><span class="bytes">0203.1 C3 01 02</span> <span id="D10_203"><span class="instruction">JP 0201.1</span></span></a>
+</pre>
+ `));
 		});
 	});
 });

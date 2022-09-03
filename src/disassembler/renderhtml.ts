@@ -215,8 +215,6 @@ export class RenderHtml extends RenderText {
 
 		// Loop all depths
 		for (let depth = 0; depth <= maxDepth; depth++) {
-			// Set depth as prefix for html id
-			this.depth = depth;
 			// Render and store
 			const html = this.renderForDepth(startNodes, depth);
 			htmls.push(html);
@@ -409,6 +407,19 @@ export class RenderHtml extends RenderText {
 			</script>
 			`;
 		return html;
+	}
+
+
+	/** ANCHOR Renders for a particular depth.
+	 * Just calls super, but stores depth before.
+	 * @param startNodes The nodes to disassemble.
+	 * @param depth The depth to render.
+	 * @returns The disassembled text.
+	 */
+	public renderForDepth(startNodes: AsmNode[], depth: number): string {
+		// Set depth as prefix for html id
+		this.depth = depth;
+		return super.renderForDepth(startNodes, depth);
 	}
 
 
