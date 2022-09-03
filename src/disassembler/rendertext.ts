@@ -395,6 +395,14 @@ export class RenderText extends RenderBase {
 				// First print comment(s)
 				this.printComments(lines, addr64k, opcode.length);
 
+				// Check if an other label needs to be printed (an "opcode reference")
+				const otherLabel = this.disasm.getOtherLabel(addr64k);
+				if (otherLabel) {
+					const labelText = this.getAddressLabel(addr64k, otherLabel);
+					// Store
+					lines.addLine(labelText);
+				}
+
 				// Associate line and address
 				this.funcLineAddressAssociation?.(lines.length(), addr64k, opcode.length);
 
