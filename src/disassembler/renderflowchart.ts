@@ -42,11 +42,11 @@ export class RenderFlowChart extends RenderBase {
 				// Bank border ?
 				if (node.bankBorder) {
 					lines.push(dotId + ' [fillcolor="' + otherBankColor + '" style=filled];');
-					instrTexts = 'Other\\lBank';
+					instrTexts = 'Other\\lBank\\l';
 				}
 				else {
 					// Get disassembly text of node.
-					instrTexts = node.getAllDisassemblyLines().join('\\l') ;
+					instrTexts = node.getAllDisassemblyLines().join('\\l') + '\\l' ;
 				}
 				// Print disassembly
 				const hrefAddresses = this.getAllRefAddressesFor(node);
