@@ -54,8 +54,8 @@ suite('Disassembler - RenderBase', () => {
 
 	suite('adjustSvg', () => {
 		test('colors', () => {
-			const text = '#FEFE01,#FEFE02,#FEFE03,#FEFE01,#FEFE02,#FEFE03,';
-			assert.equal(r.adjustSvg(text), 'var(--vscode-editor-foreground),var(--vscode-editor-selectionBackground),var(--vscode-editor-inactiveSelectionBackground),var(--vscode-editor-foreground),var(--vscode-editor-selectionBackground),var(--vscode-editor-inactiveSelectionBackground),');
+			const text = '#00FEFE,#01FEFE,#02FEFE,#03FEFE,#04FEFE';
+			assert.equal(r.adjustSvg(text), 'var(--dezog-fg-color),var(--dezog-emphasize-color1),var(--dezog-emphasize-color2),var(--dezog-emphasize-color3),var(--dezog-emphasize-color4)');
 		});
 
 		test('xlink:title', () => {
