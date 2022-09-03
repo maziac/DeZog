@@ -154,25 +154,6 @@ export class RenderHtml extends RenderText {
 	}
 
 
-
-	/** Adds an id.
-	 * @param addr64k The address for the line. Is converted into a long address.
-	 * @param label The label, e.g "LBL_C000".
-	 * @returns A complete line, e.g. "<span id="L.c000">C000.B1 LABEL1:</span>"
-	 */
-	protected formatAddressLabel(addr64k: number, label: string): string {
-		const s = super.formatAddressLabel(addr64k, label);
-		const id = this.getHtmlId(addr64k, 'T');
-		return '<span id="' + id + '">' + s + '</span>';
-	}
-	protected formatAddressLabel2(addr64k: number, label: string): string {
-		const addrString = (this.disasm.funcFormatLongAddress(addr64k)).padEnd(this.clmnsAddress - 1) + ' ';
-		const s = this.emphasizeAddrBytes(addrString) + this.emphasizeLabel(label + ':');
-		return s;
-	}
-
-
-
 	/** Adds an id.
 	 * @param addr64k The address for the line. Is converted into a long address.
 	 * @param bytes The byte to add for the line. Can be empty.
@@ -181,7 +162,7 @@ export class RenderHtml extends RenderText {
 	 * @returns A complete line, e.g. ""<span id="L.c000">C000.B1 3E 05    LD A,5 ; Comment</span>"
 	 */
 	protected formatAddressPlusText(addr64k: number, bytes: Uint8Array, text: string, comment?: string): string {
-		const id = this.getHtmlId(addr64k, 'S');	// TODO: Should be optimized: not every address line is a source (branches)
+		const id = this.getHtmlId(addr64k);	// TODO: Should be optimized: not every address line is a source (branches)
 		const addrString = this.disasm.funcFormatLongAddress(addr64k).padEnd(this.clmnsAddress - 1);
 		let bytesString = '';
 		bytes.forEach(value =>
@@ -199,12 +180,10 @@ export class RenderHtml extends RenderText {
 
 	/** Returns the html ID of a html object, e.g. a <span>.
 	 * @param addr64k The address of the label. Only labels have IDs.
-	 * @param type 'S' = Source, for e.g. JP nnnn.
-	 * 'T' = Target, the target, i.e. a label.
-	 * @return E.g. "D1_L_C0AF" (i.e. includes also depth)
+	 * @return E.g. "D1_c0af" (i.e. includes also depth)
 	 */
-	protected getHtmlId(addr64k: number, type: 'S' | 'T'): string {
-		return 'D' + this.depth + '_' + type + '_' + addr64k.toString(16);
+	protected getHtmlId(addr64k: number): string {
+		return 'D' + this.depth + '_' + addr64k.toString(16);
 	}
 
 
@@ -226,7 +205,7 @@ export class RenderHtml extends RenderText {
 
 	/** ANCHOR Renders the disassembly text for different depths.
 	 * @param startNodes The nodes to disassemble.
-	 * @param maxDepth All depths [1..maxDepth] are being rendered.
+	 * @param maxDepth All depths [0..maxDepth] are being rendered.
 	 * @returns The html for display.
 	 */
 
@@ -235,8 +214,7 @@ export class RenderHtml extends RenderText {
 		const htmls: string[] = [];
 
 		// Loop all depths
-		for (let depth = 0; depth <= maxDepth; depth++) {	// TODO
-		//for (let depth = maxDepth - 1; depth <= maxDepth; depth++) {	// TODO
+		for (let depth = 0; depth <= maxDepth; depth++) {
 			// Set depth as prefix for html id
 			this.depth = depth;
 			// Render and store
@@ -253,7 +231,13 @@ export class RenderHtml extends RenderText {
 
 				// Show the line with animation.
 				function showLine(srcObj) {
+					srcObj.line.position();
 					srcObj.line.show('draw', {duration: 500, timing: 'ease-in'});
+				}
+
+				// Hide the line with animation.
+				function hideLine(srcObj) {
+					srcObj.line.hide('fade', {duration: 2000, timing: 'ease-out'});
 				}
 
 				// Is the first "mouseenter" handler.
@@ -266,8 +250,10 @@ export class RenderHtml extends RenderText {
 					// Remove mouse event handler
 					srcObj.removeEventListener('mouseenter', firstMouseEnterHandler);
 
+					// Note: For global arrow the source can never be the same as the target because otherwise the arrow would be local.
+					let tgtObj = document.getElementById(srcObj.lineTgt);
+
 					// Create line
-					const tgtObj = document.getElementById(srcObj.lineTgt);
 					srcObj.line = new LeaderLine(srcObj, tgtObj,
 						{
 							hide: true,
@@ -279,6 +265,7 @@ export class RenderHtml extends RenderText {
 							startSocketGravity: [fontSize * srcObj.lineGravity, 0]
 						}
 					);
+
 					// Show line
 					showLine(srcObj);
 
@@ -297,7 +284,7 @@ export class RenderHtml extends RenderText {
 					// Mouse leaves the CALL object: hide line
 					srcObj.addEventListener('mouseleave', () => {
 						// Hide line
-						srcObj.line.hide('fade', {duration: 2000, timing: 'ease-out'});
+						hideLine(srcObj);
 					});
 				}
 
@@ -312,10 +299,11 @@ export class RenderHtml extends RenderText {
 				// @param color E.g. 'hsla(131, 0.75, 0.8, 0.5)'
 				// @param gravity E.g. 80
 				function createGlobalBranchSource(src, tgt, color, gravity) {
-					const srcObj = document.getElementById(src);
+					const srcObj = document.getElementById(src).parentNode;
 					gotoElement = document.createElement('span')
 					gotoElement.innerHTML = "→";
-					srcObj.appendChild(gotoElement);
+					gotoElement.style.cursor = "pointer";
+					srcObj.parentNode.insertBefore(gotoElement, srcObj.nextSibling);	// insertAfter
 					// Append properties
 					gotoElement.lineTgt = tgt;
 					gotoElement.lineColor = color;
@@ -347,8 +335,10 @@ export class RenderHtml extends RenderText {
 
 					// Enable/disable
 					if(enable) {
-						for(const arrow of arrows)
+						for(const arrow of arrows) {
+							arrow.position();
 							arrow.show('none');
+						}
 					}
 					else {
 						for(const arrow of arrows)
@@ -356,17 +346,45 @@ export class RenderHtml extends RenderText {
 					}
 				}
 
+
+				// Create a local leader line.
+				function createLocalLeaderLine(src, tgt, side, color, gravity) {
+					const srcObj = document.getElementById(src);
+					let tgtObj;
+					let endSide
+					// LeaderLine does not allow same source as target
+					if(src == tgt) {
+						// Create a new object just before the current one
+						tgtObj = document.createElement('span');
+						srcObj.parentNode.insertBefore(tgtObj, srcObj);
+						gravity = -3;
+						endSide = 'top';
+					}
+					else {
+						endSide = side;
+						tgtObj = document.getElementById(tgt);
+					}
+					const line = new LeaderLine(srcObj,	tgtObj,
+						{
+							startSocket: side,
+							endSocket: endSide,
+							color,
+							startSocketGravity: [fontSize * gravity, 0],
+							endSocketGravity: [fontSize * gravity, 0]
+						}
+					);
+					return line;
+				}
+
+
 				// The currently displayed slider depth value
 				let currentDepthValue=${maxDepth};
 
 				// Function that will be called when the slider changes.
 				function sliderDepthChanged(slideValue) {
-					// Call original function first
-				//	updateSliderDepth(slideValue);
-					// Now also update the lines
-					// Hide previous
+					// Hide previous arrows
 					enableLocalArrows(currentDepthValue, false);
-					// Show current
+					// Show current arrows
 					enableLocalArrows(slideValue, true);
 					// Use new value
 					currentDepthValue = slideValue;
@@ -375,9 +393,11 @@ export class RenderHtml extends RenderText {
 
 				// Exchange function that is called by the slider with own function.
 				const sliderObject = document.getElementById("slide");
-				sliderObject.addEventListener('input', () => {
-					sliderDepthChanged(parseInt(sliderObject.value));
-				});
+				if(sliderObject) {
+					sliderObject.addEventListener('input', () => {
+						sliderDepthChanged(parseInt(sliderObject.value));
+					});
+				}
 
 
 				// Show lines the first time when document is loaded
@@ -437,9 +457,9 @@ export class RenderHtml extends RenderText {
 				if (isLocal && nextAddr == tgtAddr64k)
 					continue;
 				const addr64k = nextAddr - node.instructions[lastInstr].length;
-				const src = this.getHtmlId(addr64k, 'S');
+				const src = this.getHtmlId(addr64k);
 				// Get target
-				const tgt = this.getHtmlId(tgtAddr64k, 'S');
+				const tgt = this.getHtmlId(tgtAddr64k);
 				const distance = Math.abs(addr64k - tgtAddr64k);
 
 				// Check if same block
@@ -459,18 +479,9 @@ export class RenderHtml extends RenderText {
 						gravity = - 60 / 14 * asymptotic(distance);
 						side = 'left';
 					}
+					const color = this.getRndColor(addr64k);
 					localArrows += `
-						arrows.push(new LeaderLine(
-							document.getElementById('${src}'),
-							document.getElementById('${tgt}'),
-							{
-								startSocket: '${side}',
-								endSocket: '${side}',
-								color: '${this.getRndColor(addr64k)}',
-								startSocketGravity: [fontSize * ${gravity}, 0],
-								endSocketGravity: [fontSize * ${gravity}, 0]
-							}
-						));
+						arrows.push(createLocalLeaderLine('${src}', '${tgt}', '${side}', '${color}', '${gravity}'));
 						`;
 				}
 				else {
@@ -480,8 +491,8 @@ export class RenderHtml extends RenderText {
 					const gravity = 1.5 + 200 / 14 * asymptotic(2 * distance);
 					const color = this.getRndColor(addr64k);
 					callArrows += `
-						createGlobalBranchSource('${src}','${tgt}', '${color}', ${gravity});
-						`;
+					createGlobalBranchSource('${src}','${tgt}', '${color}', ${gravity});
+`;
 				}
 			}
 		}
@@ -502,7 +513,7 @@ export class RenderHtml extends RenderText {
    				//# sourceURL=Arrows${this.depth}.js
 			</script>
 		`;
-		console.log(rendered);
+	//	console.log(rendered);
 
 		return rendered;
 	}
