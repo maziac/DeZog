@@ -12,7 +12,7 @@
  11   0007
  12   0007
  13   0007 00 00 00...  	DEFS 0x0100-$
- 14   0100              	; 1 branch, glocal label
+ 14   0100              	; 1 branch, global label
  15   0100 3E 05        	LD A,5
  16   0102 B8           	CP B
  17   0103 28 02        	JR Z,LBL_0107
@@ -62,14 +62,14 @@
  61   0284              SSUB_0284:
  62   0284 3E 05        	LD A,5
  63   0286 B8           	CP B
- 64   0287 28 04        	JR Z,LLBL_028D
+ 64   0287 28 04        	JR Z,SSUB_028D
  65   0289
  66   0289 ED 44        	NEG
  67   028B C9           	RET
  68   028C
  69   028C 00           	NOP
  70   028D
- 71   028D              LLBL_028D:
+ 71   028D              SSUB_028D:
  72   028D 00           	NOP
  73   028E C9           	RET
  74   028F

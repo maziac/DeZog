@@ -11,7 +11,7 @@
 
 
 	DEFS 0x0100-$
-	; 1 branch, glocal label
+	; 1 branch, global label
 	LD A,5
 	CP B
 	JR Z,LBL_0107
