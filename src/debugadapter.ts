@@ -6,8 +6,6 @@ import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {CallStackFrame} from './callstackframe';
 import {Decoration} from './decoration';
 import {DiagnosticsHandler} from './diagnosticshandler';
-import {NumberType} from './disassembler/numbertype';
-import {AnalyzeDisassembler} from './disassembly/analyzedisassembler';
 import {Disassembly, DisassemblyClass} from './disassembly/disassembly';
 import {SimpleDisassembly} from './disassembly/simpledisassembly';
 import {GenericWatchpoint} from './genericwatchpoint';
@@ -3123,35 +3121,6 @@ E.g. use "-help -view" to put the help text in an own view.
 		// Evaluate sub command
 		const subcmd = tokens[0];
 		switch (subcmd) {
-			case 'dasm-rst':
-				{
-					// Fetch memory. (Everything, since we cannot know what is used)
-					const data = await Remote.readMemoryDump(0, 0x10000);
-					// Create temporary disassembly instance
-					const disassembler = new AnalyzeDisassembler();
-					// No automatic labels
-					disassembler.automaticAddresses = false;
-					disassembler.specialLabels = false;
-					disassembler.disassembleUnreferencedData = false;
-					// Do not find interrupt labels
-					disassembler.findInterrupts = false;
-
-					// Initialize disassembly
-					const rstAddrs = [0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38];
-					//const rstAddrs = [0x78];
-					//const rstAddrs = [0x062E, 0x0636];
-					disassembler.initWithCodeAddresses(rstAddrs, [{address: 0, data}]);
-					// Init label names for RST
-					for (const rstAddr of rstAddrs) {
-						disassembler.setLabel(rstAddr, 'RST' + Utility.getHexString(rstAddr, 2), NumberType.CODE_RST);
-					}
-
-					// Disassemble
-					disassembler.disassemble(2);
-					const text = disassembler.getDisassemblyText();
-					return text;
-				}
-				//break;
 		}
 
 		// Error
