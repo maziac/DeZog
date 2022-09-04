@@ -72,8 +72,8 @@ export class SmartDisassembler {
 	public labelRstPrefix = "RST_";
 	public labelDataLblPrefix = "DATA_";
 	public labelCodePrefix = "CODE_";	// Is used if data is read /written to a CODE section. For local (e.g. "SUB_C000.CODE_C00B") and global (e.g. "CODE_C00B").
-	public labelLocalLabelPrefix = "L";	// "_L"
-	public labelLocalLoopPrefix = "LOOP";	// "_LOOP"
+	public labelLocalLabelPrefix = "L";
+	public labelLocalLoopPrefix = "LOOP";	
 
 	public labelIntrptPrefix = "INTRPT";	// TODO: Not used?
 
@@ -1035,6 +1035,7 @@ export class SmartDisassembler {
 	 * @returns
 	 */
 	public getRegisterUsage(address: number) {
+		// TODO
 	}
 
 
@@ -1105,20 +1106,6 @@ export class SmartDisassembler {
 		const label = this.otherLabels.get(addr64k);
 		return label;
 	}
-
-
-	/** Checks if 2 addresses belong to the same block.
-	 * @param addr64kA First address.
-	 * @param addr64kB Second address.
-	 * @returns true if both addresses belong to the same block.
-	 */
-	/*
-	public sameBlock(addr64kA: number, addr64kB: number) {
-		const blockNodeA = this.blocks[addr64kA];
-		const blockNodeB = this.blocks[addr64kB];
-		return (blockNodeA == blockNodeB);
-	}
-	*/
 
 
 	/** Returns the block node the address belongs to.

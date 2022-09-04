@@ -249,10 +249,9 @@ export class RenderHtml extends RenderText {
 					srcObj.removeEventListener('mouseenter', firstMouseEnterHandler);
 
 					// Note: For global arrow the source can never be the same as the target because otherwise the arrow would be local.
-					let tgtObj = document.getElementById(srcObj.lineTgt);
 
 					// Create line
-					srcObj.line = new LeaderLine(srcObj, tgtObj,
+					srcObj.line = new LeaderLine(srcObj, srcObj.lineTgtObj,
 						{
 							hide: true,
 							path: 'grid',
@@ -297,13 +296,16 @@ export class RenderHtml extends RenderText {
 				// @param color E.g. 'hsla(131, 0.75, 0.8, 0.5)'
 				// @param gravity E.g. 80
 				function createGlobalBranchSource(src, tgt, color, gravity) {
+					const tgtObj = document.getElementById(tgt);
+					if(!tgtObj)
+						return;	// No target object, e.g. other bank.
 					const srcObj = document.getElementById(src).parentNode;
 					gotoElement = document.createElement('span')
 					gotoElement.innerHTML = "→";
 					gotoElement.style.cursor = "pointer";
 					srcObj.parentNode.insertBefore(gotoElement, srcObj.nextSibling);	// insertAfter
 					// Append properties
-					gotoElement.lineTgt = tgt;
+					gotoElement.lineTgtObj = tgtObj;
 					gotoElement.lineColor = color;
 					gotoElement.lineGravity = gravity;
 					// Install first "mouseenter" handler
