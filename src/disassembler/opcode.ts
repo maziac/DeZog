@@ -1,7 +1,6 @@
 import * as util from 'util';
 import * as assert from 'assert';
 import {BaseMemory} from './basememory';
-import {Memory, MemAttribute} from './memory';
 import {NumberType} from './numbertype'
 import {Format} from './format';
 
@@ -14,8 +13,6 @@ export enum OpcodeFlag {
 	STOP = 0x04,	///< is a stop-code. E.g. ret, reti, jp or jr. Disassembly procedure stops here.
 	RET = 0x08,		///< is a RETURN from a subroutine (RET, RET cc)
 	CONDITIONAL = 0x10,	///< is a conditional opcode, e.g. JP NZ, RET Z, CALL P etc.
-	LOAD_STACK_TOP = 0x20,	///< value is the stack top value.
-	COPY,	///< Is a copy instruction (used for "used registers")
 }
 
 
@@ -27,18 +24,11 @@ export class Opcode {
 	/// The static member that holds the label converter handler.
 	protected static convertToLabelHandler: (value: number) => string;
 
-	/// If true comments might be added to the opcode.
-	/// I.e. the hex, decimal etc. conversion of  value.
-	public static enableComments = true;
-
-
 	/// The code (byte value) of the opcode
 	public code: number;	/// Used to test if all codes are in the right place.
 
 	/// The name of the opcode, e.g. "LD A,#n"
 	public name: string;
-	/// An optional comment, e.g. "; ZX Next opcode"
-	protected comment: string;
 	/// Opcode flags: branch-address, call, stop
 	public flags: OpcodeFlag;
 	/// The additional value in the opcode, e.g. nn or n
@@ -1331,7 +1321,6 @@ export class Opcode {
 			return;	// Ignore the rest because values wil be copied anyway.
 		name = name.trim();
 		this.code = code;
-		this.comment = '';
 		this.flags = OpcodeFlag.NONE;
 		this.valueType = NumberType.NONE;
 		this.value = 0;
@@ -1369,8 +1358,6 @@ export class Opcode {
 					else if (name.startsWith("LD SP,")) {
 						// The stack pointer is loaded, so this is the top of the stack.
 						this.valueType = NumberType.DATA_LBL;
-						this.flags |= OpcodeFlag.LOAD_STACK_TOP;
-						this.comment = 'top of stack';
 					}
 					else {
 						// Either call nor jp
@@ -1465,7 +1452,6 @@ export class Opcode {
 
 		// Copy properties
 		clone.code = this.code;
-		clone.comment = this.comment;
 		clone.name = this.name;
 		clone.flags = this.flags;
 		clone.valueType = this.valueType;
@@ -1530,9 +1516,6 @@ export class Opcode {
 		this.length += len;
 		// Substitute formatting
 		this.name += appendName.replace(/#nn?/g, "%s");
-
-		// Comment
-		this.comment = 'Custom opcode';
 	}
 
 
@@ -1629,122 +1612,6 @@ export class Opcode {
 			valueString = Format.getHexFormattedString(address);
 		}
 		return valueString;
-	}
-
-
-	/**
-	 * Disassembles one opcode together with a referenced label (if there
-	 * is one).
-	 * @returns A string that contains the disassembly, e.g. "LD A,(DATA_LBL1)"
-	 * or "JR Z,.sub1_lbl3".
-	   * @param memory The memory area. Used to distinguish if the access is maybe wrong.
-	 * If this is not required (comment) the parameter can be omitted.
-	 * @param func If defined a function that returns a label for a (64k??) address or undefined if no label exists.
-	 */
-	public disassemble(memory?: Memory, func?: (address: number) => string): {mnemonic: string, comment: string} {
-		// optional comment
-		let comment = '';
-
-		// Check if there is any value
-		if (this.valueType == NumberType.NONE) {
-			return {mnemonic: this.name, comment: this.comment};
-		}
-
-		// Get referenced label name
-		let valueName = '';
-		if (this.valueType == NumberType.CODE_LBL
-			|| this.valueType == NumberType.CODE_LOCAL_LBL
-			|| this.valueType == NumberType.CODE_LOCAL_LOOP
-			|| this.valueType == NumberType.CODE_SUB) {
-			const val = this.value;
-			valueName = this.convertToLabel(val, func);
-			comment = Format.getConversionForAddress(val);
-			// Check if branching into the middle of an opcode
-			if (memory) {
-				const memAttr = memory.getAttributeAt(val);
-				if (memAttr & MemAttribute.ASSIGNED) {
-					if (!(memAttr & MemAttribute.CODE_FIRST)) {
-						// Yes, it jumps into the middle of an opcode.
-						comment += ', WARNING: Branches into the middle of an opcode!';
-					}
-				}
-			}
-		}
-		else if (this.valueType == NumberType.DATA_LBL) {
-			const val = this.value;
-			valueName = this.convertToLabel(val, func);
-			comment = Format.getConversionForAddress(val);
-			// Check if accessing code area
-			if (memory) {
-				const memAttr = memory.getAttributeAt(val);
-				if (memAttr & MemAttribute.ASSIGNED) {
-					if (memAttr & MemAttribute.CODE) {
-						// Yes, code is accessed
-						comment += ', WARNING: Instruction accesses code!';
-					}
-				}
-			}
-		}
-		else if (this.valueType == NumberType.RELATIVE_INDEX) {
-			// E.g. in 'LD (IX+n),a'
-			let val = this.value;
-			valueName = (val >= 0) ? '+' : '';
-			valueName += val.toString();
-		}
-		else if (this.valueType == NumberType.CODE_RST) {
-			// Use value instead of label (looks better)
-			valueName = Format.getHexFormattedString(this.value, 2);
-		}
-		else {
-			// Use direct value
-			const val = this.value;
-			// Add comment
-			if (this.valueType == NumberType.NUMBER_BYTE) {
-				// byte
-				valueName = Format.getHexFormattedString(val, 2);
-				comment = Format.getVariousConversionsForByte(val);
-			}
-			else {
-				// word
-				valueName = Format.getHexFormattedString(val, 4);
-				comment = Format.getVariousConversionsForWord(val);
-			}
-		}
-
-		// Disassemble
-		let opCodeString;
-		if (!this.appendValueTypes) {
-			// Normal disassembly
-			opCodeString = util.format(this.name, valueName);
-		}
-		else {
-			// Custom opcode with appended bytes.
-			const len = this.appendValueTypes.length;
-			const vals = new Array<string>();
-			for (let k = 0; k < len; k++) {
-				const vType = this.appendValueTypes[k];
-				const val = this.appendValues[k];
-				let valName = (vType == NumberType.NUMBER_BYTE) ? Format.getHexString(val, 2) : Format.getHexString(val, 4);
-				valName += 'h';
-				vals.push(valName);
-			}
-			opCodeString = util.format(this.name, valueName, ...vals);
-		}
-
-		// Comments
-		if (Opcode.enableComments) {
-			if (this.comment) {
-				if (comment.length > 0)
-					comment += ', '
-				comment += this.comment;
-			}
-		}
-		else {
-			// no comment
-			comment = '';
-		}
-
-		return {mnemonic: opCodeString, comment: comment};
 	}
 
 
@@ -1909,24 +1776,6 @@ class OpcodeIndexImmediate extends Opcode {
 	}
 
 
-	/**
-	 * Disassembles the opcode.
-	 * @returns A string that contains the disassembly, e.g. "LD (IX+6),4"
-	 * @param memory The memory area. Used to distinguish if the access is maybe wrong.
-	 * If this is not required (comment) the parameter can be omitted.
-	 * @param func If defined a function that returns a label for a (64k??) address or undefined if no label exists.
-	 */
-	public disassemble(memory?: Memory, func?: (address: number) => string): {mnemonic: string, comment: string} {
-		const dasm = super.disassemble(memory, func);
-		// Results e.g. in "LD (IX+6),%s"
-
-		const valueName = Format.getHexFormattedString(this.secondValue, 2);
-		const comment = Format.getVariousConversionsForByte(this.secondValue);
-		const dasm2 = util.format(dasm.mnemonic, valueName);
-		return {mnemonic: dasm2, comment};
-	}
-
-
 	/** Disassembles one opcode together with a referenced label (if there
 	 * is one).
 	 * At the end the this.disassembledText is updated accordingly.
@@ -2025,7 +1874,6 @@ class OpcodeNext extends Opcode {
 	// Constructor.
 	constructor(code: number, name: string) {
 		super(code, name);
-		this.comment = 'ZX Next opcode'
 	}
 
 	/// Clone not supported.
@@ -2048,15 +1896,6 @@ class OpcodeNextPush extends OpcodeNext {
  * Special opcode to decode the next register
  */
 class OpcodeNext_nextreg_n_a extends OpcodeNext {	// NOSONAR
-	/// Disassemble the next register.
-	/// (1 byte value)
-	public disassemble(): {mnemonic: string, comment: string} {
-		const regname = OpcodeNext_nextreg_n_a.getRegisterName(this.value);
-		const opCodeString = util.format(this.name, regname);
-		return {mnemonic: opCodeString, comment: this.comment};
-	}
-
-
 
 	/** Disassembles one opcode together with a referenced label (if there
 	 * is one).
@@ -2175,18 +2014,6 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 		this.value2 = memory.getValueAt(address + 2);
 		return this;
 	}
-
-	/// Disassemble the 2 values.
-	/// Both are #n (1 byte values)
-	public disassemble(): {mnemonic: string, comment: string} {
-		const regId = this.value;
-		const regValue = this.value2;
-		const regname = OpcodeNext_nextreg_n_a.getRegisterName(regId);
-		const valuename = OpcodeNext_nextreg_n_n.getRegisterValueName(regId, regValue);
-		const opCodeString = util.format(this.name, regname, valuename);
-		return {mnemonic: opCodeString, comment: this.comment};
-	}
-
 
 
 	/** Disassembles one opcode together with a referenced label (if there

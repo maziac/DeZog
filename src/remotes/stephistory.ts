@@ -216,9 +216,8 @@ export class StepHistoryClass extends EventEmitter {
 		// Get opcode
 		const opcode = Opcode.getOpcodeAt(buffer, pc);
 		// Disassemble
-		const opCodeDescription = opcode.disassemble();
-		const instr = opCodeDescription.mnemonic;
-		return instr;
+		opcode.disassembleOpcode(addr64k => undefined as any);
+		return opcode.disassembledText;
 	}
 
 

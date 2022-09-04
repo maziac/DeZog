@@ -86,16 +86,9 @@ Everything bigger is a long address with the coding:
 where address includes the upper bits for the slot index.
 It is necessary to increase the bank_nr by 1 because 0 is left for normal addresses.
 
-Note: long addresses are used only for the pageable slots. The other slots use normal 64k addresses as there is no requirement to distinguish the address from some other bank,
-
-
-
-# Is it necessary to distinguish if long addresses or 64k addresses are used ?
-
-Unclear yet.
-
-Open:
-- What if e.g. ZEsarUX is used as ZX48k? Is the slot/bank association still available?
+Note: long addresses are (with DeZog 3.x) used in any case. Even for a 64k only non-banked system.
+In this case a pseudo bank is used.
+So internally all addresses are long addresses. There is no need anymore to distinguish.
 
 
 # SLD (sjasmplus)
@@ -161,46 +154,13 @@ CSpect offers ```SetPhysicalBreakpoint```which should allow for breakpoints even
 
 
 
-# WPMEM, ASSERTION, LOGPOINT
-
-These are comment annotations.
-I.e. not present in SLD parsing.
-It is possible to parse the list file in parallel but then the bank information is missing for these breakpoints.
-
-Open: How to handle. Ped7g proposes to include this somehow into the SLD. Open.
-
-
-# Label Evaluation
-
-If a long label/address is found the slot/bank information should be used additionally.
-
-Open: how to accurately display the used bank.
-
-
 # Parser / Target Combinations
 
-The Labels parser can output labels for
-- 64k addresses (no banks, no long addresses)
-- long addresses for a certain bank size
+The parser already uses a memory model (bank schema).
+When this is loaded into an emulator the emulator might have the same or an other one.
+E.g. a ZX48K program could be loaded into a ZXNext.
 
-The target (ZX48, ZX128, ZXNext) may support
-- 64k addresses only (e.g. ZX 48K)
-- long addresses for a certain bank size
-
-|             | Target 64k | Target long |
-|-------------|------------|-------------|
-| Labels 64k  |    OK      |    OK       |
-| Labels long | Not OK 1)  | Depends 2)  |
-
-1 ) Eg. Load a ZXNext or ZX128 program to a ZX48 target.
-In most cases makes no sense. But if it is a small program, e.g. one that fits into a ZX48, it could be done.
-Conclusion: Either throw an error or change all label addresses to 64k addresses.
-
-2 )
-a) If bank size is the same for target and labels then this is OK.
-b) If not equal e.g. a program assembled for ZX128 (bank size 16k) would not work with a ZXNext (bank size 8k).
-Solution: Throw exception or change all labels from one model to the other. ZX128 to ZXNext would be possible, vice versa not.
-
+Therefore the label addresses are converted into the target/emulator memory model/banking scheme.
 
 ##  puml
 
@@ -214,13 +174,7 @@ participant Remote
 participant Z80Registers
 participant DecodeRegisterData
 
-
-da -> lbls: readListFiles()
-note over lbls: Determine if\nlong addresses used.
-lbls --> da
-
-...
-note over da, Z80Registers: addAddressesFromPcHistory()\nsetPcToLine\ndisassemblyAtCursor()\ndisassemble()
+note over da, Z80Registers: disassemble
 da -> Remote: getSlots()
 Remote -> Z80Registers: getSlots()
 Z80Registers -> Z80Registers: decoder.parseSlots\n(RegisterCache)
@@ -234,7 +188,7 @@ note over Remote: Calculate the break address\ndifferently
 
 
 ...
-note over da, DecodeRegisterData: addAddressesFromPcHistory()\nDisassembly.funcAssignLabels()\nDisassembly.funcFilterAddresses()\nDisassembly.funcFormatAddress()\ndisassemble()
+note over da, DecodeRegisterData: disassemble
 da -> Z80Registers: getSlots()
 da <-- Z80Registers
 da -> Z80Registers: createLongAddress()
