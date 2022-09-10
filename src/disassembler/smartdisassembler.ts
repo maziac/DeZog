@@ -11,6 +11,7 @@ import {Z80Registers} from '../remotes/z80registers';
 import {Labels} from '../labels/labels';
 import {ReverseEngineeringLabelParser} from '../labels/reverseengineeringlabelparser';
 import {Remote} from '../remotes/remotebase';
+import {SmartDisassemblerArgs} from '../settings/settings';
 
 
 // Type used as passed argument for labels.
@@ -66,6 +67,11 @@ export class SmartDisassembler {
 	protected addrLineMap = new Map<number, number>();
 	protected lineAddrArray = new Array<number | undefined>();
 
+	// A map with adjustoments if a CALL or RST returns from any of the given (long addresses.
+	// Used for RST adjustment.
+	protected callAddressesReturnOffset = new Map<number, number>();
+
+
 	/// Label prefixes
 	public labelSubPrefix = "SUB_";
 	public labelLblPrefix = "LBL_";
@@ -73,7 +79,7 @@ export class SmartDisassembler {
 	public labelDataLblPrefix = "DATA_";
 	public labelCodePrefix = "CODE_";	// Is used if data is read /written to a CODE section. For local (e.g. "SUB_C000.CODE_C00B") and global (e.g. "CODE_C00B").
 	public labelLocalLabelPrefix = "L";
-	public labelLocalLoopPrefix = "LOOP";	
+	public labelLocalLoopPrefix = "LOOP";
 
 	public labelIntrptPrefix = "INTRPT";	// TODO: Not used?
 
@@ -154,8 +160,9 @@ export class SmartDisassembler {
 	 * Sets the memory model.
 	 * Used to check if certain execution flows should be followed or not.
 	 * @param memModel The memory model obtained from the settings through the Remote.
+	 * @param args Especially the list of call addresses and their return offsets (for RST).
 	 */
-	public setMemoryModel(memModel: MemoryModel) {
+	public setMemoryModelAndArgs(memModel: MemoryModel, args: SmartDisassemblerArgs) {
 		const slotLen = memModel.slotRanges.length;
 		for (let slot = 0; slot < slotLen; slot++) {
 			const range = memModel.slotRanges[slot];
@@ -164,6 +171,15 @@ export class SmartDisassembler {
 			const bank = memModel.banks[bankNr];
 			const singleBank = (bank.bankType != BankType.UNUSED) && (range.banks.size == 1);
 			this.setSlotBankInfo(range.start, range.end, slot, singleBank);
+		}
+
+		// Loop through all address/offset pairs
+		for (const {address, offset} of args.callAddressesReturnOffset) {
+			// Parse long address string
+			const longAddr = memModel.parseAddress(address);
+			const offs = Utility.parseValue(offset);
+			// Store
+			this.callAddressesReturnOffset.set(longAddr, offs);
 		}
 	}
 

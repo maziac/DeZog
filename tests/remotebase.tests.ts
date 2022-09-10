@@ -308,7 +308,7 @@ suite('RemoteBase', () => {
 		test('ESXDOS RST 08 and step into', async () => {
 			// Extend 'rst 8' opcode for esxdos
 			Opcode.Opcodes[0xCF].appendToOpcode(",#n");
-			Settings.launch.disassemblerArgs.esxdosRst = true;
+			//Settings.launch.disassemblerArgs.esxdosRst = true;
 			const remote = new RemoteBaseMock();
 			const rem = remote as any;
 

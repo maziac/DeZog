@@ -15,6 +15,8 @@
 - Break decoration color changed to red.
 - "disableBanking" option removed from "sjasmplus" launch.json configuration.
 - ZEsarUX: "Coleco Vision" memory model added.
+- Settings:
+	- "esxdosRst" removed. Use <<...>> instead.
 
 
 # 2.7.4

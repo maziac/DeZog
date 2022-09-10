@@ -186,7 +186,10 @@ A typical configuration looks like this:
             ],
             "disassemblerArgs": {
         		"numberOfLines": 20,
-                "esxdosRst": true
+                "esxdosRst": true // TODO: REMOVE
+            },
+            "smartDisassemblerArgs": {
+                // TODO: ADD
             },
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "stack_top",

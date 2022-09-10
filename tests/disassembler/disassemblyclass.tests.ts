@@ -10,7 +10,6 @@ suite('Disassembly (DisassemblyClass)', () => {
 		setup(() => {
 			const cfgEmpty: any = {
 				"disassemblerArgs": {
-					"esxdosRst": true
 				}
 			};
 			Settings.launch = Settings.Init(cfgEmpty);

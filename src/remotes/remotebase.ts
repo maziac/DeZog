@@ -1554,6 +1554,7 @@ export class RemoteBase extends EventEmitter {
 			// Note: The opcode length for RST 08 is adjusted by the disassembler.
 			// But with the implementation below, we don't require this.
 			if (stepOver) {
+				// TODO: For the new RST handling some additional handling is required.
 				// For stepOver nothing is required normally.
 				// However, as we have a spare breakpoint (bpAddr2),
 				// we can set it to the next PC. So that even if

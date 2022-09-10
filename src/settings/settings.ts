@@ -241,6 +241,30 @@ export interface ZSimType {
 
 
 /**
+ * The settings for the disassembler in the VARIABLEs pane.
+ */
+export interface DisassemblerArgs {
+	numberOfLines: number,	// Number of lines displayed in the (brute force) disassembly
+}
+
+
+/**
+ * The settings for the smart disassembler (disasm.list).
+ */
+export interface SmartDisassemblerArgs {
+
+	// An array with address/offset pairs.
+	callAddressesReturnOffset: {
+		// The long address in disassembly format, e.g. "0100.R0"
+		address: string;
+
+		// The offset to add, e.g. "1"
+		offset: string;
+	}[];
+}
+
+
+/**
  * See also package.json.
  * The configuration parameters for the zesarux debugger.
  */
@@ -281,11 +305,11 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// Interprets labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.
 	smallValuesMaximum: number;
 
-	/// These arguments are passed to the disassembler (z80dismblr arguments).
-	disassemblerArgs: {
-		numberOfLines: number,	// Number of lines displayed in the disassembly
-		esxdosRst: boolean	// If enabled the disassembler will disassemble "RST 8; defb N" correctly.
-	};
+	/// These arguments are passed to the disassembler in the VARIABLEs pane.
+	disassemblerArgs: DisassemblerArgs;
+
+	/// These arguments are passed to the smart disassembler (disasm.list).
+	smartDisassemblerArgs: SmartDisassemblerArgs;
 
 	/// A directory for temporary files created by this debug adapter. E.g. ".tmp"
 	tmpDir: string;
@@ -382,6 +406,7 @@ export class Settings {
 				revEng: <any>undefined,
 				smallValuesMaximum: <any>undefined,
 				disassemblerArgs: <any>undefined,
+				smartDisassemblerArgs: <any>undefined,
 				tmpDir: <any>undefined,
 				topOfStack: <any>undefined,
 				execAddress: <any>undefined,
@@ -661,25 +686,32 @@ export class Settings {
 			(launchCfg.tmpDir, rootFolder);
 		if (isNaN(launchCfg.smallValuesMaximum))
 			launchCfg.smallValuesMaximum = 255;
-		if (launchCfg.disassemblerArgs == undefined)
+		if (launchCfg.disassemblerArgs == undefined) {
 			launchCfg.disassemblerArgs = {
-				numberOfLines: 10,
-				esxdosRst: false
+				numberOfLines: 10
 			};
+		}
 		if (!launchCfg.disassemblerArgs.hasOwnProperty("numberOfLines"))
 			launchCfg.disassemblerArgs.numberOfLines = 10;
 		if (launchCfg.disassemblerArgs.numberOfLines > 100)
 			launchCfg.disassemblerArgs.numberOfLines = 100;
 		if (launchCfg.disassemblerArgs.numberOfLines < 1)
 			launchCfg.disassemblerArgs.numberOfLines = 1;
-		if (!launchCfg.disassemblerArgs.hasOwnProperty("esxdosRst"))
-			launchCfg.disassemblerArgs.esxdosRst = false;
 		if (launchCfg.startAutomatically == undefined)
 			launchCfg.startAutomatically = false;
 		if (launchCfg.commandsAfterLaunch == undefined)
 			launchCfg.commandsAfterLaunch = [];
 		if (launchCfg.zrcp.skipInterrupt == undefined)
 			launchCfg.zrcp.skipInterrupt = false;
+
+		// Smart disassembly
+		if (launchCfg.smartDisassemblerArgs == undefined) {
+			launchCfg.smartDisassemblerArgs = {
+				callAddressesReturnOffset: []
+			}
+		}
+		if (!launchCfg.smartDisassemblerArgs.hasOwnProperty("callAddressesReturnOffset"))
+			launchCfg.smartDisassemblerArgs.callAddressesReturnOffset = [];
 
 		// Reverse debugging
 		if (launchCfg.history == undefined)
