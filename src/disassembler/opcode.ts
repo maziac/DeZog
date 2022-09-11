@@ -1487,47 +1487,6 @@ export class Opcode {
 	 * #n as a byte in the disassembly.
 	 * @param appendName A string that is appended to the opcode name which includes also
 	 * further bytes to decode, e.g. "#n" or "#nn" or even "#n,#nn,#nn"
-	 */
-	public appendToOpcode(appendName: string) {	// TODO: REMOVE
-		if (!appendName || appendName.length == 0)
-			return;
-
-		this.appendValues = new Array<number>();
-		this.appendValueTypes = new Array<NumberType>();
-
-		// Calculate length and convert #n to %s
-		let k = 0;
-		let text = appendName + ' ';
-		let len = 0;
-		while ((k = text.indexOf("#n", k)) >= 0) {
-			// Increment
-			len++;
-			// Check for word
-			if (text[k + 2] == "n") {
-				k++;
-				len++;
-				this.appendValueTypes.push(NumberType.NUMBER_WORD);
-			}
-			else {
-				this.appendValueTypes.push(NumberType.NUMBER_BYTE);
-			}
-			// Next
-			k += 2;
-		}
-		this.length += len;
-		// Substitute formatting
-		this.name += appendName.replace(/#nn?/g, "%s");
-	}
-
-
-	/**
-	 * For custom opcodes like the extension to RST.
-	 * E.g. for a byte that follows a RST use the following appendName:
-	 * "#n"
-	 * This will result in e.g. the name "RST 16,#n" which will decode the
-	 * #n as a byte in the disassembly.
-	 * @param appendName A string that is appended to the opcode name which includes also
-	 * further bytes to decode, e.g. "#n" or "#nn" or even "#n,#nn,#nn"
 	 * @param appendValues The values to add.
 	 */
 	public extendOpcode(appendName: string, appendValues: number[]) {

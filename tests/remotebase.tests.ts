@@ -6,9 +6,13 @@ import {Z80RegistersClass, Z80Registers} from '../src/remotes/z80registers';
 import {Opcode} from '../src/disassembler/opcode';
 import {GenericBreakpoint, GenericWatchpoint} from '../src/genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../src/remotes/z80registersstandarddecoder';
+import {Disassembly, DisassemblyClass} from '../src/disassembly/disassembly';
+import {MemoryModelAllRam} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
 
 suite('RemoteBase', () => {
+
+	let memModel;
 
 	setup(() => {
 		// Initialize Settings
@@ -18,8 +22,10 @@ suite('RemoteBase', () => {
 		Settings.launch = Settings.Init(cfg);
 		Z80RegistersClass.createRegisters();
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();
-		// Restore 'rst 8' opcode
-		Opcode.Opcodes[0xCF] = new Opcode(0xCF, "RST %s");
+		Opcode.InitOpcodes();
+		DisassemblyClass.createDisassemblySingleton();
+		memModel = new MemoryModelAllRam();
+		memModel.init();
 	});
 
 
@@ -132,7 +138,7 @@ suite('RemoteBase', () => {
 			public pcMemory = new Uint8Array(4);
 			public spMemory = new Uint16Array(1);
 			public async getRegistersFromEmulator(): Promise<void> {
-				const cache = Z80RegistersClass.getRegisterData(this.pc, this.sp, 0, 0, 0, this.hl, this.ix, this.iy, 0, 0, 0, 0, 0, 0, 0, []);
+				const cache = Z80RegistersClass.getRegisterData(this.pc, this.sp, 0, 0, 0, this.hl, this.ix, this.iy, 0, 0, 0, 0, 0, 0, 0, [0]);
 				Z80Registers.setCache(cache);
 
 			}
@@ -188,139 +194,195 @@ suite('RemoteBase', () => {
 			assert.equal(0x1234, bp2);
 		});
 
-		test('CALL (cc) and step over', async () => {
-			const remote = new RemoteBaseMock();
-			const rem = remote as any;
+		suite('stepOver', () => {
+			test('CALL (cc) and step over', async () => {
+				const remote = new RemoteBaseMock();
+				const rem = remote as any;
 
-			remote.pc = 0x8000;
-			await remote.getRegistersFromEmulator();
-			remote.pcMemory[0] = 0xCD;	// CALL
+				remote.pc = 0x8000;
+				await remote.getRegistersFromEmulator();
+				remote.pcMemory[0] = 0xCD;	// CALL
 
-			let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
-			assert.equal(0xCD, opcode.code);
-			assert.equal(0x8003, bp1);
-			assert.equal(undefined, bp2);
+				let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
+				assert.equal(0xCD, opcode.code);
+				assert.equal(0x8003, bp1);
+				assert.equal(undefined, bp2);
 
-			remote.pcMemory[0] = 0xC4;	// CALL cc
+				remote.pcMemory[0] = 0xC4;	// CALL cc
 
-			[opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
-			assert.equal(0xC4, opcode.code);
-			assert.equal(0x8003, bp1);
-			assert.equal(undefined, bp2);
+				[opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
+				assert.equal(0xC4, opcode.code);
+				assert.equal(0x8003, bp1);
+				assert.equal(undefined, bp2);
+			});
+
+			test('RST (except 08) and step over', async () => {
+				const remote = new RemoteBaseMock();
+				const rem = remote as any;
+
+				remote.pc = 0x8000;
+				await remote.getRegistersFromEmulator();
+				remote.pcMemory[0] = 0xC7;	// RST 0
+
+				let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
+				assert.equal(0xC7, opcode.code);
+				assert.equal(0x8001, bp1);
+				assert.equal(undefined, bp2);
+			});
+
+			test('RST 08 and step over', async () => {
+				const remote = new RemoteBaseMock();
+				const rem = remote as any;
+
+				remote.pc = 0x8000;
+				await remote.getRegistersFromEmulator();
+				remote.pcMemory[0] = 0xCF;	// RST 8
+
+				let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
+				assert.equal(0xCF, opcode.code);
+				assert.equal(0x8001, bp1);
+				assert.equal(0x8002, bp2);
+			});
+
+			test('Modified RST 08 and step over', async () => {
+				// If RST 8 was modified, the default behavior for RST 8 is not used anymore
+				const remote = new RemoteBaseMock();
+				const rem = remote as any;
+
+				// Add return address offset (doesn't matter for RST 8)
+				Disassembly.setMemoryModelAndArgs(memModel, {
+					callAddressesReturnOffset: [{
+						address: "0008",
+						offset: "2"
+					}]
+				});
+
+				remote.pc = 0x8000;
+				await remote.getRegistersFromEmulator();
+				remote.pcMemory[0] = 0xCF;	// RST 8
+
+				let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
+				assert.equal(0xCF, opcode.code);
+				assert.equal(0x8003, bp1);
+				assert.equal(undefined, bp2);
+			});
+
+			test('Modified RST (except 08) and step over', async () => {
+				const remote = new RemoteBaseMock();
+				const rem = remote as any;
+
+				remote.pc = 0x8000;
+				await remote.getRegistersFromEmulator();
+				remote.pcMemory[0] = 0xD7;	// RST 16
+
+				// Add return address offset
+				Disassembly.setMemoryModelAndArgs(memModel, {
+					callAddressesReturnOffset: [{
+						address: "0010",
+						offset: "4"
+					}]
+				});
+
+				let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
+				assert.equal(0xD7, opcode.code);
+				assert.equal(0x8005, bp1);
+				assert.equal(undefined, bp2);
+			});
 		});
 
-		test('CALL (cc) and step into', async () => {
-			const remote = new RemoteBaseMock();
-			const rem = remote as any;
 
-			remote.pc = 0x8000;
-			await remote.getRegistersFromEmulator();
-			remote.pcMemory[0] = 0xCD;	// CALL
-			remote.pcMemory[1] = 0x67;
-			remote.pcMemory[2] = 0x45;
+		suite('stepInto', () => {
+			test('CALL (cc) and step into', async () => {
+				const remote = new RemoteBaseMock();
+				const rem = remote as any;
 
-			let [opcode, bp1, bp2] = await rem.calcStepBp(false);	// stepInto
-			assert.equal(0xCD, opcode.code);
-			assert.equal(0x4567, bp1);
-			assert.equal(undefined, bp2);
+				remote.pc = 0x8000;
+				await remote.getRegistersFromEmulator();
+				remote.pcMemory[0] = 0xCD;	// CALL
+				remote.pcMemory[1] = 0x67;
+				remote.pcMemory[2] = 0x45;
 
-			remote.pcMemory[0] = 0xC4;	// CALL cc
-			[opcode, bp1, bp2] = await rem.calcStepBp(false);	// stepInto
-			assert.equal(0xC4, opcode.code);
-			assert.equal(0x8003, bp1);
-			assert.equal(0x4567, bp2);
+				let [opcode, bp1, bp2] = await rem.calcStepBp(false);	// stepInto
+				assert.equal(0xCD, opcode.code);
+				assert.equal(0x4567, bp1);
+				assert.equal(undefined, bp2);
+
+				remote.pcMemory[0] = 0xC4;	// CALL cc
+				[opcode, bp1, bp2] = await rem.calcStepBp(false);	// stepInto
+				assert.equal(0xC4, opcode.code);
+				assert.equal(0x8003, bp1);
+				assert.equal(0x4567, bp2);
+			});
+			
+			test('RST (except 08) and step into', async () => {
+				const remote = new RemoteBaseMock();
+				const rem = remote as any;
+
+				remote.pc = 0x8000;
+				await remote.getRegistersFromEmulator();
+				remote.pcMemory[0] = 0xD7;	// RST 16
+
+				let [opcode, bp1, bp2] = await rem.calcStepBp(false);	// stepInto
+				assert.equal(0xD7, opcode.code);
+				assert.equal(0x0010, bp1);
+				assert.equal(undefined, bp2);
+
+				// Modification will result in the same for step into:
+				// Add return address offset
+				Disassembly.setMemoryModelAndArgs(memModel, {
+					callAddressesReturnOffset: [{
+						address: "0010",
+						offset: "2"
+					}]
+				});
+
+				[opcode, bp1, bp2] = await rem.calcStepBp(false);	// stepInto
+				assert.equal(0xD7, opcode.code);
+				assert.equal(0x0010, bp1);
+				assert.equal(undefined, bp2);
+			});
+
+			test('RST 08 and step into', async () => {
+				const remote = new RemoteBaseMock();
+				const rem = remote as any;
+
+				remote.pc = 0x8000;
+				await remote.getRegistersFromEmulator();
+				remote.pcMemory[0] = 0xCF;	// RST 8
+
+				let [opcode, bp1, bp2] = await rem.calcStepBp(false);	// stepInto
+				assert.equal(0xCF, opcode.code);
+				//assert.equal(0x8001, bp1);
+				assert.equal(0x8002, bp1);	// Changed for esxdos simulation (1 address after)
+				assert.equal(0x0008, bp2);
+			});
+
+			test('Modified RST 08 and step into', async () => {
+				// Note: RST 8 is handled differently. This test is working exactly like 'RST 08 and step into'
+				const remote = new RemoteBaseMock();
+				const rem = remote as any;
+
+				// Add return address offset (doesn't matter for RST 8)
+				Disassembly.setMemoryModelAndArgs(memModel, {
+					callAddressesReturnOffset: [{
+						address: "0008",
+						offset: "3"
+					}]
+				});
+
+				remote.pc = 0x8000;
+				await remote.getRegistersFromEmulator();
+				remote.pcMemory[0] = 0xCF;	// RST 8
+				remote.pcMemory[1] = 0xFE;	// Some data for RST 8 (not really required)
+				remote.pcMemory[2] = 0xFD;	// Some data for RST 8 (not really required)
+
+				let [opcode, bp1, bp2] = await rem.calcStepBp(false);	// stepInto
+				assert.equal(0xCF, opcode.code);
+				assert.equal(0x8002, bp1);
+				assert.equal(0x0008, bp2);
+			});
 		});
 
-		test('RST (except 08) and step over', async () => {
-			const remote = new RemoteBaseMock();
-			const rem = remote as any;
-
-			remote.pc = 0x8000;
-			await remote.getRegistersFromEmulator();
-			remote.pcMemory[0] = 0xC7;	// RST 0
-
-			let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
-			assert.equal(0xC7, opcode.code);
-			assert.equal(0x8001, bp1);
-			assert.equal(undefined, bp2);
-		});
-
-		test('RST 08 and step over', async () => {
-			const remote = new RemoteBaseMock();
-			const rem = remote as any;
-
-			remote.pc = 0x8000;
-			await remote.getRegistersFromEmulator();
-			remote.pcMemory[0] = 0xCF;	// RST 8
-
-			let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
-			assert.equal(0xCF, opcode.code);
-			assert.equal(0x8001, bp1);
-			assert.equal(0x8002, bp2);
-		});
-
-		test('ESXDOS RST 08 and step over', async () => {
-			// Works the same as "RST 08 and step over"
-			// Extend 'rst 8' opcode for esxdos
-			Opcode.Opcodes[0xCF].appendToOpcode(",#n");
-			const remote = new RemoteBaseMock();
-			const rem = remote as any;
-
-			remote.pc = 0x8000;
-			await remote.getRegistersFromEmulator();
-			remote.pcMemory[0] = 0xCF;	// RST 8
-
-			let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
-			assert.equal(0xCF, opcode.code);
-			assert.equal(0x8001, bp1);
-			assert.equal(0x8002, bp2);
-		});
-
-		test('RST (except 08) and step into', async () => {
-			const remote = new RemoteBaseMock();
-			const rem = remote as any;
-
-			remote.pc = 0x8000;
-			await remote.getRegistersFromEmulator();
-			remote.pcMemory[0] = 0xD7;	// RST 16
-
-			let [opcode, bp1, bp2] = await rem.calcStepBp(false);	// stepInto
-			assert.equal(0xD7, opcode.code);
-			assert.equal(0x0010, bp1);
-			assert.equal(undefined, bp2);
-		});
-
-		test('RST 08 and step into', async () => {
-			const remote = new RemoteBaseMock();
-			const rem = remote as any;
-
-			remote.pc = 0x8000;
-			await remote.getRegistersFromEmulator();
-			remote.pcMemory[0] = 0xCF;	// RST 8
-
-			let [opcode, bp1, bp2] = await rem.calcStepBp(false);	// stepInto
-			assert.equal(0xCF, opcode.code);
-			//assert.equal(0x8001, bp1);
-			assert.equal(0x8002, bp1);	// Changed for esxdos simulation (1 address after)
-			assert.equal(0x0008, bp2);
-		});
-
-		test('ESXDOS RST 08 and step into', async () => {
-			// Extend 'rst 8' opcode for esxdos
-			Opcode.Opcodes[0xCF].appendToOpcode(",#n");
-			//Settings.launch.disassemblerArgs.esxdosRst = true;
-			const remote = new RemoteBaseMock();
-			const rem = remote as any;
-
-			remote.pc = 0x8000;
-			await remote.getRegistersFromEmulator();
-			remote.pcMemory[0] = 0xCF;	// RST 8
-
-			let [opcode, bp1, bp2] = await rem.calcStepBp(false);	// stepInto
-			assert.equal(0xCF, opcode.code);
-			assert.equal(0x8002, bp1);
-			assert.equal(0x0008, bp2);
-		});
 
 		test('Unconditional branches (JP, JR)', async () => {
 			const remote = new RemoteBaseMock();

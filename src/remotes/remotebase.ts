@@ -1520,7 +1520,7 @@ export class RemoteBase extends EventEmitter {
 	 * DeZog will then use up to 2 breakpoints to catch up after the instruction is executed.
 	 * The method is async, i.e. it fetches the required registers and memory on it's own.
 	 * Note: The method uses normal 64k addresses, no long addresses.
-	 * This because long addresses are not required and there is some arithmetic
+	 * This is because long addresses are not required and there is some arithmetic
 	 * done to the addresses (e.g. +3) that is not available on long addresses.
 	 * @param stepOver true if breakpoint address should be calculate for a step-over.
 	 * In this case the branching is ignored for CALL and RST.
@@ -1542,7 +1542,11 @@ export class RemoteBase extends EventEmitter {
 		// Get opcode length and calculate "normal" breakpoint address
 		const buffer = new BaseMemory(pc, opcodes);
 		const opcode = Opcode.getOpcodeAt(buffer, pc);
-		let bpAddr1 = pc + opcode.length;
+
+		// Check for (user) modified return address
+		const offs = Disassembly.getCallRetOffset(opcode);
+
+		let bpAddr1 = pc + opcode.length + offs;
 		let bpAddr2;
 		const ocFlags = opcode.flags;
 
@@ -1554,13 +1558,15 @@ export class RemoteBase extends EventEmitter {
 			// Note: The opcode length for RST 08 is adjusted by the disassembler.
 			// But with the implementation below, we don't require this.
 			if (stepOver) {
-				// TODO: For the new RST handling some additional handling is required.
-				// For stepOver nothing is required normally.
-				// However, as we have a spare breakpoint (bpAddr2),
-				// we can set it to the next PC. So that even if
-				// esxdosRst was not set a stepOver would stop.
-				bpAddr1 = pc + 1;
-				bpAddr2 = bpAddr1 + 1;
+				// USe old behavior only if user has not adjusted the offset
+				if (offs == 0) {
+					// For stepOver nothing is required normally.
+					// However, as we have a spare breakpoint (bpAddr2),
+					// we can set it to the next PC. So that even if
+					// esxdosRst was not set a stepOver would stop.
+					bpAddr1 = pc + 1;
+					bpAddr2 = bpAddr1 + 1;
+				}
 			}
 			else {
 				// If stepInto we need a breakpoint at the jump address 8 (RST 08) but also the bpAddr1 if call is simulated.

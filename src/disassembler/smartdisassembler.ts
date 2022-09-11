@@ -685,6 +685,24 @@ export class SmartDisassembler {
 	}
 
 
+	/** Returns the 'return' offset for an opcode.
+	 * Only if it is an unconditional CALL or RST.
+	 * Otherwise 0 is returned.
+	 * @param opcode The opcode.
+	 * @returns 0 or any offset.
+	 */ // TODO: Use also in above code.
+	public getCallRetOffset(opcode: Opcode): number {
+		// Adjust return address if CALL/RST and not conditional
+		if (opcode.flags & OpcodeFlag.CALL && !(opcode.flags & OpcodeFlag.CONDITIONAL)) {
+			const branchAddress64k = opcode.value;
+			const longAddr = Z80Registers.createLongAddress(branchAddress64k, this.slots);
+			const addrOffset = this.callAddressesReturnOffset.get(longAddr) || 0;
+			return addrOffset;
+		}
+		return 0;
+	}
+
+
 	/**
 	 * Connects node with the node at address.
 	 * If no node exists at address a new (bank border) node is created
