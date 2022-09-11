@@ -435,11 +435,10 @@ export class SmartDisassembler {
 				const branchAddress = refOpcode.value;
 				// First natural flow, i.e. the next address.
 				if (!(refOpcode.flags & OpcodeFlag.STOP)) {
-					// Adjust return address if CALL/RST and not conditional
-					if (flags & OpcodeFlag.CALL && !(flags & OpcodeFlag.CONDITIONAL)) {
-						const longAddr = Z80Registers.createLongAddress(branchAddress, this.slots);
-						const addrOffset = this.callAddressesReturnOffset.get(longAddr) || 0;
-						// Adjust return address
+					// Adjust return address (if CALL/RST and not conditional)
+					const addrOffset = this.getCallRetOffset(refOpcode);
+					// Adjust return address
+					if (addrOffset) {
 						addr64k = (addr64k + addrOffset) & 0xFFFF;
 					}
 					allBranchAddresses.push(addr64k);
@@ -583,20 +582,17 @@ export class SmartDisassembler {
 				const branchAddress = opcode.value;
 				// First natural flow, i.e. the next address.
 				if (!(flags & OpcodeFlag.STOP)) {
-					// Adjust return address if CALL/RST and not conditional
-					if (flags & OpcodeFlag.CALL && !(flags & OpcodeFlag.CONDITIONAL)) {
-						const longAddr = Z80Registers.createLongAddress(branchAddress, this.slots);
-						const addrOffset = this.callAddressesReturnOffset.get(longAddr);
-						// Adjust return address
-						if (addrOffset) {
-							// Read memory
-							const extData = this.memory.getData(addr64k, addrOffset);
-							// "Modify"/extend opcode
-							const append = " [#n" + ", #n".repeat(addrOffset-1) + "]";
-							opcode.extendOpcode(append, Array.from(extData));
-							// Skip bytes
-							addr64k = (addr64k + addrOffset) & 0xFFFF;
-						}
+					// Adjust return address (if CALL/RST and not conditional)
+					const addrOffset = this.getCallRetOffset(opcode);
+					// Adjust return address
+					if (addrOffset) {
+						// Read memory
+						const extData = this.memory.getData(addr64k, addrOffset);
+						// "Modify"/extend opcode
+						const append = " [#n" + ", #n".repeat(addrOffset - 1) + "]";
+						opcode.extendOpcode(append, Array.from(extData));
+						// Skip bytes
+						addr64k = (addr64k + addrOffset) & 0xFFFF;
 					}
 					// Store
 					const followingNode = this.getNodeForFill(nodeSlot, lastAddr64k, addr64k);
@@ -690,7 +686,7 @@ export class SmartDisassembler {
 	 * Otherwise 0 is returned.
 	 * @param opcode The opcode.
 	 * @returns 0 or any offset.
-	 */ // TODO: Use also in above code.
+	 */
 	public getCallRetOffset(opcode: Opcode): number {
 		// Adjust return address if CALL/RST and not conditional
 		if (opcode.flags & OpcodeFlag.CALL && !(opcode.flags & OpcodeFlag.CONDITIONAL)) {
