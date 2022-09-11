@@ -4,6 +4,10 @@ import {Format} from '../../src/disassembler/format';
 import {AsmNode} from '../../src/disassembler/asmnode';
 import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
 import {Utility} from '../../src/misc/utility';
+import {MemoryModelAllRam} from '../../src/remotes/MemoryModel/predefinedmemorymodels';
+import {Settings} from '../../src/settings/settings';
+import {Z80Registers, Z80RegistersClass} from '../../src/remotes/z80registers';
+import {Z80RegistersStandardDecoder} from '../../src/remotes/z80registersstandarddecoder';
 
 
 
@@ -42,6 +46,13 @@ suite('Disassembler', () => {
 		let dng: SmartDisassembler;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
+			// Initialize Settings
+			const cfg: any = {
+				remoteType: 'zsim'
+			};
+			Settings.launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters();
+			Z80Registers.decoder = new Z80RegistersStandardDecoder();
 			dng = new SmartDisassembler();
 			dng.funcGetLabel = addr => undefined;
 			dng.funcFilterAddresses = addr => true;
@@ -53,6 +64,9 @@ suite('Disassembler', () => {
 			/* To view in the WATCH pane use e.g.:
 			Array.from(dngNodes.values()).map(v => v.start.toString(16).toUpperCase().padStart(4, '0') + ': ' + v.label)
 			*/
+			const memModel = new MemoryModelAllRam();
+			memModel.init();
+			dng.setMemoryModelAndArgs(memModel, {callAddressesReturnOffset: []});
 		});
 
 
@@ -518,6 +532,13 @@ suite('Disassembler', () => {
 		let dng: SmartDisassembler;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
+			// Initialize Settings
+			const cfg: any = {
+				remoteType: 'zsim'
+			};
+			Settings.launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters();
+			Z80Registers.decoder = new Z80RegistersStandardDecoder();
 			dng = new SmartDisassembler();
 			dng.funcGetLabel = addr => undefined;
 			dng.funcFilterAddresses = addr => true;
@@ -526,6 +547,9 @@ suite('Disassembler', () => {
 			dng.setCurrentSlots([0]);
 			readBinFile(dng,'./tests/disassembler/projects/partition_blocks/main.bin');
 			dngNodes = (dng as any).nodes;
+			const memModel = new MemoryModelAllRam();
+			memModel.init();
+			dng.setMemoryModelAndArgs(memModel, {callAddressesReturnOffset: []});
 		});
 
 		// Checks if the addresses outside the block are all undefinded.
@@ -758,6 +782,13 @@ suite('Disassembler', () => {
 		let dng: SmartDisassembler;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
+			// Initialize Settings
+			const cfg: any = {
+				remoteType: 'zsim'
+			};
+			Settings.launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters();
+			Z80Registers.decoder = new Z80RegistersStandardDecoder();
 			dng = new SmartDisassembler();
 			dng.funcGetLabel = addr64k => undefined;
 			dng.funcFilterAddresses = addr64k => true;
@@ -771,6 +802,9 @@ suite('Disassembler', () => {
 			dng.labelLocalLabelPrefix = 'LL';
 			dng.labelRstPrefix = 'RRST_';
 			dngNodes = (dng as any).nodes;
+			const memModel = new MemoryModelAllRam();
+			memModel.init();
+			dng.setMemoryModelAndArgs(memModel, {callAddressesReturnOffset: []});
 		});
 
 		test('Simple', () => {
