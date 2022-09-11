@@ -7,6 +7,10 @@ import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
 import {Subroutine} from '../../src/disassembler/subroutine';
 import {AsmNode} from '../../src/disassembler/asmnode';
 import {RenderedLines} from '../../src/disassembler/renderedlines';
+import {MemoryModelAllRam} from '../../src/remotes/MemoryModel/predefinedmemorymodels';
+import {Z80RegistersStandardDecoder} from '../../src/remotes/z80registersstandarddecoder';
+import {Z80Registers, Z80RegistersClass} from '../../src/remotes/z80registers';
+import {Settings} from '../../src/settings/settings';
 
 
 
@@ -15,6 +19,13 @@ suite('Disassembler - RenderText', () => {
 	let disasm: SmartDisassembler;
 	let r: any;
 	setup(() => {
+		// Initialize Settings
+		const cfg: any = {
+			remoteType: 'zsim'
+		};
+		Settings.launch = Settings.Init(cfg);
+		Z80RegistersClass.createRegisters();
+		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 		disasm = new SmartDisassembler();
 		disasm.funcGetLabel = addr64k => undefined;
 		disasm.funcFilterAddresses = addr64k => true;
@@ -24,6 +35,9 @@ suite('Disassembler - RenderText', () => {
 		r.clmnsBytes = 10;
 		r.dataReferences = [];
 		Format.hexFormat = '$';
+		const memModel = new MemoryModelAllRam();
+		memModel.init();
+		disasm.setMemoryModelAndArgs(memModel, {callAddressesReturnOffset:[]});
 	});
 
 	// Strip html.

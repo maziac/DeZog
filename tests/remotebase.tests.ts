@@ -313,7 +313,7 @@ suite('RemoteBase', () => {
 				assert.equal(0x8003, bp1);
 				assert.equal(0x4567, bp2);
 			});
-			
+
 			test('RST (except 08) and step into', async () => {
 				const remote = new RemoteBaseMock();
 				const rem = remote as any;
