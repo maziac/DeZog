@@ -269,7 +269,7 @@ export class RenderHtml extends RenderText {
 					// Install real handlers
 					srcObj.addEventListener('click', () => {
 						historyStackAdd(srcObj);
-						scrollTo(tgtObj);
+						scrollTo(srcObj.lineTgtObj);
 					});
 
 					// Mouse enters the CALL object: show line

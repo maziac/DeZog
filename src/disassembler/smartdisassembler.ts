@@ -67,7 +67,7 @@ export class SmartDisassembler {
 	protected addrLineMap = new Map<number, number>();
 	protected lineAddrArray = new Array<number | undefined>();
 
-	// A map with adjustoments if a CALL or RST returns from any of the given (long addresses.
+	// A map with adjustments (if a CALL or RST returns from any of the given (long) addresses).
 	// Used for RST adjustment.
 	protected callAddressesReturnOffset = new Map<number, number>();
 
@@ -193,7 +193,7 @@ export class SmartDisassembler {
 
 
 	/** Get all Labels for the currently mapped in banks.
-	 * @returns an array of 64k adresses with associated label string.
+	 * @returns an array of 64k addresses with associated label string.
 	 */
 	public get64kLabels(): AddressLabel[] {
 		// Get address and one label
@@ -432,13 +432,20 @@ export class SmartDisassembler {
 			// Check for branch
 			const flags = refOpcode.flags;
 			if (flags & OpcodeFlag.BRANCH_ADDRESS) {
+				const branchAddress = refOpcode.value;
 				// First natural flow, i.e. the next address.
 				if (!(refOpcode.flags & OpcodeFlag.STOP)) {
+					// Adjust return address if CALL/RST and not conditional
+					if (flags & OpcodeFlag.CALL && !(flags & OpcodeFlag.CONDITIONAL)) {
+						const longAddr = Z80Registers.createLongAddress(branchAddress, this.slots);
+						const addrOffset = this.callAddressesReturnOffset.get(longAddr) || 0;
+						// Adjust return address
+						addr64k = (addr64k + addrOffset) & 0xFFFF;
+					}
 					allBranchAddresses.push(addr64k);
 				}
 
 				// Now the branch
-				const branchAddress = refOpcode.value;
 				allBranchAddresses.push(branchAddress);
 
 				// Leave loop
@@ -571,9 +578,27 @@ export class SmartDisassembler {
 			addr64k += opcode.length;
 
 			// Check for branch
-			if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
+			const flags = opcode.flags;
+			if (flags & OpcodeFlag.BRANCH_ADDRESS) {
+				const branchAddress = opcode.value;
 				// First natural flow, i.e. the next address.
-				if (!(opcode.flags & OpcodeFlag.STOP)) {
+				if (!(flags & OpcodeFlag.STOP)) {
+					// Adjust return address if CALL/RST and not conditional
+					if (flags & OpcodeFlag.CALL && !(flags & OpcodeFlag.CONDITIONAL)) {
+						const longAddr = Z80Registers.createLongAddress(branchAddress, this.slots);
+						const addrOffset = this.callAddressesReturnOffset.get(longAddr);
+						// Adjust return address
+						if (addrOffset) {
+							// Read memory
+							const extData = this.memory.getData(addr64k, addrOffset);
+							// "Modify"/extend opcode
+							const append = " [#n" + ", #n".repeat(addrOffset-1) + "]";
+							opcode.extendOpcode(append, Array.from(extData));
+							// Skip bytes
+							addr64k = (addr64k + addrOffset) & 0xFFFF;
+						}
+					}
+					// Store
 					const followingNode = this.getNodeForFill(nodeSlot, lastAddr64k, addr64k);
 					Utility.assert(followingNode);
 					node.branchNodes.push(followingNode);
@@ -581,11 +606,10 @@ export class SmartDisassembler {
 				}
 
 				// Now the branch
-				const branchAddress = opcode.value;
 				const branchNode = this.getNodeForFill(nodeSlot, lastAddr64k, branchAddress);
 
 				// Check if it is a call
-				if (opcode.flags & OpcodeFlag.CALL) {
+				if (flags & OpcodeFlag.CALL) {
 					node.callee = branchNode;
 					branchNode.callers.push(node);
 				}
@@ -596,7 +620,7 @@ export class SmartDisassembler {
 				}
 
 				// Check for JP (RET will not occur because of OpcodeFlag.BRANCH_ADDRESS)
-				if (opcode.flags & OpcodeFlag.STOP) {
+				if (flags & OpcodeFlag.STOP) {
 					node.stop = true;
 				}
 				// Leave loop
@@ -605,12 +629,12 @@ export class SmartDisassembler {
 			else {
 				// No branch, e.g. normal opcode (LD A,5), JP, RET or RET cc
 				// Check for RET or RET cc
-				if (opcode.flags & OpcodeFlag.RET) {
+				if (flags & OpcodeFlag.RET) {
 					node.isSubroutine = true;
 				}
 
 				// Check for JP (or RET)
-				if (opcode.flags & OpcodeFlag.STOP) {
+				if (flags & OpcodeFlag.STOP) {
 					node.stop = true;
 					break;
 				}

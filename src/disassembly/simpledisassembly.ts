@@ -40,7 +40,7 @@ export class SimpleDisassembly  {
 			// Get opcode
 			const opcode = Opcode.getOpcodeAt(buffer, address);
 			// disassemble
-			opcode.disassembleOpcode(addr64k => undefined as any);
+			opcode.disassembleOpcode(addr64k => Format.getHexFormattedString(addr64k));
 			const instruction = Format.formatDisassembly(undefined /*buffer*/, false, 0, 0 /*12*/, 0 /*5*/, 0 /*8*/, address, opcode.length, opcode.disassembledText, undefined);
 			// Add to list
 			list.push({address, instruction})
@@ -83,7 +83,7 @@ export class SimpleDisassembly  {
 			// Get opcode
 			const opcode = Opcode.getOpcodeAt(buffer, address);
 			// disassemble
-			opcode.disassembleOpcode(addr64k => undefined as any);
+			opcode.disassembleOpcode(addr64k => Format.getHexFormattedString(addr64k));
 			const instruction = Format.formatDisassembly(undefined /*buffer*/, false, 0, 0 /*12*/, 0 /*5*/, 0 /*8*/, address, opcode.length, opcode.disassembledText, undefined);
 			// Add to list
 			list.push({address, size: opcode.length, instruction})

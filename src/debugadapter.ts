@@ -672,53 +672,62 @@ export class DebugSessionClass extends DebugSession {
 					return;
 				}
 
-				// Inform Disassembler of MemoryModel and other arguments.
-				Disassembly.setMemoryModelAndArgs(Remote.memoryModel, Settings.launch.smartDisassemblerArgs);
+				try {
+					// Inform Disassembler of MemoryModel and other arguments.
+					Disassembly.setMemoryModelAndArgs(Remote.memoryModel, Settings.launch.smartDisassemblerArgs);
 
-				// Instantiate file watchers for revEng auto re-load
-				this.installReloadFileWatchers();
+					// Instantiate file watchers for revEng auto re-load
+					this.installReloadFileWatchers();
 
-				// Get initial registers
-				await Remote.getRegistersFromEmulator();
-				await Remote.getCallStackFromEmulator();
+					// Get initial registers
+					await Remote.getRegistersFromEmulator();
+					await Remote.getCallStackFromEmulator();
 
-				// Initialize Cpu- or StepHistory.
-				if (!StepHistory.decoder)
-					StepHistory.decoder = Z80Registers.decoder;
-				StepHistory.init();
+					// Initialize Cpu- or StepHistory.
+					if (!StepHistory.decoder)
+						StepHistory.decoder = Z80Registers.decoder;
+					StepHistory.init();
 
-				// Run user commands after load.
-				for (const cmd of Settings.launch.commandsAfterLaunch) {
-					this.debugConsoleAppendLine(cmd);
-					try {
-						const outText = await this.evaluateCommand(cmd);
-						this.debugConsoleAppendLine(outText);
+					// Run user commands after load.
+					for (const cmd of Settings.launch.commandsAfterLaunch) {
+						this.debugConsoleAppendLine(cmd);
+						try {
+							const outText = await this.evaluateCommand(cmd);
+							this.debugConsoleAppendLine(outText);
+						}
+						catch (err) {
+							// Some problem occurred
+							const output = "Error while executing '" + cmd + "' in 'commandsAfterLaunch': " + err.message;
+							this.showWarning(output);
+						}
 					}
-					catch (err) {
-						// Some problem occurred
-						const output = "Error while executing '" + cmd + "' in 'commandsAfterLaunch': " + err.message;
-						this.showWarning(output);
+
+
+					// Special handling for custom code
+					if (Remote instanceof ZSimRemote) {
+						// Start custom code (if not unit test)
+						const zsim = Remote;
+						if (this.state == DbgAdapterState.NORMAL) {
+							// Special handling for zsim: Re-init custom code.
+							zsim.customCode?.execute();
+						}
+
+						// At the end, if remote type == ZX simulator, open its window.
+						// Note: it was done this way and not in the Remote itself, otherwise
+						// there would be a dependency in RemoteFactory to vscode which in turn
+						// makes problems for the unit tests.
+						// Adds a window that displays the ZX screen.
+						new ZSimulationView(zsim); // NOSONAR
 					}
 				}
-
-
-				// Special handling for custom code
-				if (Remote instanceof ZSimRemote) {
-					// Start custom code (if not unit test)
-					const zsim = Remote;
-					if (this.state == DbgAdapterState.NORMAL) {
-						// Special handling for zsim: Re-init custom code.
-						zsim.customCode?.execute();
-					}
-
-					// At the end, if remote type == ZX simulator, open its window.
-					// Note: it was done this way and not in the Remote itself, otherwise
-					// there would be a dependency in RemoteFactory to vscode which in turn
-					// makes problems for the unit tests.
-					// Adds a window that displays the ZX screen.
-					new ZSimulationView(zsim); // NOSONAR
+				catch(e) {
+					// Some error occurred during loading, e.g. file not found.
+					const error = e.message || "Error";
+					Remote.terminate('Error during initialization: ' + error);
+					reject(e);
+					DebugSessionClass.singleton().unitTestsStartCallbacks?.reject(e);
+					return;
 				}
-
 
 				// Socket is connected, allow setting breakpoints
 				this.sendEvent(new InitializedEvent());

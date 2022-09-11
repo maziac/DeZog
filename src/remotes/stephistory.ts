@@ -8,6 +8,7 @@ import {RefList} from '../misc/reflist';
 import {Remote} from '../remotes/remotebase';
 import {Utility} from '../misc/utility';
 import {Settings} from '../settings/settings';
+import {Format} from '../disassembler/format';
 
 
 /**
@@ -216,7 +217,7 @@ export class StepHistoryClass extends EventEmitter {
 		// Get opcode
 		const opcode = Opcode.getOpcodeAt(buffer, pc);
 		// Disassemble
-		opcode.disassembleOpcode(addr64k => undefined as any);
+		opcode.disassembleOpcode(addr64k => Format.getHexFormattedString(addr64k));
 		return opcode.disassembledText;
 	}
 
