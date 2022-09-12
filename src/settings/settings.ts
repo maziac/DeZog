@@ -251,16 +251,9 @@ export interface DisassemblerArgs {
 /**
  * The settings for the smart disassembler (disasm.list).
  */
+// TODO: Do I really need this?
 export interface SmartDisassemblerArgs {
 
-	// An array with address/offset pairs.
-	callAddressesReturnOffset: {
-		// The long address in disassembly format, e.g. "0100.R0"
-		address: string;
-
-		// The offset to add, e.g. "1"
-		offset: string;
-	}[];
 }
 
 
@@ -707,11 +700,8 @@ export class Settings {
 		// Smart disassembly
 		if (launchCfg.smartDisassemblerArgs == undefined) {
 			launchCfg.smartDisassemblerArgs = {
-				callAddressesReturnOffset: []
 			}
 		}
-		if (!launchCfg.smartDisassemblerArgs.hasOwnProperty("callAddressesReturnOffset"))
-			launchCfg.smartDisassemblerArgs.callAddressesReturnOffset = [];
 
 		// Reverse debugging
 		if (launchCfg.history == undefined)

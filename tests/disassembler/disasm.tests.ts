@@ -8,7 +8,6 @@ import {MemoryModelAllRam} from '../../src/remotes/MemoryModel/predefinedmemorym
 import {Settings} from '../../src/settings/settings';
 import {Z80Registers, Z80RegistersClass} from '../../src/remotes/z80registers';
 import {Z80RegistersStandardDecoder} from '../../src/remotes/z80registersstandarddecoder';
-import {Z80} from '../../src/3rdparty/z80.js/Z80';
 
 
 
