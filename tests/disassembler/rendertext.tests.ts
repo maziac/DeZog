@@ -37,7 +37,7 @@ suite('Disassembler - RenderText', () => {
 		Format.hexFormat = '$';
 		const memModel = new MemoryModelAllRam();
 		memModel.init();
-		disasm.setMemoryModelAndArgs(memModel, {callAddressesReturnOffset:[]});
+		disasm.setMemoryModel(memModel);
 	});
 
 	// Strip html.

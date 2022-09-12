@@ -674,7 +674,7 @@ export class DebugSessionClass extends DebugSession {
 
 				try {
 					// Inform Disassembler of MemoryModel and other arguments.
-					Disassembly.setMemoryModelAndArgs(Remote.memoryModel, Settings.launch.smartDisassemblerArgs);
+					Disassembly.setMemoryModel(Remote.memoryModel);
 
 					// Instantiate file watchers for revEng auto re-load
 					this.installReloadFileWatchers();
@@ -3635,7 +3635,7 @@ E.g. use "-help -view" to put the help text in an own view.
 
 			// Create new instance to disassemble
 			const analyzer = new SmartDisassembler();
-			analyzer.setMemoryModelAndArgs(Remote.memoryModel, Settings.launch.smartDisassemblerArgs);
+			analyzer.setMemoryModel(Remote.memoryModel);
 			analyzer.setCurrentSlots(Remote.getSlots());
 			// Get whole memory for analyzing
 			const data = await Remote.readMemoryDump(0, 0x10000);

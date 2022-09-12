@@ -34,7 +34,7 @@ suite('Disassembler - RenderHtml', () => {
 		Format.hexFormat = '$';
 		const memModel = new MemoryModelAllRam();
 		memModel.init();
-		disasm.setMemoryModelAndArgs(memModel, {callAddressesReturnOffset: []});
+		disasm.setMemoryModel(memModel);
 	});
 
 	// Compresses the string.

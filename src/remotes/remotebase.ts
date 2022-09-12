@@ -1550,12 +1550,14 @@ export class RemoteBase extends EventEmitter {
 		// Check for any skips (for RST)
 		const slots = this.getSlots();
 		let skip;
+		let totalSkip = 0;
 		while (true) {
 			const longAddr = Z80Registers.createLongAddress(bpAddr1, slots);
 			skip = Labels.getSkipForAddress(longAddr);
 			if (!skip)
 				break;
 			bpAddr1 = (bpAddr1 + skip) & 0xFFFF;
+			totalSkip += skip;
 		}
 
 		// Special handling for RST 08 (esxdos) as stepInto may not work
@@ -1567,7 +1569,7 @@ export class RemoteBase extends EventEmitter {
 			// But with the implementation below, we don't require this.
 			if (stepOver) {
 				// Use old behavior only if user has not adjusted the offset
-				if (!skip) {
+				if (!totalSkip) {
 					// For stepOver nothing is required normally.
 					// However, as we have a spare breakpoint (bpAddr2),
 					// we can set it to the next PC. So that even if

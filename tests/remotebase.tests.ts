@@ -8,6 +8,7 @@ import {GenericBreakpoint, GenericWatchpoint} from '../src/genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../src/remotes/z80registersstandarddecoder';
 import {Disassembly, DisassemblyClass} from '../src/disassembly/disassembly';
 import {MemoryModelAllRam} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {Labels} from '../src/labels/labels';
 
 
 suite('RemoteBase', () => {
@@ -26,6 +27,7 @@ suite('RemoteBase', () => {
 		DisassemblyClass.createDisassemblySingleton();
 		memModel = new MemoryModelAllRam();
 		memModel.init();
+		Disassembly.setMemoryModel(memModel);
 	});
 
 
@@ -249,13 +251,9 @@ suite('RemoteBase', () => {
 				const remote = new RemoteBaseMock();
 				const rem = remote as any;
 
-				// Add return address offset (doesn't matter for RST 8)
-				Disassembly.setMemoryModelAndArgs(memModel, {
-					callAddressesReturnOffset: [{
-						address: "0008",
-						offset: "2"
-					}]
-				});
+				// Add skip
+				(Labels as any).addressSkips.clear();
+				(Labels as any).addressSkips.set(0x018001, 2);
 
 				remote.pc = 0x8000;
 				await remote.getRegistersFromEmulator();
@@ -275,17 +273,13 @@ suite('RemoteBase', () => {
 				await remote.getRegistersFromEmulator();
 				remote.pcMemory[0] = 0xD7;	// RST 16
 
-				// Add return address offset
-				Disassembly.setMemoryModelAndArgs(memModel, {
-					callAddressesReturnOffset: [{
-						address: "0010",
-						offset: "4"
-					}]
-				});
+				// Add skip
+				(Labels as any).addressSkips.clear();
+				(Labels as any).addressSkips.set(0x018001, 1);
 
 				let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
 				assert.equal(0xD7, opcode.code);
-				assert.equal(0x8005, bp1);
+				assert.equal(0x8002, bp1);
 				assert.equal(undefined, bp2);
 			});
 		});
@@ -329,12 +323,7 @@ suite('RemoteBase', () => {
 
 				// Modification will result in the same for step into:
 				// Add return address offset
-				Disassembly.setMemoryModelAndArgs(memModel, {
-					callAddressesReturnOffset: [{
-						address: "0010",
-						offset: "2"
-					}]
-				});
+				Disassembly.setMemoryModel(memModel);
 
 				[opcode, bp1, bp2] = await rem.calcStepBp(false);	// stepInto
 				assert.equal(0xD7, opcode.code);
@@ -363,12 +352,7 @@ suite('RemoteBase', () => {
 				const rem = remote as any;
 
 				// Add return address offset (doesn't matter for RST 8)
-				Disassembly.setMemoryModelAndArgs(memModel, {
-					callAddressesReturnOffset: [{
-						address: "0008",
-						offset: "3"
-					}]
-				});
+				Disassembly.setMemoryModel(memModel);
 
 				remote.pc = 0x8000;
 				await remote.getRegistersFromEmulator();

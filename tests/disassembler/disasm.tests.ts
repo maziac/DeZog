@@ -8,6 +8,7 @@ import {MemoryModelAllRam} from '../../src/remotes/MemoryModel/predefinedmemorym
 import {Settings} from '../../src/settings/settings';
 import {Z80Registers, Z80RegistersClass} from '../../src/remotes/z80registers';
 import {Z80RegistersStandardDecoder} from '../../src/remotes/z80registersstandarddecoder';
+import {Z80} from '../../src/3rdparty/z80.js/Z80';
 
 
 
@@ -66,7 +67,7 @@ suite('Disassembler', () => {
 			*/
 			const memModel = new MemoryModelAllRam();
 			memModel.init();
-			dng.setMemoryModelAndArgs(memModel, {callAddressesReturnOffset: []});
+			dng.setMemoryModel(memModel);
 		});
 
 
@@ -549,7 +550,7 @@ suite('Disassembler', () => {
 			dngNodes = (dng as any).nodes;
 			const memModel = new MemoryModelAllRam();
 			memModel.init();
-			dng.setMemoryModelAndArgs(memModel, {callAddressesReturnOffset: []});
+			dng.setMemoryModel(memModel);
 		});
 
 		// Checks if the addresses outside the block are all undefinded.
@@ -804,7 +805,7 @@ suite('Disassembler', () => {
 			dngNodes = (dng as any).nodes;
 			const memModel = new MemoryModelAllRam();
 			memModel.init();
-			dng.setMemoryModelAndArgs(memModel, {callAddressesReturnOffset: []});
+			dng.setMemoryModel(memModel);
 		});
 
 		test('Simple', () => {
@@ -1066,6 +1067,16 @@ suite('Disassembler', () => {
 		let dng: SmartDisassembler;
 		let dngNodes: Map<number, AsmNode>;
 		setup(() => {
+			// Initialize Settings
+			const cfg: any = {
+				remoteType: 'zsim'
+			};
+			Settings.launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters();
+			Z80Registers.decoder = new Z80RegistersStandardDecoder();
+			Z80Registers.setSlotsAndBanks(	// Doesn't matter what these functions return:
+				(address: number, slots: number[]) => 0x10000 + address,
+				(address: number) => 0);
 			dng = new SmartDisassembler();
 			dng.funcGetLabel = addr => undefined;
 			dng.funcFilterAddresses = addr => true;
@@ -1306,6 +1317,16 @@ suite('Disassembler', () => {
 		let dng: SmartDisassembler;
 		//let dngNodes: Map<number, AsmNode>;
 		setup(() => {
+			// Initialize Settings
+			const cfg: any = {
+				remoteType: 'zsim'
+			};
+			Settings.launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters();
+			Z80Registers.decoder = new Z80RegistersStandardDecoder();
+			Z80Registers.setSlotsAndBanks(	// Doesn't matter what these functions return:
+				(address: number, slots: number[]) => 0x10000 + address,
+				(address: number) => 0);
 			dng = new SmartDisassembler();
 			dng.funcGetLabel = addr64k => undefined;
 			dng.funcFilterAddresses = addr64k => true;

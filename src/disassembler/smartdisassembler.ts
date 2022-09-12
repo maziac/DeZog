@@ -11,7 +11,6 @@ import {Z80Registers} from '../remotes/z80registers';
 import {Labels} from '../labels/labels';
 import {ReverseEngineeringLabelParser} from '../labels/reverseengineeringlabelparser';
 import {Remote} from '../remotes/remotebase';
-import {SmartDisassemblerArgs} from '../settings/settings';
 import {SkipPseudoOpcode} from './skippseudoopcode';
 
 
@@ -161,9 +160,8 @@ export class SmartDisassembler {
 	 * Sets the memory model.
 	 * Used to check if certain execution flows should be followed or not.
 	 * @param memModel The memory model obtained from the settings through the Remote.
-	 * @param args Especially the list of call addresses and their return offsets (for RST).
 	 */
-	public setMemoryModelAndArgs(memModel: MemoryModel, args: SmartDisassemblerArgs) {
+	public setMemoryModel(memModel: MemoryModel) {
 		const slotLen = memModel.slotRanges.length;
 		for (let slot = 0; slot < slotLen; slot++) {
 			const range = memModel.slotRanges[slot];
@@ -174,14 +172,6 @@ export class SmartDisassembler {
 			this.setSlotBankInfo(range.start, range.end, slot, singleBank);
 		}
 
-		// Loop through all address/offset pairs
-		for (const {address, offset} of args.callAddressesReturnOffset) {
-			// Parse long address string
-			const longAddr = memModel.parseAddress(address);
-			const offs = Utility.parseValue(offset);
-			// Store
-			this.callAddressesReturnOffset.set(longAddr, offs);
-		}
 	}
 
 
@@ -684,20 +674,9 @@ export class SmartDisassembler {
 	/** Returns the 'return' offset for an opcode.
 	 * Only if it is an unconditional CALL or RST.
 	 * Otherwise 0 is returned.
-	 * @param opcode The opcode.
-	 * @returns 0 or any offset.
+	 * @param addr64k The address to check.
+	 * @returns undefined, 1 or 2.
 	 */
-	// TODO: REMOVE
-	public getCallRetOffsetx(opcode: Opcode): number {
-		// Adjust return address if CALL/RST and not conditional
-		if (opcode.flags & OpcodeFlag.CALL && !(opcode.flags & OpcodeFlag.CONDITIONAL)) {
-			const branchAddress64k = opcode.value;
-			const longAddr = Z80Registers.createLongAddress(branchAddress64k, this.slots);
-			const addrOffset = this.callAddressesReturnOffset.get(longAddr) || 0;
-			return addrOffset;
-		}
-		return 0;
-	}
 	public getSkipForAddress(addr64k: number): number | undefined {
 		const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
 		const skip = Labels.getSkipForAddress(longAddr);
