@@ -12,6 +12,7 @@ import {Labels} from '../labels/labels';
 import {ReverseEngineeringLabelParser} from '../labels/reverseengineeringlabelparser';
 import {Remote} from '../remotes/remotebase';
 import {SmartDisassemblerArgs} from '../settings/settings';
+import {SkipPseudoOpcode} from './skippseudoopcode';
 
 
 // Type used as passed argument for labels.
@@ -436,10 +437,10 @@ export class SmartDisassembler {
 				// First natural flow, i.e. the next address.
 				if (!(refOpcode.flags & OpcodeFlag.STOP)) {
 					// Adjust return address (if CALL/RST and not conditional)
-					const addrOffset = this.getCallRetOffset(refOpcode);
-					// Adjust return address
-					if (addrOffset) {
-						addr64k = (addr64k + addrOffset) & 0xFFFF;
+					let skip;
+					while ((skip = this.getSkipForAddress(addr64k))) {
+						// Skip bytes
+						addr64k = (addr64k + skip) & 0xFFFF;
 					}
 					allBranchAddresses.push(addr64k);
 				}
@@ -583,16 +584,15 @@ export class SmartDisassembler {
 				// First natural flow, i.e. the next address.
 				if (!(flags & OpcodeFlag.STOP)) {
 					// Adjust return address (if CALL/RST and not conditional)
-					const addrOffset = this.getCallRetOffset(opcode);
-					// Adjust return address
-					if (addrOffset) {
+					let skip;
+					while ((skip = this.getSkipForAddress(addr64k))) {
 						// Read memory
-						const extData = this.memory.getData(addr64k, addrOffset);
-						// "Modify"/extend opcode
-						const append = " [#n" + ", #n".repeat(addrOffset - 1) + "]";
-						opcode.extendOpcode(append, Array.from(extData));
+						const data = this.memory.getData(addr64k, skip);
+						// Add instructions
+						const skipOpcode = new SkipPseudoOpcode(data);
+						node.instructions.push(skipOpcode)
 						// Skip bytes
-						addr64k = (addr64k + addrOffset) & 0xFFFF;
+						addr64k = (addr64k + skip) & 0xFFFF;
 					}
 					// Store
 					const followingNode = this.getNodeForFill(nodeSlot, lastAddr64k, addr64k);
@@ -687,7 +687,8 @@ export class SmartDisassembler {
 	 * @param opcode The opcode.
 	 * @returns 0 or any offset.
 	 */
-	public getCallRetOffset(opcode: Opcode): number {
+	// TODO: REMOVE
+	public getCallRetOffsetx(opcode: Opcode): number {
 		// Adjust return address if CALL/RST and not conditional
 		if (opcode.flags & OpcodeFlag.CALL && !(opcode.flags & OpcodeFlag.CONDITIONAL)) {
 			const branchAddress64k = opcode.value;
@@ -696,6 +697,11 @@ export class SmartDisassembler {
 			return addrOffset;
 		}
 		return 0;
+	}
+	public getSkipForAddress(addr64k: number): number | undefined {
+		const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
+		const skip = Labels.getSkipForAddress(longAddr);
+		return skip;
 	}
 
 

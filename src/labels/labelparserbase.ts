@@ -87,6 +87,11 @@ export class LabelParserBase {
 	/// Long addresses.
 	protected logPointLines: Array<{address: number, line: string}>;
 
+	// A map with addresses for skips. I.e. addresses that the PC should simply skip.
+	// E.g. for special RST commands followed by bytes.
+	// Used only by the ReverseEngineeringLabelParser.
+	protected addressSkips: Map<number, number>;
+
 
 	/// The config structure is stored here.
 	protected config: ListConfigBase;
@@ -150,6 +155,7 @@ export class LabelParserBase {
 		watchPointLines: Array<{address: number, line: string}>,
 		assertionLines: Array<{address: number, line: string}>,
 		logPointLines: Array<{address: number, line: string}>,
+		addressSkips: Map<number, number>,
 		issueHandler: (issue: Issue) => void
 	) {
 		// Store variables
@@ -163,6 +169,7 @@ export class LabelParserBase {
 		this.watchPointLines = watchPointLines;
 		this.assertionLines = assertionLines;
 		this.logPointLines = logPointLines;
+		this.addressSkips = addressSkips;
 		this.issueHandler = issueHandler;
 	}
 
@@ -803,6 +810,18 @@ export class LabelParserBase {
 		// And throw an exception to stop
 		//throw Error("Label parser error.");
 		throw Error(message);
+	}
+
+
+	/** Returns any given skips for an address.
+	 * Used to skip over bytes after a RST.
+	 * Used only ba ReverseEngineeringLabelParser.
+	 * @param longAddr The long address to get the skip for.
+	 * @returns The skip. Normally undefined for no skip.
+	 * If skip is given usually this is 1 or 2.
+	 */
+	public getSkipForAddress(longAddr: number): number | undefined {
+		return undefined;
 	}
 }
 

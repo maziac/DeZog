@@ -58,9 +58,9 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	// Regex to parse the bytes after the address
 	protected regexByte = /^([\da-f][\da-f]\s)/i;
 
-	// Regex to parse the label
+	// Regex to parse the label or the special commands (SKIP, SKIPWORD)
 
-	protected regexLabel = /^\s*((\.?)[a-z_][\w\.]*):/i;
+	protected regexLabelOrCmd = /^\s*(\.?[a-z_][\w\.]*)(:?)/i;
 
 
 	/**
@@ -165,15 +165,33 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 		}
 
 		// Check if there is a label (with colon), also .local label
-		const matchLabel = this.regexLabel.exec(workLine);
-		if (matchLabel) {
-			// Label found
-			let label = matchLabel[1];
-			// Check for local label
-			if (label.startsWith('.'))
-				this.addLocalLabelForNumber(longAddress, label);
-			else
-				this.addLabelForNumber(longAddress, label);
+		const matchLabelOrCmd = this.regexLabelOrCmd.exec(workLine);
+		if (matchLabelOrCmd) {
+			// Match found, check for label (:)
+			if (matchLabelOrCmd[2] == ':') {
+				// Label found
+				let label = matchLabelOrCmd[1];
+				// Check for local label
+				if (label.startsWith('.'))
+					this.addLocalLabelForNumber(longAddress, label);
+				else
+					this.addLabelForNumber(longAddress, label);
+			}
+			else {
+				// Not a label, but check for special command
+				const specialCmd = matchLabelOrCmd[1].toLowerCase();
+				switch (specialCmd) {
+					case 'skip':		// Skip 1 byte
+						this.addressSkips.set(longAddress, 1);
+						break;
+					case 'skipword':	// Skip 2 bytes
+						this.addressSkips.set(longAddress, 2);
+						break;
+					default:
+						// Do nothing
+						break;
+				}
+			}
 		}
 
 		// Store address (or several addresses for one line).
@@ -182,8 +200,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	}
 
 
-	/**
-	 * Only difference to addLabelForNumber is that 'lastLabel' is not set.
+	/** Only difference to addLabelForNumber is that 'lastLabel' is not set.
 	 * @param value The value for which a new label is to be set. If a value > 64k it needs
 	 * to be a long address.
 	 * @param label The label to add.
@@ -196,8 +213,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	}
 
 
-	/**
-	 * Overwritten to check for same labels.
+	/** Overwritten to check for same labels.
 	 * @param value The value for which a new label is to be set. If a value > 64k it needs
 	 * to be a long address.
 	 * I.e. EQU values > 64k are not allowed here.

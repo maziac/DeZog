@@ -1543,12 +1543,20 @@ export class RemoteBase extends EventEmitter {
 		const buffer = new BaseMemory(pc, opcodes);
 		const opcode = Opcode.getOpcodeAt(buffer, pc);
 
-		// Check for (user) modified return address
-		const offs = Disassembly.getCallRetOffset(opcode);
-
-		let bpAddr1 = pc + opcode.length + offs;
-		let bpAddr2;
 		const ocFlags = opcode.flags;
+		let bpAddr1 = pc + opcode.length;
+		let bpAddr2;
+
+		// Check for any skips (for RST)
+		const slots = this.getSlots();
+		let skip;
+		while (true) {
+			const longAddr = Z80Registers.createLongAddress(bpAddr1, slots);
+			skip = Labels.getSkipForAddress(longAddr);
+			if (!skip)
+				break;
+			bpAddr1 = (bpAddr1 + skip) & 0xFFFF;
+		}
 
 		// Special handling for RST 08 (esxdos) as stepInto may not work
 		// if the emulator simulates this.
@@ -1558,8 +1566,8 @@ export class RemoteBase extends EventEmitter {
 			// Note: The opcode length for RST 08 is adjusted by the disassembler.
 			// But with the implementation below, we don't require this.
 			if (stepOver) {
-				// USe old behavior only if user has not adjusted the offset
-				if (offs == 0) {
+				// Use old behavior only if user has not adjusted the offset
+				if (!skip) {
 					// For stepOver nothing is required normally.
 					// However, as we have a spare breakpoint (bpAddr2),
 					// we can set it to the next PC. So that even if
