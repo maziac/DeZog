@@ -280,8 +280,8 @@ export class SmartDisassembler {
 		this.nodes.clear();
 
 		// Create the nodes
-		this.memory.resetAttributeFlag(MemAttribute.
-			FLOW_ANALYZED);
+		//this.memory.resetAttributeFlag(MemAttribute.FLOW_ANALYZED);
+		this.memory.resetAttributeFlag(~MemAttribute.ASSIGNED);
 		this.createNodes(addresses);
 
 		// Now create nodes for the labels
@@ -403,7 +403,7 @@ export class SmartDisassembler {
 
 			// Get opcode and opcode length
 			const refOpcode = Opcode.getOpcodeAt(this.memory, addr64k);
-			// Check if opcode addresses (other that starting address) have already been analyzed
+			// Check if opcode addresses (other than starting address) have already been analyzed
 			const flowAddr = this.memory.searchAddrWithAttribute(MemAttribute.FLOW_ANALYZED, addr64k + 1, refOpcode.length - 1);
 			// Set memory as analyzed
 			this.memory.addAttributesAt(addr64k, refOpcode.length, MemAttribute.FLOW_ANALYZED | MemAttribute.CODE);
@@ -479,7 +479,7 @@ export class SmartDisassembler {
 	/** ANCHOR createNodesForLabels
 	 * Creates extra nodes for the labels.
 	 * Creates nodes only at already analyzed memory and only if it is CODE_FIRST.
-	 * Labels pointing to data or not at the start of an instruction are ignored.
+	 * Labels pointing to data or not at the start of an instruction are added to this.otherLabel.
 	 * @param labels The Labels to consider.
 	 */
 	protected createNodesForLabels(addr64kLabels: AddressLabel[]) {
@@ -492,9 +492,7 @@ export class SmartDisassembler {
 				let node = this.nodes.get(addr64k);
 				if (!node) {
 					// Create new node
-					node = new AsmNode();
-					node.start = addr64k;
-					this.nodes.set(addr64k, node);
+					node = this.createNodeInMap(addr64k);
 				}
 				// Use the label name
 				node.label = label;

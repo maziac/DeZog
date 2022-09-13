@@ -1,6 +1,7 @@
 import {Format} from "../disassembler/format";
 import {RenderText} from "../disassembler/rendertext";
 import {SmartDisassembler} from "../disassembler/smartdisassembler";
+import {Labels} from "../labels/labels";
 import {Utility} from "../misc/utility";
 import {Z80Registers} from "../remotes/z80registers";
 import {Settings} from '../settings/settings';
@@ -264,6 +265,10 @@ export class DisassemblyClass extends SmartDisassembler {
 			const addrs64k = this.getOnlyPagedInAddresses(this.longPcAddressesHistory);
 			const csAddrs64k = this.getOnlyPagedInAddresses(this.longCallStackAddresses);
 			addrs64k.push(...csAddrs64k);
+			// Also add any CODE addresses, given by the user form the rev-eng.list file
+			const codeAddresses = Labels.getLongCodeAddresses();
+			const codeAddrs64k = this.getOnlyPagedInAddresses(codeAddresses);
+			addrs64k.push(...codeAddrs64k);
 
 			// Collect all long address labels and convert to 64k
 			const labels = this.get64kLabels();

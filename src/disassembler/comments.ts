@@ -61,7 +61,7 @@ export class Comments {
 	public addAmbiguousComment(originAddress: number, targetAddress: number) {
 		this.addCommentForAddress(originAddress, 'The disassembly is ambiguous at ' + Format.getHexFormattedString(targetAddress, 4) + '.');
 	}
-	
+
 
 	/** Adds comment that disassembly tries to access a different bank.
 	 * As the contents of that bank is not known the program flow is not followed.
@@ -70,7 +70,7 @@ export class Comments {
 	 * @param targetAddress The address in the other bank
 	 */
 	public addDifferentBankAccessComment(originAddress: number, targetAddress: number) {
-		this.addCommentForAddress(originAddress, 'The address ' + Format.getHexFormattedString(targetAddress, 4) + ' is in a different bank. As the current paged bank might be the wrong one the program flow is not followed further.');
+		this.addCommentForAddress(originAddress, 'The address ' + Format.getHexFormattedString(targetAddress, 4) + ' is in a different bank.');
 	}
 
 

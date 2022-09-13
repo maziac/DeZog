@@ -142,7 +142,6 @@ export class Memory extends BaseMemory {
 	/** Returns the address in a range that has the given attribute set.
 	 * If attribute is not found, undefined is returned
 	 * @param addr64k The start address.
-	 * @param addr64k The start address.
 	 * @param len The number of bytes to check.
 	 * @return The first address with attribute set or undefined.
 	 */

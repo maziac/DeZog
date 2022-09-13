@@ -159,6 +159,7 @@ export class LabelsClass {
 		this.labelLocations.clear();
 		this.labelsHierarchy.clear();
 		this.addressSkips.clear();
+		this.codeAddresses.length = 0;
 		this.watchPointLines.length = 0;
 		this.assertionLines.length = 0;
 		this.logPointLines.length = 0;
@@ -750,6 +751,13 @@ export class LabelsClass {
 	 */
 	public getSkipForAddress(longAddr: number): number | undefined {
 		return this.addressSkips.get(longAddr);
+	}
+
+
+	/** Returns the code addresses.
+	 */
+	public getLongCodeAddresses(): number[] {
+		return this.codeAddresses;
 	}
 }
 

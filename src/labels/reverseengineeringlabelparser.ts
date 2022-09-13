@@ -96,6 +96,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	) {
 		super(memoryModel, fileLineNrs, lineArrays, labelsForNumber64k, labelsForLongAddress, numberForLabel, labelLocations, watchPointLines, assertionLines, logPointLines, issueHandler);
 		this.addressSkips = addressSkips;
+		this.codeAddresses = codeAddresses;
 	}
 
 
