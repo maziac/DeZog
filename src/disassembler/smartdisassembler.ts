@@ -278,6 +278,7 @@ export class SmartDisassembler {
 	 */
 	public getFlowGraph(addresses: number[], labels: AddressLabel[]) {
 		this.nodes.clear();
+		this.otherLabels.clear();
 
 		// Create the nodes
 		//this.memory.resetAttributeFlag(MemAttribute.FLOW_ANALYZED);
@@ -1135,9 +1136,6 @@ export class SmartDisassembler {
 		const node = this.nodes.get(addr64k);
 		if (node)
 			label = node.label;
-		if (label)
-			return label;
-		label = this.otherLabels.get(addr64k);
 		return label;
 	}
 

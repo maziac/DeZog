@@ -286,8 +286,9 @@ export class RenderText extends RenderBase {
 				countBytes = diffToEnd;
 
 			// Print the label
-			const label = this.disasm.getLabelForAddr64k(dataAddr)!;
-			//Utility.assert(label);
+			let label = this.disasm.getLabelForAddr64k(dataAddr);
+			if (!label)
+				label = this.disasm.getOtherLabel(addr64k);
 			if (label) {
 				// Is e.g. not defined if in different bank.
 				const addressLabel = this.getAddressLabel(dataAddr, label);
