@@ -372,6 +372,7 @@ suite('Labels (revEng)', () => {
 				new Array<{address: number, line: string}>(),
 				new Array<{address: number, line: string}>(),
 				new Map<number, number>(),
+				new Array<number>(),
 				(issue) => {});	// NOSONAR
 			parser.loadAsmListFile(config);
 			fs.unlinkSync(tmpFile);

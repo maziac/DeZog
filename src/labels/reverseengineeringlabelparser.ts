@@ -60,20 +60,24 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	protected regexByte = /^([\da-f][\da-f]\s)/i;
 
 	// Regex to parse the label or the special commands (SKIP, SKIPWORD)
+	protected regexLabel = /^\s*(\.?[a-z_][\w\.]*):/i;
 
-	protected regexLabelOrCmd = /^\s*(\.?[a-z_][\w\.]*)(:?)/i;
-
+	// Regex to parse for special commands like SKIP, SKIPWORD or CODE.
+	protected regexSpecialCommand = /^\s*([a-z]+)/i;
 
 	// A map with addresses for skips. I.e. addresses that the PC should simply skip.
 	// E.g. for special RST commands followed by bytes.
 	// Used only by the ReverseEngineeringLabelParser.
 	protected addressSkips: Map<number, number>;
 
+	// Array with (long) addresses for CODE. I.e. addresses that additionally should be disassembled.
+	protected codeAddresses: Array<number>;
 
 
 	/**
 	 * Constructor.
 	 * @param addressSkips Add addressSkips for SKIP and SKIPWORD.
+	 * @param codeAddresses Array with (long) addresses for CODE.
 	 */
 	public constructor(	// NOSONAR
 		memoryModel: MemoryModel,
@@ -87,6 +91,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 		assertionLines: Array<{address: number, line: string}>,
 		logPointLines: Array<{address: number, line: string}>,
 		addressSkips: Map<number, number>,
+		codeAddresses: Array<number>,
 		issueHandler: (issue: Issue) => void
 	) {
 		super(memoryModel, fileLineNrs, lineArrays, labelsForNumber64k, labelsForLongAddress, numberForLabel, labelLocations, watchPointLines, assertionLines, logPointLines, issueHandler);
@@ -196,32 +201,38 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 		}
 
 		// Check if there is a label (with colon), also .local label
-		const matchLabelOrCmd = this.regexLabelOrCmd.exec(workLine);
-		if (matchLabelOrCmd) {
-			// Match found, check for label (:)
-			if (matchLabelOrCmd[2] == ':') {
-				// Label found
-				let label = matchLabelOrCmd[1];
-				// Check for local label
-				if (label.startsWith('.'))
-					this.addLocalLabelForNumber(longAddress, label);
-				else
-					this.addLabelForNumber(longAddress, label);
-			}
-			else {
-				// Not a label, but check for special command
-				const specialCmd = matchLabelOrCmd[1].toLowerCase();
-				switch (specialCmd) {
-					case 'skip':		// Skip 1 byte
-						this.addressSkips.set(longAddress, 1);
-						break;
-					case 'skipword':	// Skip 2 bytes
-						this.addressSkips.set(longAddress, 2);
-						break;
-					default:
-						// Do nothing
-						break;
-				}
+		const matchLabel = this.regexLabel.exec(workLine);
+		if (matchLabel) {
+			// Label found
+			let label = matchLabel[1];
+			// Check for local label
+			if (label.startsWith('.'))
+				this.addLocalLabelForNumber(longAddress, label);
+			else
+				this.addLabelForNumber(longAddress, label);
+			// Subtract label from string
+			workLine = workLine.substring(matchLabel[0].length);
+		}
+
+		// Check for special commands
+		const matchCmd = this.regexSpecialCommand.exec(workLine);
+		if (matchCmd) {
+			// Label found
+			const specialCmd = matchCmd[1].toLowerCase();
+			switch (specialCmd) {
+				case 'skip':		// Skip 1 byte
+					this.addressSkips.set(longAddress, 1);
+					break;
+				case 'skipword':	// Skip 2 bytes
+					this.addressSkips.set(longAddress, 2);
+					break;
+				case 'code':	// CODE area starts (e.g. interrupt)
+					this.codeAddresses.push(longAddress);
+					break;
+			// TODO: Tests for skip and CODE.
+				default:
+					// Do nothing
+					break;
 			}
 		}
 

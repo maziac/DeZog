@@ -131,6 +131,9 @@ export class LabelsClass {
 	// Used only by the ReverseEngineeringLabelParser.
 	protected addressSkips = new Map<number, number>();
 
+	// Array with (long) addresses for CODE. I.e. addresses that additionally should be disassembled.
+	protected codeAddresses = new Array<number>();
+
 
 	/// From the Settings.
 	protected smallValuesMaximum: number;
@@ -224,7 +227,7 @@ export class LabelsClass {
 
 		// Reverse Engineering List File
 		if (mainConfig.revEng) {
-			const parser = new ReverseEngineeringLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, this.addressSkips, issueHandler);
+			const parser = new ReverseEngineeringLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, this.addressSkips, this.codeAddresses, issueHandler);
 			for (const config of mainConfig.revEng) {
 				this.loadAsmListFile(parser, config);
 				// Check if files need to be watched
