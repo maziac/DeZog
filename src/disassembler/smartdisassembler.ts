@@ -313,11 +313,18 @@ export class SmartDisassembler {
 		// Create all (shallow) AsmNodes
 		const sortedAdresses = [...addresses];
 		sortedAdresses.sort((a, b) => a - b);
-		for (const addr of sortedAdresses) {
-			const memAttr = this.memory.getAttributeAt(addr);
-			if (!(memAttr & MemAttribute.FLOW_ANALYZED)) {
-				// If not already analyzed
-				this.createNodeForAddress(addr);
+		for (const addr64k of sortedAdresses) {
+			const memAttr = this.memory.getAttributeAt(addr64k);
+			if (memAttr & MemAttribute.FLOW_ANALYZED) {
+				// Does it fit the already done disassembly?
+				if (!(memAttr & MemAttribute.CODE_FIRST)) {
+					// Not CODE_FIRST: A disassembly at an offset took place -> error
+					this.comments.addAmbiguousComment(addr64k, addr64k);
+				}
+			}
+			else {
+				// If not already analyzed, create node
+				this.createNodeForAddress(addr64k);
 			}
 		}
 	}
@@ -704,7 +711,7 @@ export class SmartDisassembler {
 			this.comments.addDifferentBankAccessComment(originAddress, targetAddress);
 		}
 		else {
-			// The bank should already exist
+			// The node should already exist
 			otherNode = this.nodes.get(targetAddress)!;
 			//Utility.assert(otherNode);
 			// Several reason a node does not exist:
