@@ -201,14 +201,14 @@ export class LabelsClass {
 		if (mainConfig.sjasmplus) {
 			for (const config of mainConfig.sjasmplus) {
 				// Parse SLD file
-				const parser = new SjasmplusSldLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, this.addressSkips, issueHandler);
+				const parser = new SjasmplusSldLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
 				this.loadAsmListFile(parser, config);
 			}
 		}
 
 		// z80asm
 		if (mainConfig.z80asm) {
-			const parser = new Z80asmLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, this.addressSkips, issueHandler);
+			const parser = new Z80asmLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
 			for (const config of mainConfig.z80asm) {
 				this.loadAsmListFile(parser, config);
 			}
@@ -216,7 +216,7 @@ export class LabelsClass {
 
 		// z88dk
 		if (mainConfig.z88dk) {
-			const parser = new Z88dkLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, this.addressSkips, issueHandler);
+			const parser = new Z88dkLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
 			for (const config of mainConfig.z88dk) {
 				this.loadAsmListFile(parser, config);
 			}

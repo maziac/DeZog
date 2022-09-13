@@ -400,7 +400,6 @@ labelE000                          = $E000 ; addr, local, , main, , main.asm:22
 				new Array<{address: number, line: string}>(),
 				new Array<{address: number, line: string}>(),
 				new Array<{address: number, line: string}>(),
-				new Map<number, number>(),
 				(issue) => {});	// NOSONAR
 			parser.loadAsmListFile(config);
 		}

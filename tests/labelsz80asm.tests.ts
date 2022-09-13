@@ -315,7 +315,6 @@ E000           labelE000:
 				new Array<{address: number, line: string}>(),
 				new Array<{address: number, line: string}>(),
 				new Array<{address: number, line: string}>(),
-				new Map<number, number>(),
 				(issue) => {});	// NOSONAR
 			parser.loadAsmListFile(config);
 		}

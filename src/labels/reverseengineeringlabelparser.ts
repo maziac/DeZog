@@ -1,9 +1,10 @@
 import {Utility} from '../misc/utility';
+import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx48k} from '../remotes/MemoryModel/predefinedmemorymodels';
 import {Z80RegistersClass} from '../remotes/z80registers';
 import {ListConfigBase} from '../settings/settings';
-import {LabelParserBase} from './labelparserbase';
-import {ListFileLine} from './labels';
+import {Issue, LabelParserBase} from './labelparserbase';
+import {ListFileLine, SourceFileEntry} from './labels';
 
 
 /**
@@ -61,6 +62,36 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	// Regex to parse the label or the special commands (SKIP, SKIPWORD)
 
 	protected regexLabelOrCmd = /^\s*(\.?[a-z_][\w\.]*)(:?)/i;
+
+
+	// A map with addresses for skips. I.e. addresses that the PC should simply skip.
+	// E.g. for special RST commands followed by bytes.
+	// Used only by the ReverseEngineeringLabelParser.
+	protected addressSkips: Map<number, number>;
+
+
+
+	/**
+	 * Constructor.
+	 * @param addressSkips Add addressSkips for SKIP and SKIPWORD.
+	 */
+	public constructor(	// NOSONAR
+		memoryModel: MemoryModel,
+		fileLineNrs: Map<number, SourceFileEntry>,
+		lineArrays: Map<string, Array<number>>,
+		labelsForNumber64k: Array<any>,
+		labelsForLongAddress: Map<number, Array<string>>,
+		numberForLabel: Map<string, number>,
+		labelLocations: Map<string, {file: string, lineNr: number, address: number}>,
+		watchPointLines: Array<{address: number, line: string}>,
+		assertionLines: Array<{address: number, line: string}>,
+		logPointLines: Array<{address: number, line: string}>,
+		addressSkips: Map<number, number>,
+		issueHandler: (issue: Issue) => void
+	) {
+		super(memoryModel, fileLineNrs, lineArrays, labelsForNumber64k, labelsForLongAddress, numberForLabel, labelLocations, watchPointLines, assertionLines, logPointLines, issueHandler);
+		this.addressSkips = addressSkips;
+	}
 
 
 	/**
