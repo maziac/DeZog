@@ -364,6 +364,11 @@ export class RenderText extends RenderBase {
 		const lines = new RenderedLines();
 		let addr64k = 0x0000;
 		for (const node of nodes) {
+			// nodes from sub routine may contain bank border addresses -
+			// those are not shown as it is not clear to which bank they belong:
+			if (node.bankBorder)
+				continue;
+
 			// Get node address
 			const nodeAddr = node.start;
 
