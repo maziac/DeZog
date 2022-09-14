@@ -1551,9 +1551,10 @@ export class RemoteBase extends EventEmitter {
 		const slots = this.getSlots();
 		let skip;
 		let totalSkip = 0;
+		const skipAddresses = Labels.getLongSkipAddresses();
 		while (true) {
 			const longAddr = Z80Registers.createLongAddress(bpAddr1, slots);
-			skip = Labels.getSkipForAddress(longAddr);
+			skip = skipAddresses.get(longAddr);
 			if (!skip)
 				break;
 			bpAddr1 = (bpAddr1 + skip) & 0xFFFF;

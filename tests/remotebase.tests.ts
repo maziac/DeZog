@@ -252,8 +252,8 @@ suite('RemoteBase', () => {
 				const rem = remote as any;
 
 				// Add skip
-				(Labels as any).addressSkips.clear();
-				(Labels as any).addressSkips.set(0x018001, 2);
+				(Labels as any).skipAddresses.clear();
+				(Labels as any).skipAddresses.set(0x018001, 2);
 
 				remote.pc = 0x8000;
 				await remote.getRegistersFromEmulator();
@@ -274,8 +274,8 @@ suite('RemoteBase', () => {
 				remote.pcMemory[0] = 0xD7;	// RST 16
 
 				// Add skip
-				(Labels as any).addressSkips.clear();
-				(Labels as any).addressSkips.set(0x018001, 1);
+				(Labels as any).skipAddresses.clear();
+				(Labels as any).skipAddresses.set(0x018001, 1);
 
 				let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
 				assert.equal(0xD7, opcode.code);

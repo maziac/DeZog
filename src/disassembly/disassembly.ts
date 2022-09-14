@@ -271,9 +271,12 @@ export class DisassemblyClass extends SmartDisassembler {
 			const codeAddrs64k = this.getOnlyPagedInAddresses(codeAddresses);
 			addrs64k.push(...codeAddrs64k);
 
+			// Get all skip addresses and convert to 64k
+			const longSkipAddresses = Labels.getLongSkipAddresses();
+			this.skipAddrs64k = this.getOnlyPagedInAddressesForMap(longSkipAddresses);
+
 			// Collect all long address labels and convert to 64k
 			const labels = this.get64kLabels();
-
 			// Disassemble
 			this.getFlowGraph(addrs64k, labels);
 			this.disassembleNodes();
@@ -308,8 +311,8 @@ export class DisassemblyClass extends SmartDisassembler {
 	}
 
 
-	/** Adds addresses of the PC history if they are currently paged in.
-	 * @param src The source array with long addresses. Only addresses are added to target that
+	/** Returns given addresses if they are currently paged in.
+	 * @param src The source array with long addresses.
 	 * are currently paged in.
 	 * @returns An array with 64k addresses.
 	 */
@@ -323,7 +326,28 @@ export class DisassemblyClass extends SmartDisassembler {
 			// Compare
 			if (longAddr == longCmpAddress) {
 				// Is paged in
-				result.push(longAddr & 0xFFFF);
+				result.push(addr64k);
+			}
+		}
+		return result;
+	}
+
+
+	/** Returns a new map but only with items that contain addresses which are currently paged in.
+	 * @param src The source map with long addresses.
+	 * @returns A map with 64k addresses.
+	 */
+	protected getOnlyPagedInAddressesForMap(src: Map<number, number>): Map<number, number> {
+		const result = new Map<number, number>();
+		for (const [longAddr, skip] of src) {
+			// Create 64k address
+			const addr64k = longAddr & 0xFFFF;
+			// Check if longAddr is currently paged in
+			const longCmpAddress = Z80Registers.createLongAddress(addr64k, this.slots);
+			// Compare
+			if (longAddr == longCmpAddress) {
+				// Is paged in
+				result.set(addr64k, skip);
 			}
 		}
 		return result;

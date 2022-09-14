@@ -67,9 +67,10 @@ export class SmartDisassembler {
 	protected addrLineMap = new Map<number, number>();
 	protected lineAddrArray = new Array<number | undefined>();
 
-	// A map with adjustments (if a CALL or RST returns from any of the given (long) addresses).
-	// Used for RST adjustment.
-	protected callAddressesReturnOffset = new Map<number, number>();
+	// A map with long addresses for skips. I.e. addresses that the PC should simply skip.
+	// E.g. for special RST commands followed by bytes.
+	// Used only by the ReverseEngineeringLabelParser.
+	protected skipAddrs64k = new Map<number, number>();
 
 
 	/// Label prefixes
@@ -683,8 +684,7 @@ export class SmartDisassembler {
 	 * @returns undefined, 1 or 2.
 	 */
 	public getSkipForAddress(addr64k: number): number | undefined {
-		const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
-		const skip = Labels.getSkipForAddress(longAddr);
+		const skip = this.skipAddrs64k.get(addr64k);
 		return skip;
 	}
 

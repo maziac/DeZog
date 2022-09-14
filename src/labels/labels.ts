@@ -126,10 +126,10 @@ export class LabelsClass {
 	/// Long addresses.
 	protected logPointLines = new Array<{address: number, line: string}>();
 
-	// A map with addresses for skips. I.e. addresses that the PC should simply skip.
+	// A map with long addresses for skips. I.e. addresses that the PC should simply skip.
 	// E.g. for special RST commands followed by bytes.
 	// Used only by the ReverseEngineeringLabelParser.
-	protected addressSkips = new Map<number, number>();
+	protected skipAddresses = new Map<number, number>();
 
 	// Array with (long) addresses for CODE. I.e. addresses that additionally should be disassembled.
 	protected codeAddresses = new Array<number>();
@@ -158,7 +158,7 @@ export class LabelsClass {
 		this.numberForLabel.clear();
 		this.labelLocations.clear();
 		this.labelsHierarchy.clear();
-		this.addressSkips.clear();
+		this.skipAddresses.clear();
 		this.codeAddresses.length = 0;
 		this.watchPointLines.length = 0;
 		this.assertionLines.length = 0;
@@ -228,7 +228,7 @@ export class LabelsClass {
 
 		// Reverse Engineering List File
 		if (mainConfig.revEng) {
-			const parser = new ReverseEngineeringLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, this.addressSkips, this.codeAddresses, issueHandler);
+			const parser = new ReverseEngineeringLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, this.skipAddresses, this.codeAddresses, issueHandler);
 			for (const config of mainConfig.revEng) {
 				this.loadAsmListFile(parser, config);
 				// Check if files need to be watched
@@ -743,14 +743,12 @@ export class LabelsClass {
 	}
 
 
-	/** Returns any given skips for an address.
+	/** Returns the skip addresses.
 	 * Used to skip over bytes after a RST.
-	 * @param longAddr The long address to get the skip for.
-	 * @returns The skip. Normally undefined for no skip.
-	 * If skip is given usually this is 1 or 2.
+	 * @returns The skip addresses.
 	 */
-	public getSkipForAddress(longAddr: number): number | undefined {
-		return this.addressSkips.get(longAddr);
+	public getLongSkipAddresses(): Map<number, number> {
+		return this.skipAddresses;
 	}
 
 
