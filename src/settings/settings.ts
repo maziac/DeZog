@@ -640,8 +640,10 @@ export class Settings {
 				const fpPath = UnifiedPath.getUnifiedPath(fp.path);
 				const file: ReverseEngineeringConfig = {
 					path: undefined as any,
-					reloadOnSave: fp.reloadOnSave || false
+					reloadOnSave: fp.reloadOnSave
 				};
+				if (file.reloadOnSave == undefined)
+					file.reloadOnSave = true;
 				if (fpPath)
 					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
 				return file;

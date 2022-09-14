@@ -188,6 +188,14 @@ export class DisassemblyClass extends SmartDisassembler {
 	}
 
 
+	/** Invalidates the current disassembly.
+	 * This will trigger a new disassembly and a new memory fetch when setNewAddresses is called.
+	 */
+	public invalidateDisassembly() {
+		this.slots = undefined as any;
+	}
+
+
 	/** Called when a stack trace request is done. Ie. when a new PC with call stack
 	 * is available.
 	 * The first call stack address is the current PC.

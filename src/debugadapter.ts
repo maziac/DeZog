@@ -3974,6 +3974,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			StepHistory.init();	// Is only cleared because coverage is cleared (otherwise it looks inconsistent)
 
 			// Do disassembly anew
+			Disassembly.invalidateDisassembly();
 			this.sendEvent(new StoppedEvent("Labels reloaded", DebugSessionClass.THREAD_ID));
 		}
 		catch (e) {
