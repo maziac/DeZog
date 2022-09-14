@@ -217,7 +217,6 @@ export class DisassemblyClass extends SmartDisassembler {
 		const slots = Z80Registers.getSlots();
 		if (this.slotsChanged(slots)) {
 			this.setCurrentSlots(slots);
-			await this.fetch64kMemory();	// Clears also attributes
 			disasmRequired = true;
 		}
 		else {
@@ -227,11 +226,13 @@ export class DisassemblyClass extends SmartDisassembler {
 				const pcData = await Remote.readMemoryDump(pcAddr64k, 1);
 				// Compare
 				const prevData = this.memory.getValueAt(pcAddr64k);
-				if (pcData[0] != prevData) {
-					await this.fetch64kMemory();
+				if (pcData[0] != prevData)
 					disasmRequired = true;
-				}
 			}
+		}
+		// Fetch memory?
+		if (disasmRequired) {
+			await this.fetch64kMemory();	// Clears also attributes
 		}
 
 		// Check current pc

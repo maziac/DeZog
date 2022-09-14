@@ -281,8 +281,7 @@ export class SmartDisassembler {
 		this.otherLabels.clear();
 
 		// Create the nodes
-		//this.memory.resetAttributeFlag(MemAttribute.FLOW_ANALYZED);
-		this.memory.resetAttributeFlag(~MemAttribute.ASSIGNED);
+		this.memory.resetAttributeFlag(~MemAttribute.ASSIGNED);	// Memory can be disassembled anew even if it has not been newly fetched.
 		this.createNodes(addresses);
 
 		// Now create nodes for the labels
