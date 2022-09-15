@@ -725,5 +725,82 @@ suite('Labels (revEng)', () => {
 		});
 	});
 
+
+	suite('Special Commands', () => {
+		test('upper/lower case', () => {
+			const config: any = {
+				revEng: [{
+					path: 'tests/data/labels/projects/revEng/cmd_upperlower.list'
+				}]
+			};
+
+			lbls.readListFiles(config, new MemoryModelAllRam());
+			const skipAddresses = lbls.getLongSkipAddresses();
+
+			assert.equal(skipAddresses.get(0x010010), 1);
+			assert.equal(skipAddresses.get(0x010020), 1);
+
+			// Test that no more than the given skips are created
+			assert.equal(skipAddresses.size, 2);
+		});
+
+		test('SKIP', () => {
+			const config: any = {
+				revEng: [{
+					path: 'tests/data/labels/projects/revEng/cmd_skip.list'
+				}]
+			};
+
+			lbls.readListFiles(config, new MemoryModelAllRam());
+			const skipAddresses = lbls.getLongSkipAddresses();
+
+			assert.equal(skipAddresses.get(0x010003), 1);
+			assert.equal(skipAddresses.get(0x010010), 1);
+			assert.equal(skipAddresses.get(0x010020), 1);
+			assert.equal(skipAddresses.get(0x010030), 1);
+
+			// Test that no more than the given skips are created
+			assert.equal(skipAddresses.size, 4);
+		});
+
+		test('SKIPWORD', () => {
+			const config: any = {
+				revEng: [{
+					path: 'tests/data/labels/projects/revEng/cmd_skipword.list'
+				}]
+			};
+
+			lbls.readListFiles(config, new MemoryModelAllRam());
+			const skipAddresses = lbls.getLongSkipAddresses();
+
+			assert.equal(skipAddresses.get(0x010003), 2);
+			assert.equal(skipAddresses.get(0x010010), 2);
+			assert.equal(skipAddresses.get(0x010020), 2);
+			assert.equal(skipAddresses.get(0x010030), 2);
+
+			// Test that no more than the given skips are created
+			assert.equal(skipAddresses.size, 4);
+		});
+
+		test('CODE', () => {
+			const config: any = {
+				revEng: [{
+					path: 'tests/data/labels/projects/revEng/cmd_code.list'
+				}]
+			};
+
+			lbls.readListFiles(config, new MemoryModelAllRam());
+			const codeAddresses = lbls.getLongCodeAddresses();
+
+			assert.ok(codeAddresses.includes(0x010003));
+			assert.ok(codeAddresses.includes(0x010010));
+			assert.ok(codeAddresses.includes(0x010020));
+			assert.ok(codeAddresses.includes(0x010030));
+
+			// Test that no more than the given code addresses are created
+			assert.equal(codeAddresses.length, 4);
+		});
+
+	});
 });
 

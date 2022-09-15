@@ -88,11 +88,12 @@ But there are a few caveats:
 - Interrupts: The interrupt address is not known at the beginning. I.e. as long as you do not break into the interrupt DeZog will not be able to disassemble the code.
 - Same for ```JP (HL)```. The jump address is only available during run time. Therefore DeZog cannot disassemble this prior to execution.
 - Self-modifying code. DeZog does not fetch and disassemble the code on every step. Therefore, in case of self-modifying code, you may not see the correct disassembly. If the code looks suspicious you can do a manual refresh of the disassembly by pressing the refresh button ![](images/ReverseEngineeringUsage/disasm_refresh.jpg) in the top right of the disasm.list file.
+- For the same reason (Dezog does not fetch and disassemble the code on every step) the data portions in the disassembly may not be up-to-date. In doubt re-fresh the disassembly.
 
 To keep the disassembly up-to-date most of the time DeZog decides to automatically update the disassembly under the following occasions:
-- The slots (i.e. the current banking/paging) changes.
+- The slots (i.e. the current banking/paging) change.
 - The memory contents at the current PC has changed.
-- The PC is at a former unknown address (e.g. at an interrupt).
+- The PC is at a former unknown, not disassembled, address (e.g. at an interrupt).
 
 Anyhow: If in doubt that the disassembly is recent you can also compare it with the (brute force) disassembly in the VARIABLE pane, e.g.:
 ![](images/ReverseEngineeringUsage/variables_disassembly.jpg)
@@ -128,7 +129,8 @@ Please note that you can add temporary watchpoints also via the debug command "-
 
 # Analysis
 
-The inclusion of the [z80dismblr](https://github.com/maziac/z80dismblr) makes it possible to use some of it's analysing features, namely flowcharts, call graphs and smart disassembly.
+The DeZog smart disassembler is based on the [z80dismblr](https://github.com/maziac/z80dismblr) but has been heavily re-factored.
+This offers more analysing features, namely flowcharts, call graphs and smart disassembly.
 
 For all of these features:
 Start Dezog, place the cursor at the source code at some instruction and do a right click for "Analyze at Cursor":
@@ -165,6 +167,8 @@ Furthermore in the bubbles you'll find the start address and the size of the sub
 Here is a more advanced call graph from the main routine:
 ![](images/ReverseEngineeringUsage/callgraph_main.jpg).
 
+At the top of the call graph you also find a slider to adjust the shown call graph depth.
+
 ## Flow Chart
 
 Here is the flow chart for the same subroutine:
@@ -188,24 +192,171 @@ Note:
 The selection does work only on code for which a disassembly or a source file exists. If e.g. the disassembly shows too less code you might need to do a "smart disassembly" first and put that in your reverse engineered list file.
 
 Hint:
-If the flow chart or call graph is hidden by the selection please enable the following vscode setting:
+If the flow chart or call graph is hidden once you do a selection then please enable the following vscode setting:
 ~~~
 editor.revealIfOpen
 ~~~
 ![](images/ReverseEngineeringUsage/analyze_reveal_if_open.jpg)
 
 
-## Smart Disassembly # TODO: REMOVE feature.
+## Smart Disassembly
 
-This makes sense only for unknown code. Compared to the "normal" disassembly that is done on object code that has o association with a source (asm) file the smart disassembly will dig into each found subroutine and disassemble that as well.
-I.e. the smart disassembly analyzes the opcodes and follows all branches.
+The smart disassembly will follow the execution flow from the given address and visualize the calls and jumps with arrows.
 
 A smart disassembly of the above *fill_bckg_line* looks like this:
+// TODO: new animated gif
 ![](images/ReverseEngineeringUsage/smart_disassembly_fill_bckg_line.jpg)
 
 I.e. you will automatically find also the *fill_memory* disassembled because it it referenced in *fill_bckg_line*.
 
 If you'd do the same for the *main* routine you'd get a disassembly of the whole program.
 
-If labels already exist those names are re-used. If labels do not exist yet the will be "invented".
+If labels already exist those names are re-used. If labels do not exist yet a name will be "invented".
+
+
+## Note
+
+Although these analyzes features were meant for reverse engineering it is also possible to use them on "own" code.
+The visualization in a flow chart, call graph or even in the smart disassembly might be helpful as well.
+
+
+# Reverse Engineering List File
+
+The reverse engineering file is set in the launch.json file with:
+~~~json
+"revEng": [
+    {
+        "path": "pacman.list"
+    }
+~~~
+
+It is parsed by DeZog like other list files.
+DeZog retrieves the label names from it and associates them with the address for that line.
+
+## Addresses
+
+The address is given as ```long address```normally. I.e. it also includes the bank/paging information.
+Only if the address (slot) is unambiguous (i.e. does not support banking) the banking info can be omitted.
+
+Example without banking:
+~~~list
+8000  mylabel:
+~~~
+
+Example with banking:
+~~~list
+8000.9  mylabel:
+~~~
+
+I.e. the "9" is the bank. The name of the bank correspondents directly to the name used in the memory model.
+TODO: Reference to memory model. Ausserdem muss ich die Namen der Banks auch angeben.
+
+## Bytes
+
+After the address the used bytes can be given. E.g.
+~~~list
+8000.9  21 AB CD
+~~~
+
+DeZog does not interpret the contents of these bytes but counts the number. simply to know what memory belongs to the CODE area.
+In the example above all 3 bytes will be associated with the rev engineering file/line number (pacman.list).
+
+
+## Mnemonic
+
+The bytes are followed by the mnemonic (instruction).
+E.g.
+~~~list
+8000.9  21 AB CD    ld hl,0xCDAB
+~~~
+
+The mnemonics are not interpreted at all by DeZog.
+These are just to make the list file human readable.
+
+
+## Labels
+
+A label is recognized by the ':'
+
+~~~list
+8000.9  mylabel:
+8000.9  21 AB CD    ld hl,0xCDAB
+~~~
+
+The label is directly associated with the address (8000.9).
+As in the example above it is possible to use several same addresses on different lines (as with normal list files).
+
+## Comments
+
+A comment is started with ';'.
+
+~~~list
+; mul_ab:  Multiplies a with b.
+; Returns the result in hl.
+8000.9  mul_ab:
+~~~
+
+TODO: Implement multiline comments
+
+## Special Commands
+
+DeZog understands a few special commands:
+
+### 'SKIP' or 'SKIPWORD'
+
+'SKIP' is used to tell DeZog that the code at the given address should be skipped and not disassembled.
+
+This is useful if a CALL or a RST manipulates the return address on the stack.
+
+~~~list
+8000.9  CF          RST 08
+8001.9              SKIP
+8002.9  21 AB CD    LD HL,0xCDAB
+~~~
+
+In the example above the byte at 8001 is skipped. The disassembly continues at 8002.
+
+SKIPWORD works the same but skips 2 bytes:
+~~~list
+8000.9  CF          RST 08
+8001.9              SKIPWORD
+8003.9  21 AB CD    LD HL,0xCDAB
+~~~
+
+Notes:
+- Also the step-over acknowledges the SKIP (or SKIPWORD).
+- If you need to skip more than 2 bytes you can use several SKIP/SKIPWORD in sequence, e.g.:
+    ~~~list
+    8000.9  CF          RST 08
+    8001.9              SKIPWORD
+    8003.9              SKIPWORD
+    8005.9              SKIP
+    8006.9  21 AB CD    LD HL,0xCDAB
+    ~~~
+
+- You can have bytes before the SKIP or even any text after the SKIP. E.g. this is also valid:
+    ~~~list
+    8000.9  CF          RST 08
+    8001.9  FF          SKIP [0xFF]
+    8002.9  21 AB CD    LD HL,0xCDAB
+    ~~~
+
+
+### 'CODE'
+
+'CODE' is used to tell DeZog that at a certain address code is starting.
+Normally not all code can be found by DeZog itself.
+In those case you can help DeZog by specifying CODE addresses.
+
+this is useful e.g. to specify the start of a interrupt routine or e.g. code that is only reached through ```JP (HL)```.
+
+Here the address 0x0066 will be disassembled by DeZog even if no current execution flow would lead to it:
+~~~list
+0066.R0 CODE
+~~~
+
+You can combine that with a label, of course:
+~~~list
+0066.R0 interrupt: CODE
+~~~
 

@@ -643,7 +643,7 @@ export class Settings {
 					reloadOnSave: fp.reloadOnSave
 				};
 				if (file.reloadOnSave == undefined)
-					file.reloadOnSave = true;
+					file.reloadOnSave = false;
 				if (fpPath)
 					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
 				return file;

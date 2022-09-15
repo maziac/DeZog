@@ -280,6 +280,7 @@ export class SmartDisassembler {
 	public getFlowGraph(addresses: number[], labels: AddressLabel[]) {
 		this.nodes.clear();
 		this.otherLabels.clear();
+		this.comments.clear();
 
 		// Create the nodes
 		this.memory.resetAttributeFlag(~MemAttribute.ASSIGNED);	// Memory can be disassembled anew even if it has not been newly fetched.

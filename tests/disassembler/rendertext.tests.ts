@@ -886,4 +886,71 @@ suite('Disassembler - RenderText', () => {
 			});
 		});
 	});
+
+
+	suite('Special Commands', () => {
+		// Disassemble the special commands: SKIP. SKIPWORD, CODE.
+
+		// Disassemble
+		function disassemble(startAddrs64k: number[]): string {
+			(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
+			disasm.setCurrentSlots([0]);
+			readBinFile(disasm, './tests/disassembler/projects/render_text_special_commands/main.bin');
+
+			disasm.getFlowGraph(startAddrs64k, []);
+			disasm.disassembleNodes();
+			// Get all nodes for the depth
+			const nodes = new Set<AsmNode>();
+			const startNodes = disasm.getNodesForAddresses(startAddrs64k);
+			for (const node of startNodes) {
+				const sub = new Subroutine(node);
+				sub.getAllNodesRecursively(65536, nodes);
+			}
+			const text = r.renderNodes(nodes);
+			return text;
+		}
+
+		test('SKIP', () => {
+			(disasm as any).skipAddrs64k.set(0x0101, 1);
+			const text = disassemble([0x0100]);
+
+			assert.equal(c(text), c(`0008.1 RST_0008:
+0008.1 E3 EX (SP),HL
+0009.1 23 INC HL
+000A.1 E3 EX (SP),HL
+000B.1 C9 RET
+
+0100.1 CF RST $08
+0101.1 02 SKIP [$02]
+
+0102.1 00 NOP
+0103.1 C9 RET
+`));
+		});
+
+		test('SKIPWORD', () => {
+			(disasm as any).skipAddrs64k.set(0x0201, 2);
+			const text = disassemble([0x0200]);
+
+			assert.equal(c(text), c(`0010.1 RST_0010:
+0010.1 E3 EX (SP),HL
+0011.1 23 INC HL
+0012.1 23 INC HL
+0013.1 E3 EX (SP),HL
+0014.1 C9 RET
+
+0200.1 D7 RST $10
+0201.1 CD AB SKIPWORD [$ABCD]
+
+0203.1 00 NOP
+0204.1 C9 RET
+`));
+		});
+
+		test('CODE', () => {
+			// No test required: A CODE command in the list file just leads to a
+			// another start address passed to the disassembly.
+			assert.ok(true);
+		});
+	});
 });

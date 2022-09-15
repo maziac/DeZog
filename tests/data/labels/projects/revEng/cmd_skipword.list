@@ -1,0 +1,11 @@
+
+0003              SKIPWORD
+
+0010        label1: SKIPWORD
+
+
+0020 1C           SKIPWORD
+
+
+0030 1D       label1: SKIPWORD
+

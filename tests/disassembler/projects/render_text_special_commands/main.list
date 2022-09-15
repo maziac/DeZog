@@ -1,0 +1,33 @@
+# file opened: main.asm
+ 1    0000
+ 2    0000 00 00 00...  	DEFS 0x0008-$
+ 3    0008              RST_08: ; Consumes one bye from stack
+ 4    0008 E3           	EX (SP),HL
+ 5    0009 23           	INC HL
+ 6    000A E3           	EX (SP),HL
+ 7    000B C9           	RET
+ 8    000C
+ 9    000C 00 00 00 00  	DEFS 0x0010-$
+10    0010              RST_10: ; Consumes two bytes from stack
+11    0010 E3           	EX (SP),HL
+12    0011 23           	INC HL
+13    0012 23           	INC HL
+14    0013 E3           	EX (SP),HL
+15    0014 C9           	RET
+16    0015
+17    0015
+18    0015
+19    0015 00 00 00...  	DEFS 0x0100-$
+20    0100 CF           	RST 8
+21    0101 02           	DEFB 2
+22    0102 00           	NOP
+23    0103 C9           	RET
+24    0104
+25    0104
+26    0104 00 00 00...  	DEFS 0x0200-$
+27    0200 D7           	RST 16
+28    0201 CD AB        	DEFW 0xABCD
+29    0203 00           	NOP
+30    0204 C9           	RET
+31    0205
+# file closed: main.asm

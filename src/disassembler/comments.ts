@@ -10,12 +10,11 @@ export class Comments {
 	protected addrComments = new Map<number, string[]>();
 
 
-	/** Constructor.
+	/** Clears all comments.
 	*/
-	/*
-	constructor() {
+	public clear() {
+		this.addrComments.clear();
 	}
-	*/
 
 
 	/** Adds a comment to an address.
