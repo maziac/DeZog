@@ -267,7 +267,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 		// Check if label already exists
 		if (this.numberForLabel.get(label) != undefined) {
 			// Yes, warn
-			this.sendWarning("Label '" + label + "' defined more than once.");
+			this.sendWarning("Label '" + label + "' already defined. Definition skipped.");
 			return;
 		}
 

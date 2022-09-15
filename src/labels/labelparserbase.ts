@@ -774,7 +774,7 @@ export class LabelParserBase {
 
 
 	/**
-	 * Sends an warning to the Labels class to print out a PROBLEM.
+	 * Sends a warning to the Labels class to print out a PROBLEM.
 	 * @param message The text to print.
 	 */
 	protected sendWarning(message: string, severity: "error" | "warning" = "warning", filepath?: string, lineNr?: number) {
