@@ -11,7 +11,8 @@
             "remoteType": "zsim",
             "zsim": {
                 "visualMemory": true,
-                "memoryModel": "ZX48K"
+                //"memoryModel": "ZX48K",
+                "memoryModel": "RAM"
                 //"Z80N": true,
             },
             "z80asm": [
@@ -19,9 +20,18 @@
                     "path": "general.list",
                 }
             ],
-            "rootFolder": "${workspaceFolder}",
             "execAddress": "label1",
-            "loadObjs": [{ "path": "general.obj", "start": "0x8000" }]
+            "startAutomatically": false,
+            "rootFolder": "${workspaceFolder}",
+            "loadObjs": [{
+                "path": "general.obj",
+                "start": "0x8000"
+            }],
+            "commandsAfterLaunch": [
+                "-wpmem enable",
+                "-logpoint enable",
+                "-assertion enable",
+            ]
         }
     ]
 }
