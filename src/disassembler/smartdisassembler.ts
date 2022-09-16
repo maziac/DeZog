@@ -451,6 +451,10 @@ export class SmartDisassembler {
 				break;
 			}
 
+			// Also stop if end of memory reached
+			if (addr64k > 0xFFFF)
+				break;
+
 			// Check for RET cc
 			if (flags & OpcodeFlag.RET && flags & OpcodeFlag.CONDITIONAL) {
 				// Follow natural flow
@@ -632,6 +636,10 @@ export class SmartDisassembler {
 					break;
 				}
 			}
+
+			// Also stop if end of memory reached
+			if (addr64k > 0xFFFF)
+				break;
 
 			// Also stop if next node starts
 			const followingNode = this.nodes.get(addr64k)!;

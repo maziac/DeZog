@@ -139,7 +139,7 @@ export class LabelsClass {
 	protected smallValuesMaximum: number;
 
 	// Remembers if an error happened.
-	protected errorHappened: boolean;
+	protected errorHappened: string | undefined;
 
 	// Contains the watched files. For reverse engineering auto re-load.
 	protected watchedFiles: Array<string> = [];
@@ -164,7 +164,7 @@ export class LabelsClass {
 		this.assertionLines.length = 0;
 		this.logPointLines.length = 0;
 		this.smallValuesMaximum = smallValuesMaximum;
-		this.errorHappened = false;
+		this.errorHappened = undefined;
 		this.watchedFiles.length = 0;
 	}
 
@@ -243,8 +243,8 @@ export class LabelsClass {
 
 
 		// Check errors
-		if (this.errorHappened)
-			throw Error("Error during parsing of the list/sld file(s).");
+		if (this.errorHappened != undefined)
+			throw Error("Error during parsing of the list/sld file(s).\n" + this.errorHappened);
 
 		// Finish
 		this.finish();
@@ -262,7 +262,7 @@ export class LabelsClass {
 		}
 		catch (e) {
 			// Just remember that an exception happened
-			this.errorHappened = true;
+			this.errorHappened = e.message;
 		}
 	}
 
