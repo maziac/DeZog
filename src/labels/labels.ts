@@ -630,12 +630,9 @@ export class LabelsClass {
 	public getFileAndLineForAddress(longAddress: number): SourceFileEntry {
 		// Address file conversion
 		let entry = this.fileLineNrs.get(longAddress);
-		//if (!entry) {
-		//	entry = this.fileLineNrs.get(longAddress & 0xFFFF);	// Try 64k address, in case some sld file was without banking. // TODO: REMOVE (experimentally removed in 07/22)
-			if (!entry) {
-				return {fileName: '', lineNr: 0, modulePrefix: undefined, lastLabel: undefined, size: 0};
-			}
-		//}
+		if (!entry) {
+			return {fileName: '', lineNr: 0, modulePrefix: undefined, lastLabel: undefined, size: 0};
+		}
 
 		const filePath = Utility.getAbsFilePath(entry.fileName);
 		return {

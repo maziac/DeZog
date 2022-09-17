@@ -1797,23 +1797,28 @@ class OpcodeIndexImmediate extends Opcode {
 
 class OpcodeExtended extends Opcode {
 	/// Array that holds the sub opcodes for this opcode.
-	public opcodes;
+	public opcodes: Opcode[];
 
 	/**
 	 * On construction the array is passed which holds the opcodes for this extended opcode.
 	 * @param code The code, e.g. 0xCD or 0xDD
 	 * @param opcodes The array with opcodes.
 	 */
-	constructor(code: number, opcodes: Array<Opcode>) {
+	constructor(code: number, opcodes: Opcode[]) {
 		super(code);
 		this.opcodes = opcodes;
 		this.length += 1;	// one more
 	}
 
 
-	/// Clone not supported.
+	/**
+	 * Creates a copy object,
+	 * @returns A new object with same values.
+	 */
 	public clone(): Opcode {
-		throw Error("Cloning of OpcodeExtended not supported.");
+		const clone = super.clone() as OpcodeExtended;
+		clone.opcodes = [...this.opcodes];
+		return clone;
 	}
 
 
@@ -1877,11 +1882,6 @@ class OpcodeNext extends Opcode {
 	// Constructor.
 	constructor(code: number, name: string) {
 		super(code, name);
-	}
-
-	/// Clone not supported.
-	public clone(): Opcode {
-		throw Error("Cloning of OpcodeExtended not supported.");
 	}
 }
 
@@ -2010,6 +2010,18 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 		this.name = this.name.replace('#n', '%s');
 		this.length++;
 	}
+
+
+	/**
+	 * Creates a copy object,
+	 * @returns A new object with same values.
+	 */
+	public clone(): Opcode {
+		const clone = super.clone() as OpcodeNext_nextreg_n_n;
+		clone.value2 = this.value2;
+		return clone;
+	}
+
 
 	/// Collects the 2 values.
 	public getOpcodeAt(memory: BaseMemory, address: number): Opcode {
