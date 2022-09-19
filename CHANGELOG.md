@@ -14,9 +14,11 @@
 - Restart behavior changed because of issue #91. A restart **with a new or changed configuration** will now terminate the current session without restarting.
 - Break decoration color changed to red.
 - "disableBanking" option removed from "sjasmplus" launch.json configuration.
-- ZEsarUX: "Coleco Vision" memory model added.
+- ZEsarUX:
+	- "Coleco Vision" memory model added.
+	- Fixed getting sprite patterns.
 - Settings:
-	- "esxdosRst" removed. Use <<...>> instead.
+	- "esxdosRst" removed. See Reverse Engineering for replacement.
 
 
 # 2.7.4

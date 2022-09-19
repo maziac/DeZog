@@ -392,8 +392,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 	public async update(reason?: any): Promise<void> {
 		try {
 			Log.log('ZxNextSpritePatternView::update a');
-			// Mark as invalid until pattern have been loaded.
-			this.patternDataValid = !(reason.step);
+			// Mark as invalid until pattern have been loaded. (Just used for displaying the "*"
+			this.patternDataValid = !(reason?.step);
 
 			// REMARK: Muss ich verloggen um rauszukriegen wo currentpalette auf -1 gesetzt wird.
 

@@ -1492,7 +1492,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	public async getTbblueSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
 		return new Promise<Array<Array<number>>>(resolve => {
-			zSocket.send('tbblue-get-pattern ' + index + ' ' + count, data => {
+			zSocket.send('tbblue-get-pattern ' + index + ' 8 ' + count, data => {
 				const patterns = new Array<Array<number>>();
 				// Check for error
 				if (!data.startsWith("ERROR")) {
