@@ -1434,7 +1434,8 @@ export class Opcode {
 
 
 	/**
-	 * Creates a copy object,
+	 * Creates a copy object.
+	 * If no deep copy is required then there is no need to override this.
 	 * @returns A new object with same values.
 	 */
 	public clone(): Opcode {
@@ -1443,14 +1444,6 @@ export class Opcode {
 			Object.getPrototypeOf(this),
 			Object.getOwnPropertyDescriptors(this)
 		));
-
-		// Copy properties
-		clone.code = this.code;
-		clone.name = this.name;
-		clone.flags = this.flags;
-		clone.valueType = this.valueType;
-		clone.length = this.length;
-		clone.value = this.value;
 		return clone;
 	}
 
@@ -1518,25 +1511,6 @@ export class Opcode {
 		}
 
 		return this;
-	}
-
-
-	/**
-	 * Converts a value to a label or (if label does not exist for that address) to a
-	 * hex string.
-	 * @param address The 64k address. // TODO: How does it work with64k addresses
-	 * @param func If defined a function that returns a label for an address or undefined if no label exists.
-	 * @returns E.g. "label" or "04AFh"
-	 */
-	// TODO: REMOVE
-	protected convertToLabel(address: number, func?: (address: number) => string): string {
-		let valueString;
-		if (func)
-			valueString = func(address);
-		if (!valueString) {
-			valueString = Format.getHexFormattedString(address);
-		}
-		return valueString;
 	}
 
 
@@ -1657,17 +1631,6 @@ class OpcodeIndexImmediate extends Opcode {
 
 
 	/**
-	 * Creates a copy object,
-	 * @returns A new object with same values.
-	 */
-	public clone(): Opcode {
-		const clone = super.clone() as OpcodeIndexImmediate;
-		clone.secondValue = this.secondValue;
-		return clone;
-	}
-
-
-	/**
 	 * Gets the value from the byte which is PREVIOUS to the opcode.
 	 * @param memory
 	 * @param address
@@ -1711,17 +1674,6 @@ class OpcodeExtended extends Opcode {
 		super(code);
 		this.opcodes = opcodes;
 		this.length += 1;	// one more
-	}
-
-
-	/**
-	 * Creates a copy object,
-	 * @returns A new object with same values.
-	 */
-	public clone(): Opcode {
-		const clone = super.clone() as OpcodeExtended;
-		clone.opcodes = [...this.opcodes];
-		return clone;
 	}
 
 
@@ -1912,17 +1864,6 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 		// There is still an '#n' to convert
 		this.name = this.name.replace('#n', '%s');
 		this.length++;
-	}
-
-
-	/**
-	 * Creates a copy object,
-	 * @returns A new object with same values.
-	 */
-	public clone(): Opcode {
-		const clone = super.clone() as OpcodeNext_nextreg_n_n;
-		clone.value2 = this.value2;
-		return clone;
 	}
 
 
