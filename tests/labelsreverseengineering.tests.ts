@@ -293,7 +293,7 @@ suite('Labels (revEng)', () => {
 
 			// Check
 			assert.notEqual(warnings, undefined);
-			assert.ok(warnings.endsWith('defined more than once.\n'));
+			assert.ok(warnings.endsWith('already defined. Definition skipped.\n'));
 		});
 
 		test('same label used twice (local)', () => {
@@ -307,7 +307,7 @@ suite('Labels (revEng)', () => {
 
 			// Check
 			assert.notEqual(warnings, undefined);
-			assert.ok(warnings.endsWith('defined more than once.\n'));
+			assert.ok(warnings.endsWith('already defined. Definition skipped.\n'));
 		});
 	});
 
