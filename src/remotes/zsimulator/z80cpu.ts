@@ -173,7 +173,7 @@ export class Z80Cpu implements Serializable {
 
 
 	/**
-	 * Properties to set flags.
+	 * Properties.
 	 */
 	set pc(value) {
 		this.z80.pc=value;
@@ -331,7 +331,11 @@ export class Z80Cpu implements Serializable {
 		this.z80.setState(r);
 	}
 
+	// T. Busse, Sep-2022: Added to break on an interrupt.
+	set interruptOccurred(value) {this.z80.interruptOccurred = value;}
+	get interruptOccurred() {return this.z80.interruptOccurred;}
 
+	
 	/**
 	 * Simulates pulsing the processor's INT (or NMI) pin.
 	 * Is called for the ULA vertical sync and also from custom code.

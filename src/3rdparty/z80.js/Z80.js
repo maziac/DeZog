@@ -92,6 +92,9 @@ export function Z80(coreParameter)
    //  including processing any prefixes and handling interrupts.
    let cycle_counter = 0;
 
+   // T. Busse, Sep-2022: Added to break on an interrupt.
+   let interruptOccurred = false;
+
    function getState() {
       return {
          b: b,
@@ -215,6 +218,7 @@ let reset = function()
    do_delayed_ei = false;
    // Obviously we've not used any cycles yet.
    cycle_counter = 0;
+   interruptOccurred = false;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -362,6 +366,9 @@ let interrupt = function(non_maskable, data)
 
          cycle_counter += 19;
       }
+
+      // T.Busse, Sep-2022: A "notification" is generated so that the calling program can break on it.
+      interruptOccurred = true;
    }
 };
 
@@ -3406,6 +3413,11 @@ let cycle_counts_dd = [
 
    Object.defineProperty(this, "halted", {
       get: () => {return halted;}
+   });
+
+   Object.defineProperty(this, "interruptOccurred", {
+      set: (value) => {interruptOccurred = value;},
+      get: () => {return interruptOccurred;}
    });
 
    this.run_instruction = run_instruction;

@@ -742,6 +742,10 @@ export class DzrpRemote extends RemoteBase {
 				reasonString += ". " + breakReasonString;
 				break;
 
+			case BREAK_REASON_NUMBER.BREAK_INTERRUPT:
+				reasonString = "Break on interrupt.";
+				break;
+
 			default:
 				reasonString = breakReasonString;
 		}

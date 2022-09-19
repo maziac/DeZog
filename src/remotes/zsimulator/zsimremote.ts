@@ -85,6 +85,9 @@ export class ZSimRemote extends DzrpRemote {
 	// The current ZX border color.
 	protected zxBorderColor: number;
 
+	// Can be enabled through commands to break when an interrupt occurs.
+	protected breakOnInterrupt: boolean;
+
 
 	/// Constructor.
 	constructor() {
@@ -101,6 +104,7 @@ export class ZSimRemote extends DzrpRemote {
 		this.stopCpu = true;
 		this.lastBpId = 0;
 		this.zxBorderColor = 7;	// White initially
+		this.breakOnInterrupt = false;
 		// Set decoder
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 		// Reverse debugging / CPU history
@@ -686,6 +690,15 @@ export class ZSimRemote extends DzrpRemote {
 						break;
 					}
 
+					// Check if an interrupt happened and it should be breaked on an interrupt
+					if (this.breakOnInterrupt) {
+						if (this.z80Cpu.interruptOccurred) {
+							breakNumber = BREAK_REASON_NUMBER.BREAK_INTERRUPT;	// Interrupt break
+							this.z80Cpu.interruptOccurred = false;
+							break;
+						}
+					}
+
 					// Check if stopped from outside
 					if (this.stopCpu) {
 						breakNumber = BREAK_REASON_NUMBER.MANUAL_BREAK;	// Manual break
@@ -1080,11 +1093,12 @@ export class ZSimRemote extends DzrpRemote {
 				response = `zsim specific commands:
 out port value: Output 'value' to 'port'. E.g. "zsim out 0x9000 0xFE"
 in port: Print input value from 'port'. E.g. "zsim in 0x8000"
-tstates set value: set t-states to 'value', then create a tick event. E.g. "zsim tstastes set 1000"
-tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim tstastes add 1000"
+tstates set value: set t-states to 'value', then create a tick event. E.g. "zsim tstates set 1000"
+tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim tstates add 1000"
 `;
+				return response;
 			}
-			else if (cmd_name == "out") {
+			if (cmd_name == "out") {
 				// Check count of arguments
 				if (tokens.length != 2) {
 					throw new Error("Wrong number of arguments: port and value expected.");
@@ -1098,7 +1112,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 				response = "Wrote " + Utility.getHexString(value, 2) + "h to port " + Utility.getHexString(port, 4) + "h";
 				return response;
 			}
-			else if (cmd_name == "in") {
+			if (cmd_name == "in") {
 				// Check count of arguments
 				if (tokens.length != 1) {
 					throw new Error("Wrong number of arguments: port expected.");
@@ -1111,7 +1125,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 				response = "Read port " + Utility.getHexString(port, 4) + "h: " + Utility.getHexString(value, 2) + "h";
 				return response;
 			}
-			else if (cmd_name == "tstates") {
+			if (cmd_name == "tstates") {
 				// Check count of arguments
 				if (tokens.length != 2) {
 					throw new Error("Wrong number of arguments.");
@@ -1124,16 +1138,39 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 					this.passedTstates += value;
 				else
 					throw Error("Expected 'set' or 'add' but got '" + subcmd + "'.");
-				this.customCode.setTstates(this.passedTstates);
-				this.customCode.tick();
+				// Also inform customCode
+				if (this.customCode) {
+					this.customCode.setTstates(this.passedTstates);
+					this.customCode.tick();
+				}
 				// Return
 				response = "T-states set to " + this.passedTstates + ".";
 				return response;
 			}
+			if (cmd_name == "breakinterrupt") {
+				// Check count of arguments
+				if (tokens.length != 1) {
+					throw new Error("Wrong number of arguments.");
+				}
+				const subcmd = tokens[0];
+				let enable;
+				if (subcmd == "on")
+					enable = true;
+				else if (subcmd == "off")
+					enable = false;
+				else
+					throw Error("Expected 'on' or 'off' but got '" + subcmd + "'.");
+				// Set
+				this.breakOnInterrupt = enable;
+				if (enable)
+					this.z80Cpu.interruptOccurred = false;
+				// Return
+				response = "Break on interrupt " + ((this.breakOnInterrupt) ? 'enabled' : 'disabled') + ".";
+				return response;
+			}
 
-			// Otherwise pass to super class
-			response += await super.dbgExec(cmd);
-			return response;
+			// Unknown command.
+			throw Error("Error: not supported.");
 		}
 		catch (e) {	// NOSONAR: is here for debugging purposes to set a breakpoint
 			// Rethrow

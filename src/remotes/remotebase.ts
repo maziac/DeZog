@@ -30,6 +30,7 @@ export enum BREAK_REASON_NUMBER {
 
 	// Internally used
 	STEPPING_NOT_ALLOWED = 100,	// For ZxNextRemote if trying to step code used for debugging.
+	BREAK_INTERRUPT = 101,	// zsim only: breakpoint at interrupt
 
 	UNKNOWN = 255		// 255=some other error
 }

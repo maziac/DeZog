@@ -17,6 +17,8 @@
 - ZEsarUX:
 	- "Coleco Vision" memory model added.
 	- Fixed getting sprite patterns.
+- zsim:
+	- Added command to break on interrupt ("-e breakinterrupt on").
 - Settings:
 	- "esxdosRst" removed. See Reverse Engineering for replacement.
 
