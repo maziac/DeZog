@@ -182,9 +182,4 @@ A vscode language server that enables code lens, references, hover
 This is a small Z80 assembler program that just puts some colored lines on the ZX Spectrum's screen. The intention is to use this as a kind of tutorial for DeZog (Z80 debugger).
 
 
-## z80dismblr
-
-z80dismblr is a command line disassembler for the Z80 CPU.
-Is not directly related to DeZog but it is also contained in side DeZog.
-I.e. all sources are copied in DeZog.
 

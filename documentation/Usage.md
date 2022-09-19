@@ -41,6 +41,8 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 [ZX Spectrum Next]: https://www.specnext.com
 [zxnext]: https://www.specnext.com
 
+[SpecBong Fork]: https://github.com/maziac/SpecBong
+
 - [Z80-Sample-Program]
 - [Z80-Peripherals-Sample]
 - [DeZogIf]
@@ -52,6 +54,8 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 - [z88dk-z80asm]
 - [ZX Spectrum Next]
 - [NEX File Format]
+- [SpecBong Fork]
+
 
 ## Migration from a previous DeZog version
 
@@ -1845,6 +1849,7 @@ Examples:
 - "-msetb fill_colors_ptr FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF02.
 - "-msetb fill_colors_ptr+4 FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF06. Note: There mustn't be any spaces in 'fill_colors_ptr+4'. Everything after a space is considered as a new argument.
 
+
 #### Sprites & Patterns
 
 You can open a view which displays the current sprite slots by entering
@@ -1909,6 +1914,9 @@ Note: From the pattern memory it cannot be known if the pattern is used as 8bit 
 This, of course, means that normally only the 8bit or the 4bit color pattern is valid. Decision is done by the sprite.
 
 ![](images/zxnextspritepatternsviewer1.jpg)
+
+
+If you want to test the sprite and pattern capabilities you can clone a project from [Peter Ped Helcmanovsky](https://github.com/ped7g). It has been forked and configured for DeZog here: [SpecBong Fork].
 
 
 ### WATCHes
