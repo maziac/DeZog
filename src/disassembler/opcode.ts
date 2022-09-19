@@ -3,7 +3,6 @@ import * as assert from 'assert';
 import {BaseMemory} from './basememory';
 import {NumberType} from './numbertype'
 import {Format} from './format';
-import {Utility} from '../misc/utility';
 
 
 /// Classifies opcodes.
@@ -40,12 +39,6 @@ export class Opcode {
 	/// The value (if any) used in the opcode, e.g. nn in "LD HL,nn"
 	/// Is set when decoded for the current instruction.
 	public value: number;
-
-	/// For custom opcodes further bytes to decode can be added.
-	public appendValues: Array<number>;
-
-	/// For custom opcodes further bytes to decode can be added.
-	public appendValueTypes: Array<NumberType>;
 
 	// The disassembled text of the opcode. E.g. "LD A,(DATA_LBL0400)".
 	public disassembledText: string;
@@ -1446,10 +1439,10 @@ export class Opcode {
 	 */
 	public clone(): Opcode {
 		// Create empty object
-		const clone: Opcode = Object.create(
+		const clone: Opcode = Object.assign(Object.create(
 			Object.getPrototypeOf(this),
 			Object.getOwnPropertyDescriptors(this)
-		);
+		));
 
 		// Copy properties
 		clone.code = this.code;
@@ -1458,10 +1451,6 @@ export class Opcode {
 		clone.valueType = this.valueType;
 		clone.length = this.length;
 		clone.value = this.value;
-		if (this.appendValues)
-			clone.appendValues = [...this.appendValues];
-		if (this.appendValueTypes)
-			clone.appendValueTypes = [...this.appendValueTypes];
 		return clone;
 	}
 
@@ -1480,49 +1469,6 @@ export class Opcode {
 
 
 	/**
-	 * For custom opcodes like the extension to RST.
-	 * E.g. for a byte that follows a RST use the following appendName:
-	 * "#n"
-	 * This will result in e.g. the name "RST 16,#n" which will decode the
-	 * #n as a byte in the disassembly.
-	 * @param appendName A string that is appended to the opcode name which includes also
-	 * further bytes to decode, e.g. "#n" or "#nn" or even "#n,#nn,#nn"
-	 * @param appendValues The values to add.
-	 */
-	public extendOpcode(appendName: string, appendValues: number[]) {
-		if (!appendName || appendName.length == 0)
-			return;
-
-		this.appendValues = appendValues;
-		this.appendValueTypes = new Array<NumberType>();
-
-		// Calculate length and convert #n to %s
-		let k = 0;
-		let text = appendName + ' ';
-		let len = 0;
-		while ((k = text.indexOf("#n", k)) >= 0) {
-			// Increment
-			len++;
-			// Check for word
-			if (text[k + 2] == "n") {
-				k++;
-				len++;
-				this.appendValueTypes.push(NumberType.NUMBER_WORD);
-			}
-			else {
-				this.appendValueTypes.push(NumberType.NUMBER_BYTE);
-			}
-			// Next
-			k += 2;
-		}
-		Utility.assert(len == appendValues.length);
-		this.length += len;
-		// Substitute formatting
-		this.name += appendName.replace(/#nn?/g, "%s");
-	}
-
-
-	/**
 	 * The 1 byte opcodes just return self (this).
 	 * @param memory The memory area to get the opcode from.
 	 * @param address The address of the opcode.
@@ -1530,7 +1476,6 @@ export class Opcode {
 	 */
 	public getOpcodeAt(memory: BaseMemory, address: number): Opcode {
 		// Get value (if any)
-		let offs = 0;
 		switch (this.valueType) {
 			case NumberType.CODE_RST:
 			case NumberType.NONE:
@@ -1543,19 +1488,16 @@ export class Opcode {
 			case NumberType.NUMBER_WORD:
 				// word value
 				this.value = memory.getWordValueAt(address + 1);
-				offs = 2;
 				break;
 			case NumberType.NUMBER_WORD_BIG_ENDIAN:
 				// e.g. for PUSH $nnnn
 				this.value = memory.getBigEndianWordValueAt(address + 1);
-				offs = 2;
 				break;
 			case NumberType.RELATIVE_INDEX:
 			case NumberType.CODE_LOCAL_LBL:
 			case NumberType.CODE_LOCAL_LOOP:
 				// byte value
 				this.value = memory.getValueAt(address + 1);
-				offs = 1;
 				if (this.value >= 0x80)
 					this.value -= 0x100;
 				// Change relative jump address to absolute
@@ -1565,34 +1507,14 @@ export class Opcode {
 			case NumberType.NUMBER_BYTE:
 				// byte value
 				this.value = memory.getValueAt(address + 1);
-				offs = 1;
 				break;
 			case NumberType.PORT_LBL:	// NOSONAR
 				// TODO: need to be implemented differently
 				this.value = memory.getValueAt(address + 1);
-				offs = 1;
 				break;
 			default:
 				assert(false, 'getOpcodeAt');
 				break;
-		}
-
-		// Check for custom code
-		if (this.appendValueTypes) {
-			this.appendValues.length = 0;
-			let addr = address + 1 + offs;
-			for (const vType of this.appendValueTypes) {
-				let val;
-				if (vType == NumberType.NUMBER_BYTE) {
-					val = memory.getValueAt(addr);
-					addr++;
-				}
-				else {
-					val = memory.getWordValueAt(addr);
-					addr += 2;
-				}
-				this.appendValues.push(val);
-			}
 		}
 
 		return this;
@@ -1665,27 +1587,8 @@ export class Opcode {
 			}
 		}
 
-		// Disassemble
-		let opCodeString;
-		if (!this.appendValueTypes) {
-			// Normal disassembly
-			opCodeString = util.format(this.name, valueName);
-		}
-		else {
-			// Custom opcode with appended bytes.
-			const len = this.appendValueTypes.length;
-			const vals = new Array<string>();
-			for (let k = 0; k < len; k++) {
-				const vType = this.appendValueTypes[k];
-				const val = this.appendValues[k];
-				let valName = (vType == NumberType.NUMBER_BYTE) ? Format.getHexString(val, 2) : Format.getHexString(val, 4);
-				valName += 'h';
-				vals.push(valName);
-			}
-			opCodeString = util.format(this.name, valueName, ...vals);
-		}
-
-		this.disassembledText = opCodeString;
+		// Normal disassembly
+		this.disassembledText = util.format(this.name, valueName);
 	}
 }
 
