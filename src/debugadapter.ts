@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import {HtmlView} from './views/htmlview';
-import {Breakpoint, CapabilitiesEvent, ContinuedEvent, DebugSession, InitializedEvent, InvalidatedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread} from 'vscode-debugadapter/lib/main';
-import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
+import {Breakpoint, CapabilitiesEvent, ContinuedEvent, DebugSession, InitializedEvent, InvalidatedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread} from '@vscode/debugadapter';
+import {DebugProtocol} from '@vscode/debugprotocol';
 import {CallStackFrame} from './callstackframe';
 import {Decoration} from './decoration';
 import {DiagnosticsHandler} from './diagnosticshandler';
@@ -436,11 +436,10 @@ export class DebugSessionClass extends DebugSession {
 		response.body.supportsTerminateRequest = true;
 
 		// The PC value might be changed.
-		//response.body.supportsGotoTargetsRequest = true;
+
 		// I use my own "Move Program Counter to Cursor".
-		// GotoTargetsRequest would be working now, but not in all cases.
-		// If the file is not recognized yet. It does not work.
-		// Thought it has something to do with loadSourcesRequest but it doesn't.
+		// GotoTargetsRequest would be working now, but it only supports the current file.
+		// If user wants to set the PC to some other file vscode does not even sends a request.
 		response.body.supportsGotoTargetsRequest = false;
 
 		// Support hovering over values (registers)
@@ -459,6 +458,19 @@ export class DebugSessionClass extends DebugSession {
 
 		// Allows to set values in the watch pane.
 		response.body.supportsSetExpression = true;
+
+		// Allow data breakpoints from vscode UI (for WPMEM)
+		response.body.supportsDataBreakpoints = true;
+
+		// Allow exception breakpoints from vscode UI (for ASSERTION)
+		response.body.supportsExceptionFilterOptions = true;
+		response.body.supportsExceptionOptions = true;
+		response.body.supportsExceptionInfoRequest = true;
+		response.body.exceptionBreakpointFilters = [{
+			filter: 'idGeneralAssertion',
+			label: 'Assertions',
+			description: 'ASSERTIONs are given as comments in the assembler sources. e.g. "; ASSERTION"'
+		}];
 
 		this.sendResponse(response);
 
@@ -1543,7 +1555,7 @@ export class DebugSessionClass extends DebugSession {
 
 				// Check if debug session is stopped
 				if (!this.running) {
-					return new StoppedEvent('disconected', DebugSessionClass.THREAD_ID);
+					return new StoppedEvent('disconnected', DebugSessionClass.THREAD_ID);
 				}
 
 				// Check for pause request
@@ -4016,7 +4028,35 @@ E.g. use "-help -view" to put the help text in an own view.
 		this.fileWatchers = [];
 	}
 
+	protected dataBreakpointInfoRequest(response: DebugProtocol.DataBreakpointInfoResponse, args: DebugProtocol.DataBreakpointInfoArguments, request?: DebugProtocol.Request) {
+		console.log('dataBreakpointInfoRequest', args);
+		response.body = {
+			dataId: "MyDataBPID",
+			/** UI string that describes on what data the breakpoint is set on or why a data breakpoint is not available. */
+			description: "Mein Data Breakpoint",
+			/** Optional attribute listing the available access types for a potential data breakpoint. A UI frontend could surface this information. */
+			accessTypes: ['readWrite'],
+			/** Optional attribute indicating that a potential data breakpoint could be persisted across sessions. */
+			canPersist: true
+		}
+		this.sendResponse(response);
 
+	}
+
+	/** Called to set data breakpoints.
+	 */
+	protected setDataBreakpointsRequest(response: DebugProtocol.SetDataBreakpointsResponse, args: DebugProtocol.SetDataBreakpointsArguments, request?: DebugProtocol.Request) {
+		console.log('setDataBreakpointsRequest', args);
+		this.sendResponse(response);
+	}
+
+
+	/** Sets the exception breakpoints.
+	 */
+	protected setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments, request?: DebugProtocol.Request) {
+		console.log('setExceptionBreakPointsRequest', args);
+		this.sendResponse(response);
+	}
 }
 
 

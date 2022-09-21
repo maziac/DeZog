@@ -1,5 +1,5 @@
 import {Labels} from '../labels/labels';
-import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
+import {DebugProtocol} from '@vscode/debugprotocol';
 import {Settings} from '../settings/settings'
 import {Utility} from '../misc/utility';
 import {RefList} from '../misc/reflist';
