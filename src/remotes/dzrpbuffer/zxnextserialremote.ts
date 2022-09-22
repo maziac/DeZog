@@ -66,8 +66,11 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	/// Constructor.
 	constructor() {
 		super();
+		// Init
+		this.supportsASSERTION = true;
+		this.supportsWPMEM = true;
+		this.supportsLOGPOINT = true;
 		this.cmdRespTimeoutTime = CMD_RESP_TIMEOUT;
-
 		console.log('ZxNextSerialRemote: constructor()');
 	}
 

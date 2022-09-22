@@ -42,6 +42,10 @@ export class MameRemote extends DzrpQeuedRemote {
 	/// Constructor.
 	constructor() {
 		super();
+		// Init
+		this.supportsASSERTION = true;
+		this.supportsWPMEM = false;
+		this.supportsLOGPOINT = true;
 		this.cmdRespTimeoutTime = Settings.launch.mame.socketTimeout * 1000;
 	}
 

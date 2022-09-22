@@ -93,6 +93,9 @@ export class ZSimRemote extends DzrpRemote {
 	constructor() {
 		super();
 		// Init
+		this.supportsASSERTION = true;
+		this.supportsWPMEM = true;
+		this.supportsLOGPOINT = true;
 		this.timeoutRequest = false;
 		this.previouslyStoredPCHistory = -1;
 		this.tbblueRegisterSelectValue = 0;

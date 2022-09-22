@@ -91,6 +91,15 @@ export class RemoteBase extends EventEmitter {
 		Remote = remote;
 	}
 
+	/// true if Remote supports ASSERTIONs.
+	public supportsASSERTION = false;
+
+	/// true if Remote supports WPMEMs.
+	public supportsWPMEM = false;
+
+	/// true if Remote supports LOGPOINTs.
+	public supportsLOGPOINT = false;
+
 
 	/// A list for the frames (call stack items). Is cached here.
 	protected listFrames: RefList<CallStackFrame>;
@@ -1057,7 +1066,6 @@ export class RemoteBase extends EventEmitter {
 	public async enableLogpoints(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
 		Utility.assert(false);	// override this
 	}
-
 
 
 	/**

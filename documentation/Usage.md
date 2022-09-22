@@ -554,8 +554,8 @@ The following table gives an overview.
 | Breakpoints             | yes                | yes     | yes      | yes      | yes          |
 | Break reason output     | yes                | no      | yes      | yes      | yes          |
 | Conditional Breakpoints | yes                | yes     | yes 6)   | yes 6)   | yes 6)       |
-| WPMEM (Watchpoints) support | yes            | yes 2)  | no       | no       | yes          |
 | ASSERTION support       | yes                | yes     | yes 6)   | yes 6)   | yes 6)       |
+| WPMEM (Watchpoints) support | yes            | yes 2)  | no       | no       | yes          |
 | LOGPOINT support        | yes                | no      | yes 6)   | yes 6)   | yes 6)       |
 | Long addresses/breakpoints | yes             | yes     | yes      | yes      | no           |
 | Extended callstack      | no                 | yes     | no       | no       | no           |

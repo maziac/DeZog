@@ -464,12 +464,24 @@ export class DebugSessionClass extends DebugSession {
 
 		// Allow exception breakpoints from vscode UI (for ASSERTION)
 		response.body.supportsExceptionFilterOptions = true;
-		response.body.supportsExceptionOptions = true;
-		response.body.supportsExceptionInfoRequest = true;
+		response.body.supportsExceptionOptions = false;
+		response.body.supportsExceptionInfoRequest = false;
 		response.body.exceptionBreakpointFilters = [{
-			filter: 'idGeneralAssertion',
-			label: 'Assertions',
-			description: 'ASSERTIONs are given as comments in the assembler sources. e.g. "; ASSERTION"'
+			filter: 'ASSERTION',
+			label: 'ASSERTIONs',
+			description: 'ASSERTIONs are given as comments in the assembler sources. e.g. "; ASSERTION ..."'
+		},
+		{
+			filter: 'WPMEM',
+			label: 'WPMEMs',
+			description: 'WPMEM are memory guards given as comments in the assembler sources. e.g. "; WPMEM ..."'
+		},
+		{
+			filter: 'LOGPOINT',
+			label: 'LOGPOINTs',
+			description: 'LOGPOINTs are given as comments in the assembler sources. e.g. "; LOGPOINT [group] ..."\nAdd the groups of logpoints you want to enable as a comma separated list.',
+			supportsCondition: true,
+
 		}];
 
 		this.sendResponse(response);
@@ -4048,14 +4060,223 @@ E.g. use "-help -view" to put the help text in an own view.
 	protected setDataBreakpointsRequest(response: DebugProtocol.SetDataBreakpointsResponse, args: DebugProtocol.SetDataBreakpointsArguments, request?: DebugProtocol.Request) {
 		console.log('setDataBreakpointsRequest', args);
 		this.sendResponse(response);
+		// TODO: Implement
 	}
 
 
 	/** Sets the exception breakpoints.
 	 */
-	protected setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments, request?: DebugProtocol.Request) {
+	protected async setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments, request?: DebugProtocol.Request) {
 		console.log('setExceptionBreakPointsRequest', args);
+
+		// Reformat info to easier access it.
+		const filterMap = new Map<string, string>();
+		args.filterOptions!.forEach(filterOption => {
+			filterMap.set(filterOption.filterId, filterOption.condition || '');
+		});
+
+		// Prepare response
+		const bps = new Array<DebugProtocol.Breakpoint>();
+		response.body = {
+			breakpoints: bps
+		};
+
+		// TODO: Better check for change. Hold a variable with prevValues.
+
+		// Assertions
+		const enableASSERTION = (filterMap.get('ASSERTION') != undefined);
+		await this.enableASSERTIONs(enableASSERTION);
+		if(enableASSERTION)
+			bps.push({verified: Remote.supportsASSERTION});
+
+		// WPMEMs
+		const enableWPMEM = (filterMap.get('WPMEM') != undefined);
+		await this.enableASSERTIONs(enableWPMEM);
+		if (enableWPMEM)
+			bps.push({verified: Remote.supportsWPMEM});
+
+		// LOGPOINTs
+		let groupsString = filterMap.get('LOGPOINT')!;
+		if (groupsString == undefined) {
+			// Disable
+			await this.enableLOGPOINTs(false, []);
+		}
+		else {
+			// Enable
+			groupsString = groupsString.replace(/[,;]/g, ' ');
+			groupsString = groupsString.replace(/\s+/g, ' ');
+			const groups = groupsString.split(' ');
+			await this.enableLOGPOINTs(true, groups);
+		}
+
 		this.sendResponse(response);
+	}
+
+
+	/**
+	 * ASSERTION. Enable/disable/status.
+	 * @param enable true = enable, false = disable.
+	 */
+	protected async enableASSERTIONs(enable: boolean) {
+		// Check if supported
+		if (!Remote.supportsASSERTION)
+			return;	// Not supported
+		// Check for change
+		if (enable == Remote.assertionBreakpointsEnabled)
+			return;	// No change
+
+		// Enable or disable all ASSERTION breakpoints
+		await Remote.enableAssertionBreakpoints(enable);
+
+		// Show enable status of all ASSERTION breakpoints
+		const realEnable = Remote.assertionBreakpointsEnabled;
+		const enableString = (realEnable) ? 'enabled' : 'disabled';
+		let result = 'ASSERTION breakpoints are ' + enableString + '.\n';
+		if (realEnable) {
+			// Also list all assertion breakpoints
+			const abps = Remote.getAllAssertionBreakpoints();
+			for (const abp of abps) {
+				result += Utility.getLongAddressString(abp.longAddress);
+				const labels = Labels.getLabelsForLongAddress(abp.longAddress);
+				if (labels.length > 0) {
+					const labelsString = labels.join(', ');
+					result += ' (' + labelsString + ')';
+				}
+				// Condition, remove the brackets
+				result += ', Condition: ' + Utility.getAssertionFromCondition(abp.condition) + '\n';
+			}
+			if (abps.length == 0)
+				result += 'No ASSERTION breakpoints.\n';
+		}
+		// Output
+		this.debugConsoleAppendLine(result);
+	}
+
+
+	/**
+	 * WPMEM. Enable/disable.
+	 * @param enable true = enable, false = disable.
+	 */
+	protected async enableWPMEMs(enable: boolean) {
+		// Check if supported
+		if (!Remote.supportsWPMEM)
+			return;	// Not supported
+		// Check for change
+		if (enable == Remote.wpmemEnabled)
+			return;	// No change
+
+		// Enable or disable all WPMEM watchpoints
+		await Remote.enableWPMEM(enable);
+
+		// Show enable status of all WPMEM watchpoints
+		const realEnable = Remote.wpmemEnabled;
+		const enableString = (realEnable) ? 'enabled' : 'disabled';
+		let result = 'WPMEM watchpoints are ' + enableString + '.\n';
+		if (realEnable) {
+			// Also list all watchpoints
+			const wps = Remote.getAllWpmemWatchpoints();
+			for (const wp of wps) {
+				result += Utility.getLongAddressString(wp.longOr64kAddress);
+				const labels = Labels.getLabelsForLongOr64kAddress(wp.longOr64kAddress);
+				if (labels.length > 0) {
+					const labelsString = labels.join(', ');
+					result += ' (' + labelsString + ')';
+				}
+				// Condition, remove the brackets
+				result += ', size=' + wp.size + '\n';
+			}
+			if (wps.length == 0)
+				result += 'No WPMEM watchpoints.\n';
+		}
+		// Output
+		this.debugConsoleAppendLine(result);
+	}
+
+	// TODO: Remove debug console commands.
+
+	/**
+	 * LOGPOINTS. Enable/disable.
+	 * @param enable true = enable, false = disable.
+	 * @param groups Array of string with the group names.
+	 * If enable is true only these groups will be enabled.
+	 * If enabled is false all groups will be disabled.
+	 * If array is empty all groups will be enabled or disabled.
+	 */
+	protected async enableLOGPOINTs(enable: boolean, groups: string[]) {
+		// Check if supported
+		if (!Remote.supportsLOGPOINT)
+			return;	// Not supported
+
+		const prevEnableMap = Remote.logpointsEnabled;
+		let groupsNotExist: string[] = [];
+		let changed = false;
+		// Enable or disable
+		if (enable) {
+			// Check if all of the given groups are already enabled
+			// and that all other groups are disabled.
+			for (const group of groups) {
+				const enabled = prevEnableMap.get(group);
+				if (enabled == undefined) {
+					groupsNotExist.push(group);
+				}
+				else if (!enabled) {
+					await Remote.enableLogpointGroup(group, true);
+					changed = true;
+				}
+			}
+			for (const [group, enabled] of prevEnableMap) {
+				if (!groups.includes(group) && enabled) {
+					await Remote.enableLogpointGroup(group, false);
+					changed = true;
+				}
+			}
+		}
+		else {
+			// Check if any group is enabled
+			for (const [group, enabled] of prevEnableMap) {
+				if (enabled) {
+					changed = true;
+					// Disable
+					await Remote.enableLogpointGroup(group, false);
+				}
+			}
+		}
+
+		// Return if nothing changed
+		if (!changed)
+			return;
+
+		// Always show enable status of all Logpoints
+		let result = 'LOGPOINT groups:';
+		const enableMap = Remote.logpointsEnabled;
+		if (enableMap.size == 0)
+			result += ' none';
+		else {
+			for (const [group, enabled] of enableMap) {
+				result += '\n  ' + group + ': ' + ((enabled) ? 'enabled' : 'disabled');
+				if (enabled) {
+					// List log breakpoints
+					const lps = Remote.getLogpointsForGroup(group);
+					for (const lp of lps) {
+						result += '\n    ' + Utility.getLongAddressString(lp.longAddress);
+						const labels = Labels.getLabelsForLongAddress(lp.longAddress);
+						if (labels.length > 0) {
+							const labelsString = labels.join(', ');
+							result += ' (' + labelsString + ')';
+						}
+					}
+				}
+			}
+		}
+
+		result += '\n';
+		// Check if some groups might not exist
+		if (groupsNotExist.length > 0) {
+			result += 'Note: These groups do not exist: ' + groupsNotExist.join(', ') + '\n';
+		}
+
+		// Output
+		this.debugConsoleAppendLine(result);
 	}
 }
 
