@@ -25,6 +25,14 @@ Anyhow a few changes were necessary:
 - The "zsim" "customMemory" definition was changed. please refer to the [customMemory](Usage.md#custommemory) section in Usage.md.
 
 
+Furthermore the ASSERTIONs, WPMEMs and LOGPOINTs have been better integrated into the vscode UI.
+I.e. you can enable them directly from the vscode BREAKPOINTS pane.
+![](images/exception_bp_assertion.jpg)
+On the other hand the corresponding debug console commands have been removed as they are now superfluous:
+```-ASSERTION ...```, ```-WPMEM ...```or ```-LOGPOIT ...``` are not available anymore.
+If you used them in the launch.json in the "commandsAfterLaunch" argument please make sure to remove them there.
+
+
 # Migrate from DeZog 2.6 to DeZog 2.7
 
 No required updates.
