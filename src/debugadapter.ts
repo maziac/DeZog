@@ -1895,7 +1895,7 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Evaluates the command and executes it.
 	 * The method might throw an exception if it cannot parse the command.
-	 * @param command E.g. "-exec tbblue-get-register 57" or "-wpmem disable".
+	 * @param command E.g. "-exec tbblue-get-register 57".
 	 * @returns A Promise<string> with an text to output (e.g. an error).
 	 */
 	protected async evaluateCommand(command: string): Promise<string> {
@@ -1917,9 +1917,6 @@ export class DebugSessionClass extends DebugSession {
 		if (cmd == '-help' || cmd == '-h') {
 			output = await this.evalHelp(tokens);
 		}
-		else if (cmd == '-ASSERTION' || cmd == '-assertion') {
-			output = await this.evalASSERTION(tokens);
-		}
 		else if (cmd == '-eval') {
 			output = await this.evalEval(tokens);
 		}
@@ -1928,9 +1925,6 @@ export class DebugSessionClass extends DebugSession {
 		}
 		else if (cmd == '-label' || cmd == '-l') {
 			output = await this.evalLabel(tokens);
-		}
-		else if (cmd == '-LOGPOINT' || cmd == '-logpoint') {
-			output = await this.evalLOGPOINT(tokens);
 		}
 		else if (cmd == '-md') {
 			output = await this.evalMemDump(tokens);
@@ -1958,9 +1952,6 @@ export class DebugSessionClass extends DebugSession {
 		}
 		else if (cmd == '-patterns') {
 			output = await this.evalSpritePatterns(tokens);
-		}
-		else if (cmd == '-WPMEM' || cmd == '-wpmem') {
-			output = await this.evalWPMEM(tokens);
 		}
 		else if (cmd == '-wpadd') {
 			output = await this.evalWpAdd(tokens);
@@ -2007,7 +1998,7 @@ export class DebugSessionClass extends DebugSession {
 	 * Or if commands are input in the debug console.
 	 * All have different formats:
 	 * - hovering: "word", e.g. "data_b60" or ".loop" or "HL"
-	 * - debug console: starts with "-", e.g. "-wpmem enable"
+	 * - debug console: starts with "-", e.g. "-mv 0x8000 100"
 	 * - watch: anything else.
 	 * args.context contains info that the request comes from the console, watch panel or hovering.
 	 * 'watch': evaluate is run in a watch.
@@ -2336,19 +2327,12 @@ export class DebugSessionClass extends DebugSession {
 	protected async evalHelp(_tokens: Array<string>): Promise<string> {
 		const output =
 			`Allowed commands are:
-"-ASSERTION enable|disable|status":
-	- enable|disable: Enables/disables all breakpoints caused by ASSERTIONs set in the sources. All ASSERTIONs are by default enabled after startup of the debugger.
-	- status: Shows enable status of ASSERTION breakpoints.
 "-dasm address count": Disassembles a memory area. count=number of lines.
 "-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels. It will also return the label if
 the value correspondends to a label.
 "-exec|e cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers".
 "-help|h": This command. Do "-e help" to get all possible ZEsarUX commands.
 "-label|-l XXX": Returns the matching labels (XXX) with their values. Allows wildcard "*".
-"-LOGPOINT enable|disable|status [group]":
-	- enable|disable: Enables/disables all logpoints caused by LOGPOINTs of a certain group set in the sources. If no group is given all logpoints are affected.
-	All logpoints are by default disabled after startup of the debugger.
-	- status: Shows enable status of LOGPOINTs per group.
 "-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes.
   But if chosen, words are output. Last argument is the endianness which is little endian by default.
 "-msetb address value [repeat]:"
@@ -2389,9 +2373,6 @@ the value correspondends to a label.
 	    - "r": Read watchpoint
 	    - "w": Write watchpoint
 	    - "rw": Read/write watchpoint. Default.
-"-WPMEM enable|disable|status":
-	- enable|disable: Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
-	- status: Shows enable status of WPMEM watchpoints.
 
 Some examples:
 "-exec h 0 100": Does a hexdump of 100 bytes at address 0.
@@ -2925,146 +2906,12 @@ E.g. use "-help -view" to put the help text in an own view.
 
 
 	/**
-	 * LOGPOINTS. Enable/disable/status.
-	 * @param tokens The arguments.
-	   * @returns A Promise<string> with a probably error text.
-	 */
-	protected async evalLOGPOINT(tokens: Array<string>): Promise<string> {
-		const param = tokens[0] || '';
-		const group = tokens[1];
-		if (param == 'enable' || param == 'disable') {
-			// Enable or disable all WPMEM watchpoints
-			const enable = (param == 'enable');
-			await Remote.enableLogpointGroup(group, enable);
-		}
-		else if (param == 'status') {
-			// Just show
-		}
-		else {
-			// Unknown argument
-			throw new Error("Unknown argument: '" + param + "'");
-		}
-
-		// Always show enable status of all Logpoints
-		let result = 'LOGPOINT groups:';
-		const enableMap = Remote.logpointsEnabled;
-		if (enableMap.size == 0)
-			result += ' none';
-		else {
-			for (const [grp, enabled] of enableMap) {
-				result += '\n  ' + grp + ': ' + ((enabled) ? 'enabled' : 'disabled');
-				if (enabled) {
-					// List log breakpoints
-					const lps = Remote.getLogpointsForGroup(grp);
-					for (const lp of lps) {
-						result += '\n    ' + Utility.getLongAddressString(lp.longAddress);
-						const labels = Labels.getLabelsForLongAddress(lp.longAddress);
-						if (labels.length > 0) {
-							const labelsString = labels.join(', ');
-							result += ' (' + labelsString + ')';
-						}
-					}
-				}
-			}
-		}
-		return result;
-	}
-
-
-	/**
-	 * ASSERTION. Enable/disable/status.
-	 * @param tokens The arguments.
-	   * @returns A Promise<string> with a probably error text.
-	 */
-	protected async evalASSERTION(tokens: Array<string>): Promise<string> {
-		const param = tokens[0] || '';
-		if (param == 'enable' || param == 'disable') {
-			// Enable or disable all ASSERTION breakpoints
-			const paramEnable = (param == 'enable');
-			await Remote.enableAssertionBreakpoints(paramEnable);
-		}
-		else if (param == 'status') {
-			// Just show
-		}
-		else {
-			// Unknown argument
-			throw new Error("Unknown argument: '" + param + "'");
-		}
-
-		// Show enable status of all ASSERTION breakpoints
-		const enable = Remote.assertionBreakpointsEnabled;
-		const enableString = (enable) ? 'enabled' : 'disabled';
-		let result = 'ASSERTION breakpoints are ' + enableString + '.\n';
-		if (enable) {
-			// Also list all assertion breakpoints
-			const abps = Remote.getAllAssertionBreakpoints();
-			for (const abp of abps) {
-				result += Utility.getLongAddressString(abp.longAddress);
-				const labels = Labels.getLabelsForLongAddress(abp.longAddress);
-				if (labels.length > 0) {
-					const labelsString = labels.join(', ');
-					result += ' (' + labelsString + ')';
-				}
-				// Condition, remove the brackets
-				result += ', Condition: ' + Utility.getAssertionFromCondition(abp.condition) + '\n';
-			}
-			if (abps.length == 0)
-				result += 'No ASSERTION breakpoints.\n';
-		}
-		return result;
-	}
-
-
-	/**
-	 * WPMEM. Enable/disable/status.
-	 * @param tokens The arguments.
-	   * @returns A Promise<string> with a text to print.
-	 */
-	protected async evalWPMEM(tokens: Array<string>): Promise<string> {
-		const param = tokens[0] || '';
-		if (param == 'enable' || param == 'disable') {
-			// Enable or disable all WPMEM watchpoints
-			const paramEnable = (param == 'enable');
-			await Remote.enableWPMEM(paramEnable);
-		}
-		else if (param == 'status') {
-			// Just show
-		}
-		else {
-			// Unknown argument
-			throw Error("Unknown argument: '" + param + "'");
-		}
-
-		// Show enable status of all WPMEM watchpoints
-		const enable = Remote.wpmemEnabled;
-		const enableString = (enable) ? 'enabled' : 'disabled';
-		let result = 'WPMEM watchpoints are ' + enableString + '.\n';
-		if (enable) {
-			// Also list all watchpoints
-			const wps = Remote.getAllWpmemWatchpoints();
-			for (const wp of wps) {
-				result += Utility.getLongAddressString(wp.longOr64kAddress);
-				const labels = Labels.getLabelsForLongOr64kAddress(wp.longOr64kAddress);
-				if (labels.length > 0) {
-					const labelsString = labels.join(', ');
-					result += ' (' + labelsString + ')';
-				}
-				// Condition, remove the brackets
-				result += ', size=' + wp.size + '\n';
-			}
-			if (wps.length == 0)
-				result += 'No WPMEM watchpoints.\n';
-		}
-		return result;
-	}
-
-
-	/**
 	 * Add a watchpoint.
 	 * Independent of WPMEM.
 	 * @param tokens The arguments. E.g. "-wpadd 0x8000 1 r"
 	 * @returns A Promise<string> with a text to print.
 	 */
+	// TODO: Remove in favor of data breakpoints.
 	protected async evalWpAdd(tokens: Array<string>): Promise<string> {
 		// Get parameters
 		if (tokens.length < 1)

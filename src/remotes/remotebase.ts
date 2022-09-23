@@ -1583,7 +1583,7 @@ export class RemoteBase extends EventEmitter {
 					// For stepOver nothing is required normally.
 					// However, as we have a spare breakpoint (bpAddr2),
 					// we can set it to the next PC. So that even if
-					// esxdosRst was not set a stepOver would stop.
+					// no further action would be taken, a stepOver would stop.
 					bpAddr1 = pc + 1;
 					bpAddr2 = bpAddr1 + 1;
 				}

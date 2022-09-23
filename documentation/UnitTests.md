@@ -243,9 +243,6 @@ Here is an example setup:
 		}
 	],
 	"commandsAfterLaunch": [
-		"-logpoint enable",
-		"-assertion enable",
-		"-wpmem enable"
 	],
 	"startAutomatically": true,
 	"rootFolder": "${workspaceFolder}",

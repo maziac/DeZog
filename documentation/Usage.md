@@ -189,8 +189,7 @@ A typical configuration looks like this:
                 //"-patterns"
             ],
             "disassemblerArgs": {
-        		"numberOfLines": 20,
-                "esxdosRst": true // TODO: REMOVE
+        		"numberOfLines": 20
             },
             "smartDisassemblerArgs": {
                 // TODO: ADD
@@ -218,8 +217,7 @@ Please have a look at the [Assembler Configuration](#assembler-configuration) se
 - codeCoverageEnabled: If enabled (default) code coverage information is displayed. I.e. all source codes lines that have been executed are highlighted in green. You can clear the code coverage display with the command palette "dezog: Clear current code coverage decoration".
 - commandsAfterLaunch: Here you can enter commands that are executed right after the launch and connection of the debugger. These commands are the same as you can enter in the debug console. E.g. you can use "-sprites" to show all sprites in case of a ZX Next program. See [Debug Console](#debug-console).
 - disassemblerArgs: Arguments that can be passed to the internal disassembler.
-    - numberOfLines: The number of lines displayed in the disassembly.
-    - esxdosRst: true/false. Default to false. If enabled the disassembler will disassemble "RST 8; defb N" correctly.
+    - numberOfLines: The number of lines displayed in the disassembly.will disassemble "RST 8; defb N" correctly.
 - rootFolder: Typically = workspaceFolder. All other file paths are relative to this path.
 - topOfStack: This is an important parameter to make the callstack display convenient to use. Please add here the label of the top of the stack. Without this information DeZog does not know where the stack ends and may show useless/misleading/wrong information. In order to use this correctly first you need a label that indicates the top of your stack. Here is an example how this may look like:
 Your assembler file:
@@ -1184,14 +1182,6 @@ D) You cannot set a breakpoint while the debugged program is running. This is be
 To set a breakpoint first pause your program by pressing the yellow NMI button. Then set the breakpoint and continue.
 
 
-E) Stepping over RST 8 is possible. However if RST 8 is used for the ESXDOS file operations you should enable **esxdosRst** with
-~~~json
-"disassemblerArgs": {
-    "esxdosRst": true
-},
-~~~
-
-
 ##### Layer 2
 
 DeZog can work with "Layer 2 write-only paging", i.e. bit 0 of port 0x123B being set.
@@ -1496,9 +1486,10 @@ stack_top:
 ~~~
 This will observe 2 addresses at the bottom and 2 addresses at the top.
 
+In the vscode UI WPMEM breakpoints can be turned on or off alltogether in the breakpoints pane:
+![](images/exception_bp_wpmem.jpg)
 
 Caveats:
-
 - Other than for sjasmplus WPMEMs are evaluated also in not assembled areas in the list file, e.g. in case the surrounding IF/ENDIF is not valid.
 - The 'memory breakpoints' used in ZEsarUX have 2 specific limitations:
     - Imagine you have set a watchpoint WPMEM at address 4000h.
@@ -1508,11 +1499,10 @@ But if a word (i.e. 2 bytes) is written to 4000h like in "LD (4000h),HL" the low
     But even if set to "On Change" it's problematic. If afterwards another access to the same address happens no break will occur.
 
 Notes:
-
-- WPMEMs are disabled by default. If you want to have WPMEMs enabled after launch then put "-WPMEM enable" in the "commandsAfterLaunch" settings.
 - (sjasmplus) If you use label names make sure to use the global name (i.e. full dot notation).
 - If no 'addr' is given but the current address is used the long address (i.e. with bank info) is used.
 If 'addr' is given the 64k address is used.
+- WPMEM is not available in CSpect.
 
 
 ### ASSERTION
@@ -1549,12 +1539,14 @@ ld a,c
 ~~~
 instead: The ASSERTION is on the next line i.e. at the address after the "LD" instruction and thus A is checked correctly.
 
-Notes:
+In the vscode UI ASSERTIoN breakpoints can be turned on or off alltogether in the breakpoints pane:
+![](images/exception_bp_assertion.jpg)
 
+
+Notes:
 - ASSERTION is not available in ZEsarUX.
 - you can use "ASSERTION" only, which evaluates to "ASSERTION false". I.e. this is equivalent to an unconditional break.
 - The assertions are checked in the list file. I.e. whenever you change an ASSERTION it is not immediately used. You have to assemble a new list file and start the debugger anew.
-- ASSERTIONs are disabled by default. If you want to have assertions enabled after launch then put "-ASSERTION enable" in the "commandsAfterLaunch" settings.
 - Other than for sjasmplus ASSERTIONs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
 - As a special form you can also define an ASSERTION without any condition. This will act as a breakpoint that will always be hit when the program counter reaches the instruction.
 - sjasmplus: If you use label names make sure to use the global name (i.e. full dot notation).
@@ -1579,15 +1571,22 @@ with:
 - text: A simple text that may include variables. Here are a few examples for variables:
     - ```LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}```
     - ```LOGPOINT Status=${w@(HL)}, ${(DE)}, ${b@(DE)}```
-Note: ${(DE)} is equal to ${b@(DE)} and prints the byte value at DE.
+Note: ```${(DE)}``` is equal to ```${b@(DE)}``` and prints the byte value at DE.
+
+In the vscode UI LOGPOINT breakpoints can be turned on or off alltogether in the breakpoints pane:
+![](images/exception_bp_logpoint.jpg)
+
+As LOGPOINTs are organized in groups you can turn on also only specific LOGPOINT groups.
+This is done by editing the LOGPOINTs in vscode. You have to pass a space separated list of the groups you want to enable.
+If no group is given always all groups will be enabled (disabled).
+![](images/exception_bp_logpoint_edited.jpg)
+
 
 Notes:
-
 - The LOGPOINTs are checked in the list file. I.e. whenever you change a LOGPOINT it is not immediately used. You have to assemble a new list file and start the debugger anew.
-- LOGPOINTs are disabled by default. If you want to have logpoints enabled after launch then put "-LOGPOINT enable" in the "commandsAfterLaunch" settings. Note: you can also turn on only specific groups.
 - LOGPOINTs are not available in ZEsarUX.
 - sjasmplus: If you use label names make sure to use the global name (i.e. full dot notation).
-- LOGPOINTs can do math with fixed labels but not with registers. I.e. "${b@(my_data+5)}" will work. It will statically calculate my_data+5 and lookup the memory value. But "${b@(IX+1)}" will not work as it would have to dynamically calculate "IX+1" at runtime.
+- LOGPOINTs can do math with fixed labels but not with registers. I.e. ```${b@(my_data+5)}``` will work. It will statically calculate ```my_data+5``` and lookup the memory value. But ```${b@(IX+1)}``` will not work as it would have to dynamically calculate ```IX+1``` at runtime.
 
 
 ### vscode breakpoint
