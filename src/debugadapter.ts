@@ -464,10 +464,15 @@ export class DebugSessionClass extends DebugSession {
 		// Allows to set values in the watch pane.
 		response.body.supportsSetExpression = true;
 
-		// Allow data breakpoints from vscode UI (for WPMEM)
-		response.body.supportsDataBreakpoints = true;
+		// Databreakpoints would be nice but the debug protocol gives not much
+		// control here.
+		// It's only possible to set data breakpoints in vscode in the
+		// VARIABLEs pane. But I only have registers there. So it's not useful.
+		response.body.supportsDataBreakpoints = false;
 
-		// Allow exception breakpoints from vscode UI (for ASSERTION)
+		// Allow exception breakpoints from vscode UI (for ASSERTION, WPMEM and LOGPOINT).
+		// Note: It is not possible to change the exceptionBreakpointFilters via the
+		// CapabilitiesEvent later. vscode does not react on it.
 		response.body.supportsExceptionFilterOptions = true;
 		response.body.supportsExceptionOptions = false;
 		response.body.supportsExceptionInfoRequest = false;
@@ -3882,35 +3887,10 @@ E.g. use "-help -view" to put the help text in an own view.
 		this.fileWatchers = [];
 	}
 
-	protected dataBreakpointInfoRequest(response: DebugProtocol.DataBreakpointInfoResponse, args: DebugProtocol.DataBreakpointInfoArguments, request?: DebugProtocol.Request) {
-		console.log('dataBreakpointInfoRequest', args);
-		response.body = {
-			dataId: "MyDataBPID",
-			/** UI string that describes on what data the breakpoint is set on or why a data breakpoint is not available. */
-			description: "Mein Data Breakpoint",
-			/** Optional attribute listing the available access types for a potential data breakpoint. A UI frontend could surface this information. */
-			accessTypes: ['readWrite'],
-			/** Optional attribute indicating that a potential data breakpoint could be persisted across sessions. */
-			canPersist: true
-		}
-		this.sendResponse(response);
-
-	}
-
-	/** Called to set data breakpoints.
-	 */
-	protected setDataBreakpointsRequest(response: DebugProtocol.SetDataBreakpointsResponse, args: DebugProtocol.SetDataBreakpointsArguments, request?: DebugProtocol.Request) {
-		console.log('setDataBreakpointsRequest', args);
-		this.sendResponse(response);
-		// TODO: Implement
-	}
-
 
 	/** Sets the exception breakpoints.
 	 */
 	protected async setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments, request?: DebugProtocol.Request) {
-		console.log('setExceptionBreakPointsRequest', args);
-
 		// Reformat info to easier access it.
 		const exceptionMap = new Map<string, string>();
 		args.filterOptions!.forEach(filterOption => {

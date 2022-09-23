@@ -20,7 +20,7 @@
 - zsim:
 	- Added command to break on interrupt ("-e breakinterrupt on").
 - Settings:
-	- "esxdosRst" removed. See Reverse Engineering for replacement.
+	- "esxdosRst" removed. See Reverse Engineering for a replacement.
 - Switched to @vscode/debugadapter 1.57.0.
 - Use of debugadapter API:
 	- ASSERTIONs, WPMEMs and LOGPOINTs can now be easily enabled/disabled from the vscode BREAKPOINTS pane. The now superfluous DEBUG CONSOLE commands (-assertion, -wpmem and -logpoint) have been removed.

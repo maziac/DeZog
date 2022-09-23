@@ -20,9 +20,11 @@ This was all done to allow reverse engineering together with bank switching.
 
 Please read about it in the [ReverseEngineeringUsage.md](ReverseEngineeringUsage.md).
 
-Anyhow a few changes were necessary:
+Anyhow a few changes were done/necessary:
 - The "disableBanking" option was removed from the "sjasmplus" launch.json configuration. If you used it, you need to remove it now from the launch.json.
 - The "zsim" "customMemory" definition was changed. please refer to the [customMemory](Usage.md#custommemory) section in Usage.md.
+- For "zsim" an additional debug console command is available now: ```-e breakinterrupt on|off```. If turned on the simulator will break when an interrupt is entered. This is helpful for reverse engineering cases to easily find the interrupt address.
+- "esxdosRst" was removed from the launch.json. See [ReverseEngineeringUsage.md](ReverseEngineeringUsage.md) for a replacement.
 
 
 Furthermore the ASSERTIONs, WPMEMs and LOGPOINTs have been better integrated into the vscode UI.
