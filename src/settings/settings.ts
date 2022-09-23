@@ -2,7 +2,6 @@ import {DebugProtocol} from '@vscode/debugprotocol';
 import {Utility} from '../misc/utility';
 import * as fs from 'fs';
 import {UnifiedPath} from '../misc/unifiedpath';
-//import * as hjoin from '@bartificer/human-join';
 import {CustomMemoryType} from './settingscustommemory';
 
 
