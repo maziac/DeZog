@@ -136,7 +136,10 @@ For all of these features:
 Start Dezog, place the cursor at the source code at some instruction and do a right click for "Analyze at Cursor":
 ![](images/ReverseEngineeringUsage/analyze_at_cursor.jpg)
 
-The examples below use the [z80-sample-program](https://github.com/maziac/z80-sample-program).
+Note: It depends a little bit on the assembly parser that is used. Some DeZog parsers allow a disassembly directly from a line with a label, others require that there is also an assembler instruction on that line.
+If you get a note in the DEBUG CONSOLE like this: ```Error: No address found at line.``` than re-try by right-clicking directly over an assembler instruction.
+
+The examples below use the [z80-sample-program](https://github.com/maziac/z80-sample-program) assembled for the ZX 48K.
 
 
 ## Call Graph
@@ -169,6 +172,8 @@ Here is a more advanced call graph from the main routine:
 
 At the top of the call graph you also find a slider to adjust the shown call graph depth.
 
+
+
 ## Flow Chart
 
 Here is the flow chart for the same subroutine:
@@ -176,6 +181,35 @@ Here is the flow chart for the same subroutine:
 
 And here another flowchart of the main routine:
 ![](images/ReverseEngineeringUsage/flowchart_main.jpg)
+
+
+## Smart Disassembly
+
+The smart disassembly will follow the execution flow from the given address and visualize the calls and jumps with arrows.
+
+A smart disassembly of the *main_loop* of the z80-sample-program looks like this:
+![](images/ReverseEngineeringUsage/smart_disassembly_arrows.gif)
+
+I.e. you will automatically find also the referenced *fill_bckg_line* and *inc_fill_colors_ptr* disassembled.
+
+The disassembly also contains the referenced data of that subroutine (and referenced sub-subroutines).
+I.e. also for self-developed code you can easily see which memory it references.
+
+If labels already exist those names are re-used. If labels do not exist yet a name will be "invented".
+
+In theory, if you would do a smart disassembly of the entry point of your program  (e.g. the *main* routine), you'd get a disassembly of the whole program.
+Of course, in practice, not all code is reachable from a static analysis-
+E.g. the interrupt routine or any "JP (HL)" or self-modified jumps cannot be followed/disassembled.
+
+Here is a picture of a more complex sample code:
+![](images/ReverseEngineeringUsage/smart_disassembly_complex.jpg)
+
+The jumps are visualized through arrows. Backward (loop) jumps inside the same subroutine can be found on the left.
+Forward jumps on the right.
+Any call offers a little arrow. If hovered-over it animates an arrow to the called subroutine.
+(Note: If the called routine is in another slot and it is not 100% sure that the code in the slot is the correct code (it might have paged in a wrong bank at the time of disassembly) than only the call address is shown without arrow.)
+
+At the top you find a slider with which you can control the call-depth of the disassembly.
 
 
 ## Selection
@@ -188,30 +222,18 @@ Flow chart example:
 Call graph example:
 ![](images/ReverseEngineeringUsage/callgraph_selection.gif)
 
+Smart disassembly example:
+![](images/ReverseEngineeringUsage/smart_disassembly_selection.gif)
+
 Note:
 The selection does work only on code for which a disassembly or a source file exists. If e.g. the disassembly shows too less code you might need to do a "smart disassembly" first and put that in your reverse engineered list file.
 
 Hint:
-If the flow chart or call graph is hidden once you do a selection then please enable the following vscode setting:
+If the flow chart, call graph or smart disassembly is hidden once you do a selection then please enable the following vscode setting:
 ~~~
 editor.revealIfOpen
 ~~~
 ![](images/ReverseEngineeringUsage/analyze_reveal_if_open.jpg)
-
-
-## Smart Disassembly
-
-The smart disassembly will follow the execution flow from the given address and visualize the calls and jumps with arrows.
-
-A smart disassembly of the above *fill_bckg_line* looks like this:
-// TODO: new animated gif
-![](images/ReverseEngineeringUsage/smart_disassembly_fill_bckg_line.jpg)
-
-I.e. you will automatically find also the *fill_memory* disassembled because it it referenced in *fill_bckg_line*.
-
-If you'd do the same for the *main* routine you'd get a disassembly of the whole program.
-
-If labels already exist those names are re-used. If labels do not exist yet a name will be "invented".
 
 
 ## Note
