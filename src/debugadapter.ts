@@ -476,7 +476,8 @@ export class DebugSessionClass extends DebugSession {
 		response.body.supportsExceptionFilterOptions = true;
 		response.body.supportsExceptionOptions = false;
 		response.body.supportsExceptionInfoRequest = false;
-		this.exceptionBreakpoints = new ExceptionBreakpoints();
+		const enableExceptionBps = (this.state != DbgAdapterState.UNITTEST);	// ASSERTION etc. breakpoints are controlled directly by the unit tests.
+		this.exceptionBreakpoints = new ExceptionBreakpoints(enableExceptionBps);
 		response.body.exceptionBreakpointFilters = this.exceptionBreakpoints.breakpoints.map(bp => ({
 			filter: bp.name,
 			label: bp.name,

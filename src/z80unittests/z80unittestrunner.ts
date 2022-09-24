@@ -315,6 +315,8 @@ export class Z80UnitTestRunner {
 				try {
 					// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
 					Remote.readListFiles(configuration);
+					// This needs to be done after the labels have been read
+					await Remote.initWpmemAssertionLogpoints();
 
 					// Initialize Cpu- or StepHistory.
 					StepHistory.init();  // might call the socket

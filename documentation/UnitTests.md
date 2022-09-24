@@ -333,6 +333,12 @@ For unit testing you can use .sna, .nex and plain .obj files.
 .tap files will not work.
 
 
+# Further Notes
+
+When **debugging a unit test** DeZog will automatically enable the ASSERTION, WPMEM and LOGPOINT.
+Therefore it is not possible to dynamically change them from the user interface.
+I.e. in vscode these breakpoints will not be shown in the BREAKPOINTS pane.
+
 # Caveats
 
 CSpect:

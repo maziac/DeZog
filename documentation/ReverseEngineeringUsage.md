@@ -173,7 +173,6 @@ Here is a more advanced call graph from the main routine:
 At the top of the call graph you also find a slider to adjust the shown call graph depth.
 
 
-
 ## Flow Chart
 
 Here is the flow chart for the same subroutine:

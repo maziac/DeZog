@@ -55,30 +55,37 @@ export class ExceptionBreakpoints {
 
 
 	/** Constructor.
+	 * @param enable true = enable ASSERTION, WPMEM and LOGPOINT breakpoints.
+	 * false = enable no exception breakpoint (used for unit tests).
 	 */
-	constructor() {
-		this.breakpoints = [{
-			name: 'ASSERTIONs',
-			description: 'ASSERTIONs are given as comments in the assembler sources. e.g. "; ASSERTION ..."',
-			funcSupported: () => Remote.supportsASSERTION,
-			enabled: false,
-			funcEnable: this.enableASSERTIONs
-		},
-		{
-			name: 'WPMEMs',
-			description: 'WPMEM are memory guards given as comments in the assembler sources. e.g. "; WPMEM ..."',
-			funcSupported: () => Remote.supportsWPMEM,
-			enabled: false,
-			funcEnable: this.enableWPMEMs
-		},
-		{
-			name: 'LOGPOINTs',
-			description: 'LOGPOINTs are given as comments in the assembler sources. e.g. "; LOGPOINT [group] ..."\nAdd the groups of logpoints you want to enable as a comma or space separated list.',
-			funcSupported: () => Remote.supportsLOGPOINT,
-			enabled: false,
-			conditionString: '',
-			funcEnable: this.enableLOGPOINTs
-		}];
+	constructor(enableBreakpoints: boolean) {
+		if (enableBreakpoints) {
+			this.breakpoints = [{
+				name: 'ASSERTIONs',
+				description: 'ASSERTIONs are given as comments in the assembler sources. e.g. "; ASSERTION ..."',
+				funcSupported: () => Remote.supportsASSERTION,
+				enabled: false,
+				funcEnable: this.enableASSERTIONs
+			},
+			{
+				name: 'WPMEMs',
+				description: 'WPMEM are memory guards given as comments in the assembler sources. e.g. "; WPMEM ..."',
+				funcSupported: () => Remote.supportsWPMEM,
+				enabled: false,
+				funcEnable: this.enableWPMEMs
+			},
+			{
+				name: 'LOGPOINTs',
+				description: 'LOGPOINTs are given as comments in the assembler sources. e.g. "; LOGPOINT [group] ..."\nAdd the groups of logpoints you want to enable as a comma or space separated list.',
+				funcSupported: () => Remote.supportsLOGPOINT,
+				enabled: false,
+				conditionString: '',
+				funcEnable: this.enableLOGPOINTs
+			}];
+		}
+		else {
+			this.breakpoints = [];
+		}
 	}
 
 
