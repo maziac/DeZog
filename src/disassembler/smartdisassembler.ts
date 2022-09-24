@@ -86,15 +86,9 @@ export class SmartDisassembler {
 
 
 	/** Initializes the Opcode formatting.
-	 * @param funcGetLabel A function that is used to retrieve label names by the disassembler.
-	 * @param funcFilterAddresses A function that is used to filter out certain addresses from the output by the disassembler.
-	 * If false is returned the line for this address is not shown.
-	 * @param funcFormatLongAddress A function that formats the long address printed at first in the disassembly.
-	 * Used to add bank information after the address by the disassembler.
-	 * Uses the current slot.
 	 */
 	constructor() {
-		Opcode.InitOpcodes();
+		//Opcode.InitOpcodes();
 	}
 
 

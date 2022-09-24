@@ -243,16 +243,15 @@ export interface ZSimType {
  * The settings for the disassembler in the VARIABLEs pane.
  */
 export interface DisassemblerArgs {
-	numberOfLines: number,	// Number of lines displayed in the (brute force) disassembly
+	numberOfLines: number;	// Number of lines displayed in the (brute force) disassembly
 }
 
 
 /**
  * The settings for the smart disassembler (disasm.list).
  */
-// TODO: Do I really need this?
 export interface SmartDisassemblerArgs {
-
+	lowerCase: boolean;
 }
 
 
@@ -701,8 +700,11 @@ export class Settings {
 		// Smart disassembly
 		if (launchCfg.smartDisassemblerArgs == undefined) {
 			launchCfg.smartDisassemblerArgs = {
+				lowerCase: true
 			}
 		}
+		if (launchCfg.smartDisassemblerArgs.lowerCase == undefined)
+			launchCfg.smartDisassemblerArgs.lowerCase = false;
 
 		// Reverse debugging
 		if (launchCfg.history == undefined)

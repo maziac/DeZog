@@ -784,17 +784,22 @@
 								"default": 512
 							},
 							"disassemblerArgs": {
-								"description": "Arguments passed to the disassembler.",
+								"description": "Arguments passed to the disassembler (in the VARIABLES pane).",
 								"properties": {
 									"numberOfLines": {
 										"type": "number",
 										"description": "The number of lines displayed in the disassembly.",
 										"default": 10
-									},
-									"esxdosRst": {
+									}
+								}
+							},
+							"smartDisassemblerArgs": {
+								"description": "Arguments passed to the smart disassembler used in 'Analyze', i.e. call graph, flow chart and smart (text) disassembler.",
+								"properties": {
+									"lowerCase": {
 										"type": "boolean",
-										"description": "For esxdos disassembly set this to 'true'.",
-										"default": false
+										"description": "true = use lower case for the instructions, false = use upper case.",
+										"default": true
 									}
 								}
 							},
@@ -994,9 +999,6 @@
 							"zxKeyboard": true,
 							"zxBeeper": true
 						},
-						"disassemblerArgs": {
-							"esxdosRst": true
-						},
 						"sjasmplus": [
 							{
 								"path": "Add your assembler list or sld file"
@@ -1036,9 +1038,6 @@
 								"vsyncInterrupt": true,
 								"zxKeyboard": true,
 								"zxBeeper": true
-							},
-							"disassemblerArgs": {
-								"esxdosRst": true
 							},
 							"sjasmplus": [
 								{
@@ -1107,9 +1106,6 @@
 							"request": "launch",
 							"name": "CSpect",
 							"remoteType": "cspect",
-							"disassemblerArgs": {
-								"esxdosRst": true
-							},
 							"sjasmplus": [
 								{
 									"path": "${1:Assembler list or sld file}"
@@ -1138,9 +1134,6 @@
 							"request": "launch",
 							"name": "ZEsarUX",
 							"remoteType": "zesarux",
-							"disassemblerArgs": {
-								"esxdosRst": true
-							},
 							"sjasmplus": [
 								{
 									"path": "${1:Assembler list or sld file}"
@@ -1192,9 +1185,6 @@
 							"remoteType": "zxnext",
 							"zxnext": {
 								"serial": "${1:The serial COM port}"
-							},
-							"disassemblerArgs": {
-								"esxdosRst": true
 							},
 							"sjasmplus": [
 								{

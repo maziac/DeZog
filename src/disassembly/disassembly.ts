@@ -1,4 +1,5 @@
 import {Format} from "../disassembler/format";
+import {Opcode} from "../disassembler/opcode";
 import {RenderText} from "../disassembler/rendertext";
 import {SmartDisassembler} from "../disassembler/smartdisassembler";
 import {Labels} from "../labels/labels";
@@ -40,6 +41,10 @@ export class DisassemblyClass extends SmartDisassembler {
 	public static createDisassemblySingleton() {
 		Disassembly = new DisassemblyClass();
 		Format.hexFormat = 'h';	// For all disassemblers
+		// Lower or upper case
+		Opcode.InitOpcodes();
+		if (Settings.launch.smartDisassemblerArgs.lowerCase)
+			Opcode.makeLowerCase();
 	}
 
 
