@@ -280,8 +280,53 @@ export class MemoryDumpView extends BaseView {
 	}
 
 
-	/**
-	 * Creates the script (i.e. functions) for all blocks (html tables).
+	/** Creates the html to display the search widget.
+	 */
+	protected createSearchHtml(): string {
+		//		<span style="position:fixed;right:20px">
+		// <svg> <use xlink:href="codicon.svg#arrow-down" /> </svg>
+		// <button style="background-color:transparent" >↑</button>
+		// var(--vscode-searchEditor-textInputBorder)
+		return `
+<style>
+.searchWidget {
+	font-family: Arial;
+	position: fixed;
+	right:20px;
+}
+.searchInput {
+	font-family: Arial;
+	background-color: var(--vscode-background);
+	color: var(--vscode-foreground);
+	border-color: transparent;
+}
+.navigationButton {
+	font-family: Arial;
+	font-size: 1.25em;
+  	background-color: var(--vscode-background);
+}
+.optionButtons {
+	font-family: Arial;
+	font-size: 0.8em;
+  	background-color: var(--vscode-background);
+}
+</style>
+
+<div class="searchWidget">
+  <input class="searchInput" type="text" placeholder="Search...">
+  <span class="optionButtons">aA</span>
+  <span class="optionButtons">0</span>
+  <span class="optionButtons">ZX</span>
+  &nbsp;
+  <span class="navigationButton">↑</span>
+  <span class="navigationButton">↓</span>
+</div>
+<br>
+		`;
+	}
+
+
+	/** Creates the script (i.e. functions) for all blocks (html tables).
 	 */
 	protected createHtmlScript(): string {
 		const html=`
@@ -583,6 +628,8 @@ export class MemoryDumpView extends BaseView {
 
 		%s
 
+		%s
+
 		</body>
 		</html>`;
 
@@ -611,11 +658,14 @@ export class MemoryDumpView extends BaseView {
 			i++;
 		}
 
+		// Add search widget
+		const searchHtml = this.createSearchHtml();
+
 		// Add functions
 		const scripts=this.createHtmlScript();
 
 		// Add html body
-		const html = util.format(format, scripts+tables, legend);
+		const html = util.format(format, searchHtml, scripts+tables, legend);
 		this.vscodePanel.webview.html = html;
 	}
 

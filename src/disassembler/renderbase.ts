@@ -210,26 +210,6 @@ export class RenderBase {
 
 
 	/** Renders the givens lines with graphviz.
-	 * Renders synchronously.
-	 * @param lines The string array to render.
-	 * @return The adjusted SVG text.
-	 */
-	/*
-	protected renderLinesSync(lines: string[]): string {
-		const text = lines.join('\n');
-
-		// Render
-		let rendered = renderGraphviz(text);
-		// Adjust
-		rendered = this.adjustSvg(rendered);
-
-		// return
-		return rendered;
-	}
-	*/
-
-
-	/** Renders the givens lines with graphviz.
 	 * Renders asynchronously.
 	 * This is faster: about 70% of the synchronous version.
 	 * For both, asynchronous and synchronous, the first rendertakes longer.
