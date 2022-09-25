@@ -521,9 +521,15 @@ function searchTextChanged(searchObj) {
 						}
 					}
 					// ASCII
-					foundAddressesAsciiObjs = document.querySelectorAll("span[address='"+message.address+"']");
-					for(const obj of foundAddressesAsciiObjs) {
-						obj.classList.add("foundAddress");
+					foundAddressesAsciiObjs = [];
+					for(const address of message.addresses) {
+						for(let i=0; i<length; i++) {
+							const objs =document.querySelectorAll("span[address='"+(address+i)+"']");
+							for(const obj of objs) {
+								foundAddressesAsciiObjs.push(obj);
+								obj.classList.add("foundAddress");
+							}
+						}
 					}
  				}   break;
 
