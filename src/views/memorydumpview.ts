@@ -342,6 +342,44 @@ function searchTextChanged(searchObj) {
 		zxTerminated: false
 	});
 }
+
+function scrollTo(tgt) {
+	if(tgt) {
+		tgt.scrollIntoView({
+			behavior: "smooth",
+			block: "start",
+			inline: "nearest"
+		});
+	}
+}
+
+function scrollToSelectedAddress() {
+	// Find first object with selected address
+	const address = foundAddresses[selectedAddress];
+	const obj = document.querySelector("td[address='"+address+"']");
+	// Scroll to selected address
+	scrollTo(obj);
+}
+
+function searchUp() {
+	// Decrement
+	selectedAddress--;
+	if(selectedAddress < 0)
+		selectedAddress = foundAddresses.length;
+	// Scroll to selected address
+	scrollToSelectedAddress();
+}
+
+function searchDown() {
+	// Increment
+	selectedAddress++;
+	if(selectedAddress >= foundAddresses.length)
+		selectedAddress = 0;
+	// Scroll to selected address
+	scrollToSelectedAddress();
+}
+
+//# sourceURL=memorydumpview-searchhtml.js
 </script>
 
 <div class="searchWidget">
@@ -350,8 +388,8 @@ function searchTextChanged(searchObj) {
   <span class="optionButtons">0</span>
   <span class="optionButtons">ZX</span>
   &nbsp;
-  <span class="navigationButton">↑</span>
-  <span class="navigationButton">↓</span>
+  <span class="navigationButton" onclick="searchUp()">↑</span>
+  <span class="navigationButton" onclick="searchDown()">↓</span>
 </div>
 <br>
 		`;
@@ -368,6 +406,10 @@ function searchTextChanged(searchObj) {
 		// For highlighting the found addresses
 		let foundAddressesHexObjs = [];
 		let foundAddressesAsciiObjs = [];
+
+		// The selected found address.
+		let selectedAddress = 0;
+		let foundAddresses = [];
 
 		//---- Handle Mouse Over, Calculation of hover text -------
 		function mouseOverValue(obj) {
@@ -525,9 +567,10 @@ function searchTextChanged(searchObj) {
 
 					// Highlight the new  found addresses:
 					const length = message.length;
+					foundAddresses = message.addresses;
 					// HEX
 					foundAddressesHexObjs = [];
-					for(const address of message.addresses) {
+					for(const address of foundAddresses) {
 						for(let i=0; i<length; i++) {
 							const objs = document.querySelectorAll("td[address='"+(address+i)+"']");
 							for(const obj of objs) {
@@ -538,7 +581,7 @@ function searchTextChanged(searchObj) {
 					}
 					// ASCII
 					foundAddressesAsciiObjs = [];
-					for(const address of message.addresses) {
+					for(const address of foundAddresses) {
 						for(let i=0; i<length; i++) {
 							const objs =document.querySelectorAll("span[address='"+(address+i)+"']");
 							for(const obj of objs) {
@@ -547,12 +590,15 @@ function searchTextChanged(searchObj) {
 							}
 						}
 					}
+
+					// Reset selected address
+					selectedAddress = 0;
  				}   break;
 
            }
         });
 
-		//# sourceURL=memorydumpview.js
+		//# sourceURL=memorydumpview-htmlscript.js
 		</script>
 `;
 		return html;
