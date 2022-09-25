@@ -328,9 +328,20 @@ export class MemoryDumpView extends BaseView {
 .foundAddressAscii {
   	background-color: lightyellow;
 }
+.selectedAddress {
+  	background-color: red;
+	border-radius: 3px;
+}
+.selectedAddressAscii {
+  	background-color: red;
+}
 </style>
 
 <script>
+// The previously selected objects.
+let prevSelectedHex = [];
+let prevSelectedAscii = [];
+
 function searchTextChanged(searchObj) {
 	// Get string
 	const searchText = searchObj.value;
@@ -347,36 +358,70 @@ function scrollTo(tgt) {
 	if(tgt) {
 		tgt.scrollIntoView({
 			behavior: "smooth",
-			block: "start",
+			block: "center",
 			inline: "nearest"
 		});
 	}
 }
 
-function scrollToSelectedAddress() {
-	// Find first object with selected address
-	const address = foundAddresses[selectedAddress];
-	const obj = document.querySelector("td[address='"+address+"']");
-	// Scroll to selected address
-	scrollTo(obj);
+function clearSelection() {
+	// De-select previous selection
+	for(const obj of prevSelectedHex)
+		obj.classList.remove("selectedAddress");
+	for(const obj of prevSelectedAscii)
+		obj.classList.remove("selectedAddressAscii");
+	prevSelectedHex = [];
+	prevSelectedAscii = [];
 }
 
-function searchUp() {
+function selectAddress() {
+	// Clear previous
+	clearSelection();
+
+	// Any address found ?
+	if(foundAddresses.length > 0) {
+		// Find first object with selected address
+		const address = foundAddresses[selectedAddress];
+		const obj = document.querySelector("td[address='"+address+"']");
+		// Scroll to selected address
+		scrollTo(obj);
+
+		// Highlight all addresses
+		for(let i=0; i<selectedLength; i++) {
+			const objs = document.querySelectorAll("td[address='"+(address+i)+"']");
+			if(objs) {
+				for(const obj of objs) {
+					obj.classList.add("selectedAddress");
+					prevSelectedHex.push(obj);
+				}
+			}
+			const spanObjs = document.querySelectorAll("span[address='"+(address+i)+"']");
+			if(spanObjs) {
+				for(const obj of spanObjs) {
+					obj.classList.add("selectedAddressAscii");
+					prevSelectedAscii.push(obj);
+				}
+			}
+		}
+	}
+}
+
+function searchArrowUp() {
 	// Decrement
 	selectedAddress--;
 	if(selectedAddress < 0)
-		selectedAddress = foundAddresses.length;
+		selectedAddress = foundAddresses.length-1;
 	// Scroll to selected address
-	scrollToSelectedAddress();
+	selectAddress();
 }
 
-function searchDown() {
+function searchArrowDown() {
 	// Increment
 	selectedAddress++;
 	if(selectedAddress >= foundAddresses.length)
 		selectedAddress = 0;
 	// Scroll to selected address
-	scrollToSelectedAddress();
+	selectAddress();
 }
 
 //# sourceURL=memorydumpview-searchhtml.js
@@ -388,8 +433,8 @@ function searchDown() {
   <span class="optionButtons">0</span>
   <span class="optionButtons">ZX</span>
   &nbsp;
-  <span class="navigationButton" onclick="searchUp()">↑</span>
-  <span class="navigationButton" onclick="searchDown()">↓</span>
+  <span class="navigationButton" onclick="searchArrowUp()">↑</span>
+  <span class="navigationButton" onclick="searchArrowDown()">↓</span>
 </div>
 <br>
 		`;
@@ -410,6 +455,7 @@ function searchDown() {
 		// The selected found address.
 		let selectedAddress = 0;
 		let foundAddresses = [];
+		let selectedLength = 0;
 
 		//---- Handle Mouse Over, Calculation of hover text -------
 		function mouseOverValue(obj) {
@@ -566,12 +612,12 @@ function searchDown() {
 					}
 
 					// Highlight the new  found addresses:
-					const length = message.length;
+					selectedLength = message.length;
 					foundAddresses = message.addresses;
 					// HEX
 					foundAddressesHexObjs = [];
 					for(const address of foundAddresses) {
-						for(let i=0; i<length; i++) {
+						for(let i=0; i<selectedLength; i++) {
 							const objs = document.querySelectorAll("td[address='"+(address+i)+"']");
 							for(const obj of objs) {
 								foundAddressesHexObjs.push(obj);
@@ -582,7 +628,7 @@ function searchDown() {
 					// ASCII
 					foundAddressesAsciiObjs = [];
 					for(const address of foundAddresses) {
-						for(let i=0; i<length; i++) {
+						for(let i=0; i<selectedLength; i++) {
 							const objs =document.querySelectorAll("span[address='"+(address+i)+"']");
 							for(const obj of objs) {
 								foundAddressesAsciiObjs.push(obj);
@@ -591,8 +637,15 @@ function searchDown() {
 						}
 					}
 
-					// Reset selected address
+					// Enable/disable navigation buttons
+					const disabled = (foundAddresses.length == 0);
+					const navs = document.getElementsByClassName("navigationButton")
+					for(const nav of navs)
+						nav.disabled = disabled;
+
+					// Select first
 					selectedAddress = 0;
+					selectAddress();
  				}   break;
 
            }
