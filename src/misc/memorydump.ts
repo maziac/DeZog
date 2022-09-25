@@ -380,9 +380,9 @@ ranges.
 	// TODO: unit test
 	public search(searchInput: string, caseSensitive: boolean, nullTerminated: boolean, zxTerminated: boolean): FoundAddresses {
 		const foundAddresses = new Set<number>();
-		let searchText = '';
-		const len = searchText.length;
-		if (len > 0) {
+		let searchText = searchInput;
+		const length = searchText.length;
+		if (length > 0) {
 			if (!caseSensitive)
 				searchText = searchText.toLowerCase();
 
