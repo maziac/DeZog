@@ -16,7 +16,7 @@
 - "disableBanking" option removed from "sjasmplus" launch.json configuration.
 - ZEsarUX:
 	- "Coleco Vision" memory model added.
-	- Fixed getting sprite patterns.
+	- Fixed obtaining of the sprite patterns.
 - zsim:
 	- Added command to break on interrupt ("-e breakinterrupt on").
 - Settings:

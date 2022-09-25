@@ -49,10 +49,8 @@ export class Opcode {
 
 	/// Call this to use lower case or upper case opcodes.
 	public static makeLowerCase() {
-		for (const oc of Opcode.Opcodes) {
+		for (const oc of Opcode.Opcodes)
 			oc.name = oc.name.toLowerCase();
-			console.log(oc.name);
-		}
 		for (const oc of Opcode.OpcodesCB)
 			oc.name = oc.name.toLowerCase();
 		for (const oc of Opcode.OpcodesDD)
