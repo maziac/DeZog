@@ -2373,12 +2373,17 @@ the value correspondends to a label.
 "-state save|restore|list|clear|clearall [statename]": Saves/restores the current state. I.e. the complete RAM + the registers.
 "-wpadd address [size] [type]": Adds a watchpoint. See below.
 "-wprm address [size] [type]": Removes a watchpoint.
-	- address: The address to watch
+	- address: The 64k address to watch.
 	- size: The size of the area to watch. Can be omitted. Defaults to 1.
 	- type:
 	    - "r": Read watchpoint
 	    - "w": Write watchpoint
 	    - "rw": Read/write watchpoint. Default.
+	Note: This is a leightwieght version of the WPMEM watchpoints you can add to your sources.
+	      Watchpoints added through "-wpadd" are independent. They are NOT controlled (enabled/disabled) through the
+		  vscode's BREAKPOINTS pane.
+		  Furthermore they work on 64k addresses (whereas WPMEM works on long addresses).
+		  I.e. a watchpoint added through "-wpadd" will break in any bank.
 
 Some examples:
 "-exec h 0 100": Does a hexdump of 100 bytes at address 0.
@@ -2474,10 +2479,12 @@ E.g. use "-help -view" to put the help text in an own view.
 		let result = '';
 		if (labels.length > 0) {
 			labels.forEach(label => {
-				let value = Labels.getNumberForLabel(label);
-				if (value != undefined)
-					value &= 0xFFFF;
-				result += label + ': ' + Utility.getHexString(value, 4) + 'h\n';
+				const value = Labels.getNumberForLabel(label)!;
+				const bankString = Remote.memoryModel.getBankNameForAddress(value);
+				result += label + ': ' + Utility.getHexString(value & 0xFFFF, 4) + 'h';
+				if (bankString)
+					result += ' (@' + bankString + ')';
+				result += '\n';
 			})
 		}
 		else {

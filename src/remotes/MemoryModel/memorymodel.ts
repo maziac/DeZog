@@ -464,23 +464,54 @@ export class MemoryModel {
 
 
 	/**
+	 * Returns the bank for a given address.
+	 * @param longAddress The long address.
+	 * @returns The bank. Undefined if longAddress is < 0x10000 or if there is only 1
+	 * bank for the slot.
+	 */
+	public getBankForAddress(longAddress: number): BankInfo | undefined {
+		// Check for long address
+		const bankNr = (longAddress >>> 16) - 1;
+		if (bankNr < 0)
+			return undefined;
+		// Check for switched banks
+		const addr64k = longAddress & 0xFFFF;
+		const banks = this.getBanksFor(addr64k);
+		if (banks.size == 1)
+			return undefined;	// Just 1 bank
+		// Return bank
+		return this.banks[bankNr];
+	}
+
+
+	/**
 	 * Returns the short name of a bank.
 	 * @param longAddress The long address.
 	 * @returns The bank number as string (e.g. "R0") or an empty string: if longAddress is < 0x10000 or if there are no switched banks at the given address.
 	 */
 	public getBankShortNameForAddress(longAddress: number): string {
-		// Check for long address
-		const bankNr = (longAddress >>> 16) - 1;
-		if (bankNr < 0)
+		// Get bank
+		const bank = this.getBankForAddress(longAddress);
+		if (!bank)
 			return '';
-		// Check for switched banks
-		const addr64k = longAddress & 0xFFFF;
-		const banks = this.getBanksFor(addr64k);
-		if (banks.size == 1)
-			return '';	// Just 1 bank
-		// Get name for bank number
-		const bank = this.banks[bankNr];
+		// Get short name for bank number
 		return bank.shortName;
+	}
+
+
+
+	/**
+	 * Returns the full name of a bank.
+	 * @param longAddress The long address.
+	 * @returns The bank number as string (e.g. "ROM0") or an empty string: if longAddress is < 0x10000 or if there are no switched banks at the given address.
+	 */
+	public getBankNameForAddress(longAddress: number): string {
+		// Get bank
+		const bank = this.getBankForAddress(longAddress);
+		if (!bank)
+			return '';
+		// Get name for bank number
+		return bank.name;
 	}
 
 

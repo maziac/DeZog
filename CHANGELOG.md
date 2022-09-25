@@ -24,7 +24,9 @@
 - Switched to @vscode/debugadapter 1.57.0.
 - Use of debugadapter API:
 	- ASSERTIONs, WPMEMs and LOGPOINTs can now be easily enabled/disabled from the vscode BREAKPOINTS pane. The now superfluous DEBUG CONSOLE commands (-assertion, -wpmem and -logpoint) have been removed.
-- Fixed "-wprm" (debug console).
+- debug console:
+	- Fixed "-wprm".
+	- "-label" now also prints the bank of a label.
 
 
 # 2.7.4
