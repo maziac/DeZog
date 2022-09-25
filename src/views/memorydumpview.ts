@@ -323,7 +323,10 @@ export class MemoryDumpView extends BaseView {
 }
 .foundAddress {
   	background-color: lightyellow;
-	//border: 1px solid red;
+	border-radius: 3px;
+}
+.foundAddressAscii {
+  	background-color: lightyellow;
 }
 </style>
 
@@ -473,20 +476,33 @@ function searchTextChanged(searchObj) {
 
 				case 'setAddressColor':
 				{
+					const className = "registerPointer"+message.register;
+					const classNameAscii = "registerPointerAscii"+message.register;
+
+					// Remove old
+					if(message.prevAddress) {
+						const objs = document.querySelectorAll("td[address='"+message.prevAddress+"']");
+						for(let obj of objs) {
+							obj.classList.remove(className);
+						}
+						// ASCII
+						const spanObjs = document.querySelectorAll("span[address='"+message.prevAddress+"']");
+						for(let obj of spanObjs) {
+							obj.classList.remove(classNameAscii);
+						}
+					}
+
 					// HEX
 					const objs = document.querySelectorAll("td[address='"+message.address+"']");
 					for(let obj of objs) {
-						obj.style.backgroundColor = message.color;
-						obj.style.borderRadius = '3px';
+						obj.classList.add(className);
 					}
 					// ASCII
 					const spanObjs = document.querySelectorAll("span[address='"+message.address+"']");
 					for(let obj of spanObjs) {
-						obj.style.color = "white";
-						obj.style.backgroundColor = message.color;
-						obj.style.borderRadius = '3px';
+						obj.classList.add(classNameAscii);
 					}
-				 }   break;
+				 }  break;
 
 				case 'setMemoryTable':
 				{
@@ -504,7 +520,7 @@ function searchTextChanged(searchObj) {
 					}
 					// ASCII
 					for(const obj of foundAddressesAsciiObjs) {
-						obj.classList.remove("foundAddress");
+						obj.classList.remove("foundAddressAscii");
 					}
 
 					// Highlight the new  found addresses:
@@ -527,7 +543,7 @@ function searchTextChanged(searchObj) {
 							const objs =document.querySelectorAll("span[address='"+(address+i)+"']");
 							for(const obj of objs) {
 								foundAddressesAsciiObjs.push(obj);
-								obj.classList.add("foundAddress");
+								obj.classList.add("foundAddressAscii");
 							}
 						}
 					}
@@ -692,6 +708,10 @@ function searchTextChanged(searchObj) {
 			<title>Dump</title>
 		</head>
 
+		<style>
+		%s
+		</style>
+
 		<body style="font-family: Courier">
 
 		%s
@@ -729,6 +749,23 @@ function searchTextChanged(searchObj) {
 			i++;
 		}
 
+		// Create style section
+		const arr = Settings.launch.memoryViewer.registerPointerColors;
+		let style = '';
+		for (let i = 0; i < arr.length; i+=2) {
+			style += `
+			.registerPointer${arr[i]} {
+				background-color: ${arr[i + 1]};
+				border-radius: 3px;
+			}
+			.registerPointerAscii${arr[i]} {
+				color: white;
+				background-color: ${arr[i + 1]};
+				border-radius: 3px;
+			}
+			`;
+		}
+
 		// Add search widget
 		const searchHtml = this.createSearchHtml();
 
@@ -736,7 +773,7 @@ function searchTextChanged(searchObj) {
 		const scripts = this.createHtmlScript();
 
 		// Add html body
-		const html = util.format(format, searchHtml, scripts + tables, legend);
+		const html = util.format(format, style, searchHtml, scripts + tables, legend);
 		this.vscodePanel.webview.html = html;
 	}
 
@@ -757,25 +794,15 @@ function searchTextChanged(searchObj) {
 			const address = Remote.getRegisterValue(reg)
 			//console.log( reg + ': ' + address.toString(16));
 			// Clear old color
-			let prevAddr = this.prevRegAddr.get(reg);
-			if (prevAddr != undefined) {
-				// Check if prevAddr has been set by another register (avoid that a just set address is overwritten)
-				if (!setAddrs.includes(prevAddr)) {
-					// If not, clear the address highlighting
-					const msgPrev = {
-						command: 'setAddressColor',
-						address: prevAddr.toString(),
-						color: "transparent"
-					};
-					this.sendMessageToWebView(msgPrev);
-				}
-			}
+			const prevAddr = this.prevRegAddr.get(reg);
 			// Send the address/color to the web view for display.
-			const color = arr[i + 1];
+			const register = arr[i];
 			const msg = {
 				command: 'setAddressColor',
-				address: address.toString(),
-				color: color
+				address: address,
+				prevAddress: prevAddr,
+				register: register,
+				select: true
 			};
 			this.sendMessageToWebView(msg);
 			// Store
