@@ -3,7 +3,7 @@ import {Remote} from '../remotes/remotebase';
 import * as util from 'util';
 import {Utility} from '../misc/utility';
 import {Labels} from '../labels/labels';
-import {MetaBlock, MemoryDump} from '../misc/memorydump';
+import {MetaBlock, MemoryDump, FoundAddresses} from '../misc/memorydump';
 import {Settings} from '../settings/settings';
 import {Z80RegistersClass} from '../remotes/z80registers';
 import {BaseView} from './baseview';
@@ -103,8 +103,18 @@ export class MemoryDumpView extends BaseView {
 
 			case 'getAddressInfoText':
 				{
-					const address=parseInt(message.address);
+					const address = parseInt(message.address);
 					await this.getAddressInfoText(address);
+				}
+				break;
+
+			case 'searchTextChanged':
+				{
+					// Search all addresses
+					const foundAddresses: FoundAddresses = this.memDump.search(message.searchInput, message.caseSensitive, message.nullTerminated, message.zxTerminated);
+					// Send found addresses to webview for display
+					const msg = {command: 'foundAddresses', ...foundAddresses};
+					this.sendMessageToWebView(msg);
 				}
 				break;
 

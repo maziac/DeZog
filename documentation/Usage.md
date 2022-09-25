@@ -543,7 +543,7 @@ The ZX Next can be connected via a serial interface to the PC.
 Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbserial (macOS).
 
 
-### Remote capabilities
+### Remote Capabilities Comparison
 
 The different Remotes have different capabilities in conjunction with DeZog.
 The following table gives an overview.

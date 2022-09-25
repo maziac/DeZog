@@ -16,6 +16,17 @@ interface MemBlock {
 }
 
 
+/** The struct that is returned on a search.
+ */
+export interface FoundAddresses {
+	// The length of the search string. I.e. the length to highlight for
+	// every addresses in addresses.
+	length: number,
+	// The found start addresses.
+	addresses: number[]
+}
+
+
 /// One meta block. That is a block that encapsulates AddressRanges.
 /// The meta block always starts at mod 16.
 /// Usually it includes only one AddressRange but it can be more if the address
@@ -358,4 +369,42 @@ ranges.
 		this.metaBlocks = biggerBlocks;
 	}
 
+
+	/** Searches the memory.
+	 * Sends the found locations to the webview.
+	 * @param searchInput The search input string as typed into the search box.
+	 * @param caseSensitive true if the search should be case sensitive.
+	 * @param nullTerminated true if there should be a 0 after the searched string.
+	 * @param zxTerminated true if bit 8 of the last search string byte should be set. Bit 8 is the end of string marker.
+	 */
+	// TODO: unit test
+	public search(searchInput: string, caseSensitive: boolean, nullTerminated: boolean, zxTerminated: boolean): FoundAddresses {
+		const foundAddresses = new Set<number>();
+		let searchText = '';
+		const len = searchText.length;
+		if (len > 0) {
+			if (!caseSensitive)
+				searchText = searchText.toLowerCase();
+
+			const dec = new TextDecoder('ascii');
+			for (let mb of this.metaBlocks) {
+				//	const index = address - mb.address;
+				let data = dec.decode(mb.data);
+				if (!caseSensitive)
+					data = data.toLowerCase();
+				// Search
+				let k = 0;
+				while ((k = data.indexOf(searchText, k)) >= 0) {
+					// Found
+					foundAddresses.add(mb.address + k);
+					k++;
+				}
+			}
+		}
+
+		// Create array from set
+		const addresses = Array.from(foundAddresses);
+
+		return {length, addresses};
+	}
 }

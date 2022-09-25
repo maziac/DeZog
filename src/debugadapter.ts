@@ -2917,7 +2917,6 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * @param tokens The arguments. E.g. "-wpadd 0x8000 1 r"
 	 * @returns A Promise<string> with a text to print.
 	 */
-	// TODO: Remove in favor of data breakpoints.
 	protected async evalWpAdd(tokens: Array<string>): Promise<string> {
 		// Get parameters
 		if (tokens.length < 1)
