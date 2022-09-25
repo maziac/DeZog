@@ -2960,7 +2960,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		if (tokens.length < 1)
 			throw Error("Expecting at least 1 argument.");
 		// Address
-		const addr64k = Utility.evalExpression(tokens[1]);
+		const addr64k = Utility.evalExpression(tokens[0]);
 		// Size
 		let size = 1;
 		let access = 'rw';
