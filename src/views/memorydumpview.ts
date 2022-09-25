@@ -303,12 +303,20 @@ export class MemoryDumpView extends BaseView {
 .searchWidget {
 	font-family: Arial;
 	position: fixed;
-	right:20px;
+	right: 2em;
+	background-color: var(--vscode-background);
+	padding: 0.1em;
+    align-items: center;
+}
+.searchContainer {
+	padding: 0.3em;
+	background-color: var(--vscode-button-secondaryBackground);
+    align-items: center;
 }
 .searchInput {
 	font-family: Arial;
-	background-color: var(--vscode-background);
 	color: var(--vscode-foreground);
+	background-color: var(--vscode-secondaryBackground);
 	border-color: transparent;
 }
 .navigationButton {
@@ -316,9 +324,31 @@ export class MemoryDumpView extends BaseView {
 	font-size: 1.25em;
   	background-color: var(--vscode-background);
 }
-.optionButtons {
+.optionButton {
 	font-family: Arial;
 	font-size: 0.8em;
+	padding: 0.2em;
+	margin-left: 0.05em;
+	margin-right: 0.05em;
+  	background-color: var(--vscode-button-secondaryBackground);
+	display: inline-block;
+	width: 1.5em;
+	vertical-align: middle;
+	text-align: center;
+}
+.optionButton:hover {
+  	background-color: var(--vscode-button-secondaryHoverBackground);
+}
+.optionButtonChecked {
+  	background-color: var(--vscode-button-background);
+}
+.optionButtonChecked:hover {
+  	background-color: var(--vscode-button-hoverBackground);
+}
+.searchNumberInfo {
+	font-family: Arial;
+	font-size: 0.8em;
+	padding: 0.1em;
   	background-color: var(--vscode-background);
 }
 .foundAddress {
@@ -379,28 +409,36 @@ function selectAddress() {
 	clearSelection();
 
 	// Any address found ?
-	if(foundAddresses.length > 0) {
-		// Find first object with selected address
-		const address = foundAddresses[selectedAddress];
-		const obj = document.querySelector("td[address='"+address+"']");
-		// Scroll to selected address
-		scrollTo(obj);
+	const numberInfo =  document.getElementById("searchNumberInfo");
+	const length = foundAddresses.length;
+	if(length == 0) {
+		numberInfo.innerText = "No results";
+		return;
+	}
 
-		// Highlight all addresses
-		for(let i=0; i<selectedLength; i++) {
-			const objs = document.querySelectorAll("td[address='"+(address+i)+"']");
-			if(objs) {
-				for(const obj of objs) {
-					obj.classList.add("selectedAddress");
-					prevSelectedHex.push(obj);
-				}
+	// Number info
+	numberInfo.innerText = "" + (selectedAddress+1) + " of " + length;
+
+	// Find first object with selected address
+	const address = foundAddresses[selectedAddress];
+	const obj = document.querySelector("td[address='"+address+"']");
+	// Scroll to selected address
+	scrollTo(obj);
+
+	// Highlight all addresses
+	for(let i=0; i<selectedLength; i++) {
+		const objs = document.querySelectorAll("td[address='"+(address+i)+"']");
+		if(objs) {
+			for(const obj of objs) {
+				obj.classList.add("selectedAddress");
+				prevSelectedHex.push(obj);
 			}
-			const spanObjs = document.querySelectorAll("span[address='"+(address+i)+"']");
-			if(spanObjs) {
-				for(const obj of spanObjs) {
-					obj.classList.add("selectedAddressAscii");
-					prevSelectedAscii.push(obj);
-				}
+		}
+		const spanObjs = document.querySelectorAll("span[address='"+(address+i)+"']");
+		if(spanObjs) {
+			for(const obj of spanObjs) {
+				obj.classList.add("selectedAddressAscii");
+				prevSelectedAscii.push(obj);
 			}
 		}
 	}
@@ -424,17 +462,50 @@ function searchArrowDown() {
 	selectAddress();
 }
 
+function toggleButton(obj) {
+	const checked = obj.checked || false;
+	obj.checked = !checked;
+	if(obj.checked)
+		obj.classList.add("optionButtonChecked");
+	else
+		obj.classList.remove("optionButtonChecked");
+}
+
+
+/** Function to test the vscode colors, e.g. --vscode-button-background.
+ */
+function vscodeColorChanged(obj) {
+	const colorString = obj.value;
+	const colorVar = "var(" + colorString + ")";
+	const testVscodeColorObj = document.getElementById("testVscodeColor");
+	testVscodeColorObj.style="background-color: " + colorVar;
+}
+
+
+// Init
+window.addEventListener('load', () => {
+	selectAddress();
+});
+
 //# sourceURL=memorydumpview-searchhtml.js
 </script>
 
 <div class="searchWidget">
-  <input class="searchInput" type="text" placeholder="Search..." oninput="searchTextChanged(this)">
-  <span class="optionButtons">aA</span>
-  <span class="optionButtons">0</span>
-  <span class="optionButtons">ZX</span>
-  &nbsp;
-  <span class="navigationButton" onclick="searchArrowUp()">↑</span>
-  <span class="navigationButton" onclick="searchArrowDown()">↓</span>
+	<span class="searchContainer">
+		<input class="searchInput" type="text" placeholder="Search..." oninput="searchTextChanged(this)"/>
+		<span class="optionButton" onclick="toggleButton(this)">aA</span>
+		<span width="20em" class="optionButton" onclick="toggleButton(this)">0</span>
+	</span>
+	<span class="searchNumberInfo" id="searchNumberInfo"></span>
+	&nbsp;
+	<span class="navigationButton" onclick="searchArrowUp()">↑</span>
+	<span class="navigationButton" onclick="searchArrowDown()">↓</span>
+</div>
+
+<br>
+<div style="position:fixed; left:20px;" >
+	<input width="200px" type="text" placeholder="--vscode-..." oninput="vscodeColorChanged(this)">
+	<span id="testVscodeColor">&nbsp; A a &nbsp;</span>
 </div>
 <br>
 		`;
@@ -639,7 +710,7 @@ function searchArrowDown() {
 
 					// Enable/disable navigation buttons
 					const disabled = (foundAddresses.length == 0);
-					const navs = document.getElementsByClassName("navigationButton")
+					const navs = document.getElementsByClassName("navigationButton");
 					for(const nav of navs)
 						nav.disabled = disabled;
 
