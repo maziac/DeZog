@@ -299,7 +299,6 @@ export class MemoryDumpView extends BaseView {
 		// <button style="background-color:transparent" >↑</button>
 		// var(--vscode-searchEditor-textInputBorder)
 		return `
-<
 <style>
 .searchWidget {
 	font-family: Arial;
@@ -308,13 +307,14 @@ export class MemoryDumpView extends BaseView {
 	background-color: var(--vscode-editorWidget-background);
     padding: 2px;
     padding-right: 2px;
+	box-shadow: 1px 1px 1px 1px var(--vscode-widget-shadow);
 }
 .searchContainer {
 	padding-right: 2px;
     display: inline-block;
 	background-color: var(--vscode-input-background);
     vertical-align: middle;
-    outline-width: 2px;
+    outline-width: 1px;
     outline-style: solid;
     outline-color: transparent;
 }
@@ -355,16 +355,32 @@ export class MemoryDumpView extends BaseView {
 .searchNumberInfo {
 	font-family: Arial;
 	padding: 0.1em;
-  	//background-color: white; transparent
     vertical-align: middle;
 }
 .navigationButton {
 	font-family: Arial;
-  	//background-color: lightgray;
-	display: inline-block;
-	width: 1.25em;
+	width: 1.5em;
 	vertical-align: middle;
 	text-align: center;
+    color: var(--vscode-editor-foreground);
+  	background-color: var(--vscode-editorWidget-background);
+    border-radius: 1px;
+	border: 0;
+    outline-width: 1px;
+    outline-style: solid;
+    outline-color: transparent;
+	padding-bottom: 0.3em;	// Because arrows are not vertically centered
+}
+.navigationButton:active {
+    color: var(--vscode-button-foreground);
+    background-color: var(--vscode-editorWidget-background);
+}
+.navigationButton:focus {
+    outline-color: var(--vscode-tab-activeModifiedBorder);
+}
+.navigationButton:hover {
+   	cursor: pointer;
+  	background-color: var(--vscode-editorWidget-background);
 }
 
 .foundAddress {
@@ -460,7 +476,9 @@ function selectAddress() {
 	}
 }
 
-function searchArrowUp() {
+function searchArrowUp(btn) {
+	// Set focus (blue border)
+	btn.focus();
 	// Decrement
 	selectedAddress--;
 	if(selectedAddress < 0)
@@ -469,7 +487,9 @@ function searchArrowUp() {
 	selectAddress();
 }
 
-function searchArrowDown() {
+function searchArrowDown(btn) {
+	// Set focus (blue border)
+	btn.focus();
 	// Increment
 	selectedAddress++;
 	if(selectedAddress >= foundAddresses.length)
@@ -511,12 +531,12 @@ window.addEventListener('load', () => {
 		<input class="searchInput" type="text" placeholder="Search..." oninput="searchTextChanged(this)"/>
 		<span class="optionButton" onclick="toggleButton(this)">Aa</span>
 		<span class="optionButton" onclick="toggleButton(this)">0</span>
-    	<span class="optionButton" onclick="toggleButton(this)" style="font-size: 0.85em;">ᐃ</span>
+    	<span class="optionButton" onclick="toggleButton(this)" style="font-size: 0.9em;">ᐃ</span>
 	</span>
 	<span class="searchNumberInfo" id="searchNumberInfo">2 of 63</span>
 	&nbsp;
-	<span class="navigationButton" onclick="searchArrowUp()">↑</span>
-	<span class="navigationButton" onclick="searchArrowDown()">↓</span>
+	<button class="navigationButton" onclick="searchArrowUp(this)">↑</button>
+	<button class="navigationButton" onclick="searchArrowDown(this)">↓</button>
 </div>
 
 <br>
@@ -971,7 +991,6 @@ window.addEventListener('load', () => {
 	 */
 	protected setColorsForRegisterPointers() {
 		// Set colors for register pointers
-		const setAddrs = new Array<number>();
 		const arr = Settings.launch.memoryViewer.registerPointerColors;
 		for (let i = 0; i < arr.length - 1; i += 2) {
 			const reg = arr[i];
@@ -994,8 +1013,6 @@ window.addEventListener('load', () => {
 			this.sendMessageToWebView(msg);
 			// Store
 			this.prevRegAddr.set(reg, address);
-			// Next
-			setAddrs.push(address);
 		}
 	}
 
