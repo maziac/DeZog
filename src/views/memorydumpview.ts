@@ -299,42 +299,55 @@ export class MemoryDumpView extends BaseView {
 		// <button style="background-color:transparent" >↑</button>
 		// var(--vscode-searchEditor-textInputBorder)
 		return `
+<
 <style>
 .searchWidget {
 	font-family: Arial;
 	position: fixed;
 	right: 2em;
-	background-color: var(--vscode-background);
-	padding: 0.1em;
-    align-items: center;
+	background-color: black;
+    padding: 2px;
+    padding-right: 2px;
 }
 .searchContainer {
-	padding: 0.3em;
-	background-color: var(--vscode-button-secondaryBackground);
-    align-items: center;
+	padding-right: 2px;
+    display: inline-block;
+	background-color: gray;
+    vertical-align: middle;
+    outline-width: 2px;
+    outline-style: solid;
+    outline-color: transparent;
+}
+.searchContainer:focus-within {
+  outline-color: blue;
 }
 .searchInput {
 	font-family: Arial;
-	color: var(--vscode-foreground);
-	background-color: var(--vscode-secondaryBackground);
+	color: white;
+	background-color: blue;
 	border-color: transparent;
+    vertical-align: middle;
+  	outline-width: 0;
+}
+.searchInput:focus {
+  	outline-width: 0;
 }
 .navigationButton {
 	font-family: Arial;
-	font-size: 1.25em;
-  	background-color: var(--vscode-background);
+  	background-color: lightgray;
+	display: inline-block;
+	width: 1.25em;
+	vertical-align: middle;
+	text-align: center;
 }
 .optionButton {
 	font-family: Arial;
-	font-size: 0.8em;
-	padding: 0.2em;
-	margin-left: 0.05em;
-	margin-right: 0.05em;
-  	background-color: var(--vscode-button-secondaryBackground);
+  	background-color: yellow;
 	display: inline-block;
 	width: 1.5em;
 	vertical-align: middle;
 	text-align: center;
+    border-radius: 1px;
 }
 .optionButton:hover {
   	background-color: var(--vscode-button-secondaryHoverBackground);
@@ -347,9 +360,9 @@ export class MemoryDumpView extends BaseView {
 }
 .searchNumberInfo {
 	font-family: Arial;
-	font-size: 0.8em;
 	padding: 0.1em;
-  	background-color: var(--vscode-background);
+  	background-color: white;
+    vertical-align: middle;
 }
 .foundAddress {
   	background-color: lightyellow;
@@ -494,9 +507,10 @@ window.addEventListener('load', () => {
 	<span class="searchContainer">
 		<input class="searchInput" type="text" placeholder="Search..." oninput="searchTextChanged(this)"/>
 		<span class="optionButton" onclick="toggleButton(this)">aA</span>
-		<span width="20em" class="optionButton" onclick="toggleButton(this)">0</span>
+		<span class="optionButton" onclick="toggleButton(this)">0</span>
+    	<span class="optionButton" onclick="toggleButton(this)" style="font-size: 0.85em;">ᐃ</span>
 	</span>
-	<span class="searchNumberInfo" id="searchNumberInfo"></span>
+	<span class="searchNumberInfo" id="searchNumberInfo">2 of 63</span>
 	&nbsp;
 	<span class="navigationButton" onclick="searchArrowUp()">↑</span>
 	<span class="navigationButton" onclick="searchArrowDown()">↓</span>
