@@ -305,26 +305,26 @@ export class MemoryDumpView extends BaseView {
 	font-family: Arial;
 	position: fixed;
 	right: 2em;
-	background-color: black;
+	background-color: var(--vscode-editorWidget-background);
     padding: 2px;
     padding-right: 2px;
 }
 .searchContainer {
 	padding-right: 2px;
     display: inline-block;
-	background-color: gray;
+	background-color: var(--vscode-input-background);
     vertical-align: middle;
     outline-width: 2px;
     outline-style: solid;
     outline-color: transparent;
 }
 .searchContainer:focus-within {
-  outline-color: blue;
+  outline-color: var(--vscode-tab-activeModifiedBorder);
 }
 .searchInput {
 	font-family: Arial;
 	color: white;
-	background-color: blue;
+	background-color: var(--vscode-input-background);
 	border-color: transparent;
     vertical-align: middle;
   	outline-width: 0;
@@ -332,25 +332,19 @@ export class MemoryDumpView extends BaseView {
 .searchInput:focus {
   	outline-width: 0;
 }
-.navigationButton {
-	font-family: Arial;
-  	background-color: lightgray;
-	display: inline-block;
-	width: 1.25em;
-	vertical-align: middle;
-	text-align: center;
-}
 .optionButton {
+	padding: 1px;
 	font-family: Arial;
-  	background-color: yellow;
 	display: inline-block;
 	width: 1.5em;
 	vertical-align: middle;
 	text-align: center;
-    border-radius: 1px;
+    border-radius: 2px;
+	margin: 0;
 }
 .optionButton:hover {
-  	background-color: var(--vscode-button-secondaryHoverBackground);
+	cursor: pointer;
+	background-color: var(--vscode-badge-background);
 }
 .optionButtonChecked {
   	background-color: var(--vscode-button-background);
@@ -361,9 +355,18 @@ export class MemoryDumpView extends BaseView {
 .searchNumberInfo {
 	font-family: Arial;
 	padding: 0.1em;
-  	background-color: white;
+  	//background-color: white; transparent
     vertical-align: middle;
 }
+.navigationButton {
+	font-family: Arial;
+  	//background-color: lightgray;
+	display: inline-block;
+	width: 1.25em;
+	vertical-align: middle;
+	text-align: center;
+}
+
 .foundAddress {
   	background-color: lightyellow;
 	border-radius: 3px;
@@ -506,7 +509,7 @@ window.addEventListener('load', () => {
 <div class="searchWidget">
 	<span class="searchContainer">
 		<input class="searchInput" type="text" placeholder="Search..." oninput="searchTextChanged(this)"/>
-		<span class="optionButton" onclick="toggleButton(this)">aA</span>
+		<span class="optionButton" onclick="toggleButton(this)">Aa</span>
 		<span class="optionButton" onclick="toggleButton(this)">0</span>
     	<span class="optionButton" onclick="toggleButton(this)" style="font-size: 0.85em;">ᐃ</span>
 	</span>
