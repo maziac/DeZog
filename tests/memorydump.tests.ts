@@ -272,31 +272,17 @@ suite('MemoryDump', () => {
 
 			test('multiple items', () => {
 				const md = new MemoryDump() as any;
-				// Too many ,
-				assert.throws(() => {
-					md.parseSearchInput(' , 0xf, 100, AFh , $7e');
-				});
-				assert.throws(() => {
-					md.parseSearchInput(',');
-				});
-				assert.throws(() => {
-					md.parseSearchInput('0xf, 100,, AFh , $7e');
-				});
-
 				// Wrong/missing separator
-				assert.throws(() => {
-					md.parseSearchInput('0xf 100, AFh , $7e');
-				});
 				assert.throws(() => {
 					md.parseSearchInput('AFh; $7e');
 				});
 				assert.throws(() => {
-					md.parseSearchInput('AFh$7e');
+					md.parseSearchInput('AFh , $7e');
 				});
 
 				// Second string not finished
 				assert.throws(() => {
-					md.parseSearchInput('"abc","efg');
+					md.parseSearchInput('"abc" "efg');
 				});
 			});
 		});
@@ -327,7 +313,7 @@ suite('MemoryDump', () => {
 
 				test('escaped "', () => {
 					const md = new MemoryDump() as any;
-					const result = md.parseSearchInput('"Ab\"c"');
+					const result = md.parseSearchInput('"Ab\\"c"');
 					assert.equal(result.length, 4);
 					assert.equal(result[0], 0x41);
 					assert.equal(result[1], 0x62);
@@ -368,7 +354,7 @@ suite('MemoryDump', () => {
 		suite('multiple items', () => {
 			test('numbers', () => {
 				const md = new MemoryDump() as any;
-				const result = md.parseSearchInput('0xf, 100, AFh , $7e ');
+				const result = md.parseSearchInput(' 0xf 100 AFh  $7e ');
 				assert.equal(result.length, 4);
 				assert.equal(result[0], 0x0F);
 				assert.equal(result[1], 100);
@@ -378,13 +364,35 @@ suite('MemoryDump', () => {
 
 			test('strings', () => {
 				const md = new MemoryDump() as any;
-				const result = md.parseSearchInput('"a","","bc","de"');
+				const result = md.parseSearchInput('"a" "" "bc""de"');
 				assert.equal(result.length, 5);
 				assert.equal(result[0], 0x61);
 				assert.equal(result[1], 0x62);
 				assert.equal(result[2], 0x63);
 				assert.equal(result[3], 0x64);
-				assert.equal(result[3], 0x65);
+				assert.equal(result[4], 0x65);
+			});
+
+			test('strange but allowed', () => {
+				const md = new MemoryDump() as any;
+				const result = md.parseSearchInput('AFh$7e');
+				assert.equal(result.length, 2);
+				assert.equal(result[0], 0xAF);
+				assert.equal(result[1], 0x7E);
+			});
+
+			test('mixed', () => {
+				// There should be space for separating, but it is not required
+				const md = new MemoryDump() as any;
+				const result = md.parseSearchInput('"a"100"bc"$7f"de"');
+				assert.equal(result.length, 7);
+				assert.equal(result[0], 0x61);
+				assert.equal(result[1], 100);
+				assert.equal(result[2], 0x62);
+				assert.equal(result[3], 0x63);
+				assert.equal(result[4], 0x7F);
+				assert.equal(result[5], 0x64);
+				assert.equal(result[6], 0x65);
 			});
 		});
 	});
