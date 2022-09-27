@@ -82,15 +82,6 @@ export class SmartDisassembler {
 	public labelLocalLabelPrefix = "L";
 	public labelLocalLoopPrefix = "LOOP";
 
-	public labelIntrptPrefix = "INTRPT";	// TODO: Not used?
-
-
-	/** Initializes the Opcode formatting.
-	 */
-	constructor() {
-		//Opcode.InitOpcodes();
-	}
-
 
 	/**The function that is used to retrieve label names by the disassembler.
 	 * @param addr64k The 64k address.

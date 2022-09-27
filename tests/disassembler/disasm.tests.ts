@@ -8,6 +8,7 @@ import {MemoryModelAllRam} from '../../src/remotes/MemoryModel/predefinedmemorym
 import {Settings} from '../../src/settings/settings';
 import {Z80Registers, Z80RegistersClass} from '../../src/remotes/z80registers';
 import {Z80RegistersStandardDecoder} from '../../src/remotes/z80registersstandarddecoder';
+import {Opcode} from '../../src/disassembler/opcode';
 
 
 
@@ -53,6 +54,7 @@ suite('Disassembler', () => {
 			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
 			Z80Registers.decoder = new Z80RegistersStandardDecoder();
+			Opcode.InitOpcodes();
 			dng = new SmartDisassembler();
 			dng.funcGetLabel = addr => undefined;
 			dng.funcFilterAddresses = addr => true;
@@ -539,6 +541,7 @@ suite('Disassembler', () => {
 			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
 			Z80Registers.decoder = new Z80RegistersStandardDecoder();
+			Opcode.InitOpcodes();
 			dng = new SmartDisassembler();
 			dng.funcGetLabel = addr => undefined;
 			dng.funcFilterAddresses = addr => true;
@@ -789,6 +792,7 @@ suite('Disassembler', () => {
 			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
 			Z80Registers.decoder = new Z80RegistersStandardDecoder();
+			Opcode.InitOpcodes();
 			dng = new SmartDisassembler();
 			dng.funcGetLabel = addr64k => undefined;
 			dng.funcFilterAddresses = addr64k => true;
@@ -1076,6 +1080,7 @@ suite('Disassembler', () => {
 			Z80Registers.setSlotsAndBanks(	// Doesn't matter what these functions return:
 				(address: number, slots: number[]) => 0x10000 + address,
 				(address: number) => 0);
+			Opcode.InitOpcodes();
 			dng = new SmartDisassembler();
 			dng.funcGetLabel = addr => undefined;
 			dng.funcFilterAddresses = addr => true;
@@ -1197,6 +1202,7 @@ suite('Disassembler', () => {
 		let dngNodes: Map<number, AsmNode>;
 		let comments: Map<number, string[]>;
 		setup(() => {
+			Opcode.InitOpcodes();
 			dng = new SmartDisassembler();
 			dng.funcGetLabel = addr => undefined;
 			dng.funcFilterAddresses = addr => true;

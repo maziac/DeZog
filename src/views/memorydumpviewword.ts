@@ -2,7 +2,7 @@ import {Remote} from '../remotes/remotebase';
 import * as util from 'util';
 import {Utility} from '../misc/utility';
 import {Labels} from '../labels/labels';
-import {MetaBlock} from '../misc/memorydump';
+import {MetaBlock} from '../misc/metablock';
 import {Settings} from '../settings/settings';
 import {MemoryDumpView} from './memorydumpview';
 import {BaseView} from './baseview';

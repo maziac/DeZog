@@ -3,10 +3,11 @@ import {Remote} from '../remotes/remotebase';
 import * as util from 'util';
 import {Utility} from '../misc/utility';
 import {Labels} from '../labels/labels';
-import {MetaBlock, MemoryDump, FoundAddresses} from '../misc/memorydump';
+import {MemoryDump, FoundAddresses} from '../misc/memorydump';
 import {Settings} from '../settings/settings';
 import {Z80RegistersClass} from '../remotes/z80registers';
 import {BaseView} from './baseview';
+import {MetaBlock} from '../misc/metablock';
 
 
 /// The boundary at which the memory dumps should be shown.
