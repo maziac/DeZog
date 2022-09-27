@@ -234,7 +234,7 @@ export class MemoryDumpView extends BaseView {
 	 */
 	public async update(reason?: any): Promise<void> {
 		// Get data from Remote
-		for (let metaBlock of this.memDump.metaBlocks) {
+		for (const metaBlock of this.memDump.metaBlocks) {
 			// Updates the shown memory dump.
 			const data = await Remote.readMemoryDump(metaBlock.address, metaBlock.size);
 			// Store data
