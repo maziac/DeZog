@@ -294,13 +294,10 @@ export class MemoryDumpView extends BaseView {
 	/** Creates the html to display the search widget.
 	 */
 	protected createSearchHtml(): string {
-		//		<span style="position:fixed;right:20px">
-		// <svg> <use xlink:href="codicon.svg#arrow-down" /> </svg>
-		// <button style="background-color:transparent" >↑</button>
-		// var(--vscode-searchEditor-textInputBorder)
 		return `
 <style>
 .searchWidget {
+	user-select: none;
 	font-family: Arial;
 	position: fixed;
 	right: 2em;
@@ -384,18 +381,18 @@ export class MemoryDumpView extends BaseView {
 }
 
 .foundAddress {
-  	background-color: lightyellow;
+  	background-color: var(--vscode-editor-findMatchHighlightBackground);
 	border-radius: 3px;
 }
 .foundAddressAscii {
-  	background-color: lightyellow;
+  	background-color: var(--vscode-editor-findMatchHighlightBackground);
 }
 .selectedAddress {
-  	background-color: red;
+  	background-color: var(--vscode-editor-findMatchBackground);
 	border-radius: 3px;
 }
 .selectedAddressAscii {
-  	background-color: red;
+  	background-color: var(--vscode-editor-findMatchBackground);
 }
 </style>
 
