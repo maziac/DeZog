@@ -111,9 +111,9 @@ export class MemoryDumpView extends BaseView {
 
 			case 'searchTextChanged':
 				{
-					console.log('searchText=' + message.searchText);
+					console.log('searchText=', message);
 					// Search all addresses
-					const foundAddresses: FoundAddresses = this.memDump.search(message.searchText, message.caseSensitive, message.nullTerminated, message.zxTerminated);
+					const foundAddresses: FoundAddresses = this.memDump.search(message.searchText, message.caseSensitive, message.zeroTerminated, message.diff);
 					// Send found addresses to webview for display
 					const msg = {command: 'foundAddresses', ...foundAddresses};
 					console.log('foundAddresses=', foundAddresses);
@@ -402,15 +402,21 @@ export class MemoryDumpView extends BaseView {
 let prevSelectedHex = [];
 let prevSelectedAscii = [];
 
+// Values of option buttons
+let caseSensitive = false;
+let zeroTerminated = false;
+let diff = false;
+
+
 function searchTextChanged(searchObj) {
 	// Get string
 	const searchText = searchObj.value;
 	vscode.postMessage({
 		command: "searchTextChanged",
 		searchText,
-		caseSensitive: false,
-		nullTerminated: false,
-		zxTerminated: false
+		caseSensitive: caseSensitive,
+		zeroTerminated: zeroTerminated,
+		diff: diff
 	});
 }
 
@@ -439,7 +445,7 @@ function selectAddress() {
 	clearSelection();
 
 	// Any address found ?
-	const numberInfo =  document.getElementById("searchNumberInfo");
+	const numberInfo = document.getElementById("searchNumberInfo");
 	const length = foundAddresses.length;
 	if(length == 0) {
 		numberInfo.innerText = "No results";
@@ -505,6 +511,38 @@ function toggleButton(obj) {
 		obj.classList.remove("optionButtonChecked");
 }
 
+function toggleButtonCaseSensitive(obj) {
+	toggleButton(obj);
+	caseSensitive = obj.checked;
+	if(caseSensitive) {
+		// Not together with diff
+		const diffObj = document.getElementById("diff");
+		diffObj.checked = false;
+	}
+}
+
+function toggleButtonZeroTerminated(obj) {
+	toggleButton(obj);
+	zeroTerminated = obj.checked;
+	if(zeroTerminated) {
+		// Not together with diff
+		const diffObj = document.getElementById("diff");
+		diffObj.checked = false;
+	}
+}
+
+function toggleButtonDiff(obj) {
+	toggleButton(obj);
+	diff = obj.checked;
+	if(diff) {
+		// Not together with case and zero
+		const caseObj = document.getElementById("caseSensitive");
+		caseObj.checked = false;
+		const zeroObj = document.getElementById("zeroTerminated");
+		zeroObj.checked = false;
+	}
+}
+
 
 /** Function to test the vscode colors, e.g. --vscode-button-background.
  */
@@ -527,9 +565,9 @@ window.addEventListener('load', () => {
 <div class="searchWidget">
 	<span class="searchContainer">
 		<input class="searchInput" type="text" placeholder="Search..." oninput="searchTextChanged(this)"/>
-		<span class="optionButton" onclick="toggleButton(this)">Aa</span>
-		<span class="optionButton" onclick="toggleButton(this)">0</span>
-    	<span class="optionButton" onclick="toggleButton(this)" style="font-size: 0.9em;">ᐃ</span>
+		<span id="caseSensitive" class="optionButton" onclick="toggleButtonCaseSensitive(this)">Aa</span>
+		<span id="zeroTerminated" class="optionButton" onclick="toggleButtonZeroTerminated(this)">0</span>
+    	<span id="diff" class="optionButton" onclick="toggleButtonDiff(this)" style="font-size: 0.9em;">ᐃ</span>
 	</span>
 	<span class="searchNumberInfo" id="searchNumberInfo">2 of 63</span>
 	&nbsp;

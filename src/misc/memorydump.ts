@@ -315,7 +315,7 @@ ranges.
 	protected parseSearchInput(input: string): number[] {
 		const result: number[] = [];
 		// Find all matches
-		const regex = /^(?:"(.*(?<!\\))"|([0-9a-f]+h)|(0x[0-9a-f]+)|(\$[0-9a-f]+)|(\d+))/i;
+		const regex = /^(?:"(.*?(?<!\\))"|([0-9a-f]+h)|(0x[0-9a-f]+)|(\$[0-9a-f]+)|(\d+))/i;
 		let text = input;
 		while (true) {
 			text = text.trim();
@@ -328,7 +328,7 @@ ranges.
 			// Check which format was found: string, hex, decimal
 			if (match[1] != undefined) {
 				// Exchange any inner escaped '\"'
-				const s = match[1].replace(/\"/g, '"');
+				const s = match[1].replace(/\\"/g, '"');
 				// Convert to numbers
 				const len = s.length;
 				for (let i = 0; i < len; i++) {
@@ -375,8 +375,6 @@ ranges.
 
 			// Next
 			text = text.substring(match[0].length);	// Skip parsed text
-			// Replace any following ','
-			text = text.replace(',', '');	// Only the next occurence
 		}
 
 		// Return
@@ -392,34 +390,55 @@ ranges.
 	 * @param diff true if the difference of the given values should be
 	 * compared. Requires at least 2 values.
 	 */
-	// TODO: unit test
 	public search(searchInput: string, caseSensitive: boolean, zeroTerminated: boolean, diff: boolean): FoundAddresses {
-		const foundAddresses = new Set<number>();
-		let searchText = searchInput;
-		const length = searchText.length;
-		if (length > 0) {
-			if (!caseSensitive)
-				searchText = searchText.toLowerCase();
-
-			const dec = new TextDecoder('ascii');
-			for (let mb of this.metaBlocks) {
-				//	const index = address - mb.address;
-				let data = dec.decode(mb.data);
-				if (!caseSensitive)
-					data = data.toLowerCase();
-				// Search
-				let k = 0;
-				while ((k = data.indexOf(searchText, k)) >= 0) {
-					// Found
-					foundAddresses.add(mb.address + k);
-					k++;
+		try {
+			const foundAddresses = new Set<number>();
+			const searchData = this.parseSearchInput(searchInput);
+			const length = searchData.length;
+			if (length > 0) {
+				if (zeroTerminated)
+					searchData.push(0);
+				if (diff) {
+					// Diff search
+					if (length >= 2) {
+						// Diff needs at lease 2 numbers as input
+					}
+				}
+				else {
+					// Normal search
+					const dec = new TextDecoder('ascii');
+					// Create string from data
+					let searchString = dec.decode(new Uint8Array(searchData));
+					// Case
+					if (!caseSensitive)
+						searchString = searchString.toLowerCase();
+					// Search all blocks
+					for (let mb of this.metaBlocks) {
+						let data = dec.decode(mb.data);
+						if (!caseSensitive)
+							data = data.toLowerCase();
+						// Search
+						let k = 0;
+						while ((k = data.indexOf(searchString, k)) >= 0) {
+							// Found
+							foundAddresses.add(mb.address + k);
+							k++;
+						}
+					}
 				}
 			}
+
+			// Create array from set
+			const addresses = Array.from(foundAddresses);
+
+			return {length, addresses};
 		}
-
-		// Create array from set
-		const addresses = Array.from(foundAddresses);
-
-		return {length, addresses};
+		catch (e) {
+			// Return as error
+			return {
+				length: 0,
+				addresses: undefined as any
+			};
+		}
 	}
 }
