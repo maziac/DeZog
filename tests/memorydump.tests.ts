@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { MemoryDump } from '../src/misc/memorydump';
+import {MemoryDump} from '../src/misc/memorydump';
 
 suite('MemoryDump', () => {
 
@@ -12,7 +12,7 @@ suite('MemoryDump', () => {
 
 		test('1 block A', () => {
 			const md = new MemoryDump();
-			md.addBlock(0,16);
+			md.addBlock(0, 16);
 			assert.equal(md.metaBlocks.length, 1, "number of meta blocks wrong");
 			const mb = md.metaBlocks[0];
 			assert.equal(mb.address, 0, "address wrong");
@@ -21,7 +21,7 @@ suite('MemoryDump', () => {
 
 		test('1 block B', () => {
 			const md = new MemoryDump();
-			md.addBlock(16,1);
+			md.addBlock(16, 1);
 			const mb = md.metaBlocks[0];
 			assert.equal(mb.address, 0, "address wrong");
 			assert.equal(mb.size, 48, "size wrong");
@@ -29,7 +29,7 @@ suite('MemoryDump', () => {
 
 		test('1 block C', () => {
 			const md = new MemoryDump();
-			md.addBlock(17,2);
+			md.addBlock(17, 2);
 			const mb = md.metaBlocks[0];
 			assert.equal(mb.address, 0, "address wrong");
 			assert.equal(mb.size, 48, "size wrong");
@@ -37,7 +37,7 @@ suite('MemoryDump', () => {
 
 		test('1 block D', () => {
 			const md = new MemoryDump();
-			md.addBlock(16,16);
+			md.addBlock(16, 16);
 			const mb = md.metaBlocks[0];
 			assert.equal(mb.address, 0, "address wrong");
 			assert.equal(mb.size, 48, "size wrong");
@@ -45,7 +45,7 @@ suite('MemoryDump', () => {
 
 		test('1 block E', () => {
 			const md = new MemoryDump();
-			md.addBlock(16,17);
+			md.addBlock(16, 17);
 			const mb = md.metaBlocks[0];
 			assert.equal(mb.address, 0, "address wrong");
 			assert.equal(mb.size, 64, "size wrong");
@@ -53,7 +53,7 @@ suite('MemoryDump', () => {
 
 		test('1 block F', () => {
 			const md = new MemoryDump();
-			md.addBlock(32,17);
+			md.addBlock(32, 17);
 			const mb = md.metaBlocks[0];
 			assert.equal(mb.address, 16, "address wrong");
 			assert.equal(mb.size, 64, "size wrong");
@@ -61,7 +61,7 @@ suite('MemoryDump', () => {
 
 		test('1 block G', () => {
 			const md = new MemoryDump();
-			md.addBlock(17,16);
+			md.addBlock(17, 16);
 			const mb = md.metaBlocks[0];
 			assert.equal(mb.address, 0, "address wrong");
 			assert.equal(mb.size, 64, "size wrong");
@@ -74,92 +74,92 @@ suite('MemoryDump', () => {
 
 		test('far away', () => {
 			const md = new MemoryDump();
-			md.addBlock(0,16);
-			md.addBlock(4096,16);
+			md.addBlock(0, 16);
+			md.addBlock(4096, 16);
 			assert.equal(md.metaBlocks.length, 2, "number of meta blocks wrong");
 			const mb0 = md.metaBlocks[0];
 			assert.equal(mb0.address, 0, "address wrong");
 			assert.equal(mb0.size, 32, "size wrong");
 			const mb1 = md.metaBlocks[1];
-			assert.equal(mb1.address, 4096-16, "address wrong");
+			assert.equal(mb1.address, 4096 - 16, "address wrong");
 			assert.equal(mb1.size, 48, "size wrong");
 		});
 
 		test('overlapping', () => {
 			const md = new MemoryDump();
-			md.addBlock(1024,48);
-			md.addBlock(1032,50);
-            md.mergeBlocks();
+			md.addBlock(1024, 48);
+			md.addBlock(1032, 50);
+			md.mergeBlocks();
 			assert.equal(md.metaBlocks.length, 1, "number of meta blocks wrong");
 			const mb = md.metaBlocks[0];
-			const resAddr = 1024-16;
+			const resAddr = 1024 - 16;
 			assert.equal(mb.address, resAddr, "address wrong");
-			const resSize = ((1032+50) & 0xFFF0) + 32 - resAddr;
+			const resSize = ((1032 + 50) & 0xFFF0) + 32 - resAddr;
 			assert.equal(mb.size, resSize, "size wrong");
 		});
 
 		test('overlapping reverse order', () => {
 			const md = new MemoryDump();
-			md.addBlock(1032,50);
-			md.addBlock(1024,48);
+			md.addBlock(1032, 50);
+			md.addBlock(1024, 48);
 			md.mergeBlocks();
 			assert.equal(md.metaBlocks.length, 1, "number of meta blocks wrong");
 			const mb = md.metaBlocks[0];
-			const resAddr = 1024-16;
+			const resAddr = 1024 - 16;
 			assert.equal(mb.address, resAddr, "address wrong");
-			const resSize = ((1032+50-1) & 0xFFF0) + 32 - resAddr;
+			const resSize = ((1032 + 50 - 1) & 0xFFF0) + 32 - resAddr;
 			assert.equal(mb.size, resSize, "size wrong");
 		});
 
 		test('included', () => {
 			const md = new MemoryDump();
-			md.addBlock(1024,48);
-			md.addBlock(1032,5);
+			md.addBlock(1024, 48);
+			md.addBlock(1032, 5);
 			md.mergeBlocks();
 			assert.equal(md.metaBlocks.length, 1, "number of meta blocks wrong");
 			const mb = md.metaBlocks[0];
-			const resAddr = 1024-16;
+			const resAddr = 1024 - 16;
 			assert.equal(mb.address, resAddr, "address wrong");
-			const resSize = ((1024+48-1) & 0xFFF0) + 32 - resAddr;
+			const resSize = ((1024 + 48 - 1) & 0xFFF0) + 32 - resAddr;
 			assert.equal(mb.size, resSize, "size wrong");
 		});
 
 		test('blocks right after the other at boundary', () => {
 			const md = new MemoryDump();
-			md.addBlock(1024,48);
-			md.addBlock(1072,32);
+			md.addBlock(1024, 48);
+			md.addBlock(1072, 32);
 			md.mergeBlocks();
 			assert.equal(md.metaBlocks.length, 1, "number of meta blocks wrong");
 			const mb = md.metaBlocks[0];
-			const resAddr = 1024-16;
+			const resAddr = 1024 - 16;
 			assert.equal(mb.address, resAddr, "address wrong");
-			const resSize = ((1072+32-1) & 0xFFF0) + 32 - resAddr;
+			const resSize = ((1072 + 32 - 1) & 0xFFF0) + 32 - resAddr;
 			assert.equal(mb.size, resSize, "size wrong");
 		});
 
 		test('blocks right after the other not at boundary', () => {
 			const md = new MemoryDump();
-			md.addBlock(1024,49);
-			md.addBlock(1073,32);
+			md.addBlock(1024, 49);
+			md.addBlock(1073, 32);
 			md.mergeBlocks();
 			assert.equal(md.metaBlocks.length, 1, "number of meta blocks wrong");
 			const mb = md.metaBlocks[0];
-			const resAddr = 1024-16;
+			const resAddr = 1024 - 16;
 			assert.equal(mb.address, resAddr, "address wrong");
-			const resSize = ((1073+32-1) & 0xFFF0) + 32 - resAddr;
+			const resSize = ((1073 + 32 - 1) & 0xFFF0) + 32 - resAddr;
 			assert.equal(mb.size, resSize, "size wrong");
 		});
 
 		test('connected blocks with space', () => {
 			const md = new MemoryDump();
-			md.addBlock(1024,49);
-			md.addBlock(1088,32);
+			md.addBlock(1024, 49);
+			md.addBlock(1088, 32);
 			md.mergeBlocks();
 			assert.equal(md.metaBlocks.length, 1, "number of meta blocks wrong");
 			const mb = md.metaBlocks[0];
-			const resAddr = 1024-16;
+			const resAddr = 1024 - 16;
 			assert.equal(mb.address, resAddr, "address wrong");
-			const resSize = ((1088+32-1) & 0xFFF0) + 32 - resAddr;
+			const resSize = ((1088 + 32 - 1) & 0xFFF0) + 32 - resAddr;
 			assert.equal(mb.size, resSize, "size wrong");
 		});
 
@@ -170,39 +170,39 @@ suite('MemoryDump', () => {
 
 		test('merge first 2 if inserting as 3rd block', () => {
 			const md = new MemoryDump();
-			md.addBlock(1024,48);	// ends 1072
-			md.addBlock(1300,100);	// ends 1300
+			md.addBlock(1024, 48);	// ends 1072
+			md.addBlock(1300, 100);	// ends 1300
 			assert.equal(md.metaBlocks.length, 2, "number of meta blocks wrong");
-			md.addBlock(1068,150);
+			md.addBlock(1068, 150);
 			md.mergeBlocks();	// The metablock collapses with the 1rst block
 			assert.equal(md.metaBlocks.length, 2, "number of meta blocks wrong");
 
 			const mb0 = md.metaBlocks[0];
-			const resAddr0 = 1024-16;
+			const resAddr0 = 1024 - 16;
 			assert.equal(mb0.address, resAddr0, "address wrong");
-			const resSize0 = ((1068+150-1) & 0xFFF0) + 32 - resAddr0;
+			const resSize0 = ((1068 + 150 - 1) & 0xFFF0) + 32 - resAddr0;
 			assert.equal(mb0.size, resSize0, "size wrong");
 
 			const mb1 = md.metaBlocks[1];
 			const resAddr1 = (1300 & 0xFFF0) - 16;
 			assert.equal(mb1.address, resAddr1, "address wrong");
-			const resSize1 = ((1300+100-1) & 0xFFF0) + 32 - (resAddr1);
+			const resSize1 = ((1300 + 100 - 1) & 0xFFF0) + 32 - (resAddr1);
 			assert.equal(mb1.size, resSize1, "size wrong");
 
 		});
 
 		test('merge all 3 after inserting 3rd block', () => {
 			const md = new MemoryDump();
-			md.addBlock(1024,48);	// ends 1072
-			md.addBlock(1200,100);	// ends 1300
+			md.addBlock(1024, 48);	// ends 1072
+			md.addBlock(1200, 100);	// ends 1300
 			assert.equal(md.metaBlocks.length, 2, "number of meta blocks wrong");
-			md.addBlock(1068,150);
+			md.addBlock(1068, 150);
 			md.mergeBlocks();	// The metablock collapses to one because of the 3rd block
 			assert.equal(md.metaBlocks.length, 1, "number of meta blocks wrong");
 			const mb = md.metaBlocks[0];
-			const resAddr = 1024-16;
+			const resAddr = 1024 - 16;
 			assert.equal(mb.address, resAddr, "address wrong");
-			const resSize = ((1200+100-1) & 0xFFF0) + 32 - (1024-16);
+			const resSize = ((1200 + 100 - 1) & 0xFFF0) + 32 - (1024 - 16);
 			assert.equal(mb.size, resSize, "size wrong");
 		});
 	});
@@ -212,7 +212,7 @@ suite('MemoryDump', () => {
 
 		test('range 1 block', () => {
 			const md = new MemoryDump();
-			md.addBlock(18,10);
+			md.addBlock(18, 10);
 			const mb = md.metaBlocks[0];
 			assert.ok(mb.isInRange(18), "address should be in range");
 			assert.ok(mb.isInRange(27), "address should be in range");
@@ -222,8 +222,8 @@ suite('MemoryDump', () => {
 
 		test('range 2 blocks', () => {
 			const md = new MemoryDump();
-			md.addBlock(18,10);
-			md.addBlock(30,10);
+			md.addBlock(18, 10);
+			md.addBlock(30, 10);
 			md.mergeBlocks();
 			const mb = md.metaBlocks[0];
 
@@ -240,9 +240,159 @@ suite('MemoryDump', () => {
 	});
 
 
+	suite('parseSearchInput', () => {
+		suite('wrong input, exception', () => {
+			test('too big', () => {
+				const md = new MemoryDump() as any;
+				assert.throws(() => {
+					md.parseSearchInput('256');
+				});
+				assert.throws(() => {
+					md.parseSearchInput('$100');
+				});
+				assert.throws(() => {
+					md.parseSearchInput('0x100');
+				});
+				assert.throws(() => {
+					md.parseSearchInput('100h');
+				});
+			});
+
+			test('string problems', () => {
+				const md = new MemoryDump() as any;
+				assert.throws(() => {
+					// Just one "
+					md.parseSearchInput('"');
+				});
+				assert.throws(() => {
+					// Unicode
+					md.parseSearchInput('"↑"');
+				});
+			});
+
+			test('multiple items', () => {
+				const md = new MemoryDump() as any;
+				// Too many ,
+				assert.throws(() => {
+					md.parseSearchInput(' , 0xf, 100, AFh , $7e');
+				});
+				assert.throws(() => {
+					md.parseSearchInput(',');
+				});
+				assert.throws(() => {
+					md.parseSearchInput('0xf, 100,, AFh , $7e');
+				});
+
+				// Wrong/missing separator
+				assert.throws(() => {
+					md.parseSearchInput('0xf 100, AFh , $7e');
+				});
+				assert.throws(() => {
+					md.parseSearchInput('AFh; $7e');
+				});
+				assert.throws(() => {
+					md.parseSearchInput('AFh$7e');
+				});
+
+				// Second string not finished
+				assert.throws(() => {
+					md.parseSearchInput('"abc","efg');
+				});
+			});
+		});
+
+		suite('1 item', () => {
+			suite('string', () => {
+				test('Empty', () => {
+					const md = new MemoryDump() as any;
+					const result = md.parseSearchInput('""');
+					assert.equal(result.length, 0);
+				});
+
+				test('1 char', () => {
+					const md = new MemoryDump() as any;
+					const result = md.parseSearchInput('"A"');
+					assert.equal(result.length, 1);
+					assert.equal(result[0], 0x41);
+				});
+
+				test('multiple char', () => {
+					const md = new MemoryDump() as any;
+					const result = md.parseSearchInput('"Abc"');
+					assert.equal(result.length, 3);
+					assert.equal(result[0], 0x41);
+					assert.equal(result[1], 0x62);
+					assert.equal(result[2], 0x63);
+				});
+
+				test('escaped "', () => {
+					const md = new MemoryDump() as any;
+					const result = md.parseSearchInput('"Ab\"c"');
+					assert.equal(result.length, 4);
+					assert.equal(result[0], 0x41);
+					assert.equal(result[1], 0x62);
+					assert.equal(result[2], 0x22);	// "
+					assert.equal(result[3], 0x63);
+				});
+			});
+
+			test('decimal', () => {
+				const md = new MemoryDump() as any;
+				const result = md.parseSearchInput('129');
+				assert.equal(result.length, 1);
+				assert.equal(result[0], 129);
+			});
+
+			test('hex h', () => {
+				const md = new MemoryDump() as any;
+				const result = md.parseSearchInput('8Ah');
+				assert.equal(result.length, 1);
+				assert.equal(result[0], 0x8A);
+			});
+
+			test('hex $', () => {
+				const md = new MemoryDump() as any;
+				const result = md.parseSearchInput('$8a');
+				assert.equal(result.length, 1);
+				assert.equal(result[0], 0x8A);
+			});
+
+			test('hex 0x', () => {
+				const md = new MemoryDump() as any;
+				const result = md.parseSearchInput('0xf');
+				assert.equal(result.length, 1);
+				assert.equal(result[0], 0x0F);
+			});
+		});
+
+		suite('multiple items', () => {
+			test('numbers', () => {
+				const md = new MemoryDump() as any;
+				const result = md.parseSearchInput('0xf, 100, AFh , $7e ');
+				assert.equal(result.length, 4);
+				assert.equal(result[0], 0x0F);
+				assert.equal(result[1], 100);
+				assert.equal(result[2], 0xAF);
+				assert.equal(result[3], 0x7E);
+			});
+
+			test('strings', () => {
+				const md = new MemoryDump() as any;
+				const result = md.parseSearchInput('"a","","bc","de"');
+				assert.equal(result.length, 5);
+				assert.equal(result[0], 0x61);
+				assert.equal(result[1], 0x62);
+				assert.equal(result[2], 0x63);
+				assert.equal(result[3], 0x64);
+				assert.equal(result[3], 0x65);
+			});
+		});
+	});
+
+
 	suite('search', () => {
 
-		// Fills teh memory with zeroes.
+		// Fills the memory with zeroes.
 		function initBlocks(md: MemoryDump) {
 			for (const metaBlock of md.metaBlocks) {
 				metaBlock.data = new Uint8Array(metaBlock.size);	// Is zero-initialized
@@ -404,5 +554,56 @@ suite('MemoryDump', () => {
 			assert.equal(found.addresses[2], 300);
 		});
 
+		test('zero-terminated', () => {
+			const md = new MemoryDump();
+			md.addBlock(50, 1000);
+			initBlocks(md);
+			copyToAddress(md, 100, "abcdefg");
+
+			let found = md.search('abcd', true, true /*zero-termination*/, false);
+			assert.equal(found.length, 4);
+			assert.equal(found.addresses.length, 0);
+
+			found = md.search('defg', true, true /*zero-termination*/, false);
+			assert.equal(found.length, 4);
+			assert.equal(found.addresses.length, 1);
+			assert.equal(found.addresses[0], 103);
+		});
+
+		test('diff, too less input', () => {
+			const md = new MemoryDump();
+			md.addBlock(50, 1000);
+			initBlocks(md);
+			copyToAddress(md, 100, "abbdefg");
+
+			let found = md.search('a', true, false, true /*diff*/);
+			assert.equal(found.length, 1);
+			assert.equal(found.addresses.length, 0);
+		});
+
+		test('diff, 1 finding', () => {
+			const md = new MemoryDump();
+			md.addBlock(50, 1000);
+			initBlocks(md);
+			copyToAddress(md, 100, "abbdefg");
+
+			const found = md.search('cdd', true, false, true /*diff*/);
+			assert.equal(found.length, 3);
+			assert.equal(found.addresses.length, 1);
+			assert.equal(found.addresses[0], 100);
+		});
+
+		test('diff, 2 findings', () => {
+			const md = new MemoryDump();
+			md.addBlock(50, 1000);
+			initBlocks(md);
+			copyToAddress(md, 100, "abbdeff");
+
+			const found = md.search('cdd', true, false, true /*diff*/);
+			assert.equal(found.length, 3);
+			assert.equal(found.addresses.length, 2);
+			assert.equal(found.addresses[0], 100);
+			assert.equal(found.addresses[1], 104);
+		});
 	});
 });

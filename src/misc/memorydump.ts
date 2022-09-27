@@ -303,15 +303,97 @@ ranges.
 	}
 
 
+	/** Parses the search input string given by the user.
+	 * @param input Examples:
+	 * - '129'
+	 * - '80h $4F 0x7e 65'
+	 * - '"texta" 80h "textb"'
+	 * Note: a " in a string is to be escaped: \"
+	 * @throws If there is a parsing error. Or the numbers are bigger
+	 * than 255.
+	 */
+	protected parseSearchInput(input: string): number[] {
+		const result: number[] = [];
+		// Find all matches
+		const regex = /^(?:"(.*(?<!\\))"|([0-9a-f]+h)|(0x[0-9a-f]+)|(\$[0-9a-f]+)|(\d+))/i;
+		let text = input;
+		while (true) {
+			text = text.trim();
+			if (!text)
+				break;
+			// Find number or string
+			const match = regex.exec(text);
+			if (!match)
+				throw Error('String is wrong formatted.');
+			// Check which format was found: string, hex, decimal
+			if (match[1] != undefined) {
+				// Exchange any inner escaped '\"'
+				const s = match[1].replace(/\"/g, '"');
+				// Convert to numbers
+				const len = s.length;
+				for (let i = 0; i < len; i++) {
+					const val = s.charCodeAt(i);
+					if (val > 255)
+						throw Error('No unicode supported.');
+					result.push(val);
+				}
+			}
+			else {
+				// Number
+				let val;
+				if (match[5]) {
+					// E.g. 165, decimal
+					val = parseInt(match[5]);
+				}
+				else {
+					// Hex
+					let s: string;
+					if (match[2]) {
+						// E.g. 80h
+						s = match[2];
+					}
+					else if (match[3]) {
+						// E.g. 0xAF
+						s = match[3].substring(2);
+					}
+					else if (match[4]) {
+						// E.g. $AF
+						s = match[4].substring(1);
+					}
+					else {
+						// Should not happen
+						Utility.assert(false);
+						break;	// Will not be reached, to calm SONAR
+					}
+					// Hex convert
+					val = parseInt(s, 16);
+				}
+				if (val > 255)
+					throw Error('Value too big.');
+				result.push(val);
+			}
+
+			// Next
+			text = text.substring(match[0].length);	// Skip parsed text
+			// Replace any following ','
+			text = text.replace(',', '');	// Only the next occurence
+		}
+
+		// Return
+		return result;
+	}
+
+
 	/** Searches the memory.
 	 * Sends the found locations to the webview.
 	 * @param searchInput The search input string as typed into the search box.
 	 * @param caseSensitive true if the search should be case sensitive.
-	 * @param nullTerminated true if there should be a 0 after the searched string.
-	 * @param zxTerminated true if bit 8 of the last search string byte should be set. Bit 8 is the end of string marker.
+	 * @param zeroTerminated true if there should be a 0 after the searched string.
+	 * @param diff true if the difference of the given values should be
+	 * compared. Requires at least 2 values.
 	 */
 	// TODO: unit test
-	public search(searchInput: string, caseSensitive: boolean, nullTerminated: boolean, zxTerminated: boolean): FoundAddresses {
+	public search(searchInput: string, caseSensitive: boolean, zeroTerminated: boolean, diff: boolean): FoundAddresses {
 		const foundAddresses = new Set<number>();
 		let searchText = searchInput;
 		const length = searchText.length;
