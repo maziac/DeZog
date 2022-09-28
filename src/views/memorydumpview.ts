@@ -579,15 +579,16 @@ window.addEventListener('load', () => {
 
 <div class="searchWidget">
 	<span id="searchContainer" class="searchContainer">
-		<input id="searchInput" class="searchInput" type="text" placeholder="Search..." oninput="sendSearchText(this)"/>
-		<span id="caseSensitive" class="optionButton" onclick="toggleButtonCaseSensitive(this)">Aa</span>
-		<span id="zeroTerminated" class="optionButton" onclick="toggleButtonZeroTerminated(this)">0</span>
-    	<span id="diff" class="optionButton" onclick="toggleButtonDiff(this)" style="font-size: 0.9em;">ᐃ</span>
+		<input id="searchInput" class="searchInput" type="text" placeholder="Find" title='Find. E.g. "abcde" or FFh CBh 1Eh' oninput="sendSearchText(this)"/>
+
+		<span id="caseSensitive" class="optionButton" title="Match Case" onclick="toggleButtonCaseSensitive(this)">Aa</span>
+		<span id="zeroTerminated" class="optionButton" title="Zero terminated" onclick="toggleButtonZeroTerminated(this)">0</span>
+    	<span id="diff" class="optionButton" title="Search differences as in given sequence" onclick="toggleButtonDiff(this)" style="font-size: 0.9em;">ᐃ</span>
 	</span>
 	<span class="searchNumberInfo" id="searchNumberInfo">2 of 63</span>
 	&nbsp;
-	<button class="navigationButton" onclick="searchArrowUp(this)">↑</button>
-	<button class="navigationButton" onclick="searchArrowDown(this)">↓</button>
+	<button class="navigationButton" title="Previous Match" onclick="searchArrowUp(this)">↑</button>
+	<button class="navigationButton" title="Next Match" onclick="searchArrowDown(this)">↓</button>
 </div>
 
 <br>
