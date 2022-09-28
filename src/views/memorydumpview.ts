@@ -109,8 +109,9 @@ export class MemoryDumpView extends BaseView {
 				}
 				break;
 
-			case 'searchTextChanged':
+			case 'searchChanged':
 				{
+					// Search text or options changed
 					console.log('searchText=', message);
 					// Search all addresses
 					const foundAddresses: FoundAddresses = this.memDump.search(message.searchText, message.caseSensitive, message.zeroTerminated, message.diff);
@@ -408,11 +409,11 @@ let zeroTerminated = false;
 let diff = false;
 
 
-function searchTextChanged(searchObj) {
+function sendSearchText(searchObj) {
 	// Get string
 	const searchText = searchObj.value;
 	vscode.postMessage({
-		command: "searchTextChanged",
+		command: "searchChanged",
 		searchText,
 		caseSensitive: caseSensitive,
 		zeroTerminated: zeroTerminated,
@@ -502,13 +503,17 @@ function searchArrowDown(btn) {
 	selectAddress();
 }
 
-function toggleButton(obj) {
-	const checked = obj.checked || false;
-	obj.checked = !checked;
-	if(obj.checked)
+function setCheckedState(obj, checked) {
+	obj.checked = checked;
+	if(checked)
 		obj.classList.add("optionButtonChecked");
 	else
 		obj.classList.remove("optionButtonChecked");
+}
+
+function toggleButton(obj) {
+	const checked = obj.checked || false;
+	setCheckedState(obj, !checked)
 }
 
 function toggleButtonCaseSensitive(obj) {
@@ -517,8 +522,10 @@ function toggleButtonCaseSensitive(obj) {
 	if(caseSensitive) {
 		// Not together with diff
 		const diffObj = document.getElementById("diff");
-		diffObj.checked = false;
+		setCheckedState(diffObj, false);
+		diff = false;
 	}
+	const searchObj = document.getElementById("searchInput");sendSearchText(searchObj);
 }
 
 function toggleButtonZeroTerminated(obj) {
@@ -527,8 +534,10 @@ function toggleButtonZeroTerminated(obj) {
 	if(zeroTerminated) {
 		// Not together with diff
 		const diffObj = document.getElementById("diff");
-		diffObj.checked = false;
+		setCheckedState(diffObj, false);
+		diff = false;
 	}
+	const searchObj = document.getElementById("searchInput");sendSearchText(searchObj);
 }
 
 function toggleButtonDiff(obj) {
@@ -536,11 +545,14 @@ function toggleButtonDiff(obj) {
 	diff = obj.checked;
 	if(diff) {
 		// Not together with case and zero
-		const caseObj = document.getElementById("caseSensitive");
-		caseObj.checked = false;
-		const zeroObj = document.getElementById("zeroTerminated");
-		zeroObj.checked = false;
+	 	const caseObj = document.getElementById("caseSensitive");
+		setCheckedState(caseObj, false);
+		caseSensitive = false;
+	 	const zeroObj = document.getElementById("zeroTerminated");
+		setCheckedState(zeroObj, false);
+		zeroTerminated = false;
 	}
+	const searchObj = document.getElementById("searchInput");sendSearchText(searchObj);
 }
 
 
@@ -564,7 +576,7 @@ window.addEventListener('load', () => {
 
 <div class="searchWidget">
 	<span class="searchContainer">
-		<input class="searchInput" type="text" placeholder="Search..." oninput="searchTextChanged(this)"/>
+		<input id="searchInput" class="searchInput" type="text" placeholder="Search..." oninput="sendSearchText(this)"/>
 		<span id="caseSensitive" class="optionButton" onclick="toggleButtonCaseSensitive(this)">Aa</span>
 		<span id="zeroTerminated" class="optionButton" onclick="toggleButtonZeroTerminated(this)">0</span>
     	<span id="diff" class="optionButton" onclick="toggleButtonDiff(this)" style="font-size: 0.9em;">ᐃ</span>
