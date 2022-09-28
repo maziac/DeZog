@@ -592,11 +592,13 @@ window.addEventListener('load', () => {
 </div>
 
 <br>
+<!--For testing vscode colors uncomment this.
 <div style="position:fixed; left:20px;" >
 	<input width="200px" type="text" placeholder="--vscode-..." oninput="vscodeColorChanged(this)">
 	<span id="testVscodeColor">&nbsp; A a &nbsp;</span>
 </div>
 <br>
+-->
 		`;
 	}
 
