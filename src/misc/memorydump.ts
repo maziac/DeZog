@@ -392,17 +392,27 @@ ranges.
 	 */
 	public search(searchInput: string, caseSensitive: boolean, zeroTerminated: boolean, diff: boolean): FoundAddresses {
 		try {
-			const foundAddresses = new Set<number>();
+			let foundAddresses = new Set<number>();
 			const searchData = this.parseSearchInput(searchInput);
 			const length = searchData.length;
 			if (length > 0) {
 				if (zeroTerminated)
 					searchData.push(0);
 				if (diff) {
-					// Diff search
-					if (length >= 2) {
+					// Diff search (no zero terminated, no case sensitive)
+					if (length < 2) {
 						// Diff needs at lease 2 numbers as input
+						throw new Error('Diff requires at least 2 numbers');
 					}
+					// Calculate diff values
+					const diffValues: number[] = [];
+					for (let i = 1; i < length; i++) {
+						let d = searchData[i] - searchData[i - 1];
+						if (d < 0)
+							d += 256;
+						diffValues.push(d);
+					}
+					foundAddresses = this.searchDiff(diffValues);
 				}
 				else {
 					// Normal search
@@ -440,5 +450,43 @@ ranges.
 				addresses: undefined as any
 			};
 		}
+	}
+
+
+	/** Searches difference values in the memory.
+	 * @param diffValues The diff values.
+	 * @returns The found addresses.
+	 */
+	protected searchDiff(diffValues: number[]): Set<number> {
+		const diffLen = diffValues.length;
+		const foundAddresses = new Set<number>();
+
+		// Search all blocks
+		for (let mb of this.metaBlocks) {
+			// Search
+			let k = 0;
+			const mbLen = mb.size - diffLen;
+			const data = mb.data!;
+			while (k <= mbLen) {
+				// Search all diff values
+				let j;
+				for (j = 0; j < diffLen; j++) {
+					let d = data[j + k + 1] - data[j + k];
+					if (d < 0)
+						d += 256;
+					if (d != diffValues[j])
+						break;
+				}
+				if (j == diffLen) {
+					// Found
+					foundAddresses.add(mb.address + k);
+				}
+
+				// Next
+				k++;
+			}
+		}
+
+		return foundAddresses;
 	}
 }
