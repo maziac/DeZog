@@ -488,22 +488,26 @@ function searchArrowUp(btn) {
 	// Set focus (blue border)
 	btn.focus();
 	// Decrement
-	selectedAddress--;
-	if(selectedAddress < 0)
-		selectedAddress = foundAddresses.length-1;
-	// Scroll to selected address
-	selectAddress();
+	if(foundAddresses.length > 0) {
+		selectedAddress--;
+		if(selectedAddress < 0)
+			selectedAddress = foundAddresses.length-1;
+		// Scroll to selected address
+		selectAddress();
+	}
 }
 
 function searchArrowDown(btn) {
 	// Set focus (blue border)
 	btn.focus();
 	// Increment
-	selectedAddress++;
-	if(selectedAddress >= foundAddresses.length)
-		selectedAddress = 0;
-	// Scroll to selected address
-	selectAddress();
+	if(foundAddresses.length > 0) {
+		selectedAddress++;
+		if(selectedAddress >= foundAddresses.length)
+			selectedAddress = 0;
+		// Scroll to selected address
+		selectAddress();
+	}
 }
 
 function setCheckedState(obj, checked) {
@@ -809,12 +813,6 @@ window.addEventListener('load', () => {
 							}
 						}
 					}
-
-					// Enable/disable navigation buttons
-					const disabled = (foundAddresses.length == 0);
-					const navs = document.getElementsByClassName("navigationButton");
-					for(const nav of navs)
-						nav.disabled = disabled;
 
 					// Select first
 					selectedAddress = 0;
