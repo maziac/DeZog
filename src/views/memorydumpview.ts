@@ -320,6 +320,9 @@ export class MemoryDumpView extends BaseView {
 .searchContainer:focus-within {
   outline-color: var(--vscode-tab-activeModifiedBorder);
 }
+.searchError:focus-within {
+  outline-color: var(--vscode-inputValidation-errorBorder);
+}
 .searchInput {
 	font-family: Arial;
 	color: white;
@@ -575,7 +578,7 @@ window.addEventListener('load', () => {
 </script>
 
 <div class="searchWidget">
-	<span class="searchContainer">
+	<span id="searchContainer" class="searchContainer">
 		<input id="searchInput" class="searchInput" type="text" placeholder="Search..." oninput="sendSearchText(this)"/>
 		<span id="caseSensitive" class="optionButton" onclick="toggleButtonCaseSensitive(this)">Aa</span>
 		<span id="zeroTerminated" class="optionButton" onclick="toggleButtonZeroTerminated(this)">0</span>
@@ -766,6 +769,17 @@ window.addEventListener('load', () => {
 					for(const obj of foundAddressesAsciiObjs) {
 						obj.classList.remove("foundAddressAscii");
 					}
+
+					// Check for error (message.addresses == undefined)
+					const searchContainer = document.getElementById("searchContainer");
+					if(message.addresses == undefined) {
+						selectedLength = 0;
+						foundAddresses = [];
+						// Note: adding the same class twice will actually only result in one item in the classList
+						searchContainer.classList.add("searchError");
+						return;
+					}
+					searchContainer.classList.remove("searchError");
 
 					// Highlight the new  found addresses:
 					selectedLength = message.length;
