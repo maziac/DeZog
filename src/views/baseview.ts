@@ -128,14 +128,15 @@ export class BaseView {
 	 * @param addToStaticViews Adds the view to the static views list so that
 	 * it will get an update event. This is the default for debug windows.
 	 * Other (independent) views can set this to false.
+	 * @param enableGenericFindWidget Set to true to enable the vscode find widget.
 	 */
-	constructor(addToStaticViews = true) {
+	constructor(addToStaticViews = true, enableGenericFindWidget = true) {
 		// Add to view list
 		if (addToStaticViews)
 			BaseView.staticViews.push(this);
 
 		// Create vscode panel view
-		this.vscodePanel = vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true, enableFindWidget: true, retainContextWhenHidden: true});
+		this.vscodePanel = vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true, enableFindWidget: enableGenericFindWidget, retainContextWhenHidden: true});
 
 		// Handle messages from the webview
 		this.vscodePanel.webview.onDidReceiveMessage(async message => {

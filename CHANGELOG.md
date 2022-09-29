@@ -26,7 +26,10 @@
 	- ASSERTIONs, WPMEMs and LOGPOINTs can now be easily enabled/disabled from the vscode BREAKPOINTS pane. The now superfluous DEBUG CONSOLE commands (-assertion, -wpmem and -logpoint) have been removed.
 - debug console:
 	- Fixed "-wprm".
+	- "-assertion", "-wpmem" and "-logpoint" removed (see above)
 	- "-label" now also prints the bank of a label.
+	- "-mvw" for viewing words instead of bytes is now shown in the debug console help.
+
 
 
 # 2.7.4

@@ -255,6 +255,13 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		<script>
 		const vscode = acquireVsCodeApi();
 
+		// For highlighting the found addresses
+		let foundAddressesHexObjs = [];
+
+		// The selected found address.
+		let selectedAddress = 0;
+		let foundAddresses = [];
+		let selectedLength = 0;
 
 		//---- Handle Mouse Over, Calculation of hover text -------
 		function mouseOverValue(obj) {
@@ -372,8 +379,52 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 					tableDiv.innerHTML=message.html;
  				}   break;
 
+				case 'foundAddresses':
+				{
+					// De-highlight the previous found addresses
+					for(const obj of foundAddressesHexObjs) {
+						obj.classList.remove("foundAddress");
+					}
+
+					// Check for error (message.addresses == undefined)
+					const searchContainer = document.getElementById("searchContainer");
+					if(message.addresses == undefined) {
+						selectedLength = 0;
+						foundAddresses = [];
+						// Note: adding the same class twice will actually only result in one item in the classList
+						searchContainer.classList.add("searchError");
+						return;
+					}
+					searchContainer.classList.remove("searchError");
+
+					// Highlight the new  found addresses:
+					selectedLength = message.length;
+					foundAddresses = message.addresses;
+					// HEX
+					foundAddressesHexObjs = [];
+					for(const address of foundAddresses) {
+						for(let i=0; i<selectedLength; i++) {
+							const objs = document.querySelectorAll("td[address='"+(address+i)+"']");
+							for(const obj of objs) {
+								foundAddressesHexObjs.push(obj);
+								obj.classList.add("foundAddress");
+							}
+						}
+					}
+
+					// Select first
+					selectedAddress = 0;
+					selectAddress();
+ 				}   break;
+
            }
         });
+
+		// Change the tooltip for the search box to explain search for the word view.
+		window.addEventListener('load', () => {
+			const searchObj = document.getElementById("searchInput");
+			searchObj.title += ". Please note that although the view shows words you have to input the search as a (little endian) byte sequence.";
+		});
 
 		//# sourceURL=memorydumpviewword.js
 		</script>

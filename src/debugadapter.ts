@@ -2360,6 +2360,7 @@ the value correspondends to a label.
 	"-msetw 8000h 1234h 100h" : fills memory locations 0x8000 to 0x81FF with the word value 1234h.
 "-ms address size filename": Saves a memory dump to a file. The file is saved to the temp directory.
 "-mv address size [address_n size_n]*": Memory view at 'address' with 'size' bytes. Will open a new view to display the memory contents.
+"-mvw address size [address_n size_n]*": Memory view at 'address' with 'size' words. Like -mv but display unit is word instead of byte.
 "-patterns [index[+count|-endindex] [...]": Shows the tbblue sprite patterns beginning at 'index' until 'endindex' or a number of 'count' indices.
 	The values can be omitted. 'index' defaults to 0 and 'count' to 1.
 	Without any parameter it will show all sprite patterns.
@@ -2801,7 +2802,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	/**
 	 * Shows a view with a memory dump. The memory is organized in
 	 * words instead of bytes.
-	 * One can choose little or blig endian.
+	 * One can choose little or big endian.
 	 * @param tokens The arguments. I.e. the address, size and endianness.
 	 * @returns A Promise with a text to print.
 	 */
