@@ -1788,10 +1788,23 @@ The register memory view:
 ![](images/memoryviewer2.jpg)
 
 
+To search the memory there is a search bar in the top.
+A search is done on the given memory range.
+You can search for strings or byte sequences and you can also search for a mix of strings and bytes.
+![](images/memoryviewer_search1.jpg)
+
+To search for a string use quotation marks, e.g. ```"abcde"```. A sequence of bytes is simply separated by a space. Bytes can be entered as decimal (e.g. ```193```) or hex (e.g. ```$AF```, ```AFh``` or ```0xAF```). Only positive values are allowed and they must be smaller than 256.
+
+Use
+- ![](images/memoryviewer_search_option_case.jpg) for a case sensitive search. Note that this option works on the whole search sequence, i.e. not only on the strings. E.g. if you have a sequence  ```61h 62h``` ("ab") also ```41h 42h``` ("AB") will be found. The default is ON.
+- ![](images/memoryviewer_search_option_zero.jpg) will add a ```0``` to the search. Useful for searching strings. Default is OFF.
+- ![](images/memoryviewer_search_option_diff.jpg) for delta search. For a delta search you need minimum 2 numbers. The delta search will search for a sequence which contains exactly the same deltas. E.g. if you would search for a string "acd" every sequence with the deltas 2 and 1 would be found as well, for this example "bde" or "gij". This search can be helpful if your target uses strings but these are ot ASCII coded. In most cases at least the same alphabet sequence is used and so also these strings can be found. Default is OFF.
+
+
 Note:
 - The memory views always work in the 64k area. I.e. they don't use 'long addresses' (banks).
 - If you want to launch the register memory view every time you start a debug session then add it to the "commandsAfterLaunch" in the launch.json. E.g.
-~~~
+~~~json
 "commandsAfterLaunch": [
     "-rmv"
 ]
