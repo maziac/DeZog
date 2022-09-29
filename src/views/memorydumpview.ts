@@ -35,6 +35,8 @@ const MEM_DUMP_BOUNDARY = 16;
  * 		are 2 same cells both are updated.
  * 		- If there are several memory views all are informed about the new value to update their display.
  *
+ * With DeZog 3.0 the search functionality was added to the web view.
+ *
  * See design.md for a sequence chart.
  */
 export class MemoryDumpView extends BaseView {
@@ -56,7 +58,7 @@ export class MemoryDumpView extends BaseView {
 	 * Creates the basic panel.
 	 */
 	constructor() {
-		super();
+		super(true, false);
 		MemoryDumpView.MemoryViews.push(this);
 	}
 
@@ -112,7 +114,7 @@ export class MemoryDumpView extends BaseView {
 			case 'searchChanged':
 				{
 					// Search text or options changed
-					console.log('searchText=', message);
+					//console.log('searchText=', message);
 					// Search all addresses
 					const foundAddresses: FoundAddresses = this.memDump.search(message.searchText, message.caseSensitive, message.zeroTerminated, message.diff);
 					// Send found addresses to webview for display
@@ -358,6 +360,8 @@ export class MemoryDumpView extends BaseView {
 	font-family: Arial;
 	padding: 0.1em;
     vertical-align: middle;
+    display: inline-block;
+	min-width: 5em;
 }
 .navigationButton {
 	font-family: Arial;
