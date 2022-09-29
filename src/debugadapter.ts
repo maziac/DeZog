@@ -41,6 +41,7 @@ import {RenderFlowChart} from './disassembler/renderflowchart';
 import {RenderHtml} from './disassembler/renderhtml';
 import {ExceptionBreakpoints} from './exceptionbreakpoints';
 import * as hjoin from '@bartificer/human-join';
+import {MemoryDeltaView} from './views/memorydeltaview';
 
 
 
@@ -1947,6 +1948,9 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd == '-mv') {
 			output = await this.evalMemViewByte(tokens);
 		}
+		else if (cmd == '-mvd') {
+			output = await this.evalMemViewDelta(tokens);
+		}
 		else if (cmd == '-mvw') {
 			output = await this.evalMemViewWord(tokens);
 		}
@@ -2360,7 +2364,8 @@ the value correspondends to a label.
 	"-msetw 8000h 1234h 100h" : fills memory locations 0x8000 to 0x81FF with the word value 1234h.
 "-ms address size filename": Saves a memory dump to a file. The file is saved to the temp directory.
 "-mv address size [address_n size_n]*": Memory view at 'address' with 'size' bytes. Will open a new view to display the memory contents.
-"-mvw address size [address_n size_n]*": Memory view at 'address' with 'size' words. Like -mv but display unit is word instead of byte.
+"-mvd address size [address_n size_n]*": Opens a memory view that can be used for comparison. I.e. you start at some time than later you update the view and then you can make a diff and search e.g. for all values that have been decremented by 1.
+"-mvw address size [address_n size_n]* [big]": Memory view at 'address' with 'size' words. Like -mv but display unit is word instead of byte. Normally the display is little endian. This can be changed by adding "big" as last argument.
 "-patterns [index[+count|-endindex] [...]": Shows the tbblue sprite patterns beginning at 'index' until 'endindex' or a number of 'count' indices.
 	The values can be omitted. 'index' defaults to 0 and 'count' to 1.
 	Without any parameter it will show all sprite patterns.
@@ -2786,6 +2791,53 @@ E.g. use "-help -view" to put the help text in an own view.
 
 		// Create new view
 		const panel = new MemoryDumpView();
+		for (let k = 0; k < tokens.length; k += 2) {
+			const start = addrSizes[k];
+			const size = addrSizes[k + 1]
+			panel.addBlock(start, size, Utility.getHexString(start & 0xFFFF, 4) + 'h-' + Utility.getHexString((start + size - 1) & 0xFFFF, 4) + 'h');
+		}
+		panel.mergeBlocks();
+		await panel.update();
+
+		// Send response
+		return 'OK';
+	}
+
+
+	/**
+	 * Shows a view with a memory dump that can be used for comparison
+	 * at different times.
+	 * @param tokens The arguments. I.e. the address and size.
+	 * @returns A Promise with a text to print.
+	 */
+	protected async evalMemViewDelta(tokens: Array<string>): Promise<string> {
+		// Check count of arguments
+		if (tokens.length == 0) {
+			// Error Handling: No arguments
+			throw new Error("Address and size expected.");
+		}
+
+		if (tokens.length % 2 != 0) {
+			// Error Handling: No size given
+			throw new Error("No size given for address '" + tokens[tokens.length - 1] + "'.");
+		}
+
+		// Get all addresses/sizes.
+		const addrSizes = new Array<number>();
+		for (let k = 0; k < tokens.length; k += 2) {
+			// Address
+			const addressString = tokens[k];
+			const address = Utility.evalExpression(addressString);
+			addrSizes.push(address);
+
+			// Size
+			const sizeString = tokens[k + 1];
+			const size = Utility.evalExpression(sizeString);
+			addrSizes.push(size);
+		}
+
+		// Create new view
+		const panel = new MemoryDeltaView();
 		for (let k = 0; k < tokens.length; k += 2) {
 			const start = addrSizes[k];
 			const size = addrSizes[k + 1]

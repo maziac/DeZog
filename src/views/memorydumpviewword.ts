@@ -33,6 +33,11 @@ const MEM_COLUMNS = 8;
  * 		are 2 same cells both are updated.
  * 		- If there are several memory views all are informed about the new value to update their display.
  *
+ * With DeZog 3.0 the search functionality was added to the web view.
+ * The search input is still done in bytes, not words. So the same
+ * search algorithm can be used. I expect anyway that the search for
+ * words is not really useful.
+ *
  * See design.md for a sequence chart.
  */
 export class MemoryDumpViewWord extends MemoryDumpView {
