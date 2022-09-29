@@ -530,7 +530,7 @@ function toggleButton(obj) {
 function toggleButtonCaseSensitive(obj) {
 	toggleButton(obj);
 	caseSensitive = obj.checked;
-	if(caseSensitive) {
+	if(!caseSensitive) {
 		// Not together with diff
 		const diffObj = document.getElementById("diff");
 		setCheckedState(diffObj, false);
@@ -557,8 +557,8 @@ function toggleButtonDiff(obj) {
 	if(diff) {
 		// Not together with case and zero
 	 	const caseObj = document.getElementById("caseSensitive");
-		setCheckedState(caseObj, false);
-		caseSensitive = false;
+		setCheckedState(caseObj, true);
+		caseSensitive = true;
 	 	const zeroObj = document.getElementById("zeroTerminated");
 		setCheckedState(zeroObj, false);
 		zeroTerminated = false;
@@ -579,7 +579,12 @@ function vscodeColorChanged(obj) {
 
 // Init
 window.addEventListener('load', () => {
+	// Init
 	selectAddress();
+	// Set default to select case sensitive
+	const caseObj = document.getElementById("caseSensitive");
+	setCheckedState(caseObj, true);
+	caseSensitive = true;
 });
 
 //# sourceURL=memorydumpview-searchhtml.js
