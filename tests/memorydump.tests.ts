@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import {MemoryDump} from '../src/misc/memorydump';
+import {FoundAddresses, MemoryDump} from '../src/misc/memorydump';
 
 suite('MemoryDump', () => {
 
@@ -418,6 +418,12 @@ suite('MemoryDump', () => {
 
 		suite('search', () => {
 
+			function search(md: MemoryDump, searchInput: string, caseSensitive: boolean, zero: boolean, diff: boolean): FoundAddresses {
+				const searchInputData = md.parseSearchInput(searchInput);
+				const found = md.searchData(searchInputData, true, false, false);
+				return found;
+			}
+
 			test('wrong input, found addresses undefined', () => {
 				const md = new MemoryDump();
 				md.addBlock(50, 1000);
@@ -425,23 +431,23 @@ suite('MemoryDump', () => {
 				copyToAddress(md, 100, "abcdefghijk");
 
 				// Unfinished string
-				let found = md.search('"z', true, false, false);
+				let found = search(md, '"z', true, false, false);
 				assert.equal(found.addresses, undefined);
 
 				// 2nd string open
-				found = md.search('"zl" "', true, false, false);
+				found = search(md, '"zl" "', true, false, false);
 				assert.equal(found.addresses, undefined);
 
 				// Wrong formatted number
-				found = md.search('0Gh', true, false, false);
+				found = search(md, '0Gh', true, false, false);
 				assert.equal(found.addresses, undefined);
 
 				// Separators other than space used
-				found = md.search('0, 2', true, false, false);
+				found = search(md, '0, 2', true, false, false);
 				assert.equal(found.addresses, undefined);
 
 				// diff, too less input
-				found = md.search('8', false, false, true);
+				found = search(md, '8', false, false, true);
 				assert.equal(found.addresses, undefined);
 			});
 
@@ -451,11 +457,11 @@ suite('MemoryDump', () => {
 				initBlocks(md);
 				copyToAddress(md, 100, "abcdefghijk");
 
-				let found = md.search('"z"', true, false, false);
+				let found = search(md, '"z"', true, false, false);
 				assert.equal(found.length, 1);
 				assert.equal(found.addresses.length, 0);
 
-				found = md.search('"ac"', true, false, false);
+				found = search(md, '"ac"', true, false, false);
 				assert.equal(found.length, 2);
 				assert.equal(found.addresses.length, 0);
 			});
@@ -466,7 +472,7 @@ suite('MemoryDump', () => {
 				initBlocks(md);
 				copyToAddress(md, 100, "abcdefghijk");
 
-				const found = md.search('', true, false, false);
+				const found = search(md, '', true, false, false);
 				assert.equal(found.length, 0);
 				assert.equal(found.addresses.length, 0);
 			});
@@ -477,22 +483,22 @@ suite('MemoryDump', () => {
 				initBlocks(md);
 				copyToAddress(md, 100, "abcdefghijk");
 
-				let found = md.search('"a"', true, false, false);
+				let found = search(md, '"a"', true, false, false);
 				assert.equal(found.length, 1);
 				assert.equal(found.addresses.length, 1);
 				assert.equal(found.addresses[0], 100);
 
-				found = md.search('"k"', true, false, false);
+				found = search(md, '"k"', true, false, false);
 				assert.equal(found.length, 1);
 				assert.equal(found.addresses.length, 1);
 				assert.equal(found.addresses[0], 110);
 
-				found = md.search('"f"', true, false, false);
+				found = search(md, '"f"', true, false, false);
 				assert.equal(found.length, 1);
 				assert.equal(found.addresses.length, 1);
 				assert.equal(found.addresses[0], 105);
 
-				found = md.search('"cd"', true, false, false);
+				found = search(md, '"cd"', true, false, false);
 				assert.equal(found.length, 2);
 				assert.equal(found.addresses.length, 1);
 				assert.equal(found.addresses[0], 102);
@@ -504,7 +510,7 @@ suite('MemoryDump', () => {
 				initBlocks(md);
 				copyToAddress(md, 100, "aaaaa");
 
-				let found = md.search('"aaa"', true, false, false);
+				let found = search(md, '"aaa"', true, false, false);
 				assert.equal(found.length, 3);
 				assert.equal(found.addresses.length, 3);
 				assert.equal(found.addresses[0], 100);
@@ -518,13 +524,13 @@ suite('MemoryDump', () => {
 				initBlocks(md);
 				copyToAddress(md, 100, "abcdabcd");
 
-				let found = md.search('"a"', true, false, false);
+				let found = search(md, '"a"', true, false, false);
 				assert.equal(found.length, 1);
 				assert.equal(found.addresses.length, 2);
 				assert.equal(found.addresses[0], 100);
 				assert.equal(found.addresses[1], 104);
 
-				found = md.search('"bc"', true, false, false);
+				found = search(md, '"bc"', true, false, false);
 				assert.equal(found.length, 2);
 				assert.equal(found.addresses.length, 2);
 				assert.equal(found.addresses[0], 101);
@@ -539,7 +545,7 @@ suite('MemoryDump', () => {
 				copyToAddress(md, 100, "abcdcdefg");
 				copyToAddress(md, 3010, "xxcdefgll");
 
-				let found = md.search('"cdef"', true, false, false);
+				let found = search(md, '"cdef"', true, false, false);
 				assert.equal(found.length, 4);
 				assert.equal(found.addresses.length, 2);
 				assert.equal(found.addresses[0], 104);
@@ -555,19 +561,19 @@ suite('MemoryDump', () => {
 				copyToAddress(md, 300, "AbCdEfG");
 
 				// Case sensitive
-				let found = md.search('"abcdefg"', true, false, false);
+				let found = search(md, '"abcdefg"', true, false, false);
 				assert.equal(found.length, 7);
 				assert.equal(found.addresses.length, 1);
 				assert.equal(found.addresses[0], 100);
 
 				// Case sensitive
-				found = md.search('"ABCDEFG"', true, false, false);
+				found = search(md, '"ABCDEFG"', true, false, false);
 				assert.equal(found.length, 7);
 				assert.equal(found.addresses.length, 1);
 				assert.equal(found.addresses[0], 200);
 
 				// Case insensitive
-				found = md.search('"abcdefg"', false, false, false);
+				found = search(md, '"abcdefg"', false, false, false);
 				assert.equal(found.length, 7);
 				assert.equal(found.addresses.length, 3);
 				assert.equal(found.addresses[0], 100);
@@ -575,7 +581,7 @@ suite('MemoryDump', () => {
 				assert.equal(found.addresses[2], 300);
 
 				// Case insensitive
-				found = md.search('"ABCDEFG"', false, false, false);
+				found = search(md, '"ABCDEFG"', false, false, false);
 				assert.equal(found.length, 7);
 				assert.equal(found.addresses.length, 3);
 				assert.equal(found.addresses[0], 100);
@@ -583,7 +589,7 @@ suite('MemoryDump', () => {
 				assert.equal(found.addresses[2], 300);
 
 				// Case insensitive
-				found = md.search('"ABCDefg"', false, false, false);
+				found = search(md, '"ABCDefg"', false, false, false);
 				assert.equal(found.length, 7);
 				assert.equal(found.addresses.length, 3);
 				assert.equal(found.addresses[0], 100);
@@ -597,11 +603,11 @@ suite('MemoryDump', () => {
 				initBlocks(md);
 				copyToAddress(md, 100, "abcdefg");
 
-				let found = md.search('"abcd"', true, true /*zero-termination*/, false);
+				let found = search(md, '"abcd"', true, true /*zero-termination*/, false);
 				assert.equal(found.length, 4);
 				assert.equal(found.addresses.length, 0);
 
-				found = md.search('"defg"', true, true /*zero-termination*/, false);
+				found = search(md, '"defg"', true, true /*zero-termination*/, false);
 				assert.equal(found.length, 4);
 				assert.equal(found.addresses.length, 1);
 				assert.equal(found.addresses[0], 103);
@@ -614,7 +620,7 @@ suite('MemoryDump', () => {
 
 				for (let val = 1; val < 256; val++) {
 					md.setValueFor(100, val);
-					let found = md.search(val.toString(), false, false, false);
+					let found = search(md, val.toString(), false, false, false);
 					assert.equal(found.length, 1);
 					assert.equal(found.addresses.length, 1);
 					assert.equal(found.addresses[0], 100);
@@ -624,7 +630,7 @@ suite('MemoryDump', () => {
 				const block = md.metaBlocks[0]!;
 				block.data!.fill(1, 0, block.size);
 				md.setValueFor(100, 0);
-				let found = md.search("0", false, false, false);
+				let found = search(md, "0", false, false, false);
 				assert.equal(found.length, 1);
 				assert.equal(found.addresses.length, 1);
 				assert.equal(found.addresses[0], 100);
@@ -636,7 +642,7 @@ suite('MemoryDump', () => {
 				initBlocks(md);
 				copyToAddress(md, 100, "abbdefg");
 
-				let found = md.search('"ax"', true, false, true /*diff*/);
+				let found = search(md, '"ax"', true, false, true /*diff*/);
 				assert.equal(found.length, 2);
 				assert.equal(found.addresses.length, 0);
 			});
@@ -647,7 +653,7 @@ suite('MemoryDump', () => {
 				initBlocks(md);
 				copyToAddress(md, 100, "abbdefg");
 
-				let found = md.search('"ax"', true, false, true /*diff*/);
+				let found = search(md, '"ax"', true, false, true /*diff*/);
 				assert.equal(found.length, 2);
 				assert.notEqual(found.addresses, undefined);
 			});
@@ -658,7 +664,7 @@ suite('MemoryDump', () => {
 				initBlocks(md);
 				copyToAddress(md, 100, "abbdefg");
 
-				const found = md.search('"cdd"', true, false, true /*diff*/);
+				const found = search(md, '"cdd"', true, false, true /*diff*/);
 				assert.equal(found.length, 3);
 				assert.equal(found.addresses.length, 1);
 				assert.equal(found.addresses[0], 100);
@@ -670,7 +676,7 @@ suite('MemoryDump', () => {
 				initBlocks(md);
 				copyToAddress(md, 100, "abbdeff");
 
-				const found = md.search('"cdd"', true, false, true /*diff*/);
+				const found = search(md, '"cdd"', true, false, true /*diff*/);
 				assert.equal(found.length, 3);
 				assert.equal(found.addresses.length, 2);
 				assert.equal(found.addresses[0], 100);
@@ -769,5 +775,113 @@ suite('MemoryDump', () => {
 				assert.ok(addrSet.has(500));
 			});
 		});
+
+		suite('getChangedValues', () => {
+
+			test('no data', () => {
+				const md = new MemoryDump() as any;
+				md.addBlockWithoutBoundary(50, 1000);
+
+				const vals = md.metaBlocks[0].getChangedValues();
+				assert.equal(vals.length, 0);
+			});
+
+			test('no prev data', () => {
+				const md = new MemoryDump() as any;
+				md.addBlockWithoutBoundary(100, 20);
+				const data = new Uint8Array(20);
+				md.metaBlocks[0].data = data;
+				for (let i = 0; i < 20; i++)
+					data[i] = i;
+
+				const vals = md.metaBlocks[0].getChangedValues();
+				assert.equal(vals.length, 20);
+				for (let i = 0; i < 20; i++) {
+					const addrVal = vals[i];
+					assert.equal(addrVal.length, 2);
+					assert.equal(addrVal[0], 100 + i);
+					assert.equal(addrVal[1], i);
+				}
+			});
+
+			test('no change', () => {
+				const md = new MemoryDump() as any;
+				md.addBlockWithoutBoundary(100, 20);
+				const data = new Uint8Array(20);
+				const prevData = new Uint8Array(20);
+				md.metaBlocks[0].data = data;
+				md.metaBlocks[0].prevData = prevData;
+				data[0] = 12;
+				data[17] = 0xFE;
+				prevData[0] = 12;
+				prevData[17] = 0xFE;
+				const vals = md.metaBlocks[0].getChangedValues();
+				assert.equal(vals.length, 0);
+			});
+
+			test('1 change', () => {
+				const md = new MemoryDump() as any;
+				md.addBlockWithoutBoundary(100, 20);
+				const data = new Uint8Array(20);
+				const prevData = new Uint8Array(20);
+				md.metaBlocks[0].data = data;
+				md.metaBlocks[0].prevData = prevData;
+				data[0] = 12;
+				data[17] = 0xFE;
+				prevData[0] = 12;
+				prevData[17] = 0xAB;
+				const vals = md.metaBlocks[0].getChangedValues();
+				assert.equal(vals.length, 1);
+				assert.equal(vals[0][0], 100 + 17);
+				assert.equal(vals[0][1], 0xFE);
+				assert.equal(vals[0][2], 0xAB);
+			});
+
+			test('2 changes', () => {
+				const md = new MemoryDump() as any;
+				md.addBlockWithoutBoundary(100, 20);
+				const data = new Uint8Array(20);
+				const prevData = new Uint8Array(20);
+				md.metaBlocks[0].data = data;
+				md.metaBlocks[0].prevData = prevData;
+				data[0] = 12;
+				data[17] = 0xFE;
+				prevData[0] = 123;
+				prevData[17] = 0xAB;
+				const vals = md.metaBlocks[0].getChangedValues();
+				assert.equal(vals.length, 2);
+				assert.equal(vals[0][0], 100 + 0);
+				assert.equal(vals[0][1], 12);
+				assert.equal(vals[0][2], 123);
+				assert.equal(vals[1][0], 100 + 17);
+				assert.equal(vals[1][1], 0xFE);
+				assert.equal(vals[1][2], 0xAB);
+			});
+
+			test('3 changes', () => {
+				const md = new MemoryDump() as any;
+				md.addBlockWithoutBoundary(100, 20);
+				const data = new Uint8Array(20);
+				const prevData = new Uint8Array(20);
+				md.metaBlocks[0].data = data;
+				md.metaBlocks[0].prevData = prevData;
+				data[0] = 12;
+				data[17] = 0xFE;
+				data[19] = 1;
+				prevData[0] = 123;
+				prevData[17] = 0xAB;
+				const vals = md.metaBlocks[0].getChangedValues();
+				assert.equal(vals.length, 3);
+				assert.equal(vals[0][0], 100 + 0);
+				assert.equal(vals[0][1], 12);
+				assert.equal(vals[0][2], 123);
+				assert.equal(vals[1][0], 100 + 17);
+				assert.equal(vals[1][1], 0xFE);
+				assert.equal(vals[1][2], 0xAB);
+				assert.equal(vals[2][0], 100 + 19);
+				assert.equal(vals[2][1], 1);
+				assert.equal(vals[2][2], 0);
+			});
+		})
 	});
 });

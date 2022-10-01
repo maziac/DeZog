@@ -1,3 +1,4 @@
+import {Utility} from "./utility";
 
 /// One address range (block) the user wants to show.
 interface MemBlock {
@@ -26,7 +27,7 @@ export class MetaBlock {
 	public memBlocks: Array<MemBlock>;
 
 	/// The (current) memory data.
-	/// The data is stored as one continuous hex string.
+	/// The data is stored as one continuous Uint8Array.
 	public data: Uint8Array | undefined;
 	/// The previous memory data (used to check which values have changed).
 	/// Undefined if not used.
@@ -51,17 +52,53 @@ export class MetaBlock {
 	 * Searches all memory blocks of a meta block.
 	 * If address is in range of one memory block it returns true.
 	 * Is used to show the cells in the memory dump view in bold.
-	 * Is public for testing puposes only.
 	 * @param address The address to check.
 	 * @returns true if in range of any block.
 	 */
 	public isInRange(address: number): boolean {
-		// Seach all wrapped memory blocks.
+		// Search all wrapped memory blocks.
 		for (let memBlock of this.memBlocks) {
 			if (address >= memBlock.address && address < memBlock.address + memBlock.size)
 				return true;
 		}
 		// nothing found
 		return false;
+	}
+
+
+	/** Returns all changed data (compared to prevData).
+	 * Works on all data. I.e. also the data that is not in the memBlocks
+	 * (i.e. not shown in bold).
+	 * @returns An array of address/value triples with the changed
+	 * [address, value, prevValue].
+	 * Note: if no previous value exists only 2 tuples of [address, value]
+	 * are returned.
+	 */
+	public getChangedValues() {
+		if (!this.data)
+			return [];	// No data yet
+		const addr = this.address;
+		const addrValues: any = [];
+		if (this.prevData) {
+			// Compare current with previous data
+			const len: number = this.data.length;
+			Utility.assert(len == this.prevData.length);
+			for (let i = 0; i < len; i++) {
+				if (this.data[i] != this.prevData[i]) {
+					addrValues.push([
+						addr + i,			// Address
+						this.data[i],		// Current value
+						this.prevData[i]	// Previous value
+					]);
+				}
+			}
+		}
+		else {
+			// No previous data yet, i.e. everything changed.
+			this.data.forEach((val, index) => {
+				addrValues.push([addr + index, val]);
+			});
+		}
+		return addrValues;
 	}
 }
