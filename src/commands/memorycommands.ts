@@ -52,9 +52,9 @@ export class MemoryCommands {
 
 		// Address
 		const addressString = tokens[0];
-		const address = Utility.evalExpression(addressString);
-		if (address < 0 || address > 0xFFFF)
-			throw Error("Address (" + address + ") out of range.");
+		const startAddress = Utility.evalExpression(addressString);
+		if (startAddress < 0 || startAddress > 0xFFFF)
+			throw Error("Address (" + startAddress + ") out of range.");
 
 		// Size
 		const sizeString = tokens[1];
@@ -72,21 +72,51 @@ export class MemoryCommands {
 
 		// Get memory
 		const md = new MemoryDump();
-		md.addBlockWithoutBoundary(address, size);
-		md.metaBlocks[0].data = await Remote.readMemoryDump(address, size);
+		md.addBlockWithoutBoundary(startAddress, size);
+		const data = await Remote.readMemoryDump(startAddress, size);
+		md.metaBlocks[0].data = data;
 
 		// Delta search
 		const searchInputData = md.parseSearchInput(searchString);
 		const found = md.searchData(searchInputData, true, false, true);
+		const addresses = found.addresses;
+
+		// Check for errors
+		if (!addresses)
+			throw Error("Some problem occurred during search.");
+		if (addresses.length)
+			throw Error("Sequence not found.");
 
 		// 'Print'
 		let output = '';
-		for (let i = 0; i < size; i++) {
-			//	let value = //data[i];
-			//	output += Utility.getHexString(value, 2) + ' ';
-		}
+		for (const addr64k of addresses) {
+			// Calculate offset
+			const index = addr64k - startAddress;
+			const valOffset = searchInputData[0] - data[index];
+			// Print complete range
+			for (let i = 0; i < size;) {
+				// Print address
+				const addr = startAddress + i;
+				const remainder = addr % 16;
+				const addrShow = addr - remainder;
+				const addrString = Utility.getHexString(addrShow, 4);
+				output += addrString + ': ';
 
-		output = found.toString();
+				// Print hex and ascii:
+				// Print spaces
+				output += '   '.repeat(remainder);
+				let ascii = ' '.repeat(remainder);
+				// Print values
+				for (let k = remainder; k < 16; k++) {
+					// Calculate value with offset
+					const modValue = data[i++] + valOffset;
+					output += Utility.getHexString(modValue, 2);
+					ascii += Utility.getHTMLChar(modValue);
+				}
+				// Add ASCII
+				output += ascii + '\n';
+			}
+		}
 
 		// Send response
 		return output;
