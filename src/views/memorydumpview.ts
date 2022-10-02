@@ -1248,18 +1248,6 @@ window.addEventListener('load', () => {
 
 
 	/**
-	 * Adds emphasizes for changed values.
-	 * @param origText
-	 * @returns html text that id emphasized.
-	 */
-	// TODO: remove
-	protected addEmphasizeChanged(origText: string,): string {
-		const resText = '<font color="red">' + origText + '</font>';
-		return resText;
-	}
-
-
-	/**
 	 * Adds emphasizes for labelled values.
 	 * @param origText
 	 * @returns html text that id emphasized.

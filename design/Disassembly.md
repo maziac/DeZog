@@ -121,7 +121,7 @@ TODO:
 Therefore it is possible to use some pseudo commands in the rev-eng.list file:
 'SKIP' or 'SKIPWORD'.
 It makes the disassembler skip a certain byte during disassembly and not interprete it as new opcode.
-See ['SKIP' or 'SKIPWORD'](../documentation/ReverseEngineeringUsage.md#skip-or-skipword)
+See ['SKIP' or 'SKIPWORD'](../documentation/ReverseEngineeringUsage.md#skip-or-skipword).
 
 
 #### Branching into Paged Banks

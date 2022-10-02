@@ -42,6 +42,7 @@ import {RenderHtml} from './disassembler/renderhtml';
 import {ExceptionBreakpoints} from './exceptionbreakpoints';
 import * as hjoin from '@bartificer/human-join';
 import {MemoryDeltaView} from './views/memorydeltaview';
+import {MemoryDump} from './misc/memorydump';
 
 
 
@@ -1936,6 +1937,9 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd == '-md') {
 			output = await this.evalMemDump(tokens);
 		}
+		else if (cmd == '-mdelta') {
+			output = await this.evalMemDelta(tokens);
+		}
 		else if (cmd == '-msetb') {
 			output = await this.evalMemSetByte(tokens);
 		}
@@ -2605,6 +2609,68 @@ E.g. use "-help -view" to put the help text in an own view.
 			littleEndian = (s == 'little');
 		}
 		return littleEndian;
+	}
+
+
+	/**
+	 * Does a delta string search on the given memory range
+	 * and converts the range afterwards by the found offset.
+	 * This is to find hiscore names in memory when the text is not
+	 * ASCII encoded. In this case most probably at least the
+	 * differences between teh characters can be found.
+	 * If something is found the whole memory is printed with
+	 * the given offset. Making it possible to see also the other
+	 * hiscore names.
+	 * @param tokens The arguments. I.e. the address and size.
+	 * @returns A Promise with a text to print.
+	 */
+	protected async evalMemDelta(tokens: Array<string>): Promise<string> {
+		// Check count of arguments
+		if (tokens.length < 3) {
+			// Error Handling: Too less arguments
+			throw Error("Address, size and a search string expected.");
+		}
+
+		// Address
+		const addressString = tokens[0];
+		const address = Utility.evalExpression(addressString);
+		if (address < 0 || address > 0xFFFF)
+			throw Error("Address (" + address + ") out of range.");
+
+		// Size
+		const sizeString = tokens[1];
+		const size = Utility.evalExpression(sizeString);
+		if (size < 0 || size > 0xFFFF)
+			throw Error("Size (" + size + ") out of range.");
+
+		// Search string (without parenthesis)
+		const searchString = tokens[2];
+		if (!searchString)
+			throw Error("No search string given.");
+		if (searchString.length < 2)
+			throw Error("Search string must contain of at least 2 characters.");
+
+
+		// Get memory
+		const md = new MemoryDump();
+		md.addBlockWithoutBoundary(address, size);
+		md.metaBlocks[0].data = await Remote.readMemoryDump(address, size);
+
+		// Delta search
+		const searchInputData = md.parseSearchInput(searchString);
+		const found = md.searchData(searchInputData, true, false, true);
+
+		// 'Print'
+		let output = '';
+		for (let i = 0; i < size; i++) {
+		//	let value = //data[i];
+		//	output += Utility.getHexString(value, 2) + ' ';
+		}
+
+		output = found.toString();
+
+		// Send response
+		return output;
 	}
 
 

@@ -420,7 +420,7 @@ suite('MemoryDump', () => {
 
 			function search(md: MemoryDump, searchInput: string, caseSensitive: boolean, zero: boolean, diff: boolean): FoundAddresses {
 				const searchInputData = md.parseSearchInput(searchInput);
-				const found = md.searchData(searchInputData, true, false, false);
+				const found = md.searchData(searchInputData, caseSensitive, zero, diff);
 				return found;
 			}
 
@@ -431,23 +431,28 @@ suite('MemoryDump', () => {
 				copyToAddress(md, 100, "abcdefghijk");
 
 				// Unfinished string
-				let found = search(md, '"z', true, false, false);
-				assert.equal(found.addresses, undefined);
+				assert.throws(() => {
+					search(md, '"z', true, false, false);
+				});
 
 				// 2nd string open
-				found = search(md, '"zl" "', true, false, false);
-				assert.equal(found.addresses, undefined);
+				assert.throws(() => {
+					search(md, '"zl" "', true, false, false);
+				});
 
 				// Wrong formatted number
-				found = search(md, '0Gh', true, false, false);
-				assert.equal(found.addresses, undefined);
+				assert.throws(() => {
+					search(md, '0Gh', true, false, false);
+				});
 
 				// Separators other than space used
-				found = search(md, '0, 2', true, false, false);
-				assert.equal(found.addresses, undefined);
+				assert.throws(() => {
+					search(md, '0, 2', true, false, false);
+
+				});
 
 				// diff, too less input
-				found = search(md, '8', false, false, true);
+				const found = search(md, '8', false, false, true);
 				assert.equal(found.addresses, undefined);
 			});
 
@@ -834,7 +839,6 @@ suite('MemoryDump', () => {
 				assert.equal(vals.length, 1);
 				assert.equal(vals[0][0], 100 + 17);
 				assert.equal(vals[0][1], 0xFE);
-				assert.equal(vals[0][2], 0xAB);
 			});
 
 			test('2 changes', () => {
@@ -852,10 +856,8 @@ suite('MemoryDump', () => {
 				assert.equal(vals.length, 2);
 				assert.equal(vals[0][0], 100 + 0);
 				assert.equal(vals[0][1], 12);
-				assert.equal(vals[0][2], 123);
 				assert.equal(vals[1][0], 100 + 17);
 				assert.equal(vals[1][1], 0xFE);
-				assert.equal(vals[1][2], 0xAB);
 			});
 
 			test('3 changes', () => {
@@ -874,13 +876,10 @@ suite('MemoryDump', () => {
 				assert.equal(vals.length, 3);
 				assert.equal(vals[0][0], 100 + 0);
 				assert.equal(vals[0][1], 12);
-				assert.equal(vals[0][2], 123);
 				assert.equal(vals[1][0], 100 + 17);
 				assert.equal(vals[1][1], 0xFE);
-				assert.equal(vals[1][2], 0xAB);
 				assert.equal(vals[2][0], 100 + 19);
 				assert.equal(vals[2][1], 1);
-				assert.equal(vals[2][2], 0);
 			});
 		})
 	});
