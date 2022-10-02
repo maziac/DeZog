@@ -312,7 +312,7 @@ ranges.
 	 * @throws If there is a parsing error. Or the numbers are bigger
 	 * than 255.
 	 */
-	protected parseSearchInput(input: string): number[] {
+	public parseSearchInput(input: string): number[] {
 		const result: number[] = [];
 		// Find all matches
 		const regex = /^(?:"(.*?(?<!\\))"|([0-9a-f]+h)|(0x[0-9a-f]+)|(\$[0-9a-f]+)|(\d+))/i;
@@ -382,22 +382,22 @@ ranges.
 	}
 
 
-	/** Searches the memory.
-	 * Sends the found locations to the webview.
-	 * @param searchInput The search input string as typed into the search box.
+	/** Searches the memory. Uses the parsed search data for a search.
+	 * Returns the found locations.
+	 * @param searchDataInput The search input in binary format.
 	 * @param caseSensitive true if the search should be case sensitive.
 	 * @param zeroTerminated true if there should be a 0 after the searched string.
 	 * @param diff true if the difference of the given values should be
 	 * compared. Requires at least 2 values.
+	 * @return The found locations.
 	 */
-	public search(searchInput: string, caseSensitive: boolean, zeroTerminated: boolean, diff: boolean): FoundAddresses {
+	public searchData(searchDataInput: number[], caseSensitive: boolean, zeroTerminated: boolean, diff: boolean): FoundAddresses {
 		try {
 			let foundAddresses = new Set<number>();
-			const searchData = this.parseSearchInput(searchInput);
-			const length = searchData.length;
+			const length = searchDataInput.length;
 			if (length > 0) {
 				if (zeroTerminated)
-					searchData.push(0);
+					searchDataInput.push(0);
 				if (diff) {
 					// Diff search (no zero terminated, no case sensitive)
 					if (length < 2) {
@@ -407,7 +407,7 @@ ranges.
 					// Calculate diff values
 					const diffValues: number[] = [];
 					for (let i = 1; i < length; i++) {
-						let d = searchData[i] - searchData[i - 1];
+						let d = searchDataInput[i] - searchDataInput[i - 1];
 						if (d < 0)
 							d += 256;
 						diffValues.push(d);
@@ -418,7 +418,7 @@ ranges.
 					// Normal search
 					const dec = new TextDecoder('ascii');
 					// Create string from data
-					let searchString = dec.decode(new Uint8Array(searchData));
+					let searchString = dec.decode(new Uint8Array(searchDataInput));
 					// Case
 					if (!caseSensitive)
 						searchString = searchString.toLowerCase();

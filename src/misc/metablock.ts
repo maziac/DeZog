@@ -70,9 +70,7 @@ export class MetaBlock {
 	 * Works on all data. I.e. also the data that is not in the memBlocks
 	 * (i.e. not shown in bold).
 	 * @returns An array of address/value triples with the changed
-	 * [address, value, prevValue].
-	 * Note: if no previous value exists only 2 tuples of [address, value]
-	 * are returned.
+	 * [address, value].
 	 */
 	public getChangedValues() {
 		if (!this.data)
@@ -87,8 +85,7 @@ export class MetaBlock {
 				if (this.data[i] != this.prevData[i]) {
 					addrValues.push([
 						addr + i,			// Address
-						this.data[i],		// Current value
-						this.prevData[i]	// Previous value
+						this.data[i]
 					]);
 				}
 			}

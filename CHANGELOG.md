@@ -29,6 +29,7 @@
 	- "-assertion", "-wpmem" and "-logpoint" removed (see above)
 	- "-label" now also prints the bank of a label.
 	- "-mvw" for viewing words instead of bytes is now shown in the debug console help.
+- MemoryDumpViewWord: Changed word input into byte input.
 
 
 

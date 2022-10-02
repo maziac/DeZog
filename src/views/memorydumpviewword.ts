@@ -1,11 +1,9 @@
-import {Remote} from '../remotes/remotebase';
 import * as util from 'util';
 import {Utility} from '../misc/utility';
 import {Labels} from '../labels/labels';
 import {MetaBlock} from '../misc/metablock';
 import {Settings} from '../settings/settings';
 import {MemoryDumpView} from './memorydumpview';
-import {BaseView} from './baseview';
 
 
 /// The number of word columns shown in one line.
@@ -71,48 +69,13 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 
 
 	/**
-	 * The user just changed a cell in the dump view table.
-	 * The value is written to memory. Either little or big endian.
-	 * @param address The address to change.
-	 * @param value The new word value.
-	 */
-	protected async changeMemory(address: number, value: number) {
-		// Get bytes dependent on endianness
-		let lowByte = value & 0xFF;
-		let highByte = value >> 8;
-		if (!this.littleEndian) {
-			const tmp = lowByte;
-			lowByte = highByte;
-			highByte = tmp;
-		}
-		// Prepare data
-		const data = new Uint8Array([lowByte, highByte]);
-		await Remote.writeMemoryDump(address, data);
-		const realData = await Remote.readMemoryDump(address, 2);
-		const realValue = realData[0] + 256 * realData[1];	// In little endian
-		for (const mdvb of MemoryDumpView.MemoryViews) {
-			const mdv = mdvb as MemoryDumpViewWord;	// To gain access
-			// Check first if address included at all
-			if (!isNaN(mdv.memDump.getWordValueFor(address, this.littleEndian))) {
-				// Update value
-				mdv.memDump.setWordValueFor(address, realValue, true);	// Also write as little endian
-			}
-		}
-		// Update html without getting data from remote
-		BaseView.staticCallUpdateWithoutRemote();
-		// Inform vscode
-		BaseView.sendChangeEvent();
-	}
-
-
-	/**
 	 * Retrieves the value info text (that is the hover text).
 	 * @param address The address for which the info should be shown.
 	 */
 	protected async getValueInfoText(address: number) {
 		// Value
 		const value = this.memDump.getWordValueFor(address, this.littleEndian);
-		const valFormattedString = await Utility.numberFormatted('', value, 1, Settings.launch.memoryViewer.valueHoverFormat, undefined);
+		const valFormattedString = await Utility.numberFormatted('', value, 2, Settings.launch.memoryViewer.valueHoverFormat, undefined);
 		let text = valFormattedString + '\n';
 
 		// Address
@@ -124,7 +87,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		if (!isNaN(prevValue)) {
 			if (prevValue != value) {
 				// has changed so add the last value to the hover text
-				text += '\nPrevious value: ' + Utility.getHexString(prevValue, 2) + 'h';
+				text += '\nPrevious value: ' + Utility.getHexString(prevValue, 4) + 'h';
 			}
 		}
 		// Now send the formatted text to the web view for display.
@@ -147,8 +110,27 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		if (!metaBlock.data)
 			return '';
 
+		const addressColor = Settings.launch.memoryViewer.addressColor;
+		const bytesColor = Settings.launch.memoryViewer.bytesColor;
+		const changedColor = "red";
+
 		const format=
-`			<table style="">
+			`
+			<style>
+			td {
+				color: ${bytesColor};
+			}
+			.addressClmn {
+				color: ${addressColor};
+				border-radius: 3px;
+				cursor: pointer;
+			}
+			.valueChanged {
+				background-color: ${changedColor};
+			}
+			</style>
+
+			<table style="">
 				<colgroup>
 					<col>
 					<col width="10em">
@@ -166,8 +148,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		const data = metaBlock.data;
 		const len=data.length;
 
-		const addressColor = Settings.launch.memoryViewer.addressColor;
-		const bytesColor = Settings.launch.memoryViewer.bytesColor;
 
 		// Table column headers
 		table += '<tr>\n<th>Address:</th> <th></th>';
@@ -187,7 +167,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			if(i == 0) {
 				// start of a new line
 				let addrText=Utility.getHexString(addr64k,4) + ':';
-				table+='<tr>\n<td addressLine="'+addr64k + '" style="color:' + addressColor + '; border-radius:3px; cursor: pointer" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
+				table +='<tr>\n<td class="addressClmn" addressLine="'+addr64k + '" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
 				table += '<td> </td>\n';
 			}
 
@@ -205,7 +185,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				firstAddress = addr64k2;
 				secondAddress = addr64k;
 			}
-			valueText = '<span address="' + secondAddress + '">' + valueText.substring(0, 2) + '</span><span address="' + firstAddress + '">' + valueText.substring(2, 2+2) + '</span>';
+			valueText = '<span address="' + secondAddress + '" ondblclick="makeEditable(this)">' + valueText.substring(0, 2) + '</span><span address="' + firstAddress + '" ondblclick="makeEditable(this)">' + valueText.substring(2, 2+2) + '</span>';
 
 			// Check if in address range
 			if(metaBlock.isInRange(address))
@@ -217,20 +197,8 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			if (Labels.getLabelsForNumber64k(addr64k).length > 0)
 				valueText = this.addEmphasizeLabelled(valueText);
 
-			// Compare with prev value.
-			const prevData=metaBlock.prevData;
-			if (prevData) {
-				if (prevData.length > 0) {
-					const prevValue = Utility.getUintFromMemory(prevData, k, 2, this.littleEndian);
-					if (value != prevValue) {
-						// Change html emphasizes
-						valueText = this.addEmphasizeChanged(valueText);
-					}
-				}
-			}
-
 			// Create html cell
-			table += '<td address="' + addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText +'</td>\n';
+			table += '<td address="' + addr64k + '" onmouseover="mouseOverValue(this)">' + valueText +'</td>\n';
 
 			// Check end of line
 			if (i == MEM_COLUMNS-1) {
@@ -262,6 +230,9 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 
 		// For highlighting the found addresses
 		let foundAddressesHexObjs = [];
+
+		// The changed memory. Is an array of triples: [address, value, ASCII]
+		let changedAddressValues = [];
 
 		// The selected found address.
 		let selectedAddress = 0;
@@ -297,7 +268,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 
 			if(key == 13) {	// ENTER key
 				const value = curObj.innerText;
-				prevValue = value;	// To prevent that the old value is shown in 'focusLost'
 				const address = curObj.getAttribute("address");
 				e.preventDefault();
 				curObj.blur();
@@ -317,8 +287,11 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 
 		function focusLost(e) {	// = "blur"
 			// Undo: Use previous value
-			if(prevValue.length > 0)
-				curObj.innerText = prevValue;
+			if(prevValue.length > 0) {
+				// Inner text object
+				const textObj = curObj.firstChild;
+				textObj.textContent = prevValue;
+			}
 			curObj.contentEditable = false;
 			curObj.removeEventListener("blur", focusLost);
 			curObj.removeEventListener("keypress", keyPress);
@@ -328,9 +301,11 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		function makeEditable(obj) {
 			// makes the object editable on double click.
 			curObj = obj;	// store object for use in other functions
-			prevValue = curObj.innerText;	// store for undo
-			if(!curObj.innerText.endsWith('h'))
-				curObj.innerText += 'h';
+			// Inner text object
+			const textObj = curObj.firstChild;
+			prevValue = textObj.textContent;	// store for undo
+			if(!textObj.textContent.endsWith('h'))
+				textObj.textContent += 'h';
 			curObj.contentEditable = true;
 			curObj.focus();
 			selection = window.getSelection();    // Save the selection.
@@ -346,6 +321,13 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			curObj.addEventListener("keypress", keyPress, true);
 		}
 
+		function getHexObjsForAddress(address) {
+			return document.querySelectorAll("td[address='"+address+"']");
+		}
+
+		function getHexObjsForAddressSingleByte(address) {
+			return document.querySelectorAll("span[address='"+address+"']");
+		}
 
 		//---- Handle Messages from vscode extension --------
 		window.addEventListener('message', event => {
@@ -354,8 +336,8 @@ export class MemoryDumpViewWord extends MemoryDumpView {
             switch (message.command) {
 				case 'valueInfoText':
 				{
-					const objs = document.querySelectorAll("td[address='"+message.address+"']");
-					for(let obj of objs) {
+					const objs = getHexObjsForAddress(message.address);
+					for(const obj of objs) {
 						obj.title = message.text;
 					}
                 }   break;
@@ -363,25 +345,58 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				case 'addressInfoText':
 				{
 					const objs = document.querySelectorAll("td[addressLine='"+message.address+"']");
-					for(let obj of objs) {
+					for(const obj of objs) {
 						obj.title = message.text;
 					}
 				}   break;
 
 				case 'setAddressColor':
 				{
-					const objs = document.querySelectorAll("span[address='"+message.address+"']");
-					for(let obj of objs) {
-						obj.style.backgroundColor = message.color;
-						obj.style.borderRadius = '3px';
-					}
-				 }   break;
+					const className = "registerPointer"+message.register;
 
-				case 'setMemoryTable':
+					// Remove old
+					if(message.prevAddress) {
+						const objs = getHexObjsForAddressSingleByte(message.prevAddress);
+						for(const obj of objs) {
+							obj.classList.remove(className);
+						}
+					}
+
+					// HEX
+					const objs = getHexObjsForAddressSingleByte(message.address);
+					for(const obj of objs) {
+						obj.classList.add(className);
+					}
+				 }  break;
+
+
+				case 'memoryChanged':
 				{
-					// Set table as html string
-			        const tableDiv=document.getElementById("mem_table_"+message.index);
-					tableDiv.innerHTML=message.html;
+					// Note: This is called on every step, even if no memory has changed.
+					// Because it is also required to de-highlight the previous values.
+
+					// De-emphasize previously changed values
+					for(const addrVal of changedAddressValues) {
+						const address = addrVal[0];
+						// Get HEX for address
+						const objs = getHexObjsForAddressSingleByte(address);
+						for(const obj of objs) {
+							obj.classList.remove("valueChanged");
+						}
+					}
+					// The memory has changed.
+					// Loop through all changed addresses and update.
+					changedAddressValues = message.addressValues;
+					for(const addrVal of changedAddressValues) {
+						const address = addrVal[0];
+						// Get HEX for address
+						const objs = getHexObjsForAddressSingleByte(address);
+						for(const obj of objs) {
+							// Change only the text, no other style attributes:
+							obj.firstChild.textContent = addrVal[1];
+							obj.classList.add("valueChanged");
+						}
+					}
  				}   break;
 
 				case 'foundAddresses':
@@ -409,7 +424,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 					foundAddressesHexObjs = [];
 					for(const address of foundAddresses) {
 						for(let i=0; i<selectedLength; i++) {
-							const objs = document.querySelectorAll("td[address='"+(address+i)+"']");
+							const objs = getHexObjsForAddressSingleByte(address+i);
 							for(const obj of objs) {
 								foundAddressesHexObjs.push(obj);
 								obj.classList.add("foundAddress");

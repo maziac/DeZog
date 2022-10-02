@@ -53,6 +53,17 @@ export class MemoryDumpView extends BaseView {
 	// The windows title prefix, e.g. "Memory ".
 	protected titlePrefix = "Memory ";
 
+	// Search:
+	// The addresses found in last search are stored here.
+	// Used to check if display needs to be updated on a step.
+	protected foundAddresses: FoundAddresses;
+	// The last search in binary representation.
+	protected searchDataInput: number[] = [];
+	// Last search options:
+	protected caseSensitive: boolean;
+	protected zeroTerminated: boolean;
+	protected diff: boolean;
+
 
 	/**
 	 * Creates the basic panel.
@@ -90,7 +101,13 @@ export class MemoryDumpView extends BaseView {
 					// Change memory
 					const address = parseInt(message.address);
 					const value = Utility.evalExpression(message.value);
-					await this.changeMemory(address, value);
+					if (value <= 255 && value >= -255) {
+						await this.changeMemory(address, value);
+					}
+					else {
+						// Error
+						vscode.window.showWarningMessage("Value (" + value + ") out of range.");
+					}
 				}
 				catch (e) {
 					vscode.window.showWarningMessage("Could not evaluate: '" + message.value + "'");
@@ -113,13 +130,25 @@ export class MemoryDumpView extends BaseView {
 
 			case 'searchChanged':
 				{
-					// Search text or options changed
-					//console.log('searchText=', message);
-					// Search all addresses
-					const foundAddresses: FoundAddresses = this.memDump.search(message.searchText, message.caseSensitive, message.zeroTerminated, message.diff);
+					// Search text or options changed.
+					try {
+						// Copy options
+						this.caseSensitive = message.caseSensitive;
+						this.zeroTerminated = message.zeroTerminated;
+						this.diff = message.diff;
+						// Parse input string
+						this.searchDataInput = this.memDump.parseSearchInput(message.searchText);
+						// Search all addresses
+						this.foundAddresses = this.memDump.searchData(this.searchDataInput, this.caseSensitive, this.zeroTerminated, this.diff);
+					}
+					catch (e) {
+						this.foundAddresses = {
+							length: 0,
+							addresses: undefined as any
+						};
+					}
 					// Send found addresses to webview for display
-					const msg = {command: 'foundAddresses', ...foundAddresses};
-					console.log('foundAddresses=', foundAddresses);
+					const msg = {command: 'foundAddresses', ...this.foundAddresses};
 					this.sendMessageToWebView(msg);
 				}
 				break;
@@ -127,6 +156,45 @@ export class MemoryDumpView extends BaseView {
 			default:
 				await super.webViewMessageReceived(message);
 				break;
+		}
+	}
+
+
+	/** Checks if search results have changed.
+	 * If yes: update the web view highlighting.
+	 * If no: inform webview to use the last values for highlighting.
+	 */
+	protected updateSearchResults() {
+		try {
+			// Only if there is something to search
+			if (this.searchDataInput.length > 0) {
+				// Do a new search
+				const currentFound = this.memDump.searchData(this.searchDataInput, this.caseSensitive, this.zeroTerminated, this.diff);
+				// Checks if search results have changed
+				const len = currentFound.addresses.length;
+				let changed = (this.foundAddresses.addresses.length != len);
+				if (!changed) {
+					// Check also the addresses
+					for (let i = 0; i < len; i++) {
+						if (currentFound.addresses[i] != this.foundAddresses.addresses[i]) {
+							changed = true;
+							break;
+						}
+					}
+				}
+
+				// Update only on change.
+				if (changed) {
+					// Use found addresses
+					this.foundAddresses = currentFound;
+					// Send found addresses to webview for display
+					const msg = {command: 'foundAddresses', ...this.foundAddresses};
+					this.sendMessageToWebView(msg);
+				}
+			}
+		}
+		catch (e) {
+			// Ignore (should not happen)
 		}
 	}
 
@@ -273,20 +341,33 @@ export class MemoryDumpView extends BaseView {
 			}
 		}
 		else {
-			// Update blocks the next times
-			const msg = {
-				command: 'setMemoryTable',
-				index: 0,
-				html: ""
-			};
-			let i = 0;
-			for (let metaBlock of this.memDump.metaBlocks) {
-				// Update the block in html
-				msg.html = this.createHtmlTable(metaBlock);
-				msg.index = i;
+			// Update only the changed values
+
+			// Loop all blocks
+			let changed = false;
+			for (const metaBlock of this.memDump.metaBlocks) {
+				// Get changes
+				const addrValues = metaBlock.getChangedValues();
+				// And update
+				// Convert values to [address, hex-text , ascii-text]
+				const addrValsText = addrValues.map(addrVal => [
+					addrVal[0],
+					Utility.getHexString(addrVal[1], 2),
+					Utility.getHTMLChar(addrVal[1])
+				]);
+				// Send to web view
+				const msg = {
+					command: 'memoryChanged',
+					addressValues: addrValsText
+				};
 				this.sendMessageToWebView(msg);
-				// Next
-				i++;
+				if (addrValues.length > 0)
+					changed = true;
+			}
+
+			// Also update the search results
+			if (changed) {
+				this.updateSearchResults();
 			}
 		}
 
@@ -471,14 +552,14 @@ function selectAddress() {
 
 	// Highlight all addresses
 	for(let i=0; i<selectedLength; i++) {
-		const objs = document.querySelectorAll("td[address='"+(address+i)+"']");
+		const objs = getHexObjsForAddress(address+i);
 		if(objs) {
 			for(const obj of objs) {
 				obj.classList.add("selectedAddress");
 				prevSelectedHex.push(obj);
 			}
 		}
-		const spanObjs = document.querySelectorAll("span[address='"+(address+i)+"']");
+		const spanObjs = getAsciiObjsForAddress(address+i);
 		if(spanObjs) {
 			for(const obj of spanObjs) {
 				obj.classList.add("selectedAddressAscii");
@@ -627,6 +708,9 @@ window.addEventListener('load', () => {
 		let foundAddressesHexObjs = [];
 		let foundAddressesAsciiObjs = [];
 
+		// The changed memory. Is an array of triples: [address, value, ASCII]
+		let changedAddressValues = [];
+
 		// The selected found address.
 		let selectedAddress = 0;
 		let foundAddresses = [];
@@ -680,8 +764,11 @@ window.addEventListener('load', () => {
 
 		function focusLost(e) {	// = "blur"
 			// Undo: Use previous value
-			if(prevValue.length > 0)
-				curObj.innerText = prevValue;
+			if(prevValue.length > 0) {
+				// Inner text object
+				const textObj = curObj.firstChild;
+				textObj.textContent = prevValue;
+			}
 			curObj.contentEditable = false;
 			curObj.removeEventListener("blur", focusLost);
 			curObj.removeEventListener("keypress", keyPress);
@@ -691,9 +778,11 @@ window.addEventListener('load', () => {
 		function makeEditable(obj) {
 			// makes the object editable on double click.
 			curObj = obj;	// store object for use in other functions
-			prevValue = curObj.innerText;	// store for undo
-			if(!curObj.innerText.endsWith('h'))
-				curObj.innerText += 'h';
+			// Inner text object
+			const textObj = curObj.firstChild;
+			prevValue = textObj.textContent;	// store for undo
+			if(!textObj.textContent.endsWith('h'))
+				textObj.textContent += 'h';
 			curObj.contentEditable = true;
 			curObj.focus();
 			selection = window.getSelection();    // Save the selection.
@@ -709,6 +798,14 @@ window.addEventListener('load', () => {
 			curObj.addEventListener("keypress", keyPress, true);
 		}
 
+		function getHexObjsForAddress(address) {
+			return document.querySelectorAll("td[address='"+address+"']");
+		}
+
+		function getAsciiObjsForAddress(address) {
+			return document.querySelectorAll("span[address='"+address+"']");
+		}
+
 
 		//---- Handle Messages from vscode extension --------
 		window.addEventListener('message', event => {
@@ -718,13 +815,13 @@ window.addEventListener('load', () => {
 				case 'valueInfoText':
 				{
 					// HEX numbers
-					const objs = document.querySelectorAll("td[address='"+message.address+"']");
-					for(let obj of objs) {
+					const objs = getHexObjsForAddress(message.address);
+					for(const obj of objs) {
 						obj.title = message.text;
 					}
 					// ASCII
-					const spanObjs = document.querySelectorAll("span[address='"+message.address+"']");
-					for(let obj of spanObjs) {
+					const spanObjs = getAsciiObjsForAddress(message.address);
+					for(const obj of spanObjs) {
 						obj.title = message.text;
 					}
                 }   break;
@@ -732,7 +829,7 @@ window.addEventListener('load', () => {
 				case 'addressInfoText':
 				{
 					const objs = document.querySelectorAll("td[addressLine='"+message.address+"']");
-					for(let obj of objs) {
+					for(const obj of objs) {
 						obj.title = message.text;
 					}
 				}   break;
@@ -744,34 +841,67 @@ window.addEventListener('load', () => {
 
 					// Remove old
 					if(message.prevAddress) {
-						const objs = document.querySelectorAll("td[address='"+message.prevAddress+"']");
-						for(let obj of objs) {
+						const objs = getHexObjsForAddress(message.prevAddress);
+						for(const obj of objs) {
 							obj.classList.remove(className);
 						}
 						// ASCII
-						const spanObjs = document.querySelectorAll("span[address='"+message.prevAddress+"']");
-						for(let obj of spanObjs) {
+						const spanObjs = getAsciiObjsForAddress(message.prevAddress);
+						for(const obj of spanObjs) {
 							obj.classList.remove(classNameAscii);
 						}
 					}
 
 					// HEX
-					const objs = document.querySelectorAll("td[address='"+message.address+"']");
-					for(let obj of objs) {
+					const objs = getHexObjsForAddress(message.address);
+					for(const obj of objs) {
 						obj.classList.add(className);
 					}
 					// ASCII
-					const spanObjs = document.querySelectorAll("span[address='"+message.address+"']");
-					for(let obj of spanObjs) {
+					const spanObjs = getAsciiObjsForAddress(message.address);
+					for(const obj of spanObjs) {
 						obj.classList.add(classNameAscii);
 					}
 				 }  break;
 
-				case 'setMemoryTable':
+				case 'memoryChanged':
 				{
-					// Set table as html string
-			        const tableDiv=document.getElementById("mem_table_"+message.index);
-					tableDiv.innerHTML=message.html;
+					// Note: This is called on every step, even if no memory has changed.
+					// Because it is also required to de-highlight the previous values.
+
+					// De-emphasize previously changed values
+					for(const addrVal of changedAddressValues) {
+						const address = addrVal[0];
+						// Get HEX for address
+						const objs = getHexObjsForAddress(address);
+						for(const obj of objs) {
+							obj.classList.remove("valueChanged");
+						}
+						// Get Ascii for address
+						const asciiObjs = getAsciiObjsForAddress(address);
+						for(const obj of asciiObjs) {
+							obj.classList.remove("valueChanged");
+						}
+					}
+					// The memory has changed.
+					// Loop through all changed addresses and update.
+					changedAddressValues = message.addressValues;
+					for(const addrVal of changedAddressValues) {
+						const address = addrVal[0];
+						// Get HEX for address
+						const objs = getHexObjsForAddress(address);
+						for(const obj of objs) {
+							// Change only the text, no other style attributes:
+							obj.firstChild.textContent = addrVal[1];
+							obj.classList.add("valueChanged");
+						}
+						// Get Ascii for address
+						const asciiObjs = getAsciiObjsForAddress(address);
+						for(const obj of asciiObjs) {
+							obj.firstChild.textContent = addrVal[2];
+							obj.classList.add("valueChanged");
+						}
+					}
  				}   break;
 
 				case 'foundAddresses':
@@ -804,7 +934,7 @@ window.addEventListener('load', () => {
 					foundAddressesHexObjs = [];
 					for(const address of foundAddresses) {
 						for(let i=0; i<selectedLength; i++) {
-							const objs = document.querySelectorAll("td[address='"+(address+i)+"']");
+							const objs = getHexObjsForAddress(address+i);
 							for(const obj of objs) {
 								foundAddressesHexObjs.push(obj);
 								obj.classList.add("foundAddress");
@@ -815,7 +945,7 @@ window.addEventListener('load', () => {
 					foundAddressesAsciiObjs = [];
 					for(const address of foundAddresses) {
 						for(let i=0; i<selectedLength; i++) {
-							const objs =document.querySelectorAll("span[address='"+(address+i)+"']");
+							const objs = getAsciiObjsForAddress(address+i);
 							for(const obj of objs) {
 								foundAddressesAsciiObjs.push(obj);
 								obj.classList.add("foundAddressAscii");
@@ -872,8 +1002,31 @@ window.addEventListener('load', () => {
 		if (!metaBlock.data)
 			return '';
 
+		const addressColor = Settings.launch.memoryViewer.addressColor;
+		const asciiColor = Settings.launch.memoryViewer.asciiColor;
+		const bytesColor = Settings.launch.memoryViewer.bytesColor;
+		const changedColor = "red";
+
 		const format =
-			`			<table style="">
+			`
+			<style>
+			td {
+				color: ${bytesColor};
+			}
+			td span {
+				color: ${asciiColor};
+			}
+			.addressClmn {
+				color: ${addressColor};
+				border-radius: 3px;
+				cursor: pointer;
+			}
+			.valueChanged {
+				background-color: ${changedColor};
+			}
+			</style>
+
+			<table>
 				<colgroup>
 					<col>
 					<col width="10em">
@@ -893,10 +1046,6 @@ window.addEventListener('load', () => {
 		const data = metaBlock.data;
 		const len = data.length;
 
-		const addressColor = Settings.launch.memoryViewer.addressColor;
-		const asciiColor = Settings.launch.memoryViewer.asciiColor;
-		const bytesColor = Settings.launch.memoryViewer.bytesColor;
-
 		// Table column headers
 		let clmStart = address % clmns;	// Usually 0
 		table += '<tr>\n<th>Address:</th> <th></th>';
@@ -915,7 +1064,7 @@ window.addEventListener('load', () => {
 			if (i == 0) {
 				// start of a new line
 				let addrText = Utility.getHexString(addr64k, 4) + ':';
-				table += '<tr>\n<td addressLine="' + addr64k + '" style="color:' + addressColor + '; border-radius:3px; cursor: pointer" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
+				table += '<tr>\n<td class="addressClmn" addressLine="' + addr64k + '" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
 				table += '<td> </td>\n';
 				ascii = '';
 			}
@@ -934,20 +1083,8 @@ window.addEventListener('load', () => {
 			if (Labels.getLabelsForNumber64k(addr64k).length > 0)
 				valueText = this.addEmphasizeLabelled(valueText);
 
-			// Compare with prev value.
-			const prevData = metaBlock.prevData;
-			if (prevData) {
-				if (prevData.length > 0) {
-					const prevValue = prevData[k];
-					if (value != prevValue) {
-						// Change html emphasizes
-						valueText = this.addEmphasizeChanged(valueText);
-					}
-				}
-			}
-
 			// Create html cell
-			table += '<td address="' + addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText + '</td>\n';
+			table += '<td address="' + addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)">' + valueText + '</td>\n';
 
 
 			// Convert to ASCII (->html)
@@ -957,7 +1094,7 @@ window.addEventListener('load', () => {
 			if (i == clmns - 1) {
 				// print ASCII characters.
 				table += '<td> </td>\n';
-				table += '<td style="color:' + asciiColor + '">' + ascii + '</td>\n';
+				table += '<td>' + ascii + '</td>\n';
 				// end of a new line
 				table += '</tr>\n';
 			}
@@ -1115,6 +1252,7 @@ window.addEventListener('load', () => {
 	 * @param origText
 	 * @returns html text that id emphasized.
 	 */
+	// TODO: remove
 	protected addEmphasizeChanged(origText: string,): string {
 		const resText = '<font color="red">' + origText + '</font>';
 		return resText;
