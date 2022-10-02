@@ -230,7 +230,6 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 				case 'code':	// CODE area starts (e.g. interrupt)
 					this.codeAddresses.push(longAddress);
 					break;
-			// TODO: Tests for skip and CODE.
 				default:
 					// Do nothing
 					break;

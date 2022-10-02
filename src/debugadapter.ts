@@ -1973,9 +1973,6 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd == '-wprm') {
 			output = await this.evalWpRemove(tokens);
 		}
-		else if (cmd == '-reveng') {
-			output = await this.evalRevEng(tokens);
-		}
 		else if (cmd == '-sprites') {
 			output = await this.evalSprites(tokens);
 		}
@@ -3110,27 +3107,6 @@ E.g. use "-help -view" to put the help text in an own view.
 
 		// Send response
 		return 'OK';
-	}
-
-
-	/**
-	 * Reverse engineering commands:
-	 * - 'dasm-rst': Disassembles all RST sub routines.
-	 * @param tokens The arguments. E.g. "-reveng dasm-rst"
-	 * @returns A Promise<string> with a text to print.
-	 */
-	// TODO: Doku
-	protected async evalRevEng(tokens: Array<string>): Promise<string> {
-		// Get parameters
-		if (tokens.length < 1)
-			throw Error("Expecting at least 1 argument.");
-		// Evaluate sub command
-		const subcmd = tokens[0];
-		switch (subcmd) {
-		}
-
-		// Error
-		throw Error("Unknwon sub commmand '" + subcmd + "'.");
 	}
 
 

@@ -206,7 +206,6 @@ export class ExceptionBreakpoints {
 		return result;
 	}
 
-	// TODO: Remove debug console commands.
 
 	/**
 	 * LOGPOINTS. Enable/disable.

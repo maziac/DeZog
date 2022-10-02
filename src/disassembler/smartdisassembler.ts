@@ -1067,15 +1067,6 @@ export class SmartDisassembler {
 	}
 
 
-	/**
-	 * Follows the execution path and collects used and unchanged registers.
-	 * @param address The start address of the subroutine.
-	 * @returns
-	 */
-	public getRegisterUsage(address: number) {
-		// TODO
-	}
-
 
 	/** Returns a map with all node subroutines associations used by the starting nodes.
 	 * Infinite depth.
