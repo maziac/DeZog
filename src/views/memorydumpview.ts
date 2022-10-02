@@ -864,6 +864,19 @@ window.addEventListener('load', () => {
 					}
 				 }  break;
 
+				case 'setMemoryTable':
+				{	// Was used in the past instead of 'memorChanged'. I.e.
+					// this sets the whole memory as new data via a html string.
+					// Problem here was that it created new objects which did not
+					// work together with updating the  search results.
+					// Now it is only in used for the register memory view which
+					// has no search.
+
+					// Set table as html string
+			        const tableDiv = document.getElementById("mem_table_"+message.index);
+					tableDiv.innerHTML = message.html;
+ 				}   break;
+
 				case 'memoryChanged':
 				{
 					// Note: This is called on every step, even if no memory has changed.
