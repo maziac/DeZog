@@ -778,7 +778,7 @@ Only evaluated if 'memoryModel' is set to 'CUSTOM'. Chooses the banks and their 
 - 'slots': An array with slots. A slot describes an address range for a bank.
 If more than one bank is defined for a slot then the banks are switchable.
     - "name": An optional name for the slot.
-    - "range": An array with 2 numbers or hex strings that define the start and teh end address of the slot.
+    - "range": An array with 2 numbers or hex strings that define the start and the end address of the slot.
     - "banks": An array with 1 or more bank definitions.
         - "index": A single number to define one bank (with that index) or a range of start and end index to define a couple of banks.
         - "name": The name of the bank as seen in the "Memory Banks" section in the VARIABLE's pane.

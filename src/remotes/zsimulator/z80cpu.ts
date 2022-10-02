@@ -60,7 +60,7 @@ export class Z80Cpu implements Serializable {
 	 * @param memory The Z80 memory.
 	 * @param ports The Z80 ports.
 	 * @param vertInterruptFunc An optional function that is called on a vertical interrupt.
-	 * Can be used by teh caller to sync the display.
+	 * Can be used by the caller to sync the display.
 	 */
 	constructor(memory: SimulatedMemory, ports: Z80Ports, vertInterruptFunc = () => {}) {	// NOSONAR
 		this.vertInterruptFunc = vertInterruptFunc;
@@ -335,7 +335,7 @@ export class Z80Cpu implements Serializable {
 	set interruptOccurred(value) {this.z80.interruptOccurred = value;}
 	get interruptOccurred() {return this.z80.interruptOccurred;}
 
-	
+
 	/**
 	 * Simulates pulsing the processor's INT (or NMI) pin.
 	 * Is called for the ULA vertical sync and also from custom code.
