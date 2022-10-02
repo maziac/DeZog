@@ -12,31 +12,13 @@ const MEM_COLUMNS = 8;
 
 /**
  * A Webview that shows a memory dump.
- * The memory dump can also be edited.
- * There is a rather complex messaging between the webview's html javascript (the webview
- * panel) and the extension (the typescript code):
- * - Display:
- * 		- Register coloring: If the address of a value is the same as a register value it is colored
- * differently. 'setColorsForRegisterPointers' calls 'setAddressColor' in the webview. This is done
- * when the panel is created or updated (each step) or when the webview becomes visible (e.g. if
- * it was hidden).
- * 		- The dump contents is updated on every step ('update').
- * 		- The hovering text (labels etc.): When the mouse is over a value or address the webview asks for the hovering text ('getValueInfoText/getAddressInfoText'.
- * 		This way the calculation of all labels is delayed. A message with the info is sent to the webview ('valueInfoText/addressInfoText').
- * - Editing:
- * 		- On double click the webview turns the cell in editable mode.
- * 		- When the user presses enter the new value is sent from the webview('valueChanged').
- * 		- The value is then changed in the remote and the real value (from the remote) is sent to
- * 		to the webview. The webview will then update all cells with the same address. I.e. if there
- * 		are 2 same cells both are updated.
- * 		- If there are several memory views all are informed about the new value to update their display.
+ * Very similar to MemoryDumpView but shows the memory contents as words.
  *
- * With DeZog 3.0 the search functionality was added to the web view.
- * The search input is still done in bytes, not words. So the same
- * search algorithm can be used. I expect anyway that the search for
- * words is not really useful.
- *
- * See design.md for a sequence chart.
+ * Notes:
+ * - The editing is still done in bytes
+ * - Also the search input is done in bytes
+ * - This makes it easier to re-use stuff from MemoryDumpView
+ * - The hovering on the other side shows the value and previous value as word.
  */
 export class MemoryDumpViewWord extends MemoryDumpView {
 

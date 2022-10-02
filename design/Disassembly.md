@@ -118,10 +118,10 @@ The disassembler cannot analyze this. For one it would require a dynamic analysi
 For now the disassembly simply goes on after the RST instruction. This could lead into a wrong disassembly, e.g. a (1 byte) instruction is decoded that is not existing or, even more problematic), e.g. a non-existing 3 byte instruction is decoded so that also the following instruction is wrongly decoded.
 
 TODO:
-Therefore it is possible in the Settings for the disassemble to specify long addresses for caller routines (i.e. RST and CALL).
-If a CALL/RST calls such an address the PC is adjusted by a given offset.
-Although this is normally only used for RST it could also help on subroutines that use a similar concept.
-Also it is possible to define different addresses for different banks. E.g. in a ZX128K the 2 ROMs may use different offsets.
+Therefore it is possible to use some pseudo commands in the rev-eng.list file:
+'SKIP' or 'SKIPWORD'.
+It makes the disassembler skip a certain byte during disassembly and not interprete it as new opcode.
+See ['SKIP' or 'SKIPWORD'](../documentation/ReverseEngineeringUsage.md#skip-or-skipword)
 
 
 #### Branching into Paged Banks
