@@ -290,8 +290,7 @@ export class MemoryDumpView extends BaseView {
 	}
 
 
-	/**
-	 * View is informed that a register has changed (manually).
+	/** View is informed that a register has changed (manually).
 	 */
 	public async updateRegisterChanged(): Promise<void> {
 		// Set colors for register pointers

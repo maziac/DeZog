@@ -1808,6 +1808,7 @@ Note:
 "commandsAfterLaunch": [
     "-rmv"
 ]
+- The register memory view (-rmv) lacks the search bar, highlighting of changed values and showing previous values when hovering.
 ~~~
 
 
