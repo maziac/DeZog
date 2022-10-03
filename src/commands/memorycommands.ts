@@ -3,6 +3,7 @@ import {MemoryDump} from '../misc/memorydump';
 import {Utility} from "../misc/utility";
 import {Remote} from "../remotes/remotebase";
 import {Settings} from "../settings/settings";
+import {BaseView} from '../views/baseview';
 import {MemoryDeltaView} from "../views/memorydeltaview";
 import {MemoryDumpView} from "../views/memorydumpview";
 import {MemoryDumpViewWord} from "../views/memorydumpviewword";
@@ -287,6 +288,9 @@ export class MemoryCommands {
 
 		await this.memSet(1, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/);
 
+		// Update possibly memory views
+		BaseView.staticCallUpdateFunctions();
+
 		return 'OK';
 	}
 
@@ -311,6 +315,9 @@ export class MemoryCommands {
 		}
 
 		await this.memSet(2, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/, tokens[3] /*endianness*/);
+
+		// Update possibly memory views
+		BaseView.staticCallUpdateFunctions();
 
 		return 'OK';
 	}
