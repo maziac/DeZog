@@ -1793,7 +1793,7 @@ A search is done on the given memory range.
 You can search for strings or byte sequences and you can also search for a mix of strings and bytes.
 ![](images/memoryviewer_search1.jpg)
 
-To search for a string use quotation marks, e.g. ```"abcde"```. A sequence of bytes is simply separated by a space. Bytes can be entered as decimal (e.g. ```193```) or hex (e.g. ```$AF```, ```AFh``` or ```0xAF```). Only positive values are allowed and they must be smaller than 256.
+To search for a string use quotation marks, e.g. ```"abcde"```. A sequence of bytes is simply separated by a space. Bytes can be entered as decimal (e.g. ```193```) or hex (e.g. ```$AF```, ```AFh``` or ```0xAF```). Only positive values are allowed and they must be smaller than 256. (If you want to search for a " you need to escape it, e.g. use "\\"".
 
 Use
 - ![](images/memoryviewer_search_option_case.jpg) for a case sensitive search. Note that this option works on the whole search sequence, i.e. not only on the strings. E.g. if you have a sequence  ```61h 62h``` ("ab") also ```41h 42h``` ("AB") will be found. The default is ON.
@@ -1804,12 +1804,13 @@ Use
 Note:
 - The memory views always work in the 64k area. I.e. they don't use 'long addresses' (banks).
 - If you want to launch the register memory view every time you start a debug session then add it to the "commandsAfterLaunch" in the launch.json. E.g.
-~~~json
-"commandsAfterLaunch": [
-    "-rmv"
-]
+    ~~~json
+    "commandsAfterLaunch": [
+        "-rmv"
+    ]
+    ~~~
 - The register memory view (-rmv) lacks the search bar, highlighting of changed values and showing previous values when hovering.
-~~~
+
 
 
 ##### Memory Editor

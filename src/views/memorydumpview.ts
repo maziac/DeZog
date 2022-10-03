@@ -383,7 +383,7 @@ export class MemoryDumpView extends BaseView {
 
 body.vscode-dark {
 	--foundAddressBgColor: lightcoral;
-	--selectedAddressBgColor: red;
+	--selectedAddressBgColor: #B73333;
 	--searchOptionButtonChecked: var(--vscode-button-background);
 }
 

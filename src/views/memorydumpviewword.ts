@@ -167,7 +167,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				firstAddress = addr64k2;
 				secondAddress = addr64k;
 			}
-			valueText = '<span address="' + secondAddress + '" ondblclick="makeEditable(this)">' + valueText.substring(0, 2) + '</span><span address="' + firstAddress + '" ondblclick="makeEditable(this)">' + valueText.substring(2, 2+2) + '</span>';
+			valueText = '<span address="' + secondAddress + '">' + valueText.substring(0, 2) + '</span><span address="' + firstAddress + '">' + valueText.substring(2, 2+2) + '</span>';
 
 			// Check if in address range
 			if(metaBlock.isInRange(address))
@@ -180,7 +180,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				valueText = this.addEmphasizeLabelled(valueText);
 
 			// Create html cell
-			table += '<td address="' + addr64k + '" onmouseover="mouseOverValue(this)">' + valueText +'</td>\n';
+			table += '<td address="' + addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)">' + valueText +'</td>\n';
 
 			// Check end of line
 			if (i == MEM_COLUMNS-1) {
@@ -269,11 +269,15 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 
 		function focusLost(e) {	// = "blur"
 			// Undo: Use previous value
-			if(prevValue.length > 0) {
-				// Inner text object
-				const textObj = curObj.firstChild;
-				textObj.textContent = prevValue;
-			}
+			if(prevValue.length > 0)
+				curObj.innerHTML = prevValue;
+
+			//if(prevValue.length > 0) {
+			//	// Inner text object
+			//	const textObj = curObj.firstChild;
+			//	textObj.textContent = prevValue;
+			//}
+
 			curObj.contentEditable = false;
 			curObj.removeEventListener("blur", focusLost);
 			curObj.removeEventListener("keypress", keyPress);
@@ -283,11 +287,17 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		function makeEditable(obj) {
 			// makes the object editable on double click.
 			curObj = obj;	// store object for use in other functions
+
+			prevValue = curObj.innerHTML;	// store for undo
+			if(!curObj.innerText.endsWith('h'))
+				curObj.innerText += 'h';
+
 			// Inner text object
-			const textObj = curObj.firstChild;
-			prevValue = textObj.textContent;	// store for undo
-			if(!textObj.textContent.endsWith('h'))
-				textObj.textContent += 'h';
+			//const textObj = curObj.firstChild;
+			//prevValue = textObj.textContent;	// store for undo
+			//if(!textObj.textContent.endsWith('h'))
+			//	textObj.textContent += 'h';
+
 			curObj.contentEditable = true;
 			curObj.focus();
 			selection = window.getSelection();    // Save the selection.
@@ -434,4 +444,34 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		return html;
 	}
 
+
+	/**
+	 * The web view posted a message to this view.
+	 * Most events are simply passed to the parent object.
+	 * But the 'valueChanged' is event is evaluated because a different
+	 * range (word) is allowed.
+	 * @param message The message. message.command contains the command as a string.
+	 */
+	protected async webViewMessageReceived(message: any) {
+		switch (message.command) {
+			case 'valueChanged':
+				try {
+					// Change memory: value is a word
+					const address = parseInt(message.address);
+					const value = Utility.evalExpression(message.value);
+					// Write a word: 2 bytes (no check required, evalExpression masks internally with 0xFFFF)
+					await this.changeMemory(address, value & 0xFF);
+					await this.changeMemory((address + 1) & 0xFFFF, (value >> 8) & 0xFF);	// Masking is still required here
+				}
+				catch (e) {
+					vscode.window.showWarningMessage("Could not evaluate: '" + message.value + "'");
+				}
+				break;
+
+			default:
+				// Handle by parent
+				super.webViewMessageReceived(message);
+				break;
+		}
+	}
 }
