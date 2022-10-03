@@ -1949,7 +1949,7 @@ export class DebugSessionClass extends DebugSession {
 			output = await MemoryCommands.evalMemViewByte(tokens);
 		}
 		else if (cmd == '-mvd') {
-			output = await MemoryCommands.evalMemViewDelta(tokens);
+			output = await MemoryCommands.evalMemViewDiff(tokens);
 		}
 		else if (cmd == '-mvw') {
 			output = await MemoryCommands.evalMemViewWord(tokens);

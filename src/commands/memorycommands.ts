@@ -85,20 +85,30 @@ export class MemoryCommands {
 		// Check for errors
 		if (!addresses)
 			throw Error("Some problem occurred during search.");
-		if (addresses.length)
+		if (addresses.length == 0)
 			throw Error("Sequence not found.");
 
-		// 'Print'
-		let output = '';
+		// Combine similar findings, e.g. "mik" is found in 2 locations. If both locations start with
+		// the same value (e.g. "M") they can be merged.
+		const valueOffsets = new Set<number>();
 		for (const addr64k of addresses) {
 			// Calculate offset
 			const index = addr64k - startAddress;
 			const valOffset = searchInputData[0] - data[index];
+			valueOffsets.add(valOffset);
+		}
+
+		// 'Print'
+		let output = '';
+		const clmns = 16;
+		for (const valOffset of valueOffsets) {
+			// Print offset
+			output += 'OFFSET: ' + valOffset + ' (' + Utility.getHexString(valOffset & 0xFF, 2) + 'h)\n';
 			// Print complete range
 			for (let i = 0; i < size;) {
 				// Print address
 				const addr = startAddress + i;
-				const remainder = addr % 16;
+				const remainder = addr % clmns;
 				const addrShow = addr - remainder;
 				const addrString = Utility.getHexString(addrShow, 4);
 				output += addrString + ': ';
@@ -108,15 +118,23 @@ export class MemoryCommands {
 				output += '   '.repeat(remainder);
 				let ascii = ' '.repeat(remainder);
 				// Print values
-				for (let k = remainder; k < 16; k++) {
+				for (let k = remainder; k < clmns; k++) {
+					// Check if too big
+					if (i >= size) {
+						// End
+						output += '   '.repeat(clmns - k);
+						break;
+					}
 					// Calculate value with offset
-					const modValue = data[i++] + valOffset;
-					output += Utility.getHexString(modValue, 2);
-					ascii += Utility.getHTMLChar(modValue);
+					const modValue = (data[i++] + valOffset) & 0xFF;
+					output += Utility.getHexString(modValue, 2) + ' ';
+					ascii += Utility.getASCIIChar(modValue);
 				}
 				// Add ASCII
-				output += ascii + '\n';
+				output += ' ' + ascii + '\n';
 			}
+			// Newline
+			output += '\n';
 		}
 
 		// Send response
@@ -411,13 +429,12 @@ export class MemoryCommands {
 	}
 
 
-	/**
-	 * Shows a view with a memory dump that can be used for comparison
+	/** Shows a view with a memory dump that can be used for comparison
 	 * at different times.
 	 * @param tokens The arguments. I.e. the address and size.
 	 * @returns A Promise with a text to print.
 	 */
-	public static async evalMemViewDelta(tokens: Array<string>): Promise<string> {
+	public static async evalMemViewDiff(tokens: Array<string>): Promise<string> {
 		// Check count of arguments
 		if (tokens.length == 0) {
 			// Error Handling: No arguments
