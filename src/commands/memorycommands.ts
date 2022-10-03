@@ -77,7 +77,7 @@ export class MemoryCommands {
 		md.metaBlocks[0].data = data;
 
 		// Delta search
-		const searchInputData = md.parseSearchInput(searchString);
+		const searchInputData = md.parseSearchInput('"' + searchString + '"');
 		const found = md.searchData(searchInputData, true, false, true);
 		const addresses = found.addresses;
 

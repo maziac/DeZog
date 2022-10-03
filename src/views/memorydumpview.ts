@@ -380,6 +380,19 @@ export class MemoryDumpView extends BaseView {
 	protected createSearchHtml(): string {
 		return `
 <style>
+
+body.vscode-dark {
+	--foundAddressBgColor: lightcoral;
+	--selectedAddressBgColor: red;
+	--searchOptionButtonChecked: var(--vscode-button-background);
+}
+
+body.vscode-light {
+	--foundAddressBgColor: #FFCACA;
+	--selectedAddressBgColor: #FD8C8C;
+	--searchOptionButtonChecked: #81DFFF;
+}
+
 .searchWidget {
 	user-select: none;
 	font-family: Arial;
@@ -408,6 +421,7 @@ export class MemoryDumpView extends BaseView {
 .searchInput {
 	font-family: Arial;
 	color: white;
+    color: var(--vscode-editor-foreground);
 	background-color: var(--vscode-input-background);
 	border-color: transparent;
     vertical-align: middle;
@@ -431,7 +445,7 @@ export class MemoryDumpView extends BaseView {
 	background-color: var(--vscode-badge-background);
 }
 .optionButtonChecked {
-  	background-color: var(--vscode-button-background);
+  	background-color: var(--searchOptionButtonChecked);
 }
 .optionButtonChecked:hover {
   	background-color: var(--vscode-button-hoverBackground);
@@ -470,18 +484,18 @@ export class MemoryDumpView extends BaseView {
 }
 
 .foundAddress {
-  	background-color: var(--vscode-editor-findMatchHighlightBackground);
 	border-radius: 3px;
+  	background-color: var(--foundAddressBgColor);
 }
 .foundAddressAscii {
-  	background-color: var(--vscode-editor-findMatchHighlightBackground);
+  	background-color: var(--foundAddressBgColor);
 }
 .selectedAddress {
-  	background-color: var(--vscode-editor-findMatchBackground);
 	border-radius: 3px;
+  	background-color: var(--selectedAddressBgColor);
 }
 .selectedAddressAscii {
-  	background-color: var(--vscode-editor-findMatchBackground);
+  	background-color: var(--selectedAddressBgColor);
 }
 </style>
 
