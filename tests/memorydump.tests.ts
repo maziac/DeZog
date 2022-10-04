@@ -1,6 +1,7 @@
 
 import * as assert from 'assert';
 import {FoundAddresses, MemoryDump} from '../src/misc/memorydump';
+import {MetaBlock} from '../src/misc/metablock';
 
 suite('MemoryDump', () => {
 
@@ -882,5 +883,38 @@ suite('MemoryDump', () => {
 				assert.equal(vals[2][1], 1);
 			});
 		})
+	});
+
+
+	suite('clone', () => {
+
+		function checkMetaBlockEqual(base: MetaBlock, clone: MetaBlock) {
+			assert.equal(clone.address, base.address);
+			assert.equal(clone.size, base.size);
+			const mbLen = clone.memBlocks.length;
+			assert.equal(mbLen, base.memBlocks.length);
+			for (let i = 0; i < mbLen; i++) {
+				//assert.equal(JSON.stringify(clone.memBlocks[i]), JSON.stringify(base.memBlocks[i]));
+				assert.deepStrictEqual(clone.memBlocks[i], base.memBlocks[i]);
+				// But "pointers" are not equal
+				assert.notEqual(clone.memBlocks[i], base.memBlocks[i]);
+			}
+			// But "pointers" are not equal
+			assert.notEqual(clone.memBlocks, base.memBlocks);
+
+			// Also prevdata
+
+
+			assert.equal(clone.title, base.title);
+
+		}
+
+
+		test('metaBlock', () => {
+			let mb = new MetaBlock(1, 2, [], 'title1');
+			let clone = mb.clone();
+			checkMetaBlockEqual(clone, mb);
+
+		});
 	});
 });

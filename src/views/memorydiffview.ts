@@ -1,3 +1,4 @@
+import {MemoryDump} from '../misc/memorydump';
 import {MemoryDumpView} from './memorydumpview';
 
 
@@ -9,6 +10,11 @@ import {MemoryDumpView} from './memorydumpview';
  *
  */
 export class MemoryDiffView extends MemoryDumpView {
+
+	/// The previous memory dump. I.e. the base to compare the current
+	// memory to.
+	protected baseMemDump: MemoryDump;
+
 
 	/** Creates the basic panel.
 	 */
@@ -22,6 +28,26 @@ export class MemoryDiffView extends MemoryDumpView {
 	 */
 	protected createSearchHtml(): string {
 		return '';
+	}
+
+
+	/** Additionally stores (copies) the base memory dump.
+	 * @param reason Not used.
+	 */
+	public async update(reason?: any): Promise<void> {
+		await super.update(reason);
+		// Store memory
+		if (!this.baseMemDump) {
+			this.copyToBaseMemory();
+		}
+	}
+
+
+	/** Copies this.memDump to the baseMemDump.
+	 * Both structure and contents.
+	 */
+	protected copyToBaseMemory() {
+		this.baseMemDump = this.memDump.clone();
 	}
 }
 

@@ -48,6 +48,25 @@ export class MetaBlock {
 	}
 
 
+	/** Copies the MetaBlock object (structure and contents) to a new MetaBlock object.
+	 * Deep copy.
+	 * @returns a new MetaBlock object.
+	 */
+	public clone(): MetaBlock {
+		// Copy memblocks
+		const memBlocks = new Array<MemBlock>();
+		for (const mb of this.memBlocks)
+			memBlocks.push({...mb});
+		const clone = new MetaBlock(this.address, this.size, memBlocks, this.title);
+
+		// Copy data
+		if(this.data)
+			clone.data = new Uint8Array(this.data);
+
+		return clone;
+	}
+
+
 	/**
 	 * Searches all memory blocks of a meta block.
 	 * If address is in range of one memory block it returns true.

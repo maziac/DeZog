@@ -26,6 +26,23 @@ export class MemoryDump {
 	public metaBlocks = Array<MetaBlock>();	///< An array with all meta blocks which contain the mem dumps.
 
 
+	/** Copies the MemoryDump object (structure and contents) to a new MemoryDump object.
+	 * Deep copy.
+	 * @returns a new MemoryDump object.
+	 */
+	public clone(): MemoryDump {
+		const clone = new MemoryDump();
+
+		// Copy metablocks
+		for (const mb of this.metaBlocks) {
+			const mbClone = mb.clone();
+			clone.metaBlocks.push(mbClone);
+		}
+
+		return clone;
+	}
+
+
 	/**
 	 * Remove all memory blocks.
 	 */
