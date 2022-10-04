@@ -319,7 +319,7 @@ A comment is started with ';'.
 
 TODO: Implement multiline comments
 
-## Special Commands
+## Special Listfile Commands
 
 DeZog understands a few special commands:
 
@@ -380,4 +380,52 @@ You can combine that with a label, of course:
 ~~~list
 0066.R0 interrupt: CODE
 ~~~
+
+
+# Misc
+
+## Delta Search
+
+The idea behind the delta search is to search the memory for strings that are not ASCII encoded.
+The only assumption done is that the characters are in a standard order.
+
+For a delta search you enter a string with minimum 2 characters.
+Then the deltas between the characters are taken and the memory is searched for a sequence with the same deltas.
+
+Example:
+"MIK" has the deltas:
+- 'M' to 'I': -4
+- 'I' to 'K': 2
+
+When searching the following sequences would be found:
+- 10, 6, 8
+- 204, 200, 202
+- "MIK"
+- "mik"
+- "njl"
+- etc.
+
+If you have a memory view open ("-mv address size") you can activate the delta search with the
+![](images/memoryviewer_search_option_delta.jpg)
+symbol.
+
+When you have identified a memory region that matches you can also "decode" that area in the debug console.
+The command is "-mdelta address size string". E.g.
+~~~
+-mv C000h 256 MIK
+~~~
+
+This command will once again search for the sequence but additional dump out the memory area with the found offset.
+The offset is the first search string character subtracted by the memory value at the found location.
+I.e. in the memory dump you will get a "MIK" dumped out even if the found string was "njl".
+Not only the found string is dumped with the offset but also all of the other memory values.
+
+"So, what's the use of it all?"
+
+Imagine you know only a part of the string that is being used.
+Or you know for sure that one string is included but you don't kow what the other strings are.
+Doing the delta memory dump ("-mdelta") will decode also the rest and you can easily see where the other strings are located.
+
+For MAME games you could use this to find the high score tables.
+If you know one of the 3 letter gamer tags you can easily locate the whole high score table.
 

@@ -37,7 +37,7 @@ export class MemoryCommands {
 	 * and converts the range afterwards by the found offset.
 	 * This is to find hiscore names in memory when the text is not
 	 * ASCII encoded. In this case most probably at least the
-	 * differences between teh characters can be found.
+	 * differences between the characters can be found.
 	 * If something is found the whole memory is printed with
 	 * the given offset. Making it possible to see also the other
 	 * hiscore names.

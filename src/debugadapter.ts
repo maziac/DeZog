@@ -2342,6 +2342,14 @@ the value correspondends to a label.
 "-label|-l XXX": Returns the matching labels (XXX) with their values. Allows wildcard "*".
 "-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes.
   But if chosen, words are output. Last argument is the endianness which is little endian by default.
+"-mdelta address size string": This does a 'delta' search on the address range. The memory is searched for byte
+  sequences that contain the same deltas as the given string. E.g. if you would search for "MIK" not only "MIK"
+  would be found but also "mik" or "njl". The whole memory is dumped but all values are adjusted by an offset to
+  match the searched string. If several sequences are found the memory might be dumped several times.
+  The idea is to find strings also if they are not coded as ASCII sequence but with some other, unknown coding
+  scheme.
+Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes.
+  But if chosen, words are output. Last argument is the endianness which is little endian by default.
 "-msetb address value [repeat]:"
 	- address: The address to fill. Can also be a label or expression.
 	- value: The byte value to set.
