@@ -62,7 +62,7 @@ export class MemoryDumpView extends BaseView {
 	// Last search options:
 	protected caseSensitive: boolean;
 	protected zeroTerminated: boolean;
-	protected diff: boolean;
+	protected delta: boolean;
 
 
 	/**
@@ -135,11 +135,11 @@ export class MemoryDumpView extends BaseView {
 						// Copy options
 						this.caseSensitive = message.caseSensitive;
 						this.zeroTerminated = message.zeroTerminated;
-						this.diff = message.diff;
+						this.delta = message.delta;
 						// Parse input string
 						this.searchDataInput = this.memDump.parseSearchInput(message.searchText);
 						// Search all addresses
-						this.foundAddresses = this.memDump.searchData(this.searchDataInput, this.caseSensitive, this.zeroTerminated, this.diff);
+						this.foundAddresses = this.memDump.searchData(this.searchDataInput, this.caseSensitive, this.zeroTerminated, this.delta);
 					}
 					catch (e) {
 						this.foundAddresses = {
@@ -169,7 +169,7 @@ export class MemoryDumpView extends BaseView {
 			// Only if there is something to search
 			if (this.searchDataInput.length > 0) {
 				// Do a new search
-				const currentFound = this.memDump.searchData(this.searchDataInput, this.caseSensitive, this.zeroTerminated, this.diff);
+				const currentFound = this.memDump.searchData(this.searchDataInput, this.caseSensitive, this.zeroTerminated, this.delta);
 				// Checks if search results have changed
 				const len = currentFound.addresses.length;
 				let changed = (this.foundAddresses.addresses.length != len);
@@ -382,7 +382,7 @@ export class MemoryDumpView extends BaseView {
 <style>
 
 body.vscode-dark {
-	--foundAddressBgColor: lightcoral;
+	--foundAddressBgColor: #8C4E4E;
 	--selectedAddressBgColor: #B73333;
 	--searchOptionButtonChecked: var(--vscode-button-background);
 }
@@ -507,7 +507,7 @@ let prevSelectedAscii = [];
 // Values of option buttons
 let caseSensitive = false;
 let zeroTerminated = false;
-let diff = false;
+let delta = false;
 
 
 function sendSearchText(searchObj) {
@@ -518,7 +518,7 @@ function sendSearchText(searchObj) {
 		searchText,
 		caseSensitive: caseSensitive,
 		zeroTerminated: zeroTerminated,
-		diff: diff
+		delta: delta
 	});
 }
 
@@ -625,10 +625,10 @@ function toggleButtonCaseSensitive(obj) {
 	toggleButton(obj);
 	caseSensitive = obj.checked;
 	if(!caseSensitive) {
-		// Not together with diff
-		const diffObj = document.getElementById("diff");
-		setCheckedState(diffObj, false);
-		diff = false;
+		// Not together with delta
+		const deltaObj = document.getElementById("delta");
+		setCheckedState(deltaObj, false);
+		delta = false;
 	}
 	const searchObj = document.getElementById("searchInput");sendSearchText(searchObj);
 }
@@ -637,18 +637,19 @@ function toggleButtonZeroTerminated(obj) {
 	toggleButton(obj);
 	zeroTerminated = obj.checked;
 	if(zeroTerminated) {
-		// Not together with diff
-		const diffObj = document.getElementById("diff");
-		setCheckedState(diffObj, false);
-		diff = false;
+		// Not together with delta
+		const deltaObj = document.getElementById("delta");
+		setCheckedState(deltaObj, false);
+		delta = false;
 	}
-	const searchObj = document.getElementById("searchInput");sendSearchText(searchObj);
+	const searchObj = document.getElementById("searchInput");
+	sendSearchText(searchObj);
 }
 
-function toggleButtonDiff(obj) {
+function toggleButtonDelta(obj) {
 	toggleButton(obj);
-	diff = obj.checked;
-	if(diff) {
+	delta = obj.checked;
+	if(delta) {
 		// Not together with case and zero
 	 	const caseObj = document.getElementById("caseSensitive");
 		setCheckedState(caseObj, true);
@@ -657,7 +658,8 @@ function toggleButtonDiff(obj) {
 		setCheckedState(zeroObj, false);
 		zeroTerminated = false;
 	}
-	const searchObj = document.getElementById("searchInput");sendSearchText(searchObj);
+	const searchObj = document.getElementById("searchInput");
+	sendSearchText(searchObj);
 }
 
 
@@ -690,7 +692,7 @@ window.addEventListener('load', () => {
 
 		<span id="caseSensitive" class="optionButton" title="Match Case" onclick="toggleButtonCaseSensitive(this)">Aa</span>
 		<span id="zeroTerminated" class="optionButton" title="Zero terminated" onclick="toggleButtonZeroTerminated(this)">0</span>
-    	<span id="diff" class="optionButton" title="Search differences as in given sequence" onclick="toggleButtonDiff(this)" style="font-size: 0.9em;">ᐃ</span>
+    	<span id="delta" class="optionButton" title="Search differences as in given sequence" onclick="toggleButtonDelta(this)" style="font-size: 0.9em;">ᐃ</span>
 	</span>
 	<span class="searchNumberInfo" id="searchNumberInfo">2 of 63</span>
 	&nbsp;
