@@ -4,7 +4,7 @@ import {Utility} from "../misc/utility";
 import {Remote} from "../remotes/remotebase";
 import {Settings} from "../settings/settings";
 import {BaseView} from '../views/baseview';
-import {MemoryDeltaView} from "../views/memorydeltaview";
+import {MemoryDiffView} from "../views/memorydiffview";
 import {MemoryDumpView} from "../views/memorydumpview";
 import {MemoryDumpViewWord} from "../views/memorydumpviewword";
 import {MemoryRegisterView} from "../views/memoryregisterview";
@@ -461,7 +461,7 @@ export class MemoryCommands {
 		}
 
 		// Create new view
-		const panel = new MemoryDeltaView();
+		const panel = new MemoryDiffView();
 		for (let k = 0; k < tokens.length; k += 2) {
 			const start = addrSizes[k];
 			const size = addrSizes[k + 1]

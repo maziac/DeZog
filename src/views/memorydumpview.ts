@@ -298,8 +298,7 @@ export class MemoryDumpView extends BaseView {
 	}
 
 
-	/**
-	 * Retrieves the memory content and displays it.
+	/** Retrieves the memory content and displays it.
 	 * @param reason Not used.
 	 */
 	public async update(reason?: any): Promise<void> {

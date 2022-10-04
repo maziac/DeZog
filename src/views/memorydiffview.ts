@@ -8,14 +8,20 @@ import {MemoryDumpView} from './memorydumpview';
  * decremented since last t ime are shown.
  *
  */
-export class MemoryDeltaView extends MemoryDumpView {
+export class MemoryDiffView extends MemoryDumpView {
 
-	/**
-	 * Creates the basic panel.
+	/** Creates the basic panel.
 	 */
 	constructor() {
 		super();
+		this.vscodePanel.title = 'Diff View: ' + this.vscodePanel.title;
 	}
 
+
+	/** The search widget is disabled.
+	 */
+	protected createSearchHtml(): string {
+		return '';
+	}
 }
 
