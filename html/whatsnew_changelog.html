@@ -1,16 +1,46 @@
 <li>
-	<span class="changelog-badge changelog-badge-new">NEW</span>
-	<br>Experimental MAME support: You can connect DeZog now to MAME to debug arcade games with Z80 architecture. The connection is done via a socket to the gdbstub inside MAME.
-	See chapter <a href="https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#mame---multiple-machine-arcade-emulator">MAME - Multiple Machine Arcade Emulator</a> for more information.
+	<span class="changelog-badge changelog-badge-new">NEW</span><br>
+	The <strong>3.0</strong> release of DeZog is dedicated to <strong>Reverse Engineering</strong>. A lot of improvements have gone into the internal memory model, the disassembler and the interactive way of disassembling unknown code.
+</li>
+
+<li><span class="changelog-badge changelog-badge-new">NEW</span><br>
+	<strong>Disassembler</strong>: The disassembler follows the execution path. It is able to recognize subroutines and can include
+	defined labels.
+	You can interactively create own list files with comments from the disassembly.
 </li>
 
 <li>
-	<span class="changelog-badge changelog-badge-changed">CHANGED</span>
-	<br>Changed name of disassembly from 'disasm.asm' to 'disasm.list'.
+	<span class="changelog-badge changelog-badge-new">NEW</span><br>
+	<strong>Call Graphs</strong>: Show a call graph of a subroutine. You can interactively change the calling depth.
 </li>
 
 <li>
-	<span class="changelog-badge changelog-badge-fixed">FIXED</span>
-	<br>zsim: Fixed IND, INI, OUTD and OUTI instructions.
+	<span class="changelog-badge changelog-badge-new">NEW</span><br>
+	<strong>Flow Chart</strong>: Show a flowchart of a subroutine.
+</li>
+
+<li>
+	<span class="changelog-badge changelog-badge-new">NEW</span><br>
+	<strong>Smart Disassembly</strong>: Output a smart disassembly into a window. Jumps and calls will be visualized with arrows. Here, as well, you can select different calling depths.
+</li>
+
+<li>
+	<span class="changelog-badge changelog-badge-new">NEW</span><br>
+	Delta Search: An easy way to search for strings with encodings other than ASCII.
+</li>
+
+<li>
+	<span class="changelog-badge changelog-badge-new">NEW</span><br>
+	'zsim' now supports custom memory maps. This offers more simulation opportunities. It is even possible to define custom slot ranges and custom banks. Also customized io based memory switching can be simulated.
+</li>
+
+<li>
+	<span class="changelog-badge changelog-badge-changed">CHANGED</span><br>
+	Memory views now support a search bar.
+</li>
+
+<li>
+	<span class="changelog-badge changelog-badge-fixed">FIXED</span><br>
+	A lot of minor fixes and improvements.
 </li>
 
