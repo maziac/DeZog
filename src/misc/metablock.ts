@@ -60,8 +60,10 @@ export class MetaBlock {
 		const clone = new MetaBlock(this.address, this.size, memBlocks, this.title);
 
 		// Copy data
-		if(this.data)
+		if (this.data)
 			clone.data = new Uint8Array(this.data);
+		if (this.prevData)
+			clone.prevData = new Uint8Array(this.prevData);
 
 		return clone;
 	}

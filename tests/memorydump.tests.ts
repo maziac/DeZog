@@ -888,7 +888,24 @@ suite('MemoryDump', () => {
 
 	suite('clone', () => {
 
-		function checkMetaBlockEqual(base: MetaBlock, clone: MetaBlock) {
+		// Tests that a and b have same elements but references are different.
+		function uint8ArrayEqual(a: Uint8Array | undefined, b: Uint8Array | undefined) {
+			if (a == undefined || b == undefined) {
+				assert.equal(a, b);	// Both need to be undefined
+				return;
+			}
+			const len = a!.length;
+			assert.equal(len, b!.length);
+			for (let i = 0; i < len; i++) {
+				assert.equal(a![i], b![i]);
+			}
+			// Everything equal
+		}
+
+		function checkMetaBlockCloneEqual(base: MetaBlock) {
+			// Clone
+			const clone = base.clone();
+			// And test
 			assert.equal(clone.address, base.address);
 			assert.equal(clone.size, base.size);
 			const mbLen = clone.memBlocks.length;
@@ -902,19 +919,53 @@ suite('MemoryDump', () => {
 			// But "pointers" are not equal
 			assert.notEqual(clone.memBlocks, base.memBlocks);
 
-			// Also prevdata
-
+			// data and prevData
+			uint8ArrayEqual(clone.data, base.data);
+			uint8ArrayEqual(clone.prevData, base.prevData);
 
 			assert.equal(clone.title, base.title);
-
 		}
 
 
-		test('metaBlock', () => {
-			let mb = new MetaBlock(1, 2, [], 'title1');
-			let clone = mb.clone();
-			checkMetaBlockEqual(clone, mb);
+		test('metaBlock empty', () => {
+			const mb = new MetaBlock(1, 2, [], 'title1');
+			checkMetaBlockCloneEqual(mb);
+		});
 
+		test('1 metaBlock', () => {
+			const mb = new MetaBlock(100, 200, [
+				{
+					address: 100,
+					size: 200
+				}
+			]);
+			checkMetaBlockCloneEqual(mb);
+		});
+
+		test('2 metaBlocks', () => {
+			const mb = new MetaBlock(100, 1000, [
+				{
+					address: 100,
+					size: 200
+				},
+				{
+					address: 500,
+					size: 100
+				}
+			]);
+			checkMetaBlockCloneEqual(mb);
+		});
+
+		test('metaBlock and data', () => {
+			const mb = new MetaBlock(100, 5, [
+				{
+					address: 100,
+					size: 5
+				}
+			]);
+			mb.data = new Uint8Array([1, 3, 5, 7, 9]);
+			mb.prevData = new Uint8Array([0, 2, 4, 6, 8]);
+			checkMetaBlockCloneEqual(mb);
 		});
 	});
 });
