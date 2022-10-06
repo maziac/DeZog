@@ -15,7 +15,7 @@
             "problemMatcher": {
                 "fileLocation": [
                     "relative",
-                    "${workspaceRoot}"
+                    "${workspaceFolder}"
                 ],
                 "pattern": {
                     "regexp": "^(.*)\\((\\d+)\\):\\s+(warning|error):\\s+(.*)$",
