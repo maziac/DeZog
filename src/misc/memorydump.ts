@@ -97,9 +97,8 @@ export class MemoryDump {
 		if (size > 0x10000)
 			size = 0x10000;
 		const memBlock = {address: startAddress, size: size, data: []};
-		let bigBlock;
 		// Create one meta block for the memory block
-		bigBlock = new MetaBlock(startAddress, size, [memBlock], title);
+		const bigBlock = new MetaBlock(startAddress, size, [memBlock], title);
 		this.metaBlocks.push(bigBlock);
 	}
 
@@ -281,7 +280,6 @@ export class MemoryDump {
 
 	/**
 	 * Merges the address ranges if they are near to each other.
-ranges.
 	 * Note: During merging the title of one of the blocks is lost. But they are anyway not used in this case.
 	 */
 	public mergeBlocks() {
@@ -317,6 +315,62 @@ ranges.
 
 		// Store
 		this.metaBlocks = biggerBlocks;
+	}
+
+
+	/** Calculates the diff: diffMemDump = this - baseMemDump.
+	 * The type of diff can be selected.
+	 * The baseMemDump is "subtracted" from the this MemoryDump and
+	 * a new MemoryDump is generated.
+	 * baseMemDump and this need to have exactly the same structure.
+	 * I.e. same meta blocks, same ranges. Only contents may differ.
+	 * No check is done that the structure really is the same.
+	 * The caller need to take care.
+	 * The function is only meant to be called by MemoryDiffView.
+	 * @param baseMemDump The MemoryDump to compare against.
+	 * @return A new MemoryDump with only the diff.
+	 */
+	public getDiffMemDump(baseMemDump: MemoryDump): MemoryDump {
+		// TODO: at the moment only "not equal" is implemented
+
+		const addresses = new Map<number, number[]>(); // address -> data[]
+		const mbLen = this.metaBlocks.length;
+		for (let i = 0; i < mbLen; i++) {
+			const baseData = baseMemDump.metaBlocks[i].data!;
+			const data = this.metaBlocks[i].data!;
+			const start = this.metaBlocks[i].address;
+			const len = data!.length;
+			let lastFoundK = -1;
+			let address = -1;
+			for (let k = 0; k < len; k++) {
+				const val = data[k];
+				if (val != baseData[k]) {
+					if (k != lastFoundK + 1) {
+						address = start + k;
+						lastFoundK = k;
+					}
+					let data = addresses.get(address);
+					if (!data) {
+						data = [];
+					}
+					data.push(val);
+					addresses.set(address, data);
+				}
+			}
+		}
+
+		// Create new delta mem dump from addresses
+		const deltaMemDump = new MemoryDump();
+		for (const [address, data] of addresses) {
+			// "Alloc" range
+			deltaMemDump.addBlockWithoutBoundary(address, data.length);
+			// Create Uint8Array
+			deltaMemDump.metaBlocks[-1].data = new Uint8Array(data);
+		}
+
+		// Probably mergeBlocks is not even required.
+
+		return deltaMemDump;
 	}
 
 

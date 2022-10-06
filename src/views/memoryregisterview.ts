@@ -91,16 +91,14 @@ export class MemoryRegisterView extends MemoryDumpView {
 		}
 		else {
 			// Use a different method, because for the register view the ranges may change all the time.
-			const msg = {
-				command: 'setMemoryTable',
-				index: 0,
-				html: ""
-			};
 			let i = 0;
 			for (let metaBlock of this.memDump.metaBlocks) {
 				// Update the block in html
-				msg.html = this.createHtmlTable(metaBlock);
-				msg.index = i;
+				const msg = {
+					command: 'setMemoryTable',
+					index: i,
+					html: this.createHtmlTable(metaBlock)
+				};
 				this.sendMessageToWebView(msg);
 				// Next
 				i++;

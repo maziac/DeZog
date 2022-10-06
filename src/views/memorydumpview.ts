@@ -326,17 +326,7 @@ export class MemoryDumpView extends BaseView {
 			// Create the first time
 			this.setHtml();
 			// Create title
-			if (this.vscodePanel) {
-				// Create from all blocks
-				let title = '';
-				for (let metaBlock of this.memDump.metaBlocks) {
-					if (title)
-						title += ', ';
-					title += metaBlock.title;
-				}
-				title = this.titlePrefix + title;
-				this.vscodePanel.title = title;
-			}
+			this.setPanelTitle();
 		}
 		else {
 			// Update only the changed values
@@ -371,6 +361,23 @@ export class MemoryDumpView extends BaseView {
 
 		// Set colors for register pointers
 		this.setColorsForRegisterPointers();
+	}
+
+
+	/** Create and sets the panel title from the meta block address ranges.
+	 */
+	protected setPanelTitle() {
+		if (this.vscodePanel) {
+			// Create from all blocks
+			let title = '';
+			for (let metaBlock of this.memDump.metaBlocks) {
+				if (title)
+					title += ', ';
+				title += metaBlock.title;
+			}
+			title = this.titlePrefix + title;
+			this.vscodePanel.title = title;
+		}
 	}
 
 
@@ -879,12 +886,13 @@ window.addEventListener('load', () => {
 				 }  break;
 
 				case 'setMemoryTable':
-				{	// Was used in the past instead of 'memorChanged'. I.e.
+				{	// Was used in the past instead of 'memoryChanged'. I.e.
 					// this sets the whole memory as new data via a html string.
 					// Problem here was that it created new objects which did not
 					// work together with updating the  search results.
-					// Now it is only in used for the register memory view which
-					// has no search.
+					// Now it is still used for the register memory view and the
+					// MemoryDiffView which both have no search and both have
+					// potentially changing ranges each step.
 
 					// Set table as html string
 			        const tableDiv = document.getElementById("mem_table_"+message.index);
@@ -999,7 +1007,7 @@ window.addEventListener('load', () => {
 	 * Creates one html table out of a meta block.
 	 * @param index The number of the memory block, starting at 0.
 	 * Used for the id.
-	 * @param metaBlock The block to convert. The templtae takes only the name from it.
+	 * @param metaBlock The block to convert. The template takes only the name from it.
 	 */
 	protected createHtmlTableTemplate(index: number, metaBlock: MetaBlock): string {
 		// Add html body
