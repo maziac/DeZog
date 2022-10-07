@@ -968,4 +968,197 @@ suite('MemoryDump', () => {
 			checkMetaBlockCloneEqual(mb);
 		});
 	});
+
+
+	suite('getDiffMemDump', () => {
+
+		test('empty', () => {
+			const md1 = new MemoryDump();
+			const md2 = md1.clone();
+			const diff = md2.getDiffMemDump(md1);
+			assert.equal(diff.metaBlocks.length, 0);
+		});
+
+		test('no difference', () => {
+			const md1 = new MemoryDump();
+			md1.addBlockWithoutBoundary(100, 200);
+			md1.metaBlocks[0].data = new Uint8Array(200);
+			md1.metaBlocks[0].data[5] = 17;
+			const md2 = md1.clone();
+			const diff = md2.getDiffMemDump(md1);
+			assert.equal(diff.metaBlocks.length, 0);
+		});
+
+		test('1 difference', () => {
+			const md1 = new MemoryDump();
+			md1.addBlockWithoutBoundary(100, 200);
+			md1.metaBlocks[0].data = new Uint8Array(200);
+			md1.metaBlocks[0].data[5] = 17;
+			const md2 = md1.clone();
+			md2.metaBlocks[0].data![5] = 22;
+			const diff = md2.getDiffMemDump(md1);
+			assert.equal(diff.metaBlocks.length, 1);
+			assert.equal(diff.metaBlocks[0].address, 105);
+			assert.equal(diff.metaBlocks[0].size, 1);
+			assert.equal(diff.metaBlocks[0].data![0], 22);
+		});
+
+		test('difference at start', () => {
+			const md1 = new MemoryDump();
+			md1.addBlockWithoutBoundary(100, 200);
+			md1.metaBlocks[0].data = new Uint8Array(200);
+			md1.metaBlocks[0].data[0] = 17;
+			const md2 = md1.clone();
+			md2.metaBlocks[0].data![0] = 22;
+			const diff = md2.getDiffMemDump(md1);
+			assert.equal(diff.metaBlocks.length, 1);
+			assert.equal(diff.metaBlocks[0].address, 100);
+			assert.equal(diff.metaBlocks[0].size, 1);
+			assert.equal(diff.metaBlocks[0].data![0], 22);
+		});
+
+
+		test('difference at end', () => {
+			const md1 = new MemoryDump();
+			md1.addBlockWithoutBoundary(100, 200);
+			md1.metaBlocks[0].data = new Uint8Array(200);
+			md1.metaBlocks[0].data[199] = 17;
+			const md2 = md1.clone();
+			md2.metaBlocks[0].data![199] = 22;
+			const diff = md2.getDiffMemDump(md1);
+			assert.equal(diff.metaBlocks.length, 1);
+			assert.equal(diff.metaBlocks[0].address, 299);
+			assert.equal(diff.metaBlocks[0].size, 1);
+			assert.equal(diff.metaBlocks[0].data![0], 22);
+		});
+
+		test('more differences', () => {
+			const md1 = new MemoryDump();
+			md1.addBlockWithoutBoundary(100, 200);
+			md1.metaBlocks[0].data = new Uint8Array(200);
+			md1.metaBlocks[0].data[5] = 17;
+			md1.metaBlocks[0].data[6] = 18;
+			md1.metaBlocks[0].data[10] = 19;
+			md1.metaBlocks[0].data[11] = 20;
+			md1.metaBlocks[0].data[12] = 21;
+			md1.metaBlocks[0].data[13] = 22;
+			md1.metaBlocks[0].data[20] = 30;
+			md1.metaBlocks[0].data[30] = 31;
+			const md2 = md1.clone();
+
+			md2.metaBlocks[0].data![5] = 117;
+			md2.metaBlocks[0].data![6] = 118;
+
+			md2.metaBlocks[0].data![10] = 119;
+			md2.metaBlocks[0].data![11] = 120;
+			md2.metaBlocks[0].data![12] = 121;
+
+			md2.metaBlocks[0].data![13] = 22;	// Equal
+
+			md2.metaBlocks[0].data![20] = 130;
+
+			md2.metaBlocks[0].data![30] = 131;
+
+			const diff = md2.getDiffMemDump(md1);
+			assert.equal(diff.metaBlocks.length, 4);
+
+			assert.equal(diff.metaBlocks[0].address, 105);
+			assert.deepEqual(Array.from(diff.metaBlocks[0].data!), [117, 118]);
+
+			assert.equal(diff.metaBlocks[1].address, 110);
+			assert.deepEqual(Array.from(diff.metaBlocks[1].data!), [119, 120, 121]);
+
+			assert.equal(diff.metaBlocks[2].address, 120);
+			assert.deepEqual(Array.from(diff.metaBlocks[2].data!), [130]);
+
+			assert.equal(diff.metaBlocks[3].address, 130);
+			assert.deepEqual(Array.from(diff.metaBlocks[3].data!), [131]);
+		});
+
+		test('3 meta blocks', () => {
+			const md1 = new MemoryDump();
+			md1.addBlockWithoutBoundary(100, 200);
+			md1.addBlockWithoutBoundary(300, 100);
+			md1.addBlockWithoutBoundary(1000, 50);
+			md1.metaBlocks[0].data = new Uint8Array(200);
+			md1.metaBlocks[0].data[6] = 18;
+			md1.metaBlocks[0].data[199] = 31;
+			md1.metaBlocks[1].data = new Uint8Array(100);
+			md1.metaBlocks[1].data[0] = 32;
+			md1.metaBlocks[1].data[1] = 33;
+			md1.metaBlocks[2].data = new Uint8Array(50);
+			md1.metaBlocks[2].data[25] = 40;
+			md1.metaBlocks[2].data[26] = 41;
+
+			const md2 = md1.clone();
+
+			md2.metaBlocks[0].data![6] = 19;
+			md2.metaBlocks[0].data![199] = 32;
+			md2.metaBlocks[1].data![0] = 33;
+			md2.metaBlocks[1].data![1] = 34;
+			md2.metaBlocks[2].data![25] = 41;
+			md2.metaBlocks[2].data![26] = 42;
+
+			const diff = md2.getDiffMemDump(md1);
+			assert.equal(diff.metaBlocks.length, 3);
+
+			assert.equal(diff.metaBlocks[0].address, 106);
+			assert.deepEqual(Array.from(diff.metaBlocks[0].data!), [19]);
+
+			assert.equal(diff.metaBlocks[1].address, 299);
+			assert.deepEqual(Array.from(diff.metaBlocks[1].data!), [32, 33, 34]);
+
+			assert.equal(diff.metaBlocks[2].address, 1025);
+			assert.deepEqual(Array.from(diff.metaBlocks[2].data!), [41, 42]);
+		});
+
+		test('meta blocks borders', () => {
+			const md1 = new MemoryDump();
+			md1.addBlockWithoutBoundary(100, 100);
+			md1.addBlockWithoutBoundary(200, 100);
+			md1.addBlockWithoutBoundary(300, 100);
+			md1.addBlockWithoutBoundary(400, 100);
+			md1.addBlockWithoutBoundary(500, 100);
+			md1.metaBlocks[0].data = new Uint8Array(100);
+			md1.metaBlocks[0].data[99] = 31;
+			md1.metaBlocks[1].data = new Uint8Array(100);
+			md1.metaBlocks[1].data[0] = 32;
+			md1.metaBlocks[1].data[99] = 33;
+			md1.metaBlocks[2].data = new Uint8Array(100);
+			md1.metaBlocks[2].data[98] = 34;
+			md1.metaBlocks[2].data[99] = 35;
+			md1.metaBlocks[3].data = new Uint8Array(100);
+			md1.metaBlocks[3].data[0] = 36;
+			md1.metaBlocks[4].data = new Uint8Array(100);
+			md1.metaBlocks[4].data[0] = 37;
+
+			const md2 = md1.clone();
+
+			md2.metaBlocks[0].data![99] = 131;
+			md2.metaBlocks[1].data![0] = 132;
+
+			md2.metaBlocks[1].data![99] = 133;
+
+			md2.metaBlocks[2].data![98] = 134;
+			md2.metaBlocks[2].data![99] = 135;
+			md2.metaBlocks[3].data![0] = 136;
+
+			md2.metaBlocks[4].data![0] = 137;
+
+			const diff = md2.getDiffMemDump(md1);
+			assert.equal(diff.metaBlocks.length, 4);
+
+			assert.equal(diff.metaBlocks[0].address, 199);
+			assert.deepEqual(Array.from(diff.metaBlocks[0].data!), [131, 132]);
+
+			assert.equal(diff.metaBlocks[1].address, 299);
+			assert.deepEqual(Array.from(diff.metaBlocks[1].data!), [133]);
+
+			assert.equal(diff.metaBlocks[2].address, 398);
+			assert.deepEqual(Array.from(diff.metaBlocks[2].data!), [134, 135, 136]);
+
+			assert.equal(diff.metaBlocks[3].address, 500);
+			assert.deepEqual(Array.from(diff.metaBlocks[3].data!), [137]);
+		});
+	});
 });

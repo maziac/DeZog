@@ -335,26 +335,27 @@ export class MemoryDump {
 
 		const addresses = new Map<number, number[]>(); // address -> data[]
 		const mbLen = this.metaBlocks.length;
+		let address = -Number.MAX_SAFE_INTEGER;	// So it is not accidentally matched before it is assigned.
+		let baseAddress = -1;
 		for (let i = 0; i < mbLen; i++) {
 			const baseData = baseMemDump.metaBlocks[i].data!;
 			const data = this.metaBlocks[i].data!;
 			const start = this.metaBlocks[i].address;
 			const len = data!.length;
-			let lastFoundK = -1;
-			let address = -1;
 			for (let k = 0; k < len; k++) {
 				const val = data[k];
 				if (val != baseData[k]) {
-					if (k != lastFoundK + 1) {
-						address = start + k;
-						lastFoundK = k;
+					address++;
+					if (start + k != address) {
+						baseAddress = start + k;
+						address = baseAddress;
 					}
-					let data = addresses.get(address);
+					let data = addresses.get(baseAddress);
 					if (!data) {
 						data = [];
+						addresses.set(baseAddress, data);
 					}
 					data.push(val);
-					addresses.set(address, data);
 				}
 			}
 		}
@@ -365,7 +366,7 @@ export class MemoryDump {
 			// "Alloc" range
 			deltaMemDump.addBlockWithoutBoundary(address, data.length);
 			// Create Uint8Array
-			deltaMemDump.metaBlocks[-1].data = new Uint8Array(data);
+			deltaMemDump.metaBlocks.at(-1)!.data = new Uint8Array(data);
 		}
 
 		// Probably mergeBlocks is not even required.
