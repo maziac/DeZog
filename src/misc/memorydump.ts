@@ -366,7 +366,9 @@ export class MemoryDump {
 		for (const [address, data] of addresses) {
 			// "Alloc" range
 			const size = data.length;
-			const title = Utility.getHexString(address & 0xFFFF, 4) + 'h-' + Utility.getHexString((address + size - 1) & 0xFFFF, 4) + 'h';
+			let title = Utility.getHexString(address & 0xFFFF, 4) + 'h';
+			if (size > 1)
+				title += '-' + Utility.getHexString((address + size - 1) & 0xFFFF, 4) + 'h';
 			deltaMemDump.addBlockWithoutBoundary(address, data.length, title);
 			// Create Uint8Array
 			deltaMemDump.metaBlocks.at(-1)!.data = new Uint8Array(data);

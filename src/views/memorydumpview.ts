@@ -1084,7 +1084,8 @@ window.addEventListener('load', () => {
 		// Create a string with the table itself.
 		let table = '';
 		let address = metaBlock.address;
-		let i = 0;
+		let i = metaBlock.address % MEM_DUMP_BOUNDARY;
+		address -= i;
 		const clmns = MEM_DUMP_BOUNDARY;
 		const data = metaBlock.data;
 		const len = data.length;
@@ -1100,16 +1101,24 @@ window.addEventListener('load', () => {
 
 		// Table contents
 		let ascii = '';
+		let startOfLine = true;
 		for (let k = 0; k < len; k++) {
 			// Address but bound to 64k to forecome wrap arounds
 			const addr64k = address & 0xFFFF;
 			// Check start of line
-			if (i == 0) {
+			if (startOfLine) {
 				// start of a new line
 				let addrText = Utility.getHexString(addr64k, 4) + ':';
 				table += '<tr>\n<td class="addressClmn" addressLine="' + addr64k + '" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
 				table += '<td> </td>\n';
 				ascii = '';
+				startOfLine = false;
+				if (i != 0) {
+					// Draw empty clmns
+					table += '<td></td>\n'.repeat(i);
+					ascii += '<span>&nbsp;</span>'.repeat(i);
+					address += i;
+				}
 			}
 
 			// Print value
@@ -1145,8 +1154,10 @@ window.addEventListener('load', () => {
 			// Next column
 			address++;
 			i++;
-			if (i >= clmns)
+			if (i >= clmns) {
 				i = 0;
+				startOfLine = true;
+			}
 		}
 
 		const html = util.format(format, clmns, table);

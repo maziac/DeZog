@@ -60,6 +60,16 @@ export class MemoryDiffView extends MemoryDumpView {
 	}
 
 
+	/**
+	 * Change to 'withoutBoundary'.
+	 * @param startAddress The address of the memory block.
+	 * @param size The size of the memory block.
+	 */
+	public addBlock(startAddress: number, size: number, title: string) {
+		this.memDump.addBlockWithoutBoundary(startAddress, size, title);
+	}
+
+
 	/** The search widget is disabled.
 	 */
 	protected createSearchHtml(): string {
