@@ -890,13 +890,21 @@ window.addEventListener('load', () => {
 					// this sets the whole memory as new data via a html string.
 					// Problem here was that it created new objects which did not
 					// work together with updating the  search results.
-					// Now it is still used for the register memory view and the
-					// MemoryDiffView which both have no search and both have
-					// potentially changing ranges each step.
+					// Now it is still used for the register memory view
+					// which has no search and potentially may change
+					// range each step.
 
 					// Set table as html string
 			        const tableDiv = document.getElementById("mem_table_"+message.index);
 					tableDiv.innerHTML = message.html;
+ 				}   break;
+
+				case 'setAllTables':
+				{	// Is used by the MemoryDiffView to replace all tables at once.
+
+					// Set table as html string
+			        const allTables = document.getElementById("allTables");
+					allTables.innerHTML = message.html;
  				}   break;
 
 				case 'memoryChanged':
@@ -1146,6 +1154,32 @@ window.addEventListener('load', () => {
 	}
 
 
+	/** Override if it should return a different memory dump.
+	 * @returns html in a string.
+	 */
+	protected getAllHtmlTables(): string {
+		return this.getAllHtmlTablesForDump(this.memDump);
+	}
+
+
+	/** Loops over all MetaBlocks and returns all tables as html string.
+	 * @param md The MeMoryDump to convert.
+	 * @returns html in a string.
+	 */
+	protected getAllHtmlTablesForDump(md: MemoryDump): string {
+		const vertBreak = this.getHtmlVertBreak();
+		let i = 0;
+		let tables;
+		for (let mb of md.metaBlocks) {
+			const table = this.createHtmlTableTemplate(i, mb);
+			tables = (tables) ? tables + vertBreak + table : table;
+			// Next
+			i++;
+		}
+		return tables || '';
+	}
+
+
 	/**
 	 * Sets the html code to display the memory dump.
 	 * Is called only once at creation time as it does not hold the actual data.
@@ -1190,15 +1224,8 @@ window.addEventListener('load', () => {
 		}
 
 		// Loop through all metablocks
-		let tables;
-		const vertBreak = this.getHtmlVertBreak();
-		let i = 0;
-		for (let mb of this.memDump.metaBlocks) {
-			const table = this.createHtmlTableTemplate(i, mb);
-			tables = (tables) ? tables + vertBreak + table : table;
-			// Next
-			i++;
-		}
+		let tables = this.getAllHtmlTables();
+		tables = '<div id="allTables">' + tables + '</div>';
 
 		// Create style section
 		const arr = Settings.launch.memoryViewer.registerPointerColors;

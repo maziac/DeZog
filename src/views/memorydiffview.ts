@@ -67,25 +67,11 @@ export class MemoryDiffView extends MemoryDumpView {
 	}
 
 
-	/**
-	 * Compared to the original this does not create the table itself.
-	 * @param index The number of the memory block, starting at 0.
-	 * Used for the id.
-	 * @param metaBlock The block to convert. The template takes only the name from it.
+	/**Returns the diffMemDump instead.
+	 * @returns html in a string.
 	 */
-	protected createHtmlTableTemplate(index: number, metaBlock: MetaBlock): string {
-		// Add html body
-		let caption = metaBlock.title || '...';
-
-		const html = `
-		<details open="true">
-			<summary>${caption}</summary>
-			<div id="mem_table_${index}">
-
-			</div>
-		</details>
-		`;
-		return html;
+	protected getAllHtmlTables(): string {
+		return this.getAllHtmlTablesForDump(this.diffMemDump);
 	}
 
 
@@ -99,26 +85,26 @@ export class MemoryDiffView extends MemoryDumpView {
 
 		// Create generic html if not yet done (the first time)
 		if (!this.vscodePanel.webview.html) {
+			// For the first view it is enough to shallow copy the diffMemDump
+			this.diffMemDump = this.memDump;
 			// Create the first time
 			this.setHtml();
 		}
+		else {
+			// Calculate the diff
+			this.diffMemDump = this.memDump.getDiffMemDump(this.baseMemDump);
 
-		// Calculate the diff
-		this.diffMemDump = this.memDump.getDiffMemDump(this.baseMemDump);
-
-		// Update the html table
-		let i = 0;
-		for (let metaBlock of this.memDump.metaBlocks) {
-			// Update the block in html
+			// Update the html table
+			const tableHtml = this.getAllHtmlTables();
 			const msg = {
-				command: 'setMemoryTable',
-				index: i,
-				html: this.createHtmlTable(metaBlock)
+				command: 'setAllTables',
+				html: tableHtml
 			};
 			this.sendMessageToWebView(msg);
-			// Next
-			i++;
+
+			// TODO: Ausserdem muss memDump mit withoutBoundary erzeugt werden.
 		}
+
 		// Set colors for register pointers
 		this.setColorsForRegisterPointers();
 	}

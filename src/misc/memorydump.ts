@@ -344,6 +344,7 @@ export class MemoryDump {
 			const len = data!.length;
 			for (let k = 0; k < len; k++) {
 				const val = data[k];
+				//if (val != baseData[k]) {
 				if (val != baseData[k]) {
 					address++;
 					if (start + k != address) {
@@ -364,7 +365,9 @@ export class MemoryDump {
 		const deltaMemDump = new MemoryDump();
 		for (const [address, data] of addresses) {
 			// "Alloc" range
-			deltaMemDump.addBlockWithoutBoundary(address, data.length);
+			const size = data.length;
+			const title = Utility.getHexString(address & 0xFFFF, 4) + 'h-' + Utility.getHexString((address + size - 1) & 0xFFFF, 4) + 'h';
+			deltaMemDump.addBlockWithoutBoundary(address, data.length, title);
 			// Create Uint8Array
 			deltaMemDump.metaBlocks.at(-1)!.data = new Uint8Array(data);
 		}
