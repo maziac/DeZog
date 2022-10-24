@@ -122,7 +122,7 @@ export class MemoryRegisterView extends MemoryDumpView {
 	 * Would be difficult to implement as the ranges change
 	 * when the registers change.
 	 */
-	protected createSearchHtml(): string {
+	protected createInputHtml(): string {
 		return '';
 	}
 }

@@ -117,7 +117,7 @@ export class MemoryDumpView extends BaseView {
 			case 'getValueInfoText':
 				{
 					const address = parseInt(message.address);
-					await this.getValueInfoText(address);
+					await this.getValueInfoText(address, this.memDump);
 				}
 				break;
 
@@ -204,7 +204,7 @@ export class MemoryDumpView extends BaseView {
 	 * Memory blocks are ordered, i.e. the 'memDumps' array is ordered from
 	 * low to high (the start addresses).
 	 * @param startAddress The address of the memory block.
-	 * @param size The size of the memory block.
+	 * @param size The size of the memory block. (Can be 0x10000 max)
 	 */
 	public addBlock(startAddress: number, size: number, title: string) {
 		this.memDump.addBlock(startAddress, size, title);
@@ -225,17 +225,9 @@ export class MemoryDumpView extends BaseView {
 	 * @param value The new value.
 	 */
 	protected async changeMemory(address: number, value: number) {
-		const realValue = await Remote.writeMemory(address, value);
-		// Also update the value and the hovertext in all webviews
-		for (const mdv of MemoryDumpView.MemoryViews) {
-			// Check first if address included at all
-			if (!isNaN(mdv.memDump.getValueFor(address))) {
-				// Update value
-				mdv.memDump.setValueFor(address, realValue);
-			}
-		}
-		// Update html without getting data from remote
-		BaseView.staticCallUpdateWithoutRemote();
+		await Remote.writeMemory(address, value);
+		// Also update the all webviews
+		await BaseView.staticCallUpdateFunctions();
 		// Inform vscode
 		BaseView.sendChangeEvent();
 	}
@@ -244,10 +236,11 @@ export class MemoryDumpView extends BaseView {
 	/**
 	 * Retrieves the value info text (that is the hover text).
 	 * @param address The address for which the info should be shown.
+	 * @param md The MemoryDump to convert.
 	 */
-	protected async getValueInfoText(address: number) {
+	protected async getValueInfoText(address: number, md: MemoryDump) {
 		// Value
-		const value = this.memDump.getValueFor(address);
+		const value = md.getValueFor(address);
 		const valFormattedString = await Utility.numberFormatted('', value, 1, Settings.launch.memoryViewer.valueHoverFormat, undefined);
 		let text = valFormattedString + '\n';
 
@@ -256,12 +249,9 @@ export class MemoryDumpView extends BaseView {
 		text += '@\n' + addrFormattedString;
 
 		// Check for last value
-		const prevValue = this.memDump.getPrevValueFor(address);
+		const prevValue = md.getPrevValueFor(address);
 		if (!isNaN(prevValue)) {
-			if (prevValue != value) {
-				// has changed so add the last value to the hover text
-				text += '\nPrevious value: ' + Utility.getHexString(prevValue, 2) + 'h';
-			}
+			text += '\nPrevious value: ' + Utility.getHexString(prevValue, 2) + 'h';
 		}
 		// Now send the formatted text to the web view for display.
 		const msg = {
@@ -307,7 +297,7 @@ export class MemoryDumpView extends BaseView {
 			// Updates the shown memory dump.
 			const data = await Remote.readMemoryDump(metaBlock.address, metaBlock.size);
 			// Store data
-			metaBlock.prevData = metaBlock.data || new Uint8Array(data);
+			metaBlock.prevData = metaBlock.data || new Uint8Array(data);	// For the first time the same data is copied also to prevData.
 			metaBlock.data = data;
 		}
 
@@ -336,7 +326,6 @@ export class MemoryDumpView extends BaseView {
 			for (const metaBlock of this.memDump.metaBlocks) {
 				// Get changes
 				const addrValues = metaBlock.getChangedValues();
-				// And update
 				// Convert values to [address, hex-text , ascii-text]
 				const addrValsText = addrValues.map(addrVal => [
 					addrVal[0],
@@ -346,7 +335,7 @@ export class MemoryDumpView extends BaseView {
 				// Send to web view
 				const msg = {
 					command: 'memoryChanged',
-					addressValues: addrValsText
+					addressValues: addrValsText	// Is also sent if empty to reset the changed values.
 				};
 				this.sendMessageToWebView(msg);
 				if (addrValues.length > 0)
@@ -383,7 +372,7 @@ export class MemoryDumpView extends BaseView {
 
 	/** Creates the html to display the search widget.
 	 */
-	protected createSearchHtml(): string {
+	protected createInputHtml(): string {
 		return `
 <style>
 
@@ -426,7 +415,6 @@ body.vscode-light {
 }
 .searchInput {
 	font-family: Arial;
-	color: white;
     color: var(--vscode-editor-foreground);
 	background-color: var(--vscode-input-background);
 	border-color: transparent;
@@ -1103,7 +1091,7 @@ window.addEventListener('load', () => {
 		let ascii = '';
 		let startOfLine = true;
 		for (let k = 0; k < len; k++) {
-			// Address but bound to 64k to forecome wrap arounds
+			// Address but bound to 64k to forecome any wrap around
 			const addr64k = address & 0xFFFF;
 			// Check start of line
 			if (startOfLine) {
@@ -1136,11 +1124,11 @@ window.addEventListener('load', () => {
 				valueText = this.addEmphasizeLabelled(valueText);
 
 			// Create html cell
-			table += '<td address="' + addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)">' + valueText + '</td>\n';
+			table += '<td address="' + address + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)">' + valueText + '</td>\n';
 
 
 			// Convert to ASCII (->html)
-			ascii += '<span address="' + addr64k + '" onmouseover="mouseOverValue(this)">' + Utility.getHTMLChar(value) + '</span>';
+			ascii += '<span address="' + address + '" onmouseover="mouseOverValue(this)">' + Utility.getHTMLChar(value) + '</span>';
 
 			// Check end of line
 			if (i == clmns - 1) {
@@ -1256,7 +1244,7 @@ window.addEventListener('load', () => {
 		}
 
 		// Add search widget
-		const searchHtml = this.createSearchHtml();
+		const searchHtml = this.createInputHtml();
 
 		// Add functions
 		const scripts = this.createHtmlScript();

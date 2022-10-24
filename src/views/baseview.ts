@@ -61,18 +61,6 @@ export class BaseView {
 
 
 	/**
-	 * Updates all views but without getting values from the
-	 * Remote.
-	 */
-	protected static staticCallUpdateWithoutRemote() {
-		// Loop all views
-		for (const view of BaseView.staticViews) {
-			view.updateWithoutRemote();
-		}
-	}
-
-
-	/**
 	 * Closes all opened views.
 	 * Is called when the debugger closes.
 	 */
@@ -199,14 +187,6 @@ export class BaseView {
 	 * E.g. for 'step' it contains { step: true };
 	 */
 	public async update(_reason?: any): Promise<void> {
-		// Overwrite this.
-	}
-
-
-	/** Updates the html. E.g. after the change of a value.
-	 * Without getting the memory from the Remote.
-	 */
-	protected updateWithoutRemote() {
 		// Overwrite this.
 	}
 
