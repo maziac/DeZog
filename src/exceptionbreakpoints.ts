@@ -91,13 +91,13 @@ export class ExceptionBreakpoints {
 
 	/** Sets the exception breakpoints.
 	 * @param exceptionMap The breakpoints to enable (not given breakpoints will be removed).
-	 * @returns A tuple: [string, boolean[]]:
+	 * @returns A tuple: [string, boolean[], string[]]:
 	 * - A string with human readable output to be displayed in the debug console. The breakpoint status.
 	 * - An array with verification status of the breakpoints. I.e. some Remotes
 	 * do not support certain breakpoint types, e.g. CSpect does not support WPMEM.
 	 * In that case an un-verified status is returned.
 	 * Important: The order of the returned array is the same as the passed 'exceptionMap'.
-	 * - A string of exception breakpoint names that should be enabled but are not supported.
+	 * - An array of strings of exception breakpoint names that should be enabled but are not supported.
 	 */
 	public async setExceptionBreakPoints(exceptionMap: Map<string, string>): Promise<[string, boolean[], string[]]> {
 		let output = '';

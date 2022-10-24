@@ -1502,7 +1502,7 @@ export class Opcode {
 				this.value = memory.getValueAt(address + 1);
 				break;
 			case NumberType.PORT_LBL:	// NOSONAR
-				// TODO: need to be implemented differently
+				// NOTE: should be implemented differently
 				this.value = memory.getValueAt(address + 1);
 				break;
 			default:
@@ -1520,7 +1520,7 @@ export class Opcode {
 	 * E.g. "LD A,(DATA_LBL1)" or "JR Z,.sub1_lbl3".
 	 * @param func A function that returns a label for a (64k) address.
 	 */
-	public disassembleOpcode(funcGetLabel: (addr64k: number) => string) {
+	public disassembleOpcode(funcGetLabel: (addr64k: number) => string, upperCase = false) {
 		// Check if there is any value
 		if (this.valueType == NumberType.NONE) {
 			// Just e.g. "INC A"
@@ -1529,35 +1529,33 @@ export class Opcode {
 		}
 
 		// Get referenced label name
-		let valueName = '';
+		let valueName:  string;
 		if (this.valueType == NumberType.CODE_LBL
 			|| this.valueType == NumberType.CODE_LOCAL_LBL
 			|| this.valueType == NumberType.CODE_LOCAL_LOOP
 			|| this.valueType == NumberType.CODE_SUB
+			|| this.valueType == NumberType.CODE_RST
 			|| this.valueType == NumberType.DATA_LBL) {
 			valueName = funcGetLabel(this.value);
 		}
 		else if (this.valueType == NumberType.RELATIVE_INDEX) {
-			// E.g. in 'LD (IX+n),a'
+			// E.g. in 'LD (IX+n),A'
 			let val = this.value;
 			valueName = (val >= 0) ? '+' : '';
 			valueName += val.toString();
 		}
-		else if (this.valueType == NumberType.CODE_RST) {
-			// Use value instead of label (looks better)
-			valueName = Format.getHexFormattedString(this.value, 2);
-		}
 		else {
-			// Use direct value
-			const val = this.value;
 			// Add comment
 			if (this.valueType == NumberType.NUMBER_BYTE) {
 				// byte
-				valueName = Format.getHexFormattedString(val, 2);
+				valueName = Format.getHexFormattedString(this.value, 2);
 			}
 			else {
-				// word
-				valueName = Format.getHexFormattedString(val, 4);
+				// Word, interpret as label
+				if (this.value < 0x100)
+					valueName = Format.getHexFormattedString(this.value, 4);
+				else
+					valueName = funcGetLabel(this.value);
 			}
 		}
 
