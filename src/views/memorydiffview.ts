@@ -1,5 +1,4 @@
 import {MemoryDump} from '../misc/memorydump';
-import {MetaBlock} from '../misc/metablock';
 import {MemoryDumpView} from './memorydumpview';
 
 
@@ -51,12 +50,18 @@ export class MemoryDiffView extends MemoryDumpView {
 	// The resulting diff memory dump: memDump - baseMemDump
 	protected diffMemDump: MemoryDump;
 
+	// The values used for diffing:
+	// undefined = not equal
+	// any number = the diff must have exactly this value (e.g. 1)
+	protected previousDiffCriteria: number | 'no check' | 'not equal';
+
 
 	/** Creates the basic panel.
 	 */
 	constructor() {
 		super();
 		this.titlePrefix = 'Memory Diff View: ';
+		this.previousDiffCriteria = 'no check';	// Do no check at the beginning
 	}
 
 
@@ -72,8 +77,104 @@ export class MemoryDiffView extends MemoryDumpView {
 
 	/** The search widget is disabled.
 	 */
-	protected createSearchHtml(): string {
-		return '';
+	protected createInputHtml(): string {
+		return `
+<style>
+
+body.vscode-dark {
+}
+
+body.vscode-light {
+}
+
+.inputWidget {
+	user-select: none;
+	font-family: Arial;
+	position: fixed;
+	right: 2em;
+	background-color: var(--vscode-editorWidget-background);
+    padding: 2px;
+    padding-right: 2px;
+	box-shadow: 1px 1px 1px 1px var(--vscode-widget-shadow);
+}
+.inputComboBox {
+ 	-webkit-appearance: none;
+	font-family: Arial;
+	width: 2em;
+	text-align: center;
+	color: var(--vscode-input-foreground);
+	background-color: var(--vscode-input-background);
+	border-color: transparent;
+	vertical-align: middle;
+}
+.inputComboBox:focus {
+    outline-color: var(--vscode-tab-activeModifiedBorder);
+}
+.storeButton {
+	font-family: Arial;
+	vertical-align: middle;
+	text-align: center;
+    color: var(--vscode-editor-foreground);
+  	background-color: var(--vscode-editorWidget-background);
+    border-radius: 1px;
+	border: 0;
+    outline-width: 1px;
+    outline-style: solid;
+    outline-color: transparent;
+}
+.storeButton:active {
+    color: var(--vscode-button-foreground);
+    background-color: var(--vscode-editorWidget-background);
+}
+.storeButton:focus {
+    outline-color: var(--vscode-tab-activeModifiedBorder);
+}
+.storeButton:hover {
+   	cursor: pointer;
+  	background-color: var(--vscode-editorWidget-background);
+}
+
+</style>
+
+<script>
+
+function changeDiffCriteria(obj) {
+	const criteria = obj.options[obj.selectedIndex].text;
+	vscode.postMessage({
+		command: "diffCriteriaChanged",
+		criteria: criteria
+	});
+}
+
+function store() {
+	// Send store message
+	vscode.postMessage({
+		command: "storeDiff"
+	});
+	// Reset diff criteria to "==" (otherwise nothing would be shown anymore)
+	const comboBox =  document.getElementById("comboBox");
+	comboBox.selectedIndex = 0;	// Note: this will NOT generate a "diffCriteriaChanged" message.
+}
+
+
+//# sourceURL=memorydiffview-inputhtml.js
+</script>
+
+<div class="inputWidget">
+	<select id="comboBox" class="inputComboBox" onchange="changeDiffCriteria(this)">
+	<option title="No check. Shows the current values.">--</option>
+	<option>==</option>
+	<option>!=</option>
+	<option>-1</option>
+	<option>-2</option>
+	<option>+1</option>
+	<option>+2</option>
+	</select>
+	<button class="storeButton" title="Press to use the current result as new base for future comparison." onclick="store()">Store</button>
+</div>
+
+<br>
+		`;
 	}
 
 
@@ -81,7 +182,8 @@ export class MemoryDiffView extends MemoryDumpView {
 	 * @returns html in a string.
 	 */
 	protected getAllHtmlTables(): string {
-		return this.getAllHtmlTablesForDump(this.diffMemDump);
+		const tables = this.getAllHtmlTablesForDump(this.diffMemDump);
+		return tables || "'Diff' is empty.";
 	}
 
 
@@ -99,10 +201,12 @@ export class MemoryDiffView extends MemoryDumpView {
 			this.diffMemDump = this.memDump;
 			// Create the first time
 			this.setHtml();
+			// Create title
+			this.setPanelTitle();
 		}
 		else {
 			// Calculate the diff
-			this.diffMemDump = this.memDump.getDiffMemDump(this.baseMemDump);
+			this.diffMemDump = this.memDump.getDiffMemDump(this.baseMemDump, this.previousDiffCriteria);
 
 			// Update the html table
 			const tableHtml = this.getAllHtmlTables();
@@ -111,12 +215,69 @@ export class MemoryDiffView extends MemoryDumpView {
 				html: tableHtml
 			};
 			this.sendMessageToWebView(msg);
-
-			// TODO: Ausserdem muss memDump mit withoutBoundary erzeugt werden.
 		}
 
 		// Set colors for register pointers
 		this.setColorsForRegisterPointers();
 	}
-}
 
+
+	/** Handle the commands for changing the diff criteria and for storing.
+	 * Otherwise the parent's function is called.
+	 * @param message The message. message.command contains the command as a string.
+	 */
+	protected async webViewMessageReceived(message: any) {
+		switch (message.command) {
+			case 'diffCriteriaChanged':
+				console.log(message);
+				// Convert criteria
+				const criteria = message.criteria;
+				let diff;
+				switch (criteria) {
+					case '--':
+						diff = 'no check';
+						break;
+					case '!=':
+						diff = 'not equal';
+						break;
+					case '==':
+						diff = 0;
+						break;
+					default:
+						diff = parseInt(criteria);
+						break;
+				}
+				// Store
+				this.previousDiffCriteria = diff;
+				// Update
+				this.updateWithoutRemote();
+				break;
+
+			case 'storeDiff':
+				console.log(message);
+				// Simply take the current diff map as new base map
+				// Note: I don't need to clone here, diffMemMap contents is not changed.
+				// There is also no need to update because this map is already shown
+				// and the combo box has been changed to "==" already.
+				this.baseMemDump = this.diffMemDump;
+				// But I need to clone 'memDump' because the use might alter it
+				// and in that case also the 'baseMemDump' would be updated.
+				this.memDump = this.diffMemDump.clone();
+				// Update title
+				this.setPanelTitle();
+				break;
+
+			case 'getValueInfoText':
+				{
+					// For hover: This message now uses the 'diffMemDump' instead of 'memDump'.
+					const address = parseInt(message.address);
+					await this.getValueInfoText(address, this.diffMemDump);
+				}
+				break;
+
+			default:
+				await super.webViewMessageReceived(message);
+				break;
+		}
+	}
+}
