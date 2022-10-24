@@ -55,6 +55,7 @@
 		"@vscode/debugprotocol": "^1.57.0",
 		"await-notify": "1.0.1",
 		"binary-file": "^0.2.3",
+		"fast-glob": "^3.2.12",
 		"gif-writer": "^0.9.4",
 		"glob": "^8.0.3",
 		"intel-hex": "^0.1.2",
@@ -769,7 +770,7 @@
 									"properties": {
 										"path": {
 											"type": "string",
-											"description": "Path to the .list file."
+											"description": "Path to the .list file. For 'revEng' you may also add a glob pattern here."
 										},
 										"reloadOnSave": {
 											"type": "boolean",
@@ -987,12 +988,11 @@
 					{
 						"type": "dezog",
 						"request": "launch",
-						"name": "Simulator - ZX Spectrum+Next",
+						"name": "Simulator - ZX48K Spectrum",
 						"remoteType": "zsim",
 						"zsim": {
-							"Z80N": true,
 							"visualMemory": true,
-							"memoryModel": "ZXNEXT",
+							"memoryModel": "ZX48K",
 							"ulaScreen": true,
 							"zxBorderWidth": 20,
 							"vsyncInterrupt": true,
@@ -1004,11 +1004,7 @@
 								"path": "Add your assembler list or sld file"
 							}
 						],
-						"commandsAfterLaunch": [
-							"-logpoint enable",
-							"-assertion enable",
-							"-wpmem enable"
-						],
+						"commandsAfterLaunch": [],
 						"history": {
 							"reverseDebugInstructionCount": 1000000,
 							"spotCount": 10,
@@ -1022,17 +1018,16 @@
 				],
 				"configurationSnippets": [
 					{
-						"label": "DeZog: Simulator - ZX Spectrum+Next",
-						"description": "Configuration for DeZog to use the internal simulator for a ZX Spectrum but with memory banking from the ZX Next as well as with the extended Z80N opcodes. Can be used to simulate a ZX 48K and additionally the Z80N opcodes and banking if needed.",
+						"label": "DeZog: Simulator - ZX Spectrum",
+						"description": "Configuration for DeZog to use the internal simulator for a ZX Spectrum 48K. Can be used to simulate a ZX 48K.",
 						"body": {
 							"type": "dezog",
 							"request": "launch",
-							"name": "Simulator - ZX Spectrum+Next",
+							"name": "Simulator - ZX48K Spectrum",
 							"remoteType": "zsim",
 							"zsim": {
-								"Z80N": true,
 								"visualMemory": true,
-								"memoryModel": "ZXNEXT",
+								"memoryModel": "ZX48K",
 								"ulaScreen": true,
 								"zxBorderWidth": 20,
 								"vsyncInterrupt": true,
@@ -1044,11 +1039,7 @@
 									"path": "${1:Assembler list or sld file}"
 								}
 							],
-							"commandsAfterLaunch": [
-								"-logpoint enable",
-								"-assertion enable",
-								"-wpmem enable"
-							],
+							"commandsAfterLaunch": [],
 							"history": {
 								"reverseDebugInstructionCount": 1000000,
 								"spotCount": 10,
@@ -1077,11 +1068,7 @@
 									"path": "${1:Assembler list or sld file}"
 								}
 							],
-							"commandsAfterLaunch": [
-								"-logpoint enable",
-								"-assertion enable",
-								"-wpmem enable"
-							],
+							"commandsAfterLaunch": [],
 							"history": {
 								"reverseDebugInstructionCount": 1000000,
 								"spotCount": 10,
@@ -1111,10 +1098,7 @@
 									"path": "${1:Assembler list or sld file}"
 								}
 							],
-							"commandsAfterLaunch": [
-								"-logpoint enable",
-								"-assertion enable"
-							],
+							"commandsAfterLaunch": [],
 							"history": {
 								"reverseDebugInstructionCount": 1000000,
 								"spotCount": 10,
@@ -1139,11 +1123,7 @@
 									"path": "${1:Assembler list or sld file}"
 								}
 							],
-							"commandsAfterLaunch": [
-								"-logpoint enable",
-								"-assertion enable",
-								"-wpmem enable"
-							],
+							"commandsAfterLaunch": [],
 							"history": {
 								"reverseDebugInstructionCount": 1000000,
 								"spotCount": 10,
@@ -1172,6 +1152,9 @@
 									"path": "${1:The list file (initially an empty file with extension *.list)}"
 								}
 							],
+							"history": {
+								"codeCoverageEnabled": false
+							},
 							"rootFolder": "^\"\\${workspaceFolder\\}\""
 						}
 					},
@@ -1191,10 +1174,7 @@
 									"path": "${2:Assembler list or sld file}"
 								}
 							],
-							"commandsAfterLaunch": [
-								"-logpoint enable",
-								"-assertion enable"
-							],
+							"commandsAfterLaunch": [],
 							"history": {
 								"reverseDebugInstructionCount": 1000000,
 								"spotCount": 10,

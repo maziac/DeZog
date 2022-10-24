@@ -11,4 +11,5 @@ notes.md
 **/.tmp/
 .obsidian/
 .scannerwork/
+.VSCodeCounter/
 comments.json
