@@ -1,6 +1,7 @@
 import {DebugProtocol} from '@vscode/debugprotocol';
 import {Utility} from '../misc/utility';
 import * as fs from 'fs';
+import * as fglob from 'fast-glob';
 import {UnifiedPath} from '../misc/unifiedpath';
 import {CustomMemoryType} from './settingscustommemory';
 
@@ -926,7 +927,16 @@ export class Settings {
 			if (loadObj.start == undefined)
 				throw Error("'loadObj.start': You must specify a 'start' address for '" + path + "'.");
 		}
+
+
+		// Rev-Eng: Check that glob pattern at least finds one file.
+		if(Settings.launch.revEng) {
+			// Check that file exists
+			for (const config of Settings.launch.revEng) {
+				const paths = fglob.sync([config.path]);
+				if (paths.length == 0)
+					throw Error("'revEng.path': '" + config.path + "' does not match any file.");
+			}
+		}
 	}
-
 }
-
