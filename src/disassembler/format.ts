@@ -147,7 +147,6 @@ export class Format {
 	/**
 	 * Formats a disassembly string for output.
 	 * @param memory The Memory to disassemble. For the opcodes. If undefined no opcodes will be printed.
-	 * @param opcodesLowerCase true if opcodes should be printed lower case.
 	 * @param clmnsAddress Number of digits used for the address. If 0 no address is printed.
 	 * @param clmnsBytes Minimal number of characters used to display the opcodes.
 	 * @param clmnsOpcodeFirstPart Minimal number of digits used to display the first of the opcode, e.g. "LD"
@@ -157,7 +156,7 @@ export class Format {
 	 * @param mainString The opcode string, e.g. "LD HL,35152"
 	 * @param addrString If not undefined this string is printed instead of the 'address'. Used to add bank information.
 	 */
-	public static formatDisassembly(memory: BaseMemory | undefined, opcodesLowerCase: boolean, clmnsAddress: number, clmnsBytes: number, clmnsOpcodeFirstPart: number, clmsnOpcodeTotal: number, address: number, size: number, mainString: string, addrString: string|undefined): string {	// NOSONAR
+	public static formatDisassembly(memory: BaseMemory | undefined, clmnsAddress: number, clmnsBytes: number, clmnsOpcodeFirstPart: number, clmsnOpcodeTotal: number, address: number, size: number, mainString: string, addrString: string|undefined): string {	// NOSONAR
 		let line = '';
 
 		// Add address field?

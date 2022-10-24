@@ -324,7 +324,7 @@ export class DebugSessionClass extends DebugSession {
 	 * socket has been disconnected.
 	 */
 	protected async terminateRequest(response: DebugProtocol.TerminateResponse, _args: DebugProtocol.TerminateArguments): Promise<void> {
-		console.log('terminateRequest');	// TODO: REMOVE
+		//console.log('terminateRequest');
 		// Disconnect Remote etc.
 		await this.disconnectAll();
 
@@ -344,7 +344,7 @@ export class DebugSessionClass extends DebugSession {
 	 * - If user presses circled arrow/restart
 	 */
 	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, _args: DebugProtocol.DisconnectArguments): Promise<void> {
-		console.log('disconnectRequest');	// TODO: REMOVE
+		//console.log('disconnectRequest');
 		// Disconnect Remote etc.
 		await this.disconnectAll();	// Just in case ... Should have been done already in terminateRequest
 		// Send response
@@ -360,7 +360,7 @@ export class DebugSessionClass extends DebugSession {
 	 * - when the ZEsarUX socket connection is terminated
 	 */
 	protected async disconnectAll(): Promise<void> {
-		console.log('disconnectAll, this.running =', this.running);	// TODO: REMOVE
+		//console.log('disconnectAll, this.running =', this.running);
 		// Test if running
 		if (!this.running)
 			return;
@@ -413,7 +413,7 @@ export class DebugSessionClass extends DebugSession {
 		catch(e) {
 			console.log('exception', e);
 		}
-		console.log('disconnectAll ended');	// TODO: REMOVE
+		//console.log('disconnectAll ended');
 	}
 
 
@@ -516,7 +516,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 		try {
-			console.log('launchRequest');	// TODO: REMOVE
+			//console.log('launchRequest');
 			this.running = true;
 
 			// Clear any diagnostics
@@ -832,8 +832,6 @@ export class DebugSessionClass extends DebugSession {
 
 
 		// Set breakpoints for the file.
-		if (!Remote)
-			console.log("Remote undefined"); // TODO: remove
 		const currentBreakpoints = await Remote.setBreakpoints(path, bps);
 		const source = this.createSource(path);
 		// Now match all given breakpoints with the available.
@@ -864,7 +862,7 @@ export class DebugSessionClass extends DebugSession {
 
 			// Additional print warning if not verified
 			if (!verified) {
-				const text = JSON.stringify(bp);
+				const text = JSON.stringify(bp);	// Shows line number starting at 1.
 				this.debugConsoleAppendLine('Unverified breakpoint: ' + text);
 				if (foundCbp && foundCbp.error) {
 					this.debugConsoleAppendLine('  Additional info: ' + foundCbp.error);
@@ -874,7 +872,7 @@ export class DebugSessionClass extends DebugSession {
 			return bp;
 		});
 
-		// send back the actual breakpoint positions
+		// Send back the actual breakpoint positions
 		response.body = {
 			breakpoints: vscodeBreakpoints
 		};
@@ -1025,8 +1023,9 @@ export class DebugSessionClass extends DebugSession {
 			const file = Labels.getFileAndLineForAddress(addr);
 			// Store file, if it does not exist the name is empty
 			let src;
-			if (file.size > 0)
+			if (file.size > 0) { // This is required, otherwise a label with a bp only in rev-eng would lead to a non-disaassembled instruction at that line. Unfortunately this makes the annotated rom-48.list for the spectrum useless as it does not contain byte columns.
 				src = this.createSource(file.fileName);
+			}
 			const lineNr = (src) ? this.convertDebuggerLineToClient(file.lineNr) : 0;
 			const sf = new StackFrameAddr(index + 1, frame.name, src, lineNr);
 			sf.longAddress = addr;
@@ -2390,7 +2389,7 @@ Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec
 	    - "r": Read watchpoint
 	    - "w": Write watchpoint
 	    - "rw": Read/write watchpoint. Default.
-	Note: This is a leightwieght version of the WPMEM watchpoints you can add to your sources.
+	Note: This is a leightweight version of the WPMEM watchpoints you can add to your sources.
 	      Watchpoints added through "-wpadd" are independent. They are NOT controlled (enabled/disabled) through the
 		  vscode's BREAKPOINTS pane.
 		  Furthermore they work on 64k addresses (whereas WPMEM works on long addresses).
@@ -3128,6 +3127,18 @@ E.g. use "-help -view" to put the help text in an own view.
 
 			// Create new instance to disassemble
 			const analyzer = new SmartDisassembler();
+			analyzer.funcGetLabel = (addr64k: number) => {
+				// Convert to long address
+				const longAddr = Z80Registers.createLongAddress(addr64k);
+				// Check if label already known
+				const labels = Labels.getLabelsForLongAddress(longAddr);
+				if (labels.length > 0)
+					return labels[0];	// Just return first label
+				// Otherwise check in debugger.
+				const label = Disassembly.getLabelForAddr64k(addr64k);
+				return label;
+
+			};
 			analyzer.setMemoryModel(Remote.memoryModel);
 			analyzer.setCurrentSlots(Remote.getSlots());
 			// Get whole memory for analyzing
@@ -3136,7 +3147,14 @@ E.g. use "-help -view" to put the help text in an own view.
 
 			// Collect all long address labels and convert to 64k
 			const labels = analyzer.get64kLabels();
+			// Make sure that at least start labels from the disassembly are used if available
 			const startAddrs64k = startLongAddrs.map(addr => addr & 0xFFFF);
+			for (const addr64k of startAddrs64k) {
+				const label = Disassembly.getLabelForAddr64k(addr64k);
+				if (label)
+					labels.push([addr64k, label]);
+			}
+			// Create the flow graph
 			analyzer.getFlowGraph(startAddrs64k, labels);
 			// Convert to start nodes
 			const startNodes = analyzer.getNodesForAddresses(startAddrs64k);
@@ -3472,8 +3490,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		}
 		catch (e) {
 			// Some error occurred
-			Remote.terminate('Labels: ' + e.message);
-			//this.showError("Error while initializing labels.");
+			this.showError("Error: " + e.message + ".\nPlease fix and reload.");
 		}
 	}
 

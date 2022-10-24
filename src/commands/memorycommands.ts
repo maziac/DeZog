@@ -410,7 +410,12 @@ export class MemoryCommands {
 
 			// Size
 			const sizeString = tokens[k + 1];
-			const size = Utility.evalExpression(sizeString);
+			// Allow size of 0x10000
+			const size = Utility.parseValue(sizeString);
+			// Error Handling: size too big
+			if (size > 0x10000) {
+				throw new Error("Size too big: '" + sizeString + "'.");
+			}
 			addrSizes.push(size);
 		}
 
@@ -456,7 +461,12 @@ export class MemoryCommands {
 
 			// Size
 			const sizeString = tokens[k + 1];
-			const size = Utility.evalExpression(sizeString);
+			// Allow size of 0x10000
+			const size = Utility.parseValue(sizeString);
+			// Error Handling: size too big
+			if (size > 0x10000) {
+				throw new Error("Size too big: '" + sizeString + "'.");
+			}
 			addrSizes.push(size);
 		}
 
@@ -507,7 +517,12 @@ export class MemoryCommands {
 
 			// Size
 			const sizeString = tokens[k + 1];
-			const size = Utility.evalExpression(sizeString);
+			// Parse size
+			const size = Utility.parseValue(sizeString);
+			// Error Handling: size too big
+			if (size > 0x8000) {	// $8000 words = $10000 bytes
+				throw new Error("Size too big: '" + sizeString + "'.");
+			}
 			addrSizes.push(size);
 		}
 
