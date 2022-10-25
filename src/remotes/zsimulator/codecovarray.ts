@@ -3,13 +3,13 @@
  * This is a set to store the code coverage addresses.
  */
 export class CodeCoverageArray {
-	// This is a list of used addresses.
-	protected addressSet=new Set<number>();
+	// This is a list of used long addresses.
+	protected addressSet = new Set<number>();
 
 
 	/**
 	 * Adds address to the set.
-	 * @param longAddress A "normal" 64k address or a long address.
+	 * @param longAddress A long address.
 	 */
 	public storeAddress(longAddress: number) {
 		this.addressSet.add(longAddress);
@@ -17,7 +17,7 @@ export class CodeCoverageArray {
 
 
 	/**
-	 * Returns a set with the addresses.
+	 * Returns a set with the long addresses.
 	 */
 	public getAddresses(): Set<number> {
 		return this.addressSet;
@@ -30,7 +30,7 @@ export class CodeCoverageArray {
 	public clearAll() {
 		// Note: It is important that a new Set is allocated.
 		// It's not correct to clear the existing one (it might be still used).
-		this.addressSet=new Set<number>();
+		this.addressSet = new Set<number>();
 	}
 
 }
