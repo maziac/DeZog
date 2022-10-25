@@ -63,10 +63,6 @@ export class SmartDisassembler {
 	// The assembly comments are stored here.
 	public comments = new Comments();
 
-	// Map with the long address to line number relationship and vice versa.
-	protected addrLineMap = new Map<number, number>();
-	protected lineAddrArray = new Array<number | undefined>();
-
 	// A map with long addresses for skips. I.e. addresses that the PC should simply skip.
 	// E.g. for special RST commands followed by bytes.
 	// Used only by the ReverseEngineeringLabelParser.
@@ -82,35 +78,9 @@ export class SmartDisassembler {
 	public labelLocalLabelPrefix = "L";
 	public labelLocalLoopPrefix = "LOOP";
 
-
-	/**The function that is used to retrieve label names by the disassembler.
-	 * @param addr64k The 64k address.
-	 * @returns The corresponding first label found. Or undefined.
-	 */
-	public funcGetLabel(addr64k: number): string | undefined {
-		// Convert to long address
-		const longAddr = Z80Registers.createLongAddress(addr64k);
-		// Check if label already known
-		const labels = Labels.getLabelsForLongAddress(longAddr);
-		if (labels.length == 0)
-			return undefined;
-		return labels[0];	// Just return first label
-	}
-
-
-	/** The function that is used to filter out certain addresses from the output by the disassembler.
-	 * If false is returned the line for this address is not shown.
-	 * @param addr64k The 64k address.
-	 * @returns true (show line) / false (do not show line)
-	 */
-
-	public funcFilterAddresses(addr64k: number): boolean {
-		// Convert to long address
-		const longAddr = Z80Registers.createLongAddress(addr64k);
-		// Check if label has a file associated
-		const entry = Labels.getSourceFileEntryForAddress(longAddr);
-		return (entry == undefined || entry.size == 0);	// Filter only non-existing addresses or addresses with no code
-	}
+	// The function which is used to retrieve already available label names.
+	// Should be set directly after construction.
+	public funcGetLabel: (addr64k: number) => string | undefined = (addr64k: number) => undefined;
 
 
 	/// A function that formats the long address printed at first in the disassembly.
@@ -812,25 +782,22 @@ export class SmartDisassembler {
 				if (!node.label) {
 					// Only if not already assigned
 					if (node.callers.length > 0 || node.predecessors.length > 0) {
-						let prefix;
 						// First check if it is a subroutine
 						if (blockNode.isSubroutine) {
 							// Now check for RST addresses
 							if (blockNode.start & ~0b00111000) {
 								// Is normal CALL
-								prefix = this.labelSubPrefix;
+								node.label = this.labelSubPrefix + Utility.getHexString(addr64k, 4);
 							}
 							else {
 								// Is RST
-								prefix = this.labelRstPrefix;
+								node.label = this.labelRstPrefix + Utility.getHexString(addr64k, 2);
 							}
 						}
 						else {
 							// Use normal label
-							prefix = this.labelLblPrefix;
+							node.label = this.labelLblPrefix + Utility.getHexString(addr64k, 4);
 						}
-						// Add global label name
-						node.label = prefix + Utility.getHexString(addr64k, 4);
 					}
 				}
 
@@ -887,8 +854,8 @@ export class SmartDisassembler {
 			// Local label
 			// Number the local labels
 			let i = 1;
-			const preLabel = '.';	// Just local label
-			// const preLabel = node.label + '.';	// Full label
+			//const preLabel = '.';	// Just local label
+			const preLabel = node.label + '.';	// Full label
 			for (const localNode of localNodes) {
 				localNode.label = preLabel + this.labelLocalLabelPrefix + i;
 				i++;
@@ -987,12 +954,13 @@ export class SmartDisassembler {
 	 * If nothing is found it checks the this.nodes labels.
 	 * If still nothing is found it checks this.otherLabels.
 	 * If nothing is found the address in hex is returned.
+	 * @param blockNode The originating node. (required to check for local node).
 	 * @param addr64k The 64k address.
 	 * @param slot The slot where the access originated. I.e. if there is a bank
 	 * border not the label but a pure hex address is shown.
 	 * @returns The label as string e.g. "SUB_0604.LOOP" or "LBL_0788+1" (in case address points to 0x0789 inside an instruction) or "$C000".
 	 */
-	protected getLabelFromSlotForAddress(slot: number, addr64k: number): string {
+	protected getLabelFromSlotForAddress(blockNode: AsmNode, slot: number, addr64k: number): string {
 		// Check if no bank border
 		if (this.bankBorderPassed(slot, addr64k)) {
 			// Just return the address as hex string
@@ -1018,6 +986,15 @@ export class SmartDisassembler {
 		if (!label)
 			label = this.otherLabels.get(addr64k);
 
+		// ANCHOR - Reduce to local label
+		// Check if label can be reduced to local label, e.g. "SUB_0112.L1" to ".L1"
+		if (label && blockNode.label) {
+			if(label.startsWith(blockNode.label + '.')) {
+				// Is local label
+				label = label.substring(blockNode.label.length);
+			}
+		}
+
 		// Note: it can still happen that a label is not found. One case is that
 		// There e.g. is:
 		// LBL:  LD A,6
@@ -1025,7 +1002,7 @@ export class SmartDisassembler {
 		//   JP LBL+1
 		if (!label) {
 			// In that case just return the address (with bank)
-			return this.funcFormatLongAddress(addr64k + suffixDiff);
+			label = this.funcFormatLongAddress(addr64k); // Format.getHexFormattedString(addr64k, 4);
 		}
 
 		// Suffix?
@@ -1052,12 +1029,13 @@ export class SmartDisassembler {
 		for (const [, node] of this.nodes) {
 			// Loop over all instructions/opcodes
 			//let blockNodeLabel;
-			const slot = this.addressesSlotBankInfo[node.start].slot;
 			let addr64k = node.start;
+			const slot = this.addressesSlotBankInfo[addr64k].slot;
+			const blockNode = this.blocks[addr64k];
 			for (const opcode of node.instructions) {
 				opcode.disassembleOpcode((addr64k: number) => {
 					// Return an existing label for the address or just the address
-					const labelName = this.getLabelFromSlotForAddress(slot, addr64k);
+					const labelName = this.getLabelFromSlotForAddress(blockNode, slot, addr64k);
 					return labelName;
 				});
 				opcode.addr64k = addr64k;
