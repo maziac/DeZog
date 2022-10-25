@@ -48,16 +48,27 @@ export class MetaBlock {
 	}
 
 
-	/** Copies the MetaBlock object (structure and contents) to a new MetaBlock object.
-	 * Deep copy.
+	/** Copies just the MetaBlock structure without contents (data/prevData).
 	 * @returns a new MetaBlock object.
 	 */
-	public clone(): MetaBlock {
+	public cloneWithoutData(): MetaBlock {
 		// Copy memblocks
 		const memBlocks = new Array<MemBlock>();
 		for (const mb of this.memBlocks)
 			memBlocks.push({...mb});
 		const clone = new MetaBlock(this.address, this.size, memBlocks, this.title);
+
+		return clone;
+	}
+
+
+	/** Copies the MetaBlock object (structure and contents) to a new MetaBlock object.
+	 * Deep copy.
+	 * @returns a new MetaBlock object with copied data and prevData.
+	 */
+	public clone(): MetaBlock {
+		// Copy memblocks
+		const clone = this.cloneWithoutData();
 
 		// Copy data
 		if (this.data)
@@ -94,29 +105,25 @@ export class MetaBlock {
 	 * [address, value].
 	 */
 	public getChangedValues() {
-		if (!this.data)
-			return [];	// No data yet
+		// After first update both data is set.
+		Utility.assert(this.data);
+		Utility.assert(this.prevData);
+
 		const addr = this.address;
 		const addrValues: any = [];
-		if (this.prevData) {
-			// Compare current with previous data
-			const len: number = this.data.length;
-			Utility.assert(len == this.prevData.length);
-			for (let i = 0; i < len; i++) {
-				if (this.data[i] != this.prevData[i]) {
-					addrValues.push([
-						addr + i,			// Address
-						this.data[i]
-					]);
-				}
+
+		// Compare current with previous data
+		const len: number = this.data!.length;
+		Utility.assert(len == this.prevData!.length);
+		for (let i = 0; i < len; i++) {
+			if (this.data![i] != this.prevData![i]) {
+				addrValues.push([
+					addr + i,	// Address
+					this.data![i]
+				]);
 			}
 		}
-		else {
-			// No previous data yet, i.e. everything changed.
-			this.data.forEach((val, index) => {
-				addrValues.push([addr + index, val]);
-			});
-		}
+
 		return addrValues;
 	}
 }
