@@ -56,7 +56,7 @@ export class MemoryDump {
 	 * Memory blocks are ordered, i.e. the 'memDumps' array is ordered from
 	 * low to high (the start addresses).
 	 * @param startAddress The address of the memory block.
-	 * @param size The size of the memory block in bytes.
+	 * @param size The size of the memory block in bytes. (Can be 0x10000 max)
 	 * @param title An optional title for the memory block (shown as table header).
 	 */
 	public addBlock(startAddress: number, size: number, title: string | undefined = undefined) {
@@ -328,13 +328,33 @@ export class MemoryDump {
 	 * The caller need to take care.
 	 * The function is only meant to be called by MemoryDiffView.
 	 * @param baseMemDump The MemoryDump to compare against.
+	 * @param diff 'no check'=all values are returned, no check is done.
+	 * 'not equal'=return all values that are not equal.
+	 * any number=return all values vor which "this-baseMemDump==diff" is
+	 * true.
 	 * @return A new MemoryDump with only the diff.
 	 */
-	public getDiffMemDump(baseMemDump: MemoryDump): MemoryDump {
-		// TODO: at the moment only "not equal" is implemented
-
-		const addresses = new Map<number, number[]>(); // address -> data[]
+	public getDiffMemDump(baseMemDump: MemoryDump, diff: number | 'no check' | 'not equal'): MemoryDump {
 		const mbLen = this.metaBlocks.length;
+		const diffMemDump = new MemoryDump();
+
+		// Check, if check is required
+		if (diff == 'no check') {
+			// But still the data need to be copied: data from this and prevData from baseMemDump
+			for (let i = 0; i < mbLen; i++) {
+				// Copy structure
+				const mb = this.metaBlocks[i];
+				const mbCopy = mb.cloneWithoutData();
+				// Copy data/prevData
+				mbCopy.data = new Uint8Array(mb.data!);
+				mbCopy.prevData = new Uint8Array(baseMemDump.metaBlocks[i].data!);
+				diffMemDump.metaBlocks.push(mbCopy);
+			}
+			return diffMemDump;
+		}
+
+		// Otherwise check
+		const addresses = new Map<number, {data: number[], prevData: number[]}>(); // address -> data[]
 		let address = -Number.MAX_SAFE_INTEGER;	// So it is not accidentally matched before it is assigned.
 		let baseAddress = -1;
 		for (let i = 0; i < mbLen; i++) {
@@ -344,39 +364,51 @@ export class MemoryDump {
 			const len = data!.length;
 			for (let k = 0; k < len; k++) {
 				const val = data[k];
-				//if (val != baseData[k]) {
-				if (val != baseData[k]) {
+				const prevVal = baseData[k];
+				const diffVal = val - prevVal;
+				let keepValue;
+				if (diff == 'not equal') {
+					keepValue = (diffVal != 0);
+				}
+				else {
+					keepValue = (diff == diffVal);
+				}
+				if (keepValue) {
 					address++;
 					if (start + k != address) {
 						baseAddress = start + k;
 						address = baseAddress;
 					}
-					let data = addresses.get(baseAddress);
-					if (!data) {
-						data = [];
-						addresses.set(baseAddress, data);
+					// Handle data
+					let dataInfo = addresses.get(baseAddress);
+					if (!dataInfo) {
+						dataInfo = {data: [], prevData: []};
+						addresses.set(baseAddress, dataInfo);
 					}
-					data.push(val);
+					dataInfo.data.push(val);	// Current value
+					dataInfo.prevData.push(prevVal);	// previous value
 				}
 			}
 		}
 
 		// Create new delta mem dump from addresses
-		const deltaMemDump = new MemoryDump();
-		for (const [address, data] of addresses) {
+		for (const [address, dataInfo] of addresses) {
 			// "Alloc" range
-			const size = data.length;
+			const size = dataInfo.data.length;
 			let title = Utility.getHexString(address & 0xFFFF, 4) + 'h';
 			if (size > 1)
 				title += '-' + Utility.getHexString((address + size - 1) & 0xFFFF, 4) + 'h';
-			deltaMemDump.addBlockWithoutBoundary(address, data.length, title);
+			diffMemDump.addBlockWithoutBoundary(address, size, title);
 			// Create Uint8Array
-			deltaMemDump.metaBlocks.at(-1)!.data = new Uint8Array(data);
+			const mb = diffMemDump.metaBlocks.at(-1)!;	// Get last meta block
+			mb.data = new Uint8Array(dataInfo.data);
+			// Handle prevData
+			mb.prevData = new Uint8Array(dataInfo.prevData);
 		}
 
 		// Probably mergeBlocks is not even required.
 
-		return deltaMemDump;
+		return diffMemDump;
 	}
 
 
