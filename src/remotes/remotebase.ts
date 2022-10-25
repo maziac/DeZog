@@ -229,6 +229,12 @@ export class RemoteBase extends EventEmitter {
 	 * Override
 	 */
 	public async loadExecutable(): Promise<void> {
+		// Load sna or nex file
+		const loadPath = Settings.launch.load;
+		if (loadPath) {
+			await this.loadBin(loadPath);
+		}
+
 		// Load obj file(s) unit
 		for (const loadObj of Settings.launch.loadObjs) {
 			if (loadObj.path) {
@@ -238,12 +244,6 @@ export class RemoteBase extends EventEmitter {
 					throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
 				await this.loadObj(loadObj.path, start);
 			}
-		}
-
-		// Load sna or nex file
-		const loadPath = Settings.launch.load;
-		if (loadPath) {
-			await this.loadBin(loadPath);
 		}
 
 		// Load registers
@@ -754,7 +754,13 @@ export class RemoteBase extends EventEmitter {
 		calledAddr = Z80Registers.createLongAddress(calledAddr);
 
 		// Found: get label
-		const labelCalledAddrArr = Labels.getLabelsForLongAddress(calledAddr);
+		let labelCalledAddrArr = Labels.getLabelsForLongAddress(calledAddr);
+		if (labelCalledAddrArr.length == 0) {
+			// check if maybe the disassembly has defined something
+			const label = Disassembly.getLabelForAddr64k(calledAddr & 0xFFFF);
+			if (label)
+				labelCalledAddrArr.push(label);
+		}
 		const labelCalledAddr = (labelCalledAddrArr.length > 0) ? labelCalledAddrArr[0] : Utility.getHexString(calledAddr & 0xFFFF, 4) + 'h';
 
 		// Return
@@ -1190,8 +1196,9 @@ export class RemoteBase extends EventEmitter {
 						// create breakpoint object
 						ebp = {bpId: 0, filePath: file.fileName, lineNr: file.lineNr, longAddress: longAddr, condition: bp.condition, log: bp.log};
 					}
-					else
-						error = "File " + file.fileName + " found at address " + Utility.getHexString(longAddr, 4) + "h";
+					else {
+						error = "You cannot set a breakpoint here because the address (" + Utility.getHexString(longAddr & 0xFFFF, 4) + "h) is bound to a different file. Please try to set the breakpoint in: " + file.fileName;
+					}
 				}
 				else {
 					// Additional info
@@ -1668,6 +1675,19 @@ export class RemoteBase extends EventEmitter {
 
 		// Return either 1 or 2 breakpoints
 		return [opcode, bpAddr1, bpAddr2];
+	}
+
+
+	/** The Remote can return here the code coverage addresses that
+	 * are safe to be known as code address.
+	 * This is an additional information for the disassembler.
+	 * The addresses are not in a specific order.
+	 * Only zsim implements this at the moment.
+	 * @returns An array with long addresses.
+	 */
+	public async getTraceBack(): Promise<number[]> {
+		// Override
+		return [];
 	}
 }
 
