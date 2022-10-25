@@ -38,10 +38,11 @@ export class SimpleDisassembly  {
 		const list = new Array<{address: number, instruction: string}>();
 		for (let i = 0; i < count; i++) {
 			// Get opcode
-			const opcode = Opcode.getOpcodeAt(buffer, address);
+			const opcode = Opcode.getOpcodeAt(buffer, address).clone();
 			// disassemble
 			opcode.disassembleOpcode(addr64k => Format.getHexFormattedString(addr64k));
-			const instruction = Format.formatDisassembly(undefined /*buffer*/, false, 0, 0 /*12*/, 0 /*5*/, 0 /*8*/, address, opcode.length, opcode.disassembledText, undefined);
+			opcode.name = opcode.name.toUpperCase();
+			const instruction = Format.formatDisassembly(undefined /*buffer*/, 0, 0 /*12*/, 0 /*5*/, 0 /*8*/, address, opcode.length, opcode.disassembledText, undefined);
 			// Add to list
 			list.push({address, instruction})
 			// Next address
@@ -81,10 +82,11 @@ export class SimpleDisassembly  {
 		while (addr < end) {
 			const address = addr & 0xFFFF;
 			// Get opcode
-			const opcode = Opcode.getOpcodeAt(buffer, address);
+			const opcode = Opcode.getOpcodeAt(buffer, address).clone();
 			// disassemble
 			opcode.disassembleOpcode(addr64k => Format.getHexFormattedString(addr64k));
-			const instruction = Format.formatDisassembly(undefined /*buffer*/, false, 0, 0 /*12*/, 0 /*5*/, 0 /*8*/, address, opcode.length, opcode.disassembledText, undefined);
+			opcode.name = opcode.name.toUpperCase();
+			const instruction = Format.formatDisassembly(undefined /*buffer*/, 0, 0 /*12*/, 0 /*5*/, 0 /*8*/, address, opcode.length, opcode.disassembledText, undefined);
 			// Add to list
 			list.push({address, size: opcode.length, instruction})
 			// Next address
