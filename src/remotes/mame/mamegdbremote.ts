@@ -1,4 +1,4 @@
-import { BreakInfo } from './../dzrp/dzrpremote';
+import { BreakInfo } from '../dzrp/dzrpremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {LogTransport} from '../../log';
 import {Socket} from 'net';
@@ -19,6 +19,7 @@ const CONNECTION_TIMEOUT = 1000;	// 1 sec
 const CTRL_C = '\x03';
 
 
+// TODO: Remove ? And also z80registersmamedecoder.ts
 /**
  * The representation of a MAME remote.
  * Can handle the MAME gdbstub but only for Z80.
@@ -44,7 +45,7 @@ export class MameRemote extends DzrpQeuedRemote {
 		super();
 		// Init
 		this.supportsASSERTION = true;
-		this.supportsWPMEM = false;
+		this.supportsWPMEM = true;
 		this.supportsLOGPOINT = true;
 		this.cmdRespTimeoutTime = Settings.launch.mame.socketTimeout * 1000;
 	}
