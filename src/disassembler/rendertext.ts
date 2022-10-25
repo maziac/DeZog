@@ -6,6 +6,15 @@ import {SmartDisassembler} from "./smartdisassembler";
 import {Subroutine} from "./subroutine";
 
 
+/** Used by funcLineAddressAssociation.
+ * Returns a guide for the RenderText to render the current line.
+ */
+export const enum RenderHint {
+	RENDER_EVERYTHING,	// Render label, data and disassembly
+	RENDER_DATA_AND_DISASSEMBLY,	// Render no label
+	RENDER_NOTHING,		// Do not render the current line at all
+}
+
 
 /** Class to render disassembly text.
  */
@@ -32,12 +41,12 @@ export class RenderText extends RenderBase {
 	 * @param addr64k The address.
 	 * @param bytesCount The number of bytes. Every address will be associated with the line number.
 	 */
-	protected funcLineAddressAssociation?: (lineNr: number, addr64k: number, bytesCount: number) => void;
+	protected funcLineAddressAssociation?: (lineNr: number, addr64k: number, bytesCount: number) => RenderHint;
 
 
 	/** Constructor.
 	 */
-	constructor(disasm: SmartDisassembler, funcLineAddressAssociation?: (lineNr: number, addr64k: number, bytesCount: number) => void) {
+	constructor(disasm: SmartDisassembler, funcLineAddressAssociation?: (lineNr: number, addr64k: number, bytesCount: number) => RenderHint) {
 		super(disasm);
 		this.funcLineAddressAssociation = funcLineAddressAssociation;
 	}
@@ -285,19 +294,38 @@ export class RenderText extends RenderBase {
 			if (countBytes > diffToEnd)
 				countBytes = diffToEnd;
 
-			// Print the label
-			let label = this.disasm.getLabelForAddr64k(dataAddr);
-			if (!label)
-				label = this.disasm.getOtherLabel(dataAddr);
-			if (label) {
-				// Is e.g. not defined if in different bank.
-				const addressLabel = this.getAddressLabel(dataAddr, label);
-				lines.addLine(addressLabel);
+			// Check all bytes if a source file already mentions them
+			let render: RenderHint = RenderHint.RENDER_EVERYTHING;
+			if (this.funcLineAddressAssociation) {
+				for (let i = 0; i < countBytes; i++) {
+					render = this.funcLineAddressAssociation(lines.length(), dataAddr + i, 1);
+					if (render) {
+						// Show not all
+						countBytes = i;
+						break;
+					}
+				}
 			}
 
-			// Print the data
-			const line = this.getCompleteDataLine(dataAddr, countBytes);
-			lines.addLine(line);
+			if (countBytes) {
+				// Print the label
+				if (render == RenderHint.RENDER_EVERYTHING) {
+					let label = this.disasm.getLabelForAddr64k(dataAddr);
+					if (!label)
+						label = this.disasm.getOtherLabel(dataAddr);
+					if (label) {
+						// Is e.g. not defined if in different bank.
+						const addressLabel = this.getAddressLabel(dataAddr, label);
+						lines.addLine(addressLabel);
+					}
+				}
+
+				// Print the data
+				if (render != RenderHint.RENDER_NOTHING) {
+					const line = this.getCompleteDataLine(dataAddr, countBytes);
+					lines.addLine(line);
+				}
+			}
 
 			// Check for end
 			if (nextDataAddr == undefined)
@@ -361,8 +389,10 @@ export class RenderText extends RenderBase {
 		this.dataReferences.sort((a, b) => b - a); // 0 = highest
 
 		// Loop over all nodes
+		let render = RenderHint.RENDER_EVERYTHING;
 		const lines = new RenderedLines();
 		let addr64k = 0x0000;
+		let lastLabel = '';	// Is required for reducing local labels.
 		for (const node of nodes) {
 			// nodes from sub routine may contain bank border addresses -
 			// those are not shown as it is not clear to which bank they belong:
@@ -381,49 +411,69 @@ export class RenderText extends RenderBase {
 
 			// Check if label exists
 			let emphasizeStartNode = startNodes.includes(node);
-			const label = this.disasm.getLabelForAddr64k(addr64k);
-			if (label) // && !label.includes('.'))
-			{
-				let labelText = this.getAddressLabel(addr64k, label);
-				// Color the node label
-				if (emphasizeStartNode) {
-					labelText = this.emphasizeStartLabel(labelText);
-					// Emphasizing finished
-					emphasizeStartNode = false;
+			let label = this.disasm.getLabelForAddr64k(addr64k);
+			if (label) {
+				// Check if label should be shown at all
+				if (this.funcLineAddressAssociation) {
+					render = this.funcLineAddressAssociation(lines.length(), addr64k, 0);
 				}
-				// Store
-				lines.addLine(labelText);
+				if (render == RenderHint.RENDER_EVERYTHING) {
+					// Check if local label.
+					const isLocal = label.startsWith(lastLabel + '.');
+					if (isLocal) {
+						// Is a local label, reduce to e.g. ".L1"
+						const kLocal = lastLabel.length;
+						label = label.substring(kLocal);
+					}
+					else {
+						// Remember if not local label
+						lastLabel = label;
+					}
+					let labelText = this.getAddressLabel(addr64k, label);
+					// Color the node label
+					if (emphasizeStartNode) {
+						labelText = this.emphasizeStartLabel(labelText);
+						// Emphasizing finished
+						emphasizeStartNode = false;
+					}
+					// Store
+					lines.addLine(labelText);
+				}
 			}
 
 			// Disassemble node
 			for (const opcode of node.instructions) {
 
-				// First print comment(s)
-				this.printComments(lines, addr64k, opcode.length);
-
-				// Check if an other label needs to be printed (an "opcode reference")
-				const otherLabel = this.disasm.getOtherLabel(addr64k);
-				if (otherLabel) {
-					const labelText = this.getAddressLabel(addr64k, otherLabel);
-					// Store
-					lines.addLine(labelText);
-				}
-
 				// Associate line and address
-				this.funcLineAddressAssociation?.(lines.length(), addr64k, opcode.length);
-
-				// Now disassemble instruction
 				const len = opcode.length;
-				const bytes = this.disasm.memory.getData(addr64k, len);
-				const instructionText = this.formatAddressPlusText(addr64k, bytes, opcode.disassembledText);
-				let hrefInstrText = this.addReferences(instructionText, addr64k);
-				if (emphasizeStartNode) {
-					hrefInstrText = this.emphasizeStartLabel(hrefInstrText);
-					// Emphasizing finished
-					emphasizeStartNode = false;
+				if (this.funcLineAddressAssociation) {
+					render = this.funcLineAddressAssociation(lines.length(), addr64k, len);
 				}
-				lines.addLine(hrefInstrText);
 
+				// Only render if no source file exists with the same address
+				if (render != RenderHint.RENDER_NOTHING) {
+					// First print comment(s)
+					this.printComments(lines, addr64k, opcode.length);
+
+					// Check if an other label needs to be printed (an "opcode reference")
+					const otherLabel = this.disasm.getOtherLabel(addr64k);
+					if (otherLabel) {
+						const labelText = this.getAddressLabel(addr64k, otherLabel);
+						// Store
+						lines.addLine(labelText);
+					}
+
+					// Now disassemble instruction
+					const bytes = this.disasm.memory.getData(addr64k, len);
+					const instructionText = this.formatAddressPlusText(addr64k, bytes, opcode.disassembledText);
+					let hrefInstrText = this.addReferences(instructionText, addr64k);
+					if (emphasizeStartNode) {
+						hrefInstrText = this.emphasizeStartLabel(hrefInstrText);
+						// Emphasizing finished
+						emphasizeStartNode = false;
+					}
+					lines.addLine(hrefInstrText);
+				}
 
 				// Next
 				addr64k += len;

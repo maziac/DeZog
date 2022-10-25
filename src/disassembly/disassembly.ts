@@ -1,6 +1,6 @@
 import {Format} from "../disassembler/format";
 import {Opcode} from "../disassembler/opcode";
-import {RenderText} from "../disassembler/rendertext";
+import {RenderHint, RenderText} from "../disassembler/rendertext";
 import {SmartDisassembler} from "../disassembler/smartdisassembler";
 import {Labels} from "../labels/labels";
 import {Utility} from "../misc/utility";
@@ -40,6 +40,15 @@ export class DisassemblyClass extends SmartDisassembler {
 	 */
 	public static createDisassemblySingleton() {
 		Disassembly = new DisassemblyClass();
+		Disassembly.funcGetLabel = (addr64k: number) => {
+			// Convert to long address
+			const longAddr = Z80Registers.createLongAddress(addr64k);
+			// Check if label already known
+			const labels = Labels.getLabelsForLongAddress(longAddr);
+			if (labels.length == 0)
+				return undefined;
+			return labels[0];	// Just return first label
+		};
 		Format.hexFormat = 'h';	// For all disassemblers
 		// Lower or upper case
 		Opcode.InitOpcodes();
@@ -71,13 +80,9 @@ export class DisassemblyClass extends SmartDisassembler {
 	/// Stores last disassembled text.
 	protected disassemblyText: string = '';
 
-
-	/**
-	 * Constructor.
-	 */
-	constructor() {
-		super();
-	}
+	// Map with the long address to line number relationship and vice versa.
+	protected addrLineMap = new Map<number, number>();
+	protected lineAddrArray = new Array<number | undefined>();
 
 
 	/** Adds the long address to this.longPcAddressesHistory
@@ -204,7 +209,7 @@ export class DisassemblyClass extends SmartDisassembler {
 	/** Called when a stack trace request is done. Ie. when a new PC with call stack
 	 * is available.
 	 * The first call stack address is the current PC.
-	 * IF the slots have changed beforehand new memory is fetched from the Remote.
+	 * If the slots have changed beforehand new memory is fetched from the Remote.
 	 * @param longCallStackAddresses The call stack.
 	 * @returns true if a new disassembly was done.
 	 */
@@ -273,16 +278,36 @@ export class DisassemblyClass extends SmartDisassembler {
 			}
 		}
 
+		// Now a complex check:
+		// If user just breaked manually the PC can be at a position where
+		// no disassembly of the previous line(s) exist.
+		// This is not so nice as we cannot see where the program flow came
+		// from.
+		// So we check if the address above the PC is already known to be
+		// CODE.
+		// If not we get a trace back from the Remote (only zsim) and add
+		// that to the addresses that should be disassembled.
+		let traceBackAddrs: number[] = [];
+		if (pcAddr64k != undefined) {
+			const attrPrev = this.memory.getAttributeAt((pcAddr64k-1) & 0xFFFF);
+			if (!(attrPrev & MemAttribute.CODE)) {
+				// No CODE yet
+				traceBackAddrs = await Remote.getTraceBack();	// Long addresses
+			}
+		}
+
 		// Check if disassembly is required
-		if(disasmRequired) {
-			// Get all addresses
-			const addrs64k = this.getOnlyPagedInAddresses(this.longPcAddressesHistory);
-			const csAddrs64k = this.getOnlyPagedInAddresses(this.longCallStackAddresses);
-			addrs64k.push(...csAddrs64k);
-			// Also add any CODE addresses, given by the user form the rev-eng.list file
+		if (disasmRequired) {
 			const codeAddresses = Labels.getLongCodeAddresses();
-			const codeAddrs64k = this.getOnlyPagedInAddresses(codeAddresses);
-			addrs64k.push(...codeAddrs64k);
+			// Add all addresses
+			const allAddrs = [
+				...traceBackAddrs,
+				...this.longPcAddressesHistory,
+				...this.longCallStackAddresses,
+				...codeAddresses, // Also add any CODE addresses, given by the user from the rev-eng.list file
+			];
+			// Convert to 64k addresses
+			const addrs64k = this.getOnlyPagedInAddresses(allAddrs);
 
 			// Get all skip addresses and convert to 64k
 			const longSkipAddresses = Labels.getLongSkipAddresses();
@@ -299,23 +324,42 @@ export class DisassemblyClass extends SmartDisassembler {
 			// Get max depth
 			const {depth, } = this.getSubroutinesFor(startNodes);	// TODO: Probably this could be implemented smarter, the complete map is not used, only the depth.
 
+			// Clear line arrays
+			this.lineAddrArray = [];
+			this.addrLineMap.clear();
 			// Render text
 			const renderer = new RenderText(this,
 				(lineNr: number, addr64k: number, bytesCount: number) => {
 					// Convert to long address
 					const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
-					// Add to arrays;
-					while (this.lineAddrArray.length <= lineNr)
-						this.lineAddrArray.push(longAddr);
-					// Add all bytes
-					this.addrLineMap.set(longAddr, lineNr);
-					for (let i = 1; i < bytesCount; i++) {
-						addr64k++;
-						if (addr64k > 0xFFFF)
-							break;	// Overflow from 0xFFFF
-						const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
-						this.addrLineMap.set(longAddr, lineNr);
+
+					// Check if entry already exists (is filtered in this case
+					const entry = Labels.getSourceFileEntryForAddress(longAddr);
+					let render: RenderHint = RenderHint.RENDER_EVERYTHING;
+					if (entry) {
+						render = (entry.size) ? RenderHint.RENDER_NOTHING : RenderHint.RENDER_DATA_AND_DISASSEMBLY;
 					}
+
+					// Add to arrays
+					if (render != RenderHint.RENDER_NOTHING) {
+						while (this.lineAddrArray.length <= lineNr)
+							this.lineAddrArray.push(longAddr);
+						// Add all bytes
+						this.addrLineMap.set(longAddr, lineNr);
+						for (let i = 1; i < bytesCount; i++) {
+							addr64k++;
+							if (addr64k > 0xFFFF)
+								break;	// Overflow from 0xFFFF
+							const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
+							this.addrLineMap.set(longAddr, lineNr);
+						}
+					}
+
+					// Returns:
+					// RENDER_EVERYTHING = Render label, data and disassembly
+					// RENDER_DATA_AND_DISASSEMBLY = Render no label
+					// RENDER_NOTHING = Do not render the current line at all
+					return render;
 				});
 			this.disassemblyText = renderer.renderSync(startNodes, depth);
 		}
