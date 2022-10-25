@@ -383,22 +383,8 @@ export class ZSimRemote extends DzrpRemote {
 		// Decide what machine
 		this.configureMachine(Settings.launch.zsim);
 
-		// Load obj file(s) unit
-		for (let loadObj of Settings.launch.loadObjs) {
-			if (loadObj.path) {
-				// Convert start address
-				const start = Labels.getNumberFromString64k(loadObj.start);
-				if (isNaN(start))
-					throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
-				await this.loadObj(loadObj.path, start);
-			}
-		}
-
-		// Load sna or nex file
-		const loadPath = Settings.launch.load;
-		if (loadPath) {
-			await this.loadBin(loadPath);
-		}
+		// Load sna/nex and loadObjs:
+		await this.loadExecutable();
 
 		// Set Program Counter to execAddress
 		if (Settings.launch.execAddress) {
@@ -812,7 +798,6 @@ export class ZSimRemote extends DzrpRemote {
 		// Emit code coverage event
 		if (this.codeCoverage) {
 			this.emit('coverage', this.codeCoverage.getAddresses());
-			this.codeCoverage.clearAll();
 		}
 	}
 
@@ -1179,6 +1164,22 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 			// Rethrow
 			throw e;
 		}
+	}
+
+
+	/** zsim returns here the code coverage addresses since the last step.
+	 * This is an additional information for the disassembler.
+	 * The addresses are not in a specific order.
+	 * Note: It is b intention that not the complete trace is returned.
+	 * Processing could take too long.
+	 * So only the addresses since last stepping are returned.
+	 * Maybe one could experiment with the value.
+	 * @returns An array with long addresses.
+	 */
+	public async getTraceBack(): Promise<number[]> {
+		if (this.codeCoverage)
+			return Array.from(this.codeCoverage.getAddresses());
+		return [];
 	}
 
 
