@@ -177,19 +177,19 @@ suite('ZesaruxCpuHistory', () => {
 			const hist = createCpuHistory();
 
 			const resultn = hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
-			assert.equal(0xe5, resultn);
+			assert.equal(resultn, 0xe5);
 
 			let result = hist.getInstruction("PC=0039 ... (PC)=cf000000");
-			assert.equal("RST 08h", result);
+			assert.equal(result, "RST 0008h", );
 
 			result = hist.getInstruction("PC=0039 ... (PC)=df000000");
-			assert.equal("RST 18h", result);
+			assert.equal(result, "RST 0018h");
 
 			result = hist.getInstruction("PC=0039 ... (PC)=ef000000");
-			assert.equal("RST 28h", result);
+			assert.equal(result, "RST 0028h");
 
 			result = hist.getInstruction("PC=0039 ... (PC)=ff000000");
-			assert.equal("RST 38h", result);
+			assert.equal(result, "RST 0038h");
 		});
 
 

@@ -800,7 +800,45 @@ suite('Labels (revEng)', () => {
 			// Test that no more than the given code addresses are created
 			assert.equal(codeAddresses.length, 4);
 		});
+	});
 
+
+	suite('Comments', () => {
+		test('multiline comments', () => {
+			const config: any = {
+				revEng: [{
+					path: 'tests/data/labels/projects/revEng/multiline_comments.list'
+				}]
+			};
+
+			lbls.readListFiles(config, new MemoryModelAllRam());
+
+			let res = lbls.getFileAndLineForAddress(0x011000);
+			assert.notEqual(res.fileName.length, 0);
+			res = lbls.getFileAndLineForAddress(0x011001);
+			assert.notEqual(res.fileName.length, 0);
+			res = lbls.getFileAndLineForAddress(0x011002);
+			assert.notEqual(res.fileName.length, 0);
+
+			res = lbls.getFileAndLineForAddress(0x011003);
+			assert.equal(res.fileName.length, 0);
+			res = lbls.getFileAndLineForAddress(0x011004);
+			assert.equal(res.fileName.length, 0);
+
+			res = lbls.getFileAndLineForAddress(0x011005);
+			assert.notEqual(res.fileName.length, 0);
+			res = lbls.getFileAndLineForAddress(0x011006);
+			assert.notEqual(res.fileName.length, 0);
+
+			res = lbls.getFileAndLineForAddress(0x011007);
+			assert.equal(res.fileName.length, 0);
+
+			res = lbls.getFileAndLineForAddress(0x011008);
+			assert.notEqual(res.fileName.length, 0);
+			
+			res = lbls.getFileAndLineForAddress(0x011009);
+			assert.equal(res.fileName.length, 0);
+		});
 	});
 });
 

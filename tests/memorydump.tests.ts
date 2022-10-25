@@ -784,32 +784,6 @@ suite('MemoryDump', () => {
 
 		suite('getChangedValues', () => {
 
-			test('no data', () => {
-				const md = new MemoryDump() as any;
-				md.addBlockWithoutBoundary(50, 1000);
-
-				const vals = md.metaBlocks[0].getChangedValues();
-				assert.equal(vals.length, 0);
-			});
-
-			test('no prev data', () => {
-				const md = new MemoryDump() as any;
-				md.addBlockWithoutBoundary(100, 20);
-				const data = new Uint8Array(20);
-				md.metaBlocks[0].data = data;
-				for (let i = 0; i < 20; i++)
-					data[i] = i;
-
-				const vals = md.metaBlocks[0].getChangedValues();
-				assert.equal(vals.length, 20);
-				for (let i = 0; i < 20; i++) {
-					const addrVal = vals[i];
-					assert.equal(addrVal.length, 2);
-					assert.equal(addrVal[0], 100 + i);
-					assert.equal(addrVal[1], i);
-				}
-			});
-
 			test('no change', () => {
 				const md = new MemoryDump() as any;
 				md.addBlockWithoutBoundary(100, 20);
@@ -975,7 +949,7 @@ suite('MemoryDump', () => {
 		test('empty', () => {
 			const md1 = new MemoryDump();
 			const md2 = md1.clone();
-			const diff = md2.getDiffMemDump(md1);
+			const diff = md2.getDiffMemDump(md1, 'not equal');
 			assert.equal(diff.metaBlocks.length, 0);
 		});
 
@@ -985,7 +959,7 @@ suite('MemoryDump', () => {
 			md1.metaBlocks[0].data = new Uint8Array(200);
 			md1.metaBlocks[0].data[5] = 17;
 			const md2 = md1.clone();
-			const diff = md2.getDiffMemDump(md1);
+			const diff = md2.getDiffMemDump(md1, 'not equal');
 			assert.equal(diff.metaBlocks.length, 0);
 		});
 
@@ -996,11 +970,12 @@ suite('MemoryDump', () => {
 			md1.metaBlocks[0].data[5] = 17;
 			const md2 = md1.clone();
 			md2.metaBlocks[0].data![5] = 22;
-			const diff = md2.getDiffMemDump(md1);
+			const diff = md2.getDiffMemDump(md1, 'not equal');
 			assert.equal(diff.metaBlocks.length, 1);
 			assert.equal(diff.metaBlocks[0].address, 105);
 			assert.equal(diff.metaBlocks[0].size, 1);
 			assert.equal(diff.metaBlocks[0].data![0], 22);
+			assert.equal(diff.metaBlocks[0].prevData![0], 17);
 		});
 
 		test('difference at start', () => {
@@ -1010,11 +985,12 @@ suite('MemoryDump', () => {
 			md1.metaBlocks[0].data[0] = 17;
 			const md2 = md1.clone();
 			md2.metaBlocks[0].data![0] = 22;
-			const diff = md2.getDiffMemDump(md1);
+			const diff = md2.getDiffMemDump(md1, 'not equal');
 			assert.equal(diff.metaBlocks.length, 1);
 			assert.equal(diff.metaBlocks[0].address, 100);
 			assert.equal(diff.metaBlocks[0].size, 1);
 			assert.equal(diff.metaBlocks[0].data![0], 22);
+			assert.equal(diff.metaBlocks[0].prevData![0], 17);
 		});
 
 
@@ -1025,11 +1001,12 @@ suite('MemoryDump', () => {
 			md1.metaBlocks[0].data[199] = 17;
 			const md2 = md1.clone();
 			md2.metaBlocks[0].data![199] = 22;
-			const diff = md2.getDiffMemDump(md1);
+			const diff = md2.getDiffMemDump(md1, 'not equal');
 			assert.equal(diff.metaBlocks.length, 1);
 			assert.equal(diff.metaBlocks[0].address, 299);
 			assert.equal(diff.metaBlocks[0].size, 1);
 			assert.equal(diff.metaBlocks[0].data![0], 22);
+			assert.equal(diff.metaBlocks[0].prevData![0], 17);
 		});
 
 		test('more differences', () => {
@@ -1059,20 +1036,24 @@ suite('MemoryDump', () => {
 
 			md2.metaBlocks[0].data![30] = 131;
 
-			const diff = md2.getDiffMemDump(md1);
+			const diff = md2.getDiffMemDump(md1, 'not equal');
 			assert.equal(diff.metaBlocks.length, 4);
 
 			assert.equal(diff.metaBlocks[0].address, 105);
 			assert.deepEqual(Array.from(diff.metaBlocks[0].data!), [117, 118]);
+			assert.deepEqual(Array.from(diff.metaBlocks[0].prevData!), [17, 18]);
 
 			assert.equal(diff.metaBlocks[1].address, 110);
 			assert.deepEqual(Array.from(diff.metaBlocks[1].data!), [119, 120, 121]);
+			assert.deepEqual(Array.from(diff.metaBlocks[1].prevData!), [19, 20, 21]);
 
 			assert.equal(diff.metaBlocks[2].address, 120);
 			assert.deepEqual(Array.from(diff.metaBlocks[2].data!), [130]);
+			assert.deepEqual(Array.from(diff.metaBlocks[2].prevData!), [30]);
 
 			assert.equal(diff.metaBlocks[3].address, 130);
 			assert.deepEqual(Array.from(diff.metaBlocks[3].data!), [131]);
+			assert.deepEqual(Array.from(diff.metaBlocks[3].prevData!), [31]);
 		});
 
 		test('3 meta blocks', () => {
@@ -1099,17 +1080,20 @@ suite('MemoryDump', () => {
 			md2.metaBlocks[2].data![25] = 41;
 			md2.metaBlocks[2].data![26] = 42;
 
-			const diff = md2.getDiffMemDump(md1);
+			const diff = md2.getDiffMemDump(md1, 'not equal');
 			assert.equal(diff.metaBlocks.length, 3);
 
 			assert.equal(diff.metaBlocks[0].address, 106);
 			assert.deepEqual(Array.from(diff.metaBlocks[0].data!), [19]);
+			assert.deepEqual(Array.from(diff.metaBlocks[0].prevData!), [18]);
 
 			assert.equal(diff.metaBlocks[1].address, 299);
 			assert.deepEqual(Array.from(diff.metaBlocks[1].data!), [32, 33, 34]);
+			assert.deepEqual(Array.from(diff.metaBlocks[1].prevData!), [31, 32, 33]);
 
 			assert.equal(diff.metaBlocks[2].address, 1025);
 			assert.deepEqual(Array.from(diff.metaBlocks[2].data!), [41, 42]);
+			assert.deepEqual(Array.from(diff.metaBlocks[2].prevData!), [40, 41]);
 		});
 
 		test('meta blocks borders', () => {
@@ -1145,20 +1129,121 @@ suite('MemoryDump', () => {
 
 			md2.metaBlocks[4].data![0] = 137;
 
-			const diff = md2.getDiffMemDump(md1);
+			const diff = md2.getDiffMemDump(md1, 'not equal');
 			assert.equal(diff.metaBlocks.length, 4);
 
 			assert.equal(diff.metaBlocks[0].address, 199);
 			assert.deepEqual(Array.from(diff.metaBlocks[0].data!), [131, 132]);
+			assert.deepEqual(Array.from(diff.metaBlocks[0].prevData!), [31, 32]);
 
 			assert.equal(diff.metaBlocks[1].address, 299);
 			assert.deepEqual(Array.from(diff.metaBlocks[1].data!), [133]);
+			assert.deepEqual(Array.from(diff.metaBlocks[1].prevData!), [33]);
 
 			assert.equal(diff.metaBlocks[2].address, 398);
 			assert.deepEqual(Array.from(diff.metaBlocks[2].data!), [134, 135, 136]);
+			assert.deepEqual(Array.from(diff.metaBlocks[2].prevData!), [34, 35, 36]);
 
 			assert.equal(diff.metaBlocks[3].address, 500);
 			assert.deepEqual(Array.from(diff.metaBlocks[3].data!), [137]);
+			assert.deepEqual(Array.from(diff.metaBlocks[3].prevData!), [37]);
 		});
+
+		test("criteria 'no check'", () => {
+			// Not yet implemented
+			const md1 = new MemoryDump();
+			md1.addBlockWithoutBoundary(100, 5);
+			md1.metaBlocks[0].data = new Uint8Array([10, 11, 12, 13, 14]);
+			const md2 = md1.clone();
+			md2.metaBlocks[0].data![0] = 10;	// same
+			md2.metaBlocks[0].data![1] = 12;	// +1
+			md2.metaBlocks[0].data![2] = 14;	// +2
+			md2.metaBlocks[0].data![3] = 12;	// -1
+			md2.metaBlocks[0].data![4] = 12;	// -2
+
+			// Not check
+			const diff = md2.getDiffMemDump(md1, 'no check');
+			assert.equal(diff.metaBlocks.length, 1);
+			assert.equal(diff.metaBlocks[0].address, 100);
+			assert.equal(diff.metaBlocks[0].size, 5);
+			assert.equal(diff.metaBlocks[0].data![0], 10);
+			assert.equal(diff.metaBlocks[0].prevData![0], 10);
+			assert.equal(diff.metaBlocks[0].data![1], 12);
+			assert.equal(diff.metaBlocks[0].prevData![1], 11);
+			assert.equal(diff.metaBlocks[0].data![2], 14);
+			assert.equal(diff.metaBlocks[0].prevData![2], 12);
+			assert.equal(diff.metaBlocks[0].data![3], 12);
+			assert.equal(diff.metaBlocks[0].prevData![3], 13);
+			assert.equal(diff.metaBlocks[0].data![4], 12);
+			assert.equal(diff.metaBlocks[0].prevData![4], 14);
+		});
+
+		test('criteria number', () => {
+			// Not yet implemented
+			const md1 = new MemoryDump();
+			md1.addBlockWithoutBoundary(100, 5);
+			md1.metaBlocks[0].data = new Uint8Array([10, 11, 12, 13, 14]);
+			const md2 = md1.clone();
+			md2.metaBlocks[0].data![0] = 10;	// same
+			md2.metaBlocks[0].data![1] = 12;	// +1
+			md2.metaBlocks[0].data![2] = 14;	// +2
+			md2.metaBlocks[0].data![3] = 12;	// -1
+			md2.metaBlocks[0].data![4] = 12;	// -2
+
+			// Equal
+			let diff = md2.getDiffMemDump(md1, 0);
+			assert.equal(diff.metaBlocks.length, 1);
+			assert.equal(diff.metaBlocks[0].address, 100);
+			assert.equal(diff.metaBlocks[0].size, 1);
+			assert.equal(diff.metaBlocks[0].data![0], 10);
+			assert.equal(diff.metaBlocks[0].prevData![0], 10);
+
+			// +1
+			diff = md2.getDiffMemDump(md1, 1);
+			assert.equal(diff.metaBlocks.length, 1);
+			assert.equal(diff.metaBlocks[0].address, 101);
+			assert.equal(diff.metaBlocks[0].size, 1);
+			assert.equal(diff.metaBlocks[0].data![0], 12);
+			assert.equal(diff.metaBlocks[0].prevData![0], 11);
+
+			// +2
+			diff = md2.getDiffMemDump(md1, 2);
+			assert.equal(diff.metaBlocks.length, 1);
+			assert.equal(diff.metaBlocks[0].address, 102);
+			assert.equal(diff.metaBlocks[0].size, 1);
+			assert.equal(diff.metaBlocks[0].data![0], 14);
+			assert.equal(diff.metaBlocks[0].prevData![0], 12);
+
+			// -1
+			diff = md2.getDiffMemDump(md1, -1);
+			assert.equal(diff.metaBlocks.length, 1);
+			assert.equal(diff.metaBlocks[0].address, 103);
+			assert.equal(diff.metaBlocks[0].size, 1);
+			assert.equal(diff.metaBlocks[0].data![0], 12);
+			assert.equal(diff.metaBlocks[0].prevData![0], 13);
+
+			// -2
+			diff = md2.getDiffMemDump(md1, -2);
+			assert.equal(diff.metaBlocks.length, 1);
+			assert.equal(diff.metaBlocks[0].address, 104);
+			assert.equal(diff.metaBlocks[0].size, 1);
+			assert.equal(diff.metaBlocks[0].data![0], 12);
+			assert.equal(diff.metaBlocks[0].prevData![0], 14);
+
+			// Not equal
+			diff = md2.getDiffMemDump(md1, 'not equal');
+			assert.equal(diff.metaBlocks.length, 1);
+			assert.equal(diff.metaBlocks[0].address, 101);
+			assert.equal(diff.metaBlocks[0].size, 4);
+			assert.equal(diff.metaBlocks[0].data![0], 12);
+			assert.equal(diff.metaBlocks[0].prevData![0], 11);
+			assert.equal(diff.metaBlocks[0].data![1], 14);
+			assert.equal(diff.metaBlocks[0].prevData![1], 12);
+			assert.equal(diff.metaBlocks[0].data![2], 12);
+			assert.equal(diff.metaBlocks[0].prevData![2], 13);
+			assert.equal(diff.metaBlocks[0].data![3], 12);
+			assert.equal(diff.metaBlocks[0].prevData![3], 14);
+		});
+
 	});
 });
