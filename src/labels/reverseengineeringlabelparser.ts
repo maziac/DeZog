@@ -25,7 +25,7 @@ import {ListFileLine, SourceFileEntry} from './labels';
  * C000.0 or C000.1.
  * Unbanked addresses are simply e.g. 8000.
  *
- * Comments start with ;
+ * Comments start with ; or //
  * Each line is either empty, contains a comment only or has to start with an address.
  * During parsing anything that does not start with an address is simply ignored.
  * After the address the decoded bytes follow, all separated by a space.
@@ -38,6 +38,8 @@ import {ListFileLine, SourceFileEntry} from './labels';
  * Afterwards a comment may follow.
  *
  * Comments are parsed for WPMEM, LOGPOINTs and ASSERTIONs by the parent class.
+ *
+ * Multiline comments with /* ...  are allowed. Anything inside a multiline comment is not parsed.
  *
  * E.g.:
  * C000.2 3E 05  LD A,5 ; load A with 5
@@ -65,6 +67,11 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	// Regex to parse for special commands like SKIP, SKIPWORD or CODE.
 	protected regexSpecialCommand = /^\s*([a-z]+)/i;
 
+	// Regex to parse for multiline comments "/* ... */"
+	protected regexMultiline = /\/\*.*?\*\//g;
+	protected multilineStart = '/*';
+	protected multilineEnd = '*/';
+
 	// A map with addresses for skips. I.e. addresses that the PC should simply skip.
 	// E.g. for special RST commands followed by bytes.
 	// Used only by the ReverseEngineeringLabelParser.
@@ -72,6 +79,9 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 
 	// Array with (long) addresses for CODE. I.e. addresses that additionally should be disassembled.
 	protected codeAddresses: Array<number>;
+
+	// Is internally set if a multiline comment ("/*") starts
+	protected multilineComment: boolean;
 
 
 	/**
@@ -141,6 +151,33 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	 */
 	protected parseLabelAndAddress(line: string) {
 		let workLine = line + ' ';	// For easier regex
+		//console.log(workLine);
+
+		// Check if in multiline comment mode
+		if (this.multilineComment) {
+			// Only check for end of comments "*/"
+			const k = workLine.indexOf(this.multilineEnd);
+			if (k < 0) {
+				// Multiline continues
+				return;
+			}
+			// Multiline ended, process the remaining characters
+			this.multilineComment = false;
+			workLine = workLine.substring(k + this.multilineEnd.length);
+		}
+
+		// Remove any multiline comment signs within one line
+		workLine = workLine.replace(this.regexMultiline, '');
+
+		// Check for start of multiline
+		if (!this.multilineComment) {
+			const k = workLine.indexOf(this.multilineStart);
+			if (k >= 0) {
+				// Multiline started, but process the previous characters
+				this.multilineComment = true;
+				workLine = workLine.substring(0, k);
+			}
+		}
 
 		// Check first for EQU format:
 		// E.g. "MY_CONSTANT:  EQU 50"
@@ -172,7 +209,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 			// Skip if no address found
 			// Check that max. contains a comment otherwise show a warning
 			const trimmed = workLine.trim();
-			if (trimmed && !trimmed.startsWith(';')) {
+			if (trimmed && !(trimmed.startsWith(';') || trimmed.startsWith('//'))) {
 				// Line contains something and it is not a comment:
 				// Add a warning
 				this.sendWarning("Line ignored: '" + line + "'");
@@ -231,7 +268,15 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 					this.codeAddresses.push(longAddress);
 					break;
 				default:
-					// Do nothing
+					// No special command but e.g. a normal instruction.
+					// If there haven't been any bytes
+					if (countBytes == 0) {
+						// This is to work with (faulty) list files like the rom48.list.
+						// Otherwise all of the lines would still be disassembled because
+						// they wouldn't have any associated code.
+						// Assume at least one byte
+						countBytes = 1;
+					}
 					break;
 			}
 		}
