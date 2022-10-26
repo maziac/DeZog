@@ -29,6 +29,7 @@
 	- "-assertion", "-wpmem" and "-logpoint" removed (see above)
 	- "-label" now also prints the bank of a label.
 	- "-mvw" for viewing words instead of bytes is now shown in the debug console help.
+- The order of loading has been changed: First "load" (nex or sna file) then "loadObjs".
 
 
 # 2.7.4
