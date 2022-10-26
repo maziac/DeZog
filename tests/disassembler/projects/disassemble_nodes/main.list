@@ -69,7 +69,7 @@
  68   810A
  69   810A
  70   810A 00 00 00...  	DEFS 0xD000-$
- 71   D000              	; Same bank, misc
+ 71   D000              	; Loop: Label prior to subroutine, misc references
  72   D000 CD 07 D0     	CALL SUB_D007
  73   D003 C9           	RET
  74   D004
@@ -230,4 +230,12 @@
 229   E00B 06 00        	LD B,$00	; Modified
 230   E00D C9           	RET
 231   E00E
+232   E00E
+233   E00E 00 00 00...  	DEFS 0xE100-$
+234   E100 3A 07 E1     	LD A,(DATA_E107)
+235   E103 21 07 E1     	LD HL,DATA_E107
+236   E106 C9           	RET
+237   E107
+238   E107 00           DATA_E107:	DEFB 0
+239   E108
 # file closed: main.asm

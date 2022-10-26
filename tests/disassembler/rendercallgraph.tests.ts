@@ -12,7 +12,6 @@ suite('Disassembler - RenderCallGraph', () => {
 	setup(() => {
 		const disasm = new SmartDisassembler();
 		disasm.funcGetLabel = addr64k => undefined;
-		disasm.funcFilterAddresses = addr64k => true;
 		disasm.funcFormatLongAddress = addr64k => 'LONG' + Utility.getHexString(addr64k, 4);
 		r = new RenderCallGraph(disasm);
 		Format.hexFormat = '$';

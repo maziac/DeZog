@@ -225,7 +225,15 @@ SUB_D60A:
 
 SUB_E009:
 	LD A,$02
-.L1:	; This does not split the nodes but is a referenced / otherLabels)
+.L1:	; This does not split the nodes but is a referenced (otherLabels)
 	LD B,$00	; Modified
 	RET
+
+
+	DEFS 0xE100-$
+	LD A,(DATA_E107)
+	LD HL,DATA_E107
+	RET
+
+DATA_E107:	DEFB 0
 

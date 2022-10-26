@@ -4,7 +4,7 @@ import {Opcode, OpcodeFlag} from '../../src/disassembler/opcode';
 
 
 
-suite('Disassembler Opcode', () => {
+suite('Disassembler - Opcodes', () => {
 
 	setup(() => {
 		Opcode.InitOpcodes();

@@ -11,6 +11,7 @@ import {MemoryModelAllRam} from '../../src/remotes/MemoryModel/predefinedmemorym
 import {Z80RegistersStandardDecoder} from '../../src/remotes/z80registersstandarddecoder';
 import {Z80Registers, Z80RegistersClass} from '../../src/remotes/z80registers';
 import {Settings} from '../../src/settings/settings';
+import {Opcode} from '../../src/disassembler/opcode';
 
 
 
@@ -28,7 +29,6 @@ suite('Disassembler - RenderText', () => {
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 		disasm = new SmartDisassembler();
 		disasm.funcGetLabel = addr64k => undefined;
-		disasm.funcFilterAddresses = addr64k => true;
 		disasm.funcFormatLongAddress = addr64k => Utility.getHexString(addr64k, 4) + '.1';
 		r = new RenderText(disasm);
 		r.clmnsAddress = 7;
@@ -38,6 +38,7 @@ suite('Disassembler - RenderText', () => {
 		const memModel = new MemoryModelAllRam();
 		memModel.init();
 		disasm.setMemoryModel(memModel);
+		Opcode.InitOpcodes();
 	});
 
 	// Strip html.
@@ -339,21 +340,21 @@ suite('Disassembler - RenderText', () => {
 				const text = disassemble([0x0200, 0x0201, 0x0202, 0x0203, 0x0204, 0x0205, 0x0206, 0x0207, 0x0208, 0x020B]);
 
 				assert.equal(c(text), c(
-					`0200.1 C7 RST $00
+					`0200.1 C7 RST RST_00
 
-0201.1 CF RST $08
+0201.1 CF RST RST_08
 
-0202.1 D7 RST $10
+0202.1 D7 RST RST_10
 
-0203.1 DF RST $18
+0203.1 DF RST RST_18
 
-0204.1 E7 RST $20
+0204.1 E7 RST RST_20
 
-0205.1 EF RST $28
+0205.1 EF RST RST_28
 
-0206.1 F7 RST $30
+0206.1 F7 RST RST_30
 
-0207.1 FF RST $38
+0207.1 FF RST RST_38
 
 0208.1 CD 40 00 CALL SUB_0040
 
@@ -458,7 +459,7 @@ suite('Disassembler - RenderText', () => {
 1308.1 34 12 DEFB 34 12 ; ASCII: 4?
 
 130A.1           LBL_130A:
-130A.1 11 DE DE    LD DE,$DEDE
+130A.1 11 DE DE    LD DE,DEDE.1
 
 130D.1 .LOOP:
 130D.1 18 FE JR .LOOP
@@ -766,7 +767,7 @@ suite('Disassembler - RenderText', () => {
 0104.1 00 NOP
 
 ; Note: The disassembly is ambiguous at $0102.
-0105.1 C3 02 01 JP 0102.1
+0105.1 C3 02 01 JP 0101.1+1
 `));
 			});
 
@@ -783,7 +784,7 @@ suite('Disassembler - RenderText', () => {
 0104.1 00 NOP
 
 ; Note: The disassembly is ambiguous at $0102.
-0105.1 C3 02 01 JP 0102.1
+0105.1 C3 02 01 JP 0101.1+1
 `));
 			});
 
@@ -793,7 +794,7 @@ suite('Disassembler - RenderText', () => {
 					const text = disassemble([0x0200]);
 
 					assert.equal(c(text), c(
-						`0008.1 RST_0008:
+						`0008.1 RST_08:
 0008.1 C9 RET
 
 0200.1 CD 07 02 CALL SUB_0207
@@ -803,13 +804,13 @@ suite('Disassembler - RenderText', () => {
 0206.1 C9 RET
 
 0207.1 SUB_0207:
-0207.1 CF RST $08
+0207.1 CF RST RST_08
 
 ; Note: The disassembly is ambiguous at $020A.
-0208.1 01 10 21 LD BC,$2110
+0208.1 01 10 21 LD BC,2110.1
 
 020A.1 SUB_020A:
-020A.1 21 00 80 LD HL,$8000
+020A.1 21 00 80 LD HL,8000.1
 020D.1 00 NOP
 020E.1 00 NOP
 020F.1 00 NOP
@@ -822,21 +823,21 @@ suite('Disassembler - RenderText', () => {
 					const text = disassemble([0x0300]);
 
 					assert.equal(c(text), c(
-						`0008.1 RST_0008:
+						`0008.1 RST_08:
 0008.1 C9 RET
 
 ; Note: The disassembly is ambiguous at $030A.
-0300.1 CD 0A 03 CALL 030A.1
+0300.1 CD 0A 03 CALL 0308.1+2
 
 0303.1 CD 07 03 CALL SUB_0307
 
 0306.1 C9 RET
 
 0307.1 SUB_0307:
-0307.1 CF RST $08
+0307.1 CF RST RST_08
 
 ; Note: The disassembly is ambiguous at $030A.
-0308.1 01 10 21 LD BC,$2110
+0308.1 01 10 21 LD BC,2110.1
 030B.1 00 NOP
 030C.1 80 ADD A,B
 030D.1 00 NOP
@@ -851,7 +852,7 @@ suite('Disassembler - RenderText', () => {
 					const text = disassemble([0x0400]);
 
 					assert.equal(c(text), c(
-						`0008.1 RST_0008:
+						`0008.1 RST_08:
 0008.1 C9 RET
 
 0400.1 CD 04 04 CALL SUB_0404
@@ -859,17 +860,17 @@ suite('Disassembler - RenderText', () => {
 0403.1 C9 RET
 
 0404.1 SUB_0404:
-0404.1 CF RST $08
+0404.1 CF RST RST_08
 
 ; Note: The disassembly is ambiguous at $0407.
-0405.1 01 10 21 LD BC,$2110
+0405.1 01 10 21 LD BC,2110.1
 0408.1 00 NOP
 0409.1 80 ADD A,B
 040A.1 00 NOP
 040B.1 00 NOP
 
 ; Note: The disassembly is ambiguous at $0407.
-040C.1 28 F9 JR Z,0407.1
+040C.1 28 F9 JR Z,0405.1+2
 
 040E.1 C9 RET
 `));
@@ -914,13 +915,13 @@ suite('Disassembler - RenderText', () => {
 			(disasm as any).skipAddrs64k.set(0x0101, 1);
 			const text = disassemble([0x0100]);
 
-			assert.equal(c(text), c(`0008.1 RST_0008:
+			assert.equal(c(text), c(`0008.1 RST_08:
 0008.1 E3 EX (SP),HL
 0009.1 23 INC HL
 000A.1 E3 EX (SP),HL
 000B.1 C9 RET
 
-0100.1 CF RST $08
+0100.1 CF RST RST_08
 0101.1 02 SKIP [$02]
 
 0102.1 00 NOP
@@ -932,14 +933,14 @@ suite('Disassembler - RenderText', () => {
 			(disasm as any).skipAddrs64k.set(0x0201, 2);
 			const text = disassemble([0x0200]);
 
-			assert.equal(c(text), c(`0010.1 RST_0010:
+			assert.equal(c(text), c(`0010.1 RST_10:
 0010.1 E3 EX (SP),HL
 0011.1 23 INC HL
 0012.1 23 INC HL
 0013.1 E3 EX (SP),HL
 0014.1 C9 RET
 
-0200.1 D7 RST $10
+0200.1 D7 RST RST_10
 0201.1 CD AB SKIPWORD [$ABCD]
 
 0203.1 00 NOP
@@ -951,6 +952,56 @@ suite('Disassembler - RenderText', () => {
 			// No test required: A CODE command in the list file just leads to a
 			// another start address passed to the disassembly.
 			assert.ok(true);
+		});
+	});
+
+
+
+
+	suite('local labels', () => {
+		// Disassemble
+		function disassemble(startAddrs64k: number[]): string {
+			(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
+			disasm.setCurrentSlots([0]);
+			readBinFile(disasm, './tests/disassembler/projects/render_local_labels/main.bin');
+
+			disasm.getFlowGraph(startAddrs64k, []);
+			disasm.disassembleNodes();
+			// Get all nodes for the depth
+			const nodes = new Set<AsmNode>();
+			const startNodes = disasm.getNodesForAddresses(startAddrs64k);
+			for (const node of startNodes) {
+				const sub = new Subroutine(node);
+				sub.getAllNodesRecursively(65536, nodes);
+			}
+			const text = r.renderNodes(nodes);
+			return text;
+		}
+
+		test('jr into prev sub', () => {
+			const text = disassemble([0x0000]);
+
+			assert.equal(c(text), c(`0000.1 CD 00 02 CALL SUB_0200
+
+0003.1 CD 05 02 CALL SUB_0205
+
+0006.1 C9 RET
+
+0200.1 SUB_0200:
+0200.1 20 01 JR NZ,.L1
+
+0202.1 00 NOP
+
+0203.1 .L1:
+0203.1 00 NOP
+
+0204.1 .L2:
+0204.1 C9 RET
+
+0205.1 SUB_0205:
+0205.1 00 NOP
+0206.1 18 FC JR SUB_0200.L2
+`));
 		});
 	});
 });

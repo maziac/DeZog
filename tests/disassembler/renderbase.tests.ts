@@ -13,7 +13,6 @@ suite('Disassembler - RenderBase', () => {
 	setup(() => {
 		const disasm = new SmartDisassembler();
 		disasm.funcGetLabel = addr64k => undefined;
-		disasm.funcFilterAddresses = addr64k => true;
 		disasm.funcFormatLongAddress = addr64k => 'LONG' + Utility.getHexString(addr64k, 4);
 		r = new RenderBase(disasm);
 	});
