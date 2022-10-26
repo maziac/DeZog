@@ -1,4 +1,4 @@
-# Usage of DeZog - the VS Code Z80 Debug Adapter
+# Usage of DeZog - the VS Code Z80 Debugger
 
 
 This document describes the features of DeZog and how they can be used.
@@ -783,6 +783,7 @@ If more than one bank is defined for a slot then the banks are switchable.
         - "index": A single number to define one bank (with that index) or a range of start and end index to define a couple of banks.
         - "name": The name of the bank as seen in the "Memory Banks" section in the VARIABLE's pane.
         - "shortName": The short name of the bank. This is important for Reverse Engineering and used in disassemblies, i.e. in the disasm.list file, to distinguish addresses from different banks.
+        If 'shortName' is omitted then the index number is used instead.
     - "initialBank": The bank that is seen at start of 'zsim'. If not given the first defined bank is used.
 - "ioMmu": A string or an array of strings with javascript code. The code is evaluated on each OUT Z80 instruction and is to be used to switch banks. It is an optional property. In case your memory model does not require any bank switching you don't have to set it.
 Whe the code is executed the variables 'portAddress' and 'portValue' are set with the values from the OUT instruction. E.g. for
@@ -1575,7 +1576,7 @@ with:
     - ```LOGPOINT Status=${w@(HL)}, ${(DE)}, ${b@(DE)}```
 Note: ```${(DE)}``` is equal to ```${b@(DE)}``` and prints the byte value at DE.
 
-In the vscode UI LOGPOINT breakpoints can be turned on or off alltogether in the breakpoints pane:
+In the vscode UI LOGPOINT breakpoints can be turned on or off altogether in the breakpoints pane:
 ![](images/exception_bp_logpoint.jpg)
 
 As LOGPOINTs are organized in groups you can turn on also only specific LOGPOINT groups.
@@ -1594,7 +1595,7 @@ Notes:
 ### vscode breakpoint
 
 You simply set a breakpoint by clicking left to the line where you want the breakpoint to be.
-A red dot indicates the presense of a breakpoint.
+A red dot indicates the presence of a breakpoint.
 
 Breakpoints can be set only per line. I.e. it is not possible to have multiple breakpoints in one line.
 
@@ -1644,6 +1645,9 @@ You can set vscode logpoints on the fly during debugging with the vscode logpoin
 The log message that you enter will appear in the "Debug Console" if the logpoint is hit.
 You can also use variables similar to the description in chapter [LOGPOINT].
 E.g. use "Counter=${(sprite.counter)}" as a log message.
+
+Here an example:
+![](images/vscode_logpoint.gif)
 
 Note: logpoints are not available in ZEsarUX.
 
@@ -1825,6 +1829,53 @@ Note: The changed value is not updated immediately in the WATCH area. There you 
 ##### Configuration
 
 The visualization of the memory viewer can be configured. All values are collected under the 'memoryViewer' setting. You can change the registers in the registersMemoryView, the colors of the register pointers and the format of values that is shown when you hover over the memory values.
+
+
+#### Memory Diff View
+
+The Memory Diff View is more complex to use but also very powerful.
+It allows you to take a snapshot of the memory and filter for changes.
+E.g. you can do a filter on the complete memory to find any locations that were decremented by one.
+
+This is a useful tool especially for reverse engineering but you can also use it to debug your own code.
+
+To use it invoke the Memory Diff View via
+~~~
+-mvd 0x5000 0x3000
+~~~
+
+This will e.g. show you the contents:
+![](images/memoryviewer_diff1.jpg)
+
+Internally a snapshot of the memory area is taken.
+
+Now let your program run and stop after some time. The memory view will change to display the current memory content.
+
+Now press the combobox and choose to display any memory location that was changed compared to the internal snapshot:
+![](images/memoryviewer_diff_select.gif)
+
+This already could give you the information you need. But if you need to narrow down the location in question you can store the current displayed memory as the new snapshot by pressing "Store" and run your SW once again.
+![](images/memoryviewer_store.jpg)
+Please note that the title now changed to reflect the new observed memory locations.
+You can stop your program and like above check for any changes.
+
+The Memory Diff View allows a few different checks that can be selected with the combobox:
+![](images/memoryviewer_diff_combobox.jpg)
+
+- "--" will display the current memory contents and does not do a filtering at all.
+- "==" will show all equal memory locations.
+- "!=" will show all memory locations that are not equal.
+- "-1" will show all memory locations that were decremented by 1.
+- "-2" will show all memory locations that were decremented by 2.
+- "+1" will show all memory locations that were incremented by 1.
+- "+2" will show all memory locations that were incremented by 2.
+
+
+If you hover over a value you will see a few conversions of the value, it's address AND also the previous value, i.e. the value of the snapshot:
+![](images/memoryviewer_diff_hover.gif)
+
+
+Note: Since the nature of this view is to show the differences to the snapshot it will not show any changes in red like the other memory views do.
 
 
 #### Memory Dumps

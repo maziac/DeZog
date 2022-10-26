@@ -28,7 +28,7 @@ And there are basically 2 modes:
      ▼                 ▼                  ▼
 ┌─────────┐    ┌───────────────┐    ┌──────────────────┐
 │         │    │               │    │                  │
-│ Labels  │    │    Remote     │    │   DebugAdapter   │
+│ Labels  │    │    Remote     │    │DebugSessionClass │
 │         │    │               │    │                  │
 └─────────┘    └───────────────┘    └──────────────────┘
                        ▲

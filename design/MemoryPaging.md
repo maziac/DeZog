@@ -249,28 +249,6 @@ Remote <-- lbls
 da <-- Remote: call stack
 ~~~
 
-<!--
-~~~puml
-hide footbox
-title zsim
-participant da as "Debug Adapter"
-participant lbls as "Labels"
-participant model as "Memory Model"
-participant remote as "Remote\nzsim"
-participant simmemory as "SimulatedMemory"
-
-da -> remote: Connect
-model -> remote:
-remote -> simmemory:
-note over simmemory: Instantiate banks.\nAlso non-bank-switched.
-remote -> lbls: readListFiles()
-
-da -> remote: Step
-remote -> simmemory
-remote <- simmemory: getSlots
-~~~
--->
-
 ~~~puml
 hide footbox
 title Main Flow
@@ -390,7 +368,29 @@ Is maybe no problem since Labels.convertLabelsTo() is called to convert long add
 
 
 
+# Classes
 
+~~~
+                                          ┌─────────────────────┐                                                          ┌ ─ ─ ─ ─ ─ ─ ┐
+                                          │     MemoryModel     │                                                           Serializable
+                                          └─────────────────────┘                                                          └ ─ ─ ─ ─ ─ ─ ┘
+                                                     ▲                                                                            ▲
+           ┌──────────────────────────┬──────────────┴──────────────┬─────────────────────────────┐                               │
+           │                          │                             │                             │                    ┌─────────────────────┐
+┌─────────────────────┐    ┌─────────────────────┐     ┌─────────────────────────┐    ┌───────────────────────┐        │   SimulatedMemory   │
+│ MemoryModelUnknown  │    │  MemoryModelAllRam  │     │MemoryModelZxSpectrumBase│    │MemoryModelColecoVision│        └─────────────────────┘
+└─────────────────────┘    └─────────────────────┘     └─────────────────────────┘    └───────────────────────┘
+                                                                    ▲
+                                                                    │
+                    ┌────────────────────────┬──────────────────────┴─┬────────────────────────┐
+                    │                        │                        │                        │
+                    │                        │                        │                        │
+         ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐
+         │  MemoryModelZx16k   │  │  MemoryModelZx48k   │  │  MemoryModelZx128k  │  │  MemoryModelZxNext  │
+         └─────────────────────┘  └─────────────────────┘  └─────────────────────┘  └─────────────────────┘
+~~~
+
+The MemoryModel is the base class. This is also used to create custom memory models.
 
 
 # CPU History

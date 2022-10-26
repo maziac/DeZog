@@ -1,32 +1,31 @@
-# Design
 
-## Overview
+# Overview
 
 ~~~
                                                                ┌────────────────────┐
                                                        ┌───┐   │Remote              │
                                                        │   │   │   ┌────────────────┴───┐
-┌────────────────┐              ┌─────────────────┐    │ S │   │   │MAME                │
-│                │   Request    │                 │    │ o │   │   │   ┌────────────────┴──┐
-│                │─────────────▶│                 │────┼─c─┼──▶│   │   │ZEsarUX            │
-│                │              │                 │    │ k │   └───┤   │   ┌───────────────┴───┐
-│                │              │                 │◀───┼─e─┼───    │   │   │CSpect             │
-│                │              │                 │    │ t │       └───┤   │                   │
-│                │              │                 │    │   │           │   │                   │
-│                │   Response   │      DeZog      │    └───┘           └───┤                   │
-│     vscode     │◀─────────────│  Debug Adapter  │    ┌───┐               │                   │
-│                │              │                 │    │ / │               └───────────────────┘
-│                │              │                 │    │ d │                     ┌────────────────────┐
-│                │              │                 │    │ e │    ┌──────────┐     │      ZX Next       │
-│                │              │                 │────┼─v─┼────┤USB/Serial├────▶├────┐(ZXNextHW)     │
-│                │              │                 │    │ / │    │Converter │     │UART│               │
-│                │              │                 │◀───┼─t─┼────┤          ├─────├────┘               │
-│                │              │                 │    │ t │    └──────────┘     │                    │
-└────────────────┘              └─────────────────┘    │ y │                     └────────────────────┘
+┌────────────────┐            ┌───────────────────┐    │ S │   │   │MAME                │
+│                │   Request  │                   │    │ o │   │   │   ┌────────────────┴──┐
+│                │───────────▶│                   │────┼─c─┼──▶│   │   │ZEsarUX            │
+│                │            │                   │    │ k │   └───┤   │   ┌───────────────┴───┐
+│                │            │                   │◀───┼─e─┼───    │   │   │CSpect             │
+│                │            │                   │    │ t │       └───┤   │                   │
+│                │            │                   │    │   │           │   │                   │
+│                │   Response │       DeZog       │    └───┘           └───┤                   │
+│     vscode     │◀───────────│   Debug Adapter   │    ┌───┐               │                   │
+│                │            │(DebugSessionClass)│    │ / │               └───────────────────┘
+│                │            │                   │    │ d │                     ┌────────────────────┐
+│                │            │                   │    │ e │    ┌──────────┐     │      ZX Next       │
+│                │            │                   │────┼─v─┼────┤USB/Serial├────▶├────┐(ZXNextHW)     │
+│                │            │                   │    │ / │    │Converter │     │UART│               │
+│                │            │                   │◀───┼─t─┼────┤          │◀────├────┘               │
+│                │            │                   │    │ t │    └──────────┘     │                    │
+└────────────────┘            └───────────────────┘    │ y │                     └────────────────────┘
                                                        └───┘
 ~~~
 
-## Main Classes
+# Main Classes
 
 - DebugSessionClass: Just runs DeZog. I s the main class to communicate with vscode.
 - Extension: The extension class. Activates the extension and registers commands.
@@ -46,34 +45,34 @@ Helper classes:
 - Utility: Misc functions. E.g. for formatting.
 
 ~~~
-┌─────────┐      ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐        ┌──────────────────┐
-│         │      │                                                                                                        │        │Helper            │
-│         │      │                                           DebugSessionClass                                            │        │                  │
-│         │      │                                                                                                        │        │                  │
-│         │      └────────────────────────────────────────────────────────────────────────────────────────────────────────┘        │┌─────────┐       │
-│         │         ▲                         ▲                          ▲                                       ▲                 ││Utility  │       │
-│         │         │                         │                          │                                       │                 │└─────────┘       │
-│Settings │         ▼                         │                          ▼                                       ▼                 │                  │
-│         │    ┌───────────────┐              ▼               ┌────────────────────┐                   ┌──────────────────────┐    │┌─────────┐       │
-│         │    │TextView       │         ┌─────────┐          │RemoteBase          │                   │Variables             │    ││RefList  │       │
-│         │    │ ┌─────────────┴─┐       │         │          │  ┌─────────────────┴──┐                │┌───────────┐         │    │└─────────┘       │
-│         │    │ │MemoryDumpView │       │ Labels  │◀────────▶│  │ZesaruxRemote       │                ││ShallowVar │         │    │                  │
-│         │    │ │ ┌─────────────┴─┐     │         │  ┌──────▶│  │  ┌─────────────────┴──┐             │└───────────┘         │    │┌─────────┐       │
-│         │    │ │ │MemoryReg.View │     └─────────┘  │       │  │  │CSpectRemote        │             │┌────────────────┐    │    ││MemBuffer│       │
-└─────────┘    │ │ │ ┌─────────────┴─┐        ▲       │       │  │  │  ┌─────────────────┴──┐    ◀───▶ ││DisassemblyVar  │    │    │└─────────┘       │
-               └─┤ │ │ZxN.SpritesView│        │       │       └──┤  │  │ZXNextRemote        │          │└────────────────┘    │    │                  │
-                 │ │ │               │        ▼       │          │  │  │  ┌─────────────────┴──┐       │┌────────────────┐    │    │┌────────────────┐│
-                 └─┤ │               │  ┌ ─ ─ ─ ─ ─ ┐ │          └──┤  │  │ZxSimulatorRemote   │       ││MemorySlotsVar  │    │    ││DisassemblyClass││
-                   │ │               │      Files     │             │  │  │                    │       │└────────────────┘    │    │└────────────────┘│
-                   └─┤               │  └ ─ ─ ─ ─ ─ ┘ │             └──┤  │                    │       │┌────────────────┐    │    │                  │
-                     │               │                │                │  │                    │       ││RegisterMainVar │    │    │┌────┐            │
-                     └───────────────┘                │                └──┤                    │       │└────────────────┘    │    ││Log │            │
-                        ▲                             │            ▲      │                    │       │┌────────────────────┐│    │└────┘            │
-                        │                             │            │      └────────────────────┘       ││RegisterSecondaryVar││    │                  │
-                        └─────────────────────────────┘            │                    ▲              │└────────────────────┘│    │                  │
-                                                                   │                    │              │┌──────────┐          │    └──────────────────┘
-                                                                   │                    │              ││StackVar  │          │
-                                                                   ▼                    │              │└──────────┘          │
+┌─────────┐      ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐      ┌──────────────────┐
+│         │      │                                                                                                                                   │      │Helper            │
+│         │      │                                                         DebugSessionClass                                                         │      │                  │
+│         │      │                                                                                                                                   │      │                  │
+│         │      └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘      │┌─────────┐       │
+│         │         ▲                         ▲                          ▲                                       ▲                         ▲                ││Utility  │       │
+│         │         │                         │                          │                                       │                         │                │└─────────┘       │
+│         │         ▼                         │                          ▼                                       ▼                         ▼                │                  │
+│         │  ┌───────────────┐                ▼                ┌────────────────────┐                  ┌──────────────────────┐    ┌────────────────┐       │┌─────────┐       │
+│         │  │TextView       │           ┌─────────┐           │RemoteBase          │                  │Variables             │    │DisassemblyClass│       ││RefList  │       │
+│         │  │┌──────────────┴┐          │         │           │ ┌──────────────────┴─┐                │┌───────────┐         │    └────────────────┘       │└─────────┘       │
+│         │  ││HtmlView       │          │ Labels  │◀────────▶ │ │ZSimRemote          │                ││ShallowVar │         │            ▲                │                  │
+│Settings │  └┤┌──────────────┴┐         │         │  ┌──────▶ │ │  ┌─────────────────┴──┐             │└───────────┘         │            │                │┌─────────┐       │
+│         │   ││MemoryDumpView │         └─────────┘  │        │ │  │ZesaruxRemote       │             │┌────────────────┐    │            ▼                ││MemBuffer│       │
+│         │   └┤┌──────────────┴┐             ▲       │        │ │  │  ┌─────────────────┴──┐    ◀───▶ ││DisassemblyVar  │    │     ┌────────────┐          │└─────────┘       │
+│         │    ││MemoryDiffView │             │       │        └─┤  │  │CSpectRemote        │          │└────────────────┘    │     │RenderText  │          │                  │
+│         │    └┤┌──────────────┴┐            ▼       │          │  │  │  ┌─────────────────┴──┐       │┌────────────────┐    │     │┌───────────┴┐         │┌────┐            │
+│         │     ││MemoryReg.View │      ┌ ─ ─ ─ ─ ─ ┐ │          └──┤  │  │ZXNextRemote        │       ││MemorySlotsVar  │    │     ││RenderHtml  │         ││Log │            │
+│         │     └┤┌──────────────┴┐         Files     │             │  │  │  ┌─────────────────┴──┐    │└────────────────┘    │     └┤┌───────────┴┐        │└────┘            │
+│         │      ││ZxN.PatternView│     └ ─ ─ ─ ─ ─ ┘ │             └──┤  │  │MameRemote          │    │┌────────────────┐    │      ││R.CallGraph │        └──────────────────┘
+│         │      └┤┌──────────────┴┐                  │                │  │  │                    │    ││RegisterMainVar │    │      └┤┌───────────┴┐
+│         │       ││ZxN.SpritesView│                  │                └──┤  │                    │    │└────────────────┘    │       ││R.FlowChart │
+│         │       └┤               │                  │            ▲      │  │                    │    │┌────────────────────┐│       └┤            │
+│         │        │               │                  │            │      └──┤                    │    ││RegisterSecondaryVar││        │            │
+│         │        └───────────────┘                  │            │         │                    │    │└────────────────────┘│        └────────────┘
+└─────────┘                ▲                          │            │         └────────────────────┘    │┌──────────┐          │
+                           │                          │            │                    ▲              ││StackVar  │          │
+                           └──────────────────────────┘            ▼                    │              │└──────────┘          │
                                                           ┌────────────────┐            │              │┌──────────┐          │
                                                           │                │            │              ││LabelVar  │          │
                                                           │  Z80Registers  │            │              │└──────────┘          │
@@ -83,13 +82,16 @@ Helper classes:
                                                                    │                    │
                                                                    │                    │
                                                                    ▼                    ▼
-                                                        ┌──────────────────────────────────────────────────────────────────────────┐
-                                                        │Transport (sockets/file)                                                  │
-                                                        │         ┌──────────┐ ┌───────────────┐ ┌────────────┐ ┌───────────────┐  │
-                                                        │         │MameSocket│ │ ZesaruxSocket │ │CSpectSocket│ │ ZxNextSerial  │  │
-                                                        │         └──────────┘ └───────────────┘ └────────────┘ └───────────────┘  │
-                                                        │                                                                          │
-                                                        └──────────────────────────────────────────────────────────────────────────┘
+                                                        ┌───────────────────────────────────────────────────────┐
+                                                        │Transport                                              │
+                                                        │    ┌───────────────┐                                  │
+                                                        │    │ ZesaruxSocket │                                  │
+                                                        │    └───────────────┘                                  │
+                                                        │    ┌───────────────────┐      ┌───────────────┐       │
+                                                        │    │      Socket       │      │    Serial     │       │
+                                                        │    └───────────────────┘      └───────────────┘       │
+                                                        │                                                       │
+                                                        └───────────────────────────────────────────────────────┘
 ~~~
 
 
@@ -106,7 +108,7 @@ Remote <-> Socket:
 
 
 
-## Activation
+# Activation
 
 DeZog is activated in the 'activate' function in extension.ts by registering the DeZogConfigurationProvider.
 This happens e.g. when the Debugger is started.
@@ -122,7 +124,7 @@ The extension.ts calls some functions (setPcToLine, disassemblyAtCursor) directl
 It does not go through 'customRequest' through the socket.
 
 
-## Showing variables, call stacks etc.
+# Showing variables, call stacks etc.
 
 Whenever vscode thinks it needs to update some of the areas (VARIABLES, WATCHES, CALL STACK) it does a request.
 The request might be chained. E.g. if an entry in the CALL STACK is selected this first requests the SCOPE for the call stack (frame) ID.
@@ -147,7 +149,7 @@ The object is created. It holds all necessary data for processing the next step.
 
 Here are the requests and the list/objects involved:
 
-### stackTraceRequest:
+## stackTraceRequest:
 
 List:
 listFrames, cleared on start of request, filled until response.
@@ -158,7 +160,7 @@ Object:
 - fileName, lineNr: file and line number so that vscode can show the corresponding file when selected.
 
 
-### scopesRequest:
+## scopesRequest:
 
 The returned scopes list is basically always the same:
 'Disassembly', 'Registers', 'Registers 2', 'Stack'
@@ -180,11 +182,11 @@ listVariables, filled until response.
 
 
 
-### variablesRequest:
+## variablesRequest:
 List:
 listVariables, is only read.
 
-### evaluateRequest:
+## evaluateRequest:
 
 An expression is passed for hovering, from console or 'add watch'. It normally
 contains a label for which a shallow var is constructed.
@@ -378,7 +380,7 @@ hide footbox
 title User initiated
 actor user
 participant vscode
-participant "Emul\nDebug\nSession" as session
+participant "Debug\nSession\nClass" as session
 participant "Remote" as emul
 participant "Socket" as socket
 participant "ZEsarUX" as zesarux
@@ -415,7 +417,7 @@ hide footbox
 title Error
 'actor user
 participant vscode
-participant "Emul\nDebug\nSession" as session
+participant "Debug\nSession\nClass" as session
 participant "Remote" as emul
 participant "Socket" as socket
 'participant "ZEsarUX" as zesarux
@@ -443,9 +445,9 @@ vscode <-- session: response
 hide footbox
 title User started unit tests
 actor user
-participant Z80UnitTests as unittest
+participant Z80UnitTestRunner as unittest
 participant vscode
-participant "Emul\nDebug\nSession" as session
+participant "Debug\nSession\nClass" as session
 participant "Remote" as emul
 participant "Socket" as socket
 'participant "ZEsarUX" as zesarux
@@ -487,11 +489,12 @@ note over unittest: Start unit tests
 ## Code Coverage
 
 Code coverage can be enabled in the launch settings.
-Everytime the program is stopped the "Remote" will send information about the executed addresses.
+Every time the program is stopped the "Remote" will send information about the executed addresses.
 DeZog will then highlight the covered lines.
 This is available everywhere (e.g. during debugging or during execution of unit tests).
-
-xxx is either the DebugSessionClass or the Z80UnitTests.
+The stored addresses are long addresses, for zsim and for ZEsarUX.
+For ZEsarUX though the values are not safe to be correct because ZEsarUX originally only returns 64k addresses.
+xxx is either the DebugSessionClass or the Z80UnitTestRunner.
 
 ```puml
 hide footbox
@@ -507,6 +510,56 @@ Remote -> ZEsarUX: cpu-code-coverage get
 Remote <-- ZEsarUX: Executed addresses
 xxx <-- Remote: Event: 'coverage'
 note over xxx: Convert addresses to\nsource file locations.
+```
+
+
+## Reverse Engineering Reload / Hot Reload
+
+The user can do a hot reload of the rev-eng.list file during debugging to reload new labels etc.
+Note: the binary is not reloaded. Nor any state of the remote (or it's registers) is changed.
+
+
+```puml
+hide footbox
+title Hot Reload
+actor user
+participant "File\nSystem" as fs
+participant vscode
+participant "Debug\nSession\nClass" as session
+participant "Remote" as remote
+participant "Labels" as labels
+participant "Labels\nParser" as parser
+participant "Disassembly" as disassembly
+
+note over vscode, disassembly: Debug session running
+...
+
+alt Either save file
+user -> vscode: Saves rev-eg.list file
+vscode -> fs: Save
+fs -> session: rev-eng.list file changed
+session -> session: reloadLabels
+
+else or manually reload
+user -> vscode: Palette: "dezog.reload"
+vscode -> session: reloadLabels
+end
+
+session -> remote: readListFiles
+remote -> labels: readListFiles
+labels -> labels: init
+labels -> labels: loadAsmListFile
+labels -> parser: new Parser (e.g.\nReverseEngineeringLabelParser)
+labels -> parser: loadAsmListFile
+labels <-- parser: all labels
+session -> remote: initWpmemAssertionLogpoints
+
+note over session: Init of Decorations\n and StepHistory.
+
+session -> disassembly: invalidateDisassembly
+session -> vscode: StoppedEvent("Labels reloaded")
+
+note over vscode, disassembly: Contune debug session
 ```
 
 

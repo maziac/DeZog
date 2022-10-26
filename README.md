@@ -49,9 +49,8 @@ As this is a huge goal the focus is here on
 - Displaying ZX Next specific data like sprites.
 
 DeZog lets you use Visual Studio Code (vscode) as development environment for debugging your Z80 assembler programs.
-It's primary intention is to support building new programs, i.e. programs with existing assembler source code.
-(It may also be used without source code to debug binaries but in that case the support is limited and you could probably better directly debug with ZEsarUX or CSpect.)
-The biggest help it offers is that you are able to step through your sources and that DeZog is aware of all labels and can give hints to what label a number resolves.
+You can use DeZog either to build your own programs, step through the sources, use labels, watches, memory views and other helpful features.
+Or you use DeZog to reverse engineer old Z80 programs, e.g. ZX Spectrum or MAME arcade games, by debugging and building up commented list files of the program.
 
 DeZog needs a Remote to  execute the Z80 binaries. You can either use the built-in Z80/ZX simulator or connect to ZEsarUX or CSpect via a socket connection for more advanced projects.
 There is also experimental support for MAME.

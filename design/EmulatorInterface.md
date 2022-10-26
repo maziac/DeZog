@@ -118,7 +118,7 @@ The MAME implementation [here](https://github.com/mamedev/mame/blob/master/src/o
 | \x03 | CTRL-C. Break. Stop execution. | No reply |
 | '!' | Enable extended mode. In extended mode, the remote server is made persistent. The ‘R’ packet is used to restart the program being debugged. | 'OK' |
 | '?' | This is sent when connection is first established to query the reason the target halted. The reply is the same as for step and continue. This packet has a special interpretation when the target is in non-stop mode; see Remote Non-Stop. | See Stop Reply Packets |
-| '[c addr]' | Continue at addr, which is the address to resume. If addr is omitted, resume at current address. | See Stop Reply Packets |
+| 'c [addr]' | Continue at addr, which is the address to resume. If addr is omitted, resume at current address. | See Stop Reply Packets |
 | 'D' | is used to detach GDB from the remote system. It is sent to the remote target before GDB disconnects via the detach command. | 'OK' or 'E nn' (Error) |
 | 'g' | Read general registers. | 'XX...' the hex values of all registers or 'E nn'|
 | 'G XX..' | Write general registers. | 'OK' or 'E nn'|
@@ -149,7 +149,7 @@ T05watch:A000;0a:0000;0b:0100;
 
 ### Break (CTRL-C)
 
-To pause/break the server (DeZog) send a single 0x03 character.
+To pause/break the server (DeZog) sends a single 0x03 character.
 The gdbstub does not send any reply.
 
 To get a reply (also to know when to continue) DeZog will not send a single CTRL-C but follow it always by a register read to get a reply from the gdbstub.
@@ -161,7 +161,7 @@ $g#HH
 ### Continue
 
 The c(continue) command is responded with a '+'.
-The program in MAMe is running afterwards until a breakpoint is hit or until CTRL-C is received.
+The program in MAME is running afterwards until a breakpoint is hit or until CTRL-C is received.
 
 Meanwhile it is still possible to send other commands, e.g. to retrieve registers or memory contents.
 
@@ -333,7 +333,7 @@ b) the program is transferred by DeZog: Not sure if it works to write a ROM via 
 
 ## Compiling MAME
 
-To compile MAME with al debugging support use:
+To compile MAME with all debugging support use:
 ~~~
 make REGENIE=1 SYMBOLS=1 SYMLEVEL=3 OPTIMIZE=0 -j5
 ~~~
@@ -366,6 +366,53 @@ Special types of memory:
 - RAM (SMH_RAM), ROM (SMH_ROM): Are implemented as banks, but cannot be changed.
 - no-ops (SMH_NOP), unmapped space (SMH_UNMAP): unused memory, writes go nowhere, reads return 0.
 
+
+TODO: Just as reminder:
+~~~
+[MAME]> for k,v in pairs(manager.machine.devices["maincpu"].spaces["program"].map.entries) do print(k,v,v.address_start,v.address_end,v.region, v.read.handlertype, v.read.tag) end
+1       sol.address_map_entry *: 0x7fea3b1f3a68 0       32767   :maincpu        rom     nil
+2       sol.address_map_entry *: 0x7fea3b1c3078 32768   49151   nil     bank    bank1
+3       sol.address_map_entry *: 0x7fea0b156c08 49152   56831   nil     ram     nil
+4       sol.address_map_entry *: 0x7fea0b1b6368 56832   57343   nil     ram     nil
+5       sol.address_map_entry *: 0x7fea0b1bead8 57344   59391   nil     ram     nil
+6       sol.address_map_entry *: 0x7fea0b1c77b8 59392   61439   nil     ram     nil
+~~~
+I.e. ```mapentries = manager.machine.devices["maincpu"].spaces["program"].map.entries``` contains the 'slots' in entry.address_start/address_end.
+The type (rom, ram, bank) is in v.read.handlertype and the current bank ("bank1") contains an address space that covers all "banks".
+I.e. from ```bank = manager.machine.memory.banks[":bank1"]``` I get the index of the bank (inside "bank1") via bank.entry (0-based).
+Use ```print(manager.machine.memory.banks[":bank1"].entry)``` to access it.
+~~~
+space = manager.machine.devices[":maincpu"].spaces["program"]
+reg = manager.machine.memory.regions[":maincpu"]
+bank = manager.machine.memory.banks[":bank1"]
+bank.entry = 0
+print("bank.entry: ", bank.entry)
+print("space: 0x8000: ", space:read_u8(0x8000))
+print("region: 0x8000: ", reg:read_u8(0x8000))
+print("region: 0x10000: ", reg:read_u8(0x10000))
+print("region: 0x14000: ", reg:read_u8(0x14000))
+bank.entry = 1
+print("bank.entry: ", bank.entry)
+print("space: 0x8000: ", space:read_u8(0x8000))
+print("region: 0x8000: ", reg:read_u8(0x8000))
+print("region: 0x10000: ", reg:read_u8(0x10000))
+print("region: 0x14000: ", reg:read_u8(0x14000))
+
+~~~
+
+```manager.machine:soft_reset()``` does not reload the ROMs.
+```manager.machine:hard_rest()``` does, but also restarts the plugin.
+
+write handler: If the bank is read-only simply no handler is available for 'write':
+~~~
+MAME]> for k,v in pairs(manager.machine.devices["maincpu"].spaces["program"].map.entries) do print(k,v,v.address_start,v.address_end,v.region, v.read.handlertype, v.read.tag) end
+1       sol.address_map_entry *: 0x7fea5b895428 0       32767   :maincpu        rom     nil
+2       sol.address_map_entry *: 0x7fea5b8e2918 32768   49151   nil     bank    bank1
+3       sol.address_map_entry *: 0x7fea0b07c728 49152   56831   nil     ram     nil
+4       sol.address_map_entry *: 0x7fea0b0fa478 56832   57343   nil     ram     nil
+5       sol.address_map_entry *: 0x7fea0b06a638 57344   59391   nil     ram     nil
+6       sol.address_map_entry *: 0x7fea0b08b9a8 59392   61439   nil     ram     nil
+~~~
 
 ### Address Map
 

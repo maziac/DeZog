@@ -88,6 +88,12 @@ DeZog knows with which remote it communicates and chooses the right subset.
 
 ## History
 
+### 2.1.0
+Note:
+2.1.0 adds an additonal message that is backward compatible. TODO: Describe
+Changed:
+- CMD_INIT: added UNKOWN and CUSTOM (for MAME) types.
+
 ### 2.0.0
 
 Changed:
@@ -146,7 +152,7 @@ The message format is very simple. It starts with the length information followe
 For commands a byte with the command ID will follow.
 And then the payload follows.
 
-Length is the length of all bytes folowing Length.
+Length is the length of all bytes following the command ID (i.e. the payload)..
 
 Command:
 
@@ -216,7 +222,7 @@ Response (Length=7+n):
 | 0     | 1    | 1-255 | Same seq no |
 | 1     | 1    | 0/1-255 | Error: 0=no error, 1=general (unknown) error. |
 | 2     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch |
-| *5    | 1    | 0-255 | Machine type (memory model): 1 = ZX16K, 2 = ZX48K, 3 = ZX128K, 4 = ZXNEXT. Note: Only ZXNEXT is supported. |
+| *5    | 1    | 0-255 | Machine type (memory model): 0 = UNKNOWN, 1 = ZX16K, 2 = ZX48K, 3 = ZX128K, 4 = ZXNEXT, 255 = CUSTOM. Note: CSpect and the ZX Next will always return ZXNEXT, MAME uses only CUSTOM. If CUSOTM is returned then TODO: add explanation. |
 | 6    | 1-n  | 0-terminated string | The responding program name + version as a string. E.g. "dbg_uart_if v2.0.0" |
 
 

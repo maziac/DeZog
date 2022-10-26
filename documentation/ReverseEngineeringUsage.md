@@ -1,29 +1,29 @@
 # Reverse Engineering with DeZog
 
-Up to version 2.x DeZog's primary goal was to develop **new** Z80 SW and debug it.
+Up to version 2.x DeZog was primarily used to develop and debug **new** Z80 SW.
 
-Beginning with version 3 another way to use DeZog is for reverse engineering of existing SW.
-
-
-When reverse engineering existing SW the whole object code already exists whereas the source code, i.e. the commented assembler sources normally do not exist.
-The goal of reverse engineering is to discover the purpose of the binary code by disassembling and debugging it.
-Once a sub routine has been understood it can be commented, labels can be renamed to more meaningful names and the disassembly can be saved.
-
-These commented disassembly is reloaded and taken as source for the further stepping. Also the new labels are used.
-
-The more of the binary is understood the more complete the list file becomes until at the end hopefully all code is commented and understood.
+Since version 3 DeZog can also be used for reverse engineering of existing SW.
 
 
-To make it more clear: there are 2 main differences to developing a new program with an assembler.
-- Instead of running the assembler on your .asm file(s) you have to write the reverse engineered assembler file, **a list file**, yourself. DeZog supports you by providing a disassembly of the source code portion that you are currently investigating. This disassembly can be copied to your list file together with comments and renamed labels to make it human readable.
-- While the debug session is running you can re-read the list file and it's labels. I.e. as soon as you have commented the disassembly or renamed labels they are immediately taken into use. This improves the turn-around cycle a lot.
+When reverse engineering existing SW, all object code is already available, while the source code, i.e. the commented assembler sources, usually do not exist.
+The goal of reverse engineering is to discover the purpose of the binary code through disassembly and debugging.
+Once a subroutine is understood, it can be commented, labels can be renamed to more meaningful names, and the disassembly can be saved.
+
+The commented disassembly is reloaded and used as a source for further stepping. Again, the new labels are used.
+
+As more of the binary is understood, the list file becomes more complete, until hopefully all the code is commented and understood at the end.
+
+
+To make it even clearer: There are 2 main differences to developing a new program with an assembler.
+- Instead of running the assembler on your .asm file(s) you have to write the reverse engineered assembler file, a list file, yourself. DeZog assists you by providing a disassembly of the source code you are currently examining. This disassembly can be copied into your list file along with comments and renamed labels to make it human readable.
+- While the debug session is running, you can re-load the list file and its labels. That is, once you have commented the disassembly or renamed the labels, they are used immediately. This greatly improves the turnaround cycle.
 
 
 # Exemplary Process
 
-The process is shown here with MAME as an example.
+The process is shown here using MAME as an example.
 
-This example assumes that MAME is started manually or in a while loop with a ROM (pacman in this case).
+This example assumes that MAME is started manually or in a while loop with a ROM (in this case pacman).
 ~~~bash
 while true; do ./mame pacman -window -debugger gdbstub -debug -debugger_port 12000 -verbose ; sleep 2 ; done
 ~~~
@@ -66,29 +66,28 @@ Start with an empty pacman.list file.
 	- Exchange label names with more meaningful names.
 6. Save pacman.list
 7. Reload the list file. In the command palette type: ```DeZog: reload the list file(s).```
-At that point DeZog will re-read the symbols and also do a new disassembly: The code from the pacman.list is removed from the disassembly. So, when stepping the pacman.list is used whenever the PC points to code in that file.
+At this point, DeZog will reload the symbols and also perform a new disassembly: The code from the pacman.list will be removed from the disassembly. So when stepping, the pacman.list is used whenever the PC points to code in that file.
 The rest of the disassembly will also use the new labels.
-7. Goto 3
+8. Goto 3
 
 Notes:
-- The re-load of the list file takes place while the debug session is still active. I.e. you can simply continue with the debugging.
-- Instead of reloading manually it is also possible to add ```"reloadOnSave": true```to "revEng". In this case the labels will be reloaded automatically on each save of "pacman.list".
+- The reloading of the list file takes place while the debug session is still active. I.e. you can simply continue debugging.
+- Instead of manual reloading it is also possible to add ``"reloadOnSave": true`` to "revEng". In this case the labels will be reloaded automatically every time "pacman.list" is saved.
 
 
 # Disassembly
+The disassembly fetches the entire 64k memory from the remote for disassembly.
+DeZog does its best to analyze the code intelligently and disassemble the entire code.
 
-The disassembly fetches the complete 64k memory from the Remote for disassembly.
-DeZog tries it's best to smartly analyze the code and disassemble the complete code.
-
-It starts from the first PC address it encounters. If all code is reachable from there DeZog will disassemble the complete code.
+It starts with the first PC address it encounters. If all the code is accessible from there, DeZog will disassemble all the code.
 
 ![](images/ReverseEngineeringUsage/disassembly.jpg)
 
-But there are a few caveats:
-- Interrupts: The interrupt address is not known at the beginning. I.e. as long as you do not break into the interrupt DeZog will not be able to disassemble the code.
-- Same for ```JP (HL)```. The jump address is only available during run time. Therefore DeZog cannot disassemble this prior to execution.
-- Self-modifying code. DeZog does not fetch and disassemble the code on every step. Therefore, in case of self-modifying code, you may not see the correct disassembly. If the code looks suspicious you can do a manual refresh of the disassembly by pressing the refresh button ![](images/ReverseEngineeringUsage/disasm_refresh.jpg) in the top right of the disasm.list file.
-- For the same reason (Dezog does not fetch and disassemble the code on every step) the data portions in the disassembly may not be up-to-date. In doubt re-fresh the disassembly.
+There are a few caveats, however:
+- Interrupts: The interrupt address is not known at the beginning. That is, unless you break into the interrupt, DeZog will not be able to disassemble the code.
+- The same is true for ``JP (HL)```. The jump address is only available during runtime. Therefore, DeZog cannot disassemble it before execution.
+- Self-modifying code. DeZog does not fetch and disassemble the code at each step. Therefore, if the code is self-modifying, you may not see the correct disassembly. If the code looks suspicious, you can manually refresh the disassembly by clicking the refresh button ![](images/ReverseEngineeringUsage/disasm_refresh.jpg) at the top right of the disasm.list file.
+- For the same reason (Dezog does not fetch and disassemble the code at each step), the data portions in the disassembly may not be up-to-date. If in doubt, update the disassembly again.
 
 To keep the disassembly up-to-date most of the time DeZog decides to automatically update the disassembly under the following occasions:
 - The slots (i.e. the current banking/paging) change.
@@ -100,46 +99,59 @@ Anyhow: If in doubt that the disassembly is recent you can also compare it with 
 which is **always** up-to-date.
 
 
+## Disassembly after a break
+
+If you run the program and then manually pause or a breakpoint is reached, DeZog may not be able to show you the previous lines because it simply does not know which addresses have been executed recently.
+In such cases, you will see the disassembly directly from the current PC without any previous lines.
+But of course, you often want to know how we got here.
+There are a few ways you can deal with this:
+(a) Use 'zsim: the internal simulator keeps a list of the most recently executed addresses used by DeZog for disassembly.
+b) Use the command '-dasm' in the debug console: Simply specify an address slightly before that of the current PC (program counter). 'dasm' will perform a brute force disassembly. But this only works if the 'dasm' address is not too far away from the current PC. And of course it can fail because Z80 commands can be up to 4 bytes long, so you might choose an address somewhere in the middle of a command. In that case, try a slightly different address.
+c) Use '-dasm', but also take a look at the callstack and use the address from the callstack.
+
+
 # Breakpoints
 
-Breakpoints can be set via the vscode editor as normal.
+Breakpoints can be set as usual via the Vscode editor.
 Breakpoints can be set either in the disassembly or in the list file.
 
-Breakpoints will "survive" in the disassembly even if the disassembly is updated.
+Breakpoints "survive" in the disassembly, even if the disassembly is updated.
+Breakpoints in the disasm.list file are deleted after a debug session.
 
-If you need to set a breakpoint to some location that does not exist in either the disassembly or the list file then you can do the following:
-1. In the list file just type in the address (in hex) at a start of a line.
-2. In the command palette type: ```DeZog: reload the list file(s).```
-3. Set a breakpoint at the line of the address. The picture shows this for a breakpoint at address 0x8000:
+If you need to set a breakpoint in a location that is not present in either the disassembly or the list file, you can do the following:
+1. in the list file, simply enter the address (in hex) at the beginning of a line.
+2. save the list file
+3. in the command palette, type: ``DeZog: reload the list file(s).```
+4. set a breakpoint in the line of the address. The picture shows this for a breakpoint at address 0x8000:
 ![](images/ReverseEngineeringUsage/rev_eng_bp_in_listfile.jpg)
 
 
 # WPMEM, ASSERTION, LOGPOINT
 
-These all work the same as in other list files.
-E.g. to add a permanent watchpoint to some memory location use:
+These work the same way as in other list files.
+For example, to add a permanent watchpoint to a memory location, use:
 ~~~asm
 9000 00 00 00  data:    ; WPMEM
 ~~~
 
-This will watch memory at location 9000h to 9002h.
+This will watch the memory at locations 9000h to 9002h.
 
-Please note that you can add temporary watchpoints also via the debug command "-wpadd addr ...".
+Please note that you can also add temporary watchpoints with the debug command "-wpadd addr ...".
 
 
 # Analysis
 
-The DeZog smart disassembler is based on the [z80dismblr](https://github.com/maziac/z80dismblr) but has been heavily re-factored.
-This offers more analysing features, namely flowcharts, call graphs and smart disassembly.
+The DeZog smart disassembler is based on the [z80dismblr](https://github.com/maziac/z80dismblr), but has been heavily re-factored.
+It provides more analysis features, namely flowcharts, call diagrams and the smart disassembly.
 
-For all of these features:
-Start Dezog, place the cursor at the source code at some instruction and do a right click for "Analyze at Cursor":
+For all these functions:
+Start Dezog, place the cursor in the source code at a statement, and right-click for "Analyze at Cursor":
 ![](images/ReverseEngineeringUsage/analyze_at_cursor.jpg)
 
-Note: It depends a little bit on the assembly parser that is used. Some DeZog parsers allow a disassembly directly from a line with a label, others require that there is also an assembler instruction on that line.
-If you get a note in the DEBUG CONSOLE like this: ```Error: No address found at line.``` than re-try by right-clicking directly over an assembler instruction.
+Note: It depends a bit on the assembler parser used. Some DeZog parsers allow disassembly directly from a line with a label, others require that there is also an assembly instruction on that line.
+If you get a message in the DEBUG CONSOLE like this: ```Error: No address found at line.```, then try again by right-clicking directly on an assembly instruction.
 
-The examples below use the [z80-sample-program](https://github.com/maziac/z80-sample-program) assembled for the ZX 48K.
+The following examples use the [z80-sample-program](https://github.com/maziac/z80-sample-program) assembled for the ZX 48K.
 
 
 ## Call Graph
@@ -184,36 +196,36 @@ And here another flowchart of the main routine:
 
 ## Smart Disassembly
 
-The smart disassembly will follow the execution flow from the given address and visualize the calls and jumps with arrows.
+The smart disassembly follows the execution flow starting at the specified address and visualizes the calls and jumps with arrows.
 
-A smart disassembly of the *main_loop* of the z80-sample-program looks like this:
+A smart disassembly of the *main loop* of the z80 sample program looks like this:
 ![](images/ReverseEngineeringUsage/smart_disassembly_arrows.gif)
 
-I.e. you will automatically find also the referenced *fill_bckg_line* and *inc_fill_colors_ptr* disassembled.
+That is, you will automatically find the referenced *fill_bckg_line* and *inc_fill_colors_ptr* disassembled as well.
 
-The disassembly also contains the referenced data of that subroutine (and referenced sub-subroutines).
-I.e. also for self-developed code you can easily see which memory it references.
+The disassembly also contains the referenced data of this subroutine (and referenced sub-subroutines).
+I.e. even with self-developed code you can easily see to which memory it refers.
 
-If labels already exist those names are re-used. If labels do not exist yet a name will be "invented".
+If labels already exist, these names are reused. If no labels exist yet, a name is "invented".
 
-In theory, if you would do a smart disassembly of the entry point of your program  (e.g. the *main* routine), you'd get a disassembly of the whole program.
-Of course, in practice, not all code is reachable from a static analysis-
-E.g. the interrupt routine or any "JP (HL)" or self-modified jumps cannot be followed/disassembled.
+In theory, if you would do a smart disassembly of the entry point of the program (e.g., the *main*routine) you'd get a disassembly of the entire program.
+In practice, of course, not all code is reachable with static analysis.
+For example, the interrupt routine or all "JP (HL)" or even modified jumps cannot be followed/disassembled.
 
-Here is a picture of a more complex sample code:
+Here is a picture of a more complex example code:
 ![](images/ReverseEngineeringUsage/smart_disassembly_complex.jpg)
 
-The jumps are visualized through arrows. Backward (loop) jumps inside the same subroutine can be found on the left.
-Forward jumps on the right.
-Any call offers a little arrow. If hovered-over it animates an arrow to the called subroutine.
-(Note: If the called routine is in another slot and it is not 100% sure that the code in the slot is the correct code (it might have paged in a wrong bank at the time of disassembly) than only the call address is shown without arrow.)
+The jumps are visualized by arrows. Backward jumps (loops) within the same subroutine are on the left.
+Forward jumps on the right side.
+Each call offers a small arrow. Hovering over it will animate an arrow to the called subroutine.
+(Note: If the called routine is in a different slot and it is not 100% sure that the code in the slot is the correct one (it could have a wrong bank paged in), only the call address is shown without the arrow).
 
-At the top you find a slider with which you can control the call-depth of the disassembly.
+At the top you will find a slider that allows you to control the call depth of the disassembly.
 
 
 ## Selection
 
-The animated gif below shows how to create the flow chart from a disassembly and navigate through the code by selecting the blocks in the flow chart or call graph.
+The animated gif below shows how the flowchart is created from a disassembly and how to navigate through the code by selecting the blocks in the flowchart or call diagram.
 
 Flow chart example:
 ![](images/ReverseEngineeringUsage/flowchart_selection.gif)
@@ -223,9 +235,6 @@ Call graph example:
 
 Smart disassembly example:
 ![](images/ReverseEngineeringUsage/smart_disassembly_selection.gif)
-
-Note:
-The selection does work only on code for which a disassembly or a source file exists. If e.g. the disassembly shows too less code you might need to do a "smart disassembly" first and put that in your reverse engineered list file.
 
 Hint:
 If the flow chart, call graph or smart disassembly is hidden once you do a selection then please enable the following vscode setting:
@@ -237,13 +246,13 @@ editor.revealIfOpen
 
 ## Note
 
-Although these analyzes features were meant for reverse engineering it is also possible to use them on "own" code.
+Although these analysis functions are intended for reverse engineering, they can also be used for "own" code.
 The visualization in a flow chart, call graph or even in the smart disassembly might be helpful as well.
 
 
 # Reverse Engineering List File
 
-The reverse engineering file is set in the launch.json file with:
+The reverse engineering file is specified in the launch.json file with:
 ~~~json
 "revEng": [
     {
@@ -252,12 +261,14 @@ The reverse engineering file is set in the launch.json file with:
 ~~~
 
 It is parsed by DeZog like other list files.
-DeZog retrieves the label names from it and associates them with the address for that line.
+DeZog takes the label names from it and associates them with the address for that line.
+
+Please note that you can also specify several entires with different paths or you can use a glob pattern to address several files in one entry.
 
 ## Addresses
 
-The address is given as ```long address```normally. I.e. it also includes the bank/paging information.
-Only if the address (slot) is unambiguous (i.e. does not support banking) the banking info can be omitted.
+The address is normally specified as a ```long address```. I.e. it also contains the bank/paging information.
+Only if the address (slot) is unique (i.e. no banking supported), the bank information can be omitted.
 
 Example without banking:
 ~~~list
@@ -269,18 +280,28 @@ Example with banking:
 8000.9  mylabel:
 ~~~
 
-I.e. the "9" is the bank. The name of the bank correspondents directly to the name used in the memory model.
-TODO: Reference to memory model. Ausserdem muss ich die Namen der Banks auch angeben.
+I.e. the "9" is the bank. The name of the bank correspondents directly to the 'shortName' used in the memory model.
+For custom memory models, please refer to [customMemory](Usage.md#customMemory).
+Normally, the bank name is simply equal to the bank number unless otherwise specified, e.g. in 'customMemory'.
+
+Here are the short names for the predefined memory models:
+- RAM: there is only one large (RAM) bank. The bank numbers can be omitted.
+- ZX16K/ZX48K: since the slots for ROM and RAM are bound to fixed banks, the bank numbers can be omitted.
+- ZX128K: 128k ROM="R0", 48k ROM="R1", the other banks are numbered 0 to 7.
+- ZXNEXT: 128k ROM="R0a"/"R0b", 48k ROM="R1a"/"R1b", ROM1="R1", the other banks are numbered from 0 to 223.
+Note: The ROM size is 16k, but since the ZX Next has a slot size of 8k, the ROM is divided into an "a" and "b" part.
+- COLECOVISION: The bank/slot configuration is unique. The bank numbers can be omitted.
+
 
 ## Bytes
 
-After the address the used bytes can be given. E.g.
+After the address the used bytes can be specified. E.g.
 ~~~list
 8000.9  21 AB CD
 ~~~
 
-DeZog does not interpret the contents of these bytes but counts the number. simply to know what memory belongs to the CODE area.
-In the example above all 3 bytes will be associated with the rev engineering file/line number (pacman.list).
+DeZog does not interpret the content of these bytes, but counts the number. simply to know which memory belongs to the CODE area.
+In the above example, all 3 bytes are associated with the rev engineering file/line number (pacman.list).
 
 
 ## Mnemonic
@@ -291,7 +312,7 @@ E.g.
 8000.9  21 AB CD    ld hl,0xCDAB
 ~~~
 
-The mnemonics are not interpreted at all by DeZog.
+The mnemonics have no special meaning to DeZog.
 These are just to make the list file human readable.
 
 
@@ -304,12 +325,13 @@ A label is recognized by the ':'
 8000.9  21 AB CD    ld hl,0xCDAB
 ~~~
 
-The label is directly associated with the address (8000.9).
-As in the example above it is possible to use several same addresses on different lines (as with normal list files).
+The label is directly linked to the address (8000.9).
+As in the example above, it is possible to use several of the same address in different lines (as with normal list files).
+
 
 ## Comments
 
-A comment is started with ';'.
+A comment is started with ';' or ('//').
 
 ~~~list
 ; mul_ab:  Multiplies a with b.
@@ -317,7 +339,11 @@ A comment is started with ';'.
 8000.9  mul_ab:
 ~~~
 
-TODO: Implement multiline comments
+Multiline comments are also supported ('/* ... */').
+
+ASSERTION, WPMEM and LOGPOINT are supported and identified after a single line comment.
+Inside multiline comments they are not found.
+
 
 ## Special Listfile Commands
 
@@ -345,7 +371,7 @@ SKIPWORD works the same but skips 2 bytes:
 ~~~
 
 Notes:
-- Also the step-over acknowledges the SKIP (or SKIPWORD).
+- The step-over also acknowledges the SKIP (or SKIPWORD).
 - If you need to skip more than 2 bytes you can use several SKIP/SKIPWORD in sequence, e.g.:
     ~~~list
     8000.9  CF          RST 08
@@ -355,7 +381,7 @@ Notes:
     8006.9  21 AB CD    LD HL,0xCDAB
     ~~~
 
-- You can have bytes before the SKIP or even any text after the SKIP. E.g. this is also valid:
+- You can have text before the SKIP or even any text after the SKIP. E.g. this is also valid:
     ~~~list
     8000.9  CF          RST 08
     8001.9  FF          SKIP [0xFF]
@@ -369,7 +395,7 @@ Notes:
 Normally not all code can be found by DeZog itself.
 In those case you can help DeZog by specifying CODE addresses.
 
-this is useful e.g. to specify the start of a interrupt routine or e.g. code that is only reached through ```JP (HL)```.
+This is useful e.g. to specify the start of a interrupt routine or e.g. code that is only reached through ```JP (HL)```.
 
 Here the address 0x0066 will be disassembled by DeZog even if no current execution flow would lead to it:
 ~~~list
@@ -386,10 +412,10 @@ You can combine that with a label, of course:
 
 ## Delta Search
 
-The idea behind the delta search is to search the memory for strings that are not ASCII encoded.
-The only assumption done is that the characters are in a standard order.
+The idea behind delta search is to search memory for strings that are not ASCII encoded.
+The only assumption made is that the characters are in a standard order.
 
-For a delta search you enter a string with minimum 2 characters.
+For a delta search, enter a string of at least 2 characters.
 Then the deltas between the characters are taken and the memory is searched for a sequence with the same deltas.
 
 Example:
@@ -415,17 +441,42 @@ The command is "-mdelta address size string". E.g.
 -mv C000h 256 MIK
 ~~~
 
-This command will once again search for the sequence but additional dump out the memory area with the found offset.
-The offset is the first search string character subtracted by the memory value at the found location.
-I.e. in the memory dump you will get a "MIK" dumped out even if the found string was "njl".
-Not only the found string is dumped with the offset but also all of the other memory values.
+This command searches for the sequence again, but additionally outputs the memory area with the offset found.
+The offset is the first character of the search string subtracted from the memory value at the found position.
+I.e. in the memory dump a "MIK" is output, even if the found string was "njl".
+Not only the found string is output with the offset, but also all other memory values.
 
-"So, what's the use of it all?"
+"So what's the point?"
 
-Imagine you know only a part of the string that is being used.
-Or you know for sure that one string is included but you don't kow what the other strings are.
-Doing the delta memory dump ("-mdelta") will decode also the rest and you can easily see where the other strings are located.
+Imagine you know only part of the string that is being used.
+Or you know for sure that one string is included, but you don't know what the other strings are.
+With the delta memory dump ("-mdelta"), the rest is also decoded and you can easily see where the other strings are.
 
-For MAME games you could use this to find the high score tables.
-If you know one of the 3 letter gamer tags you can easily locate the whole high score table.
+In MAME games you can use this to find the highscore tables.
+If you know one of the 3-letter gamer tags, you can easily locate the entire highscore table.
+
+
+
+## Patching
+
+Imagine you are reverse-engineering some existing binary file.
+This could either be loaded on start of MAME or you load it from within DeZog e.g. with the "load" parameter in the launch.json.
+
+Now you find an interesting part of the code that you want to change.
+You could, of course, load the binary file in a hex editor, change it there and reload it.
+But there is an easier way.
+
+In launch.json you can specify the "commandsAfterLaunch" and you can use the "-msetb" command to change the memory directly after starting a new debug session.
+For smaller changes this is very effective.
+
+If you would like to do a bigger change you can use an assembler, e.g. sjasmplus, do generate e.g. a small subroutine, and load the code with the "loadObjs" parameter in the launch.json.
+"loadObjs" is executed "load" so you can easily change any previously loaded memory.
+
+
+## State Save and Restore
+
+Very helpful in debugging/reverse engineering is the save/restore feature.
+You can save teh state of the debugged system with the command "-state save <name>" and restore it anytime with "-state restore <name>".
+
+See [State Save/Restore](Usage.md/#state-save-restore).
 
