@@ -30,10 +30,10 @@ class MessageBuffer {
  * The queued remote takes care that the async messages
  * can simply be sent with an await.
  * The 'resolve' is called when the reply is received or when a timeout occurs.
- * Derive from DzrpQeuedRemote if the implemented protocol is not DZRP
+ * Derive from DzrpQueuedRemote if the implemented protocol is not DZRP
  * but only the same functionality.
  */
-export class DzrpQeuedRemote extends DzrpRemote {
+export class DzrpQueuedRemote extends DzrpRemote {
 
 	// The message queue (used to serialize the sent messages).
 	protected messageQueue: Array<MessageBuffer>;
@@ -64,9 +64,13 @@ export class DzrpQeuedRemote extends DzrpRemote {
 	public async disconnect(): Promise<void> {
 		await super.disconnect();
 		try {
+			console.log("disconnect: started");
 			await this.sendDzrpCmdClose();
+			console.log("disconnect: finished");
 		}
-		catch {}
+		catch (e) {
+			console.error("disconnect: Failed to close debug session: " + e);
+		}
 	}
 
 
@@ -91,6 +95,7 @@ export class DzrpQeuedRemote extends DzrpRemote {
 				this.emit('warning', err.message);
 				// Remove message / Queue next message
 				const msg = this.messageQueue.shift()!;
+				// Send next
 				this.sendNextMessage();
 				// Pass error data to right consumer
 				msg.reject(err);
@@ -139,6 +144,8 @@ export class DzrpQeuedRemote extends DzrpRemote {
 	protected async sendNextMessage(): Promise<void> {
 		if (this.messageQueue.length == 0)
 			return;
+		if (this.disconnected)
+			return;	// Do not send anything once disconnected
 
 		// Get next message from buffer
 		const msg = this.messageQueue[0];

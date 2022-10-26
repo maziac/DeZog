@@ -3,7 +3,7 @@ import {AlternateCommand, DzrpMachineType, DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME
 import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {GenericBreakpoint} from '../../genericwatchpoint';
-import {DzrpQeuedRemote} from '../dzrp/dzrpqeuedremote';
+import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 
 
 
@@ -53,7 +53,7 @@ class MessageBuffer {
  *
  * This class does not implement any complex flow/state handling.
  */
-export class DzrpBufferRemote extends DzrpQeuedRemote {
+export class DzrpBufferRemote extends DzrpQueuedRemote {
 
 	// The message queue (used to serialize the sent messages).
 	protected messageQueue: Array<MessageBuffer>;
@@ -199,7 +199,7 @@ export class DzrpBufferRemote extends DzrpQeuedRemote {
 			// Handle received buffer
 			this.receivedMsg(strippedBuffer);
 
-			// Prepare next buffer. Copy to many received bytes.
+			// Prepare next buffer. Copy remaining received bytes.
 			const overLength = this.receivedData.length - this.expectedLength;
 			Utility.assert(overLength >= 0);
 			this.receivingHeader = true;
@@ -383,9 +383,17 @@ export class DzrpBufferRemote extends DzrpQeuedRemote {
 		const machineType = resp[4];
 		// Program name
 		const program_name = Utility.getStringFromBuffer(resp, 5);
+
 		// Check version number. Check only major and minor number.
-		if (DZRP_VERSION[0] != resp[1]
-			|| DZRP_VERSION[1] != resp[2]) {
+		// if (DZRP_VERSION[0] != resp[1]
+		// 	|| DZRP_VERSION[1] != resp[2]) {
+		// 	error = "DZRP versions do not match.\n";
+		// 	error += "Required version is " + DZRP_VERSION[0] + "." + DZRP_VERSION[1] + ".\n";
+		// 	error += "But this remote (" + program_name + ") supports only version " + resp[1] + "." + resp[2] + ".";
+		// }
+
+		// Check only major number (TODO: check if this is OK)
+		if (DZRP_VERSION[0] != resp[1]) {
 			error = "DZRP versions do not match.\n";
 			error += "Required version is " + DZRP_VERSION[0] + "." + DZRP_VERSION[1] + ".\n";
 			error += "But this remote (" + program_name + ") supports only version " + resp[1] + "." + resp[2] + ".";
@@ -399,7 +407,15 @@ export class DzrpBufferRemote extends DzrpQeuedRemote {
 	 * The last command sent. Closes the debug session.
 	 */
 	protected async sendDzrpCmdClose(): Promise<void> {
-		await this.sendDzrpCmd(DZRP.CMD_CLOSE, undefined, this.initCloseRespTimeoutTime);
+		try { // TODO: Remove try/catch
+			console.log('sendDzrpCmdClose: start');
+			await this.sendDzrpCmd(DZRP.CMD_CLOSE, undefined, this.initCloseRespTimeoutTime);
+			console.log('sendDzrpCmdClose: end');
+		}
+		catch (e) {
+			console.error("Failed to close debug session: " + e);
+			throw e;
+		}
 	}
 
 

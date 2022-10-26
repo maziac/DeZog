@@ -142,6 +142,10 @@ export class DzrpRemote extends RemoteBase {
 	// Object to allow to give time to vscode during long running 'steps'.
 	protected timeWait: TimeWait;
 
+	// Set to true after the socket has been disconnected.
+	protected disconnected = false;
+
+
 	// A temporary map with the set breakpoints and conditions.
 	// The tmpBreakpoints are created out of the other breakpoints, assertionBreakpoints and logpoints
 	// as soon as the z80CpuContinue is called.
@@ -168,6 +172,19 @@ export class DzrpRemote extends RemoteBase {
 	/// Override this.
 	constructor() {
 		super();
+	}
+
+
+
+	/// Initializes the machine.
+	/// When ready it emits this.emit('initialized') or this.emit('error', exception);
+	/// Don't override this, override 'doInitialization' instead.
+	/// Take care to implement the emits otherwise the system will hang on a start.
+	public async init(): Promise<void> {
+		// Set disconnected
+		this.disconnected = false;
+		// Call super
+		super.init();
 	}
 
 
@@ -258,9 +275,12 @@ export class DzrpRemote extends RemoteBase {
 	 * Stops the emulator.
 	 * This will disconnect e.g. any socket and un-use all data.
 	 * Called e.g. when vscode sends a disconnectRequest
+	 * Sets 'this.disconnected' to true. Can be used to suppress
+	 * sending of further data.
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
+		this.disconnected = true;
 		await super.disconnect();
 	}
 

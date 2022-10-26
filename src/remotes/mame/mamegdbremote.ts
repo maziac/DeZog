@@ -5,7 +5,7 @@ import {Socket} from 'net';
 import {Utility} from '../../misc/utility';
 import {Settings} from '../../settings/settings';
 import {Z80Registers, Z80_REG} from '../z80registers';
-import {DzrpQeuedRemote} from '../dzrp/dzrpqeuedremote';
+import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';
 import {BREAK_REASON_NUMBER, Remote} from '../remotebase';
 import {MemoryModelUnknown} from '../MemoryModel/predefinedmemorymodels';
@@ -24,7 +24,7 @@ const CTRL_C = '\x03';
  * The representation of a MAME remote.
  * Can handle the MAME gdbstub but only for Z80.
  */
-export class MameRemote extends DzrpQeuedRemote {
+export class MameRemote extends DzrpQueuedRemote {
 
 	// The socket connection.
 	public socket: Socket;
