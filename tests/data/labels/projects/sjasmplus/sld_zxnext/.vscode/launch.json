@@ -12,7 +12,7 @@
             //"remoteType": "zrcp",
             "remoteType": "cspect",
             "zsim": {
-                "visualMemory": "ZXNEXT",
+                "visualMemory": true,
                 "Z80N": true,
                 "tbblueMemoryManagementSlots": true
             },
@@ -29,7 +29,6 @@
                 }
             ],
             "commandsAfterLaunch": [
-                "-logpoint enable"
             ],
             "topOfStack": "stack_top",
             "load": "sld1.nex",

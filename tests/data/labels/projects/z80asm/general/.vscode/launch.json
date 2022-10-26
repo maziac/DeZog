@@ -28,9 +28,6 @@
                 "start": "0x8000"
             }],
             "commandsAfterLaunch": [
-                "-wpmem enable",
-                "-logpoint enable",
-                "-assertion enable",
             ]
         }
     ]

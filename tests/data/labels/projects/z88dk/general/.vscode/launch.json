@@ -10,10 +10,10 @@
             "name": "Internal Simulator",
             "remoteType": "zsim",
             "zsim": {
-                "visualMemory": "ZX48"
+                "visualMemory": true
                 //"Z80N": true,
             },
-            "z88dkListFiles": [
+            "z88dk": [
                 {
                     "path": "main.asm",
                     "addOffset": 0,
