@@ -152,7 +152,7 @@ The message format is very simple. It starts with the length information followe
 For commands a byte with the command ID will follow.
 And then the payload follows.
 
-Length is the length of all bytes following the command ID (i.e. the payload)..
+Length is the length of all bytes following the command ID (i.e. the payload).
 
 Command:
 
@@ -376,10 +376,9 @@ Response (Length=1):
 
 ## CMD_READ_MEM=8
 
-Command (Length=6):
+Command (Length=7):
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 1    | 8     | CMD_READ_MEM |
 | 1     | 1    | 0     | reserved  |
 | 2     | 2    | addr  | Start of the memory block |
 | 4     | 2    | n     | Size of the memory block |
@@ -399,7 +398,6 @@ Response (Length=N+1):
 Command (Length=4+N):
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 1    | 9     | CMD_WRITE_MEM |
 | 1     | 1    | 0     | reserved  |
 | 2     | 2    | addr  | Start of the memory block |
 | 4     | 1    | addr[0] | First byte of memory block |
