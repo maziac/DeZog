@@ -88,7 +88,7 @@ The table below shows which commands are used with what remote:
 | [CMD_CLOSE]                               | -    | X      | X      | X    |
 | [CMD_GET_REGISTERS]                       | X    | X      | X      | X    |
 | [CMD_SET_REGISTER]                        | X    | X      | X      | X    |
-| [CMD_WRITE_BANK]                          | X    | X      | X      | X    |
+| [CMD_WRITE_BANK]                          | X    | X      | X      | -    |
 | [CMD_CONTINUE]                            | X    | X      | X      | X    |
 | [CMD_PAUSE]                               | X    | X      | -      | X    |
 | [CMD_READ_MEM]                            | X    | X      | X      | X    |
@@ -348,6 +348,7 @@ Response (Length=2+n):
 | *1    | 1    | 0-255               | Error: 0=no error, 1 = error.                                                                                     |
 | *2    | 1-n  | 0-terminated string | Either 0 or a string which explains the error. E.g. one could have tried to overwrite ROM or the DezogIf program. |
 
+Is used to write the ZX Spectrum/ZX Next sna and nex files.
 
 ## CMD_CONTINUE=6
 
@@ -444,7 +445,7 @@ Command (Length=2):
 | Index | Size | Value | Description         |
 | ----- | ---- | ----- | ------------------- |
 | 0     | 1    | 0-255 | The slot to set.    |
-| 1     | 1    | 0-255 | The 8k bank to use. |
+| 1     | 1    | 0-255 | The bank to use.    |
 
 Example for ZXNext:
 Command:
