@@ -442,10 +442,10 @@ Response (Length=1):
 ## CMD_SET_SLOT=10
 
 Command (Length=2):
-| Index | Size | Value | Description         |
-| ----- | ---- | ----- | ------------------- |
-| 0     | 1    | 0-255 | The slot to set.    |
-| 1     | 1    | 0-255 | The bank to use.    |
+| Index | Size | Value | Description      |
+| ----- | ---- | ----- | ---------------- |
+| 0     | 1    | 0-255 | The slot to set. |
+| 1     | 1    | 0-255 | The bank to use. |
 
 Example for ZXNext:
 Command:
@@ -727,6 +727,7 @@ Response (Length=1+N):
 | 4     | 1    | 1-255 | Same seq no                                     |
 | 5     | N    |       | Arbitrary data. The format is up to the remote. |
 
+Returning a zero length means that it was not possible to obtain the state.
 
 ## CMD_WRITE_STATE=51
 
@@ -739,6 +740,43 @@ Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
 | 4     | 1    | 1-255 | Same seq no |
+
+
+## CMD_GET_MEMORY_MODEL=60
+
+If [CMD_INIT](#cmd-init1) returns a CUSTOM memory model this command is sent.
+It retrieves the slots and banks from the remote.
+
+Command (Length=0):
+| Index | Size | Value | Description |
+| ----- | ---- | ----- | ----------- |
+|       |      |       |             |
+
+Response (Length=6+?):
+| Index | Size | Value   | Description                                                            |
+| ----- | ---- | ------- | ---------------------------------------------------------------------- |
+| 4     | 1    | 1-255   | Same seq no                                                            |
+|       |      | 1-255   | Number of used slots (Nslots)                                          |
+|       |      | 0-65535 | Start address of slot 0                                                |
+|       |      | 0-65535 | End address of slot 0                                                  |
+|       |      | 0-255   | Number of banks allowed for the slot 0                                 |
+|       |      | 0-255   | bank number                                                            |
+|       |      | ...     | ...                                                                    |
+|       |      | 0-65535 | Start address of slot Nslots-1                                         |
+|       |      | 0-65535 | End address of slot Nslots-1                                           |
+|       |      | 0-255   | Number of banks allowed for the slot Nslot-1                           |
+|       |      | 0-255   | bank number                                                            |
+|       |      | ...     | ...                                                                    |
+|       |      | 1-255   | Number of used banks (Nbanks)                                          |
+|       |      | 0-255   | The name of the bank 0, e.g. "Bank0". A null-terminated string.        |
+|       |      | 0-255   | The short name of the bank 0, e.g. "B0". A null-terminated string.     |
+|       |      | 0-65535 | The size of the bank 0. In bytes.                                      |
+|       |      | 0-255   | The bank 0 type. 0 = ROM, 1 = RAM                                      |
+|       |      | ...     | ...                                                                    |
+|       |      | 0-255   | The name of the bank Nbanks-1, e.g. "Bank0". A null-terminated string. |
+|       |      | 0-255   | The short name of the Nbanks-1, e.g. "B0". A null-terminated string.   |
+|       |      | 0-65535 | The size of the Nbanks-1. In bytes.                                    |
+|       |      | 0-255   | The bank Nbanks-1 type. 0 = ROM, 1 = RAM                               |
 
 
 # Notifications
