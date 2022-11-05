@@ -4,6 +4,7 @@ import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
+import {MemoryModel} from '../MemoryModel/memorymodel';
 
 
 
@@ -404,6 +405,18 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 
 
 	/**
+	 * Only if CMD_INIT returns a CUSTOM_MEMORY_MODEL this command is sent.
+	 * It retrieves the memory configuration of the target.
+	 * Used by MAME.
+	 * @returns The slot ranges and the bank info.
+	 */
+	protected async sendDzrpCmdGetMemoryModel(): Promise<MemoryModel> {
+		const mem_config = await this.sendDzrpCmd(DZRP.CMD_GET_MEMORY_MODEL);
+		return new MemoryModelAllRam();
+	}
+
+
+	/**
 	 * The last command sent. Closes the debug session.
 	 */
 	protected async sendDzrpCmdClose(): Promise<void> {
@@ -664,18 +677,20 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	 * Data will just be saved.
 	  */
 	public async sendDzrpCmdReadState(): Promise<Uint8Array> {
-		Utility.assert(false);
-		return new Uint8Array();
+		const state_buffer = await this.sendDzrpCmd(DZRP.CMD_READ_STATE);
+		const state_u8array = new Uint8Array(state_buffer);
+		return state_u8array;
 	}
 
 
 	/**
 	 * Sends the command to wite a previously saved state to the remote.
 	 * I.e. memory, registers etc.
-	 * @param The state data. Format is unknown (remote specific).
+	 * @param stateData The state data. Format is unknown (remote specific).
 	  */
 	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
-		Utility.assert(false);
+		const data = Array.from(stateData);
+		await this.sendDzrpCmd(DZRP.CMD_WRITE_STATE, data);
 	}
 
 

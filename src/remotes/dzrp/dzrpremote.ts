@@ -14,7 +14,8 @@ import {TimeWait} from '../../misc/timewait';
 import {Log} from '../../log';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {PromiseCallbacks} from '../../misc/promisecallbacks';
-import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
+import {MemoryModel} from '../MemoryModel/memorymodel';
 
 
 
@@ -64,7 +65,11 @@ export enum DZRP {
 	// State
 	CMD_READ_STATE = 50,
 	CMD_WRITE_STATE = 51,
+
+	// Memory model
+	CMD_GET_MEMORY_MODEL = 60,
 }
+
 
 /**
  * DZRP notifications.
@@ -94,7 +99,8 @@ export enum DzrpMachineType {
 	ZX16K = 1,
 	ZX48K = 2,
 	ZX128K = 3,
-	ZXNEXT = 4
+	ZXNEXT = 4,
+	CUSTOM_MEMORY_MODEL = 255
 }
 
 /**
@@ -225,6 +231,11 @@ export class DzrpRemote extends RemoteBase {
 			const resp = await this.sendDzrpCmdInit();
 			if (resp.error)
 				throw Error(resp.error);
+			// Check if we need to get the memory model configuration
+			if (resp.machineType === DzrpMachineType.CUSTOM_MEMORY_MODEL) {
+				// Retrieve memory config
+				const memoryConfig = await this.sendDzrpCmdGetMemoryModel();
+			}
 
 			// Load executable
 			await this.loadExecutable();
@@ -250,7 +261,11 @@ export class DzrpRemote extends RemoteBase {
 					break;
 				default:
 					// Error: Unknown type
-					throw Error("Unknown machine type " + resp.machineType + " received.");
+					//throw Error("Unknown machine type " + resp.machineType + " received.");
+
+					// TODO: REMOVE (and again throw)
+					this.memoryModel = new MemoryModelAllRam();
+					break;
 			}
 			this.memoryModel.init();
 
@@ -334,7 +349,6 @@ export class DzrpRemote extends RemoteBase {
 				i++;
 			}
 			// Slots
-			i++;	// Skip reserved
 			const slotCount = regs[i++];
 			response += '\nslots.length=' + slotCount;
 			for (let k = 0; k < slotCount; k++)
@@ -1536,6 +1550,19 @@ export class DzrpRemote extends RemoteBase {
 	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
 		Utility.assert(false);
 		return {error: undefined, dzrpVersion: "", programName: "", machineType: 0};
+	}
+
+
+	/**
+	 * Override (only if required).
+	 * Only if CMD_INIT returns a CUSTOM_MEMORY_MODEL this command is sent.
+	 * It retrieves the memory configuration of the target.
+	 * Used by MAME.
+	 * @returns The slot ranges and the bank info.
+	 */
+	protected async sendDzrpCmdGetMemoryModel(): Promise<MemoryModel> {
+		Utility.assert(false);
+		return new MemoryModelAllRam();
 	}
 
 
