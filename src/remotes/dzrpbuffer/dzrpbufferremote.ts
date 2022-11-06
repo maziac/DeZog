@@ -4,7 +4,7 @@ import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
-import {MemoryModel} from '../MemoryModel/memorymodel';
+import {BankInfo, MemoryModel, SlotRange} from '../MemoryModel/memorymodel';
 
 
 
@@ -113,7 +113,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	 * @param cmd The command.
 	 * @param data A buffer containing the data.
 	 * @param respTimeoutTime The response timeout. Undefined=use default.
-	 * @returns The response is returned in the Promise.
+	 * @returns The response (payload data after seq no) is returned in the Promise.
 	 */
 	protected async sendDzrpCmd(cmd: DZRP, data?: Buffer | Array<number>, respTimeoutTime?: number): Promise<Buffer> {
 		return new Promise<Buffer>(async (resolve, reject) => {
@@ -408,12 +408,73 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	 * Only if CMD_INIT returns a CUSTOM_MEMORY_MODEL this command is sent.
 	 * It retrieves the memory configuration of the target.
 	 * Used by MAME.
-	 * @returns The slot ranges and the bank info.
+	 * @returns The memory model.
 	 */
 	protected async sendDzrpCmdGetMemoryModel(): Promise<MemoryModel> {
-		const memConfig = await this.sendDzrpCmd(DZRP.CMD_GET_MEMORY_MODEL);
-		const memModel: MemoryModel = undefined as any;
+		const data = await this.sendDzrpCmd(DZRP.CMD_GET_MEMORY_MODEL);
+		let i = 0;
 
+		// Read slot ranges
+		const slotRanges: SlotRange[] = [];
+		const bankInfos: (BankInfo|undefined)[] = [];
+		const slotCount = data[i++];
+		for (let i = 0; i < slotCount; i++) {
+			const start = Utility.getWord(data, i);
+			i += 2;
+			const end = Utility.getWord(data, i);
+			i += 2;
+			// Banks for slot
+			const banks = new Set<number>();
+			const bankCount = data[i++];
+			for (let b = 0; b < bankCount; b++) {
+				banks.add(data[i++]);
+			}
+			// Create slot range
+			slotRanges.push({start, end, banks});
+		}
+
+		// Bank infos
+		const bankCount = data[i++];
+		for (let b = 0; b < bankCount; b++) {
+			// Name
+			const name = Utility.getStringFromBuffer(data, i);
+			i += name.length + 1;
+			// Short name
+			const shortName = Utility.getStringFromBuffer(data, i);
+			i += shortName.length + 1;
+			// Size of the bank
+			const size = Utility.getWord(data, i);
+			i += 2;
+			// 0=UNKNOWN, 1=ROM, 2=RAM
+			const bankType = data[i++];
+			// Create bank info
+			bankInfos[b] = {name, shortName, size, bankType};
+		}
+
+		// Create config
+		const slotInfos = [];
+		for (const slotRange of slotRanges) {
+			const slotInfo = {
+				range: [slotRange.start, slotRange.end],
+				banks: new Array<any>()
+			};
+			for (const bankNumber of slotRange.banks) {
+				const bankInfo: any = {index: bankNumber};
+				const bank = bankInfos[bankNumber];
+				if (bank) {
+					// Add name and short name
+					bankInfo.name = bank.name;
+					bankInfo.shortName = bank.shortName;
+					// Each bank need to be defined only once
+					bankInfos[bankNumber] = undefined;
+				}
+				// Add to slot
+				slotInfo.banks.push(bankInfo);
+			}
+		}
+
+		// Create memory model
+		const memModel = new MemoryModel({slots: slotInfos});
 		console.log('memModel=' + memModel.getMemModelInfo());
 		return memModel;
 	}

@@ -756,17 +756,17 @@ Response (Length=6+?):
 | Index | Size | Value   | Description                                                            |
 | ----- | ---- | ------- | ---------------------------------------------------------------------- |
 | 4     | 1    | 1-255   | Same seq no                                                            |
-|       |      | 1-255   | Number of used slots (Nslots)                                          |
-|       |      | 0-65535 | Start address of slot 0                                                |
-|       |      | 0-65535 | End address of slot 0                                                  |
-|       |      | 0-255   | Number of banks allowed for the slot 0                                 |
-|       |      | 0-255   | bank number                                                            |
-|       |      | ...     | ...                                                                    |
+| 5     |      | 1-255   | Number of used slots (Nslots)                                          |
+| 6     |      | 0-65535 | Start address of slot 0                                                |
+| 8     |      | 0-65535 | End address of slot 0                                                  |
+|  10   |      | 0-255   | Number of banks allowed for the slot 0                                 |
+|  11   |      | 0-255   | bank number for slot 0                                                            |
+|       |      | ...     | ... other bank numbers for slot 0                                                                   |
 |       |      | 0-65535 | Start address of slot Nslots-1                                         |
 |       |      | 0-65535 | End address of slot Nslots-1                                           |
 |       |      | 0-255   | Number of banks allowed for the slot Nslot-1                           |
-|       |      | 0-255   | bank number                                                            |
-|       |      | ...     | ...                                                                    |
+|       |      | 0-255   | bank number for Nslot-1                                                     |
+|       |      | ...     | ... other bank numbers for Nslot-1                        |
 |       |      | 1-255   | Number of used banks (Nbanks)                                          |
 |       |      | 0-255   | The name of the bank 0, e.g. "Bank0". A null-terminated string.        |
 |       |      | 0-255   | The short name of the bank 0, e.g. "B0". A null-terminated string.     |
@@ -776,7 +776,7 @@ Response (Length=6+?):
 |       |      | 0-255   | The name of the bank Nbanks-1, e.g. "Bank0". A null-terminated string. |
 |       |      | 0-255   | The short name of the Nbanks-1, e.g. "B0". A null-terminated string.   |
 |       |      | 0-65535 | The size of the Nbanks-1. In bytes.                                    |
-|       |      | 0-255   | The bank Nbanks-1 type.  0 = UNKNOWN, 1 = ROM, 1 = RAM                 |
+|       |      | 0-255   | The bank Nbanks-1 type. 0 = UNUSED, 1 = ROM, 2 = RAM                 |
 
 
 # Notifications

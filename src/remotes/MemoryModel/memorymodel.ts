@@ -8,9 +8,10 @@ import {Z80Registers} from "../z80registers";
  * The memory in the banks can be ROM, RAM or completely unused.
  */
 export enum BankType {
-	ROM = 0,	// Readonly memory, not writable by Z80 but writable from the debugger and e.g. loadBinSna/Nex.
-	RAM = 1,	// Readwrite memory, writable and readable by Z80 and the debugger
-	UNUSED = 2	// Not writable by Z80 and debugger. Will be filled with 0xFF.
+	UNKNOWN = 0,	// Returned from MAME for the banks. Could be ROM or RAM.
+	ROM = 1,	// Readonly memory, not writable by Z80 but writable from the debugger and e.g. loadBinSna/Nex.
+	RAM = 2,	// Readwrite memory, writable and readable by Z80 and the debugger
+	UNUSED = 3,	// Not writable by Z80 and debugger. Will be filled with 0xFF.
 }
 
 
