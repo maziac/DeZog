@@ -1935,6 +1935,9 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd == '-mdelta') {
 			output = await MemoryCommands.evalMemDelta(tokens);
 		}
+		else if (cmd == '-memmodel') {
+			output = await this.evalMemModel(tokens);
+		}
 		else if (cmd == '-msetb') {
 			output = await MemoryCommands.evalMemSetByte(tokens);
 		}
@@ -2349,7 +2352,8 @@ the value correspondends to a label.
   scheme.
 Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes.
   But if chosen, words are output. Last argument is the endianness which is little endian by default.
-"-msetb address value [repeat]:"
+"-memmodel": Prints slot and bank info of the currently used memory model.
+"-msetb address value [repeat]":
 	- address: The address to fill. Can also be a label or expression.
 	- value: The byte value to set.
 	- repeat: (Optional) How often the value is repeated.
@@ -2503,6 +2507,23 @@ E.g. use "-help -view" to put the help text in an own view.
 		}
 		// return result
 		return result;
+	}
+
+
+	/**
+	 * Displays the used Memory Model. I.e. the slot ranges and the bank info.
+	 * @param tokens No arguments
+	 * @returns A Promise with a text to print.
+	 */
+	protected async evalMemModel(tokens: Array<string>): Promise<string> {
+		// Check count of arguments
+		if (tokens.length != 0) {
+			// Error Handling: No arguments
+			throw new Error("No arguments are expected.");
+		}
+
+		const txt =Remote.memoryModel.getMemModelInfo();
+		return txt;
 	}
 
 
