@@ -418,7 +418,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		const slotRanges: SlotRange[] = [];
 		const bankInfos: (BankInfo|undefined)[] = [];
 		const slotCount = data[i++];
-		for (let i = 0; i < slotCount; i++) {
+		for (let s = 0; s < slotCount; s++) {
 			const start = Utility.getWord(data, i);
 			i += 2;
 			const end = Utility.getWord(data, i);
@@ -452,7 +452,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		}
 
 		// Create config
-		const slotInfos = [];
+		const slotInfos: any[] = [];
 		for (const slotRange of slotRanges) {
 			const slotInfo = {
 				range: [slotRange.start, slotRange.end],
@@ -471,6 +471,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 				// Add to slot
 				slotInfo.banks.push(bankInfo);
 			}
+			slotInfos.push(slotInfo);
 		}
 
 		// Create memory model
