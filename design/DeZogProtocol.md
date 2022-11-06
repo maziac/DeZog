@@ -771,12 +771,12 @@ Response (Length=6+?):
 |       |      | 0-255   | The name of the bank 0, e.g. "Bank0". A null-terminated string.        |
 |       |      | 0-255   | The short name of the bank 0, e.g. "B0". A null-terminated string.     |
 |       |      | 0-65535 | The size of the bank 0. In bytes.                                      |
-|       |      | 0-255   | The bank 0 type. 0 = ROM, 1 = RAM                                      |
+|       |      | 0-255   | The bank 0 type. 0 = UNKNOWN, 1 = ROM, 1 = RAM                         |
 |       |      | ...     | ...                                                                    |
 |       |      | 0-255   | The name of the bank Nbanks-1, e.g. "Bank0". A null-terminated string. |
 |       |      | 0-255   | The short name of the Nbanks-1, e.g. "B0". A null-terminated string.   |
 |       |      | 0-65535 | The size of the Nbanks-1. In bytes.                                    |
-|       |      | 0-255   | The bank Nbanks-1 type. 0 = ROM, 1 = RAM                               |
+|       |      | 0-255   | The bank Nbanks-1 type.  0 = UNKNOWN, 1 = ROM, 1 = RAM                 |
 
 
 # Notifications

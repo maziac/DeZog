@@ -598,4 +598,40 @@ export class MemoryModel {
 			throw Error("Bank with shortName '" + shortName + "' does not exist in memory model '" + this.name + "'.");
 		return bankNr;
 	}
+
+	/**
+	 * Returns a string with teh complete slot and bank info.
+	 * Used mainly for debugging and for the "-memmodel" command.
+	 * @returns The info as a string (with newlines).
+	 */
+	public getMemModelInfo(): string {
+		let txt = "Slot ranges:\n";
+		// Slots
+		for (const slotRange of this.slotRanges) {
+			let line = Utility.getHexString(slotRange.start, 4) + "-" + Utility.getHexString(slotRange.end, 4) + ": " + (slotRange.name || "unnamed") + ", banks: ";
+			// Banks
+			const banks = [...slotRange.banks];
+			line += banks.map(val => this.banks[val].shortName).join(", ");
+			// Next line
+			txt += line + "\n";
+		}
+		// Banks
+		txt += "Memory banks:\n";
+		for (const bank of this.banks) {
+			let line = bank.shortName + ": " + bank.name + ", size=" + bank.size;
+			let type;
+			switch (bank.bankType) {
+				case BankType.ROM: type = "ROM"; break;
+				case BankType.RAM: type = "RAM"; break;
+				case BankType.UNUSED: type = "UNUSED"; break;
+				default: type = "UNKNOWN"; break;
+			}
+			line += ", " + type;
+			// Next line
+			txt += line + "\n";
+		}
+
+		// Return
+		return txt;
+	}
 }

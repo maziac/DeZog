@@ -411,8 +411,11 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	 * @returns The slot ranges and the bank info.
 	 */
 	protected async sendDzrpCmdGetMemoryModel(): Promise<MemoryModel> {
-		const mem_config = await this.sendDzrpCmd(DZRP.CMD_GET_MEMORY_MODEL);
-		return new MemoryModelAllRam();
+		const memConfig = await this.sendDzrpCmd(DZRP.CMD_GET_MEMORY_MODEL);
+		const memModel: MemoryModel = undefined as any;
+
+		console.log('memModel=' + memModel.getMemModelInfo());
+		return memModel;
 	}
 
 
