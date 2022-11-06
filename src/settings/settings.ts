@@ -131,10 +131,10 @@ export interface CSpectType {
 
 // Definitions for the MAME remote type.
 export interface MameType {
-	// The hostname/IP address of the MAME gdbstub socket.
+	// The hostname/IP address of the MAME lua DZRP socket.
 	hostname: string;
 
-	// The port of the MAME gdbstub socket.
+	// The port of the MAME lua DZRP socket.
 	port: number;
 
 	/// The socket timeout in seconds.
@@ -262,7 +262,7 @@ export interface SmartDisassemblerArgs {
  */
 export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments {
 	/// The remote type: zesarux or zxnext.
-	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame';
+	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame' | 'mamegdb';	// TODO: Remove mamegdb
 
 	// The special settings for zrcp (ZEsarux).
 	zrcp: ZrcpType;
@@ -854,7 +854,7 @@ export class Settings {
 
 		// Check remote type
 		const rType = Settings.launch.remoteType;
-		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame'];
+		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame', 'mamegdb']; // TODO: remove mamegdb
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("'remoteType': Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
@@ -870,6 +870,12 @@ export class Settings {
 			if (oldZxnext.port != undefined || oldZxnext.hostname != undefined || oldZxnext.socketTimeout != undefined) {
 				throw Error("For 'zxnext' the properties 'port', 'hostname' and 'socketTimeout' are not used anymore. Use 'serial' instead.");
 			}
+		}
+
+		// Check 'load' if 'mame' was selected
+		if (rType == 'mame') {
+			if (Settings.launch.load != '')
+				throw Error("For remoteType 'mame' you mustn't set the 'load' property. It is only for .nex and .sna files");
 		}
 
 		// List files (=Assembler configurations)

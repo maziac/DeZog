@@ -24,7 +24,7 @@ const CTRL_C = '\x03';
  * The representation of a MAME remote.
  * Can handle the MAME gdbstub but only for Z80.
  */
-export class MameRemote extends DzrpQueuedRemote {
+export class MameGdbRemote extends DzrpQueuedRemote {
 
 	// The socket connection.
 	public socket: Socket;

@@ -133,19 +133,6 @@ export class MameRemote extends DzrpBufferRemote {
 
 
 	/**
-	 * State saving is not supported in MAME.
-	 */
-	public async stateSave(filePath: string): Promise<void> {
-		// TODO
-		throw Error("Saving and restoring the state is not supported with MAME.");
-	}
-	public async stateRestore(filePath: string): Promise<void> {
-		// TODO
-		throw Error("Saving and restoring the state is not supported with MAME.");
-	}
-
-
-	/**
 	 * Not used/supported.
 	 */
 	protected async sendDzrpCmdSetBreakpoints(bpAddresses: Array<number>): Promise<Array<number>> {
