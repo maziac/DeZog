@@ -7,14 +7,14 @@
             "command": "/Volumes/SDDPCIE2TB/Projects/Z80/z88dk/z88dk.bin/bin/z80asm",
             "args": [
                 "-s", "-l", "-b", "-m",
-                "--cpu=z80",
+                "-m=z80",
                 //"--origin=32768",
                 "main.asm"
             ],
             "problemMatcher": {
                 "fileLocation": [
                     "relative",
-                    "${workspaceFolder}"
+                    "${workspaceRoot}"
                 ],
                 "pattern": {
                     "regexp": "^(.*) at file '(.*)' line (\\d+):\\s+(.*)$",
