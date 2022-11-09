@@ -4,11 +4,11 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
-import {Z88dkLabelParserV2} from '../src/labels/z88dklabelparserv2';
+import {Z88dkLabelParser} from '../src/labels/z88dklabelparser';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
-suite('Labels (z88dk v2 format)', () => {
+suite('Labels (z88dk old format)', () => {
 	let lbls;
 
 	setup(() => {
@@ -20,13 +20,13 @@ suite('Labels (z88dk v2 format)', () => {
 
 		test('Labels (with map)', () => {
 			// Read result data (labels)
-			const labelsFile = fs.readFileSync('./tests/data/labels/projects/z88dk/general_v2/main.map').toString().split('\n');
+			const labelsFile = fs.readFileSync('./tests/data/labels/projects/z88dk/general_old/main.map').toString().split('\n');
 
 			// Read the list file
 			const config = {
 				z88dk: [{
-					path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
-					mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
+					path: './tests/data/labels/projects/z88dk/general_old/main.lis',
+					mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 					srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
@@ -46,7 +46,7 @@ suite('Labels (z88dk v2 format)', () => {
 				const value = parseInt(match[2], 16) + 0x10000;
 				// Check
 				const res = lbls.getNumberForLabel(label);
-				assert.equal(res, value, "Error: " + label);
+				assert.equal(value, res, "Error: " + label);
 			}
 		});
 
@@ -55,8 +55,8 @@ suite('Labels (z88dk v2 format)', () => {
 			// Read the list file
 			const config = {
 				z88dk: [{
-					path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
-					mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
+					path: './tests/data/labels/projects/z88dk/general_old/main.lis',
+					mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 					srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
@@ -76,8 +76,8 @@ suite('Labels (z88dk v2 format)', () => {
 			// Read the list file
 			const config = {
 				z88dk: [{
-					path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
-					mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
+					path: './tests/data/labels/projects/z88dk/general_old/main.lis',
+					mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 					srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
@@ -87,7 +87,8 @@ suite('Labels (z88dk v2 format)', () => {
 			// Test that a label under an IF 0/ENDIF is not defined => not easily possible with
 			// z80asm, so simply allow it.
 			const res = lbls.getNumberForLabel('label5');
-			assert.equal(undefined, res);
+			//assert.equal(undefined, res); // This would be correct, but is not easily possible with z80asm
+			assert.equal(res, 0x018006);
 		});
 
 
@@ -95,13 +96,14 @@ suite('Labels (z88dk v2 format)', () => {
 
 			test('Labels location', () => {
 				// Read the list file
-				const fname = './tests/data/labels/projects/z88dk/general_v2/main.lis';
+				const fname = './tests/data/labels/projects/z88dk/general_old/main.lis';
 				const config = {
 					z88dk: [{
 						path: fname,
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
-						excludeFiles: []
+						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
+						excludeFiles: [],
+						version: "1"
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -110,34 +112,34 @@ suite('Labels (z88dk v2 format)', () => {
 				let res = lbls.getLocationOfLabel('label1')!;
 				assert.notEqual(res, undefined);
 				assert.equal(fname, res.file);
-				assert.equal(16 - 1, res.lineNr);	// line number starts at 0
+				assert.equal(15 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('fa_label1')!;
 				assert.notEqual(res, undefined);
 				assert.equal(fname, res.file);
-				assert.equal(60 - 1, res.lineNr);	// line number starts at 0
+				assert.equal(52 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('global_label1')!;
 				assert.notEqual(res, undefined);
 				assert.equal(fname, res.file);
-				assert.equal(80 - 1, res.lineNr);	// line number starts at 0
+				assert.equal(71 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('global_label2')!;
 				assert.notEqual(res, undefined);
 				assert.equal(fname, res.file);
-				assert.equal(82 - 1, res.lineNr);	// line number starts at 0
+				assert.equal(73 - 1, res.lineNr);	// line number starts at 0
 			});
 
 			test('address -> file/line', () => {
 				// Read the list file as result data (addresses)
-				const listFile = fs.readFileSync('./tests/data/labels/projects/z88dk/general_v2/main.lis').toString().split('\n');
+				const listFile = fs.readFileSync('./tests/data/labels/projects/z88dk/general_old/main.lis').toString().split('\n');
 
 				// Read the list file
 				const config = {
 					z88dk: [{
-						path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
+						path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map"
+						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map"
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -162,15 +164,15 @@ suite('Labels (z88dk v2 format)', () => {
 
 			test('file/line -> address', () => {
 				// Read the list file as result data (addresses)
-				const filename = './tests/data/labels/projects/z88dk/general_v2/main.lis';
+				const filename = './tests/data/labels/projects/z88dk/general_old/main.lis';
 				const listFile = fs.readFileSync(filename).toString().split('\n');
 
 				// Read the list file
 				const config = {
 					z88dk: [{
-						path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
+						path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map"
+						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map"
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -200,11 +202,12 @@ suite('Labels (z88dk v2 format)', () => {
 				// Read the list file
 				const config = {
 					z88dk: [{
-						path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
+						path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 						mainFile: "main.asm",
-						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
+						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 						srcDirs: [""],	// Sources mode
-						excludeFiles: []
+						excludeFiles: [],
+						version: "1"
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -222,17 +225,17 @@ suite('Labels (z88dk v2 format)', () => {
 
 				res = lbls.getLocationOfLabel('global_label1')!;
 				assert.notEqual(undefined, res);
-				assert.equal('dir/filea b.asm', res.file);
+				assert.equal('filea_b.asm', res.file);
 				assert.equal(10 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('global_label2')!;
 				assert.notEqual(undefined, res);
-				assert.equal('dir/filea b.asm', res.file);
+				assert.equal('filea_b.asm', res.file);
 				assert.equal(12 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('fab_label_equ1')!;
 				assert.notEqual(undefined, res);
-				assert.equal('dir/filea b.asm', res.file);
+				assert.equal('filea_b.asm', res.file);
 				assert.equal(20 - 1, res.lineNr);	// line number starts at 0
 			});
 
@@ -241,11 +244,12 @@ suite('Labels (z88dk v2 format)', () => {
 				// Read the list file
 				const config = {
 					z88dk: [{
-						path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
+						path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 						mainFile: "main.asm",
-						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
+						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 						srcDirs: [""],	// Sources mode
-						excludeFiles: []
+						excludeFiles: [],
+						version: "1"
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -255,15 +259,15 @@ suite('Labels (z88dk v2 format)', () => {
 				assert.ok(res.fileName.endsWith('main.asm'));
 				assert.equal(16 - 1, res.lineNr);
 
-				res = lbls.getFileAndLineForAddress(0x1801F);
+				res = lbls.getFileAndLineForAddress(0x1800D);
 				assert.ok(res.fileName.endsWith('filea.asm'));
-				assert.equal(2 - 1, res.lineNr);
-
-				res = lbls.getFileAndLineForAddress(0x18023);
-				assert.ok(res.fileName.endsWith('dir/filea b.asm'));
 				assert.equal(7 - 1, res.lineNr);
 
-				res = lbls.getFileAndLineForAddress(0x18027);
+				res = lbls.getFileAndLineForAddress(0x18010);
+				assert.ok(res.fileName.endsWith('filea_b.asm'));
+				assert.equal(7 - 1, res.lineNr);
+
+				res = lbls.getFileAndLineForAddress(0x18014);
 				assert.ok(res.fileName.endsWith('filea.asm'));
 				assert.equal(16 - 1, res.lineNr);
 			});
@@ -273,11 +277,12 @@ suite('Labels (z88dk v2 format)', () => {
 				// Read the list file
 				const config = {
 					z88dk: [{
-						path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
+						path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 						mainFile: "main.asm",
-						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
+						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 						srcDirs: [""],	// Sources mode
-						excludeFiles: []
+						excludeFiles: [],
+						version: "1"
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -286,26 +291,26 @@ suite('Labels (z88dk v2 format)', () => {
 				let address = lbls.getAddrForFileAndLine('main.asm', 16 - 1);
 				assert.equal(address, 0x18000);
 
-				address = lbls.getAddrForFileAndLine('filea.asm', 2 - 1);
-				assert.equal(address, 0x1801F);
+				address = lbls.getAddrForFileAndLine('filea.asm', 6 - 1);
+				assert.equal(address, 0x1800D);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 7 - 1);
-				assert.equal(address, 0x18020);
+				assert.equal(address, 0x1800D);
 
-				address = lbls.getAddrForFileAndLine('dir/filea b.asm', 3 - 1);
-				assert.equal(address, 0x18022);
+				address = lbls.getAddrForFileAndLine('filea_b.asm', 4 - 1);
+				assert.equal(address, 0x18010);
 
-				address = lbls.getAddrForFileAndLine('dir/filea b.asm', 17 - 1);
-				assert.equal(address, 0x18026);
-
-				address = lbls.getAddrForFileAndLine('dir/filea b.asm', 16 - 1);
-				assert.equal(address, 0x18026);
+				address = lbls.getAddrForFileAndLine('filea_b.asm', 15 - 1);
+				assert.equal(address, 0x18013);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 15 - 1);
-				assert.equal(address, 0x18027);
+				assert.equal(address, 0x18014);
 
-				address = lbls.getAddrForFileAndLine('filea.asm', 16 - 1);
-				assert.equal(address, 0x18027);
+				address = lbls.getAddrForFileAndLine('filea.asm', 15 - 1);
+				assert.equal(address, 0x18014);
+
+				address = lbls.getAddrForFileAndLine('filea.asm', 17 - 1);
+				assert.equal(address, 0x18015);
 			});
 
 		});
@@ -317,22 +322,21 @@ suite('Labels (z88dk v2 format)', () => {
 		// Read the list file
 		const config = {
 			z88dk: [{
-				path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
+				path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 				mainFile: "main.asm",
-				mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
+				mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 				srcDirs: [""],	// Sources mode
-				excludeFiles: []
+				excludeFiles: [],
+				version: "1"
 			}]
 		};
 		lbls.readListFiles(config, new MemoryModelAllRam());
 
 		// Test WPMEM
 		const wpLines = lbls.getWatchPointLines();
-		assert.equal(wpLines.length, 2);
-		assert.equal(wpLines[0].address, 0x1800D);
+		assert.equal(wpLines.length, 1);
+		assert.equal(wpLines[0].address, 0x18008);
 		assert.equal(wpLines[0].line, "WPMEM");
-		assert.equal(wpLines[1].address, 0x18016);
-		assert.equal(wpLines[1].line, "WPMEM");
 
 		// Test ASSERTION
 		const assertionLines = lbls.getAssertionLines();
@@ -358,20 +362,20 @@ suite('Labels (z88dk v2 format)', () => {
 			tmpFile = path.join(os.tmpdir(), 'dezog_labels_z88dk.lis');
 			// Write file.
 			fs.writeFileSync(tmpFile,
-			`
-    15                  label0000:
-    16                  label2000:
-    17                  label4000:
-    18                  label6000:
-    19                  label8000:
-    20                  labelA000:
-    21                  labelC000:
- 99999                  labelE000:
+				`
+15    0000              label0000:
+16    2000              label2000:
+17    4000              label4000:
+18    6000              label6000:
+19    8000              label8000:
+20    A000              labelA000:
+21    C000              labelC000:
+22    E000              labelE000:
 `);
 			//Write also map file.
 			tmpMapFile = path.join(os.tmpdir(), 'dezog_labels_z88dk.map');
 			fs.writeFileSync(tmpMapFile,
-`label0000                          = $0000 ; addr, local, , main, , main.asm:15
+				`label0000                          = $0000 ; addr, local, , main, , main.asm:15
 label2000                          = $2000 ; addr, local, , main, , main.asm:16
 label4000                          = $4000 ; addr, local, , main, , main.asm:17
 label6000                          = $6000 ; addr, local, , main, , main.asm:18
@@ -390,7 +394,7 @@ labelE000                          = $E000 ; addr, local, , main, , main.asm:22
 				srcDirs: [],
 				excludeFiles: []
 			};
-			parser = new Z88dkLabelParserV2 (
+			parser = new Z88dkLabelParser(
 				mm,
 				new Map<number, SourceFileEntry>(),
 				new Map<string, Array<number>>(),
@@ -424,8 +428,5 @@ labelE000                          = $E000 ; addr, local, , main, , main.asm:22
 			assert.equal(parser.numberForLabel.get('labelC000'), 0x001C000);
 			assert.equal(parser.numberForLabel.get('labelE000'), 0x002E000);
 		});
-
 	});
-
 });
-

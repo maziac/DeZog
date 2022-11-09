@@ -147,26 +147,11 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	// Regex to iterate over the map file.
 	protected mapFileRegEx = /^(\w*)\b\s*=\s*\$([0-9a-f]+)/i;
 
-
-	// Regex to find labels
-	// Require a ":" after the label
-	//protected labelRegEx = /^[0-9a-f]+[\s0-9a-f]*\s+>?([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i;
-
-	// Search for bytes after the address:
-	// E.g. "80F1 D5 C5"
-	protected matchBytesRegEx = /[0-9a-f]{4,6}\s(([0-9a-f]{2})+)/i;
-
 	// RegEx to extract the line number for Sources-mode.
 	protected lineNumberRegEx = /^(\s*\d+\s*)/;
 
-	// Checks for "include".
-	protected matchInclStartRegEx = /^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i;
-
 	// To correct address by the values given in the map file.
 	protected z88dkMapOffset: number | undefined;
-
-	// The currently processed file. TODO: REMOVE
-	protected currentFileName: string;
 
 	// The last (known) label address in the list file.
 	protected lastLabelAddress: number;

@@ -53,6 +53,9 @@ export interface Z88dkConfig extends AsmConfigBase {
 
 	/// The z88dk map file (option "-m").
 	mapFile: string;
+
+	/// The version of the lis file format: 1 = old (prior 2), 2 = version 2 (current)
+	version: string;
 }
 
 
@@ -622,7 +625,8 @@ export class Settings {
 					srcDirs: fpSrcDirs || [""],
 					excludeFiles: fpExclFiles || [],
 					mainFile: fpMainFile || "",
-					mapFile: undefined as any
+					mapFile: undefined as any,
+					version: fp.version || "2"
 				};
 				if (fpPath)
 					file.path = Utility.getAbsFilePath(fpPath, rootFolder);

@@ -1,0 +1,33 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "z88dk assembler",
+            "type": "shell",
+            "command": "/Volumes/SDDPCIE2TB/Projects/Z80/z88dk/z88dk.bin/bin/z80asm",
+            "args": [
+                "-s", "-l", "-b", "-m",
+                "--cpu=z80",
+                //"--origin=32768",
+                "main.asm"
+            ],
+            "problemMatcher": {
+                "fileLocation": [
+                    "relative",
+                    "${workspaceRoot}"
+                ],
+                "pattern": {
+                    "regexp": "^(.*) at file '(.*)' line (\\d+):\\s+(.*)$",
+                    "file": 2,
+                    "line": 3,
+                    "severity": 1,
+                    "message": 4
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

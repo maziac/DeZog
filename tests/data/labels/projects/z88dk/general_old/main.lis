@@ -1,0 +1,93 @@
+1     0000
+2     0000
+3     0000              label_equ1:		equ 100
+4     0000
+5     0000
+6     0000              ;m1:	MACRO
+7     0000              ;	ld c,9
+8     0000              ;.mlocal:
+9     0000              ;	dec a
+10    0000              ;	ENDM
+11    0000
+12    0000
+13    0000              	ORG 0x8000
+14    0000
+15    0000              label1:
+16    0000  00          	nop
+17    0001
+18    0001  3E 05       label2:	ld a,5
+19    0003
+20    0003  06 08       _locala:	ld b,8
+21    0005
+22    0005              _localb:
+23    0005  00          	nop		; ASSERTION
+24    0006
+25    0006              label3:	;m1
+26    0006               ;m1
+27    0006              label4:
+28    0006               ;	m1
+29    0006
+30    0006              label4_1:
+31    0006              	; m1	; LOGPOINT
+32    0006
+33    0006              	IF 0
+34    0006              label5:	nop
+35    0006              	ENDIF
+36    0006
+37    0006  00          label6:	nop
+38    0007
+39    0007              _local: ; local label not existing
+40    0007  00          	nop
+41    0008
+42    0008
+43    0008
+44    0008              	;ORG 0x8200
+45    0008              data:
+46    0008  01 02 03 04 	defb 1, 2, 3, 4		; WPMEM
+47    000C
+48    000C              	;ORG 0x9000
+49    000C
+50    000C              	include "filea.asm"
+1     000C
+2     000C  00          fa_label1:	nop
+3     000D
+4     000D
+5     000D
+6     000D              fa_label2:
+7     000D  00          	nop
+8     000E
+9     000E  00          fa_label3_mid:	nop
+10    000F
+11    000F              	include "filea_b.asm"
+1     000F
+2     000F
+3     000F  00          fab_label1:	nop
+4     0010
+5     0010
+6     0010
+7     0010  00          fab_label2:	nop
+8     0011
+9     0011
+10    0011              global_label1:	; All labels are global
+11    0011  00          	nop
+12    0012              global_label2:	; All labels are global
+13    0012  00          	nop
+14    0013
+15    0013
+16    0013              fab_label3:
+17    0013  00          	nop
+18    0014
+19    0014
+20    0014              fab_label_equ1:		equ 70
+21    0014
+12    0014
+13    0014
+14    0014
+15    0014              fa_label3:
+16    0014  00          	nop
+17    0015
+18    0015
+51    0015
+52    0015
+53    0015
+54    0015
