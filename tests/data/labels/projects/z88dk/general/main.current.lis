@@ -33,58 +33,52 @@ main.asm:
     32                          
     33                          	IF 0
     34                          label5:	nop
-    35                          	ld a,6
-    36                          	ENDIF
-    37                          
-    38  0006  00                label6:	nop
-    39                          
-    40                          _local: ; local label not existing
-    41  0007  00                	nop
-    42  0008  3e05              	ld a,5
-    43  000a  211600            	ld hl,22
-    44                          
-    45                          
-    46                          
-    47                          	;ORG 0x8200
-    48                          data:
-    49  000d  0102030405060708  	defb 1, 2, 3, 4, 5, 6, 7, 8, $FA		; WPMEM
-              fa                
-    50  0016  fe02030405060708  data2:	defb $FE, 2, 3, 4, 5, 6, 7, 8, 9		; WPMEM
-              09                
-    51                          
-    52                          	;ORG 0x9000
-    53                          
-    54                          	include "filea.asm"
+    35                          	ENDIF
+    36                          
+    37  0006  00                label6:	nop
+    38                          
+    39                          _local: ; local label not existing
+    40  0007  00                	nop
+    41                          
+    42                          
+    43                          
+    44                          	;ORG 0x8200
+    45                          data:
+    46  0008  01020304          	defb 1, 2, 3, 4		; WPMEM
+    47                          
+    48                          	;ORG 0x9000
+    49                          
+    50                          	include "filea.asm"
 filea.asm:
      1                          
-     2  001f  00                fa_label1:	nop
+     2  000c  00                fa_label1:	nop
      3                          
      4                          
      5                          
      6                          fa_label2:
-     7  0020  00                	nop
+     7  000d  00                	nop
      8                          
-     9  0021  00                fa_label3_mid:	nop
+     9  000e  00                fa_label3_mid:	nop
     10                          
-    11                          	include "dir/filea b.asm"
-dir/filea b.asm:
+    11                          	include "filea_b.asm"
+filea_b.asm:
      1                          
      2                          
-     3  0022  00                fab_label1:	nop
+     3  000f  00                fab_label1:	nop
      4                          
      5                          
      6                          
-     7  0023  00                fab_label2:	nop
+     7  0010  00                fab_label2:	nop
      8                          
      9                          
     10                          global_label1:	; All labels are global
-    11  0024  00                	nop
+    11  0011  00                	nop
     12                          global_label2:	; All labels are global
-    13  0025  00                	nop
+    13  0012  00                	nop
     14                          
     15                          
     16                          fab_label3:
-    17  0026  00                	nop
+    17  0013  00                	nop
     18                          
     19                          
     20                          fab_label_equ1:		equ 70
@@ -94,11 +88,11 @@ filea.asm:
     13                          
     14                          
     15                          fa_label3:
-    16  0027  00                	nop
+    16  0014  00                	nop
     17                          
     18                          
 main.asm:
-    55                          
-    56                          
-    57                          
-    58                          
+    51                          
+    52                          
+    53                          
+    54                          

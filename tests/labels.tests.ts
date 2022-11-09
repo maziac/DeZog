@@ -243,21 +243,19 @@ suite('Labels', () => {
 
 				// Checks
 				let res = labels.getNumberForLabel("ct_ui_first_table");
-				assert.equal(0x1000B, res, "Label wrong.");
-
+				assert.equal(res, 0x1000B);
 				res = labels.getNumberForLabel("display_hor_zero_markers");
-				assert.equal(0x109A7, res, "Label wrong.");
-
+				assert.equal(res, 0x109A7);
 				res = labels.getNumberForLabel("display_hor_a_address");
-				assert.equal(0x109A1, res, "Label wrong.");
+				assert.equal(res, 0x109A1);
 
 				// defc (=equ) is not supported
 				res = labels.getNumberForLabel("MAGENTA");
-				assert.notEqual(3, res, "Label wrong.");
+				assert.notEqual(res, 3);
 
 				// defc (=equ) is not supported
 				res = labels.getNumberForLabel("CS_ROM_VALUE");
-				assert.notEqual(0xF1, res, "Label wrong.");
+				assert.notEqual(res, 0xF1);
 			});
 
 

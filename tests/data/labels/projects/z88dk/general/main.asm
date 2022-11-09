@@ -32,18 +32,22 @@ label4_1:
 
 	IF 0
 label5:	nop
+	ld a,6
 	ENDIF
 
 label6:	nop
 
 _local: ; local label not existing
 	nop
+	ld a,5
+	ld hl,22
 
 
 
 	;ORG 0x8200
 data:
-	defb 1, 2, 3, 4		; WPMEM
+	defb 1, 2, 3, 4, 5, 6, 7, 8, $FA		; WPMEM
+data2:	defb $FE, 2, 3, 4, 5, 6, 7, 8, 9		; WPMEM
 
 	;ORG 0x9000
 

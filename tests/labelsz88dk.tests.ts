@@ -46,7 +46,7 @@ suite('Labels (z88dk)', () => {
 				const value = parseInt(match[2], 16) + 0x10000;
 				// Check
 				const res = lbls.getNumberForLabel(label);
-				assert.equal(value, res, "Error: " + label);
+				assert.equal(res, value, "Error: " + label);
 			}
 		});
 
@@ -87,8 +87,7 @@ suite('Labels (z88dk)', () => {
 			// Test that a label under an IF 0/ENDIF is not defined => not easily possible with
 			// z80asm, so simply allow it.
 			const res = lbls.getNumberForLabel('label5');
-			//assert.equal(undefined, res); // This would be correct, but is not easily possible with z80asm
-			assert.equal(res, 0x018006);
+			assert.equal(undefined, res);
 		});
 
 
@@ -111,22 +110,22 @@ suite('Labels (z88dk)', () => {
 				let res = lbls.getLocationOfLabel('label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(15 - 1, res.lineNr);	// line number starts at 0
+				assert.equal(16 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('fa_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(52 - 1, res.lineNr);	// line number starts at 0
+				assert.equal(60 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('global_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(71 - 1, res.lineNr);	// line number starts at 0
+				assert.equal(80 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('global_label2')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(73 - 1, res.lineNr);	// line number starts at 0
+				assert.equal(82 - 1, res.lineNr);	// line number starts at 0
 			});
 
 			test('address -> file/line', () => {
@@ -223,17 +222,17 @@ suite('Labels (z88dk)', () => {
 
 				res = lbls.getLocationOfLabel('global_label1')!;
 				assert.notEqual(undefined, res);
-				assert.equal('filea_b.asm', res.file);
+				assert.equal('dir/filea b.asm', res.file);
 				assert.equal(10 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('global_label2')!;
 				assert.notEqual(undefined, res);
-				assert.equal('filea_b.asm', res.file);
+				assert.equal('dir/filea b.asm', res.file);
 				assert.equal(12 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('fab_label_equ1')!;
 				assert.notEqual(undefined, res);
-				assert.equal('filea_b.asm', res.file);
+				assert.equal('dir/filea b.asm', res.file);
 				assert.equal(20 - 1, res.lineNr);	// line number starts at 0
 			});
 
@@ -256,15 +255,15 @@ suite('Labels (z88dk)', () => {
 				assert.ok(res.fileName.endsWith('main.asm'));
 				assert.equal(16 - 1, res.lineNr);
 
-				res = lbls.getFileAndLineForAddress(0x1800D);
+				res = lbls.getFileAndLineForAddress(0x1801F);
 				assert.ok(res.fileName.endsWith('filea.asm'));
+				assert.equal(2 - 1, res.lineNr);
+
+				res = lbls.getFileAndLineForAddress(0x18023);
+				assert.ok(res.fileName.endsWith('dir/filea b.asm'));
 				assert.equal(7 - 1, res.lineNr);
 
-				res = lbls.getFileAndLineForAddress(0x18010);
-				assert.ok(res.fileName.endsWith('filea_b.asm'));
-				assert.equal(7 - 1, res.lineNr);
-
-				res = lbls.getFileAndLineForAddress(0x18014);
+				res = lbls.getFileAndLineForAddress(0x18027);
 				assert.ok(res.fileName.endsWith('filea.asm'));
 				assert.equal(16 - 1, res.lineNr);
 			});
@@ -287,26 +286,26 @@ suite('Labels (z88dk)', () => {
 				let address = lbls.getAddrForFileAndLine('main.asm', 16 - 1);
 				assert.equal(address, 0x18000);
 
-				address = lbls.getAddrForFileAndLine('filea.asm', 6 - 1);
-				assert.equal(address, 0x1800D);
+				address = lbls.getAddrForFileAndLine('filea.asm', 2 - 1);
+				assert.equal(address, 0x1801F);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 7 - 1);
-				assert.equal(address, 0x1800D);
+				assert.equal(address, 0x18020);
 
-				address = lbls.getAddrForFileAndLine('filea_b.asm', 4 - 1);
-				assert.equal(address, 0x18010);
+				address = lbls.getAddrForFileAndLine('dir/filea b.asm', 3 - 1);
+				assert.equal(address, 0x18022);
 
-				address = lbls.getAddrForFileAndLine('filea_b.asm', 15 - 1);
-				assert.equal(address, 0x18013);
+				address = lbls.getAddrForFileAndLine('dir/filea b.asm', 17 - 1);
+				assert.equal(address, 0x18026);
+
+				address = lbls.getAddrForFileAndLine('dir/filea b.asm', 16 - 1);
+				assert.equal(address, 0x18026);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 15 - 1);
-				assert.equal(address, 0x18014);
+				assert.equal(address, 0x18027);
 
-				address = lbls.getAddrForFileAndLine('filea.asm', 15 - 1);
-				assert.equal(address, 0x18014);
-
-				address = lbls.getAddrForFileAndLine('filea.asm', 17 - 1);
-				assert.equal(address, 0x18015);
+				address = lbls.getAddrForFileAndLine('filea.asm', 16 - 1);
+				assert.equal(address, 0x18027);
 			});
 
 		});
@@ -329,9 +328,11 @@ suite('Labels (z88dk)', () => {
 
 		// Test WPMEM
 		const wpLines = lbls.getWatchPointLines();
-		assert.equal(wpLines.length, 1);
-		assert.equal(wpLines[0].address, 0x18008);
+		assert.equal(wpLines.length, 2);
+		assert.equal(wpLines[0].address, 0x1800D);
 		assert.equal(wpLines[0].line, "WPMEM");
+		assert.equal(wpLines[1].address, 0x18016);
+		assert.equal(wpLines[1].line, "WPMEM");
 
 		// Test ASSERTION
 		const assertionLines = lbls.getAssertionLines();
@@ -358,14 +359,14 @@ suite('Labels (z88dk)', () => {
 			// Write file.
 			fs.writeFileSync(tmpFile,
 			`
-15    0000              label0000:
-16    2000              label2000:
-17    4000              label4000:
-18    6000              label6000:
-19    8000              label8000:
-20    A000              labelA000:
-21    C000              labelC000:
-22    E000              labelE000:
+    15                  label0000:
+    16                  label2000:
+    17                  label4000:
+    18                  label6000:
+    19                  label8000:
+    20                  labelA000:
+    21                  labelC000:
+ 99999                  labelE000:
 `);
 			//Write also map file.
 			tmpMapFile = path.join(os.tmpdir(), 'dezog_labels_z88dk.map');

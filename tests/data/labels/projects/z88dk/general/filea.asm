@@ -8,7 +8,7 @@ fa_label2:
 
 fa_label3_mid:	nop
 
-	include "filea_b.asm"
+	include "dir/filea b.asm"
 
 
 

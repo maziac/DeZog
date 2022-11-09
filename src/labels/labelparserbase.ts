@@ -567,7 +567,6 @@ export class LabelParserBase {
 	 * @param labelType I.e. NORMAL, LOCAL or GLOBAL.
 	 */
 	protected addLabelForNumberRaw(value: number, label: string) {
-
 		// Label: add to label array, long address
 		this.numberForLabel.set(label, value);
 
