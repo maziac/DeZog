@@ -4,7 +4,7 @@ import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {Remote} from '../remotes/remotebase';
 import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';
-import {Z88dkLabelParser} from './z88dklabelparser';
+import {Z88dkLabelParserV2} from './z88dklabelparserv2';
 import {ReverseEngineeringLabelParser} from './reverseengineeringlabelparser';
 import {SettingsParameters} from '../settings/settings';
 import {Issue, LabelParserBase} from './labelparserbase';
@@ -223,7 +223,7 @@ export class LabelsClass {
 
 		// z88dk
 		if (mainConfig.z88dk) {
-			const parser = new Z88dkLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
+			const parser = new Z88dkLabelParserV2(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
 			for (const config of mainConfig.z88dk) {
 				this.loadAsmListFile(parser, config);
 			}

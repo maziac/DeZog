@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
-import {Z88dkLabelParser} from '../src/labels/z88dklabelparser';
+import {Z88dkLabelParserV2} from '../src/labels/z88dklabelparserv2';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
@@ -20,13 +20,13 @@ suite('Labels (z88dk)', () => {
 
 		test('Labels (with map)', () => {
 			// Read result data (labels)
-			const labelsFile = fs.readFileSync('./tests/data/labels/projects/z88dk/general/main.map').toString().split('\n');
+			const labelsFile = fs.readFileSync('./tests/data/labels/projects/z88dk/general_v2/main.map').toString().split('\n');
 
 			// Read the list file
 			const config = {
 				z88dk: [{
-					path: './tests/data/labels/projects/z88dk/general/main.lis',
-					mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
+					path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
+					mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
 					srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
@@ -55,8 +55,8 @@ suite('Labels (z88dk)', () => {
 			// Read the list file
 			const config = {
 				z88dk: [{
-					path: './tests/data/labels/projects/z88dk/general/main.lis',
-					mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
+					path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
+					mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
 					srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
@@ -76,8 +76,8 @@ suite('Labels (z88dk)', () => {
 			// Read the list file
 			const config = {
 				z88dk: [{
-					path: './tests/data/labels/projects/z88dk/general/main.lis',
-					mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
+					path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
+					mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
 					srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
@@ -95,12 +95,12 @@ suite('Labels (z88dk)', () => {
 
 			test('Labels location', () => {
 				// Read the list file
-				const fname = './tests/data/labels/projects/z88dk/general/main.lis';
+				const fname = './tests/data/labels/projects/z88dk/general_v2/main.lis';
 				const config = {
 					z88dk: [{
 						path: fname,
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
+						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
 						excludeFiles: []
 					}]
 				};
@@ -130,14 +130,14 @@ suite('Labels (z88dk)', () => {
 
 			test('address -> file/line', () => {
 				// Read the list file as result data (addresses)
-				const listFile = fs.readFileSync('./tests/data/labels/projects/z88dk/general/main.lis').toString().split('\n');
+				const listFile = fs.readFileSync('./tests/data/labels/projects/z88dk/general_v2/main.lis').toString().split('\n');
 
 				// Read the list file
 				const config = {
 					z88dk: [{
-						path: './tests/data/labels/projects/z88dk/general/main.lis',
+						path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./tests/data/labels/projects/z88dk/general/main.map"
+						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map"
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -162,15 +162,15 @@ suite('Labels (z88dk)', () => {
 
 			test('file/line -> address', () => {
 				// Read the list file as result data (addresses)
-				const filename = './tests/data/labels/projects/z88dk/general/main.lis';
+				const filename = './tests/data/labels/projects/z88dk/general_v2/main.lis';
 				const listFile = fs.readFileSync(filename).toString().split('\n');
 
 				// Read the list file
 				const config = {
 					z88dk: [{
-						path: './tests/data/labels/projects/z88dk/general/main.lis',
+						path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./tests/data/labels/projects/z88dk/general/main.map"
+						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map"
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -200,9 +200,9 @@ suite('Labels (z88dk)', () => {
 				// Read the list file
 				const config = {
 					z88dk: [{
-						path: './tests/data/labels/projects/z88dk/general/main.lis',
+						path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
 						mainFile: "main.asm",
-						mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
+						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -241,9 +241,9 @@ suite('Labels (z88dk)', () => {
 				// Read the list file
 				const config = {
 					z88dk: [{
-						path: './tests/data/labels/projects/z88dk/general/main.lis',
+						path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
 						mainFile: "main.asm",
-						mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
+						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -273,9 +273,9 @@ suite('Labels (z88dk)', () => {
 				// Read the list file
 				const config = {
 					z88dk: [{
-						path: './tests/data/labels/projects/z88dk/general/main.lis',
+						path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
 						mainFile: "main.asm",
-						mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
+						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -317,9 +317,9 @@ suite('Labels (z88dk)', () => {
 		// Read the list file
 		const config = {
 			z88dk: [{
-				path: './tests/data/labels/projects/z88dk/general/main.lis',
+				path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
 				mainFile: "main.asm",
-				mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
+				mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
 				srcDirs: [""],	// Sources mode
 				excludeFiles: []
 			}]
@@ -390,7 +390,7 @@ labelE000                          = $E000 ; addr, local, , main, , main.asm:22
 				srcDirs: [],
 				excludeFiles: []
 			};
-			parser = new Z88dkLabelParser (
+			parser = new Z88dkLabelParserV2 (
 				mm,
 				new Map<number, SourceFileEntry>(),
 				new Map<string, Array<number>>(),

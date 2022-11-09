@@ -118,7 +118,7 @@ main.asm:
  * The address field ov v2.2 is 6 bytes although it is 64k address range only.
  * It is changed afterwards to 4 bytes.
  */
-export class Z88dkLabelParser extends LabelParserBase {
+export class Z88dkLabelParserV2 extends LabelParserBase {
 	// Overwrite parser name (for errors).
 	protected parserName = "z88dk";
 
