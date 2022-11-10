@@ -231,11 +231,6 @@ export class DzrpRemote extends RemoteBase {
 			const resp = await this.sendDzrpCmdInit();
 			if (resp.error)
 				throw Error(resp.error);
-			// Check if we need to get the memory model configuration
-			if (resp.machineType === DzrpMachineType.CUSTOM_MEMORY_MODEL) {
-				// Retrieve memory config
-				const memoryConfig = await this.sendDzrpCmdGetMemoryModel();
-			}
 
 			// Load executable
 			await this.loadExecutable();
@@ -258,6 +253,10 @@ export class DzrpRemote extends RemoteBase {
 				case DzrpMachineType.ZXNEXT:
 					// ZxNext: 8x8k banks
 					this.memoryModel = new MemoryModelZxNext();
+					break;
+				case DzrpMachineType.CUSTOM_MEMORY_MODEL:
+					// Retrieve memory config
+					this.memoryModel = await this.sendDzrpCmdGetMemoryModel();
 					break;
 				default:
 					// Error: Unknown type
