@@ -59,14 +59,14 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 * Loops all entries of the listFile array and parses for the (include) file
 	 * names and line numbers.
 	 * @param startLineNr The line number to start the loop with. I.e. sometimes the
-	 * beginning of the list file contains onformation that is parsed differently.
+	 * beginning of the list file contains information that is parsed differently.
 	 */
 	protected parseAllFilesAndLineNumbers(startLineNr = 0) {
 		// Check if there is a main file given in the config
 		const config = this.config as Z88dkConfig;
 		if (config.mainFile) {
 			// Set main file
-			const fileName = Utility.getRelFilePath(config.mainFile);
+			const fileName = Utility.getRelFilePath(Utility.getAbsFilePath(config.mainFile));
 			this.includeStart(fileName);
 		}
 		// Call super

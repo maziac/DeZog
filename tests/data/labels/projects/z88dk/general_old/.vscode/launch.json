@@ -1,7 +1,4 @@
 {
-    // Verwendet IntelliSense zum Ermitteln möglicher Attribute.
-    // Zeigen Sie auf vorhandene Attribute, um die zugehörigen Beschreibungen anzuzeigen.
-    // Weitere Informationen finden Sie unter https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
@@ -10,17 +7,24 @@
             "name": "Internal Simulator",
             "remoteType": "zsim",
             "zsim": {
-                "visualMemory": "ZX48"
-                //"Z80N": true,
+                "visualMemory": true,
             },
-            "z88dkListFiles": [
+            "z88dk": [
                 {
-                    "path": "main.asm",
-                    "addOffset": 0,
-	                "z88dkMapFile": "main.map"
+                    "path": "main.lis",
+                    "mainFile": "main.asm",
+                    //"dirs": [], // list file mode
+	                "dirs": [""], // source mode
+                    "mapFile": "main.map",
+                    "version": "1"
                 }
             ],
             "rootFolder": "${workspaceFolder}",
+            "loadObjs": [{
+                "path": "main.bin",
+                "start": "0x8000"
+            }],
+            "execAddress": "0x8000",
         }
     ]
 }

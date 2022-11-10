@@ -7,17 +7,21 @@
             "name": "Internal Simulator",
             "remoteType": "zsim",
             "zsim": {
-                "visualMemory": "ZX48"
-                //"Z80N": true,
+                "visualMemory": true
             },
-            "z88dkListFiles": [
+            "z88dk": [
                 {
-                    "path": "main.asm",
-                    "addOffset": 0,
-	                "z88dkMapFile": "main.map"
+                    "path": "main.lis",
+                    //"mainFile": "main.asm",
+	                "mapFile": "main.map"
                 }
             ],
             "rootFolder": "${workspaceFolder}",
+            "loadObjs": [{
+                "path": "main.bin",
+                "start": "0x8000"
+            }],
+            "execAddress": "0x8000",
         }
     ]
 }
