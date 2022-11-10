@@ -8,7 +8,7 @@ import {Z88dkLabelParser} from '../src/labels/z88dklabelparser';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
-suite('Labels (z88dk old format)', () => {
+suite('Labels (z88dk)', () => {
 	let lbls;
 
 	setup(() => {
@@ -28,7 +28,8 @@ suite('Labels (z88dk old format)', () => {
 					path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 					mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 					srcDirs: [""],	// Sources mode
-					excludeFiles: []
+					excludeFiles: [],
+					version: "1"
 				}]
 			};
 			lbls.readListFiles(config, new MemoryModelAllRam());
@@ -58,7 +59,8 @@ suite('Labels (z88dk old format)', () => {
 					path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 					mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 					srcDirs: [""],	// Sources mode
-					excludeFiles: []
+					excludeFiles: [],
+					version: "1"
 				}]
 			};
 			lbls.readListFiles(config, new MemoryModelAllRam());
@@ -79,7 +81,8 @@ suite('Labels (z88dk old format)', () => {
 					path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 					mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 					srcDirs: [""],	// Sources mode
-					excludeFiles: []
+					excludeFiles: [],
+					version: "1"
 				}]
 			};
 			lbls.readListFiles(config, new MemoryModelAllRam());
@@ -110,22 +113,22 @@ suite('Labels (z88dk old format)', () => {
 
 				// Test
 				let res = lbls.getLocationOfLabel('label1')!;
-				assert.notEqual(res, undefined);
+				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
 				assert.equal(15 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('fa_label1')!;
-				assert.notEqual(res, undefined);
+				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
 				assert.equal(52 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('global_label1')!;
-				assert.notEqual(res, undefined);
+				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
 				assert.equal(71 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('global_label2')!;
-				assert.notEqual(res, undefined);
+				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
 				assert.equal(73 - 1, res.lineNr);	// line number starts at 0
 			});
@@ -139,7 +142,8 @@ suite('Labels (z88dk old format)', () => {
 					z88dk: [{
 						path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map"
+						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
+						version: "1"
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -172,7 +176,8 @@ suite('Labels (z88dk old format)', () => {
 					z88dk: [{
 						path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map"
+						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
+						version: "1"
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -392,7 +397,8 @@ labelE000                          = $E000 ; addr, local, , main, , main.asm:22
 				path: tmpFile,
 				mapFile: tmpMapFile,
 				srcDirs: [],
-				excludeFiles: []
+				excludeFiles: [],
+				version: "1"
 			};
 			parser = new Z88dkLabelParser(
 				mm,

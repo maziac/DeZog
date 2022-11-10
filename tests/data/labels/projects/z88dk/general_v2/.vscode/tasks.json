@@ -8,6 +8,7 @@
             "args": [
                 "-s", "-l", "-b", "-m",
                 "-m=z80",
+                //"-debug",
                 //"--origin=32768",
                 "main.asm"
             ],

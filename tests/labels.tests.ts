@@ -235,7 +235,8 @@ suite('Labels', () => {
 						path: './tests/data/labels/z88dk.lis',
 						mapFile: './tests/data/labels/z88dk_empty.map',
 						srcDirs: [""],	// Sources mode
-						excludeFiles: []
+						excludeFiles: [],
+						version: "1"
 					}]
 				};
 				const labels = new LabelsClass();
@@ -264,7 +265,8 @@ suite('Labels', () => {
 					z88dk: [{
 						path: './tests/data/labels/currah_uspeech_tests.lis', mapFile: './tests/data/labels/currah_uspeech_tests.map',
 						srcDirs: [""],	// Sources mode
-						excludeFiles: []
+						excludeFiles: [],
+						version: "1"
 					}]
 				};
 				const labels = new LabelsClass();

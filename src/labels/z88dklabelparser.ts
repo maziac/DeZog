@@ -4,16 +4,18 @@ import {readFileSync} from 'fs';
 import {AsmConfigBase, Z88dkConfig} from '../settings/settings';
 
 /**
- * This class parses sjasmplus list files.
+ * This class parses z88dk asm list files.
  */
 export class Z88dkLabelParser extends LabelParserBase {
+	// Overwrite parser name (for errors).
+	protected parserName = "z88dk";
 
 	/// Map with the z88dk labels/symbols.
 	protected z88dkMappings = new Map<string, number>();
 
 	// z88dk: The format is line-number address opcode.
 	// Used to remove the line number.
-	protected z88dkRegEx = /^[0-9]+\s+/;
+	protected z88dkRegEx = /^\d+\s+/;
 
 	// Regex to find labels
 	// Require a ":"" after the label
@@ -24,7 +26,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 	protected matchBytesRegEx = /[0-9a-f]{4}\s\s(([0-9a-f][0-9a-f]\s)+)/i;
 
 	// RegEx to extract the line number for Sources-mode.
-	protected matchLineNumberRegEx = /^\s*([0-9]+)[\s\+]+(.*)/;
+	protected matchLineNumberRegEx = /^\s*(\d+)[\s\+]+(.*)/;
 
 	// Checks for "include".
 	protected matchInclStartRegEx = /^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i;
@@ -42,9 +44,14 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 * PC value.
 	 */
 	public loadAsmListFile(config: AsmConfigBase) {
-		const mapFile: string = (config as Z88dkConfig).mapFile;
-		this.readmapFile(mapFile);
-		super.loadAsmListFile(config);
+		try {
+			const mapFile: string = (config as Z88dkConfig).mapFile;
+			this.readmapFile(mapFile);
+			super.loadAsmListFile(config);
+		}
+		catch (e) {
+			this.throwError(e.message);
+		}
 	}
 
 
@@ -83,12 +90,12 @@ export class Z88dkLabelParser extends LabelParserBase {
 		line = line.replace(this.z88dkRegEx, '');
 
 		// Extract address.
-		let address = parseInt(line.substr(0, 4), 16);
-		if (isNaN(address))
-			address = undefined!;	// Should not happen
-		if (address != undefined) {
-			const readAddress = address;
-			address += this.z88dkMapOffset;
+		let addr64k = parseInt(line.substring(0, 4), 16);
+		let longAddr;
+		if (!isNaN(addr64k)) {
+
+			const readAddress = addr64k;
+			addr64k += this.z88dkMapOffset;
 			// Check for labels and "equ".
 			const match = this.labelRegEx.exec(line);
 			if (match) {
@@ -103,7 +110,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 							// Check for any '$', i.e. current address
 							if (valueString.indexOf('$') >= 0) {
 								// Replace $ with current address
-								const addressString = address.toString();
+								const addressString = addr64k.toString();
 								const cAddrString = valueString.replace(/(?<![a-z_0-9\$])\$(?![a-z_0-9\$])/i, addressString);
 								valueString = cAddrString;
 							}
@@ -114,7 +121,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 							// Add label
 							this.addLabelForNumber(value, label);
 						}
-						catch {};	// do nothing in case of an error
+						catch {}	// do nothing in case of an error
 					}
 				}
 				else {
@@ -124,12 +131,18 @@ export class Z88dkLabelParser extends LabelParserBase {
 						//console.log('z88dk: label='+label+', '+Utility.getHexString(realAddress, 4));
 						// Label/symbol found
 						this.z88dkMapOffset = realAddress - readAddress;
-						address = realAddress;
+						addr64k = realAddress;
 					}
+					// Create long address
+					longAddr = this.createLongAddress(addr64k, 0);
 					// Add label
-					this.addLabelForNumber(address, label);
+					this.addLabelForNumber(longAddr, label);
 				}
 			}
+
+			// Calculate long address (if not yet done)
+			if (longAddr == undefined)
+				longAddr = this.createLongAddress(addr64k, 0);
 
 			// Search for bytes after the address:
 			// E.g. "80F1  D5 C5";
@@ -142,7 +155,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 
 		// Store address (or several addresses for one line).
 		// This needs to be called even if address is undefined.
-		this.addAddressLine(address, countBytes);
+		this.addAddressLine(longAddr, countBytes);
 	}
 
 
@@ -236,6 +249,4 @@ export class Z88dkLabelParser extends LabelParserBase {
 			}
 		}
 	}
-
 }
-
