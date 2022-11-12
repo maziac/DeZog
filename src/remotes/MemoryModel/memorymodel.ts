@@ -601,7 +601,7 @@ export class MemoryModel {
 	}
 
 	/**
-	 * Returns a string with teh complete slot and bank info.
+	 * Returns a string with the complete slot and bank info.
 	 * Used mainly for debugging and for the "-memmodel" command.
 	 * @returns The info as a string (with newlines).
 	 */

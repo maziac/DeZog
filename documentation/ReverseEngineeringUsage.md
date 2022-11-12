@@ -476,7 +476,32 @@ If you would like to do a bigger change you can use an assembler, e.g. sjasmplus
 ## State Save and Restore
 
 Very helpful in debugging/reverse engineering is the save/restore feature.
-You can save teh state of the debugged system with the command "-state save <name>" and restore it anytime with "-state restore <name>".
+You can save the state of the debugged system with the command "-state save \<name\>" and restore it anytime with "-state restore \<name\>".
 
 See [State Save/Restore](Usage.md/#state-save-restore).
 
+Unfortunately, in MAME state save/restore is not available because of implementation details.
+
+
+## Memory Model
+
+There is a new debug console command to print the current used memory model. I.e. the used slot ranges and available banks together with their names.
+This can be particular helpful in case MAME is used as remote.
+Here is an example output:
+
+~~~
+-memmodel
+Slot ranges:
+0000-2FFF: unnamed, banks: R0
+3000-37FF: unnamed, banks: R1
+3800-3BFF: unnamed, banks: R2
+3C00-3FFF: unnamed, banks: U
+4000-43FF: unnamed, banks: R3
+4400-FFFF: unnamed, banks: U
+Memory banks:
+R0: ROM0, size=12288, RAM
+R1: ROM1, size=2048, RAM
+R2: ROM2, size=1024, RAM
+R3: ROM3, size=1024, RAM
+U: UNASSIGNED, size=48128, RAM
+~~~

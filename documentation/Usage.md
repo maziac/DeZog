@@ -550,14 +550,14 @@ The following table gives an overview.
 
 |                     | Internal Z80 Simulator | ZEsarUX | ZX Next  | CSpect   | MAME         |
 |:------------------------|:-------------------|:--------|:---------|:---------|:-------------|
-| State                   | stable             | stable  | stable   | stable   | experimental |
+| State                   | stable             | stable  | stable   | stable   | experimental/stable |
 | Breakpoints             | yes                | yes     | yes      | yes      | yes          |
 | Break reason output     | yes                | no      | yes      | yes      | yes          |
 | Conditional Breakpoints | yes                | yes     | yes 6)   | yes 6)   | yes 6)       |
 | ASSERTION support       | yes                | yes     | yes 6)   | yes 6)   | yes 6)       |
 | WPMEM (Watchpoints) support | yes            | yes 2)  | no       | no       | yes          |
 | LOGPOINT support        | yes                | no      | yes 6)   | yes 6)   | yes 6)       |
-| Long addresses/breakpoints | yes             | yes     | yes      | yes      | no           |
+| Long addresses/breakpoints | yes             | yes     | yes      | yes      | yes          |
 | Extended callstack      | no                 | yes     | no       | no       | no           |
 | Code coverage           | yes                | yes 1)  | no       | no       | no           |
 | Reverse debugging       | true               | true    | lite     | lite     | lite         |

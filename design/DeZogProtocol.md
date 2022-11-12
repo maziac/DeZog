@@ -107,8 +107,8 @@ The table below shows which commands are used with what remote:
 | [CMD_REMOVE_BREAKPOINT]                   | X    | X      | -      | X    |
 | [CMD_ADD_WATCHPOINT]                      | X    | -      | -      | X    |
 | [CMD_REMOVE_WATCHPOINT]                   | X    | -      | -      | X    |
-| [CMD_READ_STATE]                          | X    | -      | -      | X    |
-| [CMD_WRITE_STATE]                         | X    | -      | -      | X    |
+| [CMD_READ_STATE]                          | X    | -      | -      | -    |
+| [CMD_WRITE_STATE]                         | X    | -      | -      | -    |
 
 DeZog knows with which remote it communicates and chooses the right subset.
 

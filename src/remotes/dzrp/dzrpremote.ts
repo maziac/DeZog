@@ -291,10 +291,9 @@ export class DzrpRemote extends RemoteBase {
 	 * Called e.g. when vscode sends a disconnectRequest
 	 * Sets 'this.disconnected' to true. Can be used to suppress
 	 * sending of further data.
-	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
-		this.disconnected = true;
+	//	this.disconnected = true; TODO: Do I need this?
 		await super.disconnect();
 	}
 

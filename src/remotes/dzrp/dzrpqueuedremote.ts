@@ -59,9 +59,11 @@ export class DzrpQueuedRemote extends DzrpRemote {
 
 	/**
 	 * This will disconnect the socket and un-use all data.
-	 * Called e.g. when vscode sends a disconnectRequest
+	 * Additionally, on disconnect, clears the message (send) queue..
+	 * Called e.g. when vscode sends a disconnectRequest.
 	 */
 	public async disconnect(): Promise<void> {
+		this.messageQueue.length = 0;
 		await super.disconnect();
 		try {
 			console.log("disconnect: started");

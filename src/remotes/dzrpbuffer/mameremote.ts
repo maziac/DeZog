@@ -92,9 +92,6 @@ export class MameRemote extends DzrpBufferRemote {
 		if (!this.socket)
 			return;
 
-		// Send a 'break' request to emulator to stop it if it is running
-		await this.pause();
-
 		return new Promise<void>(resolve => {
 			this.socket?.removeAllListeners();
 			// Timeout is required because socket.end() does not call the

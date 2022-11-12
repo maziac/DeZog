@@ -56,9 +56,6 @@ class MessageBuffer {
  */
 export class DzrpBufferRemote extends DzrpQueuedRemote {
 
-	// The message queue (used to serialize the sent messages).
-	protected messageQueue: Array<MessageBuffer>;
-
 	// Sequence Number 1-255. Used for sending.
 	protected sequenceNumber: number;
 
@@ -96,7 +93,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		// Override this
 	}
 
-
+	
 	/**
 	 * Returns the next sequence number for sending
 	 */
