@@ -207,43 +207,7 @@ Unfortunately this is not available through the gdbstub.
 
 
 
-## DZRP vs GDB Remote Protocol
-
-The MAME gdbstub functionality is compared with the DZRP functionality to find any lacks.
-One major drawback we can see already: the MAME gdbstub does not support any information about the banking/paging.
-Note: gdb itself might support banking/paging via [overlays](https://docs.adacore.com/gdb-docs/html/gdb.html#Overlays).
-
-
-| Command               | MAME | Cmd  |
-|-----------------------|------|------|
-| CMD_INIT              | X    | !,?  |
-| CMD_CLOSE             | X    | D (MAME starts running wo debugger attached) |
-| CMD_GET_REGISTERS     | X    | g    |
-| CMD_SET_REGISTER      | X    | P    |
-| CMD_WRITE_BANK        |      |      |
-| CMD_CONTINUE          | X    | c    |
-| CMD_PAUSE             | X    | \x03, CTRL-C |
-| CMD_READ_MEM          | X    | m    |
-| CMD_WRITE_MEM         | X    | M    |
-| CMD_SET_SLOT          |      |      |
-| CMD_GET_TBBLUE_REG    |      |      |
-| CMD_SET_BORDER        |      |      |
-| CMD_SET_BREAKPOINTS   |      |      |
-| CMD_RESTORE_MEM       |      |      |
-| CMD_LOOPBACK	        |      |      |
-| CMD_GET_SPRITES_PALETTE |    |      |
-| CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL |  |  |
-| CMD_GET_SPRITES       |      |      |
-| CMD_GET_SPRITE_PATTERNS |    |      |
-| CMD_ADD_BREAKPOINT    | X    | Z0   |
-| CMD_REMOVE_BREAKPOINT | X    | z0   |
-| CMD_ADD_WATCHPOINT    | X    | Z2-4 |
-| CMD_REMOVE_WATCHPOINT | X    | z2-4 |
-| CMD_READ_STATE        |      |      |
-| CMD_WRITE_STATE       |      |      |
-
-
-## The gdb protocol in brief
+### The gdb protocol in brief
 
 The client (DeZog) sends packets in the form
 ~~~
@@ -270,7 +234,7 @@ The response/reply is sent after the ACK when the command has completed.
 For step and continue this means it is sent after the emulator has stopped.
 
 
-## XML
+### XML
 
 For 'g', 'G', 'p', and 'P to work the MAME gdbstub need to be set to XML mode.
 ~~~
@@ -313,7 +277,7 @@ Response received: l<?xml version="1.0"?>
 for the Z80.
 
 
-## Registers
+### Registers
 
 The MAME gdbstub returns the registers in the order given from the XML.
 Here is an example:
@@ -326,12 +290,16 @@ I.e. 12 words in hex.
 Note: The IM and IR registers are not transferred.
 
 
-## How to get the program into the emulator
+### How to get the program into the emulator
 
 a) the program is already there: For MAME this is nothing special the ROM is loaded at startup.
 b) the program is transferred by DeZog: Not sure if it works to write a ROM via gdbstub. Since everything is ROM might also not be needed.
 
-## Compiling MAME
+
+## Using Lua to implement the DZRP protocol in MAME
+
+
+### Compiling MAME
 
 To compile MAME with all debugging support use:
 ~~~
@@ -346,7 +314,43 @@ Anyhow, starting of MAME is still slow and might take up to a minute.
 Stepping time is fine though.
 
 
-## MAME - Paging
+### DZRP vs GDB Remote Protocol
+
+The MAME gdbstub functionality is compared with the DZRP functionality to find any lacks.
+One major drawback we can see already: the MAME gdbstub does not support any information about the banking/paging.
+Note: gdb itself might support banking/paging via [overlays](https://docs.adacore.com/gdb-docs/html/gdb.html#Overlays).
+
+
+| Command               | MAME | Cmd  |
+|-----------------------|------|------|
+| CMD_INIT              | X    | !,?  |
+| CMD_CLOSE             | X    | D (MAME starts running wo debugger attached) |
+| CMD_GET_REGISTERS     | X    | g    |
+| CMD_SET_REGISTER      | X    | P    |
+| CMD_WRITE_BANK        |      |      |
+| CMD_CONTINUE          | X    | c    |
+| CMD_PAUSE             | X    | \x03, CTRL-C |
+| CMD_READ_MEM          | X    | m    |
+| CMD_WRITE_MEM         | X    | M    |
+| CMD_SET_SLOT          |      |      |
+| CMD_GET_TBBLUE_REG    |      |      |
+| CMD_SET_BORDER        |      |      |
+| CMD_SET_BREAKPOINTS   |      |      |
+| CMD_RESTORE_MEM       |      |      |
+| CMD_LOOPBACK	        |      |      |
+| CMD_GET_SPRITES_PALETTE |    |      |
+| CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL |  |  |
+| CMD_GET_SPRITES       |      |      |
+| CMD_GET_SPRITE_PATTERNS |    |      |
+| CMD_ADD_BREAKPOINT    | X    | Z0   |
+| CMD_REMOVE_BREAKPOINT | X    | z0   |
+| CMD_ADD_WATCHPOINT    | X    | Z2-4 |
+| CMD_REMOVE_WATCHPOINT | X    | z2-4 |
+| CMD_READ_STATE        |      |      |
+| CMD_WRITE_STATE       |      |      |
+
+
+### MAME - Paging
 
 See https://docs.mamedev.org/techspecs/memory.html#shares-banks-and-regions,
 https://wiki.mamedev.org/index.php/CPUs_and_Address_Spaces.
@@ -448,6 +452,33 @@ memory_install_readwrite8_handler(machine, cpu, space, start, end, mask, mirror,
 
 If executing ```map <address>``` in the debugger one can see the read/write handlers attached to the memory.
 
+
+### Conclusion
+
+I have tried a lot but at the end I failed.
+Lua is very limited when it comes to implement a useful interface to DeZog.
+
+Here are a few problems:
+- socket implementation: The mame socket implementation is also used for Lua. It is not possible to determine that a socket has been closed.
+As a workaround the DZRP close command could be used. That at least would work on graceful terminations.
+- I also thought about using the lua as a mediator to the gdbstub and implement only additional functionality in Lua. But this is not possible, wwhen the mame debugger stops the Lua is not served anymore.
+- Stopping: Mame does not react on setting the ```manager.machine.debugger.execution_state``` to "stop". Or better: only for a short time. Then it turns "run" on by itself. Therefore it is necessary to block mame from running in the lua script with a busy loop (there is no "sleep" command available).
+- But the main problem in the end: There is no reliable way to get the banking information. I thought I found a way and it was working with lwings, but e.g. with spec128 it was failing, showing no banks.
+
+The last problem was were I stopped further development.
+I.e. MAME will continue to be supported, but through the gdbstub as before.
+Thus it will not include any slot/banking information.
+
+If I should ever try to continue on this:
+Look into the 'mame_lua' branch of DeZog.
+The plugin can be found in the 'mame/dezog/' folder.
+The dezog folder needs to be places in mame in the 'mame/plugins/' folder.
+Mame needs to be started with e.g.:
+~~~
+./mame spec128 -resolution 640x480  -window  -debug -debugger none -console -plugin dezog
+~~~
+
+The mame remote for lua is in 'remotes/dzrpbuffer/mameremote.ts'.
 
 
 ## ZEsarUX
