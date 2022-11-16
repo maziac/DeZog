@@ -298,6 +298,7 @@ b) the program is transferred by DeZog: Not sure if it works to write a ROM via 
 
 ## Using Lua to implement the DZRP protocol in MAME
 
+Note: this is not implemented, see "Conclusion".
 
 ### Compiling MAME
 

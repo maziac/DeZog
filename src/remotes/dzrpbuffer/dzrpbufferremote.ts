@@ -4,8 +4,6 @@ import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
-import {BankInfo, MemoryModel, SlotRange} from '../MemoryModel/memorymodel';
-
 
 
 /// Timeouts.
@@ -93,7 +91,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		// Override this
 	}
 
-	
+
 	/**
 	 * Returns the next sequence number for sending
 	 */
@@ -383,98 +381,14 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		const program_name = Utility.getStringFromBuffer(resp, 5);
 
 		// Check version number. Check only major and minor number.
-		// if (DZRP_VERSION[0] != resp[1]
-		// 	|| DZRP_VERSION[1] != resp[2]) {
-		// 	error = "DZRP versions do not match.\n";
-		// 	error += "Required version is " + DZRP_VERSION[0] + "." + DZRP_VERSION[1] + ".\n";
-		// 	error += "But this remote (" + program_name + ") supports only version " + resp[1] + "." + resp[2] + ".";
-		// }
-
-		// Check only major number (TODO: check if this is OK)
-		if (DZRP_VERSION[0] != resp[1]) {
+		if (DZRP_VERSION[0] != resp[1]
+			|| DZRP_VERSION[1] != resp[2]) {
 			error = "DZRP versions do not match.\n";
 			error += "Required version is " + DZRP_VERSION[0] + "." + DZRP_VERSION[1] + ".\n";
 			error += "But this remote (" + program_name + ") supports only version " + resp[1] + "." + resp[2] + ".";
 		}
 
 		return {error, dzrpVersion: dzrp_version, programName: program_name, machineType};
-	}
-
-
-	/**
-	 * Only if CMD_INIT returns a CUSTOM_MEMORY_MODEL this command is sent.
-	 * It retrieves the memory configuration of the target.
-	 * Used by MAME.
-	 * @returns The memory model.
-	 */
-	protected async sendDzrpCmdGetMemoryModel(): Promise<MemoryModel> {
-		const data = await this.sendDzrpCmd(DZRP.CMD_GET_MEMORY_MODEL);
-		let i = 0;
-
-		// Read slot ranges
-		const slotRanges: SlotRange[] = [];
-		const bankInfos: (BankInfo|undefined)[] = [];
-		const slotCount = data[i++];
-		for (let s = 0; s < slotCount; s++) {
-			const start = Utility.getWord(data, i);
-			i += 2;
-			const end = Utility.getWord(data, i);
-			i += 2;
-			// Banks for slot
-			const banks = new Set<number>();
-			const bankCount = data[i++];
-			for (let b = 0; b < bankCount; b++) {
-				banks.add(data[i++]);
-			}
-			// Create slot range
-			slotRanges.push({start, end, banks});
-		}
-
-		// Bank infos
-		const bankCount = data[i++];
-		for (let b = 0; b < bankCount; b++) {
-			// Name
-			const name = Utility.getStringFromBuffer(data, i);
-			i += name.length + 1;
-			// Short name
-			const shortName = Utility.getStringFromBuffer(data, i);
-			i += shortName.length + 1;
-			// Size of the bank
-			const size = Utility.getWord(data, i);
-			i += 2;
-			// 0=UNKNOWN, 1=ROM, 2=RAM
-			const bankType = data[i++];
-			// Create bank info
-			bankInfos[b] = {name, shortName, size, bankType};
-		}
-
-		// Create config
-		const slotInfos: any[] = [];
-		for (const slotRange of slotRanges) {
-			const slotInfo = {
-				range: [slotRange.start, slotRange.end],
-				banks: new Array<any>()
-			};
-			for (const bankNumber of slotRange.banks) {
-				const bankInfo: any = {index: bankNumber};
-				const bank = bankInfos[bankNumber];
-				if (bank) {
-					// Add name and short name
-					bankInfo.name = bank.name;
-					bankInfo.shortName = bank.shortName;
-					// Each bank need to be defined only once
-					bankInfos[bankNumber] = undefined;
-				}
-				// Add to slot
-				slotInfo.banks.push(bankInfo);
-			}
-			slotInfos.push(slotInfo);
-		}
-
-		// Create memory model
-		const memModel = new MemoryModel({slots: slotInfos});
-		console.log('memModel=' + memModel.getMemModelInfo());
-		return memModel;
 	}
 
 

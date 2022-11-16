@@ -146,9 +146,7 @@ export class DzrpQueuedRemote extends DzrpRemote {
 	protected async sendNextMessage(): Promise<void> {
 		if (this.messageQueue.length == 0)
 			return;
-		if (this.disconnected)
-			return;	// Do not send anything once disconnected
-
+		
 		// Get next message from buffer
 		const msg = this.messageQueue[0];
 		if (!msg)

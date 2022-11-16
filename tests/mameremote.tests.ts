@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import {MameRemote} from '../src/remotes/dzrpbuffer/mameremote';
+import {MameGdbRemote} from '../src/remotes/mame/mamegdbremote';
 import {Z80RegistersMameDecoder} from '../src/remotes/mame/z80registersmamedecoder';
 import {BREAK_REASON_NUMBER} from '../src/remotes/remotebase';
 import {Settings} from '../src/settings/settings';
@@ -98,7 +98,7 @@ suite('MameRemote', () => {
 				remoteType: 'mame'
 			};
 			Settings.launch = Settings.Init(cfg);
-			mame = new MameRemote() as any;
+			mame = new MameGdbRemote() as any;
 		});
 
 		test('checksum', () => {
@@ -212,7 +212,7 @@ suite('MameRemote', () => {
 
 
 	test('checkTmpBreakpoints', async () => {
-		class MockMame extends MameRemote {
+		class MockMame extends MameGdbRemote {
 			protected async sendPacketDataOk(packetData: string): Promise<void> {
 				//
 			}

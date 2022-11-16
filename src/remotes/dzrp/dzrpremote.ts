@@ -14,8 +14,7 @@ import {TimeWait} from '../../misc/timewait';
 import {Log} from '../../log';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {PromiseCallbacks} from '../../misc/promisecallbacks';
-import {MemoryModelAllRam, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
-import {MemoryModel} from '../MemoryModel/memorymodel';
+import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
 
 
 
@@ -65,9 +64,6 @@ export enum DZRP {
 	// State
 	CMD_READ_STATE = 50,
 	CMD_WRITE_STATE = 51,
-
-	// Memory model
-	CMD_GET_MEMORY_MODEL = 60,
 }
 
 
@@ -100,7 +96,6 @@ export enum DzrpMachineType {
 	ZX48K = 2,
 	ZX128K = 3,
 	ZXNEXT = 4,
-	CUSTOM_MEMORY_MODEL = 255
 }
 
 /**
@@ -148,10 +143,6 @@ export class DzrpRemote extends RemoteBase {
 	// Object to allow to give time to vscode during long running 'steps'.
 	protected timeWait: TimeWait;
 
-	// Set to true after the socket has been disconnected.
-	protected disconnected = false;
-
-
 	// A temporary map with the set breakpoints and conditions.
 	// The tmpBreakpoints are created out of the other breakpoints, assertionBreakpoints and logpoints
 	// as soon as the z80CpuContinue is called.
@@ -186,12 +177,10 @@ export class DzrpRemote extends RemoteBase {
 	/// When ready it emits this.emit('initialized') or this.emit('error', exception);
 	/// Don't override this, override 'doInitialization' instead.
 	/// Take care to implement the emits otherwise the system will hang on a start.
-	public async init(): Promise<void> {
-		// Set disconnected
-		this.disconnected = false;
-		// Call super
-		super.init();
-	}
+	// public async init(): Promise<void> {
+	// 	// Call super
+	// 	super.init();
+	// }
 
 
 	/**
@@ -254,16 +243,9 @@ export class DzrpRemote extends RemoteBase {
 					// ZxNext: 8x8k banks
 					this.memoryModel = new MemoryModelZxNext();
 					break;
-				case DzrpMachineType.CUSTOM_MEMORY_MODEL:
-					// Retrieve memory config
-					this.memoryModel = await this.sendDzrpCmdGetMemoryModel();
-					break;
 				default:
 					// Error: Unknown type
-					//throw Error("Unknown machine type " + resp.machineType + " received.");
-
-					// TODO: REMOVE (and again throw)
-					this.memoryModel = new MemoryModelAllRam();
+					throw Error("Unknown machine type " + resp.machineType + " received.");
 					break;
 			}
 			this.memoryModel.init();
@@ -289,13 +271,10 @@ export class DzrpRemote extends RemoteBase {
 	 * Stops the emulator.
 	 * This will disconnect e.g. any socket and un-use all data.
 	 * Called e.g. when vscode sends a disconnectRequest
-	 * Sets 'this.disconnected' to true. Can be used to suppress
-	 * sending of further data.
 	 */
-	public async disconnect(): Promise<void> {
-	//	this.disconnected = true; TODO: Do I need this?
-		await super.disconnect();
-	}
+	// public async disconnect(): Promise<void> {
+	// 	await super.disconnect();
+	// }
 
 
 	/**
@@ -1548,19 +1527,6 @@ export class DzrpRemote extends RemoteBase {
 	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
 		Utility.assert(false);
 		return {error: undefined, dzrpVersion: "", programName: "", machineType: 0};
-	}
-
-
-	/**
-	 * Override (only if required).
-	 * Only if CMD_INIT returns a CUSTOM_MEMORY_MODEL this command is sent.
-	 * It retrieves the memory configuration of the target.
-	 * Used by MAME.
-	 * @returns The slot ranges and the bank info.
-	 */
-	protected async sendDzrpCmdGetMemoryModel(): Promise<MemoryModel> {
-		Utility.assert(false);
-		return new MemoryModelAllRam();
 	}
 
 

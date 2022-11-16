@@ -134,10 +134,10 @@ export interface CSpectType {
 
 // Definitions for the MAME remote type.
 export interface MameType {
-	// The hostname/IP address of the MAME lua DZRP socket.
+	// The hostname/IP address of the MAME gdbstub socket.
 	hostname: string;
 
-	// The port of the MAME lua DZRP socket.
+	// The port of the MAME gdbstub socket.
 	port: number;
 
 	/// The socket timeout in seconds.

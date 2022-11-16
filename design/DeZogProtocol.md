@@ -82,44 +82,38 @@ I.e. different remotes may use a different subset of commands. For one this is b
 
 The table below shows which commands are used with what remote:
 
-| Command                                   | zsim | CSpect | ZXNext | MAME |
-| ----------------------------------------- | ---- | ------ | ------ | ---- |
-| [CMD_INIT]                                | -    | X      | X      | X    |
-| [CMD_CLOSE]                               | -    | X      | X      | X    |
-| [CMD_GET_REGISTERS]                       | X    | X      | X      | X    |
-| [CMD_SET_REGISTER]                        | X    | X      | X      | X    |
-| [CMD_WRITE_BANK]                          | X    | X      | X      | -    |
-| [CMD_CONTINUE]                            | X    | X      | X      | X    |
-| [CMD_PAUSE]                               | X    | X      | -      | X    |
-| [CMD_READ_MEM]                            | X    | X      | X      | X    |
-| [CMD_WRITE_MEM]                           | X    | X      | X      | X    |
-| [CMD_SET_SLOT]                            | X    | X      | X      | X    |
-| [CMD_GET_TBBLUE_REG]                      | X    | X      | X      |      |
-| [CMD_SET_BORDER]                          | X    | X      | X      |      |
-| [CMD_SET_BREAKPOINTS]                     | -    | -      | X      |      |
-| [CMD_RESTORE_MEM]                         | -    | -      | X      |      |
-| [CMD_LOOPBACK]                            | -    | -      | X      |      |
-| [CMD_GET_SPRITES_PALETTE]                 | X    | X      | X      |      |
-| [CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL] | X    | X      | X      |      |
-| [CMD_GET_SPRITES]                         | X    | X      | -      |      |
-| [CMD_GET_SPRITE_PATTERNS]                 | X    | X      | -      |      |
-| [CMD_ADD_BREAKPOINT]                      | X    | X      | -      | X    |
-| [CMD_REMOVE_BREAKPOINT]                   | X    | X      | -      | X    |
-| [CMD_ADD_WATCHPOINT]                      | X    | -      | -      | X    |
-| [CMD_REMOVE_WATCHPOINT]                   | X    | -      | -      | X    |
-| [CMD_READ_STATE]                          | X    | -      | -      | -    |
-| [CMD_WRITE_STATE]                         | X    | -      | -      | -    |
+| Command                                   | zsim | CSpect | ZXNext |
+| ----------------------------------------- | ---- | ------ | ------ |
+| [CMD_INIT]                                | -    | X      | X      |
+| [CMD_CLOSE]                               | -    | X      | X      |
+| [CMD_GET_REGISTERS]                       | X    | X      | X      |
+| [CMD_SET_REGISTER]                        | X    | X      | X      |
+| [CMD_WRITE_BANK]                          | X    | X      | X      |
+| [CMD_CONTINUE]                            | X    | X      | X      |
+| [CMD_PAUSE]                               | X    | X      | -      |
+| [CMD_READ_MEM]                            | X    | X      | X      |
+| [CMD_WRITE_MEM]                           | X    | X      | X      |
+| [CMD_SET_SLOT]                            | X    | X      | X      |
+| [CMD_GET_TBBLUE_REG]                      | X    | X      | X      |
+| [CMD_SET_BORDER]                          | X    | X      | X      |
+| [CMD_SET_BREAKPOINTS]                     | -    | -      | X      |
+| [CMD_RESTORE_MEM]                         | -    | -      | X      |
+| [CMD_LOOPBACK]                            | -    | -      | X      |
+| [CMD_GET_SPRITES_PALETTE]                 | X    | X      | X      |
+| [CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL] | X    | X      | X      |
+| [CMD_GET_SPRITES]                         | X    | X      | -      |
+| [CMD_GET_SPRITE_PATTERNS]                 | X    | X      | -      |
+| [CMD_ADD_BREAKPOINT]                      | X    | X      | -      |
+| [CMD_REMOVE_BREAKPOINT]                   | X    | X      | -      |
+| [CMD_ADD_WATCHPOINT]                      | X    | -      | -      |
+| [CMD_REMOVE_WATCHPOINT]                   | X    | -      | -      |
+| [CMD_READ_STATE]                          | X    | -      | -      |
+| [CMD_WRITE_STATE]                         | X    | -      | -      |
 
 DeZog knows with which remote it communicates and chooses the right subset.
 
 
 ## History
-
-### 2.1.0
-Note:
-2.1.0 adds an additonal message that is backward compatible. TODO: Describe
-Changed:
-- CMD_INIT: added UNKOWN and CUSTOM (for MAME) types.
 
 ### 2.0.0
 
@@ -249,7 +243,7 @@ Response (Length=7+n):
 | 0     | 1    | 1-255               | Same seq no                                                                                                                                                                                                                            |
 | 1     | 1    | 0/1-255             | Error: 0=no error, 1=general (unknown) error.                                                                                                                                                                                          |
 | 2     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch                                                                                                                                                              |
-| *5    | 1    | 0-255               | Machine type (memory model): 0 = UNKNOWN, 1 = ZX16K, 2 = ZX48K, 3 = ZX128K, 4 = ZXNEXT, 255 = CUSTOM. Note: CSpect and the ZX Next will always return ZXNEXT, MAME uses only CUSTOM. If CUSOTM is returned then TODO: add explanation. |
+| *5    | 1    | 0-255               | Machine type (memory model): 0 = UNKNOWN, 1 = ZX16K, 2 = ZX48K, 3 = ZX128K, 4 = ZXNEXT. Note: CSpect and the ZX Next will always return ZXNEXT. |
 | 6     | 1-n  | 0-terminated string | The responding program name + version as a string. E.g. "dbg_uart_if v2.0.0"                                                                                                                                                           |
 
 
@@ -740,43 +734,6 @@ Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
 | 4     | 1    | 1-255 | Same seq no |
-
-
-## CMD_GET_MEMORY_MODEL=60
-
-If [CMD_INIT](#cmd-init1) returns a CUSTOM memory model this command is sent.
-It retrieves the slots and banks from the remote.
-
-Command (Length=0):
-| Index | Size | Value | Description |
-| ----- | ---- | ----- | ----------- |
-|       |      |       |             |
-
-Response (Length=6+?):
-| Index | Size | Value   | Description                                                            |
-| ----- | ---- | ------- | ---------------------------------------------------------------------- |
-| 4     | 1    | 1-255   | Same seq no                                                            |
-| 5     |      | 1-255   | Number of used slots (Nslots)                                          |
-| 6     |      | 0-65535 | Start address of slot 0                                                |
-| 8     |      | 0-65535 | End address of slot 0                                                  |
-|  10   |      | 0-255   | Number of banks allowed for the slot 0                                 |
-|  11   |      | 0-255   | bank number for slot 0                                                            |
-|       |      | ...     | ... other bank numbers for slot 0                                                                   |
-|       |      | 0-65535 | Start address of slot Nslots-1                                         |
-|       |      | 0-65535 | End address of slot Nslots-1                                           |
-|       |      | 0-255   | Number of banks allowed for the slot Nslot-1                           |
-|       |      | 0-255   | bank number for Nslot-1                                                     |
-|       |      | ...     | ... other bank numbers for Nslot-1                        |
-|       |      | 1-255   | Number of used banks (Nbanks)                                          |
-|       |      | 0-255   | The name of the bank 0, e.g. "Bank0". A null-terminated string.        |
-|       |      | 0-255   | The short name of the bank 0, e.g. "B0". A null-terminated string.     |
-|       |      | 0-65535 | The size of the bank 0. In bytes.                                      |
-|       |      | 0-255   | The bank 0 type. 0 = UNKNOWN, 1 = ROM, 1 = RAM                         |
-|       |      | ...     | ...                                                                    |
-|       |      | 0-255   | The name of the bank Nbanks-1, e.g. "Bank0". A null-terminated string. |
-|       |      | 0-255   | The short name of the Nbanks-1, e.g. "B0". A null-terminated string.   |
-|       |      | 0-65535 | The size of the Nbanks-1. In bytes.                                    |
-|       |      | 0-255   | The bank Nbanks-1 type. 0 = UNUSED, 1 = ROM, 2 = RAM                 |
 
 
 # Notifications
