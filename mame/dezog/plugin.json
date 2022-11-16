@@ -1,0 +1,10 @@
+{
+  "plugin": {
+	"name": "dezog",
+	"description": "DeZog DZRP plugin",
+	"version": "1.0.0",
+	"author": "maziac",
+	"type": "plugin",
+	"start": "false"
+  }
+}
