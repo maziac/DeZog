@@ -606,7 +606,7 @@ export class MemoryModel {
 	 * @returns The info as a string (with newlines).
 	 */
 	public getMemModelInfo(): string {
-		let txt = "Slot ranges:\n";
+		let txt = "Name: '" + this.name + "'\nSlot ranges:\n";
 		// Slots
 		for (const slotRange of this.slotRanges) {
 			let line = Utility.getHexString(slotRange.start, 4) + "-" + Utility.getHexString(slotRange.end, 4) + ": " + (slotRange.name || "unnamed") + ", banks: ";
@@ -614,7 +614,7 @@ export class MemoryModel {
 			const banks = [...slotRange.banks];
 			line += banks.map(val => this.banks[val].shortName).join(", ");
 			// Next line
-			txt += line + "\n";
+			txt += "  " + line + "\n";
 		}
 		// Banks
 		txt += "Memory banks:\n";
@@ -629,7 +629,7 @@ export class MemoryModel {
 			}
 			line += ", " + type;
 			// Next line
-			txt += line + "\n";
+			txt += "  " + line + "\n";
 		}
 
 		// Return

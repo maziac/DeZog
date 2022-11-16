@@ -877,10 +877,10 @@ export class Settings {
 		}
 
 		// Check 'load' if 'mame' was selected
-		if (rType == 'mame') {
-			if (Settings.launch.load != '')
-				throw Error("For remoteType 'mame' you mustn't set the 'load' property. It is only for .nex and .sna files");
-		}
+		// if (rType == 'mame') {
+		// 	if (Settings.launch.load != '')
+		// 		throw Error("For remoteType 'mame' you mustn't set the 'load' property. It is only for .nex and .sna files");
+		// }
 
 		// List files (=Assembler configurations)
 		const listFiles = this.GetAllAssemblerListFiles(Settings.launch);

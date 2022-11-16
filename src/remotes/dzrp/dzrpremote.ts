@@ -232,9 +232,6 @@ export class DzrpRemote extends RemoteBase {
 			if (resp.error)
 				throw Error(resp.error);
 
-			// Load executable
-			await this.loadExecutable();
-
 			Z80Registers.decoder = new Z80RegistersStandardDecoder();
 			// Set memory model according machine type
 			switch (resp.machineType) {
@@ -257,6 +254,7 @@ export class DzrpRemote extends RemoteBase {
 				case DzrpMachineType.CUSTOM_MEMORY_MODEL:
 					// Retrieve memory config
 					this.memoryModel = await this.sendDzrpCmdGetMemoryModel();
+					Log.log("Machine: '" + this.memoryModel.name + "'");
 					break;
 				default:
 					// Error: Unknown type
@@ -267,6 +265,9 @@ export class DzrpRemote extends RemoteBase {
 					break;
 			}
 			this.memoryModel.init();
+
+			// Load executable
+			await this.loadExecutable();
 
 			// Set Program Counter to execAddress
 			await Remote.setLaunchExecAddress();

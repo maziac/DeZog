@@ -130,6 +130,13 @@ export class MameRemote extends DzrpBufferRemote {
 
 
 	/**
+	 * Setting border is not supported with MAME.
+     */
+	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
+	}
+
+
+	/**
 	 * Not used/supported.
 	 */
 	protected async sendDzrpCmdSetBreakpoints(bpAddresses: Array<number>): Promise<Array<number>> {

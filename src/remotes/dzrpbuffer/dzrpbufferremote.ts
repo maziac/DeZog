@@ -93,7 +93,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		// Override this
 	}
 
-	
+
 	/**
 	 * Returns the next sequence number for sending
 	 */
@@ -199,6 +199,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 
 			// Prepare next buffer. Copy remaining received bytes.
 			const overLength = this.receivedData.length - this.expectedLength;
+			LogTransport.log('<<< Remote: Received, overLength=' + overLength);
 			Utility.assert(overLength >= 0);
 			this.receivingHeader = true;
 			if (overLength == 0) {
@@ -411,6 +412,10 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		const data = await this.sendDzrpCmd(DZRP.CMD_GET_MEMORY_MODEL);
 		let i = 0;
 
+		// Read name
+		const modelName = Utility.getStringFromBuffer(data, i);
+		i += modelName.length + 1;
+
 		// Read slot ranges
 		const slotRanges: SlotRange[] = [];
 		const bankInfos: (BankInfo|undefined)[] = [];
@@ -474,6 +479,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		// Create memory model
 		const memModel = new MemoryModel({slots: slotInfos});
 		console.log('memModel=' + memModel.getMemModelInfo());
+		memModel.name = modelName;
 		return memModel;
 	}
 
@@ -664,27 +670,35 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	 * @returns A promise with an Uint8Array.
 	 */
 	protected async sendDzrpCmdReadMem(address: number, size: number): Promise<Uint8Array> {
-		let buffer;
-		// Handle special case size=0x10000
-		if (size == 0x10000 && address == 0) {
-			// Get 2 chunks of memory as 0x10000 is too big).
-			const data0 = await this.readMemoryDump(0, 0x8000);
-			const data1 = await this.readMemoryDump(0x8000, 0x8000);
-			// Create UInt8Array
-			buffer = new Uint8Array(0x10000);
-			// Combine both buffers
-			buffer.set(data0);
-			buffer.set(data1, 0x8000);
-		}
-		else {
-			// Send command to get memory dump
-			const data = await this.sendDzrpCmd(DZRP.CMD_READ_MEM, [0,
-				address & 0xFF, address >>> 8,
-				size & 0xFF, size >>> 8]);
-			// Create UInt8Array
-			buffer = new Uint8Array(data);
-		}
-		return buffer;
+		return new Promise<Uint8Array>(async (resolve, reject) => {
+			let buffer;
+			// Handle special case size=0x10000
+			if (size == 0x10000 && address == 0) {
+				// Get 2 chunks of memory as 0x10000 is too big).
+				const data0 = await this.sendDzrpCmd(DZRP.CMD_READ_MEM, [0,
+					0, 0,
+					0, 0x80]);
+				const data1 = await this.sendDzrpCmd(DZRP.CMD_READ_MEM, [0,
+					0, 0x80,
+					0, 0x80]);
+				//const data0 = await this.readMemoryDump(0, 0x8000);
+				//const data1 = await this.readMemoryDump(0x8000, 0x8000);
+				// Create UInt8Array
+				buffer = new Uint8Array(0x10000);
+				// Combine both buffers
+				buffer.set(data0);
+				buffer.set(data1, 0x8000);
+			}
+			else {
+				// Send command to get memory dump
+				const data = await this.sendDzrpCmd(DZRP.CMD_READ_MEM, [0,
+					address & 0xFF, address >>> 8,
+					size & 0xFF, size >>> 8]);
+				// Create UInt8Array
+				buffer = new Uint8Array(data);
+			}
+			resolve(buffer);
+		});
 	}
 
 
