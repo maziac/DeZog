@@ -9,6 +9,8 @@ import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';
 import {BREAK_REASON_NUMBER, Remote} from '../remotebase';
 import {MemoryModelUnknown} from '../MemoryModel/predefinedmemorymodels';
+import {SnaFile} from '../dzrp/snafile';
+import {MemBank16k} from '../dzrp/membank16k';
 
 
 
@@ -809,5 +811,69 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		await this.sendPacketDataOk(cmd);
 	}
 
+
+
+	/**
+	 * Loads a .sna file.
+	 * This does not use sendDrzpCmdWriteBank as MAME gdbstub does not
+	 * support slots and banking the way Dezog would require it.
+	 * Therefore only 48k Spectrum .sna files are supported and this is
+	 * written into memory with sendDzrpWriteMemory.
+	 * Loading a .sna file does make sense only for mame started with
+	 * machine spectrum.
+	 * If it is used with some other machine the behavior is undefined
+	 * = user error.
+	 */
+	protected async loadBinSna(filePath: string): Promise<void> {
+		// Load and parse file
+		const snaFile = new SnaFile();
+		snaFile.readFile(filePath);
+
+		// Check that it is a 48k sna file
+		if (snaFile.is128kSnaFile)
+			throw Error('Loading of 128k .sna files into MAME is not supported. Only 48k .sna files are supported.');
+
+
+		// Transfer 16k memory banks
+		for (const memBank of snaFile.memBanks) {
+			// As 2x 8k memory banks. I.e. DZRP is for ZX Next only.
+			const bank8 = 2 * memBank.bank;
+			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, MemBank16k.BANK16K_SIZE / 2));
+			await this.sendDzrpCmdWriteBank(bank8 + 1, memBank.data.slice(MemBank16k.BANK16K_SIZE / 2));
+		}
+
+		// Set the default slot/bank association
+		const slotBanks = [254, 255, 10, 11, 4, 5, 0, 1];	// 5, 2, 0
+		for (let slot = 0; slot < 8; slot++) {
+			const bank8 = slotBanks[slot];
+			await this.sendDzrpCmdSetSlot(slot, bank8);
+		}
+
+		// Set the registers
+		await this.sendDzrpCmdSetRegister(Z80_REG.PC, snaFile.pc);
+		await this.sendDzrpCmdSetRegister(Z80_REG.SP, snaFile.sp);
+		await this.sendDzrpCmdSetRegister(Z80_REG.AF, snaFile.af);
+		await this.sendDzrpCmdSetRegister(Z80_REG.BC, snaFile.bc);
+		await this.sendDzrpCmdSetRegister(Z80_REG.DE, snaFile.de);
+		await this.sendDzrpCmdSetRegister(Z80_REG.HL, snaFile.hl);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IX, snaFile.ix);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IY, snaFile.iy);
+		await this.sendDzrpCmdSetRegister(Z80_REG.AF2, snaFile.af2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.BC2, snaFile.bc2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.DE2, snaFile.de2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.HL2, snaFile.hl2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
+		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
+	}
+
+
+	/**
+	 * Loads a .nex file.
+	 * See https://wiki.specnext.dev/NEX_file_format
+	 */
+	protected async loadBinNex(filePath: string): Promise<void> {
+		throw Error('Cannot load a .nex file into MAME.');
+	}
 }
 
