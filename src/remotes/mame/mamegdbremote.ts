@@ -833,22 +833,13 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		if (snaFile.is128kSnaFile)
 			throw Error('Loading of 128k .sna files into MAME is not supported. Only 48k .sna files are supported.');
 
-
 		// Transfer 16k memory banks
+		let address = MemBank16k.BANK16K_SIZE;
 		for (const memBank of snaFile.memBanks) {
-			// Use
+			// Write memory
 			await this.sendDzrpCmdWriteMem(address, memBank.data);
-			// As 2x 8k memory banks. I.e. DZRP is for ZX Next only.
-			const bank8 = 2 * memBank.bank;
-			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, MemBank16k.BANK16K_SIZE / 2));
-			await this.sendDzrpCmdWriteBank(bank8 + 1, memBank.data.slice(MemBank16k.BANK16K_SIZE / 2));
-		}
-
-		// Set the default slot/bank association
-		const slotBanks = [254, 255, 10, 11, 4, 5, 0, 1];	// 5, 2, 0
-		for (let slot = 0; slot < 8; slot++) {
-			const bank8 = slotBanks[slot];
-			await this.sendDzrpCmdSetSlot(slot, bank8);
+			// Next
+			address += MemBank16k.BANK16K_SIZE;
 		}
 
 		// Set the registers
