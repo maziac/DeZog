@@ -426,6 +426,29 @@ For 'path', 'srcDirs' and 'excludeFiles' see z80asm configuration.
 - mapFile: The map file is required to correctly parse the label values and to get correct file/line to address associations.
 - mainFile: The relative path of the file used to create the list file.
 
+Since (about) version 2 the .lis file format has changed for z88dk.
+You can easily distinguish the 2 versions. The newer format does start with the sources file name.
+In the example below 'main.asm:':
+~~~list
+main.asm:
+     1
+     2
+     3                          label_equ1:		equ 100
+...
+~~~
+
+That is also the reason why you don't need to tell DeZog the "mainFile" name anymore.
+Here are the parameters for "z88dkv2":
+
+~~~json
+"z88dkv2": [{
+    "path": "currah_uspeech_tests.lis",
+    "srcDirs": [""],
+    "mapFile": "currah_uspeech_tests.map",
+    "excludeFiles": [ "some_folder/*" ]
+}]
+~~~
+
 
 **Reverse Engineering configuration**
 
