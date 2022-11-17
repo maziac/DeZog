@@ -1276,23 +1276,23 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 
 	/**
 	 * Sends the command to retrieve a memory dump.
-	 * @param address The memory start address.
+	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	public async sendDzrpCmdReadMem(address: number, size: number): Promise<Uint8Array> {
-		const buffer = this.memory.readBlock(address, size);
+	public async sendDzrpCmdReadMem(addr64k: number, size: number): Promise<Uint8Array> {
+		const buffer = this.memory.readBlock(addr64k, size);
 		return buffer;
 	}
 
 
 	/**
 	 * Sends the command to write a memory dump.
-	 * @param address The memory start address.
+	 * @param addr64k The memory start address.
 	 * @param dataArray The data to write.
 	  */
-	public async sendDzrpCmdWriteMem(address: number, dataArray: Buffer | Uint8Array): Promise<void> {
-		this.memory.writeBlock(address, dataArray);
+	public async sendDzrpCmdWriteMem(addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
+		this.memory.writeBlock(addr64k, dataArray);
 	}
 
 

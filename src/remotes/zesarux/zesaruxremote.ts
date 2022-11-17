@@ -1239,7 +1239,8 @@ export class ZesaruxRemote extends RemoteBase {
 
 	/**
 	 * Reads a memory dump from zesarux and converts it to a number array.
-	 * @param address The memory start address.
+	 * @param addr64k
+	 *  The memory start address.
 	 * @param size The memory size.
 	 * @param handler(data, addr) The handler that receives the data. 'addr' gets the value of 'address'.
 	 */

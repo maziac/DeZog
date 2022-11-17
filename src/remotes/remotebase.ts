@@ -1312,11 +1312,11 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Reads a memory dump and converts it to a number array.
-	 * @param address The memory start address.
+	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @param handler(data, addr) The handler that receives the data. 'addr' gets the value of 'address'.
 	 */
-	public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
+	public async readMemoryDump(addr64k: number, size: number): Promise<Uint8Array> {
 		Utility.assert(false);	// override this
 		return new Uint8Array();
 	}

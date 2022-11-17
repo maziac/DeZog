@@ -775,12 +775,12 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 	/**
 	 * Reads a memory.
-	 * @param address The memory start address.
+	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
-		const cmd = 'm' + address.toString(16) + ',' + size.toString(16);
+	public async readMemoryDump(addr64k: number, size: number): Promise<Uint8Array> {
+		const cmd = 'm' + addr64k.toString(16) + ',' + size.toString(16);
 		const resp = await this.sendPacketData(cmd);
 		// Parse the hex values
 		const buffer = new Uint8Array(size);
@@ -836,6 +836,8 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 		// Transfer 16k memory banks
 		for (const memBank of snaFile.memBanks) {
+			// Use
+			await this.sendDzrpCmdWriteMem(address, memBank.data);
 			// As 2x 8k memory banks. I.e. DZRP is for ZX Next only.
 			const bank8 = 2 * memBank.bank;
 			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, MemBank16k.BANK16K_SIZE / 2));

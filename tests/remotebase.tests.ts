@@ -144,8 +144,8 @@ suite('RemoteBase', () => {
 				Z80Registers.setCache(cache);
 
 			}
-			public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
-				switch (address) {
+			public async readMemoryDump(addr64k: number, size: number): Promise<Uint8Array> {
+				switch (addr64k) {
 					case this.pc: return this.pcMemory;
 					case this.sp: return new Uint8Array(this.spMemory.buffer);
 				}

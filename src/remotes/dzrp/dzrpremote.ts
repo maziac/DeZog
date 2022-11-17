@@ -1281,12 +1281,12 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * Reads a memory.
-	 * @param address The memory start address.
+	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
-		return this.sendDzrpCmdReadMem(address, size);
+	public async readMemoryDump(addr64k: number, size: number): Promise<Uint8Array> {
+		return this.sendDzrpCmdReadMem(addr64k, size);
 	}
 
 
@@ -1630,11 +1630,11 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * Sends the command to retrieve a memory dump.
-	 * @param address The memory start address.
+	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	protected async sendDzrpCmdReadMem(address: number, size: number): Promise<Uint8Array> {
+	protected async sendDzrpCmdReadMem(addr64k: number, size: number): Promise<Uint8Array> {
 		Utility.assert(false);
 		return new Uint8Array(0);
 	}
@@ -1643,10 +1643,10 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * Sends the command to write a memory dump.
-	 * @param address The memory start address (64k).
+	 * @param addr64k The memory start address (64k).
 	 * @param dataArray The data to write.
 	  */
-	public async sendDzrpCmdWriteMem(address: number, dataArray: Buffer | Uint8Array): Promise<void> {
+	public async sendDzrpCmdWriteMem(addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
 		Utility.assert(false);
 	}
 
