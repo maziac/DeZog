@@ -1,6 +1,6 @@
 import { Settings } from '../../src/settings/settings';
 import * as assert from 'assert';
-import {DisassemblyClass} from '../../src/disassembly/disassembly';
+import {DisassemblyClass} from '../../src/disassembler/disassembly';
 
 
 suite('Disassembly (DisassemblyClass)', () => {

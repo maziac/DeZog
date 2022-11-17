@@ -1,7 +1,7 @@
 import { Format } from './../src/disassembler/format';
 import { Opcode } from './../src/disassembler/opcode';
 import * as assert from 'assert';
-import {SimpleDisassembly} from '../src/disassembly/simpledisassembly';
+import {SimpleDisassembly} from '../src/disassembler/simpledisassembly';
 
 
 suite('Disassembly (SimpleDisassembly)', () => {

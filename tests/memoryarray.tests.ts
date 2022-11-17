@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import {MemAttribute, Memory} from '../src/disassembler/memory';
-import { MemoryArray } from '../src/disassembly/memoryarray';
+import {MemoryArray} from '../src/disassembler/memoryarray';
 
 suite('Disassembly (MemoryArray)', () => {
 

@@ -1,13 +1,13 @@
-import {Format} from "../disassembler/format";
-import {Opcode} from "../disassembler/opcode";
-import {RenderHint, RenderText} from "../disassembler/rendertext";
-import {SmartDisassembler} from "../disassembler/smartdisassembler";
+import {Format} from "./format";
+import {Opcode} from "./opcode";
+import {RenderHint, RenderText} from "./rendertext";
+import {SmartDisassembler} from "./smartdisassembler";
 import {Labels} from "../labels/labels";
 import {Utility} from "../misc/utility";
 import {Z80Registers} from "../remotes/z80registers";
 import {Settings} from '../settings/settings';
-import {MemAttribute} from './../disassembler/memory';
-import {Remote} from './../remotes/remotebase';
+import {MemAttribute} from './memory';
+import {Remote} from '../remotes/remotebase';
 
 
 /// The filename used for the temporary disassembly. ('./.tmp/disasm.list')

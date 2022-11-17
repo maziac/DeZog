@@ -6,7 +6,7 @@ import {RefList} from '../misc/reflist';
 import {Remote} from '../remotes/remotebase';
 import {Format} from '../disassembler/format';
 import {StepHistory} from '../remotes/cpuhistory';
-import {SimpleDisassembly} from '../disassembly/simpledisassembly';
+import {SimpleDisassembly} from '../disassembler/simpledisassembly';
 
 
 /**

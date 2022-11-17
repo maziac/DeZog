@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import {Labels, SourceFileEntry} from './labels/labels';
-import {Disassembly, DisassemblyClass} from './disassembly/disassembly';
+import {Disassembly, DisassemblyClass} from './disassembler/disassembly';
 import {UnifiedPath} from './misc/unifiedpath';
 import {Utility} from './misc/utility';
 
