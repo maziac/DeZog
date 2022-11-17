@@ -201,7 +201,6 @@ suite('Labels (z88dk v2 format)', () => {
 				const config = {
 					z88dk: [{
 						path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
-						mainFile: "main.asm",
 						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
@@ -242,7 +241,6 @@ suite('Labels (z88dk v2 format)', () => {
 				const config = {
 					z88dk: [{
 						path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
-						mainFile: "main.asm",
 						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
@@ -274,7 +272,6 @@ suite('Labels (z88dk v2 format)', () => {
 				const config = {
 					z88dk: [{
 						path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
-						mainFile: "main.asm",
 						mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
@@ -318,7 +315,6 @@ suite('Labels (z88dk v2 format)', () => {
 		const config = {
 			z88dk: [{
 				path: './tests/data/labels/projects/z88dk/general_v2/main.lis',
-				mainFile: "main.asm",
 				mapFile: "./tests/data/labels/projects/z88dk/general_v2/main.map",
 				srcDirs: [""],	// Sources mode
 				excludeFiles: []
