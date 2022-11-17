@@ -120,7 +120,7 @@ main.asm:
  */
 export class Z88dkLabelParserV2 extends LabelParserBase {
 	// Overwrite parser name (for errors).
-	protected parserName = "z88dk";
+	protected parserName = "z88dkv2";
 
 	/// Map with the z88dk labels/symbols.
 	protected z88dkMappings = new Map<string, number>();

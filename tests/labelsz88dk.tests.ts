@@ -28,8 +28,7 @@ suite('Labels (z88dk)', () => {
 					path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 					mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 					srcDirs: [""],	// Sources mode
-					excludeFiles: [],
-					version: "1"
+					excludeFiles: []
 				}]
 			};
 			lbls.readListFiles(config, new MemoryModelAllRam());
@@ -59,8 +58,7 @@ suite('Labels (z88dk)', () => {
 					path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 					mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 					srcDirs: [""],	// Sources mode
-					excludeFiles: [],
-					version: "1"
+					excludeFiles: []
 				}]
 			};
 			lbls.readListFiles(config, new MemoryModelAllRam());
@@ -81,8 +79,7 @@ suite('Labels (z88dk)', () => {
 					path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 					mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 					srcDirs: [""],	// Sources mode
-					excludeFiles: [],
-					version: "1"
+					excludeFiles: []
 				}]
 			};
 			lbls.readListFiles(config, new MemoryModelAllRam());
@@ -105,8 +102,7 @@ suite('Labels (z88dk)', () => {
 						path: fname,
 						srcDirs: [],	// ListFile-Mode
 						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
-						excludeFiles: [],
-						version: "1"
+						excludeFiles: []
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -142,8 +138,7 @@ suite('Labels (z88dk)', () => {
 					z88dk: [{
 						path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
-						version: "1"
+						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map"
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -176,8 +171,7 @@ suite('Labels (z88dk)', () => {
 					z88dk: [{
 						path: './tests/data/labels/projects/z88dk/general_old/main.lis',
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
-						version: "1"
+						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map"
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -211,8 +205,7 @@ suite('Labels (z88dk)', () => {
 						mainFile: "main.asm",
 						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 						srcDirs: [""],	// Sources mode
-						excludeFiles: [],
-						version: "1"
+						excludeFiles: []
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -253,8 +246,7 @@ suite('Labels (z88dk)', () => {
 						mainFile: "main.asm",
 						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 						srcDirs: [""],	// Sources mode
-						excludeFiles: [],
-						version: "1"
+						excludeFiles: []
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -286,8 +278,7 @@ suite('Labels (z88dk)', () => {
 						mainFile: "main.asm",
 						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 						srcDirs: [""],	// Sources mode
-						excludeFiles: [],
-						version: "1"
+						excludeFiles: []
 					}]
 				};
 				lbls.readListFiles(config, new MemoryModelAllRam());
@@ -331,8 +322,7 @@ suite('Labels (z88dk)', () => {
 				mainFile: "main.asm",
 				mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
 				srcDirs: [""],	// Sources mode
-				excludeFiles: [],
-				version: "1"
+				excludeFiles: []
 			}]
 		};
 		lbls.readListFiles(config, new MemoryModelAllRam());
@@ -397,8 +387,7 @@ labelE000                          = $E000 ; addr, local, , main, , main.asm:22
 				path: tmpFile,
 				mapFile: tmpMapFile,
 				srcDirs: [],
-				excludeFiles: [],
-				version: "1"
+				excludeFiles: []
 			};
 			parser = new Z88dkLabelParser(
 				mm,

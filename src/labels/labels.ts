@@ -224,15 +224,16 @@ export class LabelsClass {
 
 		// z88dk
 		if (mainConfig.z88dk) {
+			const parser = new Z88dkLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
 			for (const config of mainConfig.z88dk) {
-				// Check which version
-				let parser;
-				if (config.version === "1") {
-					parser = new Z88dkLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
-				}
-				else {
-					parser = new Z88dkLabelParserV2(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
-				}
+				this.loadAsmListFile(parser, config);
+			}
+		}
+
+		// z88dkv2
+		if (mainConfig.z88dkv2) {
+			const parser = new Z88dkLabelParserV2(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler);
+			for (const config of mainConfig.z88dkv2) {
 				this.loadAsmListFile(parser, config);
 			}
 		}

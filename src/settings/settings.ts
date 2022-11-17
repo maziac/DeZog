@@ -53,9 +53,17 @@ export interface Z88dkConfig extends AsmConfigBase {
 
 	/// The z88dk map file (option "-m").
 	mapFile: string;
+}
 
-	/// The version of the lis file format: 1 = old (prior 2), 2 = version 2 (current)
-	version: string;
+
+// Z88dk version 2.2. Option "-m" (map file) is required.
+// Both .lis and .map file are required for parsing.
+// Parsing does not required "-debug". In some cases (if there is code
+// that is not starting with a label the line/file association will
+// be missing for that portion).
+export interface Z88dkConfigV2 extends AsmConfigBase {
+	/// The z88dk map file (option "-m").
+	mapFile: string;
 }
 
 
@@ -265,7 +273,7 @@ export interface SmartDisassemblerArgs {
  */
 export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments {
 	/// The remote type: zesarux or zxnext.
-	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame' | 'mamegdb';	// TODO: Remove mamegdb
+	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame';
 
 	// The special settings for zrcp (ZEsarux).
 	zrcp: ZrcpType;
@@ -292,6 +300,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	sjasmplus: Array<SjasmplusConfig>;
 	z80asm: Array<Z80asmConfig>;
 	z88dk: Array<Z88dkConfig>;
+	z88dkv2: Array<Z88dkConfigV2>;
 	revEng: Array<ReverseEngineeringConfig>;
 
 	/// The paths to the .labels files.
@@ -398,6 +407,7 @@ export class Settings {
 				sjasmplus: <any>undefined,
 				z80asm: <any>undefined,
 				z88dk: <any>undefined,
+				z88dkv2: <any>undefined,
 				revEng: <any>undefined,
 				smallValuesMaximum: <any>undefined,
 				disassemblerArgs: <any>undefined,
@@ -625,13 +635,31 @@ export class Settings {
 					srcDirs: fpSrcDirs || [""],
 					excludeFiles: fpExclFiles || [],
 					mainFile: fpMainFile || "",
-					mapFile: undefined as any,
-					version: fp.version || "2"
+					mapFile: undefined as any
 				};
 				if (fpPath)
 					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
 				if (fpMapFile)
 					file.mapFile = Utility.getAbsFilePath(fpMapFile, rootFolder);
+				return file;
+			});
+		}
+
+		// z88dkv2
+		if (launchCfg.z88dkv2) {
+			launchCfg.z88dkv2 = launchCfg.z88dkv2.map(fp => {
+				// ListFile structure
+				const fpPath = UnifiedPath.getUnifiedPath(fp.path);
+				const fpSrcDirs = UnifiedPath.getUnifiedPathArray(fp.srcDirs);
+				const fpExclFiles = UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
+				const file = {
+					path: undefined as any,
+					srcDirs: fpSrcDirs || [""],
+					excludeFiles: fpExclFiles || [],
+					mapFile: undefined as any,
+				};
+				if (fpPath)
+					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
 				return file;
 			});
 		}
