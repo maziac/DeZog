@@ -651,6 +651,7 @@ export class Settings {
 				// ListFile structure
 				const fpPath = UnifiedPath.getUnifiedPath(fp.path);
 				const fpSrcDirs = UnifiedPath.getUnifiedPathArray(fp.srcDirs);
+				const fpMapFile = UnifiedPath.getUnifiedPath(fp.mapFile);
 				const fpExclFiles = UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
 				const file = {
 					path: undefined as any,
@@ -660,6 +661,8 @@ export class Settings {
 				};
 				if (fpPath)
 					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
+				if (fpMapFile)
+					file.mapFile = Utility.getAbsFilePath(fpMapFile, rootFolder);
 				return file;
 			});
 		}
@@ -902,12 +905,6 @@ export class Settings {
 			if (oldZxnext.port != undefined || oldZxnext.hostname != undefined || oldZxnext.socketTimeout != undefined) {
 				throw Error("For 'zxnext' the properties 'port', 'hostname' and 'socketTimeout' are not used anymore. Use 'serial' instead.");
 			}
-		}
-
-		// Check 'load' if 'mame' was selected
-		if (rType == 'mame') {
-			if (Settings.launch.load != '')
-				throw Error("For remoteType 'mame' you mustn't set the 'load' property. It is only for .nex and .sna files");
 		}
 
 		// List files (=Assembler configurations)
