@@ -89,8 +89,8 @@ export class AsmNode {
 	public getBranchesRecursive(branches: AsmNode[]) {
 		// Add referenced branches
 		const asmNodes: AsmNode[] = [this];
-		while (asmNodes.length > 0) {
-			const asmNode = asmNodes.shift()!;
+		for (let i = 0; i < asmNodes.length; i++) { // NOSONAR
+			const asmNode = asmNodes[i];
 			for (const branch of asmNode.branchNodes) {
 				if (!branches.includes(branch)) {
 					branches.push(branch);

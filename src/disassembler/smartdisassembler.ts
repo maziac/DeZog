@@ -330,9 +330,8 @@ export class SmartDisassembler {
 	protected createNodeForAddress(address64k: number) {
 
 		const allBranchAddresses: number[] = [address64k];
-
-		while (allBranchAddresses.length > 0) {
-			let addr64k = allBranchAddresses.shift()!;
+		for (let i = 0; i < allBranchAddresses.length; i++) { // NOSONAR
+			let addr64k = allBranchAddresses[i];
 
 			// Check if address/node already exists.
 			if (this.nodes.get(addr64k)) {

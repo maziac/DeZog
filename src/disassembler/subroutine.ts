@@ -59,8 +59,9 @@ export class Subroutine {
 
 
 		const asmNodes: AsmNode[] = [node];
-		while (asmNodes.length > 0) {
-			const asmNode = asmNodes.shift()!;
+
+		for (let i = 0; i < asmNodes.length; i++) { // NOSONAR
+			const asmNode = asmNodes[i];
 
 			// Check if we already used it
 			if (this.nodes.includes(asmNode))
