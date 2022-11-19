@@ -731,6 +731,49 @@ suite('Disassembler - RenderText', () => {
 		});
 
 
+
+
+		suite('65536 nodes', () => {
+			// Disassemble. To reach maximum number of nodes fill
+			// all memory with 0xFF which is RST 38h.
+			function disassemble(startAddrs64k: number[]): string {
+				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
+				disasm.setCurrentSlots([0]);
+				const bin = new Uint8Array(0x10000);
+				bin.fill(0xFF);
+				disasm.setMemory(0, bin);
+
+				disasm.getFlowGraph(startAddrs64k, []);
+				disasm.disassembleNodes();
+				// Get all nodes for the depth
+				const nodes = new Set<AsmNode>();
+				const startNodes = disasm.getNodesForAddresses(startAddrs64k);
+				for (const node of startNodes) {
+					const sub = new Subroutine(node);
+					sub.getAllNodesRecursively(65536, nodes);
+				}
+				const text = r.renderNodes(nodes);
+				return text;
+			}
+
+			test('start at 0x0000', () => {
+				const text = disassemble([0x0000]);
+
+				const cText = c(text).split('\n');
+				for (let addr64k = 0xFFFF; addr64k < 0x10000; addr64k++) {
+					let line = addr64k * 2;
+					// 1 line with RST_38 label
+					if (addr64k >= 0x38) {
+						line++;	// Skip label
+					}
+					const expected = Utility.getHexString(addr64k,4) + ".1 FF RST RST_38";
+					const actual = cText[line];
+					assert.equal(actual, expected);
+				}
+			});
+		});
+
+
 		suite('Strange disassemblies', () => {
 			// This contains e.g. code that will lead to strange disassemblies.
 			// Code that is probably wrong, but anyhow need to give some
@@ -826,8 +869,7 @@ suite('Disassembler - RenderText', () => {
 						`0008.1 RST_08:
 0008.1 C9 RET
 
-; Note: The disassembly is ambiguous at $030A.
-0300.1 CD 0A 03 CALL 0308.1+2
+0300.1 CD 0A 03 CALL SUB_030A
 
 0303.1 CD 07 03 CALL SUB_0307
 
@@ -838,8 +880,9 @@ suite('Disassembler - RenderText', () => {
 
 ; Note: The disassembly is ambiguous at $030A.
 0308.1 01 10 21 LD BC,2110.1
-030B.1 00 NOP
-030C.1 80 ADD A,B
+
+030A.1 SUB_030A:
+030A.1 21 00 80 LD HL,8000.1
 030D.1 00 NOP
 030E.1 00 NOP
 030F.1 00 NOP

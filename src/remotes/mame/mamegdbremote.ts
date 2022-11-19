@@ -837,7 +837,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		let address = MemBank16k.BANK16K_SIZE;
 		for (const memBank of snaFile.memBanks) {
 			// Write memory
-			await this.sendDzrpCmdWriteMem(address, memBank.data);
+			await this.writeMemoryDump(address, memBank.data);
 			// Next
 			address += MemBank16k.BANK16K_SIZE;
 		}

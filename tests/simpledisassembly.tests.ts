@@ -4,7 +4,7 @@ import * as assert from 'assert';
 import {SimpleDisassembly} from '../src/disassembler/simpledisassembly';
 
 
-suite('Disassembly (SimpleDisassembly)', () => {
+suite('Disassembly - SimpleDisassembly', () => {
 
 	setup(() => {
 		Opcode.InitOpcodes();

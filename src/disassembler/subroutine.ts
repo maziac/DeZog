@@ -36,26 +36,47 @@ export class Subroutine {
 
 	/**
 	 * Follows the trace and fill this.nodes with all branches.
-	 * Works recursively.
 	 * @param node The node for which to get all branches.
 	 */
 	protected processAllBranchNodes(node: AsmNode) {
-		// Check if it we already used it
-		if (this.nodes.includes(node))
-			return;
-		// Store
-		this.nodes.push(node);
+		// // Check if we already used it
+		// if (this.nodes.includes(node))
+		// 	return;
+		// // Store
+		// this.nodes.push(node);
 
-		// Process size
-		this.sizeInBytes += node.length;
+		// // Process size
+		// this.sizeInBytes += node.length;
 
-		// Add callees
-		if (node.callee)
-			this.callees.push(node.callee);
+		// // Add callees
+		// if (node.callee)
+		// 	this.callees.push(node.callee);
 
-		// Follow all branches
-		for (const branchNode of node.branchNodes) {
-			this.processAllBranchNodes(branchNode);
+		// // Follow all branches
+		// for (const branchNode of node.branchNodes) {
+		// 	this.processAllBranchNodes(branchNode);
+		// }
+
+
+		const asmNodes: AsmNode[] = [node];
+		while (asmNodes.length > 0) {
+			const asmNode = asmNodes.shift()!;
+
+			// Check if we already used it
+			if (this.nodes.includes(asmNode))
+				continue;
+			// Store
+			this.nodes.push(asmNode);
+
+			// Process size
+			this.sizeInBytes += asmNode.length;
+
+			// Add callees
+			if (asmNode.callee)
+				this.callees.push(asmNode.callee);
+
+			// Follow all branches
+			asmNodes.push(...asmNode.branchNodes);
 		}
 	}
 

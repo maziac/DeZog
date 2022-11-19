@@ -325,122 +325,121 @@ export class SmartDisassembler {
 	 * A node is not created if it would start on an already FLOW_ANALYZED address.
 	 * A created flow at least would contain one opcode. Even if that opcode is ambiguous.
 	 * (Ambiguity: this is to show the user at least one possibly disassembly and let him decide.)
-	 * @param addr64k The 64k start address.
+	 * @param address64k The 64k start address.
 	 */
-	protected createNodeForAddress(addr64k: number) {
-		// Check if address/node already exists.
-		if (this.nodes.get(addr64k)) {
-			// Node already exists
-			return;
-		}
+	protected createNodeForAddress(address64k: number) {
 
-		// Check if we reach an area that was already analyzed
-		const memAttr = this.memory.getAttributeAt(addr64k);
-		// Check if already analyzed
-		if (memAttr & MemAttribute.FLOW_ANALYZED) {
-			// Does it fit the already done disassembly?
-			if (memAttr & MemAttribute.CODE_FIRST) {
-				// Yes, so just create a new node
-				this.createNodeInMap(addr64k);
-				// No analyzes required (was done already)
-				return;
-			}
-			// Not CODE_FIRST: A disassembly at an offset took place -> error
-			this.comments.addAmbiguousComment(addr64k, addr64k);
-			// Do not create a node
-			return;
-		}
+		const allBranchAddresses: number[] = [address64k];
 
-		// Check if memory exists
-		if (!(memAttr & MemAttribute.ASSIGNED)) {
-			// A comment is created elsewhere.
-			// Do not create a node
-			return;
-		}
+		while (allBranchAddresses.length > 0) {
+			let addr64k = allBranchAddresses.shift()!;
 
-		// Node does not exist, create  new one
-		const node = this.createNodeInMap(addr64k);
-
-		const allBranchAddresses: number[] = [];
-
-		while (true) {
-
-			// Get opcode and opcode length
-			const refOpcode = Opcode.getOpcodeAt(this.memory, addr64k);
-			// Check if opcode addresses (other than starting address) have already been analyzed
-			const flowAddr = this.memory.searchAddrWithAttribute(MemAttribute.FLOW_ANALYZED, addr64k + 1, refOpcode.length - 1);
-			// Set memory as analyzed
-			this.memory.addAttributesAt(addr64k, refOpcode.length, MemAttribute.FLOW_ANALYZED | MemAttribute.CODE);
-			this.memory.addAttributeAt(addr64k, MemAttribute.CODE_FIRST);
-			// Now check
-			if (flowAddr != undefined) {
-				// Some analyzes has been done already that assumed that the opcode starts at a different address.
-				this.comments.addAmbiguousComment(addr64k, flowAddr);
-				// The disassembly will stop after that opcode.
-				break;
+			// Check if address/node already exists.
+			if (this.nodes.get(addr64k)) {
+				// Node already exists
+				continue;
 			}
 
-			// Next address
-			addr64k += refOpcode.length;
-			const memAttrNext = this.memory.getAttributeAt(addr64k);
+			// Check if we reach an area that was already analyzed
+			const memAttr = this.memory.getAttributeAt(addr64k);
+			// Check if already analyzed
+			if (memAttr & MemAttribute.FLOW_ANALYZED) {
+				// Does it fit the already done disassembly?
+				if (memAttr & MemAttribute.CODE_FIRST) {
+					// Yes, so just create a new node
+					this.createNodeInMap(addr64k);
+					// No analyzes required (was done already)
+					continue;
+				}
+				// Not CODE_FIRST: A disassembly at an offset took place -> error
+				this.comments.addAmbiguousComment(addr64k, addr64k);
+				// Do not create a node
+				continue;
+			}
 
-			// Check for branch
-			const flags = refOpcode.flags;
-			if (flags & OpcodeFlag.BRANCH_ADDRESS) {
-				const branchAddress = refOpcode.value;
-				// First natural flow, i.e. the next address.
-				if (!(refOpcode.flags & OpcodeFlag.STOP)) {
-					// Adjust return address (if CALL/RST and not conditional)
-					let skip;
-					while ((skip = this.getSkipForAddress(addr64k))) {
-						// Skip bytes
-						addr64k = (addr64k + skip) & 0xFFFF;
-					}
-					allBranchAddresses.push(addr64k);
+			// Check if memory exists
+			if (!(memAttr & MemAttribute.ASSIGNED)) {
+				// A comment is created elsewhere.
+				// Do not create a node
+				continue;
+			}
+
+			// Node does not exist, create  new one
+			const node = this.createNodeInMap(addr64k);
+
+			while (true) {
+
+				// Get opcode and opcode length
+				const refOpcode = Opcode.getOpcodeAt(this.memory, addr64k);
+				// Check if opcode addresses (other than starting address) have already been analyzed
+				const flowAddr = this.memory.searchAddrWithAttribute(MemAttribute.FLOW_ANALYZED, addr64k + 1, refOpcode.length - 1);
+				// Set memory as analyzed
+				this.memory.addAttributesAt(addr64k, refOpcode.length, MemAttribute.FLOW_ANALYZED | MemAttribute.CODE);
+				this.memory.addAttributeAt(addr64k, MemAttribute.CODE_FIRST);
+				// Now check
+				if (flowAddr != undefined) {
+					// Some analyzes has been done already that assumed that the opcode starts at a different address.
+					this.comments.addAmbiguousComment(addr64k, flowAddr);
+					// The disassembly will stop after that opcode.
+					break;
 				}
 
-				// Now the branch
-				allBranchAddresses.push(branchAddress);
+				// Next address
+				addr64k += refOpcode.length;
+				const memAttrNext = this.memory.getAttributeAt(addr64k);
 
-				// Leave loop
-				break;
+				// Check for branch
+				const flags = refOpcode.flags;
+				if (flags & OpcodeFlag.BRANCH_ADDRESS) {
+					const branchAddress = refOpcode.value;
+					// First natural flow, i.e. the next address.
+					if (!(refOpcode.flags & OpcodeFlag.STOP)) {
+						// Adjust return address (if CALL/RST and not conditional)
+						let skip;
+						while ((skip = this.getSkipForAddress(addr64k))) {
+							// Skip bytes
+							addr64k = (addr64k + skip) & 0xFFFF;
+						}
+						if (!this.bankBorderPassed(node.slot, addr64k))
+							allBranchAddresses.push(addr64k);
+					}
+
+					// Now the branch
+					if (!this.bankBorderPassed(node.slot, branchAddress))
+						allBranchAddresses.push(branchAddress);
+
+					// Leave loop
+					break;
+				}
+
+				// Also stop if end of memory reached
+				if (addr64k > 0xFFFF)
+					break;
+
+				// Check for RET cc
+				if (flags & OpcodeFlag.RET && flags & OpcodeFlag.CONDITIONAL) {
+					// Follow natural flow
+					if (!this.bankBorderPassed(node.slot, addr64k))
+						allBranchAddresses.push(addr64k);
+					break;
+				}
+
+				// Check if already analyzed
+				if (memAttrNext & MemAttribute.FLOW_ANALYZED) {
+					// Everything fine. Code has been already analyzed. Stop.
+					break;
+				}
+
+				// Check for RET or JP
+				if (flags & OpcodeFlag.STOP) {
+					break;
+				}
+
+				// Check for bank border
+				if (this.bankBorderPassed(node.slot, addr64k))
+					break;	// Bank border
 			}
-
-			// Also stop if end of memory reached
-			if (addr64k > 0xFFFF)
-				break;
-
-			// Check for RET cc
-			if (flags & OpcodeFlag.RET && flags & OpcodeFlag.CONDITIONAL) {
-				// Follow natural flow
-				allBranchAddresses.push(addr64k);
-				break;
-			}
-
-			// Check if already analyzed
-			if (memAttrNext & MemAttribute.FLOW_ANALYZED) {
-				// Everything fine. Code has been already analyzed. Stop.
-				break;
-			}
-
-			// Check for RET or JP
-			if (flags & OpcodeFlag.STOP) {
-				break;
-			}
-
-			// Check for bank border
-			if (this.bankBorderPassed(node.slot, addr64k))
-				break;	// Bank border
 		}
-
-		// Now dive into branches
-		for (const targetAddr of allBranchAddresses) {
-			// Check for bank border
-			if (!this.bankBorderPassed(node.slot, targetAddr))
-				this.createNodeForAddress(targetAddr);
-		}
-
-		return node;
 	}
 
 
@@ -531,7 +530,7 @@ export class SmartDisassembler {
 
 			// Next address
 			const lastAddr64k = addr64k;
-			addr64k += opcode.length;
+			addr64k = (addr64k + opcode.length) & 0xFFFF;
 
 			// Check for branch
 			const flags = opcode.flags;
@@ -593,8 +592,8 @@ export class SmartDisassembler {
 			}
 
 			// Also stop if end of memory reached
-			if (addr64k > 0xFFFF)
-				break;
+			// if (addr64k > 0xFFFF)
+			// 	break;
 
 			// Also stop if next node starts
 			const followingNode = this.nodes.get(addr64k)!;
@@ -961,6 +960,9 @@ export class SmartDisassembler {
 	 * @returns The label as string e.g. "SUB_0604.LOOP" or "LBL_0788+1" (in case address points to 0x0789 inside an instruction) or "$C000".
 	 */
 	protected getLabelFromSlotForAddress(blockNode: AsmNode, slot: number, addr64k: number): string {
+		if (blockNode == undefined)	// TODO: remove
+			console.log('undef');
+
 		// Check if no bank border
 		if (this.bankBorderPassed(slot, addr64k)) {
 			// Just return the address as hex string
