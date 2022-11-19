@@ -733,14 +733,16 @@ suite('Disassembler - RenderText', () => {
 
 
 
-		suite('65536 nodes', () => {
+		suite('1000 nodes', () => {
 			// Disassemble. To reach maximum number of nodes fill
 			// all memory with 0xFF which is RST 38h.
 			function disassemble(startAddrs64k: number[]): string {
 				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
 				disasm.setCurrentSlots([0]);
 				const bin = new Uint8Array(0x10000);
-				bin.fill(0xFF);
+				bin.fill(0);
+				bin.fill(0xFF, 0, 500);
+				bin.fill(0xFF, 0x8000, 0x8000+500);
 				disasm.setMemory(0, bin);
 
 				disasm.getFlowGraph(startAddrs64k, []);
@@ -758,18 +760,88 @@ suite('Disassembler - RenderText', () => {
 
 			test('start at 0x0000', () => {
 				const text = disassemble([0x0000]);
+				// Remove all empty lines
+				const nText = text.replace(/\n+/g, '\n');
 
-				const cText = c(text).split('\n');
-				for (let addr64k = 0xFFFF; addr64k < 0x10000; addr64k++) {
-					let line = addr64k * 2;
+				const cText = c(nText).split('\n');
+				for (let addr64k = 0x0000; addr64k < 0x10000; addr64k++) {
+					let line = addr64k;
 					// 1 line with RST_38 label
 					if (addr64k >= 0x38) {
 						line++;	// Skip label
 					}
-					const expected = Utility.getHexString(addr64k,4) + ".1 FF RST RST_38";
+					// Expected line
+					let expected;
+					if ((addr64k & 0x7FFF) < 500) {
+						expected = Utility.getHexString(addr64k, 4) + ".1 FF RST RST_38";
+					}
+					else {
+						expected = Utility.getHexString(addr64k, 4) + ".1 00 NOP";
+					}
+					// Check
 					const actual = cText[line];
 					assert.equal(actual, expected);
 				}
+			});
+
+			test('start at 0x8000 (0x0000)', () => {
+				const text = disassemble([0x8000, 0x0000]);
+				// Remove all empty lines
+				const nText = text.replace(/\n+/g, '\n');
+
+				const cText = c(nText).split('\n');
+				for (let addr64k = 0x0000; addr64k < 0x10000; addr64k++) {
+					let line = addr64k;
+					// 1 line with RST_38 label
+					if (addr64k >= 0x38) {
+						line++;	// Skip label
+					}
+					// Expected line
+					let expected;
+					if ((addr64k & 0x7FFF) < 500) {
+						expected = Utility.getHexString(addr64k, 4) + ".1 FF RST RST_38";
+					}
+					else {
+						expected = Utility.getHexString(addr64k, 4) + ".1 00 NOP";
+					}
+					// Check
+					const actual = cText[line];
+					assert.equal(actual, expected);
+				}
+			});
+		});
+
+
+		suite('Boundary: 0xFFFF -> 0x0000', () => {
+			// Note: disassembly does not continue from 0xFFFF to 0x0000
+			test('last address RST', () => {
+				const startAddrs64k = [0xFFFE];
+				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
+				disasm.setCurrentSlots([0]);
+				const bin = new Uint8Array(0x10000);
+				bin.fill(0xFF);
+				bin[0x0038] = 0xC9;	// RET
+				disasm.setMemory(0, bin);
+
+				disasm.getFlowGraph(startAddrs64k, []);
+				disasm.disassembleNodes();
+				// Get all nodes for the depth
+				const nodes = new Set<AsmNode>();
+				const startNodes = disasm.getNodesForAddresses(startAddrs64k);
+				for (const node of startNodes) {
+					const sub = new Subroutine(node);
+					sub.getAllNodesRecursively(65536, nodes);
+				}
+				const text = r.renderNodes(nodes);
+
+				assert.equal(c(text), c(
+					`0038.1 RST_38:
+0038.1 C9 RET
+
+FFFE.1 FF RST RST_38
+
+FFFF.1 FF RST RST_38
+`));
 			});
 		});
 

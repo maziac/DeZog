@@ -530,7 +530,7 @@ export class SmartDisassembler {
 
 			// Next address
 			const lastAddr64k = addr64k;
-			addr64k = (addr64k + opcode.length) & 0xFFFF;
+			addr64k += opcode.length;
 
 			// Check for branch
 			const flags = opcode.flags;
@@ -547,13 +547,15 @@ export class SmartDisassembler {
 						const skipOpcode = new SkipPseudoOpcode(data);
 						node.instructions.push(skipOpcode)
 						// Skip bytes
-						addr64k = (addr64k + skip) & 0xFFFF;
+						addr64k += skip;
 					}
 					// Store
-					const followingNode = this.getNodeForFill(nodeSlot, lastAddr64k, addr64k);
-					Utility.assert(followingNode);
-					node.branchNodes.push(followingNode);
-					followingNode.predecessors.push(node);
+					if (addr64k < 0x10000) {
+						const followingNode = this.getNodeForFill(nodeSlot, lastAddr64k, addr64k & 0xFFFF);
+						Utility.assert(followingNode);
+						node.branchNodes.push(followingNode);
+						followingNode.predecessors.push(node);
+					}
 				}
 
 				// Now the branch
@@ -592,8 +594,8 @@ export class SmartDisassembler {
 			}
 
 			// Also stop if end of memory reached
-			// if (addr64k > 0xFFFF)
-			// 	break;
+			 if (addr64k > 0xFFFF)
+			 	break;
 
 			// Also stop if next node starts
 			const followingNode = this.nodes.get(addr64k)!;
