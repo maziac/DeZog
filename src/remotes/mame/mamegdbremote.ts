@@ -621,7 +621,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		}
 
 		// All other registers are not supported
-		throw Error("Changing register " + Z80_REG[regIndex] + "is not supported by MAME.");
+		throw Error("Changing register " + Z80_REG[regIndex] + " is not supported by MAME.");
 	}
 
 
@@ -796,19 +796,45 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 	/**
 	 * Writes a memory dump.
+	 * There seems to be a size limit for write. Therefore the memory is
+	 * split into chunks.
 	 * @param address The memory start address.
 	 * @param dataArray The data to write.
 	 */
 	public async writeMemoryDump(address: number, dataArray: Uint8Array): Promise<void> {
-		// The command
-		const size = dataArray.length;
-		let cmd = 'M' + address.toString(16) + ',' + size.toString(16) + ':';
-		// Convert memory array into a string (cmd)
-		for (const val of dataArray) {
-			cmd += Utility.getHexString(val, 2);
+		// // The command
+		// const size = dataArray.length;
+		// let cmd = 'M' + address.toString(16) + ',' + size.toString(16) + ':';
+		// // Convert memory array into a string (cmd)
+		// for (const val of dataArray) {
+		// 	cmd += Utility.getHexString(val, 2);
+		// }
+		// // Send to MAME
+		// await this.sendPacketDataOk(cmd);
+
+
+		const chunkSize = 2000;
+		let totalSize = dataArray.length;
+		let i = 0;
+		while (totalSize > 0) {
+			// Next sending size
+			let sendSize = totalSize;
+			if (sendSize > chunkSize)
+				sendSize = chunkSize;
+			// The command
+			let cmd = 'M' + address.toString(16) + ',' + sendSize.toString(16) + ':';
+			// Convert memory array into a string (cmd)
+			const end = i + sendSize;
+			for (; i < end; i++) {
+				const val = dataArray[i];
+				cmd += Utility.getHexString(val, 2);
+			}
+			// Send to MAME
+			await this.sendPacketDataOk(cmd);
+			// Next
+			totalSize -= sendSize;
+			address += sendSize;
 		}
-		// Sed to MAME
-		await this.sendPacketDataOk(cmd);
 	}
 
 
@@ -837,6 +863,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		let address = MemBank16k.BANK16K_SIZE;
 		for (const memBank of snaFile.memBanks) {
 			// Write memory
+	//		memBank.data = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]); // TODO
 			await this.writeMemoryDump(address, memBank.data);
 			// Next
 			address += MemBank16k.BANK16K_SIZE;
@@ -855,9 +882,11 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		await this.sendDzrpCmdSetRegister(Z80_REG.BC2, snaFile.bc2);
 		await this.sendDzrpCmdSetRegister(Z80_REG.DE2, snaFile.de2);
 		await this.sendDzrpCmdSetRegister(Z80_REG.HL2, snaFile.hl2);
-		await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
-		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
-		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
+
+		 // Not supported by MAME:
+		//await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
+		//await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
+		//await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
 	}
 
 
