@@ -573,7 +573,7 @@ The following table gives an overview.
 
 |                     | Internal Z80 Simulator | ZEsarUX | ZX Next  | CSpect   | MAME         |
 |:------------------------|:-------------------|:--------|:---------|:---------|:-------------|
-| State                   | stable             | stable  | stable   | stable   | experimental/stable |
+| State                   | stable             | stable  | stable   | stable   | stable |
 | Breakpoints             | yes                | yes     | yes      | yes      | yes          |
 | Break reason output     | yes                | no      | yes      | yes      | yes          |
 | Conditional Breakpoints | yes                | yes     | yes 6)   | yes 6)   | yes 6)       |

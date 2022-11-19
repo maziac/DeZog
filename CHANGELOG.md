@@ -30,6 +30,7 @@
 	- "-label" now also prints the bank of a label.
 	- "-mvw" for viewing words instead of bytes is now shown in the debug console help.
 - The order of loading has been changed: First "load" (nex or sna file) then "loadObjs".
+- Added "z88dkv2" parsing of .lis files for z88dk v2.2 and above.
 
 
 # 2.7.4
