@@ -1,6 +1,7 @@
 .vscode/**/*
 .gitignore
 .vscodeignore
+.VSCodeCounter/
 .github/**/*
 .travis.yml
 appveyor.yml
