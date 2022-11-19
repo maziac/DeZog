@@ -588,7 +588,7 @@ The following table gives an overview.
 | Save/restore the state  | yes                | yes     | no       | no       | no           |
 | Output of T-States      | yes                | yes     | no       | no       | no           |
 | Display of sprite attributes/patterns | yes  | yes     | no       | yes      | no           |
-| Load .sna/.nex/.obj file through DeZog | yes | yes     | yes      | yes      | no           |
+| Load .sna/.nex/.obj file through DeZog | yes | yes     | yes      | yes      | yes 7)       |
 | Load .tap file through DeZog | no            | yes     | no       | no       | no           |
 | Run Z80 Unit Tests      | yes                | yes     | no 4)    | yes 3)   | yes 5)       |
 
@@ -605,6 +605,7 @@ Notes:
 - 4 ) Basically unit tests do work on the ZX Next. But they are not so convenient to use because you may need to manually stop the ZX Next between tests.
 - 5 ) There is nothing preventing you from using unit tests, but for a reverse engineering environment there is little sense in doing unit tests.
 - 6 ) Conditions, ASSERTION and LOGPOINT are evaluated in DeZog, not by the Remote. If used heavily or in a loop this may lead to a slower performance.
+- 7 ) For .sna only the 48k SNA file loading is supported. Furthermore "loadObjs" is supported. But both do work only if the target memory area is RAM. I.e. you can not overwrite the program in ROM.
 
 
 ### The Internal Z80 Simulator

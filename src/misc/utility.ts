@@ -19,7 +19,7 @@ import {HexNumber} from '../settings/settingscustommemory';
  */
 export class Utility {
 
-	/// The rootpath to the project. Used in abs and relative filename functions.
+	/// The root path to the project. Used in abs and relative filename functions.
 	protected static rootPath: string;
 
 	/// The extension's path.

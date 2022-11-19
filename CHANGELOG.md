@@ -31,6 +31,7 @@
 	- "-mvw" for viewing words instead of bytes is now shown in the debug console help.
 - The order of loading has been changed: First "load" (nex or sna file) then "loadObjs".
 - Added "z88dkv2" parsing of .lis files for z88dk v2.2 and above.
+- "mame": does support "load" for 48k sna files and "loadObjs".
 
 
 # 2.7.4

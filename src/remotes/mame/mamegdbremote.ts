@@ -195,7 +195,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	/**
 	 * Closes the socket.
 	 */
-	// TODO: Remove once MAME issue 9578 (https://github.com/mamedev/mame/issues/9578) is clarified
+	// Note: Remove once MAME issue 9578 (https://github.com/mamedev/mame/issues/9578) is clarified
 	protected socketClose(): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
 			const socket = this.socket;
@@ -774,12 +774,12 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 
 	/**
-	 * Reads a memory.
+	 * Sends the command to retrieve a memory dump.
 	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	public async readMemoryDump(addr64k: number, size: number): Promise<Uint8Array> {
+	protected async sendDzrpCmdReadMem(addr64k: number, size: number): Promise<Uint8Array> {
 		const cmd = 'm' + addr64k.toString(16) + ',' + size.toString(16);
 		const resp = await this.sendPacketData(cmd);
 		// Parse the hex values
@@ -795,25 +795,12 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 
 	/**
-	 * Writes a memory dump.
-	 * There seems to be a size limit for write. Therefore the memory is
-	 * split into chunks.
-	 * @param address The memory start address.
+	 * Sends the command to write a memory dump.
+	 * @param addr64k The memory start address (64k).
 	 * @param dataArray The data to write.
-	 */
-	public async writeMemoryDump(address: number, dataArray: Uint8Array): Promise<void> {
-		// // The command
-		// const size = dataArray.length;
-		// let cmd = 'M' + address.toString(16) + ',' + size.toString(16) + ':';
-		// // Convert memory array into a string (cmd)
-		// for (const val of dataArray) {
-		// 	cmd += Utility.getHexString(val, 2);
-		// }
-		// // Send to MAME
-		// await this.sendPacketDataOk(cmd);
-
-
-		const chunkSize = 2000;
+	  */
+	public async sendDzrpCmdWriteMem(addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
+		const chunkSize = 2000;	// empirical value: at least on macos up to 5000 seems safe.
 		let totalSize = dataArray.length;
 		let i = 0;
 		while (totalSize > 0) {
@@ -822,7 +809,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			if (sendSize > chunkSize)
 				sendSize = chunkSize;
 			// The command
-			let cmd = 'M' + address.toString(16) + ',' + sendSize.toString(16) + ':';
+			let cmd = 'M' + addr64k.toString(16) + ',' + sendSize.toString(16) + ':';
 			// Convert memory array into a string (cmd)
 			const end = i + sendSize;
 			for (; i < end; i++) {
@@ -833,10 +820,17 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			await this.sendPacketDataOk(cmd);
 			// Next
 			totalSize -= sendSize;
-			address += sendSize;
+			addr64k += sendSize;
 		}
 	}
 
+
+	/**
+	 * Ignore command.
+	 */
+	protected async sendDzrpCmdClose(): Promise<void> {
+		// Do nothing
+	}
 
 
 	/**
@@ -863,7 +857,6 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		let address = MemBank16k.BANK16K_SIZE;
 		for (const memBank of snaFile.memBanks) {
 			// Write memory
-	//		memBank.data = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]); // TODO
 			await this.writeMemoryDump(address, memBank.data);
 			// Next
 			address += MemBank16k.BANK16K_SIZE;
