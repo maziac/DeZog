@@ -915,6 +915,13 @@ export class DebugSessionClass extends DebugSession {
 	 * Returns the stack frames.
 	 */
 	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, _args: DebugProtocol.StackTraceArguments): Promise<void> {
+		// For the unit tests it happens that if you debug-stepOver the last line (TC_END)spec
+		
+		// a stackTraceRequest is still sent, even when Remote is disposed.
+		if (!Remote) {
+			return;
+		}
+
 		// vscode sometimes sends 2 stack trace requests one after the other. Because the lists are cleared this can lead to race conditions.
 		this.stackTraceResponses.push(response);
 		if (this.stackTraceResponses.length > 1)

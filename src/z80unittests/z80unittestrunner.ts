@@ -15,6 +15,7 @@ import {PromiseCallbacks} from '../misc/promisecallbacks';
 import {DiagnosticsHandler} from '../diagnosticshandler';
 import {GenericWatchpoint} from '../genericwatchpoint';
 import {ZxNextSerialRemote} from '../remotes/dzrpbuffer/zxnextserialremote';
+import {TerminatedEvent} from '@vscode/debugadapter';
 
 
 
@@ -751,11 +752,9 @@ export class Z80UnitTestRunner {
 
 			// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
 			if (this.debugAdapter) {
-				//Remote.stopProcessing();	// To show the coverage after continue to end
-				//this.debugAdapter.sendEventBreakAndUpdate();
-				//await Utility.timeout(1);
 				if (Remote)
 					await Remote.waitForBeingQuietFor(300);
+				this.debugAdapter.sendEvent(new TerminatedEvent());
 			}
 
 			// For reverse debugging.
