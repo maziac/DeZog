@@ -1519,6 +1519,29 @@ export class Utility {
 
 
 	/**
+	 * Returns a string with max number of characters.
+	 * If s is smaller than max then the complete string s is returned.
+	 * If s is bigger '...' is appended but still the total string is not
+	 * bigger than max.
+	 * @param s The input string, e.g. "abcdefg".
+	 * @param max The max number of chars, e.g. 6.
+	 * @return The cutoff string, e.g. "abc..."
+	 */
+	public static maxString(s: string, max: number) {
+		const len = s.length;
+		if (len <= max)
+			return s;
+		// Cut off
+		const append = '...';
+		const appendLength = append.length;
+		if (max < appendLength)
+			return s.substring(0, max);
+		const res = s.substring(0, max - appendLength) + append;
+		return res;
+	}
+
+
+	/**
 	 * Deep copies the the src object to the target.
 	 * Of course, only properties, o functions.
 	 * @param src Source object.
