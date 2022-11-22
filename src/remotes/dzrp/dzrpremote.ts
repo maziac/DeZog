@@ -246,7 +246,6 @@ export class DzrpRemote extends RemoteBase {
 				default:
 					// Error: Unknown type
 					throw Error("Unknown machine type " + resp.machineType + " received.");
-					break;
 			}
 			this.memoryModel.init();
 

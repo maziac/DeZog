@@ -762,8 +762,8 @@ export class Settings {
 
 		// Code coverage
 		if (launchCfg.history.codeCoverageEnabled == undefined) {
-			if (launchCfg.remoteType == 'cspect') {
-				// not supported by cspect
+			if (launchCfg.remoteType == 'cspect' || launchCfg.remoteType == 'mame') {
+				// not supported by cspect and mame
 				launchCfg.history.codeCoverageEnabled = false;
 			}
 			else {
