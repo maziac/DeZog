@@ -104,7 +104,7 @@ export class MetaBlock {
 	 * @returns An array of address/value triples with the changed
 	 * [address, value].
 	 */
-	public getChangedValues() {
+	public getChangedValues(): Array<number[]> {
 		// After first update both data is set.
 		Utility.assert(this.data);
 		Utility.assert(this.prevData);

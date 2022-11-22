@@ -322,28 +322,28 @@ export class MemoryDumpView extends BaseView {
 			// Update only the changed values
 
 			// Loop all blocks
-			let changed = false;
+			const allAddrValsText: any[] = [];
 			for (const metaBlock of this.memDump.metaBlocks) {
 				// Get changes
 				const addrValues = metaBlock.getChangedValues();
 				// Convert values to [address, hex-text , ascii-text]
-				const addrValsText = addrValues.map(addrVal => [
-					addrVal[0],
-					Utility.getHexString(addrVal[1], 2),
-					Utility.getHTMLChar(addrVal[1])
-				]);
-				// Send to web view
-				const msg = {
-					command: 'memoryChanged',
-					addressValues: addrValsText	// Is also sent if empty to reset the changed values.
-				};
-				this.sendMessageToWebView(msg);
-				if (addrValues.length > 0)
-					changed = true;
+				addrValues.forEach(addrVal => {
+					allAddrValsText.push([
+						addrVal[0],
+						Utility.getHexString(addrVal[1], 2),
+						Utility.getHTMLChar(addrVal[1])
+					]);
+				});
 			}
+			// Send to web view
+			const msg = {
+				command: 'memoryChanged',
+				addressValues: allAddrValsText	// Is also sent if empty to reset the changed values.
+			};
+			this.sendMessageToWebView(msg);
 
 			// Also update the search results
-			if (changed) {
+			if (allAddrValsText.length > 0) {
 				this.updateSearchResults();
 			}
 		}
