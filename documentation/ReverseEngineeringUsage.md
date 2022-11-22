@@ -72,7 +72,7 @@ The rest of the disassembly will also use the new labels.
 
 Notes:
 - The reloading of the list file takes place while the debug session is still active. I.e. you can simply continue debugging.
-- Instead of manual reloading it is also possible to add ``"reloadOnSave": true`` to "revEng". In this case the labels will be reloaded automatically every time "pacman.list" is saved.
+- Instead of manual reloading it is also possible to add ```"reloadOnSave": true``` to "revEng". In this case the labels will be reloaded automatically every time "pacman.list" is saved.
 
 
 # Disassembly
@@ -85,7 +85,7 @@ It starts with the first PC address it encounters. If all the code is accessible
 
 There are a few caveats, however:
 - Interrupts: The interrupt address is not known at the beginning. That is, unless you break into the interrupt, DeZog will not be able to disassemble the code.
-- The same is true for ``JP (HL)```. The jump address is only available during runtime. Therefore, DeZog cannot disassemble it before execution.
+- The same is true for ```JP (HL)```. The jump address is only available during runtime. Therefore, DeZog cannot disassemble it before execution.
 - Self-modifying code. DeZog does not fetch and disassemble the code at each step. Therefore, if the code is self-modifying, you may not see the correct disassembly. If the code looks suspicious, you can manually refresh the disassembly by clicking the refresh button ![](images/ReverseEngineeringUsage/disasm_refresh.jpg) at the top right of the disasm.list file.
 - For the same reason (Dezog does not fetch and disassemble the code at each step), the data portions in the disassembly may not be up-to-date. If in doubt, update the disassembly again.
 
@@ -103,10 +103,10 @@ which is **always** up-to-date.
 
 If you run the program and then manually pause or a breakpoint is reached, DeZog may not be able to show you the previous lines because it simply does not know which addresses have been executed recently.
 In such cases, you will see the disassembly directly from the current PC without any previous lines.
-But of course, you often want to know how we got here.
+But of course, you often want to know how you got here.
 There are a few ways you can deal with this:
-(a) Use 'zsim: the internal simulator keeps a list of the most recently executed addresses used by DeZog for disassembly.
-b) Use the command '-dasm' in the debug console: Simply specify an address slightly before that of the current PC (program counter). 'dasm' will perform a brute force disassembly. But this only works if the 'dasm' address is not too far away from the current PC. And of course it can fail because Z80 commands can be up to 4 bytes long, so you might choose an address somewhere in the middle of a command. In that case, try a slightly different address.
+- a) Use 'zsim: the internal simulator keeps a list of the most recently executed addresses used by DeZog for disassembly.
+- b) Use the command '-dasm' in the debug console: Simply specify an address slightly before that of the current PC (program counter). 'dasm' will perform a brute force disassembly. But this only works if the 'dasm' address is not too far away from the current PC. And of course it can fail because Z80 commands can be up to 4 bytes long, so you might choose an address somewhere in the middle of a command. In that case, try a slightly different address.
 c) Use '-dasm', but also take a look at the callstack and use the address from the callstack.
 
 
@@ -121,7 +121,7 @@ Breakpoints in the disasm.list file are deleted after a debug session.
 If you need to set a breakpoint in a location that is not present in either the disassembly or the list file, you can do the following:
 1. in the list file, simply enter the address (in hex) at the beginning of a line.
 2. save the list file
-3. in the command palette, type: ``DeZog: reload the list file(s).```
+3. in the command palette, type: ```DeZog: reload the list file(s).```
 4. set a breakpoint in the line of the address. The picture shows this for a breakpoint at address 0x8000:
 ![](images/ReverseEngineeringUsage/rev_eng_bp_in_listfile.jpg)
 
@@ -233,7 +233,7 @@ Flow chart example:
 Call graph example:
 ![](images/ReverseEngineeringUsage/callgraph_selection.gif)
 
-Smart disassembly example:
+Smart disassembly example: TODO: update gif:
 ![](images/ReverseEngineeringUsage/smart_disassembly_selection.gif)
 
 Hint:

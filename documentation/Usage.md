@@ -464,7 +464,7 @@ See [ReverseEngineeringUsage.md](https://github.com/maziac/DeZog/blob/master/des
 ~~~
 
 - path: The path to the .list file.
-- reloadOnSave: If true all list files (and labels) will be automatically re-loaded if this list file has been changed. Otherwise the reload has to be done manually through the command palette. Default is false.
+- reloadOnSave: If true all list files (and labels) will be automatically re-loaded if this list file has been changed. Otherwise the reload has to be done manually through the command palette (```DeZog: reload the list file(s).```). Default is false.
 
 
 **Other assemblers:**
@@ -605,7 +605,7 @@ Notes:
 - 4 ) Basically unit tests do work on the ZX Next. But they are not so convenient to use because you may need to manually stop the ZX Next between tests.
 - 5 ) There is nothing preventing you from using unit tests, but for a reverse engineering environment there is little sense in doing unit tests.
 - 6 ) Conditions, ASSERTION and LOGPOINT are evaluated in DeZog, not by the Remote. If used heavily or in a loop this may lead to a slower performance.
-- 7 ) For .sna only the 48k SNA file loading is supported. Furthermore "loadObjs" is supported. But both do work only if the target memory area is RAM. I.e. you can not overwrite the program in ROM.
+- 7 ) For .sna files only the 48k SNA file loading is supported. Furthermore "loadObjs" is supported. But both do work only if the target memory area is RAM. I.e. you can not overwrite the program in ROM.
 
 
 ### The Internal Z80 Simulator
