@@ -442,12 +442,13 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		if (srcMemModel == SjasmplusMemoryModel.NONE)
 			this.throwError("Unsupported sjasmplus memory model (DEVICE).");
 
-		// Check for unknown, also used by the unit tests to just find the labels.
+		// Check for unknown e.g. used by MAME. Also used by the unit tests to just find the labels.
 		const destMemModel = this.memoryModel;
 		if (destMemModel instanceof MemoryModelUnknown) {
 			// Just pass through
 			this.funcConvertBank = (address: number, bank: number) => {
-				return bank;
+				//return bank;	// Note: does not work for MAME
+				return 0;	// Same as MemoryModelAllRam
 			};
 			return;
 		}
