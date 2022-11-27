@@ -228,8 +228,7 @@ suite('Labels (sjasmplus)', () => {
 				}]
 			};
 			lbls = new LabelsClass();
-			lbls.readListFiles(config, new MemoryModelUnknown());
-			//lbls.readListFiles(config, new MemoryModelUnknown());
+			lbls.readListFiles(config, new MemoryModelZxNext());
 		});
 
 		test('Start addresses found', () => {
