@@ -214,7 +214,7 @@ list file also for the ROM area you can add it here.
 Please have a look at the [Assembler Configuration](#assembler-configuration) section.
 - startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=true). Please note: If this is set to true and a .tap file is loaded it will stop at address 0x0000 as this is where ZEsarUX tape load emulation starts.
 - reverseDebugInstructionCount: The number of lines you can step back during reverse debug. Use 0 to disable.
-- codeCoverageEnabled: If enabled (default) code coverage information is displayed. I.e. all source codes lines that have been executed are highlighted in green. You can clear the code coverage display with the command palette "dezog: Clear current code coverage decoration".
+- codeCoverageEnabled: If enabled code coverage information is displayed. I.e. all source codes lines that have been executed are highlighted in green. You can clear the code coverage display with the command palette "dezog: Clear current code coverage decoration". Defaults to false for 'cspect' and 'mame' otherwise true.
 - commandsAfterLaunch: Here you can enter commands that are executed right after the launch and connection of the debugger. These commands are the same as you can enter in the debug console. E.g. you can use "-sprites" to show all sprites in case of a ZX Next program. See [Debug Console](#debug-console).
 - disassemblerArgs: Arguments that are be passed to the internal disassembler that displays in the VARIABLES pane.
     - numberOfLines: The number of lines displayed in the disassembly.
