@@ -253,7 +253,9 @@ export class Utility {
 					// If (it should not but if) it would be called asynchronously the
 					// addressString would simply be not decoded.
 					try {
-						res = Remote.getRegisterValue(p1);
+						const result = Remote.getRegisterValue(p1);
+						if (!isNaN(result))
+							res = result;
 					}
 					catch {}
 				}
@@ -845,6 +847,8 @@ export class Utility {
 		//await Remote.getRegisters();
 		// Get value of register
 		const value = Remote.getRegisterValue(reg);
+		if (isNaN(value))
+			return "?";
 
 		// do the formatting
 		let rLen;

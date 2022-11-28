@@ -619,6 +619,8 @@ export class RemoteBase extends EventEmitter {
 	 * Note: The registers should already be present (cached).
 	 * I.e. there is no communication with the remote emulator involved.
 	 * @param register The register to return, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
+	 * Returns NaN if the register name does not exist or if register cannot
+	 * be obtained from remote.
 	 */
 	public getRegisterValue(register: string): number {
 		const value = Z80Registers.getRegValueByName(register);

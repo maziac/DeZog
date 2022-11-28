@@ -337,8 +337,12 @@ export class Z80RegistersClass {
 		// Get value of register
 		const value = this.decoder.getRegValueByName(reg, this.RegisterCache);
 
+		// Return "?" if value cannot be decoded (obtained) from remote
+		if (isNaN(value))
+			return "?";
+
 		// Special handling if IM is not available (e.g. for ZX Next)
-		if (reg == "IM") {
+		if (reg == "IM") { // TODO: Maybe do through decoder
 			if (value == 0xFF)
 				return "?";	// Unknown
 		}
@@ -377,7 +381,8 @@ export class Z80RegistersClass {
 	/**
 	 * Returns the register value as a number.
 	 * @param regName E.g. "BC".
-	 * @returns The value of the register.
+	 * @returns The value of the register or NaN if register cannot be
+	 * obtained from remote.
 	 */
 	public getRegValueByName(regName: string): number {
 		return this.decoder.getRegValueByName(regName, this.RegisterCache);
@@ -387,7 +392,8 @@ export class Z80RegistersClass {
 	/**
 	 * Returns the register value as a number.
 	 * @param reg The register enum.
-	 * @returns The value of the register.
+	 * @returns The value of the register or NaN if register cannot be
+	 * obtained from remote.
 	 */
 	public getRegValue(reg: Z80_REG): number {
 		const name = Z80RegistersClass.registerNames[reg];

@@ -261,6 +261,8 @@ export class StepHistoryClass extends EventEmitter {
 		let regText = '';
 		for (const [regName, prevValue] of regsMap) {
 			const regValue = Z80Registers.decoder.getRegValueByName(regName, line);
+			if (isNaN(regValue))
+				this.continue;
 			// Check if changed
 			if (regValue != prevValue) {
 				let regName2 = '';

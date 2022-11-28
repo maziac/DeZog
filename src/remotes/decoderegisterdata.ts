@@ -64,13 +64,12 @@ export class DecodeRegisterData {
 	/**
 	 * Returns the register value as a number.
 	 * @param regName The register name.
-	 * @returns The value of the register.
+	 * @returns The value of the register or NaN if register cannot be obtained.
 	 */
 	public getRegValueByName(regName: string, data: RegisterData): number {
-		const handler = this.regMap.get(regName.toUpperCase()) || (_data => 0);
-		Utility.assert(handler != undefined, 'Register ' + regName + ' does not exist.');
 		Utility.assert(data);
-		let value = handler(data);
+		const handler = this.regMap.get(regName.toUpperCase()) || (_data => NaN);
+		const value = handler(data);
 		return value;
 	}
 

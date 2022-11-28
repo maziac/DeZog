@@ -53,6 +53,8 @@ export class MemoryRegisterView extends MemoryDumpView {
 			for (let reg of this.registers) {
 				// Get register value
 				const value = Remote.getRegisterValue(reg);
+				if (isNaN(value))
+					continue;
 				// Create new block
 				this.memDump.addBlock(value, 1, '@' + reg);
 			}
@@ -63,6 +65,8 @@ export class MemoryRegisterView extends MemoryDumpView {
 			for (let reg of this.registers) {
 				// Get register value
 				const value = Remote.getRegisterValue(reg);
+				if (isNaN(value))
+					continue;
 				// Change existing mem block
 				this.memDump.changeBlock(i, value, 1);
 				// Throw away old data. (Otherwise there could be situations were the wrong prev value is shown)

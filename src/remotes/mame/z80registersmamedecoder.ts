@@ -93,18 +93,15 @@ export class Z80RegistersMameDecoder extends Z80RegistersStandardDecoder {
 	}
 
 	public parseI(data: RegisterData): number {
-		// TODO: not supported. Report differently?
-		return 0;
+		return NaN;
 	}
 
 	public parseR(data: RegisterData): number {
-		// TODO: not supported. Report differently?
-		return 0;
+		return NaN;
 	}
 
 	public parseIM(data: RegisterData): number {
-		// TODO: not supported. Report differently?
-		return 0;
+		return NaN;
 	}
 
 	public parseSlots(data: RegisterData): number[] {
