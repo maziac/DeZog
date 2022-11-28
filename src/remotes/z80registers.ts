@@ -341,12 +341,6 @@ export class Z80RegistersClass {
 		if (isNaN(value))
 			return "?";
 
-		// Special handling if IM is not available (e.g. for ZX Next)
-		if (reg == "IM") { // TODO: Maybe do through decoder
-			if (value == 0xFF)
-				return "?";	// Unknown
-		}
-
 		// do the formatting
 		let rLen = reg.length;
 		if (reg[rLen - 1] == '\'') --rLen;	// Don't count the "'" in the register name

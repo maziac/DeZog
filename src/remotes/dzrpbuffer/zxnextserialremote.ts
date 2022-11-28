@@ -8,6 +8,8 @@ import {GenericBreakpoint, GenericWatchpoint} from '../../genericwatchpoint';
 import {Opcode, OpcodeFlag} from '../../disassembler/opcode';
 import {Z80Registers, Z80RegistersClass} from '../z80registers';
 import {SerialPort} from 'serialport';
+import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
+import {Z80RegistersZxNextDecoder} from './z80registerszxnextdecoder';
 
 
 // Each sent message has to start with this byte.
@@ -72,6 +74,14 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		this.supportsLOGPOINT = true;
 		this.cmdRespTimeoutTime = CMD_RESP_TIMEOUT;
 		console.log('ZxNextSerialRemote: constructor()');
+	}
+
+
+	/**
+	 * Override to create another decoder.
+	 */
+	protected createZ80RegistersDecoder(): Z80RegistersStandardDecoder {
+		return new Z80RegistersZxNextDecoder();
 	}
 
 

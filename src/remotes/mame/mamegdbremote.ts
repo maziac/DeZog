@@ -11,6 +11,7 @@ import {BREAK_REASON_NUMBER, Remote} from '../remotebase';
 import {MemoryModelUnknown} from '../MemoryModel/predefinedmemorymodels';
 import {SnaFile} from '../dzrp/snafile';
 import {MemBank16k} from '../dzrp/membank16k';
+import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 
 
 
@@ -107,6 +108,14 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 
 	/**
+	 * Override to create another decoder.
+	 */
+	protected createZ80RegistersDecoder(): Z80RegistersStandardDecoder {
+		return new Z80RegistersMameDecoder();
+	}
+
+
+	/**
 	 * Call this from 'doInitialization' when a successful connection
 	 * has been opened to the Remote.
 	 * @emits this.emit('initialized') or this.emit('error', Error(...))
@@ -124,7 +133,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			// Load executable
 			await this.loadExecutable();
 
-			Z80Registers.decoder = new Z80RegistersMameDecoder();
+			Z80Registers.decoder = this.createZ80RegistersDecoder();
 
 			// 64k ROM
 			this.memoryModel = new MemoryModelUnknown()

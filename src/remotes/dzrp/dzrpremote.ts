@@ -210,6 +210,14 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
+	 * Override to create another decoder.
+	 */
+	protected createZ80RegistersDecoder(): Z80RegistersStandardDecoder {
+		return new Z80RegistersStandardDecoder();
+	}
+
+
+	/**
 	 * Call this from 'doInitialization' when a successful connection
 	 * has been opened to the Remote.
 	 * @emits this.emit('initialized') or this.emit('error', Error(...))
@@ -224,7 +232,7 @@ export class DzrpRemote extends RemoteBase {
 			// Load executable
 			await this.loadExecutable();
 
-			Z80Registers.decoder = new Z80RegistersStandardDecoder();
+			Z80Registers.decoder = this.createZ80RegistersDecoder();
 			// Set memory model according machine type
 			switch (resp.machineType) {
 				case DzrpMachineType.ZX16K:
