@@ -889,7 +889,7 @@ export class Settings {
 
 		// Check remote type
 		const rType = Settings.launch.remoteType;
-		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame', 'mamegdb']; // TODO: remove mamegdb
+		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("'remoteType': Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
