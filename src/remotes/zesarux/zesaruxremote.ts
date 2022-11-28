@@ -391,18 +391,13 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Note: if in reverse debug mode the function should do nothing and the promise should return the previous value.
 	 * @param register The register to set, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
 	 * @param value The new register value.
-	 * @return Promise with the "real" register value.
 	 */
-	public async setRegisterValue(register: string, value: number): Promise<number> {
-		return new Promise<number>(resolve => {
+	public async setRegisterValue(register: string, value: number) {
+		return new Promise<void>(resolve => {
 			// set value
 			zSocket.send('set-register ' + register + '=' + value, data => {
 				// Get real value (should be the same as the set value)
-				this.getRegistersFromEmulator()
-					.then(() => {
-						const realValue = this.getRegisterValue(register);
-						resolve(realValue);
-					});
+				this.getRegistersFromEmulator().then(() => resolve());
 			});
 		});
 	}

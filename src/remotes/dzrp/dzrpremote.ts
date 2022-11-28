@@ -508,18 +508,14 @@ export class DzrpRemote extends RemoteBase {
 	 * Note: if in reverse debug mode the function should do nothing and the promise should return the previous value.
 	 * @param register The register to set, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
 	 * @param value The new register value.
-	 * @return Promise with the "real" register value.
 	 */
-	public async setRegisterValue(register: string, value: number): Promise<number> {
+	public async setRegisterValue(register: string, value: number) {
 		const index = Z80RegistersClass.getEnumFromName(register) as number;
 		Utility.assert(index != undefined);
 		// Send command to set register
 		await this.sendDzrpCmdSetRegister(index, value);
 		// Send command to get registers
 		await this.getRegistersFromEmulator(); // Not necessary: this.clearRegsAndSlots();
-		// Return
-		const realValue = Z80Registers.getRegValueByName(register);
-		return realValue;
 	}
 
 

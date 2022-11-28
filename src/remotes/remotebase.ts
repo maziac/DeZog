@@ -668,11 +668,9 @@ export class RemoteBase extends EventEmitter {
 	 * Note: if in reverse debug mode the function should do nothing and the promise should return the previous value.
 	 * @param register The register to set, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
 	 * @param value The new register value.
-	 * @return Promise with the "real" register value.
 	 */
-	public async setRegisterValue(register: string, value: number): Promise<number> {
+	public async setRegisterValue(register: string, value: number) {
 		Utility.assert(false);	// override this
-		return 0;
 	}
 
 

@@ -356,7 +356,7 @@ export class Z80RegistersClass {
 
 
 	/**
-	 * Returns the 'letiable' formatted register value.
+	 * Returns the 'variable' formatted register value.
 	 * @param reg The name of the register, e.g. "A" or "BC"
 	 * @returns The formatted string.
 	 */
