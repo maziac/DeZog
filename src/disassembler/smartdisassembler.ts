@@ -961,9 +961,6 @@ export class SmartDisassembler {
 	 * @returns The label as string e.g. "SUB_0604.LOOP" or "LBL_0788+1" (in case address points to 0x0789 inside an instruction) or "$C000".
 	 */
 	protected getLabelFromSlotForAddress(blockNode: AsmNode, slot: number, addr64k: number): string {
-		if (blockNode == undefined)	// TODO: remove
-			console.log('undef');
-
 		// Check if no bank border
 		if (this.bankBorderPassed(slot, addr64k)) {
 			// Just return the address as hex string

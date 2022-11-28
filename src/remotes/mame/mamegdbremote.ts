@@ -21,7 +21,6 @@ const CONNECTION_TIMEOUT = 1000;	// 1 sec
 const CTRL_C = '\x03';
 
 
-// TODO: Remove ? And also z80registersmamedecoder.ts
 /**
  * The representation of a MAME remote.
  * Can handle the MAME gdbstub but only for Z80.
@@ -157,7 +156,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		this.socket.removeAllListeners();
 
 		// Send a k(ill) command
-		// TODO: Remove once MAME issue 9578 (https://github.com/mamedev/mame/issues/9578) 	is clarified:
+		// NOTE: Remove once MAME issue 9578 (https://github.com/mamedev/mame/issues/9578) 	is clarified:
 		this.cmdRespTimeoutTime = 0;	// No response expected for kill command.
 		this.socket.removeAllListeners();
 		try {

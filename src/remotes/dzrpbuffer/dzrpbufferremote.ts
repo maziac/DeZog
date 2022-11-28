@@ -396,15 +396,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	 * The last command sent. Closes the debug session.
 	 */
 	protected async sendDzrpCmdClose(): Promise<void> {
-		try { // TODO: Remove try/catch
-			console.log('sendDzrpCmdClose: start');
-			await this.sendDzrpCmd(DZRP.CMD_CLOSE, undefined, this.initCloseRespTimeoutTime);
-			console.log('sendDzrpCmdClose: end');
-		}
-		catch (e) {
-			console.error("Failed to close debug session: " + e);
-			throw e;
-		}
+		await this.sendDzrpCmd(DZRP.CMD_CLOSE, undefined, this.initCloseRespTimeoutTime);
 	}
 
 
