@@ -620,7 +620,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		}
 
 		// All other registers are not supported
-		throw Error("Changing register " + Z80_REG[regIndex] + " is not supported by MAME.");
+		this.emit('warning', "MAME: Changing register " + Z80_REG[regIndex] + " is not supported.");
 	}
 
 
