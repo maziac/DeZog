@@ -216,7 +216,7 @@ Please have a look at the [Assembler Configuration](#assembler-configuration) se
 - reverseDebugInstructionCount: The number of lines you can step back during reverse debug. Use 0 to disable.
 - codeCoverageEnabled: If enabled code coverage information is displayed. I.e. all source codes lines that have been executed are highlighted in green. You can clear the code coverage display with the command palette "dezog: Clear current code coverage decoration". Defaults to false for 'cspect' and 'mame' otherwise true.
 - commandsAfterLaunch: Here you can enter commands that are executed right after the launch and connection of the debugger. These commands are the same as you can enter in the debug console. E.g. you can use "-sprites" to show all sprites in case of a ZX Next program. See [Debug Console](#debug-console).
-- disassemblerArgs: Arguments that are be passed to the internal disassembler that displays in the VARIABLES pane.
+- disassemblerArgs: Arguments that are be passed to the internal disassembly that is displayed in the VARIABLES pane.
     - numberOfLines: The number of lines displayed in the disassembly.
 - smartDisassemblerArgs: Arguments that are be passed to the smart disassembler used in "Analyze". I.e. the call graph, flow chart and smart (text) disassembly.
     - lowerCase: true = use lower case for the instructions, false = use upper case. Default is 'true'.
@@ -1566,7 +1566,7 @@ ld a,c
 ~~~
 instead: The ASSERTION is on the next line i.e. at the address after the "LD" instruction and thus A is checked correctly.
 
-In the vscode UI ASSERTIoN breakpoints can be turned on or off alltogether in the breakpoints pane:
+In the vscode UI ASSERTION breakpoints can be turned on or off alltogether in the breakpoints pane:
 ![](images/exception_bp_assertion.jpg)
 
 

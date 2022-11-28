@@ -372,7 +372,7 @@ Special types of memory:
 - no-ops (SMH_NOP), unmapped space (SMH_UNMAP): unused memory, writes go nowhere, reads return 0.
 
 
-TODO: Just as reminder:
+Example:
 ~~~
 [MAME]> for k,v in pairs(manager.machine.devices["maincpu"].spaces["program"].map.entries) do print(k,v,v.address_start,v.address_end,v.region, v.read.handlertype, v.read.tag) end
 1       sol.address_map_entry *: 0x7fea3b1f3a68 0       32767   :maincpu        rom     nil

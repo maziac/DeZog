@@ -95,6 +95,7 @@ To keep the disassembly up-to-date most of the time DeZog decides to automatical
 - The PC is at a former unknown, not disassembled, address (e.g. at an interrupt).
 
 Anyhow: If in doubt that the disassembly is recent you can also compare it with the (brute force) disassembly in the VARIABLE pane, e.g.:
+
 ![](images/ReverseEngineeringUsage/variables_disassembly.jpg)
 which is **always** up-to-date.
 
@@ -146,6 +147,7 @@ It provides more analysis features, namely flowcharts, call diagrams and the sma
 
 For all these functions:
 Start Dezog, place the cursor in the source code at a statement, and right-click for "Analyze at Cursor":
+
 ![](images/ReverseEngineeringUsage/analyze_at_cursor.jpg)
 
 Note: It depends a bit on the assembler parser used. Some DeZog parsers allow disassembly directly from a line with a label, others require that there is also an assembly instruction on that line.
@@ -174,12 +176,14 @@ fill_bckg_line:
 ~~~
 
 will result into this call graph:
-![](images/ReverseEngineeringUsage/ReverseEngineeringUsage/callgraph_fill_bckg_line.jpg)
+
+![](images/ReverseEngineeringUsage/callgraph_fill_bckg_line.jpg)
 
 I.e. it is indicated by an arrow that *fill_bckg_line* calls *fill_memory*.
 Furthermore in the bubbles you'll find the start address and the size of the sub routine in bytes.
 
 Here is a more advanced call graph from the main routine:
+
 ![](images/ReverseEngineeringUsage/callgraph_main.jpg).
 
 At the top of the call graph you also find a slider to adjust the shown call graph depth.
@@ -187,10 +191,12 @@ At the top of the call graph you also find a slider to adjust the shown call gra
 
 ## Flow Chart
 
-Here is the flow chart for the same subroutine:
+Here is the flow chart for the above subroutine:
+
 ![](images/ReverseEngineeringUsage/flowchart_fill_bckg_line.jpg)
 
 And here another flowchart of the main routine:
+
 ![](images/ReverseEngineeringUsage/flowchart_main.jpg)
 
 
@@ -199,6 +205,7 @@ And here another flowchart of the main routine:
 The smart disassembly follows the execution flow starting at the specified address and visualizes the calls and jumps with arrows.
 
 A smart disassembly of the *main loop* of the z80 sample program looks like this:
+
 ![](images/ReverseEngineeringUsage/smart_disassembly_arrows.gif)
 
 That is, you will automatically find the referenced *fill_bckg_line* and *inc_fill_colors_ptr* disassembled as well.
@@ -213,6 +220,7 @@ In practice, of course, not all code is reachable with static analysis.
 For example, the interrupt routine or all "JP (HL)" or even modified jumps cannot be followed/disassembled.
 
 Here is a picture of a more complex example code:
+
 ![](images/ReverseEngineeringUsage/smart_disassembly_complex.jpg)
 
 The jumps are visualized by arrows. Backward jumps (loops) within the same subroutine are on the left.
@@ -228,12 +236,15 @@ At the top you will find a slider that allows you to control the call depth of t
 The animated gif below shows how the flowchart is created from a disassembly and how to navigate through the code by selecting the blocks in the flowchart or call diagram.
 
 Flow chart example:
+
 ![](images/ReverseEngineeringUsage/flowchart_selection.gif)
 
 Call graph example:
+
 ![](images/ReverseEngineeringUsage/callgraph_selection.gif)
 
 Smart disassembly example: TODO: update gif:
+
 ![](images/ReverseEngineeringUsage/smart_disassembly_selection.gif)
 
 Hint:
@@ -241,6 +252,7 @@ If the flow chart, call graph or smart disassembly is hidden once you do a selec
 ~~~
 editor.revealIfOpen
 ~~~
+
 ![](images/ReverseEngineeringUsage/analyze_reveal_if_open.jpg)
 
 
