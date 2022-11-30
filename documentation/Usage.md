@@ -730,8 +730,8 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
     - "RAM": One memory area of 64K RAM, no banks.
 	- "ZX16K": ROM and RAM as of the ZX Spectrum 16K.
 	- "ZX48K": ROM and RAM as of the ZX Spectrum 48K.
-	- "ZX128K": Paged memory as of the ZX Spectrum 128K (16k slots/banks).
-	- "ZXNEXT": Paged memory as of the ZX Next (8k slots/banks).
+	- "ZX128K": Paged memory as of the ZX Spectrum 128K (16k slots/banks). Banks R0, R1, 0-7.
+	- "ZXNEXT": Paged memory as of the ZX Next (8k slots/banks). Banks R0a, R0b, R1a, R1b, 0-223. R0a/b and R1a/b is R0 or R1 but sliced in 8k chunks.
     - "COLECOVISION": Memory map for the Coleco Vision (8k slots, no banking).
     - "CUSTOM": For a custom memory layout. See [customMemory](#custommemory).
 - "ulaScreen": true/false. Defaults to false. If enabled it shows the contents of the ZX Spectrum screen.
