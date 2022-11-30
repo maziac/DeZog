@@ -329,7 +329,7 @@ export class DisassemblyClass extends SmartDisassembler {
 			this.addrLineMap.clear();
 			// Render text
 			const renderer = new RenderText(this,
-				(lineNr: number, addr64k: number, bytesCount: number) => {
+				(addr64k: number) => {
 					// Convert to long address
 					const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
 
@@ -340,26 +340,27 @@ export class DisassemblyClass extends SmartDisassembler {
 						render = (entry.size) ? RenderHint.RENDER_NOTHING : RenderHint.RENDER_DATA_AND_DISASSEMBLY;
 					}
 
-					// Add to arrays
-					if (render != RenderHint.RENDER_NOTHING) {
-						while (this.lineAddrArray.length <= lineNr)
-							this.lineAddrArray.push(longAddr);
-						// Add all bytes
-						this.addrLineMap.set(longAddr, lineNr);
-						for (let i = 1; i < bytesCount; i++) {
-							addr64k++;
-							if (addr64k > 0xFFFF)
-								break;	// Overflow from 0xFFFF
-							const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
-							this.addrLineMap.set(longAddr, lineNr);
-						}
-					}
-
 					// Returns:
 					// RENDER_EVERYTHING = Render label, data and disassembly
 					// RENDER_DATA_AND_DISASSEMBLY = Render no label
 					// RENDER_NOTHING = Do not render the current line at all
 					return render;
+				},
+				(lineNr: number, addr64k: number, bytesCount: number) => {
+					// Convert to long address
+					const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
+					// Add to arrays
+					while (this.lineAddrArray.length <= lineNr)
+						this.lineAddrArray.push(longAddr);
+					// Add all bytes
+					this.addrLineMap.set(longAddr, lineNr);
+					for (let i = 1; i < bytesCount; i++) {
+						addr64k++;
+						if (addr64k > 0xFFFF)
+							break;	// Overflow from 0xFFFF
+						const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
+						this.addrLineMap.set(longAddr, lineNr);
+					}
 				});
 			this.disassemblyText = renderer.renderSync(startNodes, depth);
 		}

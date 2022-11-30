@@ -915,8 +915,8 @@ export class DebugSessionClass extends DebugSession {
 	 * Returns the stack frames.
 	 */
 	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, _args: DebugProtocol.StackTraceArguments): Promise<void> {
-		// For the unit tests it happens that if you debug-stepOver the last line (TC_END)spec
-		
+		// For the unit tests it happens that if you debug-stepOver the last line (TC_END)
+
 		// a stackTraceRequest is still sent, even when Remote is disposed.
 		if (!Remote) {
 			return;

@@ -33,6 +33,16 @@ export class RenderText extends RenderBase {
 
 
 	/** A function that is called on every disassembled line.
+	 * It will check if sourcefile/line already exists for a given address.
+	 * Only used for the normal text disassembly.
+	 * Not by call graph, flow chart or html disassembly.
+	 * Is set by the constructor.
+	 * @param addr64k The address.
+	 * @returns RenderHint The result of the comparison.
+	 */
+	protected funcLineAddressAssociation?: (addr64k: number) => RenderHint;
+
+	/** A function that is called on every disassembled line.
 	 * It will associate the code lines with addresses.
 	 * Only used for the normal text disassembly.
 	 * Not by call graph, flow chart or html disassembly.
@@ -41,14 +51,15 @@ export class RenderText extends RenderBase {
 	 * @param addr64k The address.
 	 * @param bytesCount The number of bytes. Every address will be associated with the line number.
 	 */
-	protected funcLineAddressAssociation?: (lineNr: number, addr64k: number, bytesCount: number) => RenderHint;
+	protected funcAssociateLineWithAddress?: (lineNr: number, addr64k: number, bytesCount: number) => void;
 
 
 	/** Constructor.
 	 */
-	constructor(disasm: SmartDisassembler, funcLineAddressAssociation?: (lineNr: number, addr64k: number, bytesCount: number) => RenderHint) {
+	constructor(disasm: SmartDisassembler, funcLineAddressAssociation?: (addr64k: number) => RenderHint, funcAssociateLineWithAddress?: (lineNr: number, addr64k: number, bytesCount: number) => void) {
 		super(disasm);
 		this.funcLineAddressAssociation = funcLineAddressAssociation;
+		this.funcAssociateLineWithAddress = funcAssociateLineWithAddress;
 	}
 
 
@@ -295,11 +306,13 @@ export class RenderText extends RenderBase {
 				countBytes = diffToEnd;
 
 			// Check all bytes if a source file already mentions them
-			let render: RenderHint = RenderHint.RENDER_EVERYTHING;
+			let render = RenderHint.RENDER_EVERYTHING;
 			if (this.funcLineAddressAssociation) {
 				for (let i = 0; i < countBytes; i++) {
-					render = this.funcLineAddressAssociation(lines.length(), dataAddr + i, 1);
-					if (render) {
+					const tmpRender = this.funcLineAddressAssociation(dataAddr + i);
+					if (i == 0)
+						render = tmpRender;
+					if (tmpRender == RenderHint.RENDER_NOTHING) {
 						// Show not all
 						countBytes = i;
 						break;
@@ -307,9 +320,9 @@ export class RenderText extends RenderBase {
 				}
 			}
 
-			if (countBytes) {
+			if (countBytes > 0) {
 				// Print the label
-				if (render == RenderHint.RENDER_EVERYTHING) {
+				if (render === RenderHint.RENDER_EVERYTHING) {
 					let label = this.disasm.getLabelForAddr64k(dataAddr);
 					if (!label)
 						label = this.disasm.getOtherLabel(dataAddr);
@@ -321,9 +334,11 @@ export class RenderText extends RenderBase {
 				}
 
 				// Print the data
-				if (render != RenderHint.RENDER_NOTHING) {
-					const line = this.getCompleteDataLine(dataAddr, countBytes);
-					lines.addLine(line);
+				const line = this.getCompleteDataLine(dataAddr, countBytes);
+				lines.addLine(line);
+				// Associate line(s) with addresses
+				if (this.funcAssociateLineWithAddress) {
+					this.funcAssociateLineWithAddress(lines.length()-1, addr64k, countBytes);
 				}
 			}
 
@@ -415,7 +430,7 @@ export class RenderText extends RenderBase {
 			if (label) {
 				// Check if label should be shown at all
 				if (this.funcLineAddressAssociation) {
-					render = this.funcLineAddressAssociation(lines.length(), addr64k, 0);
+					render = this.funcLineAddressAssociation(addr64k);
 				}
 				if (render == RenderHint.RENDER_EVERYTHING) {
 					// Check if local label.
@@ -438,6 +453,11 @@ export class RenderText extends RenderBase {
 					}
 					// Store
 					lines.addLine(labelText);
+
+					// Associate line(s) with address
+					if (this.funcAssociateLineWithAddress) {
+						this.funcAssociateLineWithAddress(lines.length()-1, addr64k, 0);
+					}
 				}
 			}
 
@@ -447,9 +467,8 @@ export class RenderText extends RenderBase {
 				// Associate line and address
 				const len = opcode.length;
 				if (this.funcLineAddressAssociation) {
-					render = this.funcLineAddressAssociation(lines.length(), addr64k, len);
+					render = this.funcLineAddressAssociation(addr64k);
 				}
-
 				// Only render if no source file exists with the same address
 				if (render != RenderHint.RENDER_NOTHING) {
 					// First print comment(s)
@@ -473,6 +492,11 @@ export class RenderText extends RenderBase {
 						emphasizeStartNode = false;
 					}
 					lines.addLine(hrefInstrText);
+
+					// Associate line(s) with addresses
+					if (this.funcAssociateLineWithAddress) {
+						this.funcAssociateLineWithAddress(lines.length()-1, addr64k, len);
+					}
 				}
 
 				// Next
