@@ -701,18 +701,17 @@ export class ZesaruxSocket extends Socket {
 			// Terminate connection
 			LogTransport.log('Quitting:');
 			this.setTimeout(QUIT_TIMEOUT);
-			this.send('\n');	// Just for the case that we are waiting on a breakpoint.
-			this.send('cpu-history enabled no', () => {}, true);	// NOSONAR
-			this.send('cpu-code-coverage enabled no', () => {}, true);	// NOSONAR
-			this.send('extended-stack enabled no', () => {}, true);	// NOSONAR
-			this.send('clear-membreakpoints');
-			this.send('disable-breakpoints', () => {
-				this.send('quit');
-				// Close connection (ZEsarUX also closes the connection)
-				//zSocket.end(); // "end()" takes too long > 1 s
-				zSocket.destroy();
+			await this.sendAwait('\n');	// Just for the case that we are waiting on a breakpoint.
+			await this.sendAwait('cpu-history enabled no', true);
+			await this.sendAwait('cpu-code-coverage enabled no', true);
+			await this.sendAwait('extended-stack enabled no', true);
+			await this.sendAwait('clear-membreakpoints');
+			await this.sendAwait('disable-breakpoints');
+			await this.sendAwait('quit');
+			// Close connection (ZEsarUX also closes the connection)
+			//zSocket.end(); // "end()" takes too long > 1 s
+			zSocket.destroy();
 
-			});
 			return;
 		}
 

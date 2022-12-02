@@ -516,7 +516,7 @@ export class ZesaruxRemote extends RemoteBase {
 				await this.getRegistersFromEmulator();
 				await this.getCallStackFromEmulator();
 				// Handle code coverage
-				this.handleCodeCoverage();
+				await this.handleCodeCoverage();
 				// The reason is the 2nd line
 				let breakReasonString = this.getBreakReason(text);
 
@@ -585,7 +585,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Or 'undefined' if no reason.
 	 */
 	public async stepOver(): Promise<string | undefined> {
-		return new Promise<string | undefined>(resolve => {
+		return new Promise<string | undefined>(async resolve => {
 			// Zesarux is very special in the 'step-over' behavior.
 			// In case of e.g a 'jp cc, addr' it will never return
 			// if the condition is met because
@@ -605,72 +605,75 @@ export class ZesaruxRemote extends RemoteBase {
 			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
 
 			const pc = Z80Registers.getPC();
-			zSocket.send('disassemble ' + pc, (disasm: string) => {
-				// Check if this was a "CALL something" or "CALL n/z,something"
-				const opcode = disasm.substring(7, 7+4);
+			const disasm = await zSocket.sendAwait('disassemble ' + pc);
+			// Check if this was a "CALL something" or "CALL n/z,something"
+			const opcode = disasm.substring(7, 7+4);
 
-				// For RST and CALL we break when SP reaches the current SP again.
-				// This is better than setting a PC breakpoint. A PC breakpoint is maybe never
-				// reached if the stack is manipulated.
-				// A SP breakpoint might be hit when the stack is being manipulated, but at least it
-				// is hit and does not run forever.
-				if (opcode == "RST " || opcode == "CALL") {
-					// Set condition
-					const sp = Z80Registers.getSP();
-					const condition = 'SP>=' + sp;
-					// We do a "run" instead of a step-into/over
-					// Set action first (no action).
-					const bpId = ZesaruxRemote.STEP_BREAKPOINT_ID;
+			// For RST and CALL we break when SP reaches the current SP again.
+			// This is better than setting a PC breakpoint. A PC breakpoint is maybe never
+			// reached if the stack is manipulated.
+			// A SP breakpoint might be hit when the stack is being manipulated, but at least it
+			// is hit and does not run forever.
+			if (opcode == "RST " || opcode == "CALL") {
+				// Set condition
+				const sp = Z80Registers.getSP();
+				const condition = 'SP>=' + sp;
+				// We do a "run" instead of a step-into/over
+				// Set action first (no action).
+				const bpId = ZesaruxRemote.STEP_BREAKPOINT_ID;
+				// Clear register cache
+				//Z80Registers.clearCache();
+				// Note "prints" is required, so that a normal step over will not produce a breakpoint decoration.
+				await zSocket.sendAwait('set-breakpointaction ' + bpId);
+					// set the breakpoint
+				await zSocket.sendAwait('set-breakpoint ' + bpId + ' ' + condition);
+					// enable breakpoint
+				await zSocket.sendAwait('enable-breakpoint ' + bpId,);
+				// Run
+				zSocket.sendInterruptableRunCmd(async text => {
+					// (could take some time, e.g. until a breakpoint is hit)
 					// Clear register cache
-					//Z80Registers.clearCache();
-					// Note "prints" is required, so that a normal step over will not produce a breakpoint decoration.
-					zSocket.send('set-breakpointaction ' + bpId + ' prints step-over', () => {
-						// set the breakpoint
-						zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
-							// enable breakpoint
-							zSocket.send('enable-breakpoint ' + bpId, () => {
-								// Run
-								zSocket.sendInterruptableRunCmd(async text => {
-									// (could take some time, e.g. until a breakpoint is hit)
-									// Clear register cache
-									await this.getRegistersFromEmulator();
-									await this.getCallStackFromEmulator();
-									// Handle code coverage
-									this.handleCodeCoverage();
-									// The break reason is in the returned text
-									const breakReasonString = this.getBreakReason(text);
-									// Disable breakpoint
-									zSocket.send('disable-breakpoint ' + bpId, async () => {
-										// Read the spot history
-										await CpuHistory.getHistorySpotFromRemote();
+					await this.getRegistersFromEmulator();
+					await this.getCallStackFromEmulator();
+					// Handle code coverage
+					await this.handleCodeCoverage();
 
-										this.continueResolve!.resolve(breakReasonString);
-									});
-								});
-							});
-						});
-					});
-				}
-				else {
-					// "normal" opcode, just check for repetitive ones
-					const cmd = (opcode == "LDIR" || opcode == "LDDR" || opcode == "CPIR" || opcode == "CPDR") ? 'cpu-step-over' : 'cpu-step';
-					// Clear register cache
-					//Z80Registers.clearCache();
-					zSocket.send(cmd, async result => {
-						// Clear cache
-						await this.getRegistersFromEmulator();
-						await this.getCallStackFromEmulator();
-						// Handle code coverage
-						this.handleCodeCoverage();
-						// Call handler
-						const breakReasonString = this.getBreakReason(result);
-						// Read the spot history
-						await CpuHistory.getHistorySpotFromRemote();
-						this.continueResolve!.resolve(breakReasonString);
-					});
-				}
-			});
-			//});
+					// Break reason
+					let breakReasonString;
+					// Check if temporary breakpoint hit
+					const spAfter = Z80Registers.getSP();
+					if (spAfter < sp) {
+						// Some other breakpoint was hit.
+						// The break reason is in the returned text
+						breakReasonString = this.getBreakReason(text);
+					}
+
+					// Disable breakpoint
+					await zSocket.sendAwait('disable-breakpoint ' + bpId);
+					// Read the spot history
+					await CpuHistory.getHistorySpotFromRemote();
+
+					this.continueResolve!.resolve(breakReasonString);
+				});
+			}
+			else {
+				// "normal" opcode, just check for repetitive ones
+				const cmd = (opcode == "LDIR" || opcode == "LDDR" || opcode == "CPIR" || opcode == "CPDR") ? 'cpu-step-over' : 'cpu-step';
+				// Clear register cache
+				//Z80Registers.clearCache();
+				zSocket.send(cmd, async result => {
+					// Clear cache
+					await this.getRegistersFromEmulator();
+					await this.getCallStackFromEmulator();
+					// Handle code coverage
+					await this.handleCodeCoverage();
+					// Call handler
+					const breakReasonString = this.getBreakReason(result);
+					// Read the spot history
+					await CpuHistory.getHistorySpotFromRemote();
+					this.continueResolve!.resolve(breakReasonString);
+				});
+			}
 		});
 	}
 
@@ -692,7 +695,7 @@ export class ZesaruxRemote extends RemoteBase {
 				await this.getRegistersFromEmulator();
 				await this.getCallStackFromEmulator();
 				// Handle code coverage
-				this.handleCodeCoverage();
+				await this.handleCodeCoverage();
 				// Read the spot history
 				await CpuHistory.getHistorySpotFromRemote();
 				this.continueResolve!.resolve(undefined);
@@ -706,11 +709,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * time.
 	 */
 	public async resetTstates(): Promise<void> {
-		return new Promise<void>(resolve => {
-			zSocket.send('reset-tstates-partial', data => {
-				resolve();
-			});
-		});
+		await zSocket.sendAwait('reset-tstates-partial');
 	}
 
 
@@ -745,39 +744,37 @@ export class ZesaruxRemote extends RemoteBase {
 	/**
 	 * Reads the coverage addresses and clears them in ZEsarUX.
 	 */
-	protected handleCodeCoverage() {
+	protected async handleCodeCoverage(): Promise<void> {
 		// Check if code coverage is enabled
 		if (!Settings.launch.history.codeCoverageEnabled)
 			return;
 
 		// Get coverage
-		zSocket.send('cpu-code-coverage get', data => {
-			// Check for error
-			if (data.startsWith('Error'))
-				return;
-			// Get slots
-			//this.getRegisters().then(() => {
-			// Get current slots
-			const slots = Z80Registers.getSlots();
-			// Parse data and collect addresses
-			const addresses = new Set<number>();
-			const length = data.length;
-			for (let k = 0; k < length; k += 5) {
-				const addressString = data.substr(k, 4);
-				const address = parseInt(addressString, 16);
-				// Change to long address
-				// Note: this is not 100% correct, i.e. if the slots have changed during execution the wrong values are displayed here.
-				// But since ZEsarUX only returns 64k addresses it is all that
-				// can be done here.
-				const longAddress = Z80Registers.createLongAddress(address, slots);
-				addresses.add(longAddress);
-			}
-			// Clear coverage in ZEsarUX
-			zSocket.send('cpu-code-coverage clear');
-			// Emit code coverage event
-			this.emit('coverage', addresses);
-			//});
-		});
+		const data = await zSocket.sendAwait('cpu-code-coverage get');
+		// Check for error
+		if (data.startsWith('Error'))
+			return;
+		// Get slots
+		//this.getRegisters().then(() => {
+		// Get current slots
+		const slots = Z80Registers.getSlots();
+		// Parse data and collect addresses
+		const addresses = new Set<number>();
+		const length = data.length;
+		for (let k = 0; k < length; k += 5) {
+			const addressString = data.substr(k, 4);
+			const address = parseInt(addressString, 16);
+			// Change to long address
+			// Note: this is not 100% correct, i.e. if the slots have changed during execution the wrong values are displayed here.
+			// But since ZEsarUX only returns 64k addresses it is all that
+			// can be done here.
+			const longAddress = Z80Registers.createLongAddress(address, slots);
+			addresses.add(longAddress);
+		}
+		// Clear coverage in ZEsarUX
+		await zSocket.sendAwait('cpu-code-coverage clear');
+		// Emit code coverage event
+		this.emit('coverage', addresses);
 	}
 
 
@@ -786,7 +783,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns A Promise with a string containing the break reason.
 	 */
 	public async stepOut(): Promise<string | undefined> {
-		return new Promise<string | undefined>(resolve => {
+		return new Promise<string | undefined>(async resolve => {
 			// Zesarux does not implement a step-out. Therefore we analyze the call stack to
 			// find the first return address.
 			// Then a breakpoint is created that triggers when an executed RET is found  the SP changes to that address.
@@ -815,61 +812,69 @@ export class ZesaruxRemote extends RemoteBase {
 			}
 
 			// get stack from zesarux
-			zSocket.send('extended-stack get ' + depth, (data: string) => {
-				data = data.replace(/\r/gm, "");
-				const zStack = data.split('\n');
-				zStack.splice(zStack.length - 1);	// ignore last (is empty)
+			let data: string = await zSocket.sendAwait('extended-stack get ' + depth);
+			data = data.replace(/\r/gm, "");
+			const zStack = data.split('\n');
+			zStack.splice(zStack.length - 1);	// ignore last (is empty)
 
-				// Loop through stack:
-				let bpSp = sp;
-				for (const addrTypeString of zStack) {
-					// Increase breakpoint address
-					bpSp += 2;
-					// Split address and type
-					const type = addrTypeString.substring(6);
-					if (type == "call" || type == "rst" || type.includes("interrupt")) {
-						//const addr = parseInt(addrTypeString,16);
-						// Caller found, set breakpoint: when SP gets 2 bigger than the current value.
-						// Set action first (no action).
-						const bpId = ZesaruxRemote.STEP_BREAKPOINT_ID;
-						zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', () => {
-							// Set the breakpoint.
-							// Note: PC=PEEKW(SP-2) finds an executed RET.
-							const condition = 'PC=PEEKW(SP-2) AND SP>=' + bpSp;
-							zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {	// NOSONAR
-								// Enable breakpoint
-								zSocket.send('enable-breakpoint ' + bpId, () => {	// NOSONAR
+			// Loop through stack:
+			let bpSp = sp;
+			for (const addrTypeString of zStack) {
+				// Increase breakpoint address
+				bpSp += 2;
+				// Split address and type
+				const type = addrTypeString.substring(6);
+				if (type == "call" || type == "rst" || type.includes("interrupt")) {
+					//const addr = parseInt(addrTypeString,16);
+					// Caller found, set breakpoint: when SP gets 2 bigger than the current value.
+					// Set action first (no action).
+					const bpId = ZesaruxRemote.STEP_BREAKPOINT_ID;
+					await zSocket.sendAwait('set-breakpointaction ' + bpId);
+					// Set the breakpoint.
+					// Note: PC=PEEKW(SP-2) finds an executed RET.
+					const condition = 'PC=PEEKW(SP-2) AND SP>=' + bpSp;
+					await zSocket.sendAwait('set-breakpoint ' + bpId + ' ' + condition);
+					// Enable breakpoint
+					await zSocket.sendAwait('enable-breakpoint ' + bpId);
 
-									// Clear register cache
-									//Z80Registers.clearCache();
-									// Run
-									zSocket.sendInterruptableRunCmd(async text => {	// NOSONAR
-										// (could take some time, e.g. until a breakpoint is hit)
-										// Clear register cache
-										await this.getRegistersFromEmulator();
-										await this.getCallStackFromEmulator();
-										// Handle code coverage
-										this.handleCodeCoverage();
-										// The reason is the 2nd line
-										const breakReasonString = this.getBreakReason(text);
-										// Disable breakpoint
-										zSocket.send('disable-breakpoint ' + bpId, async () => {
-											// Read the spot history
-											await CpuHistory.getHistorySpotFromRemote();
-											this.continueResolve!.resolve(breakReasonString);
-										});
-									});
-								});
-							});
-						});
-						// Return on a CALL etc.
-						return;
-					}
+					// Clear register cache
+					//Z80Registers.clearCache();
+					// Run
+					zSocket.sendInterruptableRunCmd(async text => {	// NOSONAR
+						// (could take some time, e.g. until a breakpoint is hit)
+						// Clear register cache
+						await this.getRegistersFromEmulator();
+						await this.getCallStackFromEmulator();
+						// Handle code coverage
+						await this.handleCodeCoverage();
+
+						// Break reason
+						let breakReasonString;
+						// Check if temporary breakpoint hit
+						const pcAfter = Z80Registers.getPC();
+						const spAfter = Z80Registers.getSP();
+						const data = await this.readMemoryDump(spAfter - 2, 2);
+						const peekw = data[0] + 256 * data[1];
+						if (spAfter < bpSp || pcAfter != peekw) {
+							// Some other breakpoint was hit.
+							// The break reason is in the returned text
+							breakReasonString = this.getBreakReason(text);
+						}
+
+						// Disable breakpoint
+						await zSocket.sendAwait('disable-breakpoint ' + bpId);
+						// Read the spot history
+						await CpuHistory.getHistorySpotFromRemote();
+						this.continueResolve!.resolve(breakReasonString);
+					});
+
+					// Return on a CALL etc.
+					return;
 				}
+			}
 
-				// If we reach here the stack was either empty or did not contain any call, i.e. nothing to step out to.
-				this.continueResolve!.resolve(undefined);
-			});
+			// If we reach here the stack was either empty or did not contain any call, i.e. nothing to step out to.
+			this.continueResolve!.resolve(undefined);
 		});
 	}
 
@@ -1105,9 +1110,7 @@ export class ZesaruxRemote extends RemoteBase {
 			condition += zesaruxCondition;
 
 		// Set action first (no action)
-		const shortCond = (condition.length < 50) ? condition : condition.substring(0, 50) + '...';
-		await zSocket.sendAwait('set-breakpointaction ' + bpId + ' prints breakpoint ' + bpId + ' hit (' + shortCond + ')');
-		//zSocket.send('set-breakpointaction ' + bp.bpId + ' menu', () => {
+		await zSocket.sendAwait('set-breakpointaction ' + bpId /* + ' prints breakpoint ' + bpId + ' hit (' + shortCond + ')' */);	// Since ZEsarUX 10.2 an empty breakpoint action is required.
 		// Set the breakpoint
 		await zSocket.sendAwait('set-breakpoint ' + bpId + ' ' + condition);
 		// Enable the breakpoint
