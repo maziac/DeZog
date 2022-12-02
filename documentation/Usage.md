@@ -1273,20 +1273,21 @@ The launch.json for DeZog is:
                                └─────────────────────────────────────────────────┘
 ~~~
 
-MAME in version 0.242 does only support 1 connection. A 2nd connection attempt is refused.
+MAME (as of version 0.242) does only support 1 connection. A 2nd connection attempt is refused.
+This does not mean concurrent connection, it means: only 1 connection per session.
 Therefore MAME needs to be terminated after each debug session.
 DeZog sends MAME a kill command when the session is terminated.
-The best debug experience at the moment is to re-start MAME in a loop, e.g. use:
+The best debug experience at the moment is to re-start MAME in a loop, e.g. on linux/macOS use:
 ~~~bash
 while true; do ./mame pacman -window -debugger gdbstub -debug -debugger_port 12000 -verbose ; sleep 2 ; done
 ~~~
 
 
-There is a big difference in using MAME compared to the other emulators:
-Using MAME the program is loaded when starting MAME. I.e. it is not transmitted by DeZog into MAME.
-The primary use case here is not to develop new SW with an assembler but to reverse-engineer old SW.
+If you use MAME for reverse engineering you would normally load the program together with starting mame MAME. I.e. it is not transmitted by DeZog into MAME.
 
-Please see [Reverse Engineering with DeZog](ReverseEngineeringUsage.md).
+But you could also use "loadObjs" or even "load" (for ZX 48K Spectrum files) if the target program area is RAM (and not ROM).
+
+Please also see [Reverse Engineering with DeZog](ReverseEngineeringUsage.md).
 
 
 #### Memory Banks / Paging

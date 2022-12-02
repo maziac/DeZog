@@ -157,8 +157,8 @@ For more demanding projects you have the choice to install a real emulator.
 These are the options:
 
 - the [CSpect](http://www.cspect.org) emulator (known to be interoperable with DeZog: version 2.16.6)
-- the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable with DeZog: version 10.0)
-- [MAME](https://www.mamedev.org/release.html) (experimental)
+- the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable with DeZog: version 10.3)
+- [MAME](https://www.mamedev.org/release.html) (known to be interoperable with DeZog: version 0.242)
 
 The different DeZog/emulator configurations have different advantages.
 But which one you choose mainly depends on your personal preference.
