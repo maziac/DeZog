@@ -957,6 +957,9 @@ export class DebugSessionClass extends DebugSession {
 
 				// Save all breakpoints
 				const prevBpAddresses = this.getDisassemblyBreakpoints();
+				// Remove all breakpoints temporarily
+				const removeBps = prevBpAddresses.map(sbpAddr => sbpAddr.sbp);
+				vscode.debug.removeBreakpoints(removeBps);
 
 				// Add new disassembly at the end
 				const edit = new vscode.WorkspaceEdit();
