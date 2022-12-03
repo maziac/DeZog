@@ -3194,7 +3194,8 @@ E.g. use "-help -view" to put the help text in an own view.
 						// Disassemble instructions
 						analyzer.disassembleNodes();
 						// Get max depth
-						const {depth, } = analyzer.getSubroutinesFor(startNodes);	// TODO: Probably this could be implemented smarter, the complete map is not used, only the depth.
+						const {depth, } = analyzer.getSubroutinesFor(startNodes);	// Only depth is required at this point.
+
 						// Output call graph to view
 						const renderer = new RenderHtml(analyzer);
 						const rendered = renderer.renderSync(startNodes, depth);

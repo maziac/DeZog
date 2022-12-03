@@ -1045,7 +1045,6 @@ export class SmartDisassembler {
 	}
 
 
-
 	/** Returns a map with all node subroutines associations used by the starting nodes.
 	 * Infinite depth.
 	 * @param startNodes The nodes the processing should start on.

@@ -220,14 +220,13 @@ export class DisassemblyClass extends SmartDisassembler {
 		// Check if addresses passed
 		const len = longCallStackAddresses.length;
 		if (len > 0) {
-			// Note: the current PC address is for sure paged in
+			// Note: the current PC address is for sure paged in.
 			// The other call stack addresses most probably are but there is some chance
 			// that they are in a different bank.
 			// We need to check if they can be disassembled safely.
 			// This is if the address is in a simple bank slot.
 			// Even if PC is the same slot this does not 100% assure that caller was in same bank.
 			// So e.g. for the ZXNext the whole call stack could not be used.
-			// TODO: change implementation
 			pcAddr64k = longCallStackAddresses[0] & 0xFFFF;
 		}
 
@@ -322,7 +321,7 @@ export class DisassemblyClass extends SmartDisassembler {
 			// Convert to start nodes
 			const startNodes = this.getNodesForAddresses(addrs64k);
 			// Get max depth
-			const {depth, } = this.getSubroutinesFor(startNodes);	// TODO: Probably this could be implemented smarter, the complete map is not used, only the depth.
+			const {depth, } = this.getSubroutinesFor(startNodes);	// Only depth is required at this point.
 
 			// Clear line arrays
 			this.lineAddrArray = [];
