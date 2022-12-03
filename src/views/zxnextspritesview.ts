@@ -478,10 +478,6 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	/// Contains the sprite slots to display.
 	protected slotIndices: Array<number>;
 
-	// An ordered list of this.slotIndices. The order is important
-	// (priorities) when drawing.
-	protected orderedSlotIndices: Array<number>;	// TODO: orderedSlotIndices and slotIndices are always equal. Test what happens if orderedSlotIndices is removed.
-
 	/// The sprites, i.e. 128 slots with 4-5 bytes attributes each
 	protected sprites = Array<SpriteData | undefined>(MAX_COUNT_SPRITES);
 
@@ -545,17 +541,15 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			this.spriteLastIndex = max;
 			//this.spriteStartIndex=-min;	// Unknown at the moment, therefore negative
 			// Order the slot list for drawing
-			this.orderedSlotIndices = this.slotIndices.sort((n1, n2) => n1 - n2);
+			this.slotIndices.sort((n1, n2) => n1 - n2);
 		}
 		else {
 			this.showOnlyVisible = true;
 			this.spriteLastIndex = MAX_COUNT_SPRITES - 1;
 			//this.spriteStartIndex=0;
 			this.slotIndices = new Array<number>(MAX_COUNT_SPRITES);
-			this.orderedSlotIndices = new Array<number>(MAX_COUNT_SPRITES);
 			for (let i = 0; i < MAX_COUNT_SPRITES; i++) {
 				this.slotIndices[i] = i;
-				this.orderedSlotIndices[i] = i;
 			}
 		}
 
@@ -970,11 +964,11 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 
 		// Create the sprites
 		let spritesHtml = 'ctx.beginPath();\n';
-		const lastItem = this.orderedSlotIndices.length - 1;
+		const lastItem = this.slotIndices.length - 1;
 		const priorityNormal = ((this.control & 0x40) == 0);
 		for (let i = 0; i <= lastItem; i++) {
 			const j = (priorityNormal) ? i : lastItem - i;
-			const k = this.orderedSlotIndices[j];
+			const k = this.slotIndices[j];
 			const sprite = this.sprites[k];
 			if (!sprite)
 				continue;
