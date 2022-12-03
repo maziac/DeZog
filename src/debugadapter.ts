@@ -3579,7 +3579,8 @@ E.g. use "-help -view" to put the help text in an own view.
 		}
 
 		// Output
-		this.debugConsoleAppend(output);
+		if(output)
+			this.debugConsoleAppend(output);
 
 		this.sendResponse(response);
 	}
