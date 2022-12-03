@@ -169,17 +169,16 @@ export class ZesaruxRemote extends RemoteBase {
 
 			try {
 				// Initialize
-				zSocket.send('about');
-				zSocket.send('get-version', data => {
-					// e.g. "7.1-SN"
-					this.zesaruxVersion = parseFloat(data);
-					// Check version
-					if (this.zesaruxVersion < MIN_ZESARUX_VERSION) {
-						zSocket.quit();
-						const err = new Error('Please update ZEsarUX. Need at least version ' + MIN_ZESARUX_VERSION + '.');
-						this.emit('error', err);
-					}
-				});
+				await zSocket.sendAwait('about');
+				const data = await zSocket.sendAwait('get-version');
+				// e.g. "7.1-SN"
+				this.zesaruxVersion = parseFloat(data);
+				// Check version
+				if (this.zesaruxVersion < MIN_ZESARUX_VERSION) {
+					await zSocket.quit();
+					const err = new Error('Please update ZEsarUX. Need at least version ' + MIN_ZESARUX_VERSION + '.');
+					this.emit('error', err);
+				}
 
 				// Allow extensions
 				this.zesaruxConnected();
@@ -276,7 +275,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	protected async initAfterLoad(): Promise<void> {
 		// Initialize breakpoints
-		this.initBreakpoints();
+		await this.initBreakpoints();
 
 		// Code coverage
 		if (Settings.launch.history.codeCoverageEnabled) {
@@ -308,13 +307,13 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Initializes the zesarux breakpoints.
 	 * Override this if fast-breakpoints should be used.
 	 */
-	protected initBreakpoints() {
+	protected async initBreakpoints(): Promise<void> {
 		// Clear memory breakpoints (watchpoints)
-		zSocket.send('clear-membreakpoints');
+		await zSocket.sendAwait('clear-membreakpoints');
 
 		// Clear all breakpoints
-		zSocket.send('enable-breakpoints', () => {}, true);// NOSONAR
-		this.clearAllZesaruxBreakpoints();
+		await zSocket.sendAwait('enable-breakpoints', true);
+		await this.clearAllZesaruxBreakpoints();
 
 		// Init breakpoint array
 		this.freeBreakpointIds.length = 0;
@@ -393,13 +392,10 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param value The new register value.
 	 */
 	public async setRegisterValue(register: string, value: number) {
-		return new Promise<void>(resolve => {
-			// set value
-			zSocket.send('set-register ' + register + '=' + value, data => {
-				// Get real value (should be the same as the set value)
-				this.getRegistersFromEmulator().then(() => resolve());
-			});
-		});
+		// Set value
+		await zSocket.sendAwait('set-register ' + register + '=' + value);
+		// Get real value (should be the same as the set value)
+		await this.getRegistersFromEmulator();
 	}
 
 
@@ -467,34 +463,29 @@ export class ZesaruxRemote extends RemoteBase {
 	 * 0000H default
 	 */
 	public async getStackFromEmulator(): Promise<Array<string>> {
-		return new Promise<Array<string>>(async resolve => {
-			// Get normal callstack
-			const stack = await super.getStackFromEmulator();
-			// Get e-stack
-			const depth = stack.length;
-			if (depth == 0) {
-				resolve(stack);
-				return;
-			}
-			// Get extended stack from zesarux
-			zSocket.send('extended-stack get ' + depth, (data: string) => {
-				data = data.replace(/\r/gm, "");
-				const zStack = data.split('\n');
-				let len = zStack.length - 1;
-				zStack.splice(len);	// ignore last (is empty)
-				if (depth < len)
-					len = depth;
-				// Mix stacks
-				for (let i = 0; i < len; i++) {
-					const type = zStack[i].substring(5);
-					// Add to original stack
-					stack[depth - 1 - i] += type;
-				}
-				resolve(stack);
-			});
-		});
+		// Get normal callstack
+		const stack = await super.getStackFromEmulator();
+		// Get e-stack
+		const depth = stack.length;
+		if (depth == 0) {
+			return stack;
+		}
+		// Get extended stack from zesarux
+		let data = await zSocket.sendAwait('extended-stack get ' + depth);
+		data = data.replace(/\r/gm, "");
+		const zStack = data.split('\n');
+		let len = zStack.length - 1;
+		zStack.splice(len);	// ignore last (is empty)
+		if (depth < len)
+			len = depth;
+		// Mix stacks
+		for (let i = 0; i < len; i++) {
+			const type = zStack[i].substring(5);
+			// Add to original stack
+			stack[depth - 1 - i] += type;
+		}
+		return stack;
 	}
-
 
 
 	/**
@@ -625,9 +616,9 @@ export class ZesaruxRemote extends RemoteBase {
 				//Z80Registers.clearCache();
 				// Note "prints" is required, so that a normal step over will not produce a breakpoint decoration.
 				await zSocket.sendAwait('set-breakpointaction ' + bpId);
-					// set the breakpoint
+				// set the breakpoint
 				await zSocket.sendAwait('set-breakpoint ' + bpId + ' ' + condition);
-					// enable breakpoint
+				// enable breakpoint
 				await zSocket.sendAwait('enable-breakpoint ' + bpId,);
 				// Run
 				zSocket.sendInterruptableRunCmd(async text => {
@@ -661,18 +652,17 @@ export class ZesaruxRemote extends RemoteBase {
 				const cmd = (opcode == "LDIR" || opcode == "LDDR" || opcode == "CPIR" || opcode == "CPDR") ? 'cpu-step-over' : 'cpu-step';
 				// Clear register cache
 				//Z80Registers.clearCache();
-				zSocket.send(cmd, async result => {
-					// Clear cache
-					await this.getRegistersFromEmulator();
-					await this.getCallStackFromEmulator();
-					// Handle code coverage
-					await this.handleCodeCoverage();
-					// Call handler
-					const breakReasonString = this.getBreakReason(result);
-					// Read the spot history
-					await CpuHistory.getHistorySpotFromRemote();
-					this.continueResolve!.resolve(breakReasonString);
-				});
+				const result = await zSocket.sendAwait(cmd);
+				// Clear cache
+				await this.getRegistersFromEmulator();
+				await this.getCallStackFromEmulator();
+				// Handle code coverage
+				await this.handleCodeCoverage();
+				// Call handler
+				const breakReasonString = this.getBreakReason(result);
+				// Read the spot history
+				await CpuHistory.getHistorySpotFromRemote();
+				this.continueResolve.resolve(breakReasonString);
 			}
 		});
 	}
@@ -684,22 +674,21 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Or 'undefined' if no reason.
 	 */
 	public async stepInto(): Promise<string | undefined> {
-		return new Promise<string | undefined>(resolve => {
+		return new Promise<string | undefined>(async resolve => {
 			// Remember the promise resolve for dispose
 			Utility.assert(!this.continueResolve);
 			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
 
 			// Normal step into.
-			zSocket.send('cpu-step', async result => {
-				// Clear cache
-				await this.getRegistersFromEmulator();
-				await this.getCallStackFromEmulator();
-				// Handle code coverage
-				await this.handleCodeCoverage();
-				// Read the spot history
-				await CpuHistory.getHistorySpotFromRemote();
-				this.continueResolve!.resolve(undefined);
-			});
+			await zSocket.sendAwait('cpu-step');
+			// Clear cache
+			await this.getRegistersFromEmulator();
+			await this.getCallStackFromEmulator();
+			// Handle code coverage
+			await this.handleCodeCoverage();
+			// Read the spot history
+			await CpuHistory.getHistorySpotFromRemote();
+			this.continueResolve.resolve(undefined);
 		});
 	}
 
@@ -718,12 +707,9 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns The number of T-States or 0 if not supported.
 	 */
 	public async getTstates(): Promise<number> {
-		return new Promise<number>(resolve => {
-			zSocket.send('get-tstates-partial', data => {
-				const tStates = parseInt(data);
-				resolve(tStates);
-			});
-		});
+		const data = await zSocket.sendAwait('get-tstates-partial');
+		const tStates = parseInt(data);
+		return tStates;
 	}
 
 
@@ -732,12 +718,9 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns The CPU frequency in Hz (e.g. 3500000 for 3.5MHz) or 0 if not supported.
 	 */
 	public async getCpuFrequency(): Promise<number> {
-		return new Promise<number>(resolve => {
-			zSocket.send('get-cpu-frequency', data => {
-				const cpuFreq = parseInt(data);
-				resolve(cpuFreq);
-			});
-		});
+		const data = await zSocket.sendAwait('get-cpu-frequency');
+		const cpuFreq = parseInt(data);
+		return cpuFreq;
 	}
 
 
@@ -874,7 +857,7 @@ export class ZesaruxRemote extends RemoteBase {
 			}
 
 			// If we reach here the stack was either empty or did not contain any call, i.e. nothing to step out to.
-			this.continueResolve!.resolve(undefined);
+			this.continueResolve.resolve(undefined);
 		});
 	}
 
@@ -888,31 +871,26 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param wp The watchpoint to set.
 	 */
 	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
-		return new Promise<void>(resolve => {
-			// Check if condition is used
-			if (wp.condition && wp.condition.length > 0) {
-				// OPEN: ZEsarUX does not allow for memory breakpoints plus conditions.
-				// Will most probably never be implemented by Cesar.
-				// I leave this open mainly as a reminder.
-				// At the moment no watchpoint will be set if an additional condition is set.
-			}
-			else {
-				// This is the general case. Just add a breakpoint on memory access.
-				let type = 0;
-				if (wp.access.indexOf('r') >= 0)
-					type |= 0x01;
-				if (wp.access.indexOf('w') >= 0)
-					type |= 0x02;
+		// Check if condition is used
+		if (wp.condition && wp.condition.length > 0) {
+			// OPEN: ZEsarUX does not allow for memory breakpoints plus conditions.
+			// Will most probably never be implemented by Cesar.
+			// I leave this open mainly as a reminder.
+			// At the moment no watchpoint will be set if an additional condition is set.
+		}
+		else {
+			// This is the general case. Just add a breakpoint on memory access.
+			let type = 0;
+			if (wp.access.indexOf('r') >= 0)
+				type |= 0x01;
+			if (wp.access.indexOf('w') >= 0)
+				type |= 0x02;
 
-				// Create watchpoint with range
-				const size = wp.size;
-				let addr = wp.longOr64kAddress & 0xFFFF;
-				zSocket.send('set-membreakpoint ' + addr.toString(16) + 'h ' + type + ' ' + size);
-			}
-
-			// Return promise after last watchpoint set
-			zSocket.executeWhenQueueIsEmpty().then(resolve);
-		});
+			// Create watchpoint with range
+			const size = wp.size;
+			let addr = wp.longOr64kAddress & 0xFFFF;
+			await zSocket.sendAwait('set-membreakpoint ' + addr.toString(16) + 'h ' + type + ' ' + size);
+		}
 	}
 
 
@@ -922,14 +900,10 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param wp The watchpoint to remove. Will set 'bpId' in the 'watchPoint' to undefined.
 	 */
 	public async removeWatchpoint(wp: GenericWatchpoint): Promise<void> {
-		return new Promise<void>(resolve => {
-			// Clear watchpoint with range
-			const size = wp.size;
-			let addr = wp.longOr64kAddress & 0xFFFF;
-			zSocket.send('set-membreakpoint ' + addr.toString(16) + 'h 0 ' + size);
-			// Return promise after last watchpoint set
-			zSocket.executeWhenQueueIsEmpty().then(resolve);
-		});
+		// Clear watchpoint with range
+		const size = wp.size;
+		let addr = wp.longOr64kAddress & 0xFFFF;
+		await zSocket.sendAwait('set-membreakpoint ' + addr.toString(16) + 'h 0 ' + size);
 	}
 
 
@@ -1186,9 +1160,9 @@ export class ZesaruxRemote extends RemoteBase {
 	/**
 	 * Disables all breakpoints set in zesarux on startup.
 	 */
-	protected clearAllZesaruxBreakpoints() {
+	protected async clearAllZesaruxBreakpoints() {
 		for (let i = 1; i <= Zesarux.MAX_ZESARUX_BREAKPOINTS; i++) {
-			zSocket.send('disable-breakpoint ' + i);
+			await zSocket.sendAwait('disable-breakpoint ' + i);
 		}
 	}
 
@@ -1226,12 +1200,9 @@ export class ZesaruxRemote extends RemoteBase {
 		}
 
 		// Send command to ZEsarUX
-		return new Promise<string>(resolve => {
-			zSocket.send(cmd, data => {
-				// Call handler
-				resolve(data);
-			});
-		});
+		const data = await zSocket.sendAwait(cmd);
+		// Call handler
+		return data;
 	}
 
 
@@ -1243,31 +1214,27 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param handler(data, addr) The handler that receives the data. 'addr' gets the value of 'address'.
 	 */
 	public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
-		return new Promise<Uint8Array>(resolve => {
-			// Use chunks
-			const chunkSize = 0x10000;// 0x1000;
-			// Retrieve memory values
-			const values = new Uint8Array(size);
-			let k = 0;
-			while (size > 0) {
-				const retrieveSize = (size > chunkSize) ? chunkSize : size;
-				zSocket.send('read-memory ' + address + ' ' + retrieveSize, data => {
-					const len = data.length;
-					Utility.assert(len / 2 == retrieveSize);
-					for (let i = 0; i < len; i += 2) {
-						const valueString = data.substr(i, 2);
-						const value = parseInt(valueString, 16);
-						values[k++] = value;
-					}
-				});
-				// Next chunk
-				size -= chunkSize;
+		// Use chunks
+		const chunkSize = 0x10000;// 0x1000;
+		// Retrieve memory values
+		const values = new Uint8Array(size);
+		let k = 0;
+		while (size > 0) {
+			const retrieveSize = (size > chunkSize) ? chunkSize : size;
+			const data = await zSocket.sendAwait('read-memory ' + address + ' ' + retrieveSize);
+			const len = data.length;
+			Utility.assert(len / 2 == retrieveSize);
+			for (let i = 0; i < len; i += 2) {
+				const valueString = data.substr(i, 2);
+				const value = parseInt(valueString, 16);
+				values[k++] = value;
 			}
-			// send data to handler
-			zSocket.executeWhenQueueIsEmpty().then(() => {
-				resolve(values);
-			});
-		});
+			// Next chunk
+			size -= chunkSize;
+		}
+
+		// Return
+		return values;
 	}
 
 
@@ -1277,30 +1244,22 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param dataArray The data to write.
 	 */
 	public async writeMemoryDump(address: number, dataArray: Uint8Array): Promise<void> {
-		return new Promise<void>(resolve => {
-			// Use chunks
-			const chunkSize = 0x10000; //0x1000;
-			let k = 0;
-			let size = dataArray.length;
-			let chunkCount = 0;
-			while (size > 0) {
-				const sendSize = (size > chunkSize) ? chunkSize : size;
-				// Convert array to long hex string.
-				let bytes = '';
-				for (let i = 0; i < sendSize; i++) {
-					bytes += Utility.getHexString(dataArray[k++], 2);
-				}
-				// Send
-				chunkCount++;
-				zSocket.send('write-memory-raw ' + address + ' ' + bytes, () => {
-					chunkCount--;
-					if (chunkCount == 0)
-						resolve();
-				});
-				// Next chunk
-				size -= chunkSize;
+		// Use chunks
+		const chunkSize = 0x10000; //0x1000;
+		let k = 0;
+		let size = dataArray.length;
+		while (size > 0) {
+			const sendSize = (size > chunkSize) ? chunkSize : size;
+			// Convert array to long hex string.
+			let bytes = '';
+			for (let i = 0; i < sendSize; i++) {
+				bytes += Utility.getHexString(dataArray[k++], 2);
 			}
-		});
+			// Send
+			await zSocket.sendAwait('write-memory-raw ' + address + ' ' + bytes);
+			// Next chunk
+			size -= chunkSize;
+		}
 	}
 
 
@@ -1313,17 +1272,13 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns A Promise with the real value.
 	 */
 	public async writeMemory(address: number, value: number): Promise<number> {
-		return new Promise<number>(resolve => {
-			// Write byte
-			zSocket.send('write-memory ' + address + ' ' + value, data => {
-				// read byte
-				zSocket.send('read-memory ' + address + ' 1', data => {
-					// call handler
-					const readValue = parseInt(data, 16);
-					resolve(readValue);
-				});
-			});
-		});
+		// Write byte
+		await zSocket.sendAwait('write-memory ' + address + ' ' + value);
+		// Read byte
+		const data = await zSocket.sendAwait('read-memory ' + address + ' 1');
+		// call handler
+		const readValue = parseInt(data, 16);
+		return readValue;
 	}
 
 
@@ -1334,13 +1289,9 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns State data.
 	 */
 	public async stateSave(filePath: string): Promise<void> {
-		return new Promise<void>(resolve => {
-			// Save as zsf
-			filePath += ".zsf";
-			zSocket.send('snapshot-save ' + filePath, data => {
-				resolve();
-			});
-		});
+		// Save as zsf
+		filePath += ".zsf";
+		await zSocket.sendAwait('snapshot-save ' + filePath);
 	}
 
 
@@ -1350,18 +1301,14 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param filePath The file path to retore from.
 	 */
 	public async stateRestore(filePath: string): Promise<void> {
-		return new Promise<void>(resolve => {
-			// Load as zsf
-			filePath += ".zsf";
-			zSocket.send('snapshot-load ' + filePath, async data => {
-				// Initialize more
-				await this.initAfterLoad();
-				// Clear register cache
-				await this.getRegistersFromEmulator();
-				await this.getCallStackFromEmulator();
-				resolve();
-			});
-		});
+		// Load as zsf
+		filePath += ".zsf";
+		await zSocket.sendAwait('snapshot-load ' + filePath);
+		// Initialize more
+		await this.initAfterLoad();
+		// Clear register cache
+		await this.getRegistersFromEmulator();
+		await this.getCallStackFromEmulator();
 	}
 
 
@@ -1374,20 +1321,16 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns A promise with the value of the register.
 	 */
 	public async getTbblueRegister(registerNr: number): Promise<number> {
-		return new Promise<number>(resolve => {
-			zSocket.send('tbblue-get-register ' + registerNr, (data: string)=> {
-				// Check for error
-				if (data.startsWith("ERROR")) {
-					resolve(0);
-					return;
-				}
-				// Value is returned as 2 digit hex number followed by "H", e.g. "00H"
-				const valueString = data.substring(0, 2);
-				const value = parseInt(valueString, 16);
-				// Call handler
-				resolve(value);
-			});
-		});
+		const data = await zSocket.sendAwait('tbblue-get-register ' + registerNr);
+		// Check for error
+		if (data.startsWith("ERROR")) {
+			return 0;
+		}
+		// Value is returned as 2 digit hex number followed by "H", e.g. "00H"
+		const valueString = data.substring(0, 2);
+		const value = parseInt(valueString, 16);
+		// Call handler
+		return value;
 	}
 
 
@@ -1397,27 +1340,25 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns A Promise that returns a 256 byte Array<number> with the palette values.
 	 */
 	public async getTbblueSpritesPalette(paletteNr: number): Promise<Array<number>> {
-		return new Promise<Array<number>>(resolve => {
-			const paletteNrString = (paletteNr == 0) ? 'first' : 'second';
-			zSocket.send('tbblue-get-palette sprite ' + paletteNrString + ' 0 256', data => {
-				const palette = new Array<number>(256);
-				// Check for error
-				if (!data.startsWith("ERROR")) {
-					// Palette is returned as 3 digit hex separated by spaces, e.g. "02D 168 16D 000"
-					for (let i = 0; i < 256; i++) {
-						const colorString = data.substr(i * 4, 3);
-						const color = parseInt(colorString, 16);
-						// ZEsarUX sends the data as RRRGGGBBB, we need to
-						// change this first to RRRGGGBB, 0000000B.
-						palette[i] = (color >>> 1);
-						if (color & 0x01)
-							palette[i] += 0x100;
-					}
-				}
-				// Call handler
-				resolve(palette);
-			});
-		});
+
+		const paletteNrString = (paletteNr == 0) ? 'first' : 'second';
+		const data = await zSocket.sendAwait('tbblue-get-palette sprite ' + paletteNrString + ' 0 256');
+		const palette = new Array<number>(256);
+		// Check for error
+		if (!data.startsWith("ERROR")) {
+			// Palette is returned as 3 digit hex separated by spaces, e.g. "02D 168 16D 000"
+			for (let i = 0; i < 256; i++) {
+				const colorString = data.substr(i * 4, 3);
+				const color = parseInt(colorString, 16);
+				// ZEsarUX sends the data as RRRGGGBBB, we need to
+				// change this first to RRRGGGBB, 0000000B.
+				palette[i] = (color >>> 1);
+				if (color & 0x01)
+					palette[i] += 0x100;
+			}
+		}
+		// Call handler
+		return palette;
 	}
 
 
@@ -1426,27 +1367,22 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns A Promise that returns the clipping dimensions and the control byte(xl, xr, yt, yb, control).
 	 */
 	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
-		return new Promise<{xl: number, xr: number, yt: number, yb: number, control: number}>(resolve => {
-			zSocket.send('tbblue-get-clipwindow sprite', data => {
-				// Check for error
-				if (data.startsWith("ERROR")) {
-					resolve({xl: 0, xr: 0, yt: 0, yb: 0, control: 0});
-					return;
-				}
-				// Returns 4 decimal numbers, e.g. "0 175 0 192 "
-				const clip = data.split(' ');
-				const xl = parseInt(clip[0]);
-				const xr = parseInt(clip[1]);
-				const yt = parseInt(clip[2]);
-				const yb = parseInt(clip[3]);
+		const data = await zSocket.sendAwait('tbblue-get-clipwindow sprite');
+		// Check for error
+		if (data.startsWith("ERROR")) {
+			return {xl: 0, xr: 0, yt: 0, yb: 0, control: 0};
+		}
+		// Returns 4 decimal numbers, e.g. "0 175 0 192 "
+		const clip = data.split(' ');
+		const xl = parseInt(clip[0]);
+		const xr = parseInt(clip[1]);
+		const yt = parseInt(clip[2]);
+		const yb = parseInt(clip[3]);
 
-				// Get the control byte
-				this.getTbblueRegister(0x15).then(control => {
-					// Call handler
-					resolve({xl, xr, yt, yb, control});
-				});
-			});
-		})
+		// Get the control byte
+		const control = await this.getTbblueRegister(0x15);
+		// Call handler
+		return {xl, xr, yt, yb, control};
 	}
 
 
@@ -1457,33 +1393,30 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns A Promise with an array of sprite data.
 	 */
 	public async getTbblueSprites(slot: number, count: number): Promise<Array<Uint8Array>> {
-		return new Promise<Array<Uint8Array>>(resolve => {
-			zSocket.send('tbblue-get-sprite ' + slot + ' ' + count, data => {
-				const sprites = new Array<Uint8Array>();
-				// Check for error
-				if (!data.startsWith("ERROR")) {
-					// Sprites are returned one line per sprite, each line consist of 4x 2 digit hex values, e.g.
-					// "00 00 00 00"
-					// "00 00 00 00"
-					const spriteLines = data.split('\n');
-					for (const line of spriteLines) {
-						if (line.length == 0)
-							continue;
-						const sprite = new Uint8Array(5);
-						for (let i = 0; i < 5; i++) {
-							const attrString = line.substr(i * 3, 2);
-							if (attrString.length > 0) {
-								const attribute = parseInt(attrString, 16);
-								sprite[i] = attribute;
-							}
-						}
-						sprites.push(sprite);
+		const data = await zSocket.sendAwait('tbblue-get-sprite ' + slot + ' ' + count);
+		const sprites = new Array<Uint8Array>();
+		// Check for error
+		if (!data.startsWith("ERROR")) {
+			// Sprites are returned one line per sprite, each line consist of 4x 2 digit hex values, e.g.
+			// "00 00 00 00"
+			// "00 00 00 00"
+			const spriteLines = data.split('\n');
+			for (const line of spriteLines) {
+				if (line.length == 0)
+					continue;
+				const sprite = new Uint8Array(5);
+				for (let i = 0; i < 5; i++) {
+					const attrString = line.substr(i * 3, 2);
+					if (attrString.length > 0) {
+						const attribute = parseInt(attrString, 16);
+						sprite[i] = attribute;
 					}
 				}
-				// Call handler
-				resolve(sprites);
-			});
-		});
+				sprites.push(sprite);
+			}
+		}
+		// Call handler
+		return sprites;
 	}
 
 
@@ -1494,29 +1427,26 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @preturns A Promise with an array of sprite pattern data.
 	 */
 	public async getTbblueSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
-		return new Promise<Array<Array<number>>>(resolve => {
-			zSocket.send('tbblue-get-pattern ' + index + ' 8 ' + count, data => {
-				const patterns = new Array<Array<number>>();
-				// Check for error
-				if (!data.startsWith("ERROR")) {
-					// Sprite patterns are returned one line per pattern, each line consist of
-					// 256x 2 digit hex values, e.g. "E3 E3 E3 E3 E3 ..."
-					const patternLines = data.split('\n');
-					patternLines.pop();	// Last element is a newline only
-					for (const line of patternLines) {
-						const pattern = new Array<number>(256);
-						for (let i = 0; i < 256; i++) {
-							const attrString = line.substr(i * 3, 2);
-							const attribute = parseInt(attrString, 16);
-							pattern[i] = attribute;
-						}
-						patterns.push(pattern);
-					}
+		const data = await zSocket.sendAwait('tbblue-get-pattern ' + index + ' 8 ' + count);
+		const patterns = new Array<Array<number>>();
+		// Check for error
+		if (!data.startsWith("ERROR")) {
+			// Sprite patterns are returned one line per pattern, each line consist of
+			// 256x 2 digit hex values, e.g. "E3 E3 E3 E3 E3 ..."
+			const patternLines = data.split('\n');
+			patternLines.pop();	// Last element is a newline only
+			for (const line of patternLines) {
+				const pattern = new Array<number>(256);
+				for (let i = 0; i < 256; i++) {
+					const attrString = line.substr(i * 3, 2);
+					const attribute = parseInt(attrString, 16);
+					pattern[i] = attribute;
 				}
-				// Call handler
-				resolve(patterns);
-			});
-		});
+				patterns.push(pattern);
+			}
+		}
+		// Call handler
+		return patterns;
 	}
 
 

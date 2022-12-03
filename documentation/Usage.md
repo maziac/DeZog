@@ -1522,7 +1522,7 @@ Caveats:
 - The 'memory breakpoints' used in ZEsarUX have 2 specific limitations:
     - Imagine you have set a watchpoint WPMEM at address 4000h.
 If a byte is written to 4000h, e.g. with "LD (4000h),A" the break will occur, no problem.
-But if a word (i.e. 2 bytes) is written to 4000h like in "LD (4000h),HL" the lower address is not checked. I.e. a break will not happen. Only the upper address is checked. If the word would be written to 3FFFh e.g. with "LD (3FFFh),HL" then a break would happen.
+But if a word (i.e. 2 bytes) is written to 4000h like in "LD (4000h),HL" the lower address is not checked. I.e. a break will not happen. Only the upper address is checked. If the word would be written to 3FFFh e.g. with "LD (3FFFh),HL" then a break would happen. So make sure to always cover the whole memory area with WPMEM (for a word e.g. "WPMEM,2") and not only the first (lower) address.
     - You need to make sure that the debug settings for the memory breakpoints are set to "Settings->Debug->Breakp. behavior" to "On Change". Otherwise a break will be done on every instructions following the memory access until another different memory access happens.
     But even if set to "On Change" it's problematic. If afterwards another access to the same address happens no break will occur.
 
