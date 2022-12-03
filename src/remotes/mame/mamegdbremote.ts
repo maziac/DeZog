@@ -167,7 +167,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		// Send a k(ill) command
 		// NOTE: Remove once MAME issue 9578 (https://github.com/mamedev/mame/issues/9578) 	is clarified:
 		this.cmdRespTimeoutTime = 0;	// No response expected for kill command.
-		this.socket.removeAllListeners();
+
 		try {
 			await this.sendPacketData('k');	// REMOVE with kill command
 		}
@@ -187,12 +187,14 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			const timeout = setTimeout(() => {
 				if (resolve) {
 					resolve();
+					resolve = undefined as any;
 				}
 			}, 1000);	// 1 sec
 			this.socket.end(() => {
 				if (resolve) {
 					clearTimeout(timeout);
 					resolve();
+					resolve = undefined as any;
 				}
 			});
 			this.socket = undefined as any;
@@ -309,8 +311,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		}
 		catch (e) {
 			this.receivedData = '';
-			// Rethrow
-			throw e;	// TODO: Connection is not closed on exception
+			this.emit('error', e);
 		}
 	}
 

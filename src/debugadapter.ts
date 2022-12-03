@@ -631,10 +631,10 @@ export class DebugSessionClass extends DebugSession {
 			this.debugConsoleIndentedText(message);
 		});
 
-		Remote.once('error', err => {
+		Remote.once('error', async err => {
 			// Some error occurred
-			Remote.disconnect();
-			this.terminate(err.message);
+			await Remote.disconnect();
+			this.terminate(err?.message);
 		});
 
 		Remote.once('terminated', message => {

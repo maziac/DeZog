@@ -66,9 +66,9 @@ export class DzrpQueuedRemote extends DzrpRemote {
 		this.messageQueue.length = 0;
 		await super.disconnect();
 		try {
-			console.log("disconnect: started");
+			//console.log("disconnect: started");
 			await this.sendDzrpCmdClose();
-			console.log("disconnect: finished");
+			//console.log("disconnect: finished");
 		}
 		catch (e) {
 			console.error("disconnect: Failed to close debug session: " + e);
@@ -146,7 +146,7 @@ export class DzrpQueuedRemote extends DzrpRemote {
 	protected async sendNextMessage(): Promise<void> {
 		if (this.messageQueue.length == 0)
 			return;
-		
+
 		// Get next message from buffer
 		const msg = this.messageQueue[0];
 		if (!msg)
