@@ -243,7 +243,7 @@ Call graph example:
 
 ![](images/ReverseEngineeringUsage/callgraph_selection.gif)
 
-Smart disassembly example: TODO: update gif:
+Smart disassembly example:
 
 ![](images/ReverseEngineeringUsage/smart_disassembly_selection.gif)
 
