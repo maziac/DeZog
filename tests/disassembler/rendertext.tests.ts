@@ -826,12 +826,15 @@ suite('Disassembler - RenderText', () => {
 				disasm.getFlowGraph(startAddrs64k, []);
 				disasm.disassembleNodes();
 				// Get all nodes for the depth
-				const nodes = new Set<AsmNode>();
+				const nodeSet = new Set<AsmNode>();
 				const startNodes = disasm.getNodesForAddresses(startAddrs64k);
 				for (const node of startNodes) {
 					const sub = new Subroutine(node);
-					sub.getAllNodesRecursively(65536, nodes);
+					sub.getAllNodesRecursively(65536, nodeSet);
 				}
+				// Sort the nodes
+				const nodes = Array.from(nodeSet);
+				nodes.sort((a, b) => a.start - b.start);
 				const text = r.renderNodes(nodes);
 
 				assert.equal(c(text), c(
@@ -860,12 +863,15 @@ FFFF.1 FF RST RST_38
 				disasm.getFlowGraph(startAddrs64k, []);
 				disasm.disassembleNodes();
 				// Get all nodes for the depth
-				const nodes = new Set<AsmNode>();
+				const nodeSet = new Set<AsmNode>();
 				const startNodes = disasm.getNodesForAddresses(startAddrs64k);
 				for (const node of startNodes) {
 					const sub = new Subroutine(node);
-					sub.getAllNodesRecursively(65536, nodes);
+					sub.getAllNodesRecursively(65536, nodeSet);
 				}
+				// Sort the nodes
+				const nodes = Array.from(nodeSet);
+				nodes.sort((a, b) => a.start - b.start);
 				const text = r.renderNodes(nodes);
 				return text;
 			}
@@ -1016,12 +1022,15 @@ FFFF.1 FF RST RST_38
 			disasm.getFlowGraph(startAddrs64k, []);
 			disasm.disassembleNodes();
 			// Get all nodes for the depth
-			const nodes = new Set<AsmNode>();
+			const nodeSet = new Set<AsmNode>();
 			const startNodes = disasm.getNodesForAddresses(startAddrs64k);
 			for (const node of startNodes) {
 				const sub = new Subroutine(node);
-				sub.getAllNodesRecursively(65536, nodes);
+				sub.getAllNodesRecursively(65536, nodeSet);
 			}
+			// Sort the nodes
+			const nodes = Array.from(nodeSet);
+			nodes.sort((a, b) => a.start - b.start);
 			const text = r.renderNodes(nodes);
 			return text;
 		}

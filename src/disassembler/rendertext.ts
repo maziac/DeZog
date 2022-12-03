@@ -380,22 +380,22 @@ export class RenderText extends RenderBase {
 			const sub = new Subroutine(node);
 			sub.getAllNodesRecursively(depth, nodesForDepth);
 		}
+		// Sort the nodes
+		const nodes = Array.from(nodesForDepth); 
+		nodes.sort((a, b) => a.start - b.start);
+
 		// Render
-		const rendered = this.renderNodes(nodesForDepth, startNodes);
+		const rendered = this.renderNodes(nodes, startNodes);
 		return rendered;
 	}
 
 
 	/** ANCHOR Renders all given nodes to text.
-	 * @param nodeSet The nodes to disassemble. The nodes will be sorted by start address.
+	 * @param nodes An array with the sorted nodes (sorted by start address).
 	 * @param startNodes The start node labels are rendered in a different color.
 	 * @returns The disassembly text.
 	 */
-	public renderNodes(nodeSet: Set<AsmNode>, startNodes: AsmNode[] = []): string {
-		// Sort the nodes
-		const nodes = Array.from(nodeSet); //.filter(node => (node.length > 0));	// Filter nodes in other banks
-		nodes.sort((a, b) => a.start - b.start);
-
+	public renderNodes(nodes: AsmNode[], startNodes: AsmNode[] = []): string {
 		// Now get all data references (for the nodes = for the depth)
 		this.dataReferences = [];
 		for (const node of nodes) {

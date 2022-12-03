@@ -159,10 +159,10 @@ export class RenderHtml extends RenderText {
 	 * @param bytes The byte to add for the line. Can be empty.
 	 * @param text A text to add. Usually the decoded instruction.
 	 * @param comment An optional comment text.
-	 * @returns A complete line, e.g. ""<span id="L.c000">C000.B1 3E 05    LD A,5 ; Comment</span>"
+	 * @returns A complete line, e.g. "<span id="L.c000">C000.B1 3E 05    LD A,5 ; Comment</span>"
 	 */
 	protected formatAddressPlusText(addr64k: number, bytes: Uint8Array, text: string, comment?: string): string {
-		const id = this.getHtmlId(addr64k);	// TODO: Should be optimized: not every address line is a source (branches)
+		const id = this.getHtmlId(addr64k);	// Not every ID/label would be required. However, every line gets one. It's easier than to distinguish which line requires one.
 		const addrString = this.disasm.funcFormatLongAddress(addr64k).padEnd(this.clmnsAddress - 1);
 		let bytesString = '';
 		bytes.forEach(value =>
@@ -426,17 +426,13 @@ export class RenderHtml extends RenderText {
 
 
 	/** ANCHOR Renders all given nodes to text.
-	 * @param nodeSet The nodes to disassemble. The nodes will be sorted by start address.
+	 * @param nodes An array with the sorted nodes (sorted by start address).
 	 * @param startNodes The start node labels are rendered in a different color.
 	 * @returns The disassembly text.
 	 */
-	public renderNodes(nodeSet: Set<AsmNode>, startNodes: AsmNode[] = []): string {
+	public renderNodes(nodes: AsmNode[], startNodes: AsmNode[] = []): string {
 		// Call super
-		let rendered = '<pre>' + super.renderNodes(nodeSet, startNodes) + '</pre>';
-
-		// Sort the nodes	// TODO: Optimize, was done already by super.renderNodes()
-		const nodes = Array.from(nodeSet); //.filter(node => (node.length > 0));	// Filter nodes in other banks
-		nodes.sort((a, b) => a.start - b.start);
+		let rendered = '<pre>' + super.renderNodes(nodes, startNodes) + '</pre>';
 
 		// Asymptotic function for gravity
 		const asymptotic = (x) => x / (x + 20);
