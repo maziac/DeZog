@@ -807,9 +807,8 @@ export class DebugSessionClass extends DebugSession {
 	protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Promise<void> {
 		const path = UnifiedPath.getUnifiedPath(<string>args.source.path);
 
-		// convert breakpoints
+		// Convert breakpoints
 		const givenBps = args.breakpoints || [];
-
 		const bps = new Array<RemoteBreakpoint>();
 		for (const bp of givenBps) {
 			try {
@@ -943,6 +942,9 @@ export class DebugSessionClass extends DebugSession {
 		const [sfrs, longCallstackAddresses] = this.stackFramesForCallStack(callStack);
 
 		try {
+			// Save all breakpoints with addresses, as 'setNewAddresses' could change all line/address associations.
+			const prevBpAddresses = this.getDisassemblyBreakpoints();
+
 			// Do a new disassembly if necessary.
 			const disasmUpdated = await Disassembly.setNewAddresses(longCallstackAddresses);
 
@@ -950,16 +952,15 @@ export class DebugSessionClass extends DebugSession {
 			// Update disasm.list
 			if (disasmUpdated)
 			{
+				// Remove all breakpoints temporarily
+				const removeBps = prevBpAddresses.map(sbpAddr => sbpAddr.sbp);
+				// Note: at this point the new disassembly has already taken place. I.e. the line/addr associations are potentially wrong. However, because we remove all breakpoints, the following setBreakpointsRequest anyway does not contain any bp with line number for the disassembly file and will remove all breakpoints for the file.
+				vscode.debug.removeBreakpoints(removeBps);
+
 				// Update the disasm.list editor
 				const disasmTextDoc = await this.getOrCreateDisasmTextDoc();
 				const prevLineCount = disasmTextDoc.lineCount;
 				const newText = Disassembly.getDisassemblyText();
-
-				// Save all breakpoints
-				const prevBpAddresses = this.getDisassemblyBreakpoints();
-				// Remove all breakpoints temporarily
-				const removeBps = prevBpAddresses.map(sbpAddr => sbpAddr.sbp);
-				vscode.debug.removeBreakpoints(removeBps);
 
 				// Add new disassembly at the end
 				const edit = new vscode.WorkspaceEdit();

@@ -901,7 +901,7 @@ export class SmartDisassembler {
 		for (const [, node] of this.nodes) {
 			const slot = node.slot;
 			// Loop over all data references of that node
-			for (let addr64k of node.dataReferences) {
+			for (const addr64k of node.dataReferences) {
 				// Check first if bank border crossed
 				if (this.bankBorderPassed(slot, addr64k))
 					continue;	// Does not create a label

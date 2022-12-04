@@ -338,7 +338,7 @@ export class RenderText extends RenderBase {
 				lines.addLine(line);
 				// Associate line(s) with addresses
 				if (this.funcAssociateLineWithAddress) {
-					this.funcAssociateLineWithAddress(lines.length()-1, addr64k, countBytes);
+					this.funcAssociateLineWithAddress(lines.length() - 1, dataAddr, countBytes);
 				}
 			}
 
@@ -381,7 +381,7 @@ export class RenderText extends RenderBase {
 			sub.getAllNodesRecursively(depth, nodesForDepth);
 		}
 		// Sort the nodes
-		const nodes = Array.from(nodesForDepth); 
+		const nodes = Array.from(nodesForDepth);
 		nodes.sort((a, b) => a.start - b.start);
 
 		// Render
