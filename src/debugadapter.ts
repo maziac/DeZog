@@ -533,6 +533,9 @@ export class DebugSessionClass extends DebugSession {
 				// See https://github.com/microsoft/debug-adapter-protocol/issues/171#issuecomment-754753935
 				this.sendEvent(new InvalidatedEvent(['variables']));
 				// Note: Calling this.memoryHasBeenChanged would result in an infinite loop.
+
+				// Also invalidate the disassembly (potentially code memory has been changed.
+				this.enableDisassemblyRefreshButton(true);
 			});
 
 			// Save args
@@ -987,7 +990,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Enable/disable the refresh button.
-			vscode.commands.executeCommand('setContext', 'dezog.disassembler.refreshEnabled', !disasmUpdated);
+			this.enableDisassemblyRefreshButton(!disasmUpdated);
 		}
 		catch (e) {
 			console.log(e);
@@ -1951,9 +1954,13 @@ export class DebugSessionClass extends DebugSession {
 		}
 		else if (cmd == '-msetb') {
 			output = await MemoryCommands.evalMemSetByte(tokens);
+			// Invalidate disassembly
+			this.enableDisassemblyRefreshButton(true);
 		}
 		else if (cmd == '-msetw') {
 			output = await MemoryCommands.evalMemSetWord(tokens);
+			// Invalidate disassembly
+			this.enableDisassemblyRefreshButton(true);
 		}
 		else if (cmd == '-ms') {
 			output = await MemoryCommands.evalMemSave(tokens);
@@ -2826,6 +2833,8 @@ E.g. use "-help -view" to put the help text in an own view.
 		else if (param == 'restore') {
 			// Restores the state
 			await this.stateRestore(stateName);
+			// Invalidate disassembly
+			this.enableDisassemblyRefreshButton(true);
 			return "Restored state '" + stateName + "'.";
 		}
 		else if (param == 'list') {
@@ -3588,6 +3597,15 @@ E.g. use "-help -view" to put the help text in an own view.
 			this.debugConsoleAppend(output);
 
 		this.sendResponse(response);
+	}
+
+
+	/** Enables/disables the refresh button of the disassembly (disasm-list).
+	 * @param enable true = eanble button, false = disable it.
+	 */
+	protected enableDisassemblyRefreshButton(enable: boolean) {
+		// Enable/disable the refresh button.
+		vscode.commands.executeCommand('setContext', 'dezog.disassembler.refreshEnabled', enable);
 	}
 }
 

@@ -1605,7 +1605,7 @@ In the vscode UI LOGPOINT breakpoints can be turned on or off altogether in the 
 ![](images/exception_bp_logpoint.jpg)
 
 As LOGPOINTs are organized in groups you can turn on also only specific LOGPOINT groups.
-This is done by editing the LOGPOINTs in vscode. You have to pass a space separated list of the groups you want to enable.
+This is done by editing the LOGPOINTs in vscode (i.e. press the small pecil right to the 'LOGPOINTs' text). You have to pass a space separated list of the groups you want to enable.
 If no group is given always all groups will be enabled (disabled).
 ![](images/exception_bp_logpoint_edited.jpg)
 
