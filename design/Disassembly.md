@@ -14,6 +14,9 @@ This document discusses the 2nd (smart) disassembly.
 |------|-------------|
 | reverse engineered list file (rev-eng.list) | The list file maintained by the user. Code that the user has reverse engineered and understood is out here. Normally the user will copy part of the disassembly here, change the labels to meaningful names and add comments. |
 
+# Disassembler Main Dependencies
+
+![](images/disassembler_dependency_chart.jpg)
 
 # Analysis
 
