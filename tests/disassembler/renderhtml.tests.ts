@@ -1,14 +1,14 @@
 import * as assert from 'assert';
 import {readFileSync} from 'fs';
 import {Utility} from '../../src/misc/utility';
-import {Format} from '../../src/disassembler/format';
+import {Format} from '../../src/disassembler/coredisassembler/format';
 import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
 import {RenderHtml} from '../../src/disassembler/renderhtml';
 import {MemoryModelAllRam} from '../../src/remotes/MemoryModel/predefinedmemorymodels';
 import {Z80RegistersStandardDecoder} from '../../src/remotes/z80registersstandarddecoder';
 import {Settings} from '../../src/settings/settings';
 import {Z80Registers, Z80RegistersClass} from '../../src/remotes/z80registers';
-import {Opcode} from '../../src/disassembler/opcode';
+import {Opcode} from '../../src/disassembler/coredisassembler/opcode';
 
 
 

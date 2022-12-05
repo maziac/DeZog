@@ -1,6 +1,6 @@
 import * as assert from 'assert';
-import {Opcode} from '../../src/disassembler/opcode';
-import {AsmNode} from '../../src/disassembler/asmnode';
+import {Opcode} from '../../src/disassembler/coredisassembler/opcode';
+import {AsmNode} from '../../src/disassembler/coredisassembler/asmnode';
 import {Utility} from '../../src/misc/utility';
 import {RenderBase} from '../../src/disassembler/renderbase';
 import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';

@@ -1,7 +1,7 @@
-import {AsmNode} from "./asmnode";
-import {Format} from "./format";
+import {AsmNode} from "./coredisassembler/asmnode";
+import {Format} from "./coredisassembler/format";
 import {RenderBase} from "./renderbase";
-import {Subroutine} from "./subroutine";
+import {Subroutine} from "./coredisassembler/subroutine";
 
 
 

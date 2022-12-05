@@ -1,17 +1,17 @@
 import {BankType, MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {Utility} from '../misc/utility';
-import {AsmNode} from './asmnode';
-import {Comments} from './comments';
-import {Format} from './format';
-import {MemAttribute, Memory} from './memory';
-import {NumberType} from './numbertype';
-import {Opcode, OpcodeFlag} from './opcode';
-import {Subroutine} from './subroutine';
+import {AsmNode} from './coredisassembler/asmnode';
+import {Comments} from './coredisassembler/comments';
+import {Format} from './coredisassembler/format';
+import {MemAttribute, Memory} from './coredisassembler/memory';
+import {NumberType} from './coredisassembler/numbertype';
+import {Opcode, OpcodeFlag} from './coredisassembler/opcode';
+import {Subroutine} from './coredisassembler/subroutine';
 import {Z80Registers} from '../remotes/z80registers';
 import {Labels} from '../labels/labels';
 import {ReverseEngineeringLabelParser} from '../labels/reverseengineeringlabelparser';
 import {Remote} from '../remotes/remotebase';
-import {SkipPseudoOpcode} from './skippseudoopcode';
+import {SkipPseudoOpcode} from './coredisassembler/skippseudoopcode';
 
 
 // Type used as passed argument for labels.

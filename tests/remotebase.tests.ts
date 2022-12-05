@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import {RemoteBase} from '../src/remotes/remotebase';
 import {Settings} from '../src/settings/settings';
 import {Z80RegistersClass, Z80Registers} from '../src/remotes/z80registers';
-import {Opcode} from '../src/disassembler/opcode';
+import {Opcode} from '../src/disassembler/coredisassembler/opcode';
 import {GenericBreakpoint, GenericWatchpoint} from '../src/genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../src/remotes/z80registersstandarddecoder';
 import {Disassembly, DisassemblyClass} from '../src/disassembler/disassembly';

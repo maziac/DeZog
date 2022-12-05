@@ -1,5 +1,4 @@
-import {Utility} from '../misc/utility';
-
+import * as assert from 'assert';
 
 
 export const MAX_MEM_SIZE = 0x10000;
@@ -57,8 +56,8 @@ export class BaseMemory {
 			//index=MAX_MEM_SIZE+address-this.startAddress;
 			index += MAX_MEM_SIZE;
 		}
-		Utility.assert(index >= 0, 'getValueAt 1');
-		Utility.assert(index < this.size, 'getValueAt 2');
+		assert(index >= 0, 'getValueAt 1');
+		assert(index < this.size, 'getValueAt 2');
 		return this.memory[index];
 	}
 

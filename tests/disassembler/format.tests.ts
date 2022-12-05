@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import {Format} from '../../src/disassembler/format';
+import {Format} from '../../src/disassembler/coredisassembler/format';
 
 
 

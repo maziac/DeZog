@@ -1,14 +1,14 @@
 import {Z80Registers} from '../remotes/z80registers';
 import {HistoryInstructionInfo} from './decodehistinfo';
-import {BaseMemory} from '../disassembler/basememory';
-import {Opcode} from '../disassembler/opcode';
+import {BaseMemory} from '../disassembler/coredisassembler/basememory';
+import {Opcode} from '../disassembler/coredisassembler/opcode';
 import {EventEmitter} from 'events';
 import {CallStackFrame} from '../callstackframe';
 import {RefList} from '../misc/reflist';
 import {Remote} from '../remotes/remotebase';
 import {Utility} from '../misc/utility';
 import {Settings} from '../settings/settings';
-import {Format} from '../disassembler/format';
+import {Format} from '../disassembler/coredisassembler/format';
 
 
 /**
@@ -262,7 +262,7 @@ export class StepHistoryClass extends EventEmitter {
 		for (const [regName, prevValue] of regsMap) {
 			const regValue = Z80Registers.decoder.getRegValueByName(regName, line);
 			if (isNaN(regValue))
-				this.continue;
+				continue;
 			// Check if changed
 			if (regValue != prevValue) {
 				let regName2 = '';

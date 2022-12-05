@@ -1,5 +1,5 @@
-import { Format } from './../src/disassembler/format';
-import { Opcode } from './../src/disassembler/opcode';
+import { Format } from './../src/disassembler/coredisassembler/format';
+import { Opcode } from './../src/disassembler/coredisassembler/opcode';
 import * as assert from 'assert';
 import {SimpleDisassembly} from '../src/disassembler/simpledisassembly';
 

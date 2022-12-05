@@ -1,4 +1,4 @@
-import { Utility } from './../misc/utility';
+import {Format} from './format';
 import {Opcode, OpcodeFlag} from './opcode';
 
 
@@ -75,7 +75,7 @@ export class AsmNode {
 	 * For debugging in the watch window.
 	 */
 	public toString() {
-		return "AsmNode: start=" + Utility.getHexString(this.start,4) + ', label=' + this.label;
+		return "AsmNode: start=" + Format.getHexString(this.start,4) + ', label=' + this.label;
 	}
 
 

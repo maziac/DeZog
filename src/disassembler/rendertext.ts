@@ -1,9 +1,9 @@
-import {AsmNode} from "./asmnode";
-import {Format} from "./format";
+import {AsmNode} from "./coredisassembler/asmnode";
+import {Format} from "./coredisassembler/format";
 import {RenderBase} from "./renderbase";
 import {RenderedLines} from "./renderedlines";
 import {SmartDisassembler} from "./smartdisassembler";
-import {Subroutine} from "./subroutine";
+import {Subroutine} from "./coredisassembler/subroutine";
 
 
 /** Used by funcLineAddressAssociation.

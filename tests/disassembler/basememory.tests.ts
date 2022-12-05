@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import {BaseMemory} from '../../src/disassembler/basememory';
+import {BaseMemory} from '../../src/disassembler/coredisassembler/basememory';
 
 
 suite('Disassembler - BaseMemory', () => {
@@ -14,7 +14,7 @@ suite('Disassembler - BaseMemory', () => {
 			assert.deepEqual(mem.getData(0x1000, 1), new Uint8Array([1]));
 			assert.deepEqual(mem.getData(0x1000, 2), new Uint8Array([1, 2]));
 			assert.deepEqual(mem.getData(0x1000, 3), new Uint8Array([1, 2, 3]));
-			
+
 			assert.deepEqual(mem.getData(0x1020, 3), new Uint8Array([]));
 			assert.deepEqual(mem.getData(0x101F, 3), new Uint8Array([32]));
 			assert.deepEqual(mem.getData(0x101E, 3), new Uint8Array([31, 32]));

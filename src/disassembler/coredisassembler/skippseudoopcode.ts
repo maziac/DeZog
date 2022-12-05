@@ -1,4 +1,4 @@
-import {Utility} from "../misc/utility";
+import * as assert from 'assert';
 import {Format} from "./format";
 import {Opcode} from "./opcode";
 
@@ -25,7 +25,7 @@ export class SkipPseudoOpcode extends Opcode {
 		}
 		else {
 			// Other skips are not implemented
-			Utility.assert(false, 'SkipPseudoCode: length ' + this.length + ' not implemented.');
+			assert(false, 'SkipPseudoCode: length ' + this.length + ' not implemented.');
 		}
 	}
 
