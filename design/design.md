@@ -107,6 +107,43 @@ Remote <-> Socket:
 - Data: registers, memory dump, call stack
 
 
+# Dependency Charts
+
+(Note: dependency graphs have been created with the vscode extension "classdiagram-ts".)
+
+## Disassembler
+
+See [Disassembly.md](Disassembly.md#disassembler-main-dependencies)
+
+## Remotes
+
+![](images/remotes_dependency_chart.jpg)
+
+### Internal Simulator
+
+![](images/remote_zsim_dependency_chart.jpg)
+
+### ZEsarUX Remote
+
+![](images/remote_zesarux_dependency_chart.jpg)
+
+### Memory Model
+
+![](images/memory_model_dependency_chart.jpg)
+
+
+## Labels
+
+![](images/labels_dependency_chart.jpg)
+
+## Variables
+
+![](images/variables_dependency_chart.jpg)
+
+## Views
+
+![](images/views_dependency_chart.jpg)
+
 
 # Activation
 

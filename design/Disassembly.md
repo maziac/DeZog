@@ -274,24 +274,3 @@ Note: Special instructions to consider:
 	LD SP,HL
 ~~~
 
-
-# Classes
-
-~~~
-┌─────────────────────┐           ┌─────────────────────┐
-│  SmartDisassembler  │           │  SimpleDisassembly  │
-└─────────────────────┘           └─────────────────────┘
-           ▲
-           │
-           │
-           │
-┌─────────────────────┐
-│  DisassemblyClass   │
-└─────────────────────┘
-~~~
-
-The SmartDisassembler is the base class which is directly used when rendering into html, a call graph or a flowchart.
-DisassemblyClass is derived to specialize on the disassembly required while stepping through the code, if no *.asm fie is available.
-
-SimpleDisassembly has no conjunction with the SmartDisassembler it is just used for brute force disassembly e.g. in the VARIABLES pane.
-
