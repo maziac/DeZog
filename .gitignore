@@ -1,4 +1,4 @@
-.DS_Store
+.*/
 node_modules/
 out/
 dist/
@@ -9,8 +9,4 @@ logs/
 notes.md
 /coverage/
 **/.tmp/
-.obsidian/
-.scannerwork/
-.VSCodeCounter/
 comments.json
-.vscode/settings.json

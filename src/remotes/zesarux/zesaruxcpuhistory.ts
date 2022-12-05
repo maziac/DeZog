@@ -1,4 +1,4 @@
-import { zSocket /*, ZesaruxSocket*/ } from './zesaruxsocket';
+import {zSocket /*, ZesaruxSocket*/} from './zesaruxsocket';
 //import { Z80RegistersClass } from '../z80registers';
 import {CpuHistoryClass} from '../cpuhistory';
 import {HistoryInstructionInfo, DecodeHistoryInfo} from '../decodehistinfo';
@@ -12,10 +12,10 @@ import {Utility} from '../../misc/utility';
 export class DecodeZesaruxHistoryInfo extends DecodeHistoryInfo {
 
 	// The first time the index is searched. Afterwards the stored one is used.
-	protected pcContentsIndex=-1;
+	protected pcContentsIndex = -1;
 
 	// The first time the index is searched. Afterwards the stored one is used.
-	protected spContentsIndex=-1;
+	protected spContentsIndex = -1;
 
 
 	/**
@@ -24,19 +24,19 @@ export class DecodeZesaruxHistoryInfo extends DecodeHistoryInfo {
 	 * @return E.g. 0x5C782AE52 as number
 	 */
 	public getOpcodes(line: HistoryInstructionInfo): number {
-		if (this.pcContentsIndex<0) {
-			this.pcContentsIndex=line.indexOf('(PC)=');
-			Utility.assert(this.pcContentsIndex>=0);
-			this.pcContentsIndex+=5;
+		if (this.pcContentsIndex < 0) {
+			this.pcContentsIndex = line.indexOf('(PC)=');
+			Utility.assert(this.pcContentsIndex >= 0);
+			this.pcContentsIndex += 5;
 		}
-		const opcodes=line.substr(this.pcContentsIndex, 8);
+		const opcodes = line.substr(this.pcContentsIndex, 8);
 		// Change into number (exchange byte positions)
-		const opc=parseInt(opcodes, 16);
-		let result=opc>>>24;
-		result|=(opc>>>8)&0xFF00;
-		result|=(opc<<8)&0xFF0000;
+		const opc = parseInt(opcodes, 16);
+		let result = opc >>> 24;
+		result |= (opc >>> 8) & 0xFF00;
+		result |= (opc << 8) & 0xFF0000;
 		//result|=(opc<<24)&0xFF000000
-		result+=(opc&0xFF)*256*65536;	// Otherwise the result might be negative
+		result += (opc & 0xFF) * 256 * 65536;	// Otherwise the result might be negative
 		return result;
 	}
 
@@ -48,13 +48,13 @@ export class DecodeZesaruxHistoryInfo extends DecodeHistoryInfo {
 	 * @returns The (sp), e.g. 0xA2BF
 	 */
 	public getSPContent(line: string): number {
-		if (this.spContentsIndex<0) {
-			this.spContentsIndex=line.indexOf('(SP)=');
-			Utility.assert(this.spContentsIndex>=0);
-			this.spContentsIndex+=5;
+		if (this.spContentsIndex < 0) {
+			this.spContentsIndex = line.indexOf('(SP)=');
+			Utility.assert(this.spContentsIndex >= 0);
+			this.spContentsIndex += 5;
 		}
-		const spString=line.substr(this.spContentsIndex, 4);
-		const sp=parseInt(spString, 16);
+		const spString = line.substring(this.spContentsIndex, this.spContentsIndex + 4);
+		const sp = parseInt(spString, 16);
 		return sp;
 	}
 
@@ -89,9 +89,9 @@ export class ZesaruxCpuHistory extends CpuHistoryClass {
 	 */
 	public init() {
 		super.init();
-		if(this.maxSize > 0) {
+		if (this.maxSize > 0) {
 			zSocket.send('cpu-history enabled yes', () => {}, true);
-			zSocket.send('cpu-history set-max-size '+this.maxSize);
+			zSocket.send('cpu-history set-max-size ' + this.maxSize);
 			zSocket.send('cpu-history clear');
 			zSocket.send('cpu-history started yes');
 			zSocket.send('cpu-history ignrephalt yes');
@@ -109,17 +109,15 @@ export class ZesaruxCpuHistory extends CpuHistoryClass {
 	 * @param index The index to retrieve. Starts at 0.
 	 * @returns A string with the registers.
 	 */
-	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo|undefined> {
+	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo | undefined> {
 		return new Promise<HistoryInstructionInfo | undefined>(resolve => {
 			Utility.assert(index >= 0);
 			zSocket.send('cpu-history get ' + index, (data: string) => { // 'cpu-history get' starts at 0 too
-				if(data.substring(0,5).toLowerCase() == 'error')
+				if (data.substring(0, 5).toLowerCase() == 'error')
 					resolve(undefined);
 				else
 					resolve(data);
 			}, true);
 		});
 	}
-
 }
-
