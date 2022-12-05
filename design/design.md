@@ -34,7 +34,7 @@
 - Settings: Singleton to hold the extension's settings.
 - ShallowVar: DisassemblyVar, RegistersMainVar, RegistersSecondaryVar, StackVar, LabelVar. Representations of variables. They know how to retrieve the data from zesarux.
 - Z80Registers: Static class to parse (from zesarux) and format registers.
-- Remote: Gets requests from the DebugSessionClass and passes them to e.g. ZEsarUX (via ZesaruxSocket). There are several Remote classes e.g. Zesaruxremote or ZxSimulatorRemote.
+- Remote: Gets requests from the DebugSessionClass and passes them to e.g. ZEsarUX (via ZesaruxSocket). There are several Remote classes e.g. ZesaruxRemote or ZxSimulatorRemote.
 - ZesaruxSocket: Socket connection and communication to zesarux emulator. Knows about the basic communication, but not the commands.
 
 
@@ -111,10 +111,6 @@ Remote <-> Socket:
 
 (Note: dependency graphs have been created with the vscode extension "classdiagram-ts".)
 
-## Disassembler
-
-See [Disassembly.md](Disassembly.md#disassembler-main-dependencies)
-
 ## Remotes
 
 ![](images/remotes_dependency_chart.jpg)
@@ -143,6 +139,11 @@ See [Disassembly.md](Disassembly.md#disassembler-main-dependencies)
 ## Views
 
 ![](images/views_dependency_chart.jpg)
+
+
+## Disassembler
+
+See [Disassembly.md](Disassembly.md#disassembler-main-dependencies)
 
 
 # Activation
@@ -247,7 +248,7 @@ vscode retrieves the list of variable references through 'getContent', afterward
 Unfortunately vscode is not very object oriented at that point. I.e. immediate values are returned
 immediately and not as an object as arrays or structs.
 The complicates the implementation a there are 2 ways to return a response to a request.
-(Internally DeZog therefore use the ExpressionVariable which holds either a variable reference or a callback function pointer to retireve the value.)
+(Internally DeZog therefore use the ExpressionVariable which holds either a variable reference or a callback function pointer to retrieve the value.)
 
 **vscode has no way to tell DeZog that a variable reference is not used anymore.
 Therefore new variables can be added to the list but not removed anymore.**
@@ -265,7 +266,7 @@ But a few can be set dynamically, i.e. the 'Expressions' in the VARIABLES pane a
 
 For 'Expressions' use '-addexpr/-delexpr' from the debug console.
 For WATCH simple enter the expression in the WATCH pane.
-(Note: Both panes have a similar appearance. The difference is that values of expressions can be midifed in the 'Expressions' area but not in the WATCH pane.)
+(Note: Both panes have a similar appearance. The difference is that values of expressions can be modified in the 'Expressions' area but not in the WATCH pane.)
 
 WATCHes re-evaluate expressions on each step. Therefore there is the ExpressionsList which remembers expressions and the associated ShallowVar.
 So, before an expression is evaluated it is checked if it exists already.
@@ -296,22 +297,22 @@ are referenced by a number only.
 Therefore the debug adapter needs to keep track with a map or list of the variable references and the underlying objects.
 Unfortunately there is no information available from vscode whenever a variable reference is not required anymore.
 I.e. it is impossible to delete variable references and the underlying objects.
-Because of the asynchronicity it is also imposible to bound the deleting
+Because of the asynchronicity it is also impossible to bound the deleting
 of objects to certain requests (like the stack trace request).
 
 It would be much easier if vscode (instead of using reference numbers) would offer the possibility to set a variables reference as an object. Then simply garbage collection would take care of unused objects.
 
 A way out would be to use a layer in between (between vscode and the emulator/socket).
-This layer would request all required data wenever a 'next' (step) has been performed.
+This layer would request all required data whenever a 'next' (step) has been performed.
 So all data is allocated for one 'step' only. At the start of the 'step' the old data is discarded and new data structures are allocated.
-vscode requests would be ansewered (immediately) just by returning the already received data.
+vscode requests would be answered (immediately) just by returning the already received data.
 
 Problem with this approach is that this layer would have to requests all data at once and for every step.
-E.g. even while stepping from one assembler instruction to the next all disassemblys (and, when this available later, all registers/stack objects
+E.g. even while stepping from one assembler instruction to the next all disassemblies (and, when this available later, all registers/stack objects
 for that call stack item) need to be retrieved from the emulator in advance.
 Even if the data in the vscode UI is collapsed.
 
-This doesn't seem the rigth way. Let's see how the discussion with vscode guys will turn out.
+This doesn't seem the right way. Let's see how the discussion with vscode guys will turn out.
 
 
 # Other Components
@@ -596,7 +597,7 @@ note over session: Init of Decorations\n and StepHistory.
 session -> disassembly: invalidateDisassembly
 session -> vscode: StoppedEvent("Labels reloaded")
 
-note over vscode, disassembly: Contune debug session
+note over vscode, disassembly: Continue debug session
 ```
 
 

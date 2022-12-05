@@ -54,7 +54,6 @@ class UlaScreen {
 		const colorStart = UlaScreen.SCREEN_HEIGHT * UlaScreen.SCREEN_WIDTH / 8;
 
 		// Get pixels memory
-		//const pixels = new Arra
 		const pixels = imgData.data;
 		let pixelIndex = 0;
 		let inIndex = 0;
