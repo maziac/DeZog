@@ -476,7 +476,7 @@ export class Utility {
 		const result = format.replace(/\${([^}]*?:)?([^:]*?)(:[\s\S]*?)?}/g, (_match, p1, p2, _p3) => {
 			let usedSize = size;
 			// Check modifier p1
-			const modifier = (p1 == null) ? '' : p1.substr(0, p1.length - 1);
+			const modifier = (p1 == null) ? '' : p1.substring(0, p1.length - 1);
 			switch (modifier) {
 				case 'b@':
 					usedSize = 1;
@@ -640,8 +640,8 @@ export class Utility {
 				// Not a ${...} -> continue
 				return p;
 			}
-			const p1 = p.substr(0, k);
-			const restP = p.substr(k + 1);
+			const p1 = p.substring(0, k);
+			const restP = p.substring(k + 1);
 			// Complete '${...}' found. now check content
 			const innerMatch = /^([^\|]*?:)?([^\|]*?)(\|[\s\S]*?)?(\|[\s\S]*?)?$/.exec(p1);
 			if (innerMatch == undefined)

@@ -35,7 +35,7 @@ export class HelpProvider implements vscode.WebviewViewProvider {
 					const link = message.data;
 					const index = link.lastIndexOf('#');
 					if (index >= 0) {
-						const chapter = link.substr(index);
+						const chapter = link.substring(index);
 						// E.g. "#support"
 						this.navigateToChapter(chapter);
 					}

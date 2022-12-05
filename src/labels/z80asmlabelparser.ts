@@ -93,15 +93,6 @@ export class Z80asmLabelParser extends LabelParserBase {
 			const matchBytes = this.matchBytesRegEx.exec(line);
 			// Count how many bytes are included in the line.
 			if (matchBytes) {
-				/*
-				// Now check if the bytes have been data.
-				const len=matchBytes[0].length;
-				const remLine=line.substr(len).trimLeft();
-				const matchDefb=this.matchDefbRegEx.exec(remLine);
-				if (!matchDefb) {
-					// If not data then assume that it is code
-				*/
-
 				const bytes = matchBytes[1].trim();
 				const lenBytes = bytes.length;
 				for (let k = 0; k < lenBytes; k++) {
@@ -111,8 +102,6 @@ export class Z80asmLabelParser extends LabelParserBase {
 				}
 				// 2 characters = 1 byte
 				countBytes /= 2;
-
-				//}
 			}
 		}
 

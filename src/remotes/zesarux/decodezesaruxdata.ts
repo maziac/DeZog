@@ -88,7 +88,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.pcIndex >= 0);
 			this.pcIndex += 3;
 		}
-		const res = parseInt(data.substr(this.pcIndex, 4), 16);
+		const res = parseInt(data.substring(this.pcIndex, this.pcIndex + 4), 16);
 		return res;
 	}
 
@@ -98,7 +98,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.spIndex >= 0);
 			this.spIndex += 3;
 		}
-		const res = parseInt(data.substr(this.spIndex, 4), 16);
+		const res = parseInt(data.substring(this.spIndex, this.spIndex + 4), 16);
 		return res;
 	}
 
@@ -108,7 +108,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.afIndex >= 0);
 			this.afIndex += 3;
 		}
-		const res = parseInt(data.substr(this.afIndex, 4), 16);
+		const res = parseInt(data.substring(this.afIndex, this.afIndex + 4), 16);
 		return res;
 	}
 
@@ -118,7 +118,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.bcIndex >= 0);
 			this.bcIndex += 3;
 		}
-		const res = parseInt(data.substr(this.bcIndex, 4), 16);
+		const res = parseInt(data.substring(this.bcIndex, this.bcIndex + 4), 16);
 		return res;
 	}
 
@@ -128,7 +128,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.hlIndex >= 0);
 			this.hlIndex += 3;
 		}
-		const res = parseInt(data.substr(this.hlIndex, 4), 16);
+		const res = parseInt(data.substring(this.hlIndex, this.hlIndex + 4), 16);
 		return res;
 	}
 
@@ -138,7 +138,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.deIndex >= 0);
 			this.deIndex += 3;
 		}
-		const res = parseInt(data.substr(this.deIndex, 4), 16);
+		const res = parseInt(data.substring(this.deIndex, this.deIndex + 4), 16);
 		return res;
 	}
 
@@ -148,7 +148,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.ixIndex >= 0);
 			this.ixIndex += 3;
 		}
-		const res = parseInt(data.substr(this.ixIndex, 4), 16);
+		const res = parseInt(data.substring(this.ixIndex, this.ixIndex + 4), 16);
 		return res;
 	}
 
@@ -158,7 +158,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.iyIndex >= 0);
 			this.iyIndex += 3;
 		}
-		const res = parseInt(data.substr(this.iyIndex, 4), 16);
+		const res = parseInt(data.substring(this.iyIndex, this.iyIndex + 4), 16);
 		return res;
 	}
 
@@ -168,7 +168,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.af2Index >= 0);
 			this.af2Index += 4;
 		}
-		const res = parseInt(data.substr(this.af2Index, 4), 16);
+		const res = parseInt(data.substring(this.af2Index, this.af2Index + 4), 16);
 		return res;
 	}
 
@@ -178,7 +178,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.bc2Index >= 0);
 			this.bc2Index += 4;
 		}
-		const res = parseInt(data.substr(this.bc2Index, 4), 16);
+		const res = parseInt(data.substring(this.bc2Index, this.bc2Index + 4), 16);
 		return res;
 	}
 
@@ -188,7 +188,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.hl2Index >= 0);
 			this.hl2Index += 4;
 		}
-		const res = parseInt(data.substr(this.hl2Index, 4), 16);
+		const res = parseInt(data.substring(this.hl2Index, this.hl2Index + 4), 16);
 		return res;
 	}
 
@@ -198,7 +198,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.de2Index >= 0);
 			this.de2Index += 4;
 		}
-		const res = parseInt(data.substr(this.de2Index, 4), 16);
+		const res = parseInt(data.substring(this.de2Index, this.de2Index + 4), 16);
 		return res;
 	}
 
@@ -208,7 +208,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			Utility.assert(this.iIndex >= 0);
 			this.iIndex += 2;
 		}
-		const res = parseInt(data.substr(this.iIndex, 2), 16);
+		const res = parseInt(data.substring(this.iIndex, this.iIndex + 2), 16);
 		return res;
 	}
 

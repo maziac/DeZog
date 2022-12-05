@@ -29,7 +29,7 @@ export class DecodeZesaruxHistoryInfo extends DecodeHistoryInfo {
 			Utility.assert(this.pcContentsIndex >= 0);
 			this.pcContentsIndex += 5;
 		}
-		const opcodes = line.substr(this.pcContentsIndex, 8);
+		const opcodes = line.substring(this.pcContentsIndex, this.pcContentsIndex + 8);
 		// Change into number (exchange byte positions)
 		const opc = parseInt(opcodes, 16);
 		let result = opc >>> 24;

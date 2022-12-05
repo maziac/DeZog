@@ -745,7 +745,7 @@ export class ZesaruxRemote extends RemoteBase {
 		const addresses = new Set<number>();
 		const length = data.length;
 		for (let k = 0; k < length; k += 5) {
-			const addressString = data.substr(k, 4);
+			const addressString = data.substring(k, k + 4);
 			const address = parseInt(addressString, 16);
 			// Change to long address
 			// Note: this is not 100% correct, i.e. if the slots have changed during execution the wrong values are displayed here.
@@ -1225,7 +1225,7 @@ export class ZesaruxRemote extends RemoteBase {
 			const len = data.length;
 			Utility.assert(len / 2 == retrieveSize);
 			for (let i = 0; i < len; i += 2) {
-				const valueString = data.substr(i, 2);
+				const valueString = data.substring(i, i + 2);
 				const value = parseInt(valueString, 16);
 				values[k++] = value;
 			}
@@ -1348,7 +1348,8 @@ export class ZesaruxRemote extends RemoteBase {
 		if (!data.startsWith("ERROR")) {
 			// Palette is returned as 3 digit hex separated by spaces, e.g. "02D 168 16D 000"
 			for (let i = 0; i < 256; i++) {
-				const colorString = data.substr(i * 4, 3);
+				const l = i * 4;
+				const colorString = data.substring(l, l + 3);
 				const color = parseInt(colorString, 16);
 				// ZEsarUX sends the data as RRRGGGBBB, we need to
 				// change this first to RRRGGGBB, 0000000B.
@@ -1406,7 +1407,8 @@ export class ZesaruxRemote extends RemoteBase {
 					continue;
 				const sprite = new Uint8Array(5);
 				for (let i = 0; i < 5; i++) {
-					const attrString = line.substr(i * 3, 2);
+					const l = i * 3;
+					const attrString = line.substring(l, l + 2);
 					if (attrString.length > 0) {
 						const attribute = parseInt(attrString, 16);
 						sprite[i] = attribute;
@@ -1438,7 +1440,8 @@ export class ZesaruxRemote extends RemoteBase {
 			for (const line of patternLines) {
 				const pattern = new Array<number>(256);
 				for (let i = 0; i < 256; i++) {
-					const attrString = line.substr(i * 3, 2);
+					const l = i * 3;
+					const attrString = line.substring(l, l + 2);
 					const attribute = parseInt(attrString, 16);
 					pattern[i] = attribute;
 				}
