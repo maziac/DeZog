@@ -16,7 +16,11 @@ This document discusses the 2nd (smart) disassembly.
 
 # Disassembler Main Dependencies
 
+Main dependencies:
 ![](images/disassembler_dependency_chart.jpg)
+
+Core classes dependencies:
+![](images/disassembler_dependency_chart_core.jpg)
 
 # Analysis
 
