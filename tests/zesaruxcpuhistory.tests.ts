@@ -1,5 +1,5 @@
-import { Opcode } from './../src/disassembler/coredisassembler/opcode';
-import { Format } from './../src/disassembler/coredisassembler/format';
+import { Opcode } from '../src/disassembler/core/opcode';
+import { Format } from '../src/disassembler/core/format';
 
 import * as assert from 'assert';
 import {ZesaruxCpuHistory, DecodeZesaruxHistoryInfo} from '../src/remotes/zesarux/zesaruxcpuhistory';

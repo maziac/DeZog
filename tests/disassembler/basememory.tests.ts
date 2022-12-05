@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import {BaseMemory} from '../../src/disassembler/coredisassembler/basememory';
+import {BaseMemory} from '../../src/disassembler/core/basememory';
 
 
 suite('Disassembler - BaseMemory', () => {

@@ -1,6 +1,6 @@
 import * as assert from 'assert';
-import {MAX_MEM_SIZE} from '../../src/disassembler/coredisassembler/basememory';
-import {Memory} from '../../src/disassembler/coredisassembler/memory';
+import {MAX_MEM_SIZE} from '../../src/disassembler/core/basememory';
+import {Memory} from '../../src/disassembler/core/memory';
 
 
 suite('Disassembler - Memory', () => {

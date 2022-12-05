@@ -1,8 +1,8 @@
 import {Utility} from "../misc/utility";
-import {AsmNode} from "./coredisassembler/asmnode";
-import {Format} from "./coredisassembler/format";
+import {AsmNode} from "./core/asmnode";
+import {Format} from "./core/format";
 import {RenderBase} from "./renderbase";
-import {Subroutine} from "./coredisassembler/subroutine";
+import {Subroutine} from "./core/subroutine";
 
 
 

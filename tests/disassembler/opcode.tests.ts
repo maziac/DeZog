@@ -1,6 +1,6 @@
 import * as assert from 'assert';
-import {NumberType} from '../../src/disassembler/coredisassembler/numbertype';
-import {Opcode, OpcodeFlag} from '../../src/disassembler/coredisassembler/opcode';
+import {NumberType} from '../../src/disassembler/core/numbertype';
+import {Opcode, OpcodeFlag} from '../../src/disassembler/core/opcode';
 
 
 

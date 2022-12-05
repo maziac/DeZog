@@ -1,5 +1,5 @@
-import {AsmNode} from "./coredisassembler/asmnode";
-import {Format} from "./coredisassembler/format";
+import {AsmNode} from "./core/asmnode";
+import {Format} from "./core/format";
 import {RenderText} from "./rendertext";
 
 

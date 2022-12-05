@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import {Utility} from '../../src/misc/utility';
-import {Format} from '../../src/disassembler/coredisassembler/format';
+import {Format} from '../../src/disassembler/core/format';
 import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
 import {RenderCallGraph} from '../../src/disassembler/rendercallgraph';
 

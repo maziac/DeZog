@@ -1,6 +1,6 @@
-import {AsmNode} from "./coredisassembler/asmnode";
+import {AsmNode} from "./core/asmnode";
 import {SmartDisassembler} from "./smartdisassembler";
-import {Subroutine} from "./coredisassembler/subroutine";
+import {Subroutine} from "./core/subroutine";
 
 // From: https://github.com/aduh95/viz.js
 //const renderGraphviz = require('@aduh95/viz.js/sync');	// I couldn't transfer this into an "import" statement

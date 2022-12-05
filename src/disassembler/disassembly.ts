@@ -1,12 +1,12 @@
-import {Format} from "./coredisassembler/format";
-import {Opcode} from "./coredisassembler/opcode";
+import {Format} from "./core/format";
+import {Opcode} from "./core/opcode";
 import {RenderHint, RenderText} from "./rendertext";
 import {SmartDisassembler} from "./smartdisassembler";
 import {Labels} from "../labels/labels";
 import {Utility} from "../misc/utility";
 import {Z80Registers} from "../remotes/z80registers";
 import {Settings} from '../settings/settings';
-import {MemAttribute} from './coredisassembler/memory';
+import {MemAttribute} from './core/memory';
 import {Remote} from '../remotes/remotebase';
 
 

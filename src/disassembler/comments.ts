@@ -1,4 +1,4 @@
-import {Format} from "./coredisassembler/format";
+import {Format} from "./core/format";
 
 
 /** Class that stores comments that are created during disassembly.

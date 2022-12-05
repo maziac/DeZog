@@ -1,14 +1,14 @@
 import {Z80Registers} from '../remotes/z80registers';
 import {HistoryInstructionInfo} from './decodehistinfo';
-import {BaseMemory} from '../disassembler/coredisassembler/basememory';
-import {Opcode} from '../disassembler/coredisassembler/opcode';
+import {BaseMemory} from '../disassembler/core/basememory';
+import {Opcode} from '../disassembler/core/opcode';
 import {EventEmitter} from 'events';
 import {CallStackFrame} from '../callstackframe';
 import {RefList} from '../misc/reflist';
 import {Remote} from '../remotes/remotebase';
 import {Utility} from '../misc/utility';
 import {Settings} from '../settings/settings';
-import {Format} from '../disassembler/coredisassembler/format';
+import {Format} from '../disassembler/core/format';
 
 
 /**

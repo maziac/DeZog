@@ -1,6 +1,6 @@
-import {BaseMemory} from "./coredisassembler/basememory";
-import {Opcode} from "./coredisassembler/opcode";
-import {Format} from "./coredisassembler/format";
+import {BaseMemory} from "./core/basememory";
+import {Opcode} from "./core/opcode";
+import {Format} from "./core/format";
 import {Utility} from "../misc/utility";
 
 

@@ -1,6 +1,6 @@
-import { AsmNode } from './../../src/disassembler/coredisassembler/asmnode';
+import { AsmNode } from '../../src/disassembler/core/asmnode';
 import * as assert from 'assert';
-import {Opcode} from '../../src/disassembler/coredisassembler/opcode';
+import {Opcode} from '../../src/disassembler/core/opcode';
 
 
 

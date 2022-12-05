@@ -5,7 +5,7 @@ import {Settings} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {GenericBreakpoint, GenericWatchpoint} from '../../genericwatchpoint';
-import {Opcode, OpcodeFlag} from '../../disassembler/coredisassembler/opcode';
+import {Opcode, OpcodeFlag} from '../../disassembler/core/opcode';
 import {Z80Registers, Z80RegistersClass} from '../z80registers';
 import {SerialPort} from 'serialport';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';

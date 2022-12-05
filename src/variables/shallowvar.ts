@@ -4,7 +4,7 @@ import {Settings} from '../settings/settings'
 import {Utility} from '../misc/utility';
 import {RefList} from '../misc/reflist';
 import {Remote} from '../remotes/remotebase';
-import {Format} from '../disassembler/coredisassembler/format';
+import {Format} from '../disassembler/core/format';
 import {StepHistory} from '../remotes/cpuhistory';
 import {SimpleDisassembly} from '../disassembler/simpledisassembly';
 
