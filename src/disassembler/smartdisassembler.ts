@@ -1,7 +1,7 @@
 import {BankType, MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {Utility} from '../misc/utility';
 import {AsmNode} from './coredisassembler/asmnode';
-import {Comments} from './coredisassembler/comments';
+import {Comments} from './comments';
 import {Format} from './coredisassembler/format';
 import {MemAttribute, Memory} from './coredisassembler/memory';
 import {NumberType} from './coredisassembler/numbertype';
