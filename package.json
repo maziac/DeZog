@@ -9,19 +9,11 @@
 	},
 	"license": "MIT",
 	"keywords": [
-		"debugger",
-		"debug",
 		"z80",
-		"z80-debug",
-		"dezog",
-		"zesarux",
+		"mame",
 		"cspect",
-		"zx",
 		"spectrum",
-		"next",
-		"assembler",
-		"z80asm",
-		"sjasmplus"
+		"assembler"
 	],
 	"engines": {
 		"vscode": "^1.71.0",
