@@ -2,7 +2,7 @@
 
 Up to version 2.x DeZog was primarily used to develop and debug **new** Z80 SW.
 
-Since version 3 DeZog can also be used for reverse engineering of existing SW.
+Since version 3.0 DeZog can also be used for reverse engineering of existing SW.
 
 
 When reverse engineering existing SW, all object code is already available, while the source code, i.e. the commented assembler sources, usually do not exist.
