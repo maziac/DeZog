@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.1.0
+- ZEsarUX:
+	- Support for ZEsarUX version 10.3
+	- Closes all ZEsarUX menus (close-all-menus) when a debug session starts
+
 # 3.0.0
 - Better reverse engineering support
 	- Improved disassembly
