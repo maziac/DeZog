@@ -93,7 +93,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 - supports [ZEsarUX]( emulator
 - supports [CSpect] emulator
 - experimental support for [MAME]
-- can be used with the internal simulator (does not require ZEsarUX or CSpect))
+- can be used with the internal simulator (does not require ZEsarUX or CSpect)
 - reads .list and .sld files
 	- supports stepping through source code
 	- either in .list file or in .asm files
@@ -127,23 +127,6 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 - [custom extensions](documentation/zsimPeripherals.md) to the internal simulator to simulate peripherals.
 
 
-## Constraints
-
-- supports [ZEsarUX], [CSpect], [ZX Next] HW and the internal simulator (and MAME/experimental)
-- build output must
-	- create a .list or SLD file (support for sjasmplus, Savannah's z80asm, z88dk).
-	- create a .sna, .nex or object file containing the binary
-
-
-<!--
-## Roadmap
-
-Next to implement:
-- Support for CSpect 'rewind' feature.
-- OpenMSX support: Was done by s0urceror and is available already on the 'openmsx' branch.
--->
-
-
 ## Installation
 
 ### Prerequisites
@@ -156,9 +139,9 @@ For more demanding projects you have the choice to install a real emulator.
 
 These are the options:
 
-- the [CSpect](http://www.cspect.org) emulator (known to be interoperable with DeZog: version 2.16.6)
-- the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable with DeZog: version 10.3)
-- [MAME](https://www.mamedev.org/release.html) (known to be interoperable with DeZog: version 0.242)
+- the [CSpect](http://www.cspect.org) emulator (known to be interoperable is version 2.16.6)
+- the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable is version 10.1. Note: 10.2 is unfortunately incompatible)
+- [MAME](https://www.mamedev.org/release.html) (known to be interoperable is version 0.242)
 
 The different DeZog/emulator configurations have different advantages.
 But which one you choose mainly depends on your personal preference.

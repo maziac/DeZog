@@ -178,7 +178,17 @@ export class ZesaruxRemote extends RemoteBase {
 					await zSocket.quit();
 					const err = new Error('Please update ZEsarUX. Need at least version ' + MIN_ZESARUX_VERSION + '.');
 					this.emit('error', err);
+					return;
 				}
+
+				// TODO: Remove when ZEsarUX 10.3 is out. Also set MIN_ZESARUX_VERSION to 10.3
+				if (this.zesaruxVersion >= 110.2) {
+					await zSocket.quit();
+					const err = new Error('Please use only upto ZEsarUX 10.1. 10.2 and higher is at the moment incompatible with DeZog.');
+					this.emit('error', err);
+					return;
+				}
+
 
 				// Allow extensions
 				this.zesaruxConnected();
@@ -614,12 +624,9 @@ export class ZesaruxRemote extends RemoteBase {
 				const bpId = ZesaruxRemote.STEP_BREAKPOINT_ID;
 				// Clear register cache
 				//Z80Registers.clearCache();
-				// Note "prints" is required, so that a normal step over will not produce a breakpoint decoration.
-				await zSocket.sendAwait('set-breakpointaction ' + bpId);
-				// set the breakpoint
-				await zSocket.sendAwait('set-breakpoint ' + bpId + ' ' + condition);
-				// enable breakpoint
-				await zSocket.sendAwait('enable-breakpoint ' + bpId,);
+				// Set breakpoint
+				await this.sendSetBreakpoint(bpId, condition);
+
 				// Run
 				zSocket.sendInterruptableRunCmd(async text => {
 					// (could take some time, e.g. until a breakpoint is hit)
@@ -810,15 +817,11 @@ export class ZesaruxRemote extends RemoteBase {
 				if (type == "call" || type == "rst" || type.includes("interrupt")) {
 					//const addr = parseInt(addrTypeString,16);
 					// Caller found, set breakpoint: when SP gets 2 bigger than the current value.
-					// Set action first (no action).
 					const bpId = ZesaruxRemote.STEP_BREAKPOINT_ID;
-					await zSocket.sendAwait('set-breakpointaction ' + bpId);
-					// Set the breakpoint.
 					// Note: PC=PEEKW(SP-2) finds an executed RET.
 					const condition = 'PC=PEEKW(SP-2) AND SP>=' + bpSp;
-					await zSocket.sendAwait('set-breakpoint ' + bpId + ' ' + condition);
-					// Enable breakpoint
-					await zSocket.sendAwait('enable-breakpoint ' + bpId);
+					// Set breakpoint
+					await this.sendSetBreakpoint(bpId, condition);
 
 					// Clear register cache
 					//Z80Registers.clearCache();
@@ -1083,16 +1086,42 @@ export class ZesaruxRemote extends RemoteBase {
 		if (zesaruxCondition.length > 0)
 			condition += zesaruxCondition;
 
-		// Set action first (no action)
-		await zSocket.sendAwait('set-breakpointaction ' + bpId /* + ' prints breakpoint ' + bpId + ' hit (' + shortCond + ')' */);	// Since ZEsarUX 10.2 an empty breakpoint action is required.
-		// Set the breakpoint
-		await zSocket.sendAwait('set-breakpoint ' + bpId + ' ' + condition);
-		// Enable the breakpoint
-		await zSocket.sendAwait('enable-breakpoint ' + bpId);
+		// Set breakpoint
+		await this.sendSetBreakpoint(bpId, condition);
+
 		// Return
 		return bpId;
 	}
 
+
+	/** The setting of the breakpoint for zrcp was centralized in this function to ease
+	 * making changes for the zesarux versions.
+	 * With zesarux version 10.3 this should be finally changed (about May-2023).
+	 * Version 10.2 is not supported (as it opens a window after the zrcp connection).
+	 * Version 10.1 is supported with the old breakpoint actions ("prints"). This is also
+	 * the only version that DeZog 2.7.x supports.
+	 * @param bpId The breakpoint id to use.
+	 * @param condition A breakpoint condition.
+	 */
+	protected async sendSetBreakpoint(bpId: number, condition: string) {
+		// For zesarux version 10.1:
+		// Set action first (no action)
+		await zSocket.sendAwait('set-breakpointaction ' + bpId + ' prints breakpoint ' + bpId);
+		// Set the breakpoint
+		await zSocket.sendAwait('set-breakpoint ' + bpId + ' ' + condition);
+		// Enable the breakpoint
+		await zSocket.sendAwait('enable-breakpoint ' + bpId);
+
+		/*
+		// For zesarux version 10.3:
+		// Set action first (no action)
+		await zSocket.sendAwait('set-breakpointaction ' + bpId);	// Since ZEsarUX 10.2 an empty breakpoint action is required.
+		// Set the breakpoint
+		await zSocket.sendAwait('set-breakpoint ' + bpId + ' ' + condition);
+		// Enable the breakpoint
+		await zSocket.sendAwait('enable-breakpoint ' + bpId);
+		*/
+	}
 
 
 	/**

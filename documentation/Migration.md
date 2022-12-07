@@ -37,6 +37,7 @@ If you used them in the launch.json in the "commandsAfterLaunch" argument please
 For z88dk a new/additional parser has been added: "z88dkv2" (Please search [Usage.md](Usage.md) for 'z88dkv2' for its usage). It can parse the z88dk version 2.2. .lis files.
 The old "z88dk" configuration is still available but will work only for older versions of z88dk.
 
+A note about ZEsarUX: There is currently (ZEsarUX 10.2) an incompatibility between ZEsarUX and DeZog. For DeZog 2.7 and DeZog 3.0 please use [ZEsarUX version 10.1](https://github.com/chernandezba/zesarux/releases/tag/ZEsarUX-10.1) instead.
 
 # Migrate from DeZog 2.6 to DeZog 2.7
 
