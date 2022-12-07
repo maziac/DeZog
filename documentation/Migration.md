@@ -78,7 +78,7 @@ Other than that all your unit tests should still run. Without any change in conf
 If you are using custom code for your unit tests you should be able to use it without change.
 However there is a new option that you can read the currently executed unit test label from your custom code.
 With this you could implement different behavior depending on the executed unit test.
-See [UnitTest.md](UnitTest.md).
+See [UnitTests.md](UnitTests.md).
 
 
 

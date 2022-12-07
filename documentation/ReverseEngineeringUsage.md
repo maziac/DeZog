@@ -293,7 +293,7 @@ Example with banking:
 ~~~
 
 I.e. the "9" is the bank. The name of the bank correspondents directly to the 'shortName' used in the memory model.
-For custom memory models, please refer to [customMemory](Usage.md#customMemory).
+For custom memory models, please refer to [customMemory](Usage.md#custommemory).
 Normally, the bank name is simply equal to the bank number unless otherwise specified, e.g. in 'customMemory'.
 
 Here are the short names for the predefined memory models:
@@ -490,7 +490,7 @@ If you would like to do a bigger change you can use an assembler, e.g. sjasmplus
 Very helpful in debugging/reverse engineering is the save/restore feature.
 You can save the state of the debugged system with the command "-state save \<name\>" and restore it anytime with "-state restore \<name\>".
 
-See [State Save/Restore](Usage.md/#state-save-restore).
+See [State Save/Restore](Usage.md#state-saverestore).
 
 Unfortunately, in MAME state save/restore is not available because of implementation details.
 

@@ -90,7 +90,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 
 ## Features
 
-- supports [ZEsarUX]( emulator
+- supports [ZEsarUX] emulator
 - supports [CSpect] emulator
 - experimental support for [MAME]
 - can be used with the internal simulator (does not require ZEsarUX or CSpect)
@@ -145,7 +145,7 @@ These are the options:
 
 The different DeZog/emulator configurations have different advantages.
 But which one you choose mainly depends on your personal preference.
-The table [here](documentation/Usage.md#remote-capabilities) shows a comparison of the features.
+The table [here](documentation/Usage.md#remote-capabilities-comparison) shows a comparison of the features.
 
 If you own a ZX Next you also have the option to debug your SW directly on the Next.
 
@@ -183,9 +183,9 @@ Enter "dezog: Show the DeZog Help page" in the command palette (F1 key) or revea
 
 If you would like to help extending the DeZog functionality in one of the following areas you are very welcome:
 
-- Add **new assembler** parsers: The process of writing a parser is described in detail here: [AddingNewAssemblers.md](AddingNewAssemblers.md)
+- Add **new assembler** parsers: The process of writing a parser is described in detail here: [AddingNewAssemblers.md](design/AddingNewAssemblers.md)
 Shouldn't be to hard.
-- Adding other Remotes (emulators): See [AddingNewRemotes.md](AddingNewRemotes.md).
+- Adding other Remotes (emulators): See [AddingNewRemotes.md](design/AddingNewRemotes.md).
 [S0urceror has done so for OpenMSX](https://www.youtube.com/watch?v=cf4nPzoosAw&feature=youtu.be), so it is doable.
 
 
@@ -217,7 +217,7 @@ For the other included SW see the 'dependencies' section in [package.json](https
 I would like to thank a few people for their support
 - Cesar Hernandez Bano for developing the great [ZEsarUX] emulator which very early offered the possibility to remotely connect to it. And for being patient with all my request for the ZRCP protocol. Without ZEsarUX I wouldn't have started DeZog at all. So, if you like DeZog thank Cesar.
 - Mike Dailly for the wonderful [CSpect] emulator, for opening the debug interface to plugins and for giving support to use it properly.
-- [Molly Howell/DrGoldfire](https://bitbucket.org/DrGoldfire/z80.js/src/master/) for the Z80 CPU simulation code.
+- [Molly Howell/DrGoldfire](https://bitbucket.org/DrGoldfire/z80.js/src/main/) for the Z80 CPU simulation code.
 - [Kris Borowinski](https://github.com/kborowinski) for his tireless efforts testing DeZog.
 - [Peter Ped Helcmanovsky](https://github.com/ped7g) for his support to get the display of the relative-sprites correct and for the changes he implemented for DeZog in [sjasmplus] in the SLD format.
 - Cesar Wagener Moriana, [Dean Belfield](https://github.com/breakintoprogram), [Daren May](https://github.com/darenm), [Patricia Curtis](https://luckyredfish.com/who-am-i/) and [A MAN IN HIS TECHNO SHED](https://amaninhistechnoshed.com/a-man-in-his-technoshed/) for writing tutorials.
