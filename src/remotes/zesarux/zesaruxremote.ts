@@ -175,16 +175,16 @@ export class ZesaruxRemote extends RemoteBase {
 				this.zesaruxVersion = parseFloat(data);
 				// Check version
 				if (this.zesaruxVersion < MIN_ZESARUX_VERSION) {
-					await zSocket.quit();
+					zSocket.quit();
 					const err = new Error('Please update ZEsarUX. Need at least version ' + MIN_ZESARUX_VERSION + '.');
 					this.emit('error', err);
 					return;
 				}
 
-				// TODO: Remove when ZEsarUX 10.3 is out. Also set MIN_ZESARUX_VERSION to 10.3
-				if (this.zesaruxVersion >= 110.2) {
-					await zSocket.quit();
-					const err = new Error('Please use only upto ZEsarUX 10.1. 10.2 and higher is at the moment incompatible with DeZog.');
+				// TODO: Remove when ZEsarUX 10.3 is released. Also set MIN_ZESARUX_VERSION to 10.3
+				if (this.zesaruxVersion >= 10.2) {
+					zSocket.quit();
+					const err = new Error('Please use only a ZEsarUX version <= 10.1. At the moment 10.2 and higher is incompatible with DeZog.');
 					this.emit('error', err);
 					return;
 				}
@@ -1189,10 +1189,14 @@ export class ZesaruxRemote extends RemoteBase {
 	/**
 	 * Disables all breakpoints set in zesarux on startup.
 	 */
-	protected async clearAllZesaruxBreakpoints() {
+	protected async clearAllZesaruxBreakpoints(): Promise<void> {
+		//console.time("send-disable-breakpoint");
+		// Note: I measured that sometimes zesarux requires 0.5 secs to answer for one disable breakpoint.
+		// Therefore I now send all at once, not with await and wait at the end.
 		for (let i = 1; i <= Zesarux.MAX_ZESARUX_BREAKPOINTS; i++) {
-			await zSocket.sendAwait('disable-breakpoint ' + i);
+			zSocket.send('disable-breakpoint ' + i);
 		}
+		await zSocket.executeWhenQueueIsEmpty();
 	}
 
 

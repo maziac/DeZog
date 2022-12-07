@@ -377,9 +377,12 @@ export class ZesaruxSocket extends Socket {
 	/**
 	 * Same send, but this one returns a promise.
 	 */
-	public async sendAwait(command: string, suppressErrorHandling=false): Promise<any> {
+	public async sendAwait(command: string, suppressErrorHandling = false): Promise<any> {
 		return new Promise<any>(resolve => {
+			//console.timeLog("send-disable-breakpoint");
 			this.send(command, data => {
+			//	console.timeLog("send-disable-breakpoint");
+			//	console.log("-");
 				resolve(data);
 			}, suppressErrorHandling);
 		});
@@ -636,7 +639,7 @@ export class ZesaruxSocket extends Socket {
 	 * In fact it clears the queue.
 	 * @param handler is called after the connection is disconnected. Can be omitted.
 	 */
-	public async quit(handler = () => {}) {	// NOSONAR
+	public quit(handler = () => {}) {	// NOSONAR
 		// Clear queues
 		this.queue.length = 0;
 		this.lastCallQueue.length = 0;
@@ -646,6 +649,7 @@ export class ZesaruxSocket extends Socket {
 
 		// Keep the data listener
 		this.on('data', data => {
+			//console.log('quit-receiveData: ' + data.toString());
 			this.receiveSocket(data);
 		});
 
@@ -701,16 +705,18 @@ export class ZesaruxSocket extends Socket {
 			// Terminate connection
 			LogTransport.log('Quitting:');
 			this.setTimeout(QUIT_TIMEOUT);
-			await this.sendAwait('\n');	// Just for the case that we are waiting on a breakpoint.
-			await this.sendAwait('cpu-history enabled no', true);
-			await this.sendAwait('cpu-code-coverage enabled no', true);
-			await this.sendAwait('extended-stack enabled no', true);
-			await this.sendAwait('clear-membreakpoints');
-			await this.sendAwait('disable-breakpoints');
-			await this.sendAwait('quit');
-			// Close connection (ZEsarUX also closes the connection)
-			//zSocket.end(); // "end()" takes too long > 1 s
-			zSocket.destroy();
+			this.send('\n');	// Just for the case that we are waiting on a breakpoint.
+			this.send('cpu-history enabled no', () => {}, true);	// NOSONAR
+			this.send('cpu-code-coverage enabled no', () => {}, true);	// NOSONAR
+			this.send('extended-stack enabled no', () => {}, true);	// NOSONAR
+			this.send('clear-membreakpoints');
+			this.send('disable-breakpoints', () => {
+				this.send('quit');
+				// Close connection (ZEsarUX also closes the connection)
+				//zSocket.end(); // "end()" takes too long > 1 s
+				zSocket.destroy();
+
+			});
 
 			return;
 		}
