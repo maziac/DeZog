@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.1.0
+- Fixed incompatibility with vscode 1.74.
+
 # 3.0.0
 - Better reverse engineering support
 	- Improved disassembly
