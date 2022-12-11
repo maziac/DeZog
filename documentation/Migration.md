@@ -39,6 +39,8 @@ The old "z88dk" configuration is still available but will work only for older ve
 
 A note about ZEsarUX: There is currently an incompatibility between ZEsarUX version 10.2 and DeZog. For DeZog 2.7 and DeZog 3.0 please use [ZEsarUX version 10.1](https://github.com/chernandezba/zesarux/releases/tag/ZEsarUX-10.1) instead.
 
+A note about zsim: In DeZog 2.7.3 the initial ROM was set wrongly to ROM1 (48k Basic) for the "ZX128K". This is corrected in DeZog 3.0. 3.0 uses the ROM0 (128k Editor) initially. If your code relies on the initially set ROM then you might experience that calls to the ROM will not succeed. In this case either switch to a "ZX48K" memory model or set the right ROM in your startup code (write to port 0x7FFD).
+
 # Migrate from DeZog 2.6 to DeZog 2.7
 
 No required updates.
