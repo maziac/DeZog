@@ -2889,35 +2889,43 @@ E.g. use "-help -view" to put the help text in an own view.
 	/**
 	* Called eg. if user changes a register value.
 	*/
+
 	protected async setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments) {
 		const ref = args.variablesReference;
 		const name = args.name;
-		const value = Utility.parseValue(args.value);
+		const value = args.value;
 
 		ShallowVar.clearChanged();
 
-		// Get variable object
-		const varObj = this.listVariables.getObject(ref);
-		response.success = false;	// will be changed if successful.
+		try {
+			// Get variable object
+			const varObj = this.listVariables.getObject(ref);
+			response.success = false;	// will be changed if successful.
 
-		// Safety check
-		if (varObj) {
-			// Variables can be changed only if not in reverse debug mode
-			const msg = varObj.changeable(name);
-			if (msg) {
-				// Change not allowed e.g. if in reverse debugging
-				response.message = msg;
-			}
-			else {
-				// Set value
-				const formattedString = await varObj.setValue(name, value);
-				// Send response
-				if (formattedString) {
-					response.body = {value: formattedString};
-					response.success = true;
+			// Safety check
+			if (varObj) {
+				// Variables can be changed only if not in reverse debug mode
+				const msg = varObj.changeable(name);
+				if (msg) {
+					// Change not allowed e.g. if in reverse debugging
+					response.message = msg;
+				}
+				else {
+					// Set value
+					const formattedString = await varObj.setValue(name, value);
+					// Send response
+					if (formattedString) {
+						response.body = {value: formattedString};
+						response.success = true;
+					}
 				}
 			}
 		}
+		catch (e) {
+			// Some error occurred
+			this.showError(e.message);
+		}
+
 		this.sendResponse(response);
 
 		// Now check what has been changed.
