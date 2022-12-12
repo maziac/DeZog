@@ -83,7 +83,7 @@ export class SnaFile {
 		for (let i = 0; i < 3; i++) {
 			// Copy data
 			const memBank = new MemBank16k();
-			memBank.data.set(snaBuffer.slice(index, index + MemBank16k.BANK16K_SIZE));
+			memBank.data.set(snaBuffer.subarray(index, index + MemBank16k.BANK16K_SIZE));
 			const p = MemBank16k.getMemBankPermutation(i);
 			memBank.bank = p;
 			this.memBanks.push(memBank);
@@ -123,7 +123,7 @@ export class SnaFile {
 				continue;	// skip already read bank
 			// Copy data
 			const memBank = new MemBank16k();
-			memBank.data.set(snaBuffer.slice(index, index + MemBank16k.BANK16K_SIZE));
+			memBank.data.set(snaBuffer.subarray(index, index + MemBank16k.BANK16K_SIZE));
 			memBank.bank = p;
 			this.memBanks.push(memBank);
 			index += MemBank16k.BANK16K_SIZE;
