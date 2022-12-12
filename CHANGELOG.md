@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.1.1
+- zsim: sna loading now sets IFF2 and port 7FFD.
+
 # 3.1.0
 - Fixed incompatibility with vscode 1.74.
 

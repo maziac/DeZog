@@ -1017,6 +1017,12 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
+		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.im);
+
+		// Interrupt (IFF2)
+		const enableInterrupt = (snaFile.iff2 >>> 2) & 0x01;
+		this.z80Cpu.iff1 = enableInterrupt;
+		this.z80Cpu.iff2 = enableInterrupt;
 
 		// Set ROM1 or ROM0
 		if (snaFile.is128kSnaFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNext)) {
