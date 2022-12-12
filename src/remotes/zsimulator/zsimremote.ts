@@ -1325,21 +1325,14 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
 		// Special handling for ZXNext ROM:
 		if (this.memoryModel instanceof MemoryModelZxNext) {
-			/* Special treatment for ROM:
-			* ROM0, lower 2k: 0xFC
-			* ROM0, upper 2k: 0xFD
-			* ROM1, lower 2k: 0xFE
-			* ROM1, upper 2k: 0xFF
+			/*
+			 * For ROM only 0xFF exists. But it is ambiguous,
+			 * could be ROM0 (128k editor) or ROM1 (48k basic) (or even another ROM)
+			 * be initialized to ROM0 anyway.
+			 * So, we simply skip it. Is not called in normal operation anyway.
 			*/
-			if (bank >= 0xFC) {
-				// Special handling
-				if (slot <= 1) {
-					const bankAnded = bank & 0xFE;
-					// ROM0
-					this.memory.setSlot(0, bankAnded);
-					this.memory.setSlot(1, bankAnded + 1);
-					return 0;	// No error
-				}
+			if (bank === 0xFF) {
+				// Ignore:
 				return 1;	// Error: could not set slot
 			}
 		}
