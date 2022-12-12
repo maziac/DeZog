@@ -1017,6 +1017,13 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
+
+		// Set ROM1 or ROM0
+		if (snaFile.is128kSnaFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNext)) {
+			// Write port 7FFD
+			const port7ffd = snaFile.port7ffd;
+			this.z80Cpu.ports.write(0x7FFD, port7ffd);
+		}
 	}
 
 
