@@ -172,7 +172,6 @@ A typical configuration looks like this:
             "name": "DeZog",
             "remoteType": "zsim",
             "zsim": {
-                "loadZxRom": true
             },
             "sjasmplus": [
                 {
@@ -286,8 +285,8 @@ to either load a .nex, .sna (or .tap) file. On start of the debug session the fi
 On ZEsarUX the .nex, .sna or .tap file is loaded via ZEsarUX's "smartload" command.
 This will give the best emulation for .nex (and .tap) loading as the nex loading can be emulated as well.
 
-For all other remotes (cspect, zsim and zxnext) the .nex or .sna file loading is mainly copying the data into the emulators memory, setting a few registers and starting it.
-For the .sna file this should be fine.
+For all other remotes (cspect, zsim, mame and zxnext) the .nex or .sna file loading is mainly copying the data into the emulators memory, setting a few registers and starting it.
+For the .sna file (apart from ZEsarUX) only zsim will set the port 0x7FFD and the IFF2 register (interrupt enabled) correctly.
 
 For the .nex file there can be some missing initializations.
 Most important to note are:
