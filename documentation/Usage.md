@@ -822,6 +822,7 @@ Whe the code is executed the variables 'portAddress' and 'portValue' are set wit
 Notes:
 - Banks with same indexes could be used in different slots. 'name' and 'shortName' need to be defined only once.
 - Address ranges without any bank association can be left unassigned.
+- Please find example Z80 code with a custom memory configuration here: [z80-custom-memory-model-sample](https://github.com/maziac/z80-custom-memory-model-sample).
 
 
 ### ZEsarUX
