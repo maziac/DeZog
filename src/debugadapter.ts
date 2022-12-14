@@ -468,20 +468,22 @@ export class DebugSessionClass extends DebugSession {
 		// VARIABLEs pane. But I only have registers there. So it's not useful.
 		response.body.supportsDataBreakpoints = false;
 
-		// Allow exception breakpoints from vscode UI (for ASSERTION, WPMEM and LOGPOINT).
-		// Note: It is not possible to change the exceptionBreakpointFilters via the
-		// CapabilitiesEvent later. vscode does not react on it.
-		response.body.supportsExceptionFilterOptions = true;
-		response.body.supportsExceptionOptions = false;
-		response.body.supportsExceptionInfoRequest = false;
-		const enableExceptionBps = (this.state != DbgAdapterState.UNITTEST);	// ASSERTION etc. breakpoints are controlled directly by the unit tests.
-		this.exceptionBreakpoints = new ExceptionBreakpoints(enableExceptionBps);
-		response.body.exceptionBreakpointFilters = this.exceptionBreakpoints.breakpoints.map(bp => ({
-			filter: bp.name,
-			label: bp.name,
-			description: bp.description,
-			supportsCondition: (bp.conditionString != undefined)
-		}));
+		// ASSERTION etc. breakpoints are controlled directly by the unit tests. Those will not be enabled here.
+		if (this.state !== DbgAdapterState.UNITTEST) {
+			// Allow exception breakpoints from vscode UI (for ASSERTION, WPMEM and LOGPOINT).
+			// Note: It is not possible to change the exceptionBreakpointFilters via the
+			// CapabilitiesEvent later. vscode does not react on it.
+			response.body.supportsExceptionFilterOptions = true;
+			response.body.supportsExceptionOptions = false;
+			response.body.supportsExceptionInfoRequest = false;
+			this.exceptionBreakpoints = new ExceptionBreakpoints();
+			response.body.exceptionBreakpointFilters = this.exceptionBreakpoints.breakpoints.map(bp => ({
+				filter: bp.name,
+				label: bp.name,
+				description: bp.description,
+				supportsCondition: (bp.conditionString != undefined)
+			}));
+		}
 
 		this.sendResponse(response);
 
@@ -3568,29 +3570,33 @@ E.g. use "-help -view" to put the help text in an own view.
 	/** Sets the exception breakpoints.
 	 */
 	protected async setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments, request?: DebugProtocol.Request) {
-		// Reformat info to easier access it.
-		const exceptionMap = new Map<string, string>();
-		args.filterOptions!.forEach(filterOption => {
-			exceptionMap.set(filterOption.filterId, filterOption.condition || '');
-		});
+		// Only if filter options are used
+		if (this.exceptionBreakpoints && args.filterOptions) {
 
-		// Enable/disable
-		const [output, bpsSupport, notSupported] = await this.exceptionBreakpoints.setExceptionBreakPoints(exceptionMap);
+			// Reformat info to easier access it.
+			const exceptionMap = new Map<string, string>();
+			args.filterOptions.forEach(filterOption => {
+				exceptionMap.set(filterOption.filterId, filterOption.condition || '');
+			});
 
-		// Prepare response
-		response.body = {
-			breakpoints: bpsSupport.map(bp => ({verified: bp}))
-		};
+			// Enable/disable
+			const [output, bpsSupport, notSupported] = await this.exceptionBreakpoints.setExceptionBreakPoints(exceptionMap);
 
-		// Show warnings for unsupported but enabled breakpoints
-		if (notSupported.length > 0) {
-			const unsupportedString = hjoin.join(notSupported);
-			this.showWarning(unsupportedString + " are not supported by this Remote.");
+			// Prepare response
+			response.body = {
+				breakpoints: bpsSupport.map(bp => ({verified: bp}))
+			};
+
+			// Show warnings for unsupported but enabled breakpoints
+			if (notSupported.length > 0) {
+				const unsupportedString = hjoin.join(notSupported);
+				this.showWarning(unsupportedString + " are not supported by this Remote.");
+			}
+
+			// Output
+			if (output)
+				this.debugConsoleAppend(output);
 		}
-
-		// Output
-		if(output)
-			this.debugConsoleAppend(output);
 
 		this.sendResponse(response);
 	}

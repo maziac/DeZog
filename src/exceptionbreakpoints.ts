@@ -55,37 +55,30 @@ export class ExceptionBreakpoints {
 
 
 	/** Constructor.
-	 * @param enable true = enable ASSERTION, WPMEM and LOGPOINT breakpoints.
-	 * false = enable no exception breakpoint (used for unit tests).
 	 */
-	constructor(enableBreakpoints: boolean) {
-		if (enableBreakpoints) {
-			this.breakpoints = [{
-				name: 'ASSERTIONs',
-				description: 'ASSERTIONs are given as comments in the assembler sources. e.g. "; ASSERTION ..."',
-				funcSupported: () => Remote.supportsASSERTION,
-				enabled: false,
-				funcEnable: this.enableASSERTIONs
-			},
-			{
-				name: 'WPMEMs',
-				description: 'WPMEM are memory guards given as comments in the assembler sources. e.g. "; WPMEM ..."',
-				funcSupported: () => Remote.supportsWPMEM,
-				enabled: false,
-				funcEnable: this.enableWPMEMs
-			},
-			{
-				name: 'LOGPOINTs',
-				description: 'LOGPOINTs are given as comments in the assembler sources. e.g. "; LOGPOINT [group] ..."\nAdd the groups of logpoints you want to enable as a comma or space separated list.',
-				funcSupported: () => Remote.supportsLOGPOINT,
-				enabled: false,
-				conditionString: '',
-				funcEnable: this.enableLOGPOINTs
-			}];
-		}
-		else {
-			this.breakpoints = [];
-		}
+	constructor() {
+		this.breakpoints = [{
+			name: 'ASSERTIONs',
+			description: 'ASSERTIONs are given as comments in the assembler sources. e.g. "; ASSERTION ..."',
+			funcSupported: () => Remote.supportsASSERTION,
+			enabled: false,
+			funcEnable: this.enableASSERTIONs
+		},
+		{
+			name: 'WPMEMs',
+			description: 'WPMEM are memory guards given as comments in the assembler sources. e.g. "; WPMEM ..."',
+			funcSupported: () => Remote.supportsWPMEM,
+			enabled: false,
+			funcEnable: this.enableWPMEMs
+		},
+		{
+			name: 'LOGPOINTs',
+			description: 'LOGPOINTs are given as comments in the assembler sources. e.g. "; LOGPOINT [group] ..."\nAdd the groups of logpoints you want to enable as a comma or space separated list.',
+			funcSupported: () => Remote.supportsLOGPOINT,
+			enabled: false,
+			conditionString: '',
+			funcEnable: this.enableLOGPOINTs
+		}];
 	}
 
 
@@ -144,28 +137,35 @@ export class ExceptionBreakpoints {
 	 * @param enable true = enable, false = disable.
 	 */
 	protected async enableASSERTIONs(enable: boolean): Promise<string> {
-		// Enable or disable all ASSERTION breakpoints
-		await Remote.enableAssertionBreakpoints(enable);
+		let result: string;
+		const abps = Remote.getAllAssertionBreakpoints();
 
-		// Show enable status of all ASSERTION breakpoints
-		const realEnable = Remote.assertionBreakpointsEnabled;
-		const enableString = (realEnable) ? 'enabled' : 'disabled';
-		let result = 'ASSERTION breakpoints are ' + enableString + '.\n';
-		if (realEnable) {
-			// Also list all assertion breakpoints
-			const abps = Remote.getAllAssertionBreakpoints();
-			for (const abp of abps) {
-				result += Utility.getLongAddressString(abp.longAddress);
-				const labels = Labels.getLabelsForLongAddress(abp.longAddress);
-				if (labels.length > 0) {
-					const labelsString = labels.join(', ');
-					result += ' (' + labelsString + ')';
+		// Check if there are any assertion breakpoints
+		if (abps.length == 0) {
+			// No ASSERTIONs
+			result = 'No ASSERTION breakpoints defined.';
+		}
+		else {
+			// Enable or disable all ASSERTION breakpoints
+			await Remote.enableAssertionBreakpoints(enable);
+
+			// Show enable status of all ASSERTION breakpoints
+			const realEnable = Remote.assertionBreakpointsEnabled;
+			const enableString = (realEnable) ? 'enabled' : 'disabled';
+			result = 'ASSERTION breakpoints are ' + enableString + '.\n';
+			if (realEnable) {
+				// Also list all assertion breakpoints
+				for (const abp of abps) {
+					result += Utility.getLongAddressString(abp.longAddress);
+					const labels = Labels.getLabelsForLongAddress(abp.longAddress);
+					if (labels.length > 0) {
+						const labelsString = labels.join(', ');
+						result += ' (' + labelsString + ')';
+					}
+					// Condition, remove the brackets
+					result += ', Condition: ' + Utility.getAssertionFromCondition(abp.condition) + '\n';
 				}
-				// Condition, remove the brackets
-				result += ', Condition: ' + Utility.getAssertionFromCondition(abp.condition) + '\n';
 			}
-			if (abps.length == 0)
-				result += 'No ASSERTION breakpoints.\n';
 		}
 		// Output
 		result += '\n';
@@ -199,7 +199,7 @@ export class ExceptionBreakpoints {
 				result += ', size=' + wp.size + '\n';
 			}
 			if (wps.length == 0)
-				result += 'No WPMEM watchpoints.\n';
+				result += 'No WPMEM watchpoints defined.\n';
 		}
 		// Output
 		result += '\n';
@@ -244,11 +244,12 @@ export class ExceptionBreakpoints {
 		}
 
 		// Always show enable status of all Logpoints
-		let result = 'LOGPOINT groups:';
+		let result: string;
 		const enableMap = Remote.logpointsEnabled;
 		if (enableMap.size == 0)
-			result += ' none';
+			result = 'No LOGPOINTs defined';
 		else {
+			result = 'LOGPOINT groups:';
 			for (const [group, enabled] of enableMap) {
 				result += '\n  ' + group + ': ' + ((enabled) ? 'enabled' : 'disabled');
 				if (enabled) {
