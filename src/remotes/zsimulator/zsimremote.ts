@@ -96,6 +96,8 @@ export class ZSimRemote extends DzrpRemote {
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = true;
 		this.supportsLOGPOINT = true;
+		this.supportsBreakOnInterrupt = true;
+
 		this.timeoutRequest = false;
 		this.previouslyStoredPCHistory = -1;
 		this.tbblueRegisterSelectValue = 0;
@@ -680,10 +682,10 @@ export class ZSimRemote extends DzrpRemote {
 					}
 
 					// Check if an interrupt happened and it should be breaked on an interrupt
-					if (this.breakOnInterrupt) {
-						if (this.z80Cpu.interruptOccurred) {
+					if (this.z80Cpu.interruptOccurred) {
+						this.z80Cpu.interruptOccurred = false;
+						if (this.breakOnInterrupt) {
 							breakNumber = BREAK_REASON_NUMBER.BREAK_INTERRUPT;	// Interrupt break
-							this.z80Cpu.interruptOccurred = false;
 							break;
 						}
 					}
@@ -1162,7 +1164,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 				else
 					throw Error("Expected 'on' or 'off' but got '" + subcmd + "'.");
 				// Set
-				this.breakOnInterrupt = enable;
+				this.breakOnInterrupt = enable;  // TODO: REMOVE command
 				if (enable)
 					this.z80Cpu.interruptOccurred = false;
 				// Return
@@ -1193,6 +1195,16 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 		if (this.codeCoverage)
 			return Array.from(this.codeCoverage.getAddresses());
 		return [];
+	}
+
+
+	/** Enables to break on an interrupt.
+	 * @param enable true=enable,break on interrupt, other disable.
+	 * @returns 'enable'
+	 */
+	public async enableBreakOnInterrupt(enable: boolean): Promise<boolean> {
+		this.breakOnInterrupt = enable;
+		return this.breakOnInterrupt;
 	}
 
 

@@ -3589,9 +3589,11 @@ E.g. use "-help -view" to put the help text in an own view.
 			};
 
 			// Show warnings for unsupported but enabled breakpoints
-			if (notSupported.length > 0) {
-				const unsupportedString = hjoin.join(notSupported);
-				this.showWarning(unsupportedString + " are not supported by this Remote.");
+			const len = notSupported.length;
+			if (len > 0) {
+				const unsupportedString = hjoin.join(notSupported, {quote: {enabled: true, quoteWith: "'"}});
+				const isAre = (len == 1) ? "is" : "are";
+				this.showWarning(unsupportedString + " " + isAre + " not supported by this Remote.");
 			}
 
 			// Output

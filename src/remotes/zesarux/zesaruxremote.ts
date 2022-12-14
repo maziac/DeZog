@@ -59,6 +59,7 @@ export class ZesaruxRemote extends RemoteBase {
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = true;
 		this.supportsLOGPOINT = false;
+		this.supportsBreakOnInterrupt = false;
 		// Reverse debugging / CPU history
 		CpuHistoryClass.setCpuHistory(new ZesaruxCpuHistory());
 		CpuHistory.decoder = new DecodeZesaruxHistoryInfo();

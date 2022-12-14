@@ -58,26 +58,33 @@ export class ExceptionBreakpoints {
 	 */
 	constructor() {
 		this.breakpoints = [{
-			name: 'ASSERTIONs',
+			name: 'ASSERTION',
 			description: 'ASSERTIONs are given as comments in the assembler sources. e.g. "; ASSERTION ..."',
 			funcSupported: () => Remote.supportsASSERTION,
 			enabled: false,
 			funcEnable: this.enableASSERTIONs
 		},
 		{
-			name: 'WPMEMs',
+			name: 'WPMEM',
 			description: 'WPMEM are memory guards given as comments in the assembler sources. e.g. "; WPMEM ..."',
 			funcSupported: () => Remote.supportsWPMEM,
 			enabled: false,
 			funcEnable: this.enableWPMEMs
 		},
 		{
-			name: 'LOGPOINTs',
+			name: 'LOGPOINT',
 			description: 'LOGPOINTs are given as comments in the assembler sources. e.g. "; LOGPOINT [group] ..."\nAdd the groups of logpoints you want to enable as a comma or space separated list.',
 			funcSupported: () => Remote.supportsLOGPOINT,
 			enabled: false,
 			conditionString: '',
 			funcEnable: this.enableLOGPOINTs
+		},
+		{
+			name: 'Break on Interrupt',
+			description: 'Break when entering an interrupt.',
+			funcSupported: () => Remote.supportsBreakOnInterrupt,
+			enabled: false,
+			funcEnable: this.enableBreakOnInterrupt
 		}];
 	}
 
@@ -280,6 +287,20 @@ export class ExceptionBreakpoints {
 
 		// Output
 		result += '\n';
+		return result;
+	}
+
+
+	/**
+	 * Break on interrupt. Enable/disable.
+	 * @param enable true = enable, false = disable.
+	 */
+	protected async enableBreakOnInterrupt(enable: boolean): Promise<string> {
+		// Enable or disable 'break on interrupt' (oly zsim)
+		const enabled = await Remote.enableBreakOnInterrupt(enable);
+
+		const result = "Break on interrupt: " + ((enabled) ? 'enabled' : 'disabled') + ".\n";
+
 		return result;
 	}
 }

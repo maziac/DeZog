@@ -100,6 +100,8 @@ export class RemoteBase extends EventEmitter {
 	/// true if Remote supports LOGPOINTs.
 	public supportsLOGPOINT = false;
 
+	/// true if Remote supports break on interrupt (only zsim does).
+	public supportsBreakOnInterrupt = false;
 
 	/// A list for the frames (call stack items). Is cached here.
 	protected listFrames: RefList<CallStackFrame>;
@@ -1253,6 +1255,17 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public getBreakpointsArray(): Array<RemoteBreakpoint> {
 		return this.breakpoints;
+	}
+
+
+	/** Enables to break on an interrupt.
+	 * Only supported by zsim.
+	 * @param enable true=enable,break on interrupt, other disable.
+	 * @returns false
+	 */
+	public async enableBreakOnInterrupt(enable: boolean): Promise<boolean> {
+		// Overwrite if supported.
+		return false;
 	}
 
 

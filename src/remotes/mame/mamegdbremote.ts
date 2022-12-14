@@ -49,6 +49,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = true;
 		this.supportsLOGPOINT = true;
+		this.supportsBreakOnInterrupt = false;
 		this.cmdRespTimeoutTime = Settings.launch.mame.socketTimeout * 1000;
 	}
 
