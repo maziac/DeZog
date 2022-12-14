@@ -165,9 +165,11 @@ export class DebugSessionClass extends DebugSession {
 		this.setDebuggerLinesStartAt1(false);
 		this.setDebuggerColumnsStartAt1(false);
 		vscode.debug.onDidChangeActiveDebugSession(dbgSession => {
-			if (dbgSession?.configuration.type == 'dezog') {
-				vscode.debug.activeDebugConsole.append(this.debugConsoleSavedText);
-				this.debugConsoleSavedText = '';
+			if (dbgSession?.configuration.type === 'dezog') {
+				if (this.debugConsoleSavedText) {
+					vscode.debug.activeDebugConsole.append(this.debugConsoleSavedText);
+					this.debugConsoleSavedText = '';
+				}
 			}
 		});
 	}
@@ -422,7 +424,6 @@ export class DebugSessionClass extends DebugSession {
 	 * Respond with supported features.
 	 */
 	protected async initializeRequest(response: DebugProtocol.InitializeResponse, _args: DebugProtocol.InitializeRequestArguments): Promise<void> {
-
 		//const dbgSession = vscode.debug.activeDebugSession;
 		// build and return the capabilities of this debug adapter:
 		response.body = response.body || {};
