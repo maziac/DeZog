@@ -43,7 +43,8 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 	public clear() {
 		//(async () => {
 		this.historyIndex = -1;
-		this.revDbgHistory.length = 0;
+		if(this.revDbgHistory)
+			this.revDbgHistory.length = 0;
 		this.reverseDbgStack = undefined as any;
 		//})();
 	}
