@@ -73,7 +73,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		this.supportsWPMEM = false;
 		this.supportsLOGPOINT = true;
 		this.cmdRespTimeoutTime = CMD_RESP_TIMEOUT;
-		console.log('ZxNextSerialRemote: constructor()');
+		//console.log('ZxNextSerialRemote: constructor()');
 	}
 
 
@@ -127,7 +127,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		});
 
 		// Start serial connection
-		console.log('serialPort.open();');
+		//console.log('serialPort.open();');
 		this.serialPort.open();
 	}
 
@@ -138,9 +138,9 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	public async closeSerialPort(): Promise<void> {
 		return new Promise<void>(async resolve => {
 			if (this.serialPort) {
-				console.log('serialPort.close();');
+				//console.log('serialPort.close();');
 				this.serialPort.close(() => {
-					console.log('  serialPort.close() -> done');
+					//console.log('  serialPort.close() -> done');
 					this.serialPort = undefined;
 					resolve();
 				});

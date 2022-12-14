@@ -43,8 +43,6 @@ suite('Labels (z80asm)', () => {
 				let value = parseInt(match[2], 16);
 				if (label.indexOf('equ') < 0)
 					value += 0x10000;	// +0x10000 to make log label out of it.
-				else
-					console.log();
 				// Check
 				const res = lbls.getNumberForLabel(label);
 				assert.equal(value, res);

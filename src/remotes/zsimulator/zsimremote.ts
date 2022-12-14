@@ -698,7 +698,7 @@ export class ZSimRemote extends DzrpRemote {
 			}
 			catch (errorText) {
 				breakReasonString = "Z80CPU Error: " + errorText;
-				console.log(breakReasonString);
+				//console.log(breakReasonString);
 				breakNumber = BREAK_REASON_NUMBER.UNKNOWN;
 			}
 

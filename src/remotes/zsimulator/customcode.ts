@@ -406,7 +406,7 @@ API.log('-------------------------------------\\n');`
 	public serialize(memBuffer: MemBuffer) {
 		// Write the custom code context (without tmpAPI)
 		const contextString = JSON.stringify(this.context);
-		console.log('serialize:', contextString);
+		//console.log('serialize:', contextString);
 		memBuffer.writeString(contextString);
 	}
 
@@ -417,7 +417,7 @@ API.log('-------------------------------------\\n');`
 	public deserialize(memBuffer: MemBuffer) {
 		// Get the  custom code context (without touching the tmpAPI)
 		const contextString = memBuffer.readString();
-		console.log('deserialize:', contextString);
+		//console.log('deserialize:', contextString);
 		const savedContext = JSON.parse(contextString);
 		// Put into used context
 		Utility.deepCopyContext(savedContext, this.context);

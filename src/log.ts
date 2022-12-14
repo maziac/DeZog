@@ -153,8 +153,8 @@ export class Log {
 					this.cache.shift();
 					this.cacheLogsLost = true;
 				}
-				if (text == undefined)
-					console.log("");
+				// if (text == undefined)
+				// 	console.log("");
 				this.cache.push(text);
 				// Set timeout to print cached values
 				if (this.cache.length == 1) {

@@ -379,7 +379,7 @@ export class DebugSessionClass extends DebugSession {
 			this.removeAllListeners();	// Don't react on events anymore
 			// Disconnect
 			if (Remote) {
-				console.log('Remote.disconnect()');
+				//console.log('Remote.disconnect()');
 				await Remote.disconnect();
 			}
 		}
@@ -990,7 +990,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 		}
 		catch (e) {
-			console.log(e);
+			//console.log(e);
 			this.debugConsoleAppendLine('Disassembly: ' + e.message);
 		}
 

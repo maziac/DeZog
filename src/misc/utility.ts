@@ -1554,7 +1554,7 @@ export class Utility {
 	public static deepCopyContext(src: Object, dest: Object) {
 		Object.keys(src).forEach(key => {
 			const value = src[key];
-			console.log(`key: ${key}, value: ${value}`)
+			//console.log(`key: ${key}, value: ${value}`)
 			if (typeof value === 'object') {
 				Utility.deepCopyContext(value, dest[key]);
 			}

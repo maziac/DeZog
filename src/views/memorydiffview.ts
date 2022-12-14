@@ -229,7 +229,7 @@ function store() {
 	protected async webViewMessageReceived(message: any) {
 		switch (message.command) {
 			case 'diffCriteriaChanged':
-				console.log(message);
+				//console.log(message);
 				// Convert criteria
 				const criteria = message.criteria;
 				let diff;
@@ -254,7 +254,7 @@ function store() {
 				break;
 
 			case 'storeDiff':
-				console.log(message);
+				//console.log(message);
 				// Simply take the current diff map as new base map
 				// Note: I don't need to clone here, diffMemMap contents is not changed.
 				// There is also no need to update because this map is already shown
