@@ -1150,27 +1150,6 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 				response = "T-states set to " + this.passedTstates + ".";
 				return response;
 			}
-			if (cmd_name == "breakinterrupt") {
-				// Check count of arguments
-				if (tokens.length != 1) {
-					throw new Error("Wrong number of arguments.");
-				}
-				const subcmd = tokens[0];
-				let enable;
-				if (subcmd == "on")
-					enable = true;
-				else if (subcmd == "off")
-					enable = false;
-				else
-					throw Error("Expected 'on' or 'off' but got '" + subcmd + "'.");
-				// Set
-				this.breakOnInterrupt = enable;  // TODO: REMOVE command
-				if (enable)
-					this.z80Cpu.interruptOccurred = false;
-				// Return
-				response = "Break on interrupt " + ((this.breakOnInterrupt) ? 'enabled' : 'disabled') + ".";
-				return response;
-			}
 
 			// Unknown command.
 			throw Error("Error: not supported.");

@@ -657,16 +657,6 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Returns the 'hover' formatted register value.
-	 * @param reg The name of the register, e.g. "A" or "BC"
-	 * @returns The formatted string.
-	 */
-	public getHoverFormattedReg(reg: string): string {
-		return Z80Registers.getHoverFormattedReg(reg);
-	}
-
-
-	/**
 	 * Sets the value for a specific register.
 	 * Reads the value from the emulator and returns it in the promise.
 	 * Note: if in reverse debug mode the function should do nothing and the promise should return the previous value.
