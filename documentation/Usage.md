@@ -1606,8 +1606,8 @@ In the vscode UI LOGPOINT breakpoints can be turned on or off altogether in the 
 
 As LOGPOINTs are organized in groups you can turn on also only specific LOGPOINT groups.
 This is done by editing the LOGPOINTs in vscode (i.e. press the small pecil right to the 'LOGPOINTs' text). You have to pass a space separated list of the groups you want to enable.
-If no group is given always all groups will be enabled (disabled).
 ![](images/exception_bp_logpoint_edited.jpg)
+If no group is given always all groups will be enabled (disabled).
 
 
 Notes:
@@ -1615,6 +1615,18 @@ Notes:
 - LOGPOINTs are not available in ZEsarUX.
 - sjasmplus: If you use label names make sure to use the global name (i.e. full dot notation).
 - LOGPOINTs can do math with fixed labels but not with registers. I.e. ```${b@(my_data+5)}``` will work. It will statically calculate ```my_data+5``` and lookup the memory value. But ```${b@(IX+1)}``` will not work as it would have to dynamically calculate ```IX+1``` at runtime.
+
+
+### Break on Interrupt
+
+When enabling 'Break on Interrupt'
+![](images/exception_bp_breakoninterrupt.jpg)
+the debugger will stop when an interrupt is executed.
+
+This allows to easily find the interrupt routine in case you are doing reverse debugging.
+If you have the sources / know the interrupt address already you could as well put a normal breakpoint in the interrupt routine.
+
+Note: This feature is only available with the internal simulator 'zsim'.
 
 
 ### vscode breakpoint
