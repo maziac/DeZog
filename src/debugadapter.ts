@@ -39,8 +39,6 @@ import {RenderHtml} from './disassembler/renderhtml';
 import {ExceptionBreakpoints} from './exceptionbreakpoints';
 import * as hjoin from '@bartificer/human-join';
 import {MemoryCommands} from './commands/memorycommands';
-import {utils} from 'mocha';
-import {sortAndDeduplicateDiagnostics} from 'typescript';
 
 
 
@@ -2596,45 +2594,64 @@ E.g. use "-help -view" to put the help text in an own view.
 	 */
 	protected async evalDbg(tokens: Array<string>): Promise<string> {
 		// Check count of arguments
-		if (tokens.length != 1) {
-			// Error Handling: No arguments
-			throw new Error("64k address expected.");
+		if (tokens.length > 1) {
+			// Error Handling
+			throw new Error("Too many arguments.");
 		}
 
-		// Get address
-		const addressString = tokens[0];
-		const addr64k = Utility.evalExpression(addressString);
-		if (isNaN(addr64k) {
-			// Error Handling: No number
-			throw new Error("The given address is no number.");
-		}
-		let txt = '';
-		txt += 'Address: ' + addr64k + ', (' + Utility.getHexString(addr64k, 4) + 'h)\n';
-
-		// Convert to long address
+		// One or none arguments ?
 		const slots = Remote.getSlots();
-		const address = Z80Registers.createLongAddress(addr64k, slots);
-		txt += 'Slots: [' + slots.join(', ') + ']\n';
-		txt += 'Long address: ' + address + ', (' + Utility.getHexString(address, 6) + 'h)\n';
+		let txt = '';
+		if (tokens.length == 1) {
+			// One argument:
+			// Get address
+			const addressString = tokens[0];
+			const addr64k = Utility.evalExpression(addressString);
+			if (isNaN(addr64k) {
+				// Error Handling: No number
+				throw new Error("The given address is no number.");
+			}
+			txt += 'Address: ' + addr64k + ', (' + Utility.getHexString(addr64k, 4) + 'h)\n';
 
-		// Check labels
-		txt += 'Label: ';
-		const labels = Labels.getLabelsForLongAddress(address);
-		if (labels.length > 0) {
-			txt +=  hjoin.join(labels, {quote: {enabled: true, quoteWith: "'"}}) + '\n';
+			// Convert to long address
+			const address = Z80Registers.createLongAddress(addr64k, slots);
+			txt += 'Slots: [' + slots.join(', ') + ']\n';
+			txt += 'Long address: ' + address + ', (' + Utility.getHexString(address, 6) + 'h)\n';
+
+			// Check labels
+			txt += 'Label: ';
+			const labels = Labels.getLabelsForLongAddress(address);
+			if (labels.length > 0) {
+				txt += hjoin.join(labels, {quote: {enabled: true, quoteWith: "'"}}) + '\n';
+			}
+			else {
+				txt += 'None.\n';
+			}
+
+			// Get file and line number
+			const e = Labels.getFileAndLineForAddress(address);
+			txt += 'File: ';
+			if (e.fileName) {
+				txt += e.fileName + ', line: ' + (e.lineNr + 1) + ', size: ' + e.size;
+			}
+			else {
+				txt += 'None.\n';
+			}
 		}
 		else {
-			txt += 'None.\n';
-		}
-
-		// Get file and line number
-		const entry = Labels.getFileAndLineForAddress(address);
-		txt += 'File: ';
-		if (entry.fileName) {
-			txt += entry.fileName + ', line: ' + (entry.lineNr + 1) + ', size: ' + entry.size;
-		}
-		else {
-			txt += 'None.\n';
+			// Print all address file/line associations.
+			txt += '\nAddress/File/Line associations:\n';
+			let count = 0;
+			for (let addr = 0x0000; addr < 0x10000; addr++) {
+				const lAddr = Z80Registers.createLongAddress(addr, slots);
+				const e = Labels.getFileAndLineForAddress(lAddr);
+				if (e.fileName) {
+					count++;
+					txt += Utility.getHexString(addr, 4) + 'h: ' + e.fileName + ', line: ' + (e.lineNr + 1) + ', size: ' + e.size + '\n';
+				}
+			}
+			if (count == 0)
+				txt += 'None.\n';
 		}
 
 		// Send response
