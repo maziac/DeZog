@@ -7,7 +7,6 @@ import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {Z88dkLabelParser} from '../src/labels/z88dklabelparser';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
-import {Z80Registers} from '../src/remotes/z80registers';
 
 suite('Labels (z88dk)', () => {
 	let lbls;

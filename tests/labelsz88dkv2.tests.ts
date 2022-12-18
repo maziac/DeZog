@@ -159,6 +159,8 @@ suite('Labels (z88dk v2 format)', () => {
 					// Check
 					const res = lbls.getFileAndLineForAddress(address);
 					assert.ok(res.fileName.endsWith('main.lis'));
+					if (lineNr != res.lineNr)
+						console.log();
 					assert.equal(lineNr, res.lineNr);
 				}
 				assert.notEqual(labelCount, 0, "No label found");

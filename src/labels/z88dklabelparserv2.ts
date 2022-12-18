@@ -186,8 +186,6 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	 * @param line The current analyzed line of the list file.
 	 */
 	protected parseLabelAndAddress(line: string) {
-		let countBytes = 0;
-
 		if (!line.startsWith(' '))
 			return;	// Assumes that filename does not start with a space and that not all possible line numbers are used.
 
@@ -236,6 +234,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 
 		// Check if there is an address
 		const matchAddress = this.addressRegEx.exec(line);
+		let countBytes = 0;
 		if (matchAddress) {
 			const addr64k = parseInt(matchAddress[1], 16);
 			if (this.z88dkMapOffset == undefined) {
@@ -254,6 +253,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 		// Store address (or several addresses for one line).
 		const longAddr = this.createLongAddress(this.lastAddr64k, 0);
 		this.addAddressLine(longAddr, countBytes);
+		this.lastAddr64k += countBytes;
 	}
 
 
