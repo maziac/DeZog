@@ -2355,8 +2355,8 @@ export class DebugSessionClass extends DebugSession {
 "-dbg address": Prints out internal information of the debugger for a 64k address. Can be helpful if you encounter e.g. 'Unverified breakpoints' problems.
 "-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels. It will also return the label if
 the value correspondents to a label.
-"-exec|e cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers".
-"-help|h": This command. Do "-e help" to get all possible ZEsarUX commands.
+"-exec|e cmd args": cmd and args are directly passed to the remote (ZEsarUX, CSpect, ...). E.g. "-exec get-registers".
+"-help|h": This command. Do "-e help" to get all possible remote (ZEsarUX, CSpect, ...) commands.
 "-label|-l XXX": Returns the matching labels (XXX) with their values. Allows wildcard "*".
 "-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes.
   But if chosen, words are output. Last argument is the endianness which is little endian by default.
