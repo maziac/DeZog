@@ -419,8 +419,7 @@ export class DebugSessionClass extends DebugSession {
 	}
 
 
-	/**
-	 * 'initialize' request.
+	/** ANCHOR 'initialize' request.
 	 * Respond with supported features.
 	 */
 	protected async initializeRequest(response: DebugProtocol.InitializeResponse, _args: DebugProtocol.InitializeRequestArguments): Promise<void> {
@@ -508,7 +507,7 @@ export class DebugSessionClass extends DebugSession {
 	}
 
 
-	/**
+	/** ANCHOR launchRequest
 	 * Called after 'initialize' request.
 	 * Loads the list file and connects the socket (if necessary).
 	 * Initializes the remote.

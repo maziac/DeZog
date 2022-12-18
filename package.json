@@ -35,7 +35,8 @@
 		"compile": "tsc -p ./",
 		"tslint": "eslint ./**/*.ts",
 		"watch": "tsc -w -p ./",
-		"test": "mocha -u tdd ./out/tests/",
+		"test": "mocha --exit -u tdd ./out/tests/",
+		"test:coverage": "nyc npm run test",
 		"package": "vsce package",
 		"publish": "vsce publish"
 	},
@@ -63,13 +64,33 @@
 		"ts-node": "^10.9.1"
 	},
 	"devDependencies": {
+		"@istanbuljs/nyc-config-typescript": "^1.0.2",
 		"@types/mocha": "10.0.0",
 		"@types/node": "18.8.2",
 		"@types/vscode": "^1.71.0",
 		"@vscode/debugadapter-testsupport": "^1.57.0",
 		"mocha": "^10.0.0",
+		"nyc": "^15.1.0",
 		"source-map-support": "^0.5.21",
 		"typescript": "^4.8.4"
+	},
+	"nyc": {
+		"extends": "@istanbuljs/nyc-config-typescript",
+		"check-coverage": true,
+		"all": true,
+		"include": [
+			"src/**/*.ts"
+		],
+		"exclude": [
+			"tests/**/*.tests.ts"
+		],
+		"reporter": [
+			"html",
+			"lcov",
+			"text",
+			"text-summary"
+		],
+		"report-dir": "coverage"
 	},
 	"bugs": {
 		"url": "https://github.com/maziac/DeZog/issues"
@@ -718,7 +739,8 @@
 								"items": {
 									"type": "object",
 									"required": [
-										"path"
+										"path",
+										"mapFile"
 									],
 									"properties": {
 										"path": {
@@ -744,7 +766,41 @@
 										},
 										"mapFile": {
 											"type": "string",
-											"description": "Is required only for z88dk. The map file is required to correctly parse the label values and to get correct file/line to address associations.",
+											"description": "The map file is required to correctly parse the label values and to get correct file/line to address associations.",
+											"default": 0
+										}
+									}
+								}
+							},
+							"z88dkv2": {
+								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
+								"type": "array",
+								"items": {
+									"type": "object",
+									"required": [
+										"path",
+										"mapFile"
+									],
+									"properties": {
+										"path": {
+											"type": "string",
+											"description": "Path to the assembler .list file."
+										},
+										"srcDirs": {
+											"type": "array",
+											"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here as an array of strings. All dirs are relative to the 'rootFolder'.",
+											"default": [
+												""
+											]
+										},
+										"excludeFiles": {
+											"type": "array",
+											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
+											"default": []
+										},
+										"mapFile": {
+											"type": "string",
+											"description": "The map file is required to correctly parse the label values and to get correct file/line to address associations.",
 											"default": 0
 										}
 									}

@@ -2,6 +2,7 @@
 
 # 3.1.2
 - Added option 'Break on Interrupt' in vscode's BREAKPOINTS panel. Therefore the command "-e breakinterrupt on" has been removed.
+- Added missing config attributes for "z88dkv2".
 
 # 3.1.1
 - zsim: sna loading now sets IFF2 and port 7FFD.
