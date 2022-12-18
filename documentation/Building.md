@@ -31,10 +31,39 @@ I.e. you don't need to compile manually everytime.
 
 # Creating a vsix package
 
+## Creating a full package
+
+The package that is used for releasing. It contains most of the images as they are required for the DeZog help.
+Is about 70 MB in size.
+
 Run
 ~~~bash
 vsce package
 ~~~
+
+or the npm script
+
+~~~bash
+npm run package
+~~~
+
+
+## Creating small package
+
+This package removes most of teh pictures so that the resulting size is < 20 MB.
+The file can be attached directly to vscode issues for testing.
+
+Run
+~~~bash
+vsce package --ignoreFile .vscodeignore_small
+~~~
+
+or the npm script
+
+~~~bash
+npm run package:small
+~~~
+
 
 
 # Publish to Microsoft Store

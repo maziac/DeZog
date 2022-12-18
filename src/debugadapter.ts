@@ -2607,7 +2607,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			// Get address
 			const addressString = tokens[0];
 			const addr64k = Utility.evalExpression(addressString);
-			if (isNaN(addr64k) {
+			if (isNaN(addr64k)) {
 				// Error Handling: No number
 				throw new Error("The given address is no number.");
 			}
