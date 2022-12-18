@@ -4,15 +4,16 @@
         {
             "type": "dezog",
             "request": "launch",
-            "name": "zsim: lis file (default)",
+            "name": "zsim: lis file",
             "remoteType": "zsim",
             "zsim": {
                 "visualMemory": true
             },
-            "z88dk": [
+            "z88dkv2": [
                 {
                     "path": "main.lis",
-	                "mapFile": "main.map"
+	                "mapFile": "main.map",
+                    "srcDirs": []
                 }
             ],
             "rootFolder": "${workspaceFolder}",
@@ -31,7 +32,7 @@
             "zsim": {
                 "visualMemory": true
             },
-            "z88dk": [
+            "z88dkv2": [
                 {
                     "path": "main.lis",
                     "srcDirs": [
