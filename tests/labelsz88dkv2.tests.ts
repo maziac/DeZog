@@ -6,7 +6,7 @@ import * as path from 'path';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {Z88dkLabelParserV2} from '../src/labels/z88dklabelparserv2';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
-import {MemoryModelAllRam, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
 suite('Labels (z88dk v2 format)', () => {
 	let lbls;
@@ -159,9 +159,7 @@ suite('Labels (z88dk v2 format)', () => {
 					// Check
 					const res = lbls.getFileAndLineForAddress(address);
 					assert.ok(res.fileName.endsWith('main.lis'));
-					if (lineNr != res.lineNr)
-						console.log();
-					assert.equal(lineNr, res.lineNr);
+					assert.equal(res.lineNr, lineNr);
 				}
 				assert.notEqual(labelCount, 0, "No label found");
 			});
@@ -198,11 +196,42 @@ suite('Labels (z88dk v2 format)', () => {
 					const address = 0x10000 + addr64k;	// Just 1 bank, MemoryModelAllRam
 					// Check
 					let resultAddr = lbls.getAddrForFileAndLine(filename, lineNr);
-					assert.equal(address, resultAddr);
+					assert.equal(resultAddr, address);
 				}
 				assert.notEqual(labelCount, 0, "No label found");
 			});
 
+			test('C-code assembly: Test.c.lis', () => {
+				// Read the list file
+				const config = {
+					z88dkv2: [{
+						path: './tests/data/labels/projects/z88dk/test_c_v2/Test.c.lis',
+						srcDirs: [],	// ListFile-Mode
+						mapFile: "./tests/data/labels/projects/z88dk/test_c_v2/Test.map"
+					}]
+				};
+				lbls.readListFiles(config, new MemoryModelZx48k());
+
+				let res = lbls.getFileAndLineForAddress(0x028FB7);
+				assert.ok(res.fileName.endsWith('Test.c.lis'));
+				assert.equal(res.lineNr, 557);
+
+				res = lbls.getFileAndLineForAddress(0x028FBA);
+				assert.ok(res.fileName.endsWith('Test.c.lis'));
+				assert.equal(res.lineNr, 558);
+
+				res = lbls.getFileAndLineForAddress(0x028FBB);
+				assert.ok(res.fileName.endsWith('Test.c.lis'));
+				assert.equal(res.lineNr, 559);
+
+				res = lbls.getFileAndLineForAddress(0x028FBE);
+				assert.ok(res.fileName.endsWith('Test.c.lis'));
+				assert.equal(res.lineNr, 560);
+
+				res = lbls.getFileAndLineForAddress(0x028FBF);
+				assert.ok(res.fileName.endsWith('Test.c.lis'));
+				assert.equal(res.lineNr, 562);
+			});
 		});
 
 
@@ -432,8 +461,6 @@ labelE000                          = $E000 ; addr, local, , main, , main.asm:22
 			assert.equal(parser.numberForLabel.get('labelC000'), 0x001C000);
 			assert.equal(parser.numberForLabel.get('labelE000'), 0x002E000);
 		});
-
 	});
-
 });
 

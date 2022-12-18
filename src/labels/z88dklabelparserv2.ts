@@ -136,7 +136,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	protected fileNameRegEx = /^(\S.*):/;
 
 	// Regex to find the address, e.g. "08FA  CD0F34" (address/bytes)
-	protected addressRegEx = /^([0-9a-f]{4})\s+((?:[0-9a-f]{2})+)\s/i;
+	protected addressRegEx = /^([0-9a-f]{4,6})\s+((?:[0-9a-f]{2})+)\s/i;
 
 	// Regex to find labels
 	protected labelRegEx = /([a-z_]\w*):/i;

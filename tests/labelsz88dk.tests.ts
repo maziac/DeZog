@@ -160,7 +160,7 @@ suite('Labels (z88dk)', () => {
 					// Check
 					const res = lbls.getFileAndLineForAddress(address);
 					assert.ok(res.fileName.endsWith('main.lis'));
-					assert.equal(lineNr, res.lineNr);
+					assert.equal(res.lineNr, lineNr);
 				}
 				assert.notEqual(labelCount, 0, "No label found");
 			});
@@ -197,11 +197,10 @@ suite('Labels (z88dk)', () => {
 					const address = 0x10000 + addr64k;	// Just 1 bank, MemoryModelAllRam
 					// Check
 					let resultAddr = lbls.getAddrForFileAndLine(filename, lineNr);
-					assert.equal(address, resultAddr);
+					assert.equal(resultAddr, address);
 				}
 				assert.notEqual(labelCount, 0, "No label found");
 			});
-
 		});
 
 

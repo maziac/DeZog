@@ -912,7 +912,7 @@ export class DebugSessionClass extends DebugSession {
 	}
 
 
-	/**
+	/** ANCHOR stackTraceRequest
 	 * Returns the stack frames.
 	 */
 	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, _args: DebugProtocol.StackTraceArguments): Promise<void> {
