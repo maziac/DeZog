@@ -39,6 +39,8 @@ import {RenderHtml} from './disassembler/renderhtml';
 import {ExceptionBreakpoints} from './exceptionbreakpoints';
 import * as hjoin from '@bartificer/human-join';
 import {MemoryCommands} from './commands/memorycommands';
+import {utils} from 'mocha';
+import {sortAndDeduplicateDiagnostics} from 'typescript';
 
 
 
@@ -1930,6 +1932,12 @@ export class DebugSessionClass extends DebugSession {
 		if (cmd == '-help' || cmd == '-h') {
 			output = await this.evalHelp(tokens);
 		}
+		else if (cmd == '-dasm') {
+			output = await this.evalDasm(tokens);
+		}
+		else if (cmd == '-dbg') {
+			output = await this.evalDbg(tokens);
+		}
 		else if (cmd == '-eval') {
 			output = await this.evalEval(tokens);
 		}
@@ -1968,9 +1976,6 @@ export class DebugSessionClass extends DebugSession {
 		}
 		else if (cmd == '-rmv') {
 			output = await MemoryCommands.evalRegisterMemView(tokens);
-		}
-		else if (cmd == '-dasm') {
-			output = await this.evalDasm(tokens);
 		}
 		else if (cmd == '-patterns') {
 			output = await this.evalSpritePatterns(tokens);
@@ -2347,8 +2352,9 @@ export class DebugSessionClass extends DebugSession {
 		const output =
 			`Allowed commands are:
 "-dasm address count": Disassembles a memory area. count=number of lines.
+"-dbg address": Prints out internal information of the debugger for a 64k address. Can be helpful if you encounter e.g. 'Unverified breakpoints' problems.
 "-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels. It will also return the label if
-the value correspondends to a label.
+the value correspondents to a label.
 "-exec|e cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers".
 "-help|h": This command. Do "-e help" to get all possible ZEsarUX commands.
 "-label|-l XXX": Returns the matching labels (XXX) with their values. Allows wildcard "*".
@@ -2452,13 +2458,13 @@ E.g. use "-help -view" to put the help text in an own view.
 		let result;
 		// Evaluate
 		const value = Utility.evalExpression(expr);
-		// convert to decimal
+		// Convert to decimal
 		result = value.toString();
-		// convert also to hex
+		// Convert also to hex
 		result += ', ' + value.toString(16).toUpperCase() + 'h';
-		// convert also to bin
+		// Convert also to bin
 		result += ', ' + value.toString(2) + 'b';
-		// check for label
+		// Check for label
 		const labels = Labels.getLabelsPlusIndexForNumber64k(value);
 		if (labels.length > 0) {
 			result += ', ' + labels.join(', ');
@@ -2566,7 +2572,6 @@ E.g. use "-help -view" to put the help text in an own view.
 			count = Utility.evalExpression(countString);
 		}
 
-
 		// Get memory
 		const data = await Remote.readMemoryDump(address, 4 * count);
 
@@ -2577,6 +2582,59 @@ E.g. use "-help -view" to put the help text in an own view.
 		let txt = '';
 		for (const line of dasmArray) {
 			txt += Utility.getHexString(line.address, 4) + '\t' + line.instruction + '\n';
+		}
+
+		// Send response
+		return txt;
+	}
+
+
+	/** Prints out internal information for an address.
+	 * Helpful to trace down 'Unverified breakpoint' problems.
+	 * @param tokens The arguments. I.e. the address.
+	 * @returns A Promise with a text to print.
+	 */
+	protected async evalDbg(tokens: Array<string>): Promise<string> {
+		// Check count of arguments
+		if (tokens.length != 1) {
+			// Error Handling: No arguments
+			throw new Error("64k address expected.");
+		}
+
+		// Get address
+		const addressString = tokens[0];
+		const addr64k = Utility.evalExpression(addressString);
+		if (isNaN(addr64k) {
+			// Error Handling: No number
+			throw new Error("The given address is no number.");
+		}
+		let txt = '';
+		txt += 'Address: ' + addr64k + ', (' + Utility.getHexString(addr64k, 4) + 'h)\n';
+
+		// Convert to long address
+		const slots = Remote.getSlots();
+		const address = Z80Registers.createLongAddress(addr64k, slots);
+		txt += 'Slots: [' + slots.join(', ') + ']\n';
+		txt += 'Long address: ' + address + ', (' + Utility.getHexString(address, 6) + 'h)\n';
+
+		// Check labels
+		txt += 'Label: ';
+		const labels = Labels.getLabelsForLongAddress(address);
+		if (labels.length > 0) {
+			txt +=  hjoin.join(labels, {quote: {enabled: true, quoteWith: "'"}}) + '\n';
+		}
+		else {
+			txt += 'None.\n';
+		}
+
+		// Get file and line number
+		const entry = Labels.getFileAndLineForAddress(address);
+		txt += 'File: ';
+		if (entry.fileName) {
+			txt += entry.fileName + ', line: ' + (entry.lineNr + 1) + ', size: ' + entry.size;
+		}
+		else {
+			txt += 'None.\n';
 		}
 
 		// Send response
