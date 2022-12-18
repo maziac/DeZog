@@ -208,14 +208,14 @@ suite('RemoteBase', () => {
 				let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
 				assert.equal(0xCD, opcode.code);
 				assert.equal(0x8003, bp1);
-				assert.equal(undefined, bp2);
+				assert.equal(0x8004, bp2);
 
 				remote.pcMemory[0] = 0xC4;	// CALL cc
 
 				[opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
 				assert.equal(0xC4, opcode.code);
 				assert.equal(0x8003, bp1);
-				assert.equal(undefined, bp2);
+				assert.equal(0x8004, bp2);
 			});
 
 			test('RST (except 08) and step over', async () => {
@@ -229,7 +229,7 @@ suite('RemoteBase', () => {
 				let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
 				assert.equal(0xC7, opcode.code);
 				assert.equal(0x8001, bp1);
-				assert.equal(undefined, bp2);
+				assert.equal(0x8002, bp2);
 			});
 
 			test('RST 08 and step over', async () => {
@@ -280,7 +280,7 @@ suite('RemoteBase', () => {
 				let [opcode, bp1, bp2] = await rem.calcStepBp(true);	// stepOver
 				assert.equal(0xD7, opcode.code);
 				assert.equal(0x8002, bp1);
-				assert.equal(undefined, bp2);
+				assert.equal(0x8003, bp2);
 			});
 		});
 

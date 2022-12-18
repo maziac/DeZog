@@ -1582,9 +1582,7 @@ export class RemoteBase extends EventEmitter {
 
 		// Special handling for RST 08 (esxdos) as stepInto may not work
 		// if the emulator simulates this.
-		if (ocFlags & OpcodeFlag.BRANCH_ADDRESS
-			&& (ocFlags & OpcodeFlag.CONDITIONAL) == 0
-			&& opcode.code == 0xCF) {
+		if (opcode.code == 0xCF) {
 			// Note: The opcode length for RST 08 is adjusted by the disassembler.
 			// But with the implementation below, we don't require this.
 			if (stepOver) {
@@ -1621,8 +1619,11 @@ export class RemoteBase extends EventEmitter {
 		}
 		// Check for stepOver and CALL/RST
 		else if (stepOver && (ocFlags & OpcodeFlag.CALL)) {
-			// If call and step over we don't need to check the additional
+			// If call/rst and step over we don't need to check the additional
 			// branch address.
+			// We set the 2nd bp, too, just in case the return address is
+			// manipulated. So we would at least catch a manipulation of 1
+			bpAddr2 = bpAddr1 + 1;
 		}
 		// Check for branches (JP, JR, CALL, RST, DJNZ)
 		else if (ocFlags & OpcodeFlag.BRANCH_ADDRESS) {
