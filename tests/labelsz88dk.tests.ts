@@ -7,6 +7,7 @@ import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {Z88dkLabelParser} from '../src/labels/z88dklabelparser';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {Z80Registers} from '../src/remotes/z80registers';
 
 suite('Labels (z88dk)', () => {
 	let lbls;
@@ -149,12 +150,14 @@ suite('Labels (z88dk)', () => {
 				for (let lineNr = 0; lineNr < count; lineNr++) {
 					const line = listFile[lineNr];
 					// A valid line looks like: " 18    8001 3E 05        label2:	ld a,5"
-					const match = /^\s*[0-9+]+\s+([0-9a-f]+)\s[0-9a-f]+/i.exec(line);
+					const match = /^\s*[0-9+]+\s+([0-9a-f]+)\s+[0-9a-f]{2}\s/i.exec(line);
 					if (!match)
 						continue;
 					labelCount++;
 					// Valid address line
-					const address = parseInt(match[1], 16);
+					let addr64k = parseInt(match[1], 16);
+					addr64k += 0x8000;	// Correct by ORG 0x8000
+					const address = 0x10000 + addr64k;	// Just 1 bank, MemoryModelAllRam
 					// Check
 					const res = lbls.getFileAndLineForAddress(address);
 					assert.ok(res.fileName.endsWith('main.lis'));
@@ -185,12 +188,14 @@ suite('Labels (z88dk)', () => {
 				for (let lineNr = 0; lineNr < count; lineNr++) {
 					const line = listFile[lineNr];
 					// A valid line looks like: " 18    8001 3E 05        label2:	ld a,5"
-					const match = /^\s*[0-9+]+\s+([0-9a-f]+)\s[0-9a-f]+/i.exec(line);
+					const match = /^\s*[0-9+]+\s+([0-9a-f]+)\s+[0-9a-f]{2}\s/i.exec(line);
 					if (!match)
 						continue;
 					labelCount++;
 					// Valid address line
-					const address = parseInt(match[1], 16);
+					let addr64k = parseInt(match[1], 16);
+					addr64k += 0x8000;	// Correct by ORG 0x8000
+					const address = 0x10000 + addr64k;	// Just 1 bank, MemoryModelAllRam
 					// Check
 					let resultAddr = lbls.getAddrForFileAndLine(filename, lineNr);
 					assert.equal(address, resultAddr);
