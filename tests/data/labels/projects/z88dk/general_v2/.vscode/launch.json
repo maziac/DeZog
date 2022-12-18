@@ -4,7 +4,7 @@
         {
             "type": "dezog",
             "request": "launch",
-            "name": "Internal Simulator",
+            "name": "zsim: lis file (default)",
             "remoteType": "zsim",
             "zsim": {
                 "visualMemory": true
@@ -12,7 +12,6 @@
             "z88dk": [
                 {
                     "path": "main.lis",
-                    //"mainFile": "main.asm",
 	                "mapFile": "main.map"
                 }
             ],
@@ -21,6 +20,33 @@
                 "path": "main.bin",
                 "start": "0x8000"
             }],
+            "execAddress": "0x8000",
+        },
+
+        {
+            "type": "dezog",
+            "request": "launch",
+            "name": "zsim: src mode",
+            "remoteType": "zsim",
+            "zsim": {
+                "visualMemory": true
+            },
+            "z88dk": [
+                {
+                    "path": "main.lis",
+                    "srcDirs": [
+                        ""
+                    ],
+                    "mapFile": "main.map"
+                }
+            ],
+            "rootFolder": "${workspaceFolder}",
+            "loadObjs": [
+                {
+                    "path": "main.bin",
+                    "start": "0x8000"
+                }
+            ],
             "execAddress": "0x8000",
         }
     ]

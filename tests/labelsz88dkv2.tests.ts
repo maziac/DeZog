@@ -144,12 +144,14 @@ suite('Labels (z88dk v2 format)', () => {
 
 				// Compare all addresses
 				const count = listFile.length;
+				let labelCount = 0;
 				for (let lineNr = 0; lineNr < count; lineNr++) {
 					const line = listFile[lineNr];
 					// A valid line looks like: " 18    8001 3E 05        label2:	ld a,5"
 					const match = /^\s*[0-9+]+\s+([0-9a-f]+)\s[0-9a-f]+/i.exec(line);
 					if (!match)
 						continue;
+					labelCount++;
 					// Valid address line
 					const address = parseInt(match[1], 16);
 					// Check
@@ -157,6 +159,7 @@ suite('Labels (z88dk v2 format)', () => {
 					assert.ok(res.fileName.endsWith('main.lis'));
 					assert.equal(lineNr, res.lineNr);
 				}
+				assert.notEqual(labelCount, 0, "No label found");
 			});
 
 
@@ -177,18 +180,21 @@ suite('Labels (z88dk v2 format)', () => {
 
 				// Compare all addresses
 				const count = listFile.length;
+				let labelCount = 0;
 				for (let lineNr = 0; lineNr < count; lineNr++) {
 					const line = listFile[lineNr];
 					// A valid line looks like: " 18    8001 3E 05        label2:	ld a,5"
 					const match = /^\s*[0-9+]+\s+([0-9a-f]+)\s[0-9a-f]+/i.exec(line);
 					if (!match)
 						continue;
+					labelCount++;
 					// Valid address line
 					const address = parseInt(match[1], 16);
 					// Check
 					let resultAddr = lbls.getAddrForFileAndLine(filename, lineNr);
 					assert.equal(address, resultAddr);
 				}
+				assert.notEqual(labelCount, 0, "No label found");
 			});
 
 		});
