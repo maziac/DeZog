@@ -93,12 +93,14 @@ export class CSpectRemote extends DzrpBufferRemote {
 	 * This will disconnect the socket.
 	 */
 	public async disconnect(): Promise<void> {
-		await super.disconnect();
 		if (!this.socket)
 			return;
 
 		// Send a 'break' request to emulator to stop it if it is running. (Note: does work only with cspect.)
 		await this.pause();
+
+		// Disconnect: Removes listeners and sends a CLOSE command.
+		await super.disconnect();
 
 		return new Promise<void>(resolve => {
 			this.socket?.removeAllListeners();
