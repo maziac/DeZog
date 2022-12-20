@@ -140,9 +140,10 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		return new Promise<void>(async resolve => {
 			if (this.serialPort) {
 				//console.log('serialPort.close();');
-				this.serialPort.close(() => {
+				const serialPort = this.serialPort;
+				this.serialPort = undefined;
+				serialPort.close(() => {
 					//console.log('  serialPort.close() -> done');
-					this.serialPort = undefined;
 					resolve();
 				});
 				return;
@@ -157,17 +158,13 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	 * This will disconnect the serial.
 	 */
 	public async disconnect(): Promise<void> {
+		this.disconnect = async () => {};	// Prohibit that disconnect is executed twice.
+		if (!this.serialPort) {
+			return;
+		}
 		await super.disconnect();
-		return new Promise<void>(async resolve => {
-			if (!this.serialPort) {
-				resolve();
-				return;
-			}
-			await super.disconnect();
-			// Close serial port
-			await this.closeSerialPort();
-			resolve();
-		});
+		// Close serial port
+		await this.closeSerialPort();
 	}
 
 
