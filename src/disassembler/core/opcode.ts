@@ -1,5 +1,5 @@
 import * as util from 'util';
-import * as assert from 'assert';
+import {strict as assert} from 'assert';
 import {BaseMemory} from './basememory';
 import {NumberType} from './numbertype'
 import {Format} from './format';
