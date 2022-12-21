@@ -39,7 +39,6 @@
 		"test:coverage": "nyc npm run test",
 		"package:small": "file=$npm_package_name-$npm_package_version.vsix ; vsce package --ignoreFile .vscodeignore_small --out $file ; zip $file.zip $file",
 		"package": "vsce package",
-		"publish": "vsce publish",
 		"check-env": "node -e 'console.log(process.env)' | grep npm"
 	},
 	"files": [],
