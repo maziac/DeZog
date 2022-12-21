@@ -3,6 +3,10 @@
 # 3.1.2
 - Added option 'Break on Interrupt' in vscode's BREAKPOINTS panel. Therefore the command "-e breakinterrupt on" has been removed.
 - Added missing config attributes for "z88dkv2".
+- Changed "z88dkv2" parser to understand both, 4 and 6 digit addresses.
+- Fixed a problem with disconnecting/reconnecting the ZX Next.
+- "-dbg" debug console command added to help finding the root cause of 'unverified breakpoint' errors.
+- Fixed 'step-back' in unit tests.
 
 # 3.1.1
 - zsim: sna loading now sets IFF2 and port 7FFD.

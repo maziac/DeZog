@@ -10,7 +10,7 @@ src/
 out/tests/
 **/*.js.map
 data/listings/
-coverage/
+**/coverage/
 design/
 logs/
 notes.md
