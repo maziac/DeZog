@@ -96,11 +96,15 @@ export class CSpectRemote extends DzrpBufferRemote {
 		if (!this.socket)
 			return;
 
-		// Send a 'break' request to emulator to stop it if it is running. (Note: does work only with cspect.)
-		await this.pause();
+		// Check if socket is already open.
+		if (this.socket.readyState === 'open') {
+			// Socket is open for communication:
+			// Send a 'break' request to emulator to stop it if it is running. (Note: does work only with cspect.)
+			await this.pause();
 
-		// Disconnect: Removes listeners and sends a CLOSE command.
-		await super.disconnect();
+			// Disconnect: Removes listeners and sends a CLOSE command.
+			await super.disconnect();
+		}
 
 		return new Promise<void>(resolve => {
 			this.socket?.removeAllListeners();
