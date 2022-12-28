@@ -2,19 +2,21 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "Launch Extension",
 			"type": "extensionHost",
 			"request": "launch",
-			"name": "Extension",
-			"preLaunchTask": "npm",
 			"runtimeExecutable": "${execPath}",
 			"args": [
+				//"--disable-extensions",
 				"--extensionDevelopmentPath=${workspaceFolder}"
 			],
-			"outFiles": [ "${workspaceFolder}/out/**/*.js" ],
-			"smartStep": true,
+			"debugWebviews": true,
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceFolder}/out/extension.js"
+			],
+			"preLaunchTask": "watch",
 			"skipFiles": [
-				//"inspector_async_hook.js",
-				//"async_hooks.js",
 				"**/extensionHostProcess.js"
 			]
 		}
