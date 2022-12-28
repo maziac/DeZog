@@ -2,7 +2,8 @@ declare var vscode: any;
 
 
 // Define class for communication
-class CustomUiApi {
+// TODO: Test if customUI still works...
+export class CustomUiApi {
 	/**
 	 * A message has been received from the custom code that
 	 * shall be executed by the custom UI code.
@@ -38,7 +39,7 @@ class CustomUiApi {
 		vscode.postMessage(msg);
 	}
 }
-var UIAPI = new CustomUiApi();
+export let UIAPI = new CustomUiApi();
 
 
 /**
@@ -64,7 +65,7 @@ var UIAPI = new CustomUiApi();
  * <ui-bit togglemode="false" onchange="my_func(this)"/>
  * You can get the value (e.g. in 'my_func(this)' with 'this.bitvalue'.
  */
-class UiBit extends HTMLElement {
+export class UiBit extends HTMLElement {
 
 	static get observedAttributes() {
 		return ['bitvalue', 'oncolor', 'offcolor', 'togglemode', 'onchange'];
@@ -140,7 +141,9 @@ class UiBit extends HTMLElement {
 		}
 		else if (name == "onchange") {
 			// Note: this.onchange does not work
-			(this as any).onstatechange = eval("() => { " + newValue + " }");
+			// TODO: test the new Function does work:
+			//(this as any).onstatechange = eval("() => { " + newValue + " }");
+			(this as any).onstatechange = new Function("() => { " + newValue + " }");
 		}
 	}
 
@@ -307,7 +310,9 @@ class UiByte extends HTMLElement {
 		}
 		else if (name == "onchange") {
 			// Note: (this as any).onchange does not work
-			(this as any).onstatechange = eval("() => { " + newValue + " }");
+			// TODO: test the new Function does work:
+			//(this as any).onstatechange = eval("() => { " + newValue + " }");
+			(this as any).onstatechange = new Function("() => { " + newValue + " }");
 		}
 	}
 

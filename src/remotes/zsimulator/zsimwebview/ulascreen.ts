@@ -3,7 +3,7 @@
  * Represents the ZX 48K ULA screen. (0x4000-0x5AFF)
  * I.e. it takes a bank and converts it to a gif image.
  */
-class UlaScreen {
+export class UlaScreen {
 	// Screen height
 	public static SCREEN_HEIGHT = 192;
 

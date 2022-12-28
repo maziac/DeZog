@@ -1,36 +1,44 @@
-import {ZxAudioBeeper} from "./zxaudiobeeper";
 
-declare let acquireVsCodeApi: any;
-declare let cpuLoad: HTMLLabelElement;
+import {vscode} from "./vscode-import";
+import {zxAudioBeeper} from "./zxaudiobeeper";
+import {UlaScreen} from "./ulascreen";
+import {VisualMem} from "./visualmem";
+import {joystickObjs, initJoystickPolling} from "./joysticks";
+import {UIAPI} from "./helper";
+import {MemorySlotsVar} from "../../../variables/shallowvar";
+
+// Make sure that it is not removed by optimization.
+joystickObjs;
+initJoystickPolling;
+
+
+// HTML element used for the cpu load.
+export let cpuLoad: HTMLLabelElement
+
+
+/*
 declare let slots: Array<HTMLDivElement>;
-declare let visualMem: HTMLCanvasElement;
 declare let screenImgContext: CanvasRenderingContext2D;
 declare let screenImgImgData: ImageData;
 declare let screenImg: HTMLDivElement;
-declare let UIAPI: CustomUiApi;
-// @ts-ignore
-declare let zxAudioBeeper: ZxAudioBeeper;
+*/
 
 
 let countOfProcessedMessages = 0;
-
-const vscode = acquireVsCodeApi();
-
-// Pointer to the joystick html elements
-// @ts-ignore
-const joystickObjs = new Array<{
-	fire: UiBit,
-	up: UiBit,
-	left: UiBit,
-	right: UiBit,
-	down: UiBit
-}>();
-
 
 // Message water marks.
 // @ts-ignore
 const MESSAGE_HIGH_WATERMARK = 100;
 const MESSAGE_LOW_WATERMARK = 10;
+
+
+// The slot HTML elements.
+const slots: HTMLElement[] = [];
+
+// For the ULA screen.
+let screenImg: HTMLCanvasElement;
+let screenImgImgData: ImageData;
+let screenImgContext: CanvasRenderingContext2D;
 
 
 
@@ -70,7 +78,7 @@ window.addEventListener('message', event => {// NOSONAR
 				}
 
 				if (message.visualMem) {
-					VisualMem.drawVisualMemory(visualMem, message.visualMem);
+					VisualMem.drawVisualMemory(message.visualMem);
 				}
 
 				if (message.screenImg) {
@@ -105,6 +113,47 @@ window.addEventListener('message', event => {// NOSONAR
 			break;
 	}
 });
+
+
+/** Init: Initializes parts of the simulation.
+ * This depends on if the UI element is available.
+ * If it is available was setup in zsimulationview.ts.
+ */
+function initSimulation() {
+	// Store the cpu_load_id
+	const cpuLoad = document.getElementById("cpu_load_id") as HTMLLabelElement;
+	if (cpuLoad) {
+		setCpuLoadHtmlElement(cpuLoad);
+	}
+
+	// Store the visual mem image source
+	const visualMemCanvas = document.getElementById("visual_mem_img_id") as HTMLCanvasElement;
+	if (visualMemCanvas) {
+		// Init both
+		VisualMem.initCanvas(visualMemCanvas);
+	}
+
+	// Slots
+	for (let i = 0; ; i++) {
+		const slot = document.getElementById("slot" + i + "_id");
+		if (!slot)
+			break;
+		slots.push(slot);
+	}
+
+	// Store the screen image source
+	screenImg = document.getElementById("screen_img_id") as HTMLCanvasElement;
+	if (screenImg) {
+		screenImgContext = screenImg.getContext("2d")!;
+		screenImgImgData = screenImgContext.createImageData(UlaScreen.SCREEN_WIDTH, UlaScreen.SCREEN_HEIGHT);
+	}
+}
+
+
+// Set the HTML element used for the cpu load.
+export function setCpuLoadHtmlElement(elem: HTMLLabelElement) {
+	cpuLoad = elem;
+}
 
 
 // Set cell to selected or unselected.
@@ -216,3 +265,7 @@ function keyup(e) {
 }
 
 
+// Show lines the first time when document is loaded
+window.addEventListener('load', () => {
+	initSimulation();
+});

@@ -35,7 +35,7 @@
 	"scripts": {
 		"vscode:prepublish": "npm run esbuild-node -- --minify && npm run esbuild-browser -- --minify",
 		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --format=cjs --platform=node",
-		"esbuild-browser": "esbuild ./src/html/donate.ts --bundle --outdir=out/html --platform=browser",
+		"esbuild-browser": "esbuild ./src/remotes/zsimulator/zsimwebview/main.ts ./src/html/donate.ts --bundle --outdir=out/ --platform=browser",
 		"watch-node": "npm run esbuild-node -- --sourcemap --watch",
 		"watch-browser": "npm run esbuild-browser -- --sourcemap --watch",
 		"package": "vsce package",

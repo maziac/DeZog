@@ -1,6 +1,7 @@
 import {Log} from "../../log";
 import {Serializable, MemBuffer} from "../../misc/membuffer";
 
+
 /**
  * The buffer exchanged with the zsim simulator webview.
  * It contains only the lengths for the stats changes of the beeper.

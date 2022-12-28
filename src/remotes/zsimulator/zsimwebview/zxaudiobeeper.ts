@@ -1,16 +1,16 @@
+import {vscode} from "./vscode-import";
+import {BeeperBuffer} from "../zxbeeper";
 
-declare var beeperOutput: HTMLElement;
+// Singleton for the audio beeper.
+export let zxAudioBeeper: ZxAudioBeeper;
 
-
-declare interface BeeperBuffer {
-	totalLength: number,	// The length a "normal" audio frame buffer would occupy.
-	startValue: boolean,	// Beeper value start value for the buffer.
-	buffer: Uint16Array,		// Contains the length of the beeper values.
-	bufferLen: number		// The length of buffer. For some reason buffer.length does not work in the webview.
-}
 
 export class ZxAudioBeeper {
 
+	// Create the singleton.
+	public static createZxAudioBeeper(sampleRate: number, beeperOutput: HTMLElement) {
+		zxAudioBeeper = new ZxAudioBeeper(sampleRate, beeperOutput);
+	}
 
 	// Start latency of the system.
 	protected MIN_LATENCY = 0.2; //0.05; //0.1;
@@ -80,11 +80,14 @@ export class ZxAudioBeeper {
 	// The node used to change the volume.
 	protected gainNode: GainNode;
 
+	// The visual beeper element
+	protected beeperOutput: HTMLElement;
+
 
 	/**
 	 * Constructor.
 	 */
-	constructor(sampleRate: number) {
+	constructor(sampleRate: number, beeperOutput: HTMLElement) {
 		//sampleRate = 22050;
 		this.volume = 0.75;
 		this.ctx = this.createAudioContext(sampleRate);
@@ -113,6 +116,7 @@ export class ZxAudioBeeper {
 		this.prepareNextFrame();
 
 		// Visual update
+		this.beeperOutput = beeperOutput;
 		setInterval(() => {
 			this.updateVisualBeeper();
 		}, this.BEEPER_DISPLAY_AGGREGATE_TIME);
@@ -473,12 +477,12 @@ export class ZxAudioBeeper {
 	protected updateVisualBeeper() {
 		if (this.visualBeeperChanging) {
 			// Display symbol for changing
-			beeperOutput.textContent = '*';
+			this.beeperOutput.textContent = '*';
 			this.visualBeeperChanging = false;
 		}
 		else {
 			// Display 0 or 1
-			beeperOutput.textContent = (this.lastVisualBeeperState) ? "1" : "0";
+			this.beeperOutput.textContent = (this.lastVisualBeeperState) ? "1" : "0";
 		}
 	}
 }

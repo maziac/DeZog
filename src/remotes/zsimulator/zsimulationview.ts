@@ -614,16 +614,7 @@ width:70px;
 
 </style>
 
-<script>
-	const exports = {};
-</script>
-
-  <script src="out/src/remotes/zsimulator/zsimwebview/zxaudiobeeper.js"></script>
-  <script src="out/src/remotes/zsimulator/zsimwebview/ulascreen.js"></script>
-  <script src="out/src/remotes/zsimulator/zsimwebview/visualmem.js"></script>
-  <script src="out/src/remotes/zsimulator/zsimwebview/helper.js"></script>
-  <script src="out/src/remotes/zsimulator/zsimwebview/main.js"></script>
-
+<script src="out/remotes/zsimulator/zsimwebview/main.js"></script>
 
 <body>
 
@@ -638,10 +629,6 @@ width:70px;
 	<label id="cpu_load_id">100</label>
 	<label>%</label>
 </p>
-<script>
-	<!-- Store the cpu_load_id -->
-	const cpuLoad=document.getElementById("cpu_load_id");
-</script>
 
 `;
 		}
@@ -752,23 +739,6 @@ width:70px;
 			}
 
 			html += `
-    <script>
-        <!-- Store the visual mem image source -->
-        const visualMem=document.getElementById("visual_mem_img_id");
-
-	    <!-- Store the slots -->
-	    const slots = [
-			`;
-
-			for (let i = 0; i < count; i++) {
-				const add = `document.getElementById("slot${i}_id"),
-			`;
-				html += add;
-			}
-
-			html += `
-		];
- 	</script>
 </div>
 <br><br>
 `;
@@ -820,12 +790,13 @@ width:70px;
 </details>
 
 <script>
-	// Singleton for audio
-	const zxAudioBeeper = new ZxAudioBeeper(${Settings.launch.zsim.audioSampleRate});
-	zxAudioBeeper.setVolume(${volume});
-
 	// Get Beeper output object
 	const beeperOutput = document.getElementById("beeper.output");
+
+	// Singleton for audio
+	ZxAudioBeeper.createZxAudioBeeper(${Settings.launch.zsim.audioSampleRate}, beeperOutput);
+	zxAudioBeeper.setVolume(${volume});
+
 	// Get Volume slider
 	const volumeSlider = document.getElementById("audio.volume");
 	volumeSlider.value = zxAudioBeeper.getVolume();

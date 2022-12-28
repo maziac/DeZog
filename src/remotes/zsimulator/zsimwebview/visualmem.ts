@@ -1,9 +1,10 @@
 
+
 /**
  * Represents the ZX 48K ULA screen. (0x4000-0x5AFF)
  * I.e. it takes a bank and converts it to a gif image.
  */
-class VisualMem {
+export class VisualMem {
 
 	// The palette used.
 	protected static palette = [
@@ -13,15 +14,25 @@ class VisualMem {
 		0x00, 0x00, 0xC0, 0xFF,	// Blue: Prog access
 	];
 
+	// HTML element used for the visual memory.
+	protected static visualMemCanvas: HTMLCanvasElement;
+
+
+	/** Pass the HTML element used for the visual memory.
+	 * @param canvas The canvas to draw to.
+	 */
+	public static initCanvas(canvas: HTMLCanvasElement) {
+		this.visualMemCanvas = canvas;
+	}
+
 
 	/**
 	 * Draws the visual memory into the canvas.
-	 * @param canvas The canvas to draw to.
 	 * @param visualMem The memory to display.
 	 */
-	public static drawVisualMemory(canvas: HTMLCanvasElement, visualMem: Uint8Array) {
+	public static drawVisualMemory(visualMem: Uint8Array) {
 		// Get canvas drawing context
-		const ctx = canvas.getContext("2d")!;
+		const ctx = this.visualMemCanvas.getContext("2d")!;
 		const len = visualMem.length;
 		const imgData = ctx.createImageData(len, 1);
 		const pixels = imgData.data;
@@ -37,8 +48,8 @@ class VisualMem {
 		}
 
 		// Write image
-		canvas.width = len;
-		canvas.height = 1;
+		this.visualMemCanvas.width = len;
+		this.visualMemCanvas.height = 1;
 		ctx.putImageData(imgData, 0, 0);
 	}
 }
