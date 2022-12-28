@@ -2,14 +2,18 @@
 import {UiBit} from "./helper";
 
 
-// Pointer to the joystick html elements
-export const joystickObjs = new Array<{
+// Type for the joystick data.
+export type JoystickData = {
 	fire: UiBit,
 	up: UiBit,
 	left: UiBit,
 	right: UiBit,
 	down: UiBit
-}>();
+}
+
+
+// Pointer to the joystick html elements
+export const joystickObjs = new Array<JoystickData>();
 
 
 /** Initializes the joystick polling.

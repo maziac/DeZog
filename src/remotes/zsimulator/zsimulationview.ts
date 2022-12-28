@@ -751,23 +751,18 @@ width:70px;
 				`<!-- Display the screen gif -->
 <canvas id="screen_img_id" width="256" height="192" style="image-rendering:pixelated; border:${Settings.launch.zsim.zxBorderWidth}px solid white; outline: 1px solid var(--vscode-foreground); width:95%; height:95%">
 </canvas>
-<script>
-	<!-- Store the screen image source -->
-	const screenImg=document.getElementById("screen_img_id");
-	const screenImgContext = screenImg.getContext("2d");
-	const screenImgImgData = screenImgContext.createImageData(UlaScreen.SCREEN_WIDTH, UlaScreen.SCREEN_HEIGHT);
-</script>
 `;
 		}
 
 
 		// Add code for the ZX beeper
+		let volume = 0.75;
 		if (Settings.launch.zsim.zxBeeper) {
 
 			const initialBeeperValue = this.simulator.zxBeeper.getCurrentBeeperValue().toString();
-			let volume = GlobalStorage.Get<number>('audio.volume');
-			if (volume == undefined)
-				volume = 0.75;
+			const storedVolume = GlobalStorage.Get<number>('audio.volume');
+			if (storedVolume !== undefined)
+				volume = storedVolume;
 			html += `
 <details open="true">
   <summary>ZX Beeper</summary>
@@ -788,20 +783,6 @@ width:70px;
   <span style="display:table-cell; vertical-align: middle">+</span>
 
 </details>
-
-<script>
-	// Get Beeper output object
-	const beeperOutput = document.getElementById("beeper.output");
-
-	// Singleton for audio
-	ZxAudioBeeper.createZxAudioBeeper(${Settings.launch.zsim.audioSampleRate}, beeperOutput);
-	zxAudioBeeper.setVolume(${volume});
-
-	// Get Volume slider
-	const volumeSlider = document.getElementById("audio.volume");
-	volumeSlider.value = zxAudioBeeper.getVolume();
-
-</script>
 `;
 		}
 
@@ -1069,8 +1050,13 @@ joystickObjs.push({
 `;
 		}
 
+		// Init everything
+		html += `
+initSimulation(${Settings.launch.zsim.audioSampleRate}, ${volume});
+`;
+
 		html +=
-			`</body>
+`</body>
 </html>
 `;
 

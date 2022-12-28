@@ -1,11 +1,12 @@
 
 import {vscode} from "./vscode-import";
-import {zxAudioBeeper} from "./zxaudiobeeper";
+import {ZxAudioBeeper, zxAudioBeeper} from "./zxaudiobeeper";
 import {UlaScreen} from "./ulascreen";
 import {VisualMem} from "./visualmem";
 import {joystickObjs, initJoystickPolling} from "./joysticks";
-import {UIAPI} from "./helper";
+import {UIAPI, UiBit} from "./helper";
 import {MemorySlotsVar} from "../../../variables/shallowvar";
+import Settings from "fast-glob/out/settings";
 
 // Make sure that it is not removed by optimization.
 joystickObjs;
@@ -118,8 +119,10 @@ window.addEventListener('message', event => {// NOSONAR
 /** Init: Initializes parts of the simulation.
  * This depends on if the UI element is available.
  * If it is available was setup in zsimulationview.ts.
+ * @param audioSampleRate In Hz.
+ * @param volume Number in range [0;1.0]
  */
-function initSimulation() {
+export function initSimulation(audioSampleRate: number, volume: number) {
 	// Store the cpu_load_id
 	const cpuLoad = document.getElementById("cpu_load_id") as HTMLLabelElement;
 	if (cpuLoad) {
@@ -146,6 +149,38 @@ function initSimulation() {
 	if (screenImg) {
 		screenImgContext = screenImg.getContext("2d")!;
 		screenImgImgData = screenImgContext.createImageData(UlaScreen.SCREEN_WIDTH, UlaScreen.SCREEN_HEIGHT);
+	}
+
+	// Get Beeper output object
+	const beeperOutput = document.getElementById("beeper.output");
+	if (beeperOutput) {
+		// Singleton for audio
+		ZxAudioBeeper.createZxAudioBeeper(audioSampleRate, beeperOutput);
+		zxAudioBeeper.setVolume(volume);
+
+		// Get Volume slider
+		const volumeSlider = document.getElementById("audio.volume") as HTMLInputElement;
+		volumeSlider.value = zxAudioBeeper.getVolume().toString();
+	}
+
+	// Joysticks (Interface II)
+	const joy1Fire = document.getElementById("if2.joy1.fire") as UiBit;
+	if (joy1Fire) {
+		joystickObjs.push({
+			fire: joy1Fire,
+			up: document.getElementById("if2.joy1.up") as UiBit,
+			left: document.getElementById("if2.joy1.left") as UiBit,
+			right: document.getElementById("if2.joy1.right") as UiBit,
+			down: document.getElementById("if2.joy1.down") as UiBit
+		});
+		joystickObjs.push({
+			fire: document.getElementById("if2.joy2.fire") as UiBit,
+			up: document.getElementById("if2.joy2.up") as UiBit,
+			left: document.getElementById("if2.joy2.left") as UiBit,
+			right: document.getElementById("if2.joy2.right") as UiBit,
+			down: document.getElementById("if2.joy2.down") as UiBit
+		});
+
 	}
 }
 
@@ -177,6 +212,7 @@ function cellSelect(cell, on) {
 
 // Toggle the cell.
 // @ts-ignore
+// TODO: Test if called (zx keyboard)
 function cellClicked(cell) {
 	cell.tag = !cell.tag;
 	cellSelect(cell, cell.tag);
@@ -265,7 +301,3 @@ function keyup(e) {
 }
 
 
-// Show lines the first time when document is loaded
-window.addEventListener('load', () => {
-	initSimulation();
-});
