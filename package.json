@@ -32,9 +32,15 @@
 		"url": "https://github.com/sponsors/maziac"
 	},
 	"files": [],
+	"pkg": {
+		"outputPath": ".",
+		"assets": [
+			"node_modules/@serialport/bindings-cpp/prebuilds"
+		]
+	},
 	"scripts": {
 		"vscode:prepublish": "npm run esbuild-node -- --minify && npm run esbuild-browser -- --minify",
-		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --format=cjs --platform=node",
+		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --format=cjs --platform=node",
 		"esbuild-browser": "esbuild ./src/html/donate.ts --bundle --outdir=out/html --platform=browser",
 		"watch-node": "npm run esbuild-node -- --sourcemap --watch",
 		"watch-browser": "npm run esbuild-browser -- --sourcemap --watch",
@@ -79,7 +85,7 @@
 	"bugs": {
 		"url": "https://github.com/maziac/DeZog/issues"
 	},
-	"main": "./out/src/extension",
+	"main": "./out/extension",
 	"activationEvents": [
 		"onStartupFinished"
 	],

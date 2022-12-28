@@ -93,6 +93,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	public async doInitialization(): Promise<void> {
 		// Open the serial port
 		const serialPath = Settings.launch.zxnext.serial;
+		// TODO: Test serialport (native binaries in vsix package) on win and macos.
 		this.serialPort = new SerialPort({
 			path: serialPath,
 			baudRate: 921600,
