@@ -5,7 +5,7 @@ import {Remote} from '../remotes/remotebase';
 import * as fs from 'fs';
 import {UnifiedPath} from './unifiedpath';
 import {Log} from '../log';
-import * as requireFromString from 'require-from-string';
+import requireFromString from 'require-from-string';
 import * as vm from 'vm';
 import * as jsonc from 'jsonc-parser';
 import {HexNumber} from '../settings/settingscustommemory';
@@ -304,7 +304,8 @@ export class Utility {
 			const exprLabelled = this.replaceVarsWithValues(expr, evalRegisters, modulePrefix, lastLabel);
 
 			// Evaluate
-			const result = eval(exprLabelled);
+			const result = (new Function(exprLabelled))();	// TODO: Test
+			//const resultx = eval(exprLabelled);
 
 			// Check if boolean
 			if (typeof (result) == 'boolean')
@@ -1230,7 +1231,7 @@ export class Utility {
 	 */
 	public static requireFromString(code: string, fileName?: string): any {
 		try {
-			return requireFromString(code, fileName);
+			return requireFromString(code, fileName);	// TODO: Test
 		}
 		catch (e) {
 			// e.stack contains the error location with the line number.

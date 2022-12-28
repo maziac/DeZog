@@ -1967,6 +1967,7 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 					case 0x00: valuename = "RP1_JOY1_SINCLAIR"; break;
 					case 0x40: valuename = "RP1_JOY1_KEMPSTON"; break;
 					case 0x80: valuename = "RP1_JOY1_CURSOR"; break;
+					/* TODO: Fix double case
 					case 0x00: valuename = "RP1_JOY2_SINCLAIR"; break;
 					case 0x10: valuename = "RP1_JOY2_KEMPSTON"; break;
 					case 0x20: valuename = "RP1_JOY2_CURSOR"; break;
@@ -1974,6 +1975,7 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 					case 0x04: valuename = "RP1_RATE_60"; break;
 					case 0x02: valuename = "RP1_ENABLE_SCANLINES"; break;
 					case 0x01: valuename = "RP1_ENABLE_SCANDOUBLER"; break;
+					*/
 				}
 				break;
 
@@ -2108,6 +2110,7 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 					case 0x50: valuename = "RPC_SELECT_LAYER_2_PALETTE_1"; break;
 					case 0x20: valuename = "RPC_SELECT_SPRITES_PALETTE_0"; break;
 					case 0x60: valuename = "RPC_SELECT_SPRITES_PALETTE_1"; break;
+					/* TODO: Fix double case
 					case 0x00: valuename = "RPC_ENABLE_SPRITES_PALETTE_0"; break;
 					case 0x08: valuename = "RPC_ENABLE_SPRITES_PALETTE_1"; break;
 					case 0x00: valuename = "RPC_ENABLE_LAYER_2_PALETTE_0"; break;
@@ -2115,6 +2118,7 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 					case 0x00: valuename = "RPC_ENABLE_ULA_PALETTE_0"; break;
 					case 0x02: valuename = "RPC_ENABLE_ULA_PALETTE_1"; break;
 					case 0x01: valuename = "RPC_ENABLE_ULANEXT"; break;
+					*/
 				}
 				break;
 

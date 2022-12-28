@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import {Utility} from '../misc/utility';
 import {UnifiedPath} from '../misc/unifiedpath';
 import {SourceFileEntry, ListFileLine} from './labels';
-import * as minimatch from 'minimatch';
+import minimatch from 'minimatch';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
 
