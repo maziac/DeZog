@@ -26,3 +26,10 @@ documentation/images/unittest_*
 *.vsix.zip
 releases/
 sonar*
+node_modules/
+!node_modules/@serialport/
+!node_modules/serialport/
+!node_modules/debug/
+!node_modules/node-addon-api/
+!node_modules/node-gyp-build/
+!node_modules/jsonc-parser/

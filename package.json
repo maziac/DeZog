@@ -32,12 +32,6 @@
 		"url": "https://github.com/sponsors/maziac"
 	},
 	"files": [],
-	"pkg": {
-		"outputPath": ".",
-		"assets": [
-			"node_modules/@serialport/bindings-cpp/prebuilds"
-		]
-	},
 	"scripts": {
 		"vscode:prepublish": "npm run esbuild-node -- --minify && npm run esbuild-browser -- --minify",
 		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --format=cjs --platform=node",
