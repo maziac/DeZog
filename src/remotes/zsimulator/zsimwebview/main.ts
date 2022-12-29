@@ -8,17 +8,10 @@ import {UIAPI, UiBit} from "./helper";
 
 
 // HTML element used for the cpu load.
-export let cpuLoad: HTMLLabelElement
+let cpuLoad: HTMLLabelElement
 
 
-/*
-declare let slots: Array<HTMLDivElement>;
-declare let screenImgContext: CanvasRenderingContext2D;
-declare let screenImgImgData: ImageData;
-declare let screenImg: HTMLDivElement;
-*/
-
-
+// For flow control.
 let countOfProcessedMessages = 0;
 
 // Message water marks.

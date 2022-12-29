@@ -1,4 +1,4 @@
-declare var vscode: any;
+import {vscode} from "./vscode-import";
 
 
 // Define class for communication
