@@ -6,6 +6,7 @@ import {joystickObjs, initJoystickPolling} from "./joysticks";
 import {UIAPI, UiBit} from "./helper";
 
 
+initSimulation;
 
 // HTML element used for the cpu load.
 let cpuLoad: HTMLLabelElement
@@ -46,6 +47,28 @@ window.addEventListener('message', event => {// NOSONAR
 	// Process message
 	const message = event.data;
 	switch (message.command) {
+		case 'configResponse':
+			// Configuration received. Is received once after 'configRequest' was sent.
+			// Is only done once after loading.
+			initSimulation(
+				message.cpuLoadInterruptRange,
+				message.visualMemory,
+				message.visualMemoryZxScreen,
+				message.banks,
+				message.ulaScreen,
+				message.zxBorderWidth,
+				message.zxBeeper,
+				message.initialBeeperValue,
+				message.audioSampleRate,
+				message.volume,
+				message.zxKeyboard,
+				message.zxInterface2Joy,
+				message.kempstonJoy,
+				message.jsCustomCode,
+				message.customCodeDebug
+			);
+			break;
+
 		case 'cpuStopped':
 			// Z80 CPU was stopped, t-states do not advance.
 			zxAudioBeeper.stop();
@@ -517,7 +540,6 @@ export function initSimulation(
 }
 
 
-
 /** Connect the visuals with the simulation.
  * @param audioSampleRate In Hz.
  * @param volume Number in range [0;1.0]
@@ -715,3 +737,13 @@ function keyup(e) {
 	const cell = findCell(e.code);
 	cellSelect(cell, false);
 }
+
+
+// Handle initial load.
+window.addEventListener('load', () => {
+	// Send request to vscode to ask for the configuration.
+	// A 'configResponse' is set in response.
+	vscode.postMessage({
+		command: 'configRequest'
+	});
+});

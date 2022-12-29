@@ -262,6 +262,47 @@ export class ZSimulationView extends BaseView {
 	 */
 	protected async webViewMessageReceived(message: any) {
 		switch (message.command) {
+			case 'configRequest':
+				// Is sent only once, just after the webview initially loads.
+				// Is used to get the configuration.
+				const zsim = Settings.launch.zsim;
+				const visualMemoryZxScreen = zsim.memoryModel.includes("ZX");
+				const slots = this.simulator.getSlots();
+				const banks = this.simulator.memoryModel.getMemoryBanks(slots);
+				const initialBeeperValue = this.simulator.zxBeeper.getCurrentBeeperValue();
+				let volume = GlobalStorage.Get<number>('audio.volume');
+				if (volume === undefined)
+					volume = 0.75;
+				let jsCustomCode = '';
+				if (this.customUiPath) {
+					try {
+						jsCustomCode = readFileSync(this.customUiPath).toString();
+					}
+					catch (e) {
+						jsCustomCode = "<b>Error: reading file '" + this.customUiPath + "':" + e.message + "</b>";
+					}
+				}
+				const sendMsg = {
+					command: 'configResponse',
+					cpuLoadInterruptRange: zsim.cpuLoadInterruptRange,
+					visualMemory: zsim.visualMemory,
+					visualMemoryZxScreen,
+					banks,
+					ulaScreen: zsim.ulaScreen,
+					zxBorderWidth: zsim.zxBorderWidth,
+					zxBeeper: zsim.zxBeeper,
+					initialBeeperValue,
+					audioSampleRate: zsim.audioSampleRate,
+					volume,
+					zxKeyboard: zsim.zxKeyboard,
+					zxInterface2Joy: zsim.zxInterface2Joy,
+					kempstonJoy: zsim.kempstonJoy,
+					jsCustomCode,
+					customCodeDebug: zsim.customCode.debug
+				};
+				this.sendMessageToWebView(sendMsg);
+				break;
+
 			case 'warning':
 				// A warning has been received, e.g. sample rate was not possible.
 				const warningText = message.text;
@@ -617,39 +658,6 @@ width:70px;
 <script src="out/remotes/zsimulator/zsimwebview/main.js"></script>
 
 <body>
-
-`;
-
-		const zsim = Settings.launch.zsim;
-		const visualMemoryZxScreen = zsim.memoryModel.includes("ZX");
-		const slots = this.simulator.getSlots();
-		const banks = this.simulator.memoryModel.getMemoryBanks(slots);
-		const initialBeeperValue = this.simulator.zxBeeper.getCurrentBeeperValue();
-		let volume = GlobalStorage.Get<number>('audio.volume');
-		if (volume === undefined)
-			volume = 0.75;
-		let jsCustomCode = '';
-		if (this.customUiPath) {
-			try {
-				jsCustomCode = readFileSync(this.customUiPath).toString();
-			}
-			catch (e) {
-				jsCustomCode = "<b>Error: reading file '" + this.customUiPath + "':" + e.message + "</b>";
-			}
-		}
-
-		// Init everything
-		html += `
-			initSimulation(
-				${zsim.cpuLoadInterruptRange},
-				${zsim.visualMemory}, ${visualMemoryZxScreen}, ${banks},
-				${zsim.ulaScreen}, ${zsim.zxBorderWidth},
-				${zsim.zxBeeper}, ${initialBeeperValue}, ${zsim.audioSampleRate}, ${volume},
-				${zsim.zxKeyboard}, ${zsim.zxInterface2Joy}, ${zsim.kempstonJoy},
-				${jsCustomCode});
-			`;
-
-		html += `
 				</body>
 			</html>
 			`;
