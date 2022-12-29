@@ -14,36 +14,6 @@
 		},
 
 		{
-			"label": "esbuild-node", // Used by "Launch Extension" in launch.json
-			"type": "npm",
-			"script": "esbuild-node",
-			"problemMatcher": {
-				"owner": "esbuild-node",
-				"pattern": [
-					// {
-					// 	// The warning or error
-					// 	"regexp": "^.*\\[(WARNING)\\]\\s*(.*)$",
-					// 	"severity": 1,
-					// 	"message": 2,
-					// },
-					// {
-					// 	// An empty line
-					// 	"regexp": "^$",
-					// },
-					{
-						// File name and position
-						"regexp": "^\\s*(.+):(\\d+):(\\d+):\\s*$",
-						"file": 1,
-						"line": 2,
-						"column": 3,
-						"message": 1
-					},
-				]
-			},
-			"group": "build"
-		},
-
-		{
 			"label": "watch-node", // Used by "Launch Extension" in launch.json
 			"type": "npm",
 			"script": "watch-node",
