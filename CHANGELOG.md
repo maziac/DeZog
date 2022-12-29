@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.2.0
+- Changed to esbuild. Package size decreased.
+- zsim:
+	- Audio fixed for chrome behavior. Note: audio is not started until the user has interacted with the simulator webview.
+
 # 3.1.2
 - Added option 'Break on Interrupt' in vscode's BREAKPOINTS panel. Therefore the command "-e breakinterrupt on" has been removed.
 - Added missing config attributes for "z88dkv2".

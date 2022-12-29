@@ -70,11 +70,15 @@ window.addEventListener('message', event => {// NOSONAR
 
 		case 'cpuStopped':
 			// Z80 CPU was stopped, t-states do not advance.
-			zxAudioBeeper.stop();
+			if(zxAudioBeeper)
+				zxAudioBeeper.stop();
 			break;
 
 		case 'update':
 			{
+				if (zxAudioBeeper)
+					zxAudioBeeper.resume();
+
 				if (message.cpuLoad != undefined)
 					cpuLoad.innerHTML = message.cpuLoad;
 

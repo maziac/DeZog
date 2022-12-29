@@ -67,7 +67,7 @@
 	},
 	"devDependencies": {
 		"@types/jest": "^29.2.4",
-		"@types/node": "18.8.2",
+		"@types/node": "^18.8.2",
 		"@types/vscode": "^1.71.0",
 		"@types/vscode-webview": "^1.57.0",
 		"esbuild": "^0.16.10",

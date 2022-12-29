@@ -144,10 +144,27 @@ export class ZxAudioBeeper {
 
 
 	/**
+	 * Resume is called regularly to overcome a Chrome issue:
+	 * https://developer.chrome.com/blog/autoplay/
+	 * Chrome will disallow audio until the user interacts with the page.
+	 * 'resume' should be called on every simulator 'update'.
+	 * If it was suspended it will be activated if meanwhile the user has interacted.
+	 * I.e. with no interaction no audio will be audible.
+	 */
+	public resume() {
+		if (!this.stopped) {
+			if (this.ctx.state === 'suspended')
+				this.ctx.resume();
+		}
+	}
+
+
+	/**
 	 * Sets the volume.
 	 * @param volume [0;1]
 	 */
 	public setVolume(volume: number) {
+	//	this.ctx.resume();
 		this.volume = volume;
 		// Use a "ramp" otherwise changing the volume will introduce some noise
 		this.gainNode.gain.value = this.gainNode.gain.value;	// NOSONAR: required, but I don't know why anymore.
