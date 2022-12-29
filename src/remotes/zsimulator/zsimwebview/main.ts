@@ -6,7 +6,6 @@ import {joystickObjs, initJoystickPolling} from "./joysticks";
 import {UIAPI, UiBit} from "./helper";
 
 
-initSimulation;
 
 // HTML element used for the cpu load.
 let cpuLoad: HTMLLabelElement
@@ -649,16 +648,13 @@ function cellSelect(cell, on) {
 
 
 // Toggle the cell.
-// @ts-ignore
-// TODO: Test if called (zx keyboard)
-function cellClicked(cell) {
+globalThis.cellClicked = function (cell) {
 	cell.tag = !cell.tag;
 	cellSelect(cell, cell.tag);
 }
 
 // Toggle the cell and the corresponding bit
-// @ts-ignore
-function togglePortBit(cell, port, bitByte) {
+globalThis.togglePortBit = function (cell, port, bitByte) {
 	// Send request to vscode
 	vscode.postMessage({
 		command: 'portBit',
@@ -669,8 +665,7 @@ function togglePortBit(cell, port, bitByte) {
 // Toggle the cell and the corresponding bit.
 // Inverts the bit before sending.
 // I.e. Active=LOW
-// @ts-ignore
-function togglePortBitNeg(cell, port, bitByte) {
+globalThis.togglePortBitNeg = function (cell, port, bitByte) {
 	// Send request to vscode
 	vscode.postMessage({
 		command: 'portBit',
@@ -689,16 +684,14 @@ function findCell(keyCode) {
 // "Copy all HTML" button-- >
 
 // Copies the complete html of the document to the clipboard.
-// @ts-ignore
-function copyHtmlToClipboard() {
+globalThis.copyHtmlToClipboard = function () {
 	const copyText = document.documentElement.innerHTML;
 	navigator.clipboard.writeText(copyText);
 }
 
 
 // Reload the javascript business logic.
-// @ts-ignore
-function reloadCustomLogicAndUi() {
+globalThis.reloadCustomLogicAndUi = function () {
 	// Send request to vscode
 	vscode.postMessage({
 		command: 'reloadCustomLogicAndUi'
@@ -707,8 +700,7 @@ function reloadCustomLogicAndUi() {
 
 
 // Called when the volume was changed by the user.
-// @ts-ignore
-function volumeChanged(volumeStr: string) {
+globalThis.volumeChanged = function (volumeStr: string) {
 	// Convert to number
 	const volume = parseFloat(volumeStr);
 	// Inform beeper
