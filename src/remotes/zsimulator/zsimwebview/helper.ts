@@ -140,10 +140,9 @@ export class UiBit extends HTMLElement {
 			(this as any).togglemode = (newValue == "true");
 		}
 		else if (name == "onchange") {
-			// Note: this.onchange does not work
-			// TODO: test the new Function does work:
+			// Note: eval should not be used with esbuild, instead Function is used:
 			//(this as any).onstatechange = eval("() => { " + newValue + " }");
-			(this as any).onstatechange = new Function("() => { " + newValue + " }");
+			(this as any).onstatechange = new Function(newValue);
 		}
 	}
 
