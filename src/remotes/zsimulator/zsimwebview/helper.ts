@@ -127,19 +127,19 @@ export class UiBit extends HTMLElement {
 
 
 	attributeChangedCallback(name, oldValue, newValue) {
-		if (name == "bitvalue") {
+		if (name === "bitvalue") {
 			(this as any).bitvalue = newValue;
 		}
-		else if (name == "oncolor") {
+		else if (name === "oncolor") {
 			(this as any).oncolor = newValue;
 		}
-		else if (name == "offcolor") {
+		else if (name === "offcolor") {
 			(this as any).offcolor = newValue;
 		}
-		else if (name == "togglemode") {
-			(this as any).togglemode = (newValue == "true");
+		else if (name === "togglemode") {
+			(this as any).togglemode = (newValue === "true");
 		}
-		else if (name == "onchange") {
+		else if (name === "onchange") {
 			// Note: eval should not be used with esbuild, instead Function is used:
 			//(this as any).onstatechange = eval("() => { " + newValue + " }");
 			(this as any).onstatechange = new Function(newValue);
@@ -278,11 +278,10 @@ class UiByte extends HTMLElement {
 		this.bytevalue = (this as any).initialbytevalue;
 
 		// Set onchange
-		for (let i = 0; i < 8; i++) {
-			const bit = (this as any).bits[i];
-			// Onchange
-			if ((this as any).onstatechange) {
-				bit.onstatechange = () => {
+		if ((this as any).onstatechange) {
+			for (let i = 0; i < 8; i++) {
+				const bit = (this as any).bits[i];
+				bit.onstatechange = () => {	// TODO: Do I need () => { ?
 					(this as any).onstatechange();
 				};
 				bit.registerMouseListeners();
@@ -292,26 +291,27 @@ class UiByte extends HTMLElement {
 
 
 	attributeChangedCallback(name, oldValue, newValue) {
-		if (name == "startindex") {
+		if (name === "startindex") {
 			(this as any).startindex = newValue;
 		}
-		else if (name == "bytevalue") {
+		else if (name === "bytevalue") {
 			(this as any).initialbytevalue = parseInt(newValue);
 		}
-		else if (name == "oncolor") {
+		else if (name === "oncolor") {
 			(this as any).oncolor = newValue;
 		}
-		else if (name == "offcolor") {
+		else if (name === "offcolor") {
 			(this as any).offcolor = newValue;
 		}
-		else if (name == "togglemode") {
-			(this as any).togglemode = (newValue == "true");
+		else if (name === "togglemode") {
+			(this as any).togglemode = (newValue === "true");
 		}
-		else if (name == "onchange") {
-			// Note: (this as any).onchange does not work
-			// TODO: test the new Function does work:
+		else if (name === "onchange") {
+			// Note: eval should not be used with esbuild, instead Function is used:
 			//(this as any).onstatechange = eval("() => { " + newValue + " }");
-			(this as any).onstatechange = new Function("() => { " + newValue + " }");
+			(this as any).onstatechange = new Function(newValue);
+
+			//(this as any).onstatechange = new Function("() => { " + newValue + " }");
 		}
 	}
 
