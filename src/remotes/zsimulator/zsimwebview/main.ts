@@ -46,7 +46,7 @@ window.addEventListener('message', event => {// NOSONAR
 	// Process message
 	const message = event.data;
 	switch (message.command) {
-		case 'configResponse':
+		case 'init':
 			// Configuration received. Is received once after 'configRequest' was sent.
 			// Is only done once after loading.
 			initSimulation(
@@ -737,9 +737,8 @@ function keyup(e) {
 
 // Handle initial load.
 window.addEventListener('load', () => {
-	// Send request to vscode to ask for the configuration.
-	// A 'configResponse' is set in response.
+	// Inform vscode that page was loaded.
 	vscode.postMessage({
-		command: 'configRequest'
+		command: 'loaded'
 	});
 });

@@ -14,7 +14,6 @@ import {DiagnosticsHandler} from '../../diagnosticshandler';
  * E.g. in case of the Spectrum the ULA screen or the keyboard.
  */
 export class ZSimulationView extends BaseView {
-
 	// The max. number of message in the queue. If reached the ZSimulationView will ask
 	// for processing time.
 	static MESSAGE_HIGH_WATERMARK = 100;
@@ -55,6 +54,9 @@ export class ZSimulationView extends BaseView {
 	// Stores the last T-states value.
 	// Used to check for changes.
 	protected previousTstates: number;
+
+	// Used to determine when the web view ahs been loaded.
+	protected resolveLoaded: () => void;
 
 
 	/**
@@ -127,9 +129,21 @@ export class ZSimulationView extends BaseView {
 
 		// Read path for additional javascript code
 		this.customUiPath = Settings.launch.zsim.customCode.uiPath;
+	}
 
+
+	/** Setup the html page and wait until it is loaded.
+	 */
+	public async waitOnInitView() {
 		// Initial html page.
 		this.setHtml();
+
+		// Wait until it is loaded
+		await this.waitOnViewLoaded();
+
+		// Send the initialization request.
+		this.sendInit();
+
 		// Inform custom code that UI is ready.
 		this.simulator.customCode?.uiReady();
 
@@ -165,6 +179,17 @@ export class ZSimulationView extends BaseView {
 
 		// Update once initially
 		//this.updateDisplay();
+	}
+
+
+	/** When the DOM is ready (loaded) a first message is sent.
+	 * This function waits on the message.
+	 */
+	public async waitOnViewLoaded(): Promise<void> {
+		return new Promise<void>(resolve => {
+			// Save the 'resolve'. Is called in 'messageReceived'.
+			this.resolveLoaded = resolve;
+		});
 	}
 
 
@@ -262,45 +287,10 @@ export class ZSimulationView extends BaseView {
 	 */
 	protected async webViewMessageReceived(message: any) {
 		switch (message.command) {
-			case 'configRequest':
-				// Is sent only once, just after the webview initially loads.
-				// Is used to get the configuration.
-				const zsim = Settings.launch.zsim;
-				const visualMemoryZxScreen = zsim.memoryModel.includes("ZX");
-				const slots = this.simulator.getSlots();
-				const banks = this.simulator.memoryModel.getMemoryBanks(slots);
-				const initialBeeperValue = this.simulator.zxBeeper.getCurrentBeeperValue();
-				let volume = GlobalStorage.Get<number>('audio.volume');
-				if (volume === undefined)
-					volume = 0.75;
-				let jsCustomCode = '';
-				if (this.customUiPath) {
-					try {
-						jsCustomCode = readFileSync(this.customUiPath).toString();
-					}
-					catch (e) {
-						jsCustomCode = "<b>Error: reading file '" + this.customUiPath + "':" + e.message + "</b>";
-					}
-				}
-				const sendMsg = {
-					command: 'configResponse',
-					cpuLoadInterruptRange: zsim.cpuLoadInterruptRange,
-					visualMemory: zsim.visualMemory,
-					visualMemoryZxScreen,
-					banks,
-					ulaScreen: zsim.ulaScreen,
-					zxBorderWidth: zsim.zxBorderWidth,
-					zxBeeper: zsim.zxBeeper,
-					initialBeeperValue,
-					audioSampleRate: zsim.audioSampleRate,
-					volume,
-					zxKeyboard: zsim.zxKeyboard,
-					zxInterface2Joy: zsim.zxInterface2Joy,
-					kempstonJoy: zsim.kempstonJoy,
-					jsCustomCode,
-					customCodeDebug: zsim.customCode.debug
-				};
-				this.sendMessageToWebView(sendMsg);
+			case 'loaded':
+				// DOM (webpage) has been completely loaded.
+				this.resolveLoaded();
+				this.resolveLoaded = undefined as any;
 				break;
 
 			case 'warning':
@@ -662,9 +652,51 @@ width:70px;
 			</html>
 			`;
 
-		//this.vscodePanel.webview.html = '';
 		this.vscodePanel.webview.html = html;
 	}
 
+
+	/** Sends the initialization message to the webview just after the 'loaded' has been received.
+	 */
+	protected sendInit() {
+		// Is sent only once, just after the webview initially loads.
+		// Is used to get the configuration.
+		const zsim = Settings.launch.zsim;
+		const visualMemoryZxScreen = zsim.memoryModel.includes("ZX");
+		const slots = this.simulator.getSlots();
+		const banks = this.simulator.memoryModel.getMemoryBanks(slots);
+		const initialBeeperValue = this.simulator.zxBeeper.getCurrentBeeperValue();
+		let volume = GlobalStorage.Get<number>('audio.volume');
+		if (volume === undefined)
+			volume = 0.75;
+		let jsCustomCode = '';
+		if (this.customUiPath) {
+			try {
+				jsCustomCode = readFileSync(this.customUiPath).toString();
+			}
+			catch (e) {
+				jsCustomCode = "<b>Error: reading file '" + this.customUiPath + "':" + e.message + "</b>";
+			}
+		}
+		const sendMsg = {
+			command: 'init',
+			cpuLoadInterruptRange: zsim.cpuLoadInterruptRange,
+			visualMemory: zsim.visualMemory,
+			visualMemoryZxScreen,
+			banks,
+			ulaScreen: zsim.ulaScreen,
+			zxBorderWidth: zsim.zxBorderWidth,
+			zxBeeper: zsim.zxBeeper,
+			initialBeeperValue,
+			audioSampleRate: zsim.audioSampleRate,
+			volume,
+			zxKeyboard: zsim.zxKeyboard,
+			zxInterface2Joy: zsim.zxInterface2Joy,
+			kempstonJoy: zsim.kempstonJoy,
+			jsCustomCode,
+			customCodeDebug: zsim.customCode.debug
+		};
+		this.sendMessageToWebView(sendMsg);
+	}
 }
 

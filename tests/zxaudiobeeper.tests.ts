@@ -25,6 +25,7 @@ class ZxAudioMock extends ZxAudioBeeper {
 		return new AudioContextMock(sampleRate) as any;
 	}
 	protected updateVisualBeeper() {
+		//
 	}
 	get ctxMock(): AudioContextMock {
 		return this.ctx as any;

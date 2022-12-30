@@ -742,7 +742,8 @@ export class DebugSessionClass extends DebugSession {
 						// there would be a dependency in RemoteFactory to vscode which in turn
 						// makes problems for the unit tests.
 						// Adds a window that displays the ZX screen.
-						new ZSimulationView(zsim); // NOSONAR
+						const zsimView = new ZSimulationView(zsim);
+						await zsimView.waitOnInitView();
 					}
 				}
 				catch(e) {
