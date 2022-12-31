@@ -224,6 +224,7 @@ export class CustomCode extends EventEmitter implements Serializable {
 		this.context = {tmpAPI: this.api};
 
 		// Add surrounding code
+		// TODO: Exchage 'const API = global.tmpAPI;' to 'globalThis'
 		const preamble = `
 // Preamble:
 const global = this;
@@ -303,7 +304,7 @@ API.log('-------------------------------------\\n');`
 	 */
 	public writePort(port: number, value: number) {
 		this.logTstates();
-		LogCustomCode.log('API.writePort(' + Utility.getHexString(port, 4) + 'h , ' + Utility.getHexString(value, 2) + 'h)');
+		LogCustomCode.log('API.writePort(' + Utility.getHexString(port, 4) + 'h, ' + Utility.getHexString(value, 2) + 'h)');
 		// Catch probably errors.
 		try {
 			this.api.writePort(port, value);
@@ -323,7 +324,7 @@ API.log('-------------------------------------\\n');`
 	 */
 	public receivedFromCustomUi(message: any) {
 		LogCustomCode.log('API.receivedFromCustomUi: ' + JSON.stringify(message));
-		if (this.api.receivedFromCustomUi == undefined) {
+		if (this.api.receivedFromCustomUi === undefined) {
 			// Log that a message has been received without receiver.
 			LogCustomCode.log("  But no custom 'this.receivedFromCustomUi' defined.");
 		}

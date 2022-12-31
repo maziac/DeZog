@@ -39,7 +39,8 @@ export class CustomUiApi {
 		vscode.postMessage(msg);
 	}
 }
-export let UIAPI = new CustomUiApi();
+export const UIAPI = new CustomUiApi();
+globalThis.UIAPI = UIAPI;
 
 
 /**
