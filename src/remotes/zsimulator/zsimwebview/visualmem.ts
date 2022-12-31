@@ -30,8 +30,6 @@ export class VisualMem {
 	 */
 	public static drawVisualMemory(visualMem: Uint8Array) {
 		// Get canvas drawing context
-		if (!this.visualMemCanvas)
-			console.log();
 		const ctx = this.visualMemCanvas.getContext("2d")!;
 		const len = visualMem.length;
 		const imgData = ctx.createImageData(len, 1);

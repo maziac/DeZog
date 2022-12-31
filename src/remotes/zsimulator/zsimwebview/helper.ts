@@ -2,7 +2,6 @@ import {vscode} from "./vscode-import";
 
 
 // Define class for communication
-// TODO: Test if customUI still works...
 export class CustomUiApi {
 	/**
 	 * A message has been received from the custom code that

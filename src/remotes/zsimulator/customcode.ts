@@ -224,11 +224,10 @@ export class CustomCode extends EventEmitter implements Serializable {
 		this.context = {tmpAPI: this.api};
 
 		// Add surrounding code
-		// TODO: Exchage 'const API = global.tmpAPI;' to 'globalThis'
 		const preamble = `
 // Preamble:
 const global = this;
-const API = global.tmpAPI;
+const API = globalThis.tmpAPI;
 // 'tmpAPI' is not visible to customer code. Use 'API' instead.
 delete global.tmpAPI;
 

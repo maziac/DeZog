@@ -1510,7 +1510,6 @@ export class Utility {
 		});
 		// Parse json
 		const parseErrors: jsonc.ParseError[] = [];
-		// TODO: Test jsonc-parser
 		const launch = jsonc.parse(substData, parseErrors, {allowTrailingComma: true});
 
 		// Check for error

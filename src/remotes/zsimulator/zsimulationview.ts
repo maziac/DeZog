@@ -264,7 +264,7 @@ export class ZSimulationView extends BaseView {
 	 * Closes the view.
 	 */
 	public close() {
-		this.vscodePanel.dispose();
+		this.vscodePanel?.dispose();
 	}
 
 
@@ -652,8 +652,6 @@ export class ZSimulationView extends BaseView {
 		// Setup the body
 		const zsim = Settings.launch.zsim;
 		const visualMemoryZxScreen = zsim.memoryModel.includes("ZX");
-		const slots = this.simulator.getSlots();
-		const banks = this.simulator.memoryModel.getMemoryBanks(slots);
 		let initialBeeperValue = 0;
 		if (this.simulator.zxBeeper)
 			this.simulator.zxBeeper.getCurrentBeeperValue();
@@ -775,13 +773,13 @@ export class ZSimulationView extends BaseView {
 			<!-- Slots  2nd -->
 			`;
 
-			// TODO: exchange banks with slot-ranges
-			const count = banks.length;
+			const slotRanges = this.simulator.memoryModel.slotRanges;
+			const count = slotRanges.length;
 			for (let i = 0; i < count; i++) {
-				const bank = banks[i];
-				const pos = bank.start * 100 / 0x10000;
-				const width = (bank.end + 1 - bank.start) * 100 / 0x10000;
-				const add = `<div class="border" id="slot${i}_id" style="top:3.5em; left:${pos}%; width:${width}%; height: 2em">${bank.name}</div>
+				const slotRange = slotRanges[i];
+				const pos = slotRange.start * 100 / 0x10000;
+				const width = (slotRange.end + 1 - slotRange.start) * 100 / 0x10000;
+				const add = `<div class="border" id="slot${i}_id" style="top:3.5em; left:${pos}%; width:${width}%; height: 2em"></div>
 			`;
 				html += add;
 			}
