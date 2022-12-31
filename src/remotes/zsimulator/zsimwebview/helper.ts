@@ -281,7 +281,7 @@ class UiByte extends HTMLElement {
 		if ((this as any).onstatechange) {
 			for (let i = 0; i < 8; i++) {
 				const bit = (this as any).bits[i];
-				bit.onstatechange = () => {	// TODO: Do I need () => { ?
+				bit.onstatechange = () => {
 					(this as any).onstatechange();
 				};
 				bit.registerMouseListeners();
