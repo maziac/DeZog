@@ -60,10 +60,7 @@ window.addEventListener('message', event => {// NOSONAR
 
 		case 'update':
 			{
-				if (zxAudioBeeper)
-					zxAudioBeeper.resume();
-
-				if (message.cpuLoad != undefined)
+				if (cpuLoad && message.cpuLoad)
 					cpuLoad.innerHTML = message.cpuLoad;
 
 				if (message.slotNames) {
@@ -92,9 +89,12 @@ window.addEventListener('message', event => {// NOSONAR
 					screenImg.style.borderColor = htmlColor;
 				}
 
-				if (message.audio) {
-					const audio = message.audio;
-					zxAudioBeeper.writeBeeperSamples(audio);
+				if (zxAudioBeeper) {
+					zxAudioBeeper.resume();
+					if (message.audio) {
+						const audio = message.audio;
+						zxAudioBeeper.writeBeeperSamples(audio);
+					}
 				}
 			}
 			break;
