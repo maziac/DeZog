@@ -94,7 +94,7 @@ For this there are changes to the "zxnext" launch.json configuration.
 - Documentation for core 03.01.10 debugging updated.
 
 # 2.5.0
-- zsim: Added 'ZX16K' memory model, contributed by lmartorella '[zsim] Support for not-populated slots'.
+- zsim: Added 'ZX16K' memory model, contributed by lmartorella '(zsim) Support for not-populated slots'.
 - zsim: Added 'CUSTOM' memory model to define an arbitrary memory layout.
 - Fixed intellisense for the launch.json.
 

@@ -4,7 +4,7 @@ import {BaseView} from './baseview';
 import {ImageConvert} from '../misc/imageconvert';
 import {Utility} from '../misc/utility';
 import * as Random from 'rng';
-import {Log} from '../log';
+
 
 
 /**
