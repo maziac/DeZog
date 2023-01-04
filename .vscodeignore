@@ -33,3 +33,5 @@ node_modules/
 !node_modules/node-addon-api/
 !node_modules/node-gyp-build/
 !node_modules/jsonc-parser/
+out/src
+out/tests
