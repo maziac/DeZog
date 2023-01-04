@@ -561,8 +561,7 @@ suite('ZesaruxCpuHistory', () => {
 			history = CpuHistory;
 			history.decoder = new DecodeZesaruxHistoryInfo();
 			mockSocket = new MockZesaruxSocket();
-			(<any>zSocket) = mockSocket;
-			(zSocket as any).queue = new Array<any>();
+			ZesaruxSocket.Init(mockSocket);
 			// Push one frame on the stack
 			history.reverseDbgStack = new RefList();
 			history.reverseDbgStack.push(new CallStackFrame(0, 0, "__TEST_MAIN__"));
