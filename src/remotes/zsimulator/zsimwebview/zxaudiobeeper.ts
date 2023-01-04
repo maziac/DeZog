@@ -1,4 +1,3 @@
-import {vscode} from "./vscode-import";
 import {BeeperBuffer} from "../zxbeeper";
 
 // Singleton for the audio beeper.
@@ -29,7 +28,7 @@ export class ZxAudioBeeper {
 	protected volume: number;
 
 	// Stores the sample rate.
-	protected sampleRate: number;
+	public sampleRate: number;
 
 	// To compare time with Z80 time the start time (after frame rate configuration)
 	// is stored here.
@@ -92,13 +91,6 @@ export class ZxAudioBeeper {
 		this.volume = 0.75;
 		this.ctx = this.createAudioContext(sampleRate);
 		this.sampleRate = this.ctx.sampleRate;
-		if (this.sampleRate != sampleRate) {
-			// Send warning to vscode
-			vscode.postMessage({
-				command: 'warning',
-				text: "Sample rate of " + sampleRate + "Hz could not be set. Try setting it to e.g. " + this.sampleRate + "Hz instead."
-			});
-		}
 		this.fixedFrameLength = Math.ceil(this.MIN_LATENCY/4 * this.sampleRate);
 		this.fixedFrameTime = this.fixedFrameLength / this.sampleRate;
 		this.lastEnqueuedAudioSampleValue = 0;

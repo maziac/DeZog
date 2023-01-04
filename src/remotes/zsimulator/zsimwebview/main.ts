@@ -152,6 +152,13 @@ function initSimulation(audioSampleRate: number, volume: number) {
 	if (beeperOutput) {
 		// Singleton for audio
 		ZxAudioBeeper.createZxAudioBeeper(audioSampleRate, beeperOutput);
+		if (zxAudioBeeper.sampleRate != audioSampleRate) {
+			// Send warning to vscode
+			vscode.postMessage({
+				command: 'warning',
+				text: "Sample rate of " + audioSampleRate + "Hz could not be set. Try setting it to e.g. " + zxAudioBeeper.sampleRate + "Hz instead."
+			});
+		}
 		zxAudioBeeper.setVolume(volume);
 
 		// Get Volume slider
