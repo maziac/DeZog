@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import * as util from 'util';
 import {Utility} from '../misc/utility';
 import {Labels} from '../labels/labels';

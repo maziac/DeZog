@@ -4,6 +4,7 @@
 		{
 			"label": "watch", // Used by "Launch Extension" in launch.json
 			"dependsOn": [
+				"watch-tsc",
 				"watch-node",
 				"watch-browser"
 			],
@@ -11,6 +12,14 @@
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+
+		{
+			"type": "npm",
+			"label": "watch-tsc",
+			"script": "watch-tsc",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
 		},
 
 		{
