@@ -7,18 +7,18 @@ import {BeeperBuffer} from '../src/remotes/zsimulator/zxbeeper';
 // Mock for testing.
 class ZxAudioMock extends ZxAudioBeeper {
 	// Declare everything publicly accessible for testing:
-	public MIN_LATENCY: number;
-	public MAX_LATENCY: number;
-	public ctx: AudioContext;
-	public volume: number;
-	public sampleRate: number;
-	public audioCtxStartTime: number;
-	public nextFrameIndex: number;
-	public fixedFrameLength: number;
-	public nextFrame: Float32Array;
+	declare public MIN_LATENCY: number;
+	declare public MAX_LATENCY: number;
+	declare public ctx: AudioContext;
+	declare public volume: number;
+	declare public sampleRate: number;
+	declare public audioCtxStartTime: number;
+	declare public nextFrameIndex: number;
+	declare public fixedFrameLength: number;
+	declare public nextFrame: Float32Array;
 
 	constructor(sampleRate: number) {
-		super(sampleRate);
+		super(sampleRate, undefined as any);
 		AudioBufferSourceNodeMock.mockClear();
 	}
 	protected createAudioContext(sampleRate: number): AudioContext {
@@ -100,6 +100,7 @@ class AudioBufferSourceNodeMock {
 		this.frameStartTime = when;
 	}
 	public addEventListener(event: string, func: any) {
+		// NOSONAR
 	}
 
 	// Test functions.

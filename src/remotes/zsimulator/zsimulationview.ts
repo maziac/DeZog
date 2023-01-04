@@ -656,9 +656,6 @@ export class ZSimulationView extends BaseView {
 		let initialBeeperValue = 0;
 		if (this.simulator.zxBeeper)
 			this.simulator.zxBeeper.getCurrentBeeperValue();
-		let volume = GlobalStorage.Get<number>('audio.volume');
-		if (volume === undefined)
-			volume = 0.75;
 		let jsCustomCode = '';
 		if (this.customUiPath) {
 			try {
