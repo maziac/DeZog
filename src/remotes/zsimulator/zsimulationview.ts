@@ -137,13 +137,10 @@ export class ZSimulationView extends BaseView {
 	public async waitOnInitView() {
 		// Initial html page.
 		this.setHtml();
-
 		// Wait until it is loaded
 		await this.waitOnViewLoaded();
-
 		// Send the initialization request.
 		this.sendInit();
-
 		// Inform custom code that UI is ready.
 		this.simulator.customCode?.uiReady();
 
@@ -323,8 +320,12 @@ export class ZSimulationView extends BaseView {
 					this.simulator.customCode.load(jsPath);
 					this.simulator.customCode.execute();
 				}
-				// Reload the custom UI code
+				// Initial html page.
 				this.setHtml();
+				// Wait until it is loaded
+				await this.waitOnViewLoaded();
+				// Send the initialization request.
+				this.sendInit();
 				// Inform custom code that UI is ready.
 				this.simulator.customCode?.uiReady();
 				break;
@@ -1050,6 +1051,7 @@ export class ZSimulationView extends BaseView {
 			</html>
 			`;
 
+		this.vscodePanel.webview.html = '';	// This is important to clear also the custom code.
 		this.vscodePanel.webview.html = html;
 	}
 
