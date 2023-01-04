@@ -1921,78 +1921,78 @@ export class DebugSessionClass extends DebugSession {
 
 		// Check for "-view"
 		let viewTitle;
-		if (tokens[0] == '-view') {
+		if (tokens[0] === '-view') {
 			tokens.shift();
 			viewTitle = cmd.substring(1) + ' ' + tokens.join(' ');	// strip '-'
 		}
 
 		// All commands start with "-"
 		let output: string;
-		if (cmd == '-help' || cmd == '-h') {
+		if (cmd === '-help' || cmd === '-h') {
 			output = await this.evalHelp(tokens);
 		}
-		else if (cmd == '-dasm') {
+		else if (cmd === '-address') {
+			output = await this.evalAddress(tokens);
+		}
+		else if (cmd === '-dasm') {
 			output = await this.evalDasm(tokens);
 		}
-		else if (cmd == '-dbg') {
-			output = await this.evalDbg(tokens);
-		}
-		else if (cmd == '-eval') {
+		else if (cmd === '-eval') {
 			output = await this.evalEval(tokens);
 		}
-		else if (cmd == '-exec' || cmd == '-e') {
+		else if (cmd === '-exec' || cmd === '-e') {
 			output = await this.evalExec(tokens);
 		}
-		else if (cmd == '-label' || cmd == '-l') {
+		else if (cmd === '-label' || cmd === '-l') {
 			output = await this.evalLabel(tokens);
 		}
-		else if (cmd == '-md') {
+		else if (cmd === '-md') {
 			output = await MemoryCommands.evalMemDump(tokens);
 		}
-		else if (cmd == '-mdelta') {
+		else if (cmd === '-mdelta') {
 			output = await MemoryCommands.evalMemDelta(tokens);
 		}
-		else if (cmd == '-memmodel') {
+		else if (cmd === '-memmodel') {
 			output = await this.evalMemModel(tokens);
 		}
-		else if (cmd == '-msetb') {
+		else if (cmd === '-msetb') {
 			output = await MemoryCommands.evalMemSetByte(tokens);
 		}
-		else if (cmd == '-msetw') {
+		else if (cmd === '-msetw') {
 			output = await MemoryCommands.evalMemSetWord(tokens);
 		}
-		else if (cmd == '-ms') {
+		else if (cmd === '-ms') {
 			output = await MemoryCommands.evalMemSave(tokens);
 		}
-		else if (cmd == '-mv') {
+		else if (cmd === '-mv') {
 			output = await MemoryCommands.evalMemViewByte(tokens);
 		}
-		else if (cmd == '-mvd') {
+		else if (cmd === '-mvd') {
 			output = await MemoryCommands.evalMemViewDiff(tokens);
 		}
-		else if (cmd == '-mvw') {
+		else if (cmd === '-mvw') {
 			output = await MemoryCommands.evalMemViewWord(tokens);
 		}
-		else if (cmd == '-rmv') {
+		else if (cmd === '-rmv') {
 			output = await MemoryCommands.evalRegisterMemView(tokens);
 		}
-		else if (cmd == '-patterns') {
+		else if (cmd === '-patterns') {
 			output = await this.evalSpritePatterns(tokens);
 		}
-		else if (cmd == '-wpadd') {
+		else if (cmd === '-wpadd') {
 			output = await this.evalWpAdd(tokens);
 		}
-		else if (cmd == '-wprm') {
+		else if (cmd === '-wprm') {
 			output = await this.evalWpRemove(tokens);
 		}
-		else if (cmd == '-sprites') {
+		else if (cmd === '-sprites') {
 			output = await this.evalSprites(tokens);
 		}
-		else if (cmd == '-state') {
+		else if (cmd === '-state') {
 			output = await this.evalStateSaveRestore(tokens);
 		}
 		// Debug commands
-		else if (cmd == '-dbg') {
+		else if (cmd === '-dbg') {
 			output = await this.evalDebug(tokens);
 		}
 		//
@@ -2350,8 +2350,8 @@ export class DebugSessionClass extends DebugSession {
 	protected async evalHelp(_tokens: Array<string>): Promise<string> {
 		const output =
 			`Allowed commands are:
+"-address address": Prints out internal information of the debugger for a 64k address. Can be helpful if you encounter e.g. 'Unverified breakpoints' problems.
 "-dasm address count": Disassembles a memory area. count=number of lines.
-"-dbg address": Prints out internal information of the debugger for a 64k address. Can be helpful if you encounter e.g. 'Unverified breakpoints' problems.
 "-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels. It will also return the label if
 the value correspondents to a label.
 "-exec|e cmd args": cmd and args are directly passed to the remote (ZEsarUX, CSpect, ...). E.g. "-exec get-registers".
@@ -2593,7 +2593,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * @param tokens The arguments. I.e. the address.
 	 * @returns A Promise with a text to print.
 	 */
-	protected async evalDbg(tokens: Array<string>): Promise<string> {
+	protected async evalAddress(tokens: Array<string>): Promise<string> {
 		// Check count of arguments
 		if (tokens.length > 1) {
 			// Error Handling
