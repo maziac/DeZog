@@ -693,6 +693,9 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			this.previousSprites = this.sprites;
 			this.sprites = new Array<SpriteData | undefined>(MAX_COUNT_SPRITES);
 
+			// Load palette if not available
+			await this.getSpritesPalette();
+
 			try {
 				// Reload sprites
 				await this.getSprites();
