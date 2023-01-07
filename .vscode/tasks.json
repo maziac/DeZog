@@ -23,7 +23,7 @@
 		},
 
 		{
-			"label": "watch-node", // Used by "Launch Extension" in launch.json
+			"label": "watch-node",
 			"type": "npm",
 			"script": "watch-node",
 			"problemMatcher": {
@@ -53,7 +53,7 @@
 		},
 
 		{
-			"label": "watch-browser", // Used by "Launch Extension" in launch.json
+			"label": "watch-browser",
 			"type": "npm",
 			"script": "watch-browser",
 			"problemMatcher": {
