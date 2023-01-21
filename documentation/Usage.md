@@ -949,10 +949,7 @@ For this setup you need 2 additional programs: the [CSpect] emulator and the DeZ
 
 The remote type is "cspect".
 CSpect needs to run before the debug session starts and needs to be connected via a socket interface ([DZRP]).
-CSpect does not offer a socket interface to DeZog by itself it needs the help of the [Dezog CSpect Plugin](https://github.com/maziac/DeZogPlugin).
-
-Since CSpect v2.15.2 the DeZogPlugin is included with CSpect.
-For earlier CSpect versions you would have to install it by yourself. Please see [here](https://github.com/maziac/DeZogPlugin/blob/master/Readme.md#plugin-installation).
+CSpect nowadays includes the DeZog plugin, i.e. it comes with CSpect. The sources can be found [here](https://github.com/mikedailly/CSpectPlugins/tree/main/DeZogPlugin).
 
 
 You need to enable CSpect in your Z80 program's launch.json configuration, e.g.:

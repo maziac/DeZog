@@ -150,7 +150,7 @@ It is a separate program as the serialport package has tendency to break depende
 
 # DeZogPlugin
 
-Plugin to connect the CSpect emulator with DeZog.
+Plugin to connect the CSpect emulator with DeZog. Is now included in the [CSpect Plugins](https://github.com/mikedailly/CSpectPlugins/tree/main/DeZogPlugin).
 
 
 # dezogif (dezogif.nex)
