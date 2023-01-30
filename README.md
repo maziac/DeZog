@@ -139,7 +139,7 @@ For more demanding projects you have the choice to install a real emulator.
 
 These are the options:
 
-- the [CSpect](http://www.cspect.org) emulator (known to be interoperable is version 2.17.0)
+- the [CSpect](http://www.cspect.org) emulator (known to be interoperable is version 2.19.1.0)
 - the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable is version 10.1. Note: 10.2 is unfortunately incompatible)
 - [MAME](https://www.mamedev.org/release.html) (known to be interoperable is version 0.242)
 
