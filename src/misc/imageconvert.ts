@@ -5,10 +5,12 @@ import * as gw from "gif-writer";
  * Class which converts a pixel buffer into a gif image.
  */
 export class ImageConvert implements gw.IOutputStream {
-	buffer: number[]=[];
+	protected buffer: number[] = [];
+
 	writeByte(b: number): void {
 		this.buffer.push(b);
 	}
+
 	writeBytes(bb: number[]): void {
 		Array.prototype.push.apply(this.buffer, bb);
 	}
@@ -26,15 +28,15 @@ export class ImageConvert implements gw.IOutputStream {
 	 */
 	public static createGifFromArray(width: number, height: number, pixels: Array<number>, palette: Array<number>, transparentIndex?: number): number[] {
 		// Convert to color with offset
-		let indexedImage=new gw.IndexedColorImage(
+		const indexedImage = new gw.IndexedColorImage(
 			{width, height},
 			// Indexed colors
 			pixels,
 			// Palette
 			palette);
 		// Create image
-		const gifImage=new ImageConvert();
-		const gifWriter=new gw.GifWriter(gifImage);
+		const gifImage = new ImageConvert();
+		const gifWriter = new gw.GifWriter(gifImage);
 		gifWriter.writeHeader();
 		gifWriter.writeLogicalScreenInfo({
 			width: indexedImage.width,
