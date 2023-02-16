@@ -2971,7 +2971,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	protected async setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments) {
 		const ref = args.variablesReference;
 		const name = args.name;
-		const value = args.value;
+		const valueString = args.value;
 
 		ShallowVar.clearChanged();
 
@@ -2989,6 +2989,8 @@ E.g. use "-help -view" to put the help text in an own view.
 					response.message = msg;
 				}
 				else {
+					// Convert string to number
+					const value = Utility.evalExpression(valueString, true);
 					// Set value
 					const formattedString = await varObj.setValue(name, value);
 					// Send response
