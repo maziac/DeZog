@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.2.1
+- Fix for #107: Z80CPU Error: TypeError: Cannot read properties of undefined (reading 'start')
+
 # 3.2.0
 - Changed to esbuild. Package size decreased.
 - zsim: Audio fixed for chrome behavior. Note: audio is not started until the user has interacted with the simulator webview.
