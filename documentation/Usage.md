@@ -1,7 +1,7 @@
 # Usage of DeZog - the VS Code Z80 Debugger
 
 
-This document describes the features of DeZog and how they can be used.
+This document outlines the functionalities of DeZog and provides instructions on how to utilize them.
 
 If watched inside vscode you can use "CTRL-F" to search for certain topics.
 
@@ -59,7 +59,7 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 
 ## Migration from a previous DeZog version
 
-If you installed DeZog before, [here](https://github.com/maziac/DeZog/blob/master/documentation/Migration.md) are a few tips to migrate to the current version.
+If you migrate from an older version of DeZog you can find [here](https://github.com/maziac/DeZog/blob/master/documentation/Migration.md) a few helpful tips.
 
 
 ## Supported Assemblers
@@ -99,14 +99,14 @@ This is **not required**.
 If you work with an emulator you would start the emulator once and then let it running.
 When you start a debug session DeZog will connect to it, **transfer the program to the emulator** and start the program.
 When you stop the debug session DeZog will disconnect from the emulator.
-(Disconnecting from the emulator may have the effect of keeping the program running in the emulator. This is simply because the emulator now continues execution).
+(Disconnecting from the emulator may have the effect of keeping the program running in the emulator. This is simply because the emulator now continues execution.)
 
 I.e. your workflow is as follows:
 1. Start vscode
 2. Start the emulator (or even several emulators/remotes)
 3. Create a binary of your assembler program
 4. Start DeZog
-5. Debug memory
+5. Debug
 6. Stop DeZog
 7. Loop to 3
 

@@ -39,33 +39,21 @@ If you like DeZog please consider supporting it.
 
 ![](documentation/images/main.gif)
 
-The goal of this project is to achieve a development environment for Z80 assembler programs much the same as for high-level programming languages. An experience similar to what you would expect from Eclipse, Visual Studio or XCode.
+The objective of this project is to provide a development environment for Z80 assembler programs that offers similar features to those found in high-level programming languages, such as Eclipse, Visual Studio, or XCode.
 
-As this is a huge goal the focus is here on
-- Easy navigating/stepping through assembler source files with step-over, step-into and step-out
-- Data representation by viewing memory area, adding watches conversion between hex, decimal numbers and labels.
-- Easy access to data: a lot of information is already available by simply hovering over it.
-- Offering a unit test framework.
-- Displaying ZX Next specific data like sprites.
+This includes functionalities like
+- easy stepping/navigation through source files with step-over, step-into and step-out capabilities
+- data representation through memory views and data watches
+- easy data access through hover-over information
+- data display in structures
+- a unit test framework
+Additionally it offers some ZX Next specific capabilities like displaying sprites.
 
-DeZog lets you use Visual Studio Code (vscode) as development environment for debugging your Z80 assembler programs.
-You can use DeZog either to build your own programs, step through the sources, use labels, watches, memory views and other helpful features.
-Or you use DeZog to reverse engineer old Z80 programs, e.g. ZX Spectrum or MAME arcade games, by debugging and building up commented list files of the program.
+DeZog facilitates the debugging of Z80 assembler programs using Visual Studio Code (vscode) as the development environment. This tool can be used to build programs, step through sources, use labels, watches, memory views, and other useful features. Additionally, it can be used to reverse engineer old Z80 programs, such as ZX Spectrum or MAME arcade games, by debugging and creating commented list files of the program.
 
-DeZog needs a Remote to  execute the Z80 binaries. You can either use the built-in Z80/ZX simulator or connect to ZEsarUX or CSpect via a socket connection for more advanced projects.
-There is also experimental support for MAME.
+DeZog needs a "[Remote](documentation/Usage.md#remote-types)" to  execute the Z80 binaries. You can either use the built-in Z80/ZX simulator or connect to [ZEsarUX], [CSpect] or [MAME] via a socket connection for more advanced projects.
 
 Note: DeZog itself does not include any support for building from assembler sources. For this you need a build task and an assembler. For an example look here: https://github.com/maziac/z80-sample-program
-
-
-**Migration from DeZog 1.5**
-If you installed DeZog 1.5 before [here](documentation/Migration.md) are a few tips to migrate to 2.0.
-
-
-**Important note for Windows users:**
-Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session.
-If that is true for you as well you can experiment with the "[loadDelay](documentation/Usage.md#zesarux)" option which adds an additional delay at startup. This mitigates the problem.
-The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).
 
 
 ## Gallery
@@ -90,10 +78,10 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 
 ## Features
 
-- supports [ZEsarUX] emulator
-- supports [CSpect] emulator
-- experimental support for [MAME]
-- can be used with the internal simulator (does not require ZEsarUX or CSpect)
+- supports the [ZEsarUX] emulator
+- supports the [CSpect] emulator
+- supports [MAME]
+- can be used with the internal simulator (does not require ZEsarUX, CSpect, ...)
 - reads .list and .sld files
 	- supports stepping through source code
 	- either in .list file or in .asm files
@@ -107,6 +95,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 	- Z80 registers
 	- stack
 	- callstack
+	- data
 	- tbblue sprites and patterns
 - changing of Z80 registers from vscode
 - labels
@@ -125,7 +114,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 - supports banking (['long addresses'](documentation/Usage.md#long-addresses-explanation))
 - support for Z80 [unit tests](documentation/UnitTests.md)
 - [custom extensions](documentation/zsimPeripherals.md) to the internal simulator to simulate peripherals.
-
+- [custom memory models](documentation/Usage.md#custommemory)
 
 ## Installation
 
@@ -150,6 +139,21 @@ The table [here](documentation/Usage.md#remote-capabilities-comparison) shows a 
 If you own a ZX Next you also have the option to debug your SW directly on the Next.
 
 
+
+To use DeZog, at least vscode is required (available for Linux, macOS, or Windows).
+
+For pure Z80 programs or simple ZX Spectrum 48K programs, the internal Z80 Simulator within vscode may be sufficient.
+
+For more demanding projects, you can choose to install a real emulator. The following are available options:
+
+CSpect emulator (interoperable with version 2.19.1.0)
+ZEsarUX emulator (interoperable with version 10.1, but not with 10.2)
+MAME (interoperable with version 0.242)
+Different DeZog/emulator configurations have their own unique advantages, but the choice mainly depends on personal preference. A comparison of features can be found in the [table](documentation/Usage.md#remote-capabilities-comparison) available in the documentation.
+
+If you own a ZX Next, you have the option to directly debug your software on the Next, too.
+
+
 ### DeZog
 
 In Visual Studio Code simply install "DeZog" (maziac.dezog) from the Marketplace.
@@ -168,10 +172,18 @@ There are a few other extensions that are not required to work with DeZog but ma
 
 All can be installed directly inside vscode from the market place.
 
+To use DeZog in Visual Studio Code, simply install the "DeZog" extension (maziac.dezog) from the Marketplace. Although not required, there are several other helpful extensions available, including:
+
+- [ASM Code Lens], which provides syntax highlighting for Z80 assembler, as well as completions, references, jump to label, and renaming functionality.
+- [Z80 Instruction Set], which displays opcode, affected flags, and a description when hovering over a Z80 instruction.
+- [Hex Hover Converter], which converts numbers to decimal, hexadecimal, and binary formats when hovering over them.
+- [ZX SNA File Viewer]/[ZX NEX File Viewer], which allow viewing of ZX Spectrum snapshot (.sna) and ZX Spectrum Next (.nex) files (search for "snafile" and "nexfile" in the Marketplace).
+
+All of these extensions can be easily installed directly from the Visual Studio Code Marketplace.
 
 ## Usage
 
-Please look at the documentation ['Usage of DeZog'](documentation/Usage.md).
+Please refer to the ['Usage of DeZog'](documentation/Usage.md) documentation.
 
 You can also access the documentation from within vscode/DeZog.
 Enter "dezog: Show the DeZog Help page" in the command palette (F1 key) or reveal the "DeZog Help" from the debugging sidebar.
@@ -214,7 +226,8 @@ For the other included SW see the 'dependencies' section in [package.json](https
 
 ## Acknowledgements
 
-I would like to thank a few people for their support
+I would like to express my gratitude to the following individuals for their invaluable support:
+
 - Cesar Hernandez Bano for developing the great [ZEsarUX] emulator which very early offered the possibility to remotely connect to it. And for being patient with all my request for the ZRCP protocol. Without ZEsarUX I wouldn't have started DeZog at all. So, if you like DeZog thank Cesar.
 - Mike Dailly for the wonderful [CSpect] emulator, for opening the debug interface to plugins and for giving support to use it properly.
 - [Molly Howell/DrGoldfire](https://bitbucket.org/DrGoldfire/z80.js/src/main/) for the Z80 CPU simulation code.
