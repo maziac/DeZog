@@ -153,7 +153,7 @@ export class Opcode {
 			new Opcode(0x6E, "[im0]"),
 			new Opcode(0x6F, "RLD"),
 			new Opcode(0x70, "IN F,(C)"),
-			new Opcode(0x71, "OUT (C),F"),
+			new Opcode(0x71, "OUT (C),0"),
 			new Opcode(0x72, "SBC HL,SP"),
 			new Opcode(0x73, "LD (#nn),SP"),
 			new Opcode(0x74, "[neg]"),
