@@ -3,8 +3,8 @@ import {SmartDisassembler} from "./smartdisassembler";
 import {Subroutine} from "./core/subroutine";
 
 // From: https://github.com/aduh95/viz.js
-//const renderGraphviz = require('@aduh95/viz.js/sync');	// I couldn't transfer this into an "import" statement
-const dot2svg = require("@aduh95/viz.js/async");
+//const dot2svg = require("@aduh95/viz.js/async");
+const dot2svg = require("@aduh95/viz.js/sync");
 
 
 /** Base class with common functions for RenderFlowChart, RenderCallGraph and RenderText (RenderHtml)
@@ -219,8 +219,10 @@ export class RenderBase {
 	protected async renderLines(lines: string[]): Promise<string> {
 		const text = lines.join('\n');
 
-		// Render
-		let rendered = await dot2svg(text);
+		// Render (the async api has a problem when usin in a vsix, probably because of esbuild)
+		//let rendered = await dot2svg(text);
+		let rendered = dot2svg(text);
+
 		// Adjust
 		rendered = this.adjustSvg(rendered);
 
