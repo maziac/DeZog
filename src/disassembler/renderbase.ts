@@ -210,16 +210,19 @@ export class RenderBase {
 
 
 	/** Renders the givens lines with graphviz.
-	 * Renders asynchronously.
-	 * This is faster: about 70% of the synchronous version.
-	 * For both, asynchronous and synchronous, the first rendertakes longer.
+	 * Renders synchronously because the worker thread in the vsix does not work, most probably because of esbuild.
+	 * The sync api is about 30% slower than the asynchronous one.
+	 * For both, asynchronous and synchronous, the first render takes longer.
+	 * Please note that for pathological cases (e.g. all RST 10h in all memory
+	 * the graph would become too large and duh95/viz.js generates an
+	 * error because the callstack is used up.
 	 * @param lines The string array to render.
 	 * @return The adjusted SVG text.
 	 */
 	protected async renderLines(lines: string[]): Promise<string> {
 		const text = lines.join('\n');
 
-		// Render (the async api has a problem when usin in a vsix, probably because of esbuild)
+		// Render (the async api has a problem when using in a vsix, probably because of esbuild)
 		//let rendered = await dot2svg(text);
 		let rendered = dot2svg(text);
 
