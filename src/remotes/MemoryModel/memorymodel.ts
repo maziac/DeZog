@@ -557,7 +557,7 @@ export class MemoryModel {
 	 * @returns A long address, e.g. 0x05800A for "800A.4"
 	 */
 	public parseAddress(longAddrString: string): number {
-		// Devide address from bank
+		// Divide address from bank
 		const addrBank = longAddrString.split('.');
 		const addr64kString = addrBank[0];
 		const addr64k = parseInt(addr64kString, 16);
