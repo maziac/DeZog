@@ -1,7 +1,7 @@
 
 import {Serializable, MemBuffer} from "../../misc/membuffer";
 import {MemoryModel} from "../MemoryModel/memorymodel";
-import {MemoryModelZxNext} from "../MemoryModel/predefinedmemorymodels";
+import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from "../MemoryModel/predefinedmemorymodels";
 import {Z80Ports} from "./z80ports";
 
 
@@ -30,7 +30,7 @@ export class ZxUlaScreen implements Serializable {
 			this.normalUlaBank = 5;
 			this.shadowUlaBank = 7;
 			// Check for ZXNext
-			if (memoryModel instanceof MemoryModelZxNext) {
+			if (memoryModel instanceof MemoryModelZxNextOneROM || memoryModel instanceof MemoryModelZxNextTwoRom) {
 				this.normalUlaBank *= 2;
 				this.shadowUlaBank *= 2;
 			}

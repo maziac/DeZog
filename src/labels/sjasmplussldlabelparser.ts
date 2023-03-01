@@ -1,6 +1,6 @@
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
-import {MemoryModelAllRam, MemoryModelColecoVision, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelColecoVision, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextBase} from '../remotes/MemoryModel/predefinedmemorymodels';
 import {AsmConfigBase, SjasmplusConfig} from '../settings/settings';
 import {LabelParserBase} from './labelparserbase';
 import {SourceFileEntry} from './labels';
@@ -473,7 +473,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				};
 				return;
 			}
-			if (destMemModel instanceof MemoryModelZxNext) {
+			if (destMemModel instanceof MemoryModelZxNextBase) {
 				const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];
 				this.funcConvertBank = (address: number, bank: number) => {
 					const index = (address >>> 13);
@@ -499,7 +499,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Check for sjasmplus ZX48K
 		if (srcMemModel == SjasmplusMemoryModel.ZX48K) {
 			// sjasmplus was compiled for ZX48K
-			if (destMemModel instanceof MemoryModelZxNext) {
+			if (destMemModel instanceof MemoryModelZxNextBase) {
 				const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];
 				this.funcConvertBank = (address: number, bank: number) => {
 					let index = 2 * bank;
@@ -520,7 +520,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Check for sjasmplus ZX128K
 		else if (srcMemModel == SjasmplusMemoryModel.ZX128K) {
 			// sjasmplus was compiled for ZX128K
-			if (destMemModel instanceof MemoryModelZxNext) {
+			if (destMemModel instanceof MemoryModelZxNextBase) {
 				this.funcConvertBank = (address: number, bank: number) => {
 					if (bank > 7)
 						this.throwError("Bank " + bank + " of ZXNext memory model cannot be converted to target ZX128K memory model.");
@@ -541,7 +541,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Check for sjasmplus ZXNEXT
 		else if (srcMemModel == SjasmplusMemoryModel.ZXNEXT) {
 			// sjasmplus was compiled for ZXNEXT
-			if (destMemModel instanceof MemoryModelZxNext) {
+			if (destMemModel instanceof MemoryModelZxNextBase) {
 				this.funcConvertBank = (address: number, bank: number) => {
 					return bank;	// No conversion
 				};

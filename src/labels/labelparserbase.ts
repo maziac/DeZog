@@ -5,7 +5,7 @@ import {UnifiedPath} from '../misc/unifiedpath';
 import {SourceFileEntry, ListFileLine} from './labels';
 import minimatch from 'minimatch';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
-import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../remotes/MemoryModel/predefinedmemorymodels';
 
 
 
@@ -741,7 +741,7 @@ export class LabelParserBase {
 		}
 
 		// Check for ZXNext
-		if (this.memoryModel instanceof MemoryModelZxNext) {
+		if (this.memoryModel instanceof MemoryModelZxNextOneROM || this.memoryModel instanceof MemoryModelZxNextTwoRom) {
 			const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];
 			this.funcConvertBank = (address: number, bank: number) => {
 				const index = address >>> 13;

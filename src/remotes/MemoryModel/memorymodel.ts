@@ -293,6 +293,20 @@ export class MemoryModel {
 			this.banks[index] = bankInfo;
 		}
 
+		// Check if shortName already exists
+		this.checkShortName(index);
+
+		// If everything is fine then remember the shortName
+		this.shortNameBankNr.set(bankInfo.shortName, index);
+	}
+
+
+	/**
+	 * Check if the shortName already exists.
+	 * @param index The index to check.
+	 * @throws In case name has been used already.
+	 */
+	protected checkShortName(index: number) {
 		// Associate short name with bank number
 		const shortName = this.banks[index].shortName;
 		if (shortName) {
@@ -301,7 +315,6 @@ export class MemoryModel {
 				// Name already exists
 				throw Error("Bank shortName '" + shortName + "' used more than once for different banks.");
 			}
-			this.shortNameBankNr.set(shortName, index);
 		}
 	}
 

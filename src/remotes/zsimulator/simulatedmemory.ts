@@ -149,7 +149,7 @@ export class SimulatedMemory implements Serializable {
 				// Check for rom
 				let rom = bank.rom;
 				if (rom) {
-					if (typeof rom == 'string') {
+					if (typeof rom === 'string') {
 						// Read file
 						const romData = this.readRomFile(rom);	// Note: is already a unified path
 						// Use data

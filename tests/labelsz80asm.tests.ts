@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
-import {MemoryModelAllRam, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 import {Z80asmLabelParser} from '../src/labels/z80asmlabelparser';
 
 
@@ -323,8 +323,22 @@ E000           labelE000:
 		});
 
 
-		test('createLongAddress', () => {
-			const mm = new MemoryModelZxNext();
+		test('createLongAddress MemoryModelZxNextOneROM', () => {
+			const mm = new MemoryModelZxNextOneROM();
+			createParser(mm);
+
+			assert.equal(parser.numberForLabel.get('label0000'), 0x0FF0000);
+			assert.equal(parser.numberForLabel.get('label2000'), 0x1002000);
+			assert.equal(parser.numberForLabel.get('label4000'), 0x00B4000);
+			assert.equal(parser.numberForLabel.get('label6000'), 0x00C6000);
+			assert.equal(parser.numberForLabel.get('label8000'), 0x0058000);
+			assert.equal(parser.numberForLabel.get('labelA000'), 0x006A000);
+			assert.equal(parser.numberForLabel.get('labelC000'), 0x001C000);
+			assert.equal(parser.numberForLabel.get('labelE000'), 0x002E000);
+		});
+
+		test('createLongAddress MemoryModelZxNextTwoRom', () => {
+			const mm = new MemoryModelZxNextTwoRom();
 			createParser(mm);
 
 			assert.equal(parser.numberForLabel.get('label0000'), 0x0FF0000);
