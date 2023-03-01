@@ -14,7 +14,7 @@ import {TimeWait} from '../../misc/timewait';
 import {Log} from '../../log';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {PromiseCallbacks} from '../../misc/promisecallbacks';
-import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
+import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextOneROM} from '../MemoryModel/predefinedmemorymodels';
 
 
 
@@ -249,7 +249,7 @@ export class DzrpRemote extends RemoteBase {
 					break;
 				case DzrpMachineType.ZXNEXT:
 					// ZxNext: 8x8k banks
-					this.memoryModel = new MemoryModelZxNext();
+					this.memoryModel = new MemoryModelZxNextOneROM();
 					break;
 				default:
 					// Error: Unknown type
@@ -292,6 +292,14 @@ export class DzrpRemote extends RemoteBase {
 		//Log.log('clearRegisters ->', Z80Registers.getCache() || "undefined");
 		// Get regs
 		const regs = await this.sendDzrpCmdGetRegisters();
+		// Adjust ROM bank. Change 0xFF in slot 0 to 0xFE.
+		if (this.memoryModel instanceof MemoryModelZxNextOneROM) {
+			// Only for CSpect and ZXNext
+			const k = Z80_REG.IM + 2;
+			if (regs[k] === 0xFF) {
+				regs[k]--;	// Change slot 0 to 0xFE
+			}
+		}
 		// And set
 		Z80Registers.setCache(regs);
 		//Log.log('clearRegisters <-', Z80Registers.getCache() || "undefined");

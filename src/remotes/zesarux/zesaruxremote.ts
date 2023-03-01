@@ -8,7 +8,7 @@ import {ZesaruxCpuHistory, DecodeZesaruxHistoryInfo} from './zesaruxcpuhistory';
 import {Z80RegistersClass, Z80Registers} from '../z80registers';
 import {DecodeZesaruxRegisters, DecodeZesaruxRegistersColecovision, DecodeZesaruxRegistersZx128k, DecodeZesaruxRegistersZx16k, DecodeZesaruxRegistersZx48k, DecodeZesaruxRegistersZxNext} from './decodezesaruxdata';
 import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
-import {PromiseCallbacks} from '../../misc/promisecallbacks';import {MemoryModelColecoVision, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
+import {PromiseCallbacks} from '../../misc/promisecallbacks';import {MemoryModelColecoVision, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextTwoRom} from '../MemoryModel/predefinedmemorymodels';
 
 
 
@@ -59,6 +59,7 @@ export class ZesaruxRemote extends RemoteBase {
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = true;
 		this.supportsLOGPOINT = false;
+		this.supportsBreakOnInterrupt = false;
 		// Reverse debugging / CPU history
 		CpuHistoryClass.setCpuHistory(new ZesaruxCpuHistory());
 		CpuHistory.decoder = new DecodeZesaruxHistoryInfo();
@@ -214,7 +215,7 @@ export class ZesaruxRemote extends RemoteBase {
 					// "ZX Spectrum Next" since zesarux 9.2.
 					// 8x8k banks
 					Z80Registers.decoder = new DecodeZesaruxRegistersZxNext();
-					this.memoryModel = new MemoryModelZxNext();
+					this.memoryModel = new MemoryModelZxNextTwoRom();
 				}
 				else if (machineType.includes("128k")) {
 					// 4x16k banks
@@ -1058,7 +1059,7 @@ export class ZesaruxRemote extends RemoteBase {
 						condition += ' and RAM=' + bank;
 					}
 				}
-				else if (this.memoryModel instanceof MemoryModelZxNext) {
+				else if (this.memoryModel instanceof MemoryModelZxNextTwoRom) {
 					// ZXNext
 					const slot = Z80Registers.getSlotFromAddress(address);
 					// Treat ROM banks special for ZEsarUX

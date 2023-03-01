@@ -7,8 +7,7 @@ import {Remote} from '../src/remotes/remotebase';
 import {Settings, SettingsParameters} from '../src/settings/settings';
 import {Labels} from '../src/labels/labels';
 import {DecodeZesaruxRegisters, DecodeZesaruxRegistersZx128k} from '../src/remotes/zesarux/decodezesaruxdata';
-import {MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
-
+import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
 suite('Utility', () => {
 
@@ -532,7 +531,7 @@ suite('Utility', () => {
 			Settings.launch = Settings.Init({remoteType: 'zrcp'} as any);
 			Z80RegistersClass.createRegisters();
 			Z80Registers.decoder = new DecodeZesaruxRegistersZx128k()
-			const mm = new MemoryModelZxNext();
+			const mm = new MemoryModelZxNextTwoRom();
 			mm.init();
 		});
 
@@ -592,7 +591,7 @@ suite('Utility', () => {
 				Settings.launch = Settings.Init(cfg);
 				Z80RegistersClass.createRegisters();
 				Z80Registers.decoder = new DecodeZesaruxRegistersZx128k()
-				const mm = new MemoryModelZxNext();
+				const mm = new MemoryModelZxNextOneROM();
 				mm.init();
 				RemoteFactory.createRemote(cfg.remoteType);
 			});
@@ -798,7 +797,7 @@ suite('Utility', () => {
 					excludeFiles: []
 				}]
 			};
-			const mm = new MemoryModelZxNext();
+			const mm = new MemoryModelZxNextTwoRom();
 			Labels.readListFiles(config, mm);
 
 			// Prepare memory

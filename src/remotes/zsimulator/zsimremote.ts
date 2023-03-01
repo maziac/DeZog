@@ -18,7 +18,7 @@ import {CustomCode} from './customcode';
 import {BeeperBuffer, ZxBeeper} from './zxbeeper';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
-import {MemoryModelAllRam, MemoryModelColecoVision, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelColecoVision, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../MemoryModel/predefinedmemorymodels';
 import {ZxUlaScreen} from './zxulascreen';
 
 
@@ -96,6 +96,8 @@ export class ZSimRemote extends DzrpRemote {
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = true;
 		this.supportsLOGPOINT = true;
+		this.supportsBreakOnInterrupt = true;
+
 		this.timeoutRequest = false;
 		this.previouslyStoredPCHistory = -1;
 		this.tbblueRegisterSelectValue = 0;
@@ -300,7 +302,7 @@ export class ZSimRemote extends DzrpRemote {
 				{
 					// ZX Next
 					// Memory Model
-					this.memoryModel = new MemoryModelZxNext();
+					this.memoryModel = new MemoryModelZxNextTwoRom();
 					// Bank switching.
 					for (let tbblueRegister = 0x50; tbblueRegister <= 0x57; tbblueRegister++) {
 						this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
@@ -680,10 +682,10 @@ export class ZSimRemote extends DzrpRemote {
 					}
 
 					// Check if an interrupt happened and it should be breaked on an interrupt
-					if (this.breakOnInterrupt) {
-						if (this.z80Cpu.interruptOccurred) {
+					if (this.z80Cpu.interruptOccurred) {
+						this.z80Cpu.interruptOccurred = false;
+						if (this.breakOnInterrupt) {
 							breakNumber = BREAK_REASON_NUMBER.BREAK_INTERRUPT;	// Interrupt break
-							this.z80Cpu.interruptOccurred = false;
 							break;
 						}
 					}
@@ -698,7 +700,7 @@ export class ZSimRemote extends DzrpRemote {
 			}
 			catch (errorText) {
 				breakReasonString = "Z80CPU Error: " + errorText;
-				console.log(breakReasonString);
+				//console.log(breakReasonString);
 				breakNumber = BREAK_REASON_NUMBER.UNKNOWN;
 			}
 
@@ -961,6 +963,9 @@ export class ZSimRemote extends DzrpRemote {
 		const snaFile = new SnaFile();
 		snaFile.readFile(filePath);
 
+		// If ZXNext is used then MemoryModelZxNextTwoROM should be used:
+		Utility.assert(!(this.memoryModel instanceof MemoryModelZxNextOneROM));
+
 		// 16K
 		if (this.memoryModel instanceof MemoryModelZx16k)
 			throw Error("Loading SNA file not supported for memory model '" + this.memoryModel.name + "'.");
@@ -977,8 +982,8 @@ export class ZSimRemote extends DzrpRemote {
 				this.memory.writeMemoryData(bank, offset, snaMemBank.data, 0, snaMemBank.data.length);
 			}
 		}
-		else if (this.memoryModel instanceof MemoryModelZxNext) {
-			// Bank numbers need ot be doubled
+		else if (this.memoryModel instanceof MemoryModelZxNextTwoRom) {
+			// Bank numbers need to be doubled
 			for (const memBank of snaFile.memBanks) {
 				const nextBank = 2 * memBank.bank;
 				this.memory.writeMemoryData(nextBank, 0, memBank.data, 0, 0x2000);
@@ -1017,6 +1022,19 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
+		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.im);
+
+		// Interrupt (IFF2)
+		const enableInterrupt = (snaFile.iff2 >>> 2) & 0x01;
+		this.z80Cpu.iff1 = enableInterrupt;
+		this.z80Cpu.iff2 = enableInterrupt;
+
+		// Set ROM1 or ROM0
+		if (snaFile.is128kSnaFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNextTwoRom)) {
+			// Write port 7FFD
+			const port7ffd = snaFile.port7ffd;
+			this.z80Cpu.ports.write(0x7FFD, port7ffd);
+		}
 	}
 
 
@@ -1031,7 +1049,7 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected async loadBinNex(filePath: string): Promise<void> {
 		// Check for 128K
-		if (!(this.memoryModel instanceof MemoryModelZxNext))
+		if (!(this.memoryModel instanceof MemoryModelZxNextTwoRom))
 			throw Error("A NEX file can only be loaded into a 'ZXNEXT' memory model. This is a '" + this.memoryModel.name + "' memory model.");
 
 		// Load and parse file
@@ -1135,27 +1153,6 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 				response = "T-states set to " + this.passedTstates + ".";
 				return response;
 			}
-			if (cmd_name == "breakinterrupt") {
-				// Check count of arguments
-				if (tokens.length != 1) {
-					throw new Error("Wrong number of arguments.");
-				}
-				const subcmd = tokens[0];
-				let enable;
-				if (subcmd == "on")
-					enable = true;
-				else if (subcmd == "off")
-					enable = false;
-				else
-					throw Error("Expected 'on' or 'off' but got '" + subcmd + "'.");
-				// Set
-				this.breakOnInterrupt = enable;
-				if (enable)
-					this.z80Cpu.interruptOccurred = false;
-				// Return
-				response = "Break on interrupt " + ((this.breakOnInterrupt) ? 'enabled' : 'disabled') + ".";
-				return response;
-			}
 
 			// Unknown command.
 			throw Error("Error: not supported.");
@@ -1180,6 +1177,16 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 		if (this.codeCoverage)
 			return Array.from(this.codeCoverage.getAddresses());
 		return [];
+	}
+
+
+	/** Enables to break on an interrupt.
+	 * @param enable true=enable,break on interrupt, other disable.
+	 * @returns 'enable'
+	 */
+	public async enableBreakOnInterrupt(enable: boolean): Promise<boolean> {
+		this.breakOnInterrupt = enable;
+		return this.breakOnInterrupt;
 	}
 
 
@@ -1316,12 +1323,21 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * @returns A Promise with an error=0 (no error).
 	  */
 	public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
-		// Special handling for ROM:
-		// The bank number here is 0xFF no matter if it is lower or upper part.
-		// This is "fixed" here.
-		// (Note: it is not taken care of ROM1 or ROM0)
-		if (bank == 0xFF) {
-			bank = (bank & 0xFE) + (slot & 1);
+		// If ZXNext is used then MemoryModelZxNextTwoROM should be used:
+		Utility.assert(!(this.memoryModel instanceof MemoryModelZxNextOneROM));
+
+		// Special handling for ZXNext ROM:
+		if (this.memoryModel instanceof MemoryModelZxNextTwoRom) {
+			/*
+			 * For ROM only 0xFF exists. But it is ambiguous,
+			 * could be ROM0 (128k editor) or ROM1 (48k basic) (or even another ROM)
+			 * be initialized to ROM0 anyway.
+			 * So, we simply skip it. Is not called in normal operation anyway.
+			*/
+			if (bank === 0xFF) {
+				// Ignore:
+				return 1;	// Error: could not set slot
+			}
 		}
 		this.memory.setSlot(slot, bank);
 		return 0;

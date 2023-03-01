@@ -165,9 +165,11 @@ export class DebugSessionClass extends DebugSession {
 		this.setDebuggerLinesStartAt1(false);
 		this.setDebuggerColumnsStartAt1(false);
 		vscode.debug.onDidChangeActiveDebugSession(dbgSession => {
-			if (dbgSession?.configuration.type == 'dezog') {
-				vscode.debug.activeDebugConsole.append(this.debugConsoleSavedText);
-				this.debugConsoleSavedText = '';
+			if (dbgSession?.configuration.type === 'dezog') {
+				if (this.debugConsoleSavedText) {
+					vscode.debug.activeDebugConsole.append(this.debugConsoleSavedText);
+					this.debugConsoleSavedText = '';
+				}
 			}
 		});
 	}
@@ -377,7 +379,7 @@ export class DebugSessionClass extends DebugSession {
 			this.removeAllListeners();	// Don't react on events anymore
 			// Disconnect
 			if (Remote) {
-				console.log('Remote.disconnect()');
+				//console.log('Remote.disconnect()');
 				await Remote.disconnect();
 			}
 		}
@@ -417,12 +419,10 @@ export class DebugSessionClass extends DebugSession {
 	}
 
 
-	/**
-	 * 'initialize' request.
+	/** ANCHOR 'initialize' request.
 	 * Respond with supported features.
 	 */
 	protected async initializeRequest(response: DebugProtocol.InitializeResponse, _args: DebugProtocol.InitializeRequestArguments): Promise<void> {
-
 		//const dbgSession = vscode.debug.activeDebugSession;
 		// build and return the capabilities of this debug adapter:
 		response.body = response.body || {};
@@ -468,20 +468,22 @@ export class DebugSessionClass extends DebugSession {
 		// VARIABLEs pane. But I only have registers there. So it's not useful.
 		response.body.supportsDataBreakpoints = false;
 
-		// Allow exception breakpoints from vscode UI (for ASSERTION, WPMEM and LOGPOINT).
-		// Note: It is not possible to change the exceptionBreakpointFilters via the
-		// CapabilitiesEvent later. vscode does not react on it.
-		response.body.supportsExceptionFilterOptions = true;
-		response.body.supportsExceptionOptions = false;
-		response.body.supportsExceptionInfoRequest = false;
-		const enableExceptionBps = (this.state != DbgAdapterState.UNITTEST);	// ASSERTION etc. breakpoints are controlled directly by the unit tests.
-		this.exceptionBreakpoints = new ExceptionBreakpoints(enableExceptionBps);
-		response.body.exceptionBreakpointFilters = this.exceptionBreakpoints.breakpoints.map(bp => ({
-			filter: bp.name,
-			label: bp.name,
-			description: bp.description,
-			supportsCondition: (bp.conditionString != undefined)
-		}));
+		// ASSERTION etc. breakpoints are controlled directly by the unit tests. Those will not be enabled here.
+		if (this.state !== DbgAdapterState.UNITTEST) {
+			// Allow exception breakpoints from vscode UI (for ASSERTION, WPMEM and LOGPOINT).
+			// Note: It is not possible to change the exceptionBreakpointFilters via the
+			// CapabilitiesEvent later. vscode does not react on it.
+			response.body.supportsExceptionFilterOptions = true;
+			response.body.supportsExceptionOptions = false;
+			response.body.supportsExceptionInfoRequest = false;
+			this.exceptionBreakpoints = new ExceptionBreakpoints();
+			response.body.exceptionBreakpointFilters = this.exceptionBreakpoints.breakpoints.map(bp => ({
+				filter: bp.name,
+				label: bp.name,
+				description: bp.description,
+				supportsCondition: (bp.conditionString != undefined)
+			}));
+		}
 
 		this.sendResponse(response);
 
@@ -505,7 +507,7 @@ export class DebugSessionClass extends DebugSession {
 	}
 
 
-	/**
+	/** ANCHOR launchRequest
 	 * Called after 'initialize' request.
 	 * Loads the list file and connects the socket (if necessary).
 	 * Initializes the remote.
@@ -740,7 +742,8 @@ export class DebugSessionClass extends DebugSession {
 						// there would be a dependency in RemoteFactory to vscode which in turn
 						// makes problems for the unit tests.
 						// Adds a window that displays the ZX screen.
-						new ZSimulationView(zsim); // NOSONAR
+						const zsimView = new ZSimulationView(zsim);
+						await zsimView.waitOnInitView();
 					}
 				}
 				catch(e) {
@@ -910,7 +913,7 @@ export class DebugSessionClass extends DebugSession {
 	}
 
 
-	/**
+	/** ANCHOR stackTraceRequest
 	 * Returns the stack frames.
 	 */
 	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, _args: DebugProtocol.StackTraceArguments): Promise<void> {
@@ -987,7 +990,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 		}
 		catch (e) {
-			console.log(e);
+			//console.log(e);
 			this.debugConsoleAppendLine('Disassembly: ' + e.message);
 		}
 
@@ -1918,75 +1921,78 @@ export class DebugSessionClass extends DebugSession {
 
 		// Check for "-view"
 		let viewTitle;
-		if (tokens[0] == '-view') {
+		if (tokens[0] === '-view') {
 			tokens.shift();
 			viewTitle = cmd.substring(1) + ' ' + tokens.join(' ');	// strip '-'
 		}
 
 		// All commands start with "-"
 		let output: string;
-		if (cmd == '-help' || cmd == '-h') {
+		if (cmd === '-help' || cmd === '-h') {
 			output = await this.evalHelp(tokens);
 		}
-		else if (cmd == '-eval') {
-			output = await this.evalEval(tokens);
+		else if (cmd === '-address') {
+			output = await this.evalAddress(tokens);
 		}
-		else if (cmd == '-exec' || cmd == '-e') {
-			output = await this.evalExec(tokens);
-		}
-		else if (cmd == '-label' || cmd == '-l') {
-			output = await this.evalLabel(tokens);
-		}
-		else if (cmd == '-md') {
-			output = await MemoryCommands.evalMemDump(tokens);
-		}
-		else if (cmd == '-mdelta') {
-			output = await MemoryCommands.evalMemDelta(tokens);
-		}
-		else if (cmd == '-memmodel') {
-			output = await this.evalMemModel(tokens);
-		}
-		else if (cmd == '-msetb') {
-			output = await MemoryCommands.evalMemSetByte(tokens);
-		}
-		else if (cmd == '-msetw') {
-			output = await MemoryCommands.evalMemSetWord(tokens);
-		}
-		else if (cmd == '-ms') {
-			output = await MemoryCommands.evalMemSave(tokens);
-		}
-		else if (cmd == '-mv') {
-			output = await MemoryCommands.evalMemViewByte(tokens);
-		}
-		else if (cmd == '-mvd') {
-			output = await MemoryCommands.evalMemViewDiff(tokens);
-		}
-		else if (cmd == '-mvw') {
-			output = await MemoryCommands.evalMemViewWord(tokens);
-		}
-		else if (cmd == '-rmv') {
-			output = await MemoryCommands.evalRegisterMemView(tokens);
-		}
-		else if (cmd == '-dasm') {
+		else if (cmd === '-dasm') {
 			output = await this.evalDasm(tokens);
 		}
-		else if (cmd == '-patterns') {
+		else if (cmd === '-eval') {
+			output = await this.evalEval(tokens);
+		}
+		else if (cmd === '-exec' || cmd === '-e') {
+			output = await this.evalExec(tokens);
+		}
+		else if (cmd === '-label' || cmd === '-l') {
+			output = await this.evalLabel(tokens);
+		}
+		else if (cmd === '-md') {
+			output = await MemoryCommands.evalMemDump(tokens);
+		}
+		else if (cmd === '-mdelta') {
+			output = await MemoryCommands.evalMemDelta(tokens);
+		}
+		else if (cmd === '-memmodel') {
+			output = await this.evalMemModel(tokens);
+		}
+		else if (cmd === '-msetb') {
+			output = await MemoryCommands.evalMemSetByte(tokens);
+		}
+		else if (cmd === '-msetw') {
+			output = await MemoryCommands.evalMemSetWord(tokens);
+		}
+		else if (cmd === '-ms') {
+			output = await MemoryCommands.evalMemSave(tokens);
+		}
+		else if (cmd === '-mv') {
+			output = await MemoryCommands.evalMemViewByte(tokens);
+		}
+		else if (cmd === '-mvd') {
+			output = await MemoryCommands.evalMemViewDiff(tokens);
+		}
+		else if (cmd === '-mvw') {
+			output = await MemoryCommands.evalMemViewWord(tokens);
+		}
+		else if (cmd === '-rmv') {
+			output = await MemoryCommands.evalRegisterMemView(tokens);
+		}
+		else if (cmd === '-patterns') {
 			output = await this.evalSpritePatterns(tokens);
 		}
-		else if (cmd == '-wpadd') {
+		else if (cmd === '-wpadd') {
 			output = await this.evalWpAdd(tokens);
 		}
-		else if (cmd == '-wprm') {
+		else if (cmd === '-wprm') {
 			output = await this.evalWpRemove(tokens);
 		}
-		else if (cmd == '-sprites') {
+		else if (cmd === '-sprites') {
 			output = await this.evalSprites(tokens);
 		}
-		else if (cmd == '-state') {
+		else if (cmd === '-state') {
 			output = await this.evalStateSaveRestore(tokens);
 		}
 		// Debug commands
-		else if (cmd == '-dbg') {
+		else if (cmd === '-dbg') {
 			output = await this.evalDebug(tokens);
 		}
 		//
@@ -2344,11 +2350,12 @@ export class DebugSessionClass extends DebugSession {
 	protected async evalHelp(_tokens: Array<string>): Promise<string> {
 		const output =
 			`Allowed commands are:
+"-address address": Prints out internal information of the debugger for a 64k address. Can be helpful if you encounter e.g. 'Unverified breakpoints' problems.
 "-dasm address count": Disassembles a memory area. count=number of lines.
 "-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels. It will also return the label if
-the value correspondends to a label.
-"-exec|e cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers".
-"-help|h": This command. Do "-e help" to get all possible ZEsarUX commands.
+the value correspondents to a label.
+"-exec|e cmd args": cmd and args are directly passed to the remote (ZEsarUX, CSpect, ...). E.g. "-exec get-registers".
+"-help|h": This command. Do "-e help" to get all possible remote (ZEsarUX, CSpect, ...) commands.
 "-label|-l XXX": Returns the matching labels (XXX) with their values. Allows wildcard "*".
 "-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes.
   But if chosen, words are output. Last argument is the endianness which is little endian by default.
@@ -2450,13 +2457,13 @@ E.g. use "-help -view" to put the help text in an own view.
 		let result;
 		// Evaluate
 		const value = Utility.evalExpression(expr);
-		// convert to decimal
+		// Convert to decimal
 		result = value.toString();
-		// convert also to hex
+		// Convert also to hex
 		result += ', ' + value.toString(16).toUpperCase() + 'h';
-		// convert also to bin
+		// Convert also to bin
 		result += ', ' + value.toString(2) + 'b';
-		// check for label
+		// Check for label
 		const labels = Labels.getLabelsPlusIndexForNumber64k(value);
 		if (labels.length > 0) {
 			result += ', ' + labels.join(', ');
@@ -2564,7 +2571,6 @@ E.g. use "-help -view" to put the help text in an own view.
 			count = Utility.evalExpression(countString);
 		}
 
-
 		// Get memory
 		const data = await Remote.readMemoryDump(address, 4 * count);
 
@@ -2575,6 +2581,78 @@ E.g. use "-help -view" to put the help text in an own view.
 		let txt = '';
 		for (const line of dasmArray) {
 			txt += Utility.getHexString(line.address, 4) + '\t' + line.instruction + '\n';
+		}
+
+		// Send response
+		return txt;
+	}
+
+
+	/** Prints out internal information for an address.
+	 * Helpful to trace down 'Unverified breakpoint' problems.
+	 * @param tokens The arguments. I.e. the address.
+	 * @returns A Promise with a text to print.
+	 */
+	protected async evalAddress(tokens: Array<string>): Promise<string> {
+		// Check count of arguments
+		if (tokens.length > 1) {
+			// Error Handling
+			throw new Error("Too many arguments.");
+		}
+
+		// One or none arguments ?
+		const slots = Remote.getSlots();
+		let txt = '';
+		if (tokens.length == 1) {
+			// One argument:
+			// Get address
+			const addressString = tokens[0];
+			const addr64k = Utility.evalExpression(addressString);
+			if (isNaN(addr64k)) {
+				// Error Handling: No number
+				throw new Error("The given address is no number.");
+			}
+			txt += 'Address: ' + addr64k + ', (' + Utility.getHexString(addr64k, 4) + 'h)\n';
+
+			// Convert to long address
+			const address = Z80Registers.createLongAddress(addr64k, slots);
+			txt += 'Slots: [' + slots.join(', ') + ']\n';
+			txt += 'Long address: ' + address + ', (' + Utility.getHexString(address, 6) + 'h)\n';
+
+			// Check labels
+			txt += 'Label: ';
+			const labels = Labels.getLabelsForLongAddress(address);
+			if (labels.length > 0) {
+				txt += hjoin.join(labels, {quote: {enabled: true, quoteWith: "'"}}) + '\n';
+			}
+			else {
+				txt += 'None.\n';
+			}
+
+			// Get file and line number
+			const e = Labels.getFileAndLineForAddress(address);
+			txt += 'File: ';
+			if (e.fileName) {
+				txt += e.fileName + ', line: ' + (e.lineNr + 1) + ', size: ' + e.size;
+			}
+			else {
+				txt += 'None.\n';
+			}
+		}
+		else {
+			// Print all address file/line associations.
+			txt += '\nAddress/File/Line associations:\n';
+			let count = 0;
+			for (let addr = 0x0000; addr < 0x10000; addr++) {
+				const lAddr = Z80Registers.createLongAddress(addr, slots);
+				const e = Labels.getFileAndLineForAddress(lAddr);
+				if (e.fileName) {
+					count++;
+					txt += Utility.getHexString(addr, 4) + 'h: ' + e.fileName + ', line: ' + (e.lineNr + 1) + ', size: ' + e.size + '\n';
+				}
+			}
+			if (count == 0)
+				txt += 'None.\n';
 		}
 
 		// Send response
@@ -2889,35 +2967,45 @@ E.g. use "-help -view" to put the help text in an own view.
 	/**
 	* Called eg. if user changes a register value.
 	*/
+
 	protected async setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments) {
 		const ref = args.variablesReference;
 		const name = args.name;
-		const value = Utility.parseValue(args.value);
+		const valueString = args.value;
 
 		ShallowVar.clearChanged();
 
-		// Get variable object
-		const varObj = this.listVariables.getObject(ref);
-		response.success = false;	// will be changed if successful.
+		try {
+			// Get variable object
+			const varObj = this.listVariables.getObject(ref);
+			response.success = false;	// will be changed if successful.
 
-		// Safety check
-		if (varObj) {
-			// Variables can be changed only if not in reverse debug mode
-			const msg = varObj.changeable(name);
-			if (msg) {
-				// Change not allowed e.g. if in reverse debugging
-				response.message = msg;
-			}
-			else {
-				// Set value
-				const formattedString = await varObj.setValue(name, value);
-				// Send response
-				if (formattedString) {
-					response.body = {value: formattedString};
-					response.success = true;
+			// Safety check
+			if (varObj) {
+				// Variables can be changed only if not in reverse debug mode
+				const msg = varObj.changeable(name);
+				if (msg) {
+					// Change not allowed e.g. if in reverse debugging
+					response.message = msg;
+				}
+				else {
+					// Convert string to number
+					const value = Utility.evalExpression(valueString, true);
+					// Set value
+					const formattedString = await varObj.setValue(name, value);
+					// Send response
+					if (formattedString) {
+						response.body = {value: formattedString};
+						response.success = true;
+					}
 				}
 			}
 		}
+		catch (e) {
+			// Some error occurred
+			this.showError(e.message);
+		}
+
 		this.sendResponse(response);
 
 		// Now check what has been changed.
@@ -3560,29 +3648,35 @@ E.g. use "-help -view" to put the help text in an own view.
 	/** Sets the exception breakpoints.
 	 */
 	protected async setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments, request?: DebugProtocol.Request) {
-		// Reformat info to easier access it.
-		const exceptionMap = new Map<string, string>();
-		args.filterOptions!.forEach(filterOption => {
-			exceptionMap.set(filterOption.filterId, filterOption.condition || '');
-		});
+		// Only if filter options are used
+		if (this.exceptionBreakpoints && args.filterOptions) {
 
-		// Enable/disable
-		const [output, bpsSupport, notSupported] = await this.exceptionBreakpoints.setExceptionBreakPoints(exceptionMap);
+			// Reformat info to easier access it.
+			const exceptionMap = new Map<string, string>();
+			args.filterOptions.forEach(filterOption => {
+				exceptionMap.set(filterOption.filterId, filterOption.condition || '');
+			});
 
-		// Prepare response
-		response.body = {
-			breakpoints: bpsSupport.map(bp => ({verified: bp}))
-		};
+			// Enable/disable
+			const [output, bpsSupport, notSupported] = await this.exceptionBreakpoints.setExceptionBreakPoints(exceptionMap);
 
-		// Show warnings for unsupported but enabled breakpoints
-		if (notSupported.length > 0) {
-			const unsupportedString = hjoin.join(notSupported);
-			this.showWarning(unsupportedString + " are not supported by this Remote.");
+			// Prepare response
+			response.body = {
+				breakpoints: bpsSupport.map(bp => ({verified: bp}))
+			};
+
+			// Show warnings for unsupported but enabled breakpoints
+			const len = notSupported.length;
+			if (len > 0) {
+				const unsupportedString = hjoin.join(notSupported, {quote: {enabled: true, quoteWith: "'"}});
+				const isAre = (len == 1) ? "is" : "are";
+				this.showWarning(unsupportedString + " " + isAre + " not supported by this Remote.");
+			}
+
+			// Output
+			if (output)
+				this.debugConsoleAppend(output);
 		}
-
-		// Output
-		if(output)
-			this.debugConsoleAppend(output);
 
 		this.sendResponse(response);
 	}

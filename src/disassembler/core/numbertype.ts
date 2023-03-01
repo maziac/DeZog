@@ -1,4 +1,5 @@
-import * as assert from 'assert';
+import {strict as assert} from 'assert';
+
 
 /// A categorization (and prioritization) of the numbers (labels) in the opcodes.
 /// The higher the number, the higher the priority.

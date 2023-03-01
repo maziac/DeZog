@@ -362,15 +362,6 @@ export class Z80RegistersClass {
 		return this.getFormattedReg(reg, Z80RegisterVarFormat);
 	}
 
-	/**
-	 * Returns the 'hover' formatted register value.
-	 * @param reg The name of the register, e.g. "A" or "BC"
-	 * @returns The formatted string.
-	 */
-	public getHoverFormattedReg(reg: string): string {
-		return this.getFormattedReg(reg, Z80RegisterVarFormat);
-	}
-
 
 	/**
 	 * Returns the register value as a number.

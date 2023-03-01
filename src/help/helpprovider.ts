@@ -94,9 +94,10 @@ li > ul {
 }
 
 /* Donate button. */
-button {
-  background-color: yellow;
-  color: black;
+.button-donate {
+  border: none;
+  background-color: steelblue;
+  color: white;
 }
 
 </style>

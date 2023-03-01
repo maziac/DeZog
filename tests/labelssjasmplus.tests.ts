@@ -6,7 +6,7 @@ import * as os from 'os';
 import * as path from 'path';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {SjasmplusMemoryModel, SjasmplusSldLabelParser} from '../src/labels/sjasmplussldlabelparser';
-import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 
 
@@ -228,7 +228,7 @@ suite('Labels (sjasmplus)', () => {
 				}]
 			};
 			lbls = new LabelsClass();
-			lbls.readListFiles(config, new MemoryModelZxNext());
+			lbls.readListFiles(config, new MemoryModelZxNextTwoRom());
 		});
 
 		test('Start addresses found', () => {
@@ -451,10 +451,25 @@ main.asm|12||0|-1|-1|Z|pages.size:65536,pages.count:32,slots.count:1,slots.adr:0
 				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 			});
 
-			test('Target: MemoryModelZxNext', () => {
-				const mm = new MemoryModelZxNext();
+			test('Target: MemoryModelZxNextOneROM', () => {
+				const mm = new MemoryModelZxNextOneROM();
 				createSldFile(mm);
 
+				assert.equal(parser.createLongAddress(0x0000, 0), 0x0FF0000);
+				assert.equal(parser.createLongAddress(0x2000, 0), 0x1002000);
+				assert.equal(parser.createLongAddress(0x4000, 0), 0x00B4000);
+				assert.equal(parser.createLongAddress(0x6000, 0), 0x00C6000);
+				assert.equal(parser.createLongAddress(0x8000, 0), 0x0058000);
+				assert.equal(parser.createLongAddress(0xA000, 0), 0x006A000);
+				assert.equal(parser.createLongAddress(0xC000, 0), 0x001C000);
+				assert.equal(parser.createLongAddress(0xE000, 0), 0x002E000);
+			});
+
+
+			test('Target: MemoryModelZxNextTwoRom', () => {
+				const mm = new MemoryModelZxNextTwoRom();
+				createSldFile(mm);
+				// TODO: TC and FD
 				assert.equal(parser.createLongAddress(0x0000, 0), 0x0FF0000);
 				assert.equal(parser.createLongAddress(0x2000, 0), 0x1002000);
 				assert.equal(parser.createLongAddress(0x4000, 0), 0x00B4000);
@@ -584,10 +599,25 @@ main.asm|12||0|-1|-1|Z|pages.size:16384,pages.count:4,slots.count:4,slots.adr:0,
 				assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 			});
 
-			test('Target: MemoryModelZxNext', () => {	// NOSONAR
-				const mm = new MemoryModelZxNext();
+			test('Target: MemoryModelZxNextOneROM', () => {	// NOSONAR
+				const mm = new MemoryModelZxNextOneROM();
 				createSldFile(mm);
 
+				assert.equal(parser.createLongAddress(0x0000, 0), 0x0FF0000);
+				assert.equal(parser.createLongAddress(0x2000, 0), 0x1002000);
+				assert.equal(parser.createLongAddress(0x4000, 0), 0x00B4000);
+				assert.equal(parser.createLongAddress(0x6000, 0), 0x00C6000);
+				assert.equal(parser.createLongAddress(0x8000, 0), 0x0058000);
+				assert.equal(parser.createLongAddress(0xA000, 0), 0x006A000);
+				assert.equal(parser.createLongAddress(0xC000, 0), 0x001C000);
+				assert.equal(parser.createLongAddress(0xE000, 0), 0x002E000);
+			});
+
+
+			test('Target: MemoryModelZxNextTwoRom', () => {	// NOSONAR
+				const mm = new MemoryModelZxNextTwoRom();
+				createSldFile(mm);
+// TODO
 				assert.equal(parser.createLongAddress(0x0000, 0), 0x0FF0000);
 				assert.equal(parser.createLongAddress(0x2000, 0), 0x1002000);
 				assert.equal(parser.createLongAddress(0x4000, 0), 0x00B4000);
@@ -738,10 +768,44 @@ main.asm|11||0|-1|-1|Z|pages.size:16384,pages.count:8,slots.count:4,slots.adr:0,
 				assert.equal(parser.createLongAddress(0xE000, 7), 0x8E000);
 			});
 
-			test('Target: MemoryModelZxNext', () => {
-				const mm = new MemoryModelZxNext();
+			test('Target: MemoryModelZxNextOneROM', () => {
+				const mm = new MemoryModelZxNextOneROM();
 				createSldFile(mm);
 
+				assert.equal(parser.createLongAddress(0x4000, 5), 0xB4000);
+				assert.equal(parser.createLongAddress(0x6000, 5), 0xC6000);
+				assert.equal(parser.createLongAddress(0x8000, 2), 0x58000);
+				assert.equal(parser.createLongAddress(0xA000, 2), 0x6A000);
+				assert.equal(parser.createLongAddress(0xC000, 0), 0x1C000);
+				assert.equal(parser.createLongAddress(0xE000, 0), 0x2E000);
+
+				assert.equal(parser.createLongAddress(0xC000, 1), 0x3C000);
+				assert.equal(parser.createLongAddress(0xE000, 1), 0x4E000);
+
+				assert.equal(parser.createLongAddress(0xC000, 2), 0x5C000);
+				assert.equal(parser.createLongAddress(0xE000, 2), 0x6E000);
+
+				assert.equal(parser.createLongAddress(0xC000, 3), 0x7C000);
+				assert.equal(parser.createLongAddress(0xE000, 3), 0x8E000);
+
+				assert.equal(parser.createLongAddress(0xC000, 4), 0x9C000);
+				assert.equal(parser.createLongAddress(0xE000, 4), 0xAE000);
+
+				assert.equal(parser.createLongAddress(0xC000, 5), 0xBC000);
+				assert.equal(parser.createLongAddress(0xE000, 5), 0xCE000);
+
+				assert.equal(parser.createLongAddress(0xC000, 6), 0xDC000);
+				assert.equal(parser.createLongAddress(0xE000, 6), 0xEE000);
+
+				assert.equal(parser.createLongAddress(0xC000, 7), 0xFC000);
+				assert.equal(parser.createLongAddress(0xE000, 7), 0x10E000);
+			});
+
+
+			test('Target: MemoryModelZxNextTwoRom', () => {
+				const mm = new MemoryModelZxNextTwoRom();
+				createSldFile(mm);
+// TODO
 				assert.equal(parser.createLongAddress(0x4000, 5), 0xB4000);
 				assert.equal(parser.createLongAddress(0x6000, 5), 0xC6000);
 				assert.equal(parser.createLongAddress(0x8000, 2), 0x58000);
@@ -920,8 +984,20 @@ main.asm|14||0|-1|-1|Z|pages.size:8192,pages.count:224,slots.count:8,slots.adr:0
 				}, Error);
 			});
 
-			test('Target: MemoryModelZxNext', () => {
-				const mm = new MemoryModelZxNext();
+			test('Target: MemoryModelZxNextOneROM', () => {
+				const mm = new MemoryModelZxNextOneROM();
+				createSldFile(mm);
+
+				for (let bank = 0; bank < 224; bank++) {
+					for (let address = 0; address < 0x10000; address += 0x2000) {
+						const expected = ((bank + 1) << 16) + address;
+						assert.equal(parser.createLongAddress(address, bank), expected);
+					}
+				}
+			});
+
+			test('Target: MemoryModelZxNextTwoRom', () => {
+				const mm = new MemoryModelZxNextTwoRom();
 				createSldFile(mm);
 
 				for (let bank = 0; bank < 224; bank++) {

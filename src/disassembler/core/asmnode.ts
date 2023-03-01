@@ -107,9 +107,10 @@ export class AsmNode {
 	 * @param target The node for which to test if it is loop root.
 	 * @returns true if target is the lowest predecessor of the loop.
 	 */
-	public isLoopRoot(target: AsmNode = this, alreadyProcessed: AsmNode[] = []): boolean{
+	public isLoopRoot(target: AsmNode = this, alreadyProcessed: AsmNode[] = []): boolean {
+		const predecs = [...this.predecessors];
 		// Check predecessors
-		for (const predecessor of this.predecessors) {
+		for (const predecessor of predecs) {
 			// Check if already processed
 			if (alreadyProcessed.includes(predecessor))
 				continue;
@@ -119,14 +120,13 @@ export class AsmNode {
 			if (predecessor.start < target.start)
 				continue;
 			// Check if found
-			if (target == predecessor)
+			if (target === predecessor)
 				return true;
-			// Check recursive
-			if (predecessor.isLoopRoot(target, alreadyProcessed))
-				return true;
+			// Add predecessors of predecessor
+			predecs.push(...predecessor.predecessors);
 		}
 
-		// Nothing found
+		// No loop found
 		return false;
 	}
 

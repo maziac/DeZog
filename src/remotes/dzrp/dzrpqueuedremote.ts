@@ -166,7 +166,7 @@ export class DzrpQueuedRemote extends DzrpRemote {
 		}
 		catch (error) {
 			LogTransport.log("SENT ERROR.");
-			console.log("SENT ERROR.");
+			//console.log("SENT ERROR.");
 			msg.reject(error);
 			// Error will be reported by emit. Treat normally:
 		//	msg.resolve([]);

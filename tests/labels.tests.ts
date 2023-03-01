@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
-import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -489,9 +489,24 @@ suite('Labels', () => {
 			assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 		});
 
-		test('Target: MemoryModelZxNext', () => {
-			const mm = new MemoryModelZxNext();
+		test('Target: MemoryModelZxNextOneROM', () => {
+			const mm = new MemoryModelZxNextOneROM();
 			createParser(mm);
+
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x0FF0000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x1002000);
+			assert.equal(parser.createLongAddress(0x4000, 0), 0x00B4000);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x00C6000);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x0058000);
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x006A000);
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x001C000);
+			assert.equal(parser.createLongAddress(0xE000, 0), 0x002E000);
+		});
+
+		test('Target: MemoryModelZxNextTwoRom', () => {
+			const mm = new MemoryModelZxNextTwoRom();
+			createParser(mm);
+			// TODO: Tests for FC and FD
 
 			assert.equal(parser.createLongAddress(0x0000, 0), 0x0FF0000);
 			assert.equal(parser.createLongAddress(0x2000, 0), 0x1002000);

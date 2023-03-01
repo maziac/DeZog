@@ -100,6 +100,8 @@ export class RemoteBase extends EventEmitter {
 	/// true if Remote supports LOGPOINTs.
 	public supportsLOGPOINT = false;
 
+	/// true if Remote supports break on interrupt (only zsim does).
+	public supportsBreakOnInterrupt = false;
 
 	/// A list for the frames (call stack items). Is cached here.
 	protected listFrames: RefList<CallStackFrame>;
@@ -581,7 +583,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param message If defined the message is shown to the user as error.
 	 */
 	public async terminate(message?: string): Promise<void> {
-		console.log('Remote.terminate(' + message +')');
+		//console.log('Remote.terminate(' + message +')');
 		await this.disconnect();
 		this.emit('terminated', message);
 	}
@@ -651,16 +653,6 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public getVarFormattedReg(reg: string): string {
 		return Z80Registers.getVarFormattedReg(reg);
-	}
-
-
-	/**
-	 * Returns the 'hover' formatted register value.
-	 * @param reg The name of the register, e.g. "A" or "BC"
-	 * @returns The formatted string.
-	 */
-	public getHoverFormattedReg(reg: string): string {
-		return Z80Registers.getHoverFormattedReg(reg);
 	}
 
 
@@ -1256,6 +1248,17 @@ export class RemoteBase extends EventEmitter {
 	}
 
 
+	/** Enables to break on an interrupt.
+	 * Only supported by zsim.
+	 * @param enable true=enable,break on interrupt, other disable.
+	 * @returns false
+	 */
+	public async enableBreakOnInterrupt(enable: boolean): Promise<boolean> {
+		// Overwrite if supported.
+		return false;
+	}
+
+
 	/**
 	 * Returns file name and line number associated with a certain memory address.
 	 * Takes also the disassembled file into account.
@@ -1579,9 +1582,7 @@ export class RemoteBase extends EventEmitter {
 
 		// Special handling for RST 08 (esxdos) as stepInto may not work
 		// if the emulator simulates this.
-		if (ocFlags & OpcodeFlag.BRANCH_ADDRESS
-			&& (ocFlags & OpcodeFlag.CONDITIONAL) == 0
-			&& opcode.code == 0xCF) {
+		if (opcode.code == 0xCF) {
 			// Note: The opcode length for RST 08 is adjusted by the disassembler.
 			// But with the implementation below, we don't require this.
 			if (stepOver) {
@@ -1618,8 +1619,11 @@ export class RemoteBase extends EventEmitter {
 		}
 		// Check for stepOver and CALL/RST
 		else if (stepOver && (ocFlags & OpcodeFlag.CALL)) {
-			// If call and step over we don't need to check the additional
+			// If call/rst and step over we don't need to check the additional
 			// branch address.
+			// We set the 2nd bp, too, just in case the return address is
+			// manipulated. So we would at least catch a manipulation of 1
+			bpAddr2 = bpAddr1 + 1;
 		}
 		// Check for branches (JP, JR, CALL, RST, DJNZ)
 		else if (ocFlags & OpcodeFlag.BRANCH_ADDRESS) {

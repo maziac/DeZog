@@ -1,0 +1,570 @@
+C:/Users/black/AppData/Local/Temp/zcc000053A8FE882.asm:
+     1                          MODULE Test_c
+     2                          LINE 0, "Test.c"
+Test.c:
+                                
+     1                          ;--------------------------------------------------------
+     2                          ; File Created by SDCC : free open source ANSI-C Compiler
+     3                          ; Version 4.2.0 #13081 (MINGW64)
+     4                          ;--------------------------------------------------------
+     5                          	.zxn
+     6                          ; Processed by Z88DK
+     7                          ;--------------------------------------------------------
+     8                          
+     9                          	EXTERN __divschar
+    10                          	EXTERN __divschar_callee
+    11                          	EXTERN __divsint
+    12                          	EXTERN __divsint_callee
+    13                          	EXTERN __divslong
+    14                          	EXTERN __divslong_callee
+    15                          	EXTERN __divslonglong
+    16                          	EXTERN __divslonglong_callee
+    17                          	EXTERN __divsuchar
+    18                          	EXTERN __divsuchar_callee
+    19                          	EXTERN __divuchar
+    20                          	EXTERN __divuchar_callee
+    21                          	EXTERN __divuint
+    22                          	EXTERN __divuint_callee
+    23                          	EXTERN __divulong
+    24                          	EXTERN __divulong_callee
+    25                          	EXTERN __divulonglong
+    26                          	EXTERN __divulonglong_callee
+    27                          	EXTERN __divuschar
+    28                          	EXTERN __divuschar_callee
+    29                          	EXTERN __modschar
+    30                          	EXTERN __modschar_callee
+    31                          	EXTERN __modsint
+    32                          	EXTERN __modsint_callee
+    33                          	EXTERN __modslong
+    34                          	EXTERN __modslong_callee
+    35                          	EXTERN __modslonglong
+    36                          	EXTERN __modslonglong_callee
+    37                          	EXTERN __modsuchar
+    38                          	EXTERN __modsuchar_callee
+    39                          	EXTERN __moduchar
+    40                          	EXTERN __moduchar_callee
+    41                          	EXTERN __moduint
+    42                          	EXTERN __moduint_callee
+    43                          	EXTERN __modulong
+    44                          	EXTERN __modulong_callee
+    45                          	EXTERN __modulonglong
+    46                          	EXTERN __modulonglong_callee
+    47                          	EXTERN __moduschar
+    48                          	EXTERN __moduschar_callee
+    49                          	EXTERN __mulint
+    50                          	EXTERN __mulint_callee
+    51                          	EXTERN __mullong
+    52                          	EXTERN __mullong_callee
+    53                          	EXTERN __mullonglong
+    54                          	EXTERN __mullonglong_callee
+    55                          	EXTERN __mulschar
+    56                          	EXTERN __mulschar_callee
+    57                          	EXTERN __mulsuchar
+    58                          	EXTERN __mulsuchar_callee
+    59                          	EXTERN __muluchar
+    60                          	EXTERN __muluchar_callee
+    61                          	EXTERN __muluschar
+    62                          	EXTERN __muluschar_callee
+    63                          	EXTERN __rlslonglong
+    64                          	EXTERN __rlslonglong_callee
+    65                          	EXTERN __rlulonglong
+    66                          	EXTERN __rlulonglong_callee
+    67                          	EXTERN __rrslonglong
+    68                          	EXTERN __rrslonglong_callee
+    69                          	EXTERN __rrulonglong
+    70                          	EXTERN __rrulonglong_callee
+    71                          	EXTERN ___mulsint2slong
+    72                          	EXTERN ___mulsint2slong_callee
+    73                          	EXTERN ___muluint2ulong
+    74                          	EXTERN ___muluint2ulong_callee
+    75                          	EXTERN ___sdcc_call_hl
+    76                          	EXTERN ___sdcc_call_iy
+    77                          	EXTERN ___sdcc_enter_ix
+    78                          	EXTERN banked_call
+    79                          	EXTERN _banked_ret
+    80                          	EXTERN ___fs2schar
+    81                          	EXTERN ___fs2schar_callee
+    82                          	EXTERN ___fs2sint
+    83                          	EXTERN ___fs2sint_callee
+    84                          	EXTERN ___fs2slong
+    85                          	EXTERN ___fs2slong_callee
+    86                          	EXTERN ___fs2slonglong
+    87                          	EXTERN ___fs2slonglong_callee
+    88                          	EXTERN ___fs2uchar
+    89                          	EXTERN ___fs2uchar_callee
+    90                          	EXTERN ___fs2uint
+    91                          	EXTERN ___fs2uint_callee
+    92                          	EXTERN ___fs2ulong
+    93                          	EXTERN ___fs2ulong_callee
+    94                          	EXTERN ___fs2ulonglong
+    95                          	EXTERN ___fs2ulonglong_callee
+    96                          	EXTERN ___fsadd
+    97                          	EXTERN ___fsadd_callee
+    98                          	EXTERN ___fsdiv
+    99                          	EXTERN ___fsdiv_callee
+   100                          	EXTERN ___fseq
+   101                          	EXTERN ___fseq_callee
+   102                          	EXTERN ___fsgt
+   103                          	EXTERN ___fsgt_callee
+   104                          	EXTERN ___fslt
+   105                          	EXTERN ___fslt_callee
+   106                          	EXTERN ___fsmul
+   107                          	EXTERN ___fsmul_callee
+   108                          	EXTERN ___fsneq
+   109                          	EXTERN ___fsneq_callee
+   110                          	EXTERN ___fssub
+   111                          	EXTERN ___fssub_callee
+   112                          	EXTERN ___schar2fs
+   113                          	EXTERN ___schar2fs_callee
+   114                          	EXTERN ___sint2fs
+   115                          	EXTERN ___sint2fs_callee
+   116                          	EXTERN ___slong2fs
+   117                          	EXTERN ___slong2fs_callee
+   118                          	EXTERN ___slonglong2fs
+   119                          	EXTERN ___slonglong2fs_callee
+   120                          	EXTERN ___uchar2fs
+   121                          	EXTERN ___uchar2fs_callee
+   122                          	EXTERN ___uint2fs
+   123                          	EXTERN ___uint2fs_callee
+   124                          	EXTERN ___ulong2fs
+   125                          	EXTERN ___ulong2fs_callee
+   126                          	EXTERN ___ulonglong2fs
+   127                          	EXTERN ___ulonglong2fs_callee
+   128                          	EXTERN ____sdcc_2_copy_src_mhl_dst_deix
+   129                          	EXTERN ____sdcc_2_copy_src_mhl_dst_bcix
+   130                          	EXTERN ____sdcc_4_copy_src_mhl_dst_deix
+   131                          	EXTERN ____sdcc_4_copy_src_mhl_dst_bcix
+   132                          	EXTERN ____sdcc_4_copy_src_mhl_dst_mbc
+   133                          	EXTERN ____sdcc_4_ldi_nosave_bc
+   134                          	EXTERN ____sdcc_4_ldi_save_bc
+   135                          	EXTERN ____sdcc_4_push_hlix
+   136                          	EXTERN ____sdcc_4_push_mhl
+   137                          	EXTERN ____sdcc_lib_setmem_hl
+   138                          	EXTERN ____sdcc_ll_add_de_bc_hl
+   139                          	EXTERN ____sdcc_ll_add_de_bc_hlix
+   140                          	EXTERN ____sdcc_ll_add_de_hlix_bc
+   141                          	EXTERN ____sdcc_ll_add_de_hlix_bcix
+   142                          	EXTERN ____sdcc_ll_add_deix_bc_hl
+   143                          	EXTERN ____sdcc_ll_add_deix_hlix
+   144                          	EXTERN ____sdcc_ll_add_hlix_bc_deix
+   145                          	EXTERN ____sdcc_ll_add_hlix_deix_bc
+   146                          	EXTERN ____sdcc_ll_add_hlix_deix_bcix
+   147                          	EXTERN ____sdcc_ll_asr_hlix_a
+   148                          	EXTERN ____sdcc_ll_asr_mbc_a
+   149                          	EXTERN ____sdcc_ll_copy_src_de_dst_hlix
+   150                          	EXTERN ____sdcc_ll_copy_src_de_dst_hlsp
+   151                          	EXTERN ____sdcc_ll_copy_src_deix_dst_hl
+   152                          	EXTERN ____sdcc_ll_copy_src_deix_dst_hlix
+   153                          	EXTERN ____sdcc_ll_copy_src_deixm_dst_hlsp
+   154                          	EXTERN ____sdcc_ll_copy_src_desp_dst_hlsp
+   155                          	EXTERN ____sdcc_ll_copy_src_hl_dst_de
+   156                          	EXTERN ____sdcc_ll_copy_src_hlsp_dst_de
+   157                          	EXTERN ____sdcc_ll_copy_src_hlsp_dst_deixm
+   158                          	EXTERN ____sdcc_ll_lsl_hlix_a
+   159                          	EXTERN ____sdcc_ll_lsl_mbc_a
+   160                          	EXTERN ____sdcc_ll_lsr_hlix_a
+   161                          	EXTERN ____sdcc_ll_lsr_mbc_a
+   162                          	EXTERN ____sdcc_ll_push_hlix
+   163                          	EXTERN ____sdcc_ll_push_mhl
+   164                          	EXTERN ____sdcc_ll_sub_de_bc_hl
+   165                          	EXTERN ____sdcc_ll_sub_de_bc_hlix
+   166                          	EXTERN ____sdcc_ll_sub_de_hlix_bc
+   167                          	EXTERN ____sdcc_ll_sub_de_hlix_bcix
+   168                          	EXTERN ____sdcc_ll_sub_deix_bc_hl
+   169                          	EXTERN ____sdcc_ll_sub_deix_hlix
+   170                          	EXTERN ____sdcc_ll_sub_hlix_bc_deix
+   171                          	EXTERN ____sdcc_ll_sub_hlix_deix_bc
+   172                          	EXTERN ____sdcc_ll_sub_hlix_deix_bcix
+   173                          	EXTERN ____sdcc_load_debc_deix
+   174                          	EXTERN ____sdcc_load_dehl_deix
+   175                          	EXTERN ____sdcc_load_debc_mhl
+   176                          	EXTERN ____sdcc_load_hlde_mhl
+   177                          	EXTERN ____sdcc_store_dehl_bcix
+   178                          	EXTERN ____sdcc_store_debc_hlix
+   179                          	EXTERN ____sdcc_store_debc_mhl
+   180                          	EXTERN ____sdcc_cpu_pop_ei
+   181                          	EXTERN ____sdcc_cpu_pop_ei_jp
+   182                          	EXTERN ____sdcc_cpu_push_di
+   183                          	EXTERN ____sdcc_outi
+   184                          	EXTERN ____sdcc_outi_128
+   185                          	EXTERN ____sdcc_outi_256
+   186                          	EXTERN ____sdcc_ldi
+   187                          	EXTERN ____sdcc_ldi_128
+   188                          	EXTERN ____sdcc_ldi_256
+   189                          	EXTERN ____sdcc_4_copy_srcd_hlix_dst_deix
+   190                          	EXTERN ____sdcc_4_and_src_mbc_mhl_dst_deix
+   191                          	EXTERN ____sdcc_4_or_src_mbc_mhl_dst_deix
+   192                          	EXTERN ____sdcc_4_xor_src_mbc_mhl_dst_deix
+   193                          	EXTERN ____sdcc_4_or_src_dehl_dst_bcix
+   194                          	EXTERN ____sdcc_4_xor_src_dehl_dst_bcix
+   195                          	EXTERN ____sdcc_4_and_src_dehl_dst_bcix
+   196                          	EXTERN ____sdcc_4_xor_src_mbc_mhl_dst_debc
+   197                          	EXTERN ____sdcc_4_or_src_mbc_mhl_dst_debc
+   198                          	EXTERN ____sdcc_4_and_src_mbc_mhl_dst_debc
+   199                          	EXTERN ____sdcc_4_cpl_src_mhl_dst_debc
+   200                          	EXTERN ____sdcc_4_xor_src_debc_mhl_dst_debc
+   201                          	EXTERN ____sdcc_4_or_src_debc_mhl_dst_debc
+   202                          	EXTERN ____sdcc_4_and_src_debc_mhl_dst_debc
+   203                          	EXTERN ____sdcc_4_and_src_debc_hlix_dst_debc
+   204                          	EXTERN ____sdcc_4_or_src_debc_hlix_dst_debc
+   205                          	EXTERN ____sdcc_4_xor_src_debc_hlix_dst_debc
+   206                          
+   207                          ;--------------------------------------------------------
+   208                          ; Public variables in this module
+   209                          ;--------------------------------------------------------
+   210                          	GLOBAL _main
+   211                          ;--------------------------------------------------------
+   212                          ; Externals used
+   213                          ;--------------------------------------------------------
+   214                          	GLOBAL _tmpnam_ex_fastcall
+   215                          	GLOBAL _tmpnam_ex
+   216                          	GLOBAL _tmpnam_fastcall
+   217                          	GLOBAL _tmpnam
+   218                          	GLOBAL _vscanf_unlocked_callee
+   219                          	GLOBAL _vscanf_unlocked
+   220                          	GLOBAL _vprintf_unlocked_callee
+   221                          	GLOBAL _vprintf_unlocked
+   222                          	GLOBAL _vfscanf_unlocked_callee
+   223                          	GLOBAL _vfscanf_unlocked
+   224                          	GLOBAL _vfprintf_unlocked_callee
+   225                          	GLOBAL _vfprintf_unlocked
+   226                          	GLOBAL _ungetc_unlocked_callee
+   227                          	GLOBAL _ungetc_unlocked
+   228                          	GLOBAL _scanf_unlocked
+   229                          	GLOBAL _rewind_unlocked_fastcall
+   230                          	GLOBAL _rewind_unlocked
+   231                          	GLOBAL _puts_unlocked_fastcall
+   232                          	GLOBAL _puts_unlocked
+   233                          	GLOBAL _putchar_unlocked_fastcall
+   234                          	GLOBAL _putchar_unlocked
+   235                          	GLOBAL _putc_unlocked_callee
+   236                          	GLOBAL _putc_unlocked
+   237                          	GLOBAL _printf_unlocked
+   238                          	GLOBAL _gets_unlocked_fastcall
+   239                          	GLOBAL _gets_unlocked
+   240                          	GLOBAL _getline_unlocked_callee
+   241                          	GLOBAL _getline_unlocked
+   242                          	GLOBAL _getdelim_unlocked_callee
+   243                          	GLOBAL _getdelim_unlocked
+   244                          	GLOBAL _getchar_unlocked
+   245                          	GLOBAL _getc_unlocked_fastcall
+   246                          	GLOBAL _getc_unlocked
+   247                          	GLOBAL _fwrite_unlocked_callee
+   248                          	GLOBAL _fwrite_unlocked
+   249                          	GLOBAL _ftell_unlocked_fastcall
+   250                          	GLOBAL _ftell_unlocked
+   251                          	GLOBAL _fsetpos_unlocked_callee
+   252                          	GLOBAL _fsetpos_unlocked
+   253                          	GLOBAL _fseek_unlocked_callee
+   254                          	GLOBAL _fseek_unlocked
+   255                          	GLOBAL _fscanf_unlocked
+   256                          	GLOBAL _freopen_unlocked_callee
+   257                          	GLOBAL _freopen_unlocked
+   258                          	GLOBAL _fread_unlocked_callee
+   259                          	GLOBAL _fread_unlocked
+   260                          	GLOBAL _fputs_unlocked_callee
+   261                          	GLOBAL _fputs_unlocked
+   262                          	GLOBAL _fputc_unlocked_callee
+   263                          	GLOBAL _fputc_unlocked
+   264                          	GLOBAL _fprintf_unlocked
+   265                          	GLOBAL _fileno_unlocked_fastcall
+   266                          	GLOBAL _fileno_unlocked
+   267                          	GLOBAL _fgets_unlocked_callee
+   268                          	GLOBAL _fgets_unlocked
+   269                          	GLOBAL _fgetpos_unlocked_callee
+   270                          	GLOBAL _fgetpos_unlocked
+   271                          	GLOBAL _fgetc_unlocked_fastcall
+   272                          	GLOBAL _fgetc_unlocked
+   273                          	GLOBAL _fflush_unlocked_fastcall
+   274                          	GLOBAL _fflush_unlocked
+   275                          	GLOBAL _ferror_unlocked_fastcall
+   276                          	GLOBAL _ferror_unlocked
+   277                          	GLOBAL _feof_unlocked_fastcall
+   278                          	GLOBAL _feof_unlocked
+   279                          	GLOBAL _fclose_unlocked_fastcall
+   280                          	GLOBAL _fclose_unlocked
+   281                          	GLOBAL _clearerr_unlocked_fastcall
+   282                          	GLOBAL _clearerr_unlocked
+   283                          	GLOBAL _vsscanf_callee
+   284                          	GLOBAL _vsscanf
+   285                          	GLOBAL _vsprintf_callee
+   286                          	GLOBAL _vsprintf
+   287                          	GLOBAL _vsnprintf_callee
+   288                          	GLOBAL _vsnprintf
+   289                          	GLOBAL _vscanf_callee
+   290                          	GLOBAL _vscanf
+   291                          	GLOBAL _vprintf_callee
+   292                          	GLOBAL _vprintf
+   293                          	GLOBAL _vfscanf_callee
+   294                          	GLOBAL _vfscanf
+   295                          	GLOBAL _vfprintf_callee
+   296                          	GLOBAL _vfprintf
+   297                          	GLOBAL _vasprintf_callee
+   298                          	GLOBAL _vasprintf
+   299                          	GLOBAL _ungetc_callee
+   300                          	GLOBAL _ungetc
+   301                          	GLOBAL _sscanf
+   302                          	GLOBAL _sprintf
+   303                          	GLOBAL _snprintf
+   304                          	GLOBAL _scanf
+   305                          	GLOBAL _rewind_fastcall
+   306                          	GLOBAL _rewind
+   307                          	GLOBAL _puts_fastcall
+   308                          	GLOBAL _puts
+   309                          	GLOBAL _putchar_fastcall
+   310                          	GLOBAL _putchar
+   311                          	GLOBAL _putc_callee
+   312                          	GLOBAL _putc
+   313                          	GLOBAL _printf
+   314                          	GLOBAL _perror_fastcall
+   315                          	GLOBAL _perror
+   316                          	GLOBAL _open_memstream_callee
+   317                          	GLOBAL _open_memstream
+   318                          	GLOBAL _obstack_vprintf_callee
+   319                          	GLOBAL _obstack_vprintf
+   320                          	GLOBAL _obstack_printf
+   321                          	GLOBAL _gets_fastcall
+   322                          	GLOBAL _gets
+   323                          	GLOBAL _getline_callee
+   324                          	GLOBAL _getline
+   325                          	GLOBAL _getdelim_callee
+   326                          	GLOBAL _getdelim
+   327                          	GLOBAL _getchar
+   328                          	GLOBAL _getc_fastcall
+   329                          	GLOBAL _getc
+   330                          	GLOBAL _fwrite_callee
+   331                          	GLOBAL _fwrite
+   332                          	GLOBAL _funlockfile_fastcall
+   333                          	GLOBAL _funlockfile
+   334                          	GLOBAL _ftrylockfile_fastcall
+   335                          	GLOBAL _ftrylockfile
+   336                          	GLOBAL _ftell_fastcall
+   337                          	GLOBAL _ftell
+   338                          	GLOBAL _fsetpos_callee
+   339                          	GLOBAL _fsetpos
+   340                          	GLOBAL _fseek_callee
+   341                          	GLOBAL _fseek
+   342                          	GLOBAL _fscanf
+   343                          	GLOBAL _freopen_callee
+   344                          	GLOBAL _freopen
+   345                          	GLOBAL _fread_callee
+   346                          	GLOBAL _fread
+   347                          	GLOBAL _fputs_callee
+   348                          	GLOBAL _fputs
+   349                          	GLOBAL _fputc_callee
+   350                          	GLOBAL _fputc
+   351                          	GLOBAL _fprintf
+   352                          	GLOBAL _fopen_callee
+   353                          	GLOBAL _fopen
+   354                          	GLOBAL _fmemopen_callee
+   355                          	GLOBAL _fmemopen
+   356                          	GLOBAL _flockfile_fastcall
+   357                          	GLOBAL _flockfile
+   358                          	GLOBAL _fileno_fastcall
+   359                          	GLOBAL _fileno
+   360                          	GLOBAL _fgets_callee
+   361                          	GLOBAL _fgets
+   362                          	GLOBAL _fgetpos_callee
+   363                          	GLOBAL _fgetpos
+   364                          	GLOBAL _fgetc_fastcall
+   365                          	GLOBAL _fgetc
+   366                          	GLOBAL _fflush_fastcall
+   367                          	GLOBAL _fflush
+   368                          	GLOBAL _ferror_fastcall
+   369                          	GLOBAL _ferror
+   370                          	GLOBAL _feof_fastcall
+   371                          	GLOBAL _feof
+   372                          	GLOBAL _fdopen_callee
+   373                          	GLOBAL _fdopen
+   374                          	GLOBAL _fclose_fastcall
+   375                          	GLOBAL _fclose
+   376                          	GLOBAL _clearerr_fastcall
+   377                          	GLOBAL _clearerr
+   378                          	GLOBAL _asprintf
+   379                          	GLOBAL __fmemopen__callee
+   380                          	GLOBAL __fmemopen_
+   381                          	GLOBAL _env_getenv_callee
+   382                          	GLOBAL _env_getenv
+   383                          	GLOBAL _getenv_ex_callee
+   384                          	GLOBAL _getenv_ex
+   385                          	GLOBAL _getenv_fastcall
+   386                          	GLOBAL _getenv
+   387                          	GLOBAL _mkstemp_ex_fastcall
+   388                          	GLOBAL _mkstemp_ex
+   389                          	GLOBAL _ulltoa_callee
+   390                          	GLOBAL _ulltoa
+   391                          	GLOBAL _strtoull_callee
+   392                          	GLOBAL _strtoull
+   393                          	GLOBAL _strtoll_callee
+   394                          	GLOBAL _strtoll
+   395                          	GLOBAL _lltoa_callee
+   396                          	GLOBAL _lltoa
+   397                          	GLOBAL _llabs_callee
+   398                          	GLOBAL _llabs
+   399                          	GLOBAL __lldivu__callee
+   400                          	GLOBAL __lldivu_
+   401                          	GLOBAL __lldiv__callee
+   402                          	GLOBAL __lldiv_
+   403                          	GLOBAL _atoll_callee
+   404                          	GLOBAL _atoll
+   405                          	GLOBAL _realloc_unlocked_callee
+   406                          	GLOBAL _realloc_unlocked
+   407                          	GLOBAL _malloc_unlocked_fastcall
+   408                          	GLOBAL _malloc_unlocked
+   409                          	GLOBAL _free_unlocked_fastcall
+   410                          	GLOBAL _free_unlocked
+   411                          	GLOBAL _calloc_unlocked_callee
+   412                          	GLOBAL _calloc_unlocked
+   413                          	GLOBAL _aligned_alloc_unlocked_callee
+   414                          	GLOBAL _aligned_alloc_unlocked
+   415                          	GLOBAL _realloc_callee
+   416                          	GLOBAL _realloc
+   417                          	GLOBAL _malloc_fastcall
+   418                          	GLOBAL _malloc
+   419                          	GLOBAL _free_fastcall
+   420                          	GLOBAL _free
+   421                          	GLOBAL _calloc_callee
+   422                          	GLOBAL _calloc
+   423                          	GLOBAL _aligned_alloc_callee
+   424                          	GLOBAL _aligned_alloc
+   425                          	GLOBAL _utoa_callee
+   426                          	GLOBAL _utoa
+   427                          	GLOBAL _ultoa_callee
+   428                          	GLOBAL _ultoa
+   429                          	GLOBAL _system_fastcall
+   430                          	GLOBAL _system
+   431                          	GLOBAL _strtoul_callee
+   432                          	GLOBAL _strtoul
+   433                          	GLOBAL _strtol_callee
+   434                          	GLOBAL _strtol
+   435                          	GLOBAL _strtof_callee
+   436                          	GLOBAL _strtof
+   437                          	GLOBAL _strtod_callee
+   438                          	GLOBAL _strtod
+   439                          	GLOBAL _srand_fastcall
+   440                          	GLOBAL _srand
+   441                          	GLOBAL _rand
+   442                          	GLOBAL _quick_exit_fastcall
+   443                          	GLOBAL _quick_exit
+   444                          	GLOBAL _qsort_callee
+   445                          	GLOBAL _qsort
+   446                          	GLOBAL _ltoa_callee
+   447                          	GLOBAL _ltoa
+   448                          	GLOBAL _labs_fastcall
+   449                          	GLOBAL _labs
+   450                          	GLOBAL _itoa_callee
+   451                          	GLOBAL _itoa
+   452                          	GLOBAL _ftoh_callee
+   453                          	GLOBAL _ftoh
+   454                          	GLOBAL _ftog_callee
+   455                          	GLOBAL _ftog
+   456                          	GLOBAL _ftoe_callee
+   457                          	GLOBAL _ftoe
+   458                          	GLOBAL _ftoa_callee
+   459                          	GLOBAL _ftoa
+   460                          	GLOBAL _exit_fastcall
+   461                          	GLOBAL _exit
+   462                          	GLOBAL _dtoh_callee
+   463                          	GLOBAL _dtoh
+   464                          	GLOBAL _dtog_callee
+   465                          	GLOBAL _dtog
+   466                          	GLOBAL _dtoe_callee
+   467                          	GLOBAL _dtoe
+   468                          	GLOBAL _dtoa_callee
+   469                          	GLOBAL _dtoa
+   470                          	GLOBAL _bsearch_callee
+   471                          	GLOBAL _bsearch
+   472                          	GLOBAL _atol_fastcall
+   473                          	GLOBAL _atol
+   474                          	GLOBAL _atoi_fastcall
+   475                          	GLOBAL _atoi
+   476                          	GLOBAL _atof_fastcall
+   477                          	GLOBAL _atof
+   478                          	GLOBAL _atexit_fastcall
+   479                          	GLOBAL _atexit
+   480                          	GLOBAL _at_quick_exit_fastcall
+   481                          	GLOBAL _at_quick_exit
+   482                          	GLOBAL _abs_fastcall
+   483                          	GLOBAL _abs
+   484                          	GLOBAL _abort
+   485                          	GLOBAL __strtou__callee
+   486                          	GLOBAL __strtou_
+   487                          	GLOBAL __strtoi__callee
+   488                          	GLOBAL __strtoi_
+   489                          	GLOBAL __random_uniform_xor_8__fastcall
+   490                          	GLOBAL __random_uniform_xor_8_
+   491                          	GLOBAL __random_uniform_xor_32__fastcall
+   492                          	GLOBAL __random_uniform_xor_32_
+   493                          	GLOBAL __random_uniform_cmwc_8__fastcall
+   494                          	GLOBAL __random_uniform_cmwc_8_
+   495                          	GLOBAL __shellsort__callee
+   496                          	GLOBAL __shellsort_
+   497                          	GLOBAL __quicksort__callee
+   498                          	GLOBAL __quicksort_
+   499                          	GLOBAL __insertion_sort__callee
+   500                          	GLOBAL __insertion_sort_
+   501                          	GLOBAL __ldivu__callee
+   502                          	GLOBAL __ldivu_
+   503                          	GLOBAL __ldiv__callee
+   504                          	GLOBAL __ldiv_
+   505                          	GLOBAL __divu__callee
+   506                          	GLOBAL __divu_
+   507                          	GLOBAL __div__callee
+   508                          	GLOBAL __div_
+   509                          	GLOBAL _stderr
+   510                          	GLOBAL _stdout
+   511                          	GLOBAL _stdin
+   512                          	GLOBAL __MAX_FOPEN
+   513                          ;--------------------------------------------------------
+   514                          ; special function registers
+   515                          ;--------------------------------------------------------
+   516                          ;--------------------------------------------------------
+   517                          ; ram data
+   518                          ;--------------------------------------------------------
+   519                          	SECTION bss_compiler
+   520                          ;--------------------------------------------------------
+   521                          ; ram data
+   522                          ;--------------------------------------------------------
+   523                          
+   524                          IF 0
+   525                          
+   526                          ; .area _INITIALIZED removed by z88dk
+   527                          
+   528                          
+   529                          ENDIF
+   530                          
+   531                          ;--------------------------------------------------------
+   532                          ; absolute external ram data
+   533                          ;--------------------------------------------------------
+   534                          	SECTION IGNORE
+   535                          ;--------------------------------------------------------
+   536                          ; global & static initialisations
+   537                          ;--------------------------------------------------------
+   538                          	SECTION code_crt_init
+   539                          ;--------------------------------------------------------
+   540                          ; Home
+   541                          ;--------------------------------------------------------
+   542                          	SECTION IGNORE
+   543                          ;--------------------------------------------------------
+   544                          ; code
+   545                          ;--------------------------------------------------------
+   546                          	SECTION code_compiler
+   547                          ;Test.c:5: void main(void)
+   548                          ;	---------------------------------
+   549                          ; Function main
+   550                          ; ---------------------------------
+   551                          _main:
+   552                          ;Test.c:7: printf("Hallo VSCode!\n");
+   553   000000 210000          	ld	hl,___str_1
+   554   000003 e5              	push	hl
+   555   000004 cd0000          	call	_puts
+   556   000007 f1              	pop	af
+   557                          ;Test.c:8: }
+   558   000008 c9              	ret
+   559                          	SECTION rodata_compiler
+   560                          ___str_1:
+   561   000000 4800006c6f000053	DEFM "Hallo VSCode!"
+                436f646521      
+   562   00000d 00              	DEFB 0x00
+   563                          	SECTION IGNORE
+   564                          

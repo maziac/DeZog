@@ -2,18 +2,86 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "npm",
-			"label": "npm",
-			"script": "watch",
-			"problemMatcher": [
-				"$tsc-watch"
+			"label": "watch", // Used by "Launch Extension" in launch.json
+			"dependsOn": [
+				"watch-tsc",
+				"watch-node",
+				"watch-browser"
 			],
-			"isBackground": true,
 			"group": {
 				"kind": "build",
 				"isDefault": true
 			}
 		},
+
+		{
+			"type": "npm",
+			"label": "watch-tsc",
+			"script": "watch-tsc",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+		},
+
+		{
+			"label": "watch-node",
+			"type": "npm",
+			"script": "watch-node",
+			"problemMatcher": {
+				"owner": "watch-node",
+				"pattern": [
+					{
+						// File name and position
+						"regexp": "^\\s*(.+):(\\d+):(\\d+):\\s*$",
+						"file": 1,
+						"line": 2,
+						"column": 3,
+						"message": 1	// Multiline does not work for some reason
+					},
+				],
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": {
+						"regexp": "\\s*\\[watch\\] build started"
+					},
+					"endsPattern": {
+						"regexp": "^\\s*\\[watch\\] build finished"
+					}
+				}
+			},
+			"isBackground": true,
+			"group": "build"
+		},
+
+		{
+			"label": "watch-browser",
+			"type": "npm",
+			"script": "watch-browser",
+			"problemMatcher": {
+				"owner": "watch-browser",
+				"pattern": [
+					{
+						// File name and position
+						"regexp": "^\\s*(.+):(\\d+):(\\d+):\\s*$",
+						"file": 1,
+						"line": 2,
+						"column": 3,
+						"message": 1 // Multiline does not work for some reason
+					},
+				],
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": {
+						"regexp": "\\s*\\[watch\\] build started"
+					},
+					"endsPattern": {
+						"regexp": "^\\s*\\[watch\\] build finished"
+					}
+				}
+			},
+			"isBackground": true,
+			"group": "build"
+		},
+
 		{
 			"label": "Clean SonarLint Problems",
 			"type": "shell",

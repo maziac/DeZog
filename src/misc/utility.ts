@@ -5,7 +5,7 @@ import {Remote} from '../remotes/remotebase';
 import * as fs from 'fs';
 import {UnifiedPath} from './unifiedpath';
 import {Log} from '../log';
-import * as requireFromString from 'require-from-string';
+//import requireFromString from 'require-from-string';
 import * as vm from 'vm';
 import * as jsonc from 'jsonc-parser';
 import {HexNumber} from '../settings/settingscustommemory';
@@ -304,7 +304,7 @@ export class Utility {
 			const exprLabelled = this.replaceVarsWithValues(expr, evalRegisters, modulePrefix, lastLabel);
 
 			// Evaluate
-			const result = eval(exprLabelled);
+			const result = (0, eval)(exprLabelled);	// Indirect call to eval.
 
 			// Check if boolean
 			if (typeof (result) == 'boolean')
@@ -1228,9 +1228,10 @@ export class Utility {
 	 * @param code The js file as a string.
 	 * @param fileName Optional filename to use.
 	 */
+	/*
 	public static requireFromString(code: string, fileName?: string): any {
 		try {
-			return requireFromString(code, fileName);
+			return requireFromString(code, fileName);	// Note: was changed for esbuild but not tested
 		}
 		catch (e) {
 			// e.stack contains the error location with the line number.
@@ -1270,12 +1271,10 @@ export class Utility {
 			// Re-throw
 			throw e;
 
-			/*
-			'ReferenceError: xsuite is not defined\n\tat Object.<anonymous> (/Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/src/firsttests2.ut.jsm:20:1)\n\tat Module._compile (internal/modules/cjs/loader.js:1125:30)\n\tat Object..js (internal/modules/cjs/loader.js:1155:10)\n\tat Module.load (internal/modules/cjs/loader.js:982:32)\n\tat internal/modules/cjs/loader.js:823:14\n\tat Function.<anonymous> (electron/js2c/asar_bundle.js:5:12913)\n\tat Function.<anonymous> (/Volumes/SDDPCIE2TB/Applications/Visual Studio Code.app/C…ostProcess.js:90:14919)\n\tat Function._callActivate (/Volumes/SDDPCIE2TB/Applications/Visual Studio Code.app/Contents/Resources/app/out/vs/workbench/services/extensions/node/extensionHostProcess.js:90:14592)\n\tat /Volumes/SDDPCIE2TB/Applications/Visual Studio Code.app/Contents/Resources/app/out/vs/workbench/services/extensions/node/extensionHostProcess.js:90:12789\n\tat processTicksAndRejections (internal/process/task_queues.js:93:5)\n\tat async Promise.all (index 14)\n\tat async Promise.all (index 0)'
-			*/
+			//'ReferenceError: xsuite is not defined\n\tat Object.<anonymous> (/Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/src/firsttests2.ut.jsm:20:1)\n\tat Module._compile (internal/modules/cjs/loader.js:1125:30)\n\tat Object..js (internal/modules/cjs/loader.js:1155:10)\n\tat Module.load (internal/modules/cjs/loader.js:982:32)\n\tat internal/modules/cjs/loader.js:823:14\n\tat Function.<anonymous> (electron/js2c/asar_bundle.js:5:12913)\n\tat Function.<anonymous> (/Volumes/SDDPCIE2TB/Applications/Visual Studio Code.app/C…ostProcess.js:90:14919)\n\tat Function._callActivate (/Volumes/SDDPCIE2TB/Applications/Visual Studio Code.app/Contents/Resources/app/out/vs/workbench/services/extensions/node/extensionHostProcess.js:90:14592)\n\tat /Volumes/SDDPCIE2TB/Applications/Visual Studio Code.app/Contents/Resources/app/out/vs/workbench/services/extensions/node/extensionHostProcess.js:90:12789\n\tat processTicksAndRejections (internal/process/task_queues.js:93:5)\n\tat async Promise.all (index 14)\n\tat async Promise.all (index 0)'
 		}
 	}
-
+	*/
 
 
 	/**
@@ -1554,7 +1553,7 @@ export class Utility {
 	public static deepCopyContext(src: Object, dest: Object) {
 		Object.keys(src).forEach(key => {
 			const value = src[key];
-			console.log(`key: ${key}, value: ${value}`)
+			//console.log(`key: ${key}, value: ${value}`)
 			if (typeof value === 'object') {
 				Utility.deepCopyContext(value, dest[key]);
 			}

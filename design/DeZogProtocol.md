@@ -115,6 +115,14 @@ DeZog knows with which remote it communicates and chooses the right subset.
 
 ## History
 
+
+### For a future release
+
+- Command to set a port to support setting 0x7FFD (to switch in the right ROM) when loading 128k SNA files.
+- Enabling/disabling of the interrupt. For loading 48k and 128k SNA files: index 0x13 (iff2), bit 2 contains 0=di, 1=ei. https://sinclair.wiki.zxnet.co.uk/wiki/SNA_format (sjasmplus always sets 0),
+- To be a little bit more future proof: Execute a little binary.
+- Note: .nex files do not contain the info at all.
+
 ### 2.0.0
 
 Changed:

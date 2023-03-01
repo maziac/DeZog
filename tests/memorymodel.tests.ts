@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
 import {BankType, MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
-import {MemoryModelColecoVision, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelColecoVision, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 import {Z80Registers, Z80RegistersClass} from '../src/remotes/z80registers';
 import {Settings} from '../src/settings/settings';
 
@@ -871,8 +871,94 @@ suite('MemoryModel', () => {
 		});
 
 
-		test('ZXNEXT', () => {
-			const mm = new MemoryModelZxNext() as any;
+		test('ZXNEXT (MemoryModelZxNextOneROM)', () => {
+			const mm = new MemoryModelZxNextOneROM() as any;
+			assert.equal(mm.slotRanges.length, 8);
+			assert.equal(mm.slotRanges[0].start, 0x0000);
+			assert.equal(mm.slotRanges[0].end, 0x1FFF);
+			assert.equal(mm.slotRanges[0].ioMMu, undefined)
+			assert.equal(mm.slotRanges[1].start, 0x2000);
+			assert.equal(mm.slotRanges[1].end, 0x3FFF);
+			assert.equal(mm.slotRanges[1].ioMMu, undefined);
+			assert.equal(mm.slotRanges[2].start, 0x4000);
+			assert.equal(mm.slotRanges[2].end, 0x5FFF);
+			assert.equal(mm.slotRanges[2].ioMMu, undefined);
+			assert.equal(mm.slotRanges[3].start, 0x6000);
+			assert.equal(mm.slotRanges[3].end, 0x7FFF);
+			assert.equal(mm.slotRanges[3].ioMMu, undefined);
+			assert.equal(mm.slotRanges[4].start, 0x8000);
+			assert.equal(mm.slotRanges[4].end, 0x9FFF);
+			assert.equal(mm.slotRanges[4].ioMMu, undefined);
+			assert.equal(mm.slotRanges[5].start, 0xA000);
+			assert.equal(mm.slotRanges[5].end, 0xBFFF);
+			assert.equal(mm.slotRanges[5].ioMMu, undefined);
+			assert.equal(mm.slotRanges[6].start, 0xC000);
+			assert.equal(mm.slotRanges[6].end, 0xDFFF);
+			assert.equal(mm.slotRanges[6].ioMMu, undefined);
+			assert.equal(mm.slotRanges[7].start, 0xE000);
+			assert.equal(mm.slotRanges[7].end, 0xFFFF);
+			assert.equal(mm.slotRanges[7].ioMMu, undefined);
+
+			assert.equal(mm.initialSlots.length, 8);
+			assert.equal(mm.initialSlots[0], 0xFE);
+			assert.equal(mm.initialSlots[1], 0xFF);
+			assert.equal(mm.initialSlots[2], 10);
+			assert.equal(mm.initialSlots[3], 11);
+			assert.equal(mm.initialSlots[4], 4);
+			assert.equal(mm.initialSlots[5], 5);
+			assert.equal(mm.initialSlots[6], 0);
+			assert.equal(mm.initialSlots[7], 1);
+
+			assert.equal(mm.banks.length, 256);
+			assert.equal(mm.banks[0].name, "BANK0");
+			assert.equal(mm.banks[1].name, "BANK1");
+			assert.equal(mm.banks[223].name, "BANK223");
+			assert.equal(mm.banks[254].name, "ROM");
+			assert.equal(mm.banks[255].name, "ROM");
+			assert.equal(mm.banks[0].shortName, "0");
+			assert.equal(mm.banks[1].shortName, "1");
+			assert.equal(mm.banks[223].shortName, "223");
+			assert.equal(mm.banks[254].shortName, "R");
+			assert.equal(mm.banks[255].shortName, "R");
+
+			assert.equal(mm.banks[0].bankType, BankType.RAM);
+			assert.equal(mm.banks[1].bankType, BankType.RAM);
+			assert.equal(mm.banks[223].bankType, BankType.RAM);
+			assert.equal(mm.banks[255].bankType, BankType.ROM);
+			assert.equal(mm.banks[254].bankType, BankType.ROM);
+
+			const memBanks = mm.getMemoryBanks([254, 255, 6, 5, 3, 0, 251, 6]);
+			assert.equal(memBanks.length, 8);
+			assert.equal(memBanks[0].start, 0x0000);
+			assert.equal(memBanks[0].end, 0x1FFF);
+			assert.equal(memBanks[0].name, "ROM");
+			assert.equal(memBanks[1].start, 0x2000);
+			assert.equal(memBanks[1].end, 0x3FFF);
+			assert.equal(memBanks[1].name, "ROM");
+			assert.equal(memBanks[2].start, 0x4000);
+			assert.equal(memBanks[2].end, 0x5FFF);
+			assert.equal(memBanks[2].name, "BANK6");
+			assert.equal(memBanks[3].start, 0x6000);
+			assert.equal(memBanks[3].end, 0x7FFF);
+			assert.equal(memBanks[3].name, "BANK5");
+			assert.equal(memBanks[4].start, 0x8000);
+			assert.equal(memBanks[4].end, 0x9FFF);
+			assert.equal(memBanks[4].name, "BANK3");
+			assert.equal(memBanks[5].start, 0xA000);
+			assert.equal(memBanks[5].end, 0xBFFF);
+			assert.equal(memBanks[5].name, "BANK0");
+			assert.equal(memBanks[6].start, 0xC000);
+			assert.equal(memBanks[6].end, 0xDFFF);
+			assert.equal(memBanks[6].name, "BANK251");
+			assert.equal(memBanks[7].start, 0xE000);
+			assert.equal(memBanks[7].end, 0xFFFF);
+			assert.equal(memBanks[7].name, "BANK6");
+		});
+
+
+		test('ZXNEXT (MemoryModelZxNextTwoRom)', () => {
+			//TODO
+			const mm = new MemoryModelZxNextTwoRom() as any;
 			assert.equal(mm.slotRanges.length, 8);
 			assert.equal(mm.slotRanges[0].start, 0x0000);
 			assert.equal(mm.slotRanges[0].end, 0x1FFF);
@@ -920,10 +1006,10 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks[0].shortName, "0");
 			assert.equal(mm.banks[1].shortName, "1");
 			assert.equal(mm.banks[223].shortName, "223");
-			assert.equal(mm.banks[252].shortName, "R0a");
-			assert.equal(mm.banks[253].shortName, "R0b");
-			assert.equal(mm.banks[254].shortName, "R1a");
-			assert.equal(mm.banks[255].shortName, "R1b");
+			assert.equal(mm.banks[252].shortName, "R0");
+			assert.equal(mm.banks[253].shortName, "R0");
+			assert.equal(mm.banks[254].shortName, "R1");
+			assert.equal(mm.banks[255].shortName, "R1");
 
 			assert.equal(mm.banks[0].bankType, BankType.RAM);
 			assert.equal(mm.banks[1].bankType, BankType.RAM);
@@ -933,7 +1019,7 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks[254].bankType, BankType.ROM);
 			assert.equal(mm.banks[255].bankType, BankType.ROM);
 
-			const memBanks = mm.getMemoryBanks([254, 255, 6, 5, 3, 0, 251, 6 ]);
+			const memBanks = mm.getMemoryBanks([254, 255, 6, 5, 3, 0, 251, 6]);
 			assert.equal(memBanks.length, 8);
 			assert.equal(memBanks[0].start, 0x0000);
 			assert.equal(memBanks[0].end, 0x1FFF);
@@ -960,6 +1046,7 @@ suite('MemoryModel', () => {
 			assert.equal(memBanks[7].end, 0xFFFF);
 			assert.equal(memBanks[7].name, "BANK6");
 		});
+
 
 		test('COLECOVISION', () => {
 			const mm = new MemoryModelColecoVision() as any;
@@ -1113,8 +1200,38 @@ suite('MemoryModel', () => {
 			assert.equal(Z80Registers.getSlotFromAddress(0xC000), 3);
 		});
 
-		test('ZXNEXT', () => {
-			const mm = new MemoryModelZxNext() as any;
+		test('ZXNEXT (MemoryModelZxNextOneROM)', () => {
+			const mm = new MemoryModelZxNextOneROM() as any;
+			assert.equal(mm.slotRanges.length, 8);
+			const slots = [7, 6, 5, 4, 3, 2, 1, 0];	// 8 slots a 8K
+
+			// Z80Registers
+			Z80RegistersClass.createRegisters();
+			mm.init();
+
+			// Long address
+			assert.equal(Z80Registers.createLongAddress(0x0000, slots), 0x080000);
+			assert.equal(Z80Registers.createLongAddress(0x2000, slots), 0x072000);
+			assert.equal(Z80Registers.createLongAddress(0x4000, slots), 0x064000);
+			assert.equal(Z80Registers.createLongAddress(0x6000, slots), 0x056000);
+			assert.equal(Z80Registers.createLongAddress(0x8000, slots), 0x048000);
+			assert.equal(Z80Registers.createLongAddress(0xA000, slots), 0x03A000);
+			assert.equal(Z80Registers.createLongAddress(0xC000, slots), 0x02C000);
+			assert.equal(Z80Registers.createLongAddress(0xE000, slots), 0x01E000);
+
+			// Slots
+			assert.equal(Z80Registers.getSlotFromAddress(0x0000), 0);
+			assert.equal(Z80Registers.getSlotFromAddress(0x2000), 1);
+			assert.equal(Z80Registers.getSlotFromAddress(0x4000), 2);
+			assert.equal(Z80Registers.getSlotFromAddress(0x6000), 3);
+			assert.equal(Z80Registers.getSlotFromAddress(0x8000), 4);
+			assert.equal(Z80Registers.getSlotFromAddress(0xA000), 5);
+			assert.equal(Z80Registers.getSlotFromAddress(0xC000), 6);
+			assert.equal(Z80Registers.getSlotFromAddress(0xE000), 7);
+		});
+
+		test('ZXNEXT (MemoryModelZxNextTwoRom)', () => {
+			const mm = new MemoryModelZxNextTwoRom() as any;
 			assert.equal(mm.slotRanges.length, 8);
 			const slots = [7, 6, 5, 4, 3, 2, 1, 0];	// 8 slots a 8K
 

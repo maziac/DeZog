@@ -1,4 +1,4 @@
-import * as assert from 'assert';
+import {strict as assert} from 'assert';
 
 
 export const MAX_MEM_SIZE = 0x10000;

@@ -3,8 +3,8 @@ import {SmartDisassembler} from "./smartdisassembler";
 import {Subroutine} from "./core/subroutine";
 
 // From: https://github.com/aduh95/viz.js
-//const renderGraphviz = require('@aduh95/viz.js/sync');	// I couldn't transfer this into an "import" statement
-const dot2svg = require("@aduh95/viz.js/async");
+//const dot2svg = require("@aduh95/viz.js/async");
+const dot2svg = require("@aduh95/viz.js/sync");
 
 
 /** Base class with common functions for RenderFlowChart, RenderCallGraph and RenderText (RenderHtml)
@@ -210,17 +210,22 @@ export class RenderBase {
 
 
 	/** Renders the givens lines with graphviz.
-	 * Renders asynchronously.
-	 * This is faster: about 70% of the synchronous version.
-	 * For both, asynchronous and synchronous, the first rendertakes longer.
+	 * Renders synchronously because the worker thread in the vsix does not work, most probably because of esbuild.
+	 * The sync api is about 30% slower than the asynchronous one.
+	 * For both, asynchronous and synchronous, the first render takes longer.
+	 * Please note that for pathological cases (e.g. all RST 10h in all memory
+	 * the graph would become too large and duh95/viz.js generates an
+	 * error because the callstack is used up.
 	 * @param lines The string array to render.
 	 * @return The adjusted SVG text.
 	 */
 	protected async renderLines(lines: string[]): Promise<string> {
 		const text = lines.join('\n');
 
-		// Render
-		let rendered = await dot2svg(text);
+		// Render (the async api has a problem when using in a vsix, probably because of esbuild)
+		//let rendered = await dot2svg(text);
+		let rendered = dot2svg(text);
+
 		// Adjust
 		rendered = this.adjustSvg(rendered);
 

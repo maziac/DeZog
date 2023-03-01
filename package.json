@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.0.0",
+	"version": "3.2.2-rc3",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum.",
 	"author": {
@@ -16,8 +16,8 @@
 		"assembler"
 	],
 	"engines": {
-		"vscode": "^1.71.0",
-		"node": "^16.14.0"
+		"vscode": ">=1.71.0",
+		"node": ">=16.14.0"
 	},
 	"icon": "assets/icon.png",
 	"categories": [
@@ -31,50 +31,52 @@
 	"sponsor": {
 		"url": "https://github.com/sponsors/maziac"
 	},
+	"files": [],
 	"scripts": {
 		"compile": "tsc -p ./",
-		"tslint": "eslint ./**/*.ts",
-		"watch": "tsc -w -p ./",
-		"test": "mocha -u tdd ./out/tests/",
+		"watch-tsc": "tsc -w -p ./",
+		"test": "mocha -u tdd ./out/tests/ --exit",
+		"vscode:prepublish": "npm run esbuild-node -- --minify && npm run esbuild-browser -- --minify",
+		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --external:@aduh95 --format=cjs --platform=node",
+		"esbuild-browser": "esbuild ./src/remotes/zsimulator/zsimwebview/main.ts ./src/html/donate.ts --bundle --outdir=out --platform=browser",
+		"watch-node": "npm run esbuild-node -- --sourcemap --watch",
+		"watch-browser": "npm run esbuild-browser -- --sourcemap --watch",
 		"package": "vsce package",
-		"publish": "vsce publish"
+		"package:small": "file=$npm_package_name-$npm_package_version.vsix ; vsce package --ignoreFile .vscodeignore_small --out $file ; zip $file.zip $file",
+		"check-env": "node -e 'console.log(process.env)' | grep npm"
 	},
-	"files": [],
 	"dependencies": {
 		"@aduh95/viz.js": "^3.7.0",
 		"@bartificer/human-join": "^1.1.3",
 		"@vscode/debugadapter": "^1.57.0",
 		"@vscode/debugprotocol": "^1.57.0",
-		"await-notify": "1.0.1",
-		"binary-file": "^0.2.3",
 		"fast-glob": "^3.2.12",
 		"gif-writer": "^0.9.4",
-		"glob": "^8.0.3",
 		"intel-hex": "^0.1.2",
 		"jsonc-parser": "^3.2.0",
 		"leader-line": "^1.0.7",
+		"minimatch": "^7.2.0",
 		"node-gzip": "^1.1.2",
 		"posthtml": "^0.16.6",
 		"posthtml-toc": "^1.0.3",
-		"require-from-string": "^2.0.2",
 		"rng": "^0.2.2",
 		"serialport": "^10.4.0",
-		"showdown": "^2.1.0",
-		"ts-node": "^10.9.1"
+		"showdown": "^2.1.0"
 	},
 	"devDependencies": {
 		"@types/mocha": "10.0.0",
-		"@types/node": "18.8.2",
+		"@types/node": "^18.8.2",
 		"@types/vscode": "^1.71.0",
-		"@vscode/debugadapter-testsupport": "^1.57.0",
-		"mocha": "^10.0.0",
+		"@types/vscode-webview": "^1.57.0",
+		"esbuild": "^0.17.10",
+		"mocha": "^10.2.0",
 		"source-map-support": "^0.5.21",
 		"typescript": "^4.8.4"
 	},
 	"bugs": {
 		"url": "https://github.com/maziac/DeZog/issues"
 	},
-	"main": "./out/src/extension",
+	"main": "./out/extension.js",
 	"activationEvents": [
 		"onStartupFinished"
 	],
@@ -718,7 +720,8 @@
 								"items": {
 									"type": "object",
 									"required": [
-										"path"
+										"path",
+										"mapFile"
 									],
 									"properties": {
 										"path": {
@@ -744,7 +747,41 @@
 										},
 										"mapFile": {
 											"type": "string",
-											"description": "Is required only for z88dk. The map file is required to correctly parse the label values and to get correct file/line to address associations.",
+											"description": "The map file is required to correctly parse the label values and to get correct file/line to address associations.",
+											"default": 0
+										}
+									}
+								}
+							},
+							"z88dkv2": {
+								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
+								"type": "array",
+								"items": {
+									"type": "object",
+									"required": [
+										"path",
+										"mapFile"
+									],
+									"properties": {
+										"path": {
+											"type": "string",
+											"description": "Path to the assembler .list file."
+										},
+										"srcDirs": {
+											"type": "array",
+											"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here as an array of strings. All dirs are relative to the 'rootFolder'.",
+											"default": [
+												""
+											]
+										},
+										"excludeFiles": {
+											"type": "array",
+											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
+											"default": []
+										},
+										"mapFile": {
+											"type": "string",
+											"description": "The map file is required to correctly parse the label values and to get correct file/line to address associations.",
 											"default": 0
 										}
 									}

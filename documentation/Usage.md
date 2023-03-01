@@ -1,7 +1,7 @@
 # Usage of DeZog - the VS Code Z80 Debugger
 
 
-This document describes the features of DeZog and how they can be used.
+This document outlines the functionalities of DeZog and provides instructions on how to utilize them.
 
 If watched inside vscode you can use "CTRL-F" to search for certain topics.
 
@@ -59,7 +59,7 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 
 ## Migration from a previous DeZog version
 
-If you installed DeZog before, [here](https://github.com/maziac/DeZog/blob/master/documentation/Migration.md) are a few tips to migrate to the current version.
+If you migrate from an older version of DeZog you can find [here](https://github.com/maziac/DeZog/blob/master/documentation/Migration.md) a few helpful tips.
 
 
 ## Supported Assemblers
@@ -99,14 +99,14 @@ This is **not required**.
 If you work with an emulator you would start the emulator once and then let it running.
 When you start a debug session DeZog will connect to it, **transfer the program to the emulator** and start the program.
 When you stop the debug session DeZog will disconnect from the emulator.
-(Disconnecting from the emulator may have the effect of keeping the program running in the emulator. This is simply because the emulator now continues execution).
+(Disconnecting from the emulator may have the effect of keeping the program running in the emulator. This is simply because the emulator now continues execution.)
 
 I.e. your workflow is as follows:
 1. Start vscode
 2. Start the emulator (or even several emulators/remotes)
 3. Create a binary of your assembler program
 4. Start DeZog
-5. Debug memory
+5. Debug
 6. Stop DeZog
 7. Loop to 3
 
@@ -172,7 +172,6 @@ A typical configuration looks like this:
             "name": "DeZog",
             "remoteType": "zsim",
             "zsim": {
-                "loadZxRom": true
             },
             "sjasmplus": [
                 {
@@ -286,8 +285,8 @@ to either load a .nex, .sna (or .tap) file. On start of the debug session the fi
 On ZEsarUX the .nex, .sna or .tap file is loaded via ZEsarUX's "smartload" command.
 This will give the best emulation for .nex (and .tap) loading as the nex loading can be emulated as well.
 
-For all other remotes (cspect, zsim and zxnext) the .nex or .sna file loading is mainly copying the data into the emulators memory, setting a few registers and starting it.
-For the .sna file this should be fine.
+For all other remotes (cspect, zsim, mame and zxnext) the .nex or .sna file loading is mainly copying the data into the emulators memory, setting a few registers and starting it.
+For the .sna file (apart from ZEsarUX) only zsim will set the port 0x7FFD and the IFF2 register (interrupt enabled) correctly.
 
 For the .nex file there can be some missing initializations.
 Most important to note are:
@@ -823,6 +822,7 @@ Whe the code is executed the variables 'portAddress' and 'portValue' are set wit
 Notes:
 - Banks with same indexes could be used in different slots. 'name' and 'shortName' need to be defined only once.
 - Address ranges without any bank association can be left unassigned.
+- Please find example Z80 code with a custom memory configuration here: [z80-custom-memory-model-sample](https://github.com/maziac/z80-custom-memory-model-sample).
 
 
 ### ZEsarUX
@@ -949,10 +949,7 @@ For this setup you need 2 additional programs: the [CSpect] emulator and the DeZ
 
 The remote type is "cspect".
 CSpect needs to run before the debug session starts and needs to be connected via a socket interface ([DZRP]).
-CSpect does not offer a socket interface to DeZog by itself it needs the help of the [Dezog CSpect Plugin](https://github.com/maziac/DeZogPlugin).
-
-Since CSpect v2.15.2 the DeZogPlugin is included with CSpect.
-For earlier CSpect versions you would have to install it by yourself. Please see [here](https://github.com/maziac/DeZogPlugin/blob/master/Readme.md#plugin-installation).
+CSpect nowadays includes the DeZog plugin, i.e. it comes with CSpect. The sources can be found [here](https://github.com/mikedailly/CSpectPlugins/tree/main/DeZogPlugin).
 
 
 You need to enable CSpect in your Z80 program's launch.json configuration, e.g.:
@@ -1606,8 +1603,8 @@ In the vscode UI LOGPOINT breakpoints can be turned on or off altogether in the 
 
 As LOGPOINTs are organized in groups you can turn on also only specific LOGPOINT groups.
 This is done by editing the LOGPOINTs in vscode (i.e. press the small pecil right to the 'LOGPOINTs' text). You have to pass a space separated list of the groups you want to enable.
-If no group is given always all groups will be enabled (disabled).
 ![](images/exception_bp_logpoint_edited.jpg)
+If no group is given always all groups will be enabled (disabled).
 
 
 Notes:
@@ -1615,6 +1612,18 @@ Notes:
 - LOGPOINTs are not available in ZEsarUX.
 - sjasmplus: If you use label names make sure to use the global name (i.e. full dot notation).
 - LOGPOINTs can do math with fixed labels but not with registers. I.e. ```${b@(my_data+5)}``` will work. It will statically calculate ```my_data+5``` and lookup the memory value. But ```${b@(IX+1)}``` will not work as it would have to dynamically calculate ```IX+1``` at runtime.
+
+
+### Break on Interrupt
+
+When enabling 'Break on Interrupt'
+![](images/exception_bp_breakoninterrupt.jpg)
+the debugger will stop when an interrupt is executed.
+
+This allows to easily find the interrupt routine in case you are doing reverse debugging.
+If you have the sources / know the interrupt address already you could as well put a normal breakpoint in the interrupt routine.
+
+Note: This feature is only available with the internal simulator 'zsim'.
 
 
 ### vscode breakpoint
@@ -2137,7 +2146,7 @@ With 10.3 the compatibility should be restored. See [issue #101](https://github.
     - **Windows** only: Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session. If that is true for you as well you can experiment with the "[loadDelay](#zesarux)" option which adds an additional delay at startup. This mitigates the problem.
 The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).
     - Watchpoint (**WPMEM** aka memory breakpoints) and reverse debugging: There is a subtle problem with the memory breakpoints in ZEsarUX. The cpu-history command (used when reverse debugging) does access the memory the same way as the Z80 cpu emulation does. Thus a read might fire a memory breakpoint in the same way. This results in breaks of the program execution when you would not expect it. The memory read is 4 byte at PC (program counter) and 2 bytes at SP. Often you don't even notice because you don't place a watchpoint (WPMEM) at those places but in case you guard your **stack** with WPMEM you need to be aware of it: You shouldn't guard the top of the stack directly but at least grant 2 extra bytes at the top of the stack that are unguarded. See the [z80-sample-program] for placing the WPMEM correctly.
-- **CSpect** (found with v2.13.0 through 2.16.6)
+- **CSpect** (found with v2.13.0 through at least 2.16.6)
     - The Watchpoints API has side effects and therefore Watchpoints are disabled. See [issue #18](https://github.com/maziac/DeZog/issues/18).
 - **General**
     - **Hovering** does work only on the file that is currently debugged, i.e. where the PC (program counter) points to. This seems to be a restriction of vscode. See [debug-adapter-protocol issue #86](https://github.com/microsoft/debug-adapter-protocol/issues/86).

@@ -6,7 +6,7 @@ import * as path from 'path';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {Z88dkLabelParserV2} from '../src/labels/z88dklabelparserv2';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
-import {MemoryModelAllRam, MemoryModelZxNext} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelZx48k, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 
 suite('Labels (z88dk v2 format)', () => {
 	let lbls;
@@ -144,19 +144,24 @@ suite('Labels (z88dk v2 format)', () => {
 
 				// Compare all addresses
 				const count = listFile.length;
+				let labelCount = 0;
 				for (let lineNr = 0; lineNr < count; lineNr++) {
 					const line = listFile[lineNr];
 					// A valid line looks like: " 18    8001 3E 05        label2:	ld a,5"
-					const match = /^\s*[0-9+]+\s+([0-9a-f]+)\s[0-9a-f]+/i.exec(line);
+					const match = /^\s*[0-9+]+\s+([0-9a-f]+)\s+[0-9a-f]{2}\s/i.exec(line);
 					if (!match)
 						continue;
+					labelCount++;
 					// Valid address line
-					const address = parseInt(match[1], 16);
+					let addr64k = parseInt(match[1], 16);
+					addr64k += 0x8000;	// Correct by ORG 0x8000
+					const address = 0x10000 + addr64k;	// Just 1 bank, MemoryModelAllRam
 					// Check
 					const res = lbls.getFileAndLineForAddress(address);
 					assert.ok(res.fileName.endsWith('main.lis'));
-					assert.equal(lineNr, res.lineNr);
+					assert.equal(res.lineNr, lineNr);
 				}
+				assert.notEqual(labelCount, 0, "No label found");
 			});
 
 
@@ -177,20 +182,56 @@ suite('Labels (z88dk v2 format)', () => {
 
 				// Compare all addresses
 				const count = listFile.length;
+				let labelCount = 0;
 				for (let lineNr = 0; lineNr < count; lineNr++) {
 					const line = listFile[lineNr];
 					// A valid line looks like: " 18    8001 3E 05        label2:	ld a,5"
-					const match = /^\s*[0-9+]+\s+([0-9a-f]+)\s[0-9a-f]+/i.exec(line);
+					const match = /^\s*[0-9+]+\s+([0-9a-f]+)\s+[0-9a-f]{2}\s/i.exec(line);
 					if (!match)
 						continue;
+					labelCount++;
 					// Valid address line
-					const address = parseInt(match[1], 16);
+					let addr64k = parseInt(match[1], 16);
+					addr64k += 0x8000;	// Correct by ORG 0x8000
+					const address = 0x10000 + addr64k;	// Just 1 bank, MemoryModelAllRam
 					// Check
 					let resultAddr = lbls.getAddrForFileAndLine(filename, lineNr);
-					assert.equal(address, resultAddr);
+					assert.equal(resultAddr, address);
 				}
+				assert.notEqual(labelCount, 0, "No label found");
 			});
 
+			test('C-code assembly: Test.c.lis', () => {
+				// Read the list file
+				const config = {
+					z88dkv2: [{
+						path: './tests/data/labels/projects/z88dk/test_c_v2/Test.c.lis',
+						srcDirs: [],	// ListFile-Mode
+						mapFile: "./tests/data/labels/projects/z88dk/test_c_v2/Test.map"
+					}]
+				};
+				lbls.readListFiles(config, new MemoryModelZx48k());
+
+				let res = lbls.getFileAndLineForAddress(0x028FB7);
+				assert.ok(res.fileName.endsWith('Test.c.lis'));
+				assert.equal(res.lineNr, 557);
+
+				res = lbls.getFileAndLineForAddress(0x028FBA);
+				assert.ok(res.fileName.endsWith('Test.c.lis'));
+				assert.equal(res.lineNr, 558);
+
+				res = lbls.getFileAndLineForAddress(0x028FBB);
+				assert.ok(res.fileName.endsWith('Test.c.lis'));
+				assert.equal(res.lineNr, 559);
+
+				res = lbls.getFileAndLineForAddress(0x028FBE);
+				assert.ok(res.fileName.endsWith('Test.c.lis'));
+				assert.equal(res.lineNr, 560);
+
+				res = lbls.getFileAndLineForAddress(0x028FBF);
+				assert.ok(res.fileName.endsWith('Test.c.lis'));
+				assert.equal(res.lineNr, 562);
+			});
 		});
 
 
@@ -407,8 +448,8 @@ labelE000                          = $E000 ; addr, local, , main, , main.asm:22
 		});
 
 
-		test('createLongAddress', () => {
-			const mm = new MemoryModelZxNext();
+		test('createLongAddress MemoryModelZxNextOneROM', () => {
+			const mm = new MemoryModelZxNextOneROM();
 			createParser(mm);
 
 			assert.equal(parser.numberForLabel.get('label0000'), 0x0FF0000);
@@ -421,7 +462,19 @@ labelE000                          = $E000 ; addr, local, , main, , main.asm:22
 			assert.equal(parser.numberForLabel.get('labelE000'), 0x002E000);
 		});
 
-	});
+		test('createLongAddress MemoryModelZxNextTwoRom', () => {
+			const mm = new MemoryModelZxNextTwoRom();
+			createParser(mm);
 
+			assert.equal(parser.numberForLabel.get('label0000'), 0x0FF0000);
+			assert.equal(parser.numberForLabel.get('label2000'), 0x1002000);
+			assert.equal(parser.numberForLabel.get('label4000'), 0x00B4000);
+			assert.equal(parser.numberForLabel.get('label6000'), 0x00C6000);
+			assert.equal(parser.numberForLabel.get('label8000'), 0x0058000);
+			assert.equal(parser.numberForLabel.get('labelA000'), 0x006A000);
+			assert.equal(parser.numberForLabel.get('labelC000'), 0x001C000);
+			assert.equal(parser.numberForLabel.get('labelE000'), 0x002E000);
+		});
+	});
 });
 

@@ -23,7 +23,7 @@ Please read about it in the [ReverseEngineeringUsage.md](ReverseEngineeringUsage
 Anyhow a few changes were done/necessary:
 - The "disableBanking" option was removed from the "sjasmplus" launch.json configuration. If you used it, you need to remove it now from the launch.json.
 - The "zsim" "customMemory" definition was changed. Please refer to the [customMemory](Usage.md#custommemory) section in Usage.md.
-- For "zsim" an additional debug console command is available now: ```-e breakinterrupt on|off```. If turned on the simulator will break when an interrupt is entered. This is helpful for reverse engineering cases to easily find the interrupt address.
+- For "zsim" an additional breakpoint is available 'Break on Interrupt'. If turned on the simulator will break when an interrupt is entered. This is helpful for reverse engineering cases to easily find the interrupt address.
 - "esxdosRst" was removed from the launch.json. See [ReverseEngineeringUsage.md](ReverseEngineeringUsage.md) for a replacement.
 
 
@@ -38,6 +38,7 @@ For z88dk a new/additional parser has been added: "z88dkv2" (Please search [Usag
 The old "z88dk" configuration is still available but will work only for older versions of z88dk.
 
 A note about ZEsarUX: There is currently an incompatibility between ZEsarUX version 10.2 and DeZog. For DeZog 2.7 and DeZog 3.0 please use [ZEsarUX version 10.1](https://github.com/chernandezba/zesarux/releases/tag/ZEsarUX-10.1) instead.
+
 
 # Migrate from DeZog 2.6 to DeZog 2.7
 

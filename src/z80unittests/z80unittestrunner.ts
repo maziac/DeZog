@@ -619,7 +619,6 @@ export class Z80UnitTestRunner {
 
 			// Note: after the first call to debugAdapter.remoteContinue the vscode will take over until dbgCheckUnitTest will finally return (in 'finish')
 			await finish;
-			console.log();
 		}
 		else {
 			// Run: Continue

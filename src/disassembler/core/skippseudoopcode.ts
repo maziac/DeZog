@@ -1,4 +1,4 @@
-import * as assert from 'assert';
+import {strict as assert} from 'assert';
 import {Format} from "./format";
 import {Opcode} from "./opcode";
 

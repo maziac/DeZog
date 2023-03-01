@@ -227,7 +227,7 @@ export class CustomCode extends EventEmitter implements Serializable {
 		const preamble = `
 // Preamble:
 const global = this;
-const API = global.tmpAPI;
+const API = globalThis.tmpAPI;
 // 'tmpAPI' is not visible to customer code. Use 'API' instead.
 delete global.tmpAPI;
 
@@ -303,7 +303,7 @@ API.log('-------------------------------------\\n');`
 	 */
 	public writePort(port: number, value: number) {
 		this.logTstates();
-		LogCustomCode.log('API.writePort(' + Utility.getHexString(port, 4) + 'h , ' + Utility.getHexString(value, 2) + 'h)');
+		LogCustomCode.log('API.writePort(' + Utility.getHexString(port, 4) + 'h, ' + Utility.getHexString(value, 2) + 'h)');
 		// Catch probably errors.
 		try {
 			this.api.writePort(port, value);
@@ -323,7 +323,7 @@ API.log('-------------------------------------\\n');`
 	 */
 	public receivedFromCustomUi(message: any) {
 		LogCustomCode.log('API.receivedFromCustomUi: ' + JSON.stringify(message));
-		if (this.api.receivedFromCustomUi == undefined) {
+		if (this.api.receivedFromCustomUi === undefined) {
 			// Log that a message has been received without receiver.
 			LogCustomCode.log("  But no custom 'this.receivedFromCustomUi' defined.");
 		}
@@ -406,7 +406,7 @@ API.log('-------------------------------------\\n');`
 	public serialize(memBuffer: MemBuffer) {
 		// Write the custom code context (without tmpAPI)
 		const contextString = JSON.stringify(this.context);
-		console.log('serialize:', contextString);
+		//console.log('serialize:', contextString);
 		memBuffer.writeString(contextString);
 	}
 
@@ -417,7 +417,7 @@ API.log('-------------------------------------\\n');`
 	public deserialize(memBuffer: MemBuffer) {
 		// Get the  custom code context (without touching the tmpAPI)
 		const contextString = memBuffer.readString();
-		console.log('deserialize:', contextString);
+		//console.log('deserialize:', contextString);
 		const savedContext = JSON.parse(contextString);
 		// Put into used context
 		Utility.deepCopyContext(savedContext, this.context);

@@ -31,9 +31,6 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	// The socket connection.
 	public socket: Socket;
 
-	// Timeout between sending command and receiving response.
-	protected cmdRespTimeout?: NodeJS.Timeout;
-
 	// The used timeout time. (ms)
 	protected cmdRespTimeoutTime = 500;	// Will be overwritten.
 	protected initCloseRespTimeoutTime = 900;	// Timeout for CMD_INIT and CMD_CLOSE. This is not configurable and depends on vscode internal times.
@@ -49,6 +46,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = true;
 		this.supportsLOGPOINT = true;
+		this.supportsBreakOnInterrupt = false;
 		this.cmdRespTimeoutTime = Settings.launch.mame.socketTimeout * 1000;
 	}
 

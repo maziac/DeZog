@@ -26,6 +26,8 @@ export class CSpectRemote extends DzrpBufferRemote {
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = false;
 		this.supportsLOGPOINT = true;
+		this.supportsBreakOnInterrupt = false;
+
 		this.cmdRespTimeoutTime = Settings.launch.cspect.socketTimeout * 1000;
 	}
 
@@ -60,7 +62,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 		// Handle disconnect
 		this.socket.on('close', hadError => {
 			LogTransport.log('CSpectRemote: closed connection: ' + hadError);
-			console.log('Close.');
+			//console.log('Close.');
 			// Error
 			const err = new Error('CSpect plugin terminated the connection!');
 			this.emit('error', err);
@@ -69,7 +71,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 		// Handle errors
 		this.socket.on('error', err => {
 			LogTransport.log('CSpectRemote: Error: ' + err);
-			console.log('Error: ', err);
+			//console.log('Error: ', err);
 			// Error
 			this.emit('error', err);
 		});
@@ -91,12 +93,18 @@ export class CSpectRemote extends DzrpBufferRemote {
 	 * This will disconnect the socket.
 	 */
 	public async disconnect(): Promise<void> {
-		await super.disconnect();
 		if (!this.socket)
 			return;
 
-		// Send a 'break' request to emulator to stop it if it is running. (Note: does work only with cspect.)
-		await this.pause();
+		// Check if socket is already open.
+		if (this.socket.readyState === 'open') {
+			// Socket is open for communication:
+			// Send a 'break' request to emulator to stop it if it is running. (Note: does work only with cspect.)
+			await this.pause();
+
+			// Disconnect: Removes listeners and sends a CLOSE command.
+			await super.disconnect();
+		}
 
 		return new Promise<void>(resolve => {
 			this.socket?.removeAllListeners();

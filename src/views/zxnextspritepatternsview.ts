@@ -4,7 +4,7 @@ import {BaseView} from './baseview';
 import {ImageConvert} from '../misc/imageconvert';
 import {Utility} from '../misc/utility';
 import * as Random from 'rng';
-import {Log} from '../log';
+
 
 
 /**
@@ -45,7 +45,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 	protected static spritePalettes: Map<number, Array<number>>;
 
 
-	/// The currently selected sprite palette.
+	/// The currently selected sprite palette (in remote).
 	protected static currentPaletteNumber: number;
 
 	/// String that is shown if retrieving was not possible.
@@ -218,8 +218,6 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * @return A palette array. May return undefined if no palette is found.
 	 */
 	protected static staticGetPaletteForSelectedIndex(selectedIndex: PaletteSelection): any {
-
-		Log.log('ZxNextSpritePatternView::staticGetPaletteForSelectedIndex a, selectedIndex=' + selectedIndex + ', currentPaletteNumber=' + ZxNextSpritePatternsView.currentPaletteNumber);
 		let paletteSelection = selectedIndex;
 		if (selectedIndex == PaletteSelection.CURRENT) {
 			switch (ZxNextSpritePatternsView.currentPaletteNumber) {
@@ -237,7 +235,6 @@ export class ZxNextSpritePatternsView extends BaseView {
 		}
 
 		const palette = ZxNextSpritePatternsView.spritePalettes.get(paletteSelection);
-		Log.log('ZxNextSpritePatternView::staticGetPaletteForSelectedIndex b');
 		return palette;
 	}
 
@@ -249,7 +246,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * @param palette The palette to store.
 	 */
 	protected static staticSetPaletteForPaletteNumber(paletteNumber: number, palette: Array<number>) {
-		let selectedIndex = ZxNextSpritePatternsView.staticGetSelectedIndexFromPaletteNumber(paletteNumber);
+		const selectedIndex = ZxNextSpritePatternsView.staticGetSelectedIndexFromPaletteNumber(paletteNumber);
 		ZxNextSpritePatternsView.spritePalettes.set(selectedIndex, palette);
 	}
 
@@ -298,8 +295,11 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * First checks which palette is in use, then loads it from the emulator.
 	 */
 	protected async getSpritesPalette(): Promise<void> {
-		if (ZxNextSpritePatternsView.currentPaletteNumber >= 0) {
-			return;
+		const curPalNumber = ZxNextSpritePatternsView.currentPaletteNumber;
+		if (curPalNumber >= 0) {
+			const avail = ZxNextSpritePatternsView.spritePalettes.get(curPalNumber);
+			if(avail)
+				return;
 		}
 
 		// Get the transparent index
@@ -391,30 +391,22 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 */
 	public async update(reason?: any): Promise<void> {
 		try {
-			Log.log('ZxNextSpritePatternView::update a');
 			// Mark as invalid until pattern have been loaded. (Just used for displaying the "*"
 			this.patternDataValid = !(reason?.step);
-
-			// REMARK: Muss ich verloggen um rauszukriegen wo currentpalette auf -1 gesetzt wird.
 
 			// Load palette if not available
 			await this.getSpritesPalette();
 
 			try {
 				// Get patterns
-				Log.log('ZxNextSpritePatternView::update b');
 				await this.getSpritePatterns();
 			}
 			catch (e) {
 				this.retrievingError = e.message;
 			}
 
-			Log.log('ZxNextSpritePatternView::update c');
-
 			// Create a new web view html code
 			this.setHtml();
-			Log.log('ZxNextSpritePatternView::update d');
-
 		}
 		catch (e) {
 			Remote.emit('warning', e.message);
@@ -530,8 +522,6 @@ export class ZxNextSpritePatternsView extends BaseView {
 			return '<div>' + this.retrievingError + '</div>';
 
 		// Create a string with the table itself.
-		Log.log('ZxNextSpritePatternView::createHtmlTable a');
-
 		let palette = ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
 		Utility.assert(palette);
 		let table = `
@@ -618,8 +608,6 @@ export class ZxNextSpritePatternsView extends BaseView {
 			k++;
 		}
 
-
-		Log.log('ZxNextSpritePatternView::createHtmlTable b');
 		return table;
 	}
 

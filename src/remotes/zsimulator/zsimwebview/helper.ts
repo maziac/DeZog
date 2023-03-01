@@ -1,8 +1,8 @@
-declare var vscode: any;
+import {vscode} from "./vscode-import";
 
 
 // Define class for communication
-class CustomUiApi {
+export class CustomUiApi {
 	/**
 	 * A message has been received from the custom code that
 	 * shall be executed by the custom UI code.
@@ -38,7 +38,8 @@ class CustomUiApi {
 		vscode.postMessage(msg);
 	}
 }
-var UIAPI = new CustomUiApi();
+export const UIAPI = new CustomUiApi();
+globalThis.UIAPI = UIAPI;
 
 
 /**
@@ -64,7 +65,7 @@ var UIAPI = new CustomUiApi();
  * <ui-bit togglemode="false" onchange="my_func(this)"/>
  * You can get the value (e.g. in 'my_func(this)' with 'this.bitvalue'.
  */
-class UiBit extends HTMLElement {
+export class UiBit extends HTMLElement {
 
 	static get observedAttributes() {
 		return ['bitvalue', 'oncolor', 'offcolor', 'togglemode', 'onchange'];
@@ -126,21 +127,22 @@ class UiBit extends HTMLElement {
 
 
 	attributeChangedCallback(name, oldValue, newValue) {
-		if (name == "bitvalue") {
+		if (name === "bitvalue") {
 			(this as any).bitvalue = newValue;
 		}
-		else if (name == "oncolor") {
+		else if (name === "oncolor") {
 			(this as any).oncolor = newValue;
 		}
-		else if (name == "offcolor") {
+		else if (name === "offcolor") {
 			(this as any).offcolor = newValue;
 		}
-		else if (name == "togglemode") {
-			(this as any).togglemode = (newValue == "true");
+		else if (name === "togglemode") {
+			(this as any).togglemode = (newValue === "true");
 		}
-		else if (name == "onchange") {
-			// Note: this.onchange does not work
-			(this as any).onstatechange = eval("() => { " + newValue + " }");
+		else if (name === "onchange") {
+			// Note: eval should not be used with esbuild, instead Function is used:
+			//(this as any).onstatechange = eval("() => { " + newValue + " }");
+			(this as any).onstatechange = new Function(newValue);
 		}
 	}
 
@@ -276,10 +278,9 @@ class UiByte extends HTMLElement {
 		this.bytevalue = (this as any).initialbytevalue;
 
 		// Set onchange
-		for (let i = 0; i < 8; i++) {
-			const bit = (this as any).bits[i];
-			// Onchange
-			if ((this as any).onstatechange) {
+		if ((this as any).onstatechange) {
+			for (let i = 0; i < 8; i++) {
+				const bit = (this as any).bits[i];
 				bit.onstatechange = () => {
 					(this as any).onstatechange();
 				};
@@ -290,24 +291,27 @@ class UiByte extends HTMLElement {
 
 
 	attributeChangedCallback(name, oldValue, newValue) {
-		if (name == "startindex") {
+		if (name === "startindex") {
 			(this as any).startindex = newValue;
 		}
-		else if (name == "bytevalue") {
+		else if (name === "bytevalue") {
 			(this as any).initialbytevalue = parseInt(newValue);
 		}
-		else if (name == "oncolor") {
+		else if (name === "oncolor") {
 			(this as any).oncolor = newValue;
 		}
-		else if (name == "offcolor") {
+		else if (name === "offcolor") {
 			(this as any).offcolor = newValue;
 		}
-		else if (name == "togglemode") {
-			(this as any).togglemode = (newValue == "true");
+		else if (name === "togglemode") {
+			(this as any).togglemode = (newValue === "true");
 		}
-		else if (name == "onchange") {
-			// Note: (this as any).onchange does not work
-			(this as any).onstatechange = eval("() => { " + newValue + " }");
+		else if (name === "onchange") {
+			// Note: eval should not be used with esbuild, instead Function is used:
+			//(this as any).onstatechange = eval("() => { " + newValue + " }");
+			(this as any).onstatechange = new Function(newValue);
+
+			//(this as any).onstatechange = new Function("() => { " + newValue + " }");
 		}
 	}
 

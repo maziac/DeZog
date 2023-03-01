@@ -1,16 +1,15 @@
+import {BeeperBuffer} from "../zxbeeper";
 
-declare var beeperOutput: HTMLElement;
+// Singleton for the audio beeper.
+export let zxAudioBeeper: ZxAudioBeeper;
 
-
-declare interface BeeperBuffer {
-	totalLength: number,	// The length a "normal" audio frame buffer would occupy.
-	startValue: boolean,	// Beeper value start value for the buffer.
-	buffer: Uint16Array,		// Contains the length of the beeper values.
-	bufferLen: number		// The length of buffer. For some reason buffer.length does not work in the webview.
-}
 
 export class ZxAudioBeeper {
 
+	// Create the singleton.
+	public static createZxAudioBeeper(sampleRate: number, beeperOutput: HTMLElement) {
+		zxAudioBeeper = new ZxAudioBeeper(sampleRate, beeperOutput);
+	}
 
 	// Start latency of the system.
 	protected MIN_LATENCY = 0.2; //0.05; //0.1;
@@ -29,7 +28,7 @@ export class ZxAudioBeeper {
 	protected volume: number;
 
 	// Stores the sample rate.
-	protected sampleRate: number;
+	public sampleRate: number;
 
 	// To compare time with Z80 time the start time (after frame rate configuration)
 	// is stored here.
@@ -80,22 +79,18 @@ export class ZxAudioBeeper {
 	// The node used to change the volume.
 	protected gainNode: GainNode;
 
+	// The visual beeper element
+	protected beeperOutput: HTMLElement;
+
 
 	/**
 	 * Constructor.
 	 */
-	constructor(sampleRate: number) {
+	constructor(sampleRate: number, beeperOutput: HTMLElement) {
 		//sampleRate = 22050;
 		this.volume = 0.75;
 		this.ctx = this.createAudioContext(sampleRate);
 		this.sampleRate = this.ctx.sampleRate;
-		if (this.sampleRate != sampleRate) {
-			// Send warning to vscode
-			vscode.postMessage({
-				command: 'warning',
-				text: "Sample rate of " + sampleRate + "Hz could not be set. Try setting it to e.g. " + this.sampleRate + "Hz instead."
-			});
-		}
 		this.fixedFrameLength = Math.ceil(this.MIN_LATENCY/4 * this.sampleRate);
 		this.fixedFrameTime = this.fixedFrameLength / this.sampleRate;
 		this.lastEnqueuedAudioSampleValue = 0;
@@ -113,6 +108,7 @@ export class ZxAudioBeeper {
 		this.prepareNextFrame();
 
 		// Visual update
+		this.beeperOutput = beeperOutput;
 		setInterval(() => {
 			this.updateVisualBeeper();
 		}, this.BEEPER_DISPLAY_AGGREGATE_TIME);
@@ -140,10 +136,27 @@ export class ZxAudioBeeper {
 
 
 	/**
+	 * Resume is called regularly to overcome a Chrome issue:
+	 * https://developer.chrome.com/blog/autoplay/
+	 * Chrome will disallow audio until the user interacts with the page.
+	 * 'resume' should be called on every simulator 'update'.
+	 * If it was suspended it will be activated if meanwhile the user has interacted.
+	 * I.e. with no interaction no audio will be audible.
+	 */
+	public resume() {
+		if (!this.stopped) {
+			if (this.ctx.state === 'suspended')
+				this.ctx.resume();
+		}
+	}
+
+
+	/**
 	 * Sets the volume.
 	 * @param volume [0;1]
 	 */
 	public setVolume(volume: number) {
+	//	this.ctx.resume();
 		this.volume = volume;
 		// Use a "ramp" otherwise changing the volume will introduce some noise
 		this.gainNode.gain.value = this.gainNode.gain.value;	// NOSONAR: required, but I don't know why anymore.
@@ -473,12 +486,12 @@ export class ZxAudioBeeper {
 	protected updateVisualBeeper() {
 		if (this.visualBeeperChanging) {
 			// Display symbol for changing
-			beeperOutput.textContent = '*';
+			this.beeperOutput.textContent = '*';
 			this.visualBeeperChanging = false;
 		}
 		else {
 			// Display 0 or 1
-			beeperOutput.textContent = (this.lastVisualBeeperState) ? "1" : "0";
+			this.beeperOutput.textContent = (this.lastVisualBeeperState) ? "1" : "0";
 		}
 	}
 }

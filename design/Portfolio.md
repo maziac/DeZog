@@ -150,7 +150,7 @@ It is a separate program as the serialport package has tendency to break depende
 
 # DeZogPlugin
 
-Plugin to connect the CSpect emulator with DeZog.
+Plugin to connect the CSpect emulator with DeZog. Is now included in the [CSpect Plugins](https://github.com/mikedailly/CSpectPlugins/tree/main/DeZogPlugin).
 
 
 # dezogif (dezogif.nex)
@@ -162,7 +162,7 @@ A Z80 asssembler program which runs on the ZXNext and serves as (serial) interfa
 
 A plugin for CSpect which connects the (ESP) UART (inside CSpect) with a socket.
 It's used for testing the real UART serial debugging.
-Once the ZX Next dezogif has some stability it is not required anymore.
+Now that the ZX Next dezogif has become stable it is not required anymore.
 
 
 # Related

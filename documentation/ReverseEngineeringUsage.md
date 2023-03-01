@@ -156,6 +156,12 @@ If you get a message in the DEBUG CONSOLE like this: ```Error: No address found 
 The following examples use the [z80-sample-program](https://github.com/maziac/z80-sample-program) assembled for the ZX 48K.
 
 
+Please note: For some pathological cases DeZog might show an error.
+Especially if the created graph would become too large.
+In that case the used tool (duh95/viz.js) will throw an error.
+This could e.g. happen if you fill the complete memory with "RST 10h" (0xD7) and try to create a flowchart.
+
+
 ## Call Graph
 
 The following subroutine

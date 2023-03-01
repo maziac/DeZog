@@ -1,9 +1,36 @@
 # Changelog
 
-# 3.1.0
+# 3.3.0
 - ZEsarUX:
 	- Support for ZEsarUX version 10.3
 	- Closes all ZEsarUX menus (close-all-menus) when a debug session starts
+
+# 3.2.2
+- Fix for #108: Reverse engineering: Call Graph and Flow Chart failing to render
+- Changed disassembly "out (c),f" to "out (c),0"
+
+# 3.2.1
+- Fix for #107: Z80CPU Error: TypeError: Cannot read properties of undefined (reading 'start')
+
+# 3.2.0
+- Changed to esbuild. Package size decreased.
+- zsim: Audio fixed for chrome behavior. Note: audio is not started until the user has interacted with the simulator webview.
+- Fixed an old bug when using different palettes in patterns and sprites view.
+- "-address" debug console command to print out debug information about an address.
+
+# 3.1.2
+- Added option 'Break on Interrupt' in vscode's BREAKPOINTS panel. Therefore the command "-e breakinterrupt on" has been removed.
+- Added missing config attributes for "z88dkv2".
+- Changed "z88dkv2" parser to understand both, 4 and 6 digit addresses.
+- Fixed a problem with disconnecting/reconnecting the ZX Next.
+- "-dbg" debug console command added to help finding the root cause of 'unverified breakpoint' errors.
+- Fixed 'step-back' in unit tests.
+
+# 3.1.1
+- zsim: sna loading now sets IFF2 and port 7FFD.
+
+# 3.1.0
+- Fixed incompatibility with vscode 1.74.
 
 # 3.0.0
 - Better reverse engineering support
@@ -79,7 +106,7 @@ For this there are changes to the "zxnext" launch.json configuration.
 - Documentation for core 03.01.10 debugging updated.
 
 # 2.5.0
-- zsim: Added 'ZX16K' memory model, contributed by lmartorella '[zsim] Support for not-populated slots'.
+- zsim: Added 'ZX16K' memory model, contributed by lmartorella '(zsim) Support for not-populated slots'.
 - zsim: Added 'CUSTOM' memory model to define an arbitrary memory layout.
 - Fixed intellisense for the launch.json.
 

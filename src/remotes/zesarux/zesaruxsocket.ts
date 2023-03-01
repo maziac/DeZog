@@ -197,9 +197,13 @@ export class ZesaruxSocket extends Socket {
 	/**
 	 * Static init method. Creates a new socket object.
 	 * Used in the launchRequest.
+	 * @param socket You can specify a (mock) socket here for unit testing (or leave undefined for normal operation)
 	 */
-	public static Init() {
-		zSocket = new ZesaruxSocket();
+	public static Init(socket?: ZesaruxSocket) {
+		if (socket)
+			zSocket = socket;
+		else
+			zSocket = new ZesaruxSocket();
 		zSocket.init();
 	}
 

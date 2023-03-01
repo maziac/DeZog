@@ -72,8 +72,9 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = false;
 		this.supportsLOGPOINT = true;
+		this.supportsBreakOnInterrupt = false;
 		this.cmdRespTimeoutTime = CMD_RESP_TIMEOUT;
-		console.log('ZxNextSerialRemote: constructor()');
+		//console.log('ZxNextSerialRemote: constructor()');
 	}
 
 
@@ -127,7 +128,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		});
 
 		// Start serial connection
-		console.log('serialPort.open();');
+		//console.log('serialPort.open();');
 		this.serialPort.open();
 	}
 
@@ -138,10 +139,11 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	public async closeSerialPort(): Promise<void> {
 		return new Promise<void>(async resolve => {
 			if (this.serialPort) {
-				console.log('serialPort.close();');
-				this.serialPort.close(() => {
-					console.log('  serialPort.close() -> done');
-					this.serialPort = undefined;
+				//console.log('serialPort.close();');
+				const serialPort = this.serialPort;
+				this.serialPort = undefined;
+				serialPort.close(() => {
+					//console.log('  serialPort.close() -> done');
 					resolve();
 				});
 				return;
@@ -156,17 +158,13 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	 * This will disconnect the serial.
 	 */
 	public async disconnect(): Promise<void> {
+		this.disconnect = async () => {};	// Prohibit that disconnect is executed twice.
+		if (!this.serialPort) {
+			return;
+		}
 		await super.disconnect();
-		return new Promise<void>(async resolve => {
-			if (!this.serialPort) {
-				resolve();
-				return;
-			}
-			await super.disconnect();
-			// Close serial port
-			await this.closeSerialPort();
-			resolve();
-		});
+		// Close serial port
+		await this.closeSerialPort();
 	}
 
 
