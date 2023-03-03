@@ -175,7 +175,7 @@ export class RenderBase {
 			//# sourceURL=updateSliderDepth.js
 		</script>
 		<div id="sliderDepth">
-			Depth:
+			Call depth:
 			<input id="slide" type="range"
 			min="0" max="${maxDepth}"
 			step="1" value="${maxDepth}"
