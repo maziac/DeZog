@@ -1,11 +1,12 @@
 # Changelog
 
 # 3.2.2
-- Fix for #108: Reverse engineering: Call Graph and Flow Chart failing to render
-- Changed disassembly "out (c),f" to "out (c),0"
+- Fix for #108: Reverse engineering: Call Graph and Flow Chart failing to render.
+- Changed disassembly "out (c),f" to "out (c),0".
+- Fixed display of hex number in flowchart.
 
 # 3.2.1
-- Fix for #107: Z80CPU Error: TypeError: Cannot read properties of undefined (reading 'start')
+- Fix for #107: Z80CPU Error: TypeError: Cannot read properties of undefined (reading 'start').
 
 # 3.2.0
 - Changed to esbuild. Package size decreased.
