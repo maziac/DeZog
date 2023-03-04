@@ -1544,19 +1544,14 @@ export class Opcode {
 			valueName = (val >= 0) ? '+' : '';
 			valueName += val.toString();
 		}
+		// E.g. "LD DE,nnnn"
+		else if (this.valueType == NumberType.NUMBER_BYTE) {
+			// byte
+			valueName = Format.getHexFormattedString(this.value, 2);
+		}
 		else {
-			// Add comment
-			if (this.valueType == NumberType.NUMBER_BYTE) {
-				// byte
-				valueName = Format.getHexFormattedString(this.value, 2);
-			}
-			else {
-				// Word, interpret as label
-				if (this.value < 0x100)
-					valueName = Format.getHexFormattedString(this.value, 4);
-				else
-					valueName = funcGetLabel(this.value);
-			}
+			// word
+			valueName = Format.getHexFormattedString(this.value, 4);
 		}
 
 		// Normal disassembly
