@@ -3569,7 +3569,7 @@ E.g. use "-help -view" to put the help text in an own view.
 
 	public async refreshDisassembler(): Promise<void> {
 		try {
-			// Clear the stores call stack values.
+			// Clear the stored call stack values.
 			Disassembly.prepareRefresh();
 
 			// Do disassembly anew

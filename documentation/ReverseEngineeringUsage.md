@@ -100,6 +100,13 @@ Anyhow: If in doubt that the disassembly is recent you can also compare it with 
 which is **always** up-to-date.
 
 
+Some special not about ZX Next disassembly:
+a) There are several ways in the ZX Next to e.g. overlay the ROM area. E.g. although the memory banks may show that ROM is paged in, it might be that this is overlayed by Layer2 RAM. A disassembly would then show the disassembled Layer2 (which is most probably nonsense as Layer2 normally would contain data).
+b) The ZX Next works with 8 banks each with 8k byte size. If disassembled code would pass a bank border the disassembly stops at this point.
+This is simply because it is not safe to assume that the bank will still be paged in when the opcode is executed. E.g. let's assume in the slot 0x8000-0xBFFF there is a call to 0xC000. The disassembly would not follow the address 0xC000.
+This is why a disassembly on a ZX48K may disassembly more code than on a ZX Next: The ZX48K supports no banking so the disassembly can follow the execution flow in all cases. In this example also the subroutine at 0xC000 would be disassembled.
+
+
 ## Disassembly after a break
 
 If you run the program and then manually pause or a breakpoint is reached, DeZog may not be able to show you the previous lines because it simply does not know which addresses have been executed recently.
