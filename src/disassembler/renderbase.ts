@@ -5,7 +5,8 @@ import {Subroutine} from "./core/subroutine";
 // From: https://github.com/aduh95/viz.js
 //const dot2svg = require("@aduh95/viz.js/async");
 //const dot2svg = require("@aduh95/viz.js/sync");
-const {graphviz} = require('node-graphviz');
+//const {graphviz} = require('node-graphviz');
+import {graphviz} from 'node-graphviz';
 
 
 /** Base class with common functions for RenderFlowChart, RenderCallGraph and RenderText (RenderHtml)
