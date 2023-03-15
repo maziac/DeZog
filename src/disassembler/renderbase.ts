@@ -4,7 +4,8 @@ import {Subroutine} from "./core/subroutine";
 
 // From: https://github.com/aduh95/viz.js
 //const dot2svg = require("@aduh95/viz.js/async");
-const dot2svg = require("@aduh95/viz.js/sync");
+//const dot2svg = require("@aduh95/viz.js/sync");
+const {graphviz} = require('node-graphviz');
 
 
 /** Base class with common functions for RenderFlowChart, RenderCallGraph and RenderText (RenderHtml)
@@ -224,10 +225,12 @@ export class RenderBase {
 
 		// Render (the async api has a problem when using in a vsix, probably because of esbuild)
 		//let rendered = await dot2svg(text);
-		let rendered = dot2svg(text);
+		//let rendered = dot2svg(text);
+		let rendered = await graphviz.dot(text, 'svg');
 
 		// Adjust
 		rendered = this.adjustSvg(rendered);
+
 
 		// return
 		return rendered;

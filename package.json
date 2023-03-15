@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.2.2",
+	"version": "3.2.3-rc2",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum.",
 	"author": {
@@ -37,7 +37,7 @@
 		"watch-tsc": "tsc -w -p ./",
 		"test": "mocha -u tdd ./out/tests/ --exit",
 		"vscode:prepublish": "npm run esbuild-node -- --minify && npm run esbuild-browser -- --minify",
-		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --external:@aduh95 --format=cjs --platform=node",
+		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --external:node-graphviz --format=cjs --platform=node",
 		"esbuild-browser": "esbuild ./src/remotes/zsimulator/zsimwebview/main.ts ./src/html/donate.ts --bundle --outdir=out --platform=browser",
 		"watch-node": "npm run esbuild-node -- --sourcemap --watch",
 		"watch-browser": "npm run esbuild-browser -- --sourcemap --watch",
@@ -46,7 +46,6 @@
 		"check-env": "node -e 'console.log(process.env)' | grep npm"
 	},
 	"dependencies": {
-		"@aduh95/viz.js": "^3.7.0",
 		"@bartificer/human-join": "^1.1.3",
 		"@vscode/debugadapter": "^1.57.0",
 		"@vscode/debugprotocol": "^1.57.0",
@@ -56,6 +55,7 @@
 		"jsonc-parser": "^3.2.0",
 		"leader-line": "^1.0.7",
 		"minimatch": "^7.2.0",
+		"node-graphviz": "^0.1.1",
 		"node-gzip": "^1.1.2",
 		"posthtml": "^0.16.6",
 		"posthtml-toc": "^1.0.3",
