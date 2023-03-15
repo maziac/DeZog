@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.2.2",
+	"version": "3.3.0-rc1",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum.",
 	"author": {
@@ -35,12 +35,9 @@
 	"scripts": {
 		"compile": "tsc -p ./",
 		"watch-tsc": "tsc -w -p ./",
-		"test": "mocha -u tdd ./out/tests/ --exit",
-		"vscode:prepublish": "npm run esbuild-node -- --minify && npm run esbuild-browser -- --minify",
-		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --external:@aduh95 --format=cjs --platform=node",
-		"esbuild-browser": "esbuild ./src/remotes/zsimulator/zsimwebview/main.ts ./src/html/donate.ts --bundle --outdir=out --platform=browser",
-		"watch-node": "npm run esbuild-node -- --sourcemap --watch",
 		"watch-browser": "npm run esbuild-browser -- --sourcemap --watch",
+		"esbuild-browser": "esbuild ./src/remotes/zsimulator/zsimwebview/main.ts ./src/html/donate.ts --bundle --outdir=out --platform=browser",
+		"test": "mocha -u tdd ./out/tests/ --exit",
 		"package": "vsce package",
 		"package:small": "file=$npm_package_name-$npm_package_version.vsix ; vsce package --ignoreFile .vscodeignore_small --out $file ; zip $file.zip $file",
 		"check-env": "node -e 'console.log(process.env)' | grep npm"
@@ -50,6 +47,7 @@
 		"@bartificer/human-join": "^1.1.3",
 		"@vscode/debugadapter": "^1.57.0",
 		"@vscode/debugprotocol": "^1.57.0",
+		"esbuild": "^0.17.11",
 		"fast-glob": "^3.2.12",
 		"gif-writer": "^0.9.4",
 		"intel-hex": "^0.1.2",
@@ -68,7 +66,6 @@
 		"@types/node": "^18.8.2",
 		"@types/vscode": "^1.71.0",
 		"@types/vscode-webview": "^1.57.0",
-		"esbuild": "^0.17.10",
 		"mocha": "^10.2.0",
 		"source-map-support": "^0.5.21",
 		"typescript": "^4.8.4"
@@ -76,7 +73,7 @@
 	"bugs": {
 		"url": "https://github.com/maziac/DeZog/issues"
 	},
-	"main": "./out/extension.js",
+	"main": "./out/src/extension.js",
 	"activationEvents": [
 		"onStartupFinished"
 	],

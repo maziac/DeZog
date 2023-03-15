@@ -224,7 +224,7 @@ export class RenderBase {
 
 		// Render (the async api has a problem when using in a vsix, probably because of esbuild)
 		//let rendered = await dot2svg(text);
-		let rendered = dot2svg(text);
+		let rendered = dot2svg(text); //TODO: change to await
 
 		// Adjust
 		rendered = this.adjustSvg(rendered);

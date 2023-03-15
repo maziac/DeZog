@@ -5,51 +5,22 @@
 			"label": "watch", // Used by "Launch Extension" in launch.json
 			"dependsOn": [
 				"watch-tsc",
-				"watch-node",
 				"watch-browser"
 			],
 			"group": {
 				"kind": "build",
 				"isDefault": true
-			}
-		},
-
-		{
-			"type": "npm",
-			"label": "watch-tsc",
-			"script": "watch-tsc",
-			"problemMatcher": "$tsc-watch",
-			"isBackground": true,
-		},
-
-		{
-			"label": "watch-node",
-			"type": "npm",
-			"script": "watch-node",
-			"problemMatcher": {
-				"owner": "watch-node",
-				"pattern": [
-					{
-						// File name and position
-						"regexp": "^\\s*(.+):(\\d+):(\\d+):\\s*$",
-						"file": 1,
-						"line": 2,
-						"column": 3,
-						"message": 1	// Multiline does not work for some reason
-					},
-				],
-				"background": {
-					"activeOnStart": true,
-					"beginsPattern": {
-						"regexp": "\\s*\\[watch\\] build started"
-					},
-					"endsPattern": {
-						"regexp": "^\\s*\\[watch\\] build finished"
-					}
-				}
 			},
+		},
+
+		{
+			"label": "watch-tsc",
+			"type": "npm",
+			"script": "watch-tsc",
+			"problemMatcher": [
+				"$tsc-watch"
+			],
 			"isBackground": true,
-			"group": "build"
 		},
 
 		{
@@ -81,7 +52,6 @@
 			"isBackground": true,
 			"group": "build"
 		},
-
 		{
 			"label": "Clean SonarLint Problems",
 			"type": "shell",
