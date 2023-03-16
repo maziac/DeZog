@@ -1,11 +1,6 @@
 import {AsmNode} from "./core/asmnode";
 import {SmartDisassembler} from "./smartdisassembler";
 import {Subroutine} from "./core/subroutine";
-
-// From: https://github.com/aduh95/viz.js
-//const dot2svg = require("@aduh95/viz.js/async");
-//const dot2svg = require("@aduh95/viz.js/sync");
-//const {graphviz} = require('node-graphviz');
 import {graphviz} from 'node-graphviz';
 
 
@@ -223,16 +218,10 @@ export class RenderBase {
 	 */
 	protected async renderLines(lines: string[]): Promise<string> {
 		const text = lines.join('\n');
-
-		// Render (the async api has a problem when using in a vsix, probably because of esbuild)
-		//let rendered = await dot2svg(text);
-		//let rendered = dot2svg(text);
+		// Render
 		let rendered = await graphviz.dot(text, 'svg');
-
 		// Adjust
 		rendered = this.adjustSvg(rendered);
-
-
 		// return
 		return rendered;
 	}

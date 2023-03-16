@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.2.3
+- Fix for #109: Extension host terminated unexpectedly 3 times within the last 5 minutes. aduh95/graphviz.js has been replaced with node-graphviz.
+
 # 3.2.2
 - Fix for #108: Reverse engineering: Call Graph and Flow Chart failing to render.
 - Changed disassembly "out (c),f" to "out (c),0".
