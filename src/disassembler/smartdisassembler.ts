@@ -86,6 +86,7 @@ export class SmartDisassembler {
 	/// A function that formats the long address printed at first in the disassembly.
 	/// Used to add bank information after the address by the disassembler.
 	/// Uses the current slot.
+	/// @returns E.g. "8A4F.2" or "8AF2"
 	public funcFormatLongAddress(addr64k: number): string {
 		// Convert to long address
 		const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
@@ -1001,8 +1002,8 @@ export class SmartDisassembler {
 		// and somewhere else is:
 		//   JP LBL+1
 		if (!label) {
-			// In that case just return the address (with bank)
-			label = this.funcFormatLongAddress(addr64k); // Format.getHexFormattedString(addr64k, 4);
+			// In that case just return the address as hex (with bank)
+			label = Format.stringToHex(this.funcFormatLongAddress(addr64k));
 		}
 
 		// Suffix?

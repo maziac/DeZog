@@ -1544,8 +1544,10 @@ export class Opcode {
 			valueName = (val >= 0) ? '+' : '';
 			valueName += val.toString();
 		}
+
+/* TODO: REMOVE
 		// E.g. "LD DE,nnnn"
-		else if (this.valueType == NumberType.NUMBER_BYTE) {
+		else if (this.valueType == NumberType.NUMBER_BYTE) { 
 			// byte
 			valueName = Format.getHexFormattedString(this.value, 2);
 		}
@@ -1553,6 +1555,20 @@ export class Opcode {
 			// word
 			valueName = Format.getHexFormattedString(this.value, 4);
 		}
+*/
+
+		else if (this.valueType == NumberType.NUMBER_BYTE) {
+			// byte
+			valueName = Format.getHexFormattedString(this.value, 2);
+		}
+		else {
+			// Word, interpret as label
+			if (this.value < 0x100)
+				valueName = Format.getHexFormattedString(this.value, 4);
+			else
+				valueName = funcGetLabel(this.value);
+		}
+
 
 		// Normal disassembly
 		this.disassembledText = util.format(this.name, valueName);

@@ -100,7 +100,7 @@ Anyhow: If in doubt that the disassembly is recent you can also compare it with 
 which is **always** up-to-date.
 
 
-Some special not about ZX Next disassembly:
+Some special notes about ZX Next disassembly:
 a) There are several ways in the ZX Next to e.g. overlay the ROM area. E.g. although the memory banks may show that ROM is paged in, it might be that this is overlayed by Layer2 RAM. A disassembly would then show the disassembled Layer2 (which is most probably nonsense as Layer2 normally would contain data).
 b) The ZX Next works with 8 banks each with 8k byte size. If disassembled code would pass a bank border the disassembly stops at this point.
 This is simply because it is not safe to assume that the bank will still be paged in when the opcode is executed. E.g. let's assume in the slot 0x8000-0xBFFF there is a call to 0xC000. The disassembly would not follow the address 0xC000.
@@ -115,12 +115,12 @@ But of course, you often want to know how you got here.
 There are a few ways you can deal with this:
 - a) Use 'zsim: the internal simulator keeps a list of the most recently executed addresses used by DeZog for disassembly.
 - b) Use the command '-dasm' in the debug console: Simply specify an address slightly before that of the current PC (program counter). 'dasm' will perform a brute force disassembly. But this only works if the 'dasm' address is not too far away from the current PC. And of course it can fail because Z80 commands can be up to 4 bytes long, so you might choose an address somewhere in the middle of a command. In that case, try a slightly different address.
-c) Use '-dasm', but also take a look at the callstack and use the address from the callstack.
+- c) Use '-dasm', but also take a look at the callstack and use the address from the callstack.
 
 
 # Breakpoints
 
-Breakpoints can be set as usual via the Vscode editor.
+Breakpoints can be set as usual via the vscode editor.
 Breakpoints can be set either in the disassembly or in the list file.
 
 Breakpoints "survive" in the disassembly, even if the disassembly is updated.
@@ -165,7 +165,7 @@ The following examples use the [z80-sample-program](https://github.com/maziac/z8
 
 Please note: For some pathological cases DeZog might show an error.
 Especially if the created graph would become too large.
-In that case the used tool (duh95/viz.js) will throw an error.
+In that case the used package (node-graphviz) will throw an error, "Maximum call stack size exceeded".
 This could e.g. happen if you fill the complete memory with "RST 10h" (0xD7) and try to create a flowchart.
 
 
@@ -224,7 +224,6 @@ A smart disassembly of the *main loop* of the z80 sample program looks like this
 That is, you will automatically find the referenced *fill_bckg_line* and *inc_fill_colors_ptr* disassembled as well.
 
 The disassembly also contains the referenced data of this subroutine (and referenced sub-subroutines).
-I.e. even with self-developed code you can easily see to which memory it refers.
 
 If labels already exist, these names are reused. If no labels exist yet, a name is "invented".
 
@@ -288,7 +287,7 @@ The reverse engineering file is specified in the launch.json file with:
 It is parsed by DeZog like other list files.
 DeZog takes the label names from it and associates them with the address for that line.
 
-Please note that you can also specify several entires with different paths or you can use a glob pattern to address several files in one entry.
+Please note that you can also specify several entries with different paths or you can use a glob pattern to address several files in one entry.
 
 ## Addresses
 

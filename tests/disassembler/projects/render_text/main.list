@@ -291,4 +291,28 @@
 289   5312
 290   5312 C9           	RET
 291   5313
+292   5313
+293   5313 00 00 00...  	DEFS 0x6000-$
+294   6000              	; Access through bank border into multi bank slot
+295   6000 11 00 80     	LD DE,0x8000
+296   6003 CD 00 80     	CALL 0x8000
+297   6006
+298   6006              	; Or in same bank
+299   6006 11 00 59     	LD DE,0x5900
+300   6009 01 10 59     	LD BC,0x5910
+301   600C CD 10 59     	CALL 0x5910
+302   600F
+303   600F              	; Access through bank border into single bank slot
+304   600F 11 00 C0     	LD DE,0xC000
+305   6012 01 10 C0     	LD BC,0xC010
+306   6015 CD 10 C0     	CALL 0xC010
+307   6018
+308   6018 C9           	RET
+309   6019
+310   6019 00 00 00...  	DEFS 0x8010-$
+311   8010 C9           	RET
+312   8011
+313   8011 00 00 00...  	DEFS 0xC010-$
+314   C010 C9           	RET
+315   C011
 # file closed: main.asm
