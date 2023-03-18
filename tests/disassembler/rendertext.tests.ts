@@ -33,7 +33,15 @@ suite('Disassembler - RenderText', () => {
 			let addrString = Utility.getHexString(addr64k, 4);
 			const slotBank = (disasm as any).addressesSlotBankInfo[addr64k]
 			if (!slotBank.singleBank) {
-				addrString += '.' + (slotBank.slot+1);	// Fake a bank number by simply using the slot number.
+				addrString += '.' + (slotBank.slot + 1);	// Fake a bank number by simply using the slot number.
+			}
+			return addrString;
+		}
+		disasm.funcFormatLongAddressHex = (addr64k) => {
+			let addrString = Format.getHexFormattedString(addr64k, 4);
+			const slotBank = (disasm as any).addressesSlotBankInfo[addr64k]
+			if (!slotBank.singleBank) {
+				addrString +=  '.' + (slotBank.slot + 1);	// Fake a bank number by simply using the slot number.
 			}
 			return addrString;
 		}

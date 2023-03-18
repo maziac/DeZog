@@ -72,7 +72,8 @@ export class Format {
 	 * @param countDigits The number of digits.
 	 * @returns a string, e.g. "0x04fd".
 	 */
-	public static stringToHex(s: string): string {
+	public static getHexFormattedString(value: number, countDigits = 4): string {
+		let s = this.getHexString(value, countDigits);
 		if (this.hexFormat === '$')
 			s = '$' + s;
 		else if (this.hexFormat === 'h')
@@ -80,18 +81,6 @@ export class Format {
 		else
 			s = '0x' + s;
 		return s;
-	}
-
-
-	/**
-	 * Returns a hex string with a fixed number of digits.
-	 * @param value The value to convert.
-	 * @param countDigits The number of digits.
-	 * @returns a string, e.g. "0x04fd".
-	 */
-	public static getHexFormattedString(value: number, countDigits = 4): string {
-		const s = this.getHexString(value, countDigits);
-		return this.stringToHex(s);
 	}
 
 

@@ -27,6 +27,7 @@ suite('Disassembler - RenderHtml', () => {
 		disasm = new SmartDisassembler();
 		disasm.funcGetLabel = addr64k => undefined;
 		disasm.funcFormatLongAddress = addr64k => Utility.getHexString(addr64k, 4) + '.1';
+		disasm.funcFormatLongAddressHex = addr64k => '$' + Utility.getHexString(addr64k, 4) + '.1';
 		r = new RenderHtml(disasm);
 		r.clmnsAddress = 7;
 		r.clmnsBytes = 10;

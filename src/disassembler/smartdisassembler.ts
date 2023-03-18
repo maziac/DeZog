@@ -10,7 +10,6 @@ import {Subroutine} from './core/subroutine';
 import {Z80Registers} from '../remotes/z80registers';
 import {Labels} from '../labels/labels';
 import {ReverseEngineeringLabelParser} from '../labels/reverseengineeringlabelparser';
-import {Remote} from '../remotes/remotebase';
 import {SkipPseudoOpcode} from './core/skippseudoopcode';
 
 
@@ -68,6 +67,9 @@ export class SmartDisassembler {
 	// Used only by the ReverseEngineeringLabelParser.
 	protected skipAddrs64k = new Map<number, number>();
 
+	// Use setMemoryModel to make the memory model known to the disassembler.
+	protected memoryModel: MemoryModel;
+
 
 	/// Label prefixes
 	public labelSubPrefix = "SUB_";
@@ -92,7 +94,23 @@ export class SmartDisassembler {
 		const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
 		// Formatting
 		let addrString = Utility.getHexString(addr64k, 4);
-		const shortName = Remote.memoryModel.getBankShortNameForAddress(longAddr);
+		const shortName = this.memoryModel.getBankShortNameForAddress(longAddr);
+		if (shortName)
+			addrString += ReverseEngineeringLabelParser.bankSeparator + shortName;
+		return addrString;
+	}
+
+
+	/// A function that formats the long address printed at first in the disassembly.
+	/// Used to add bank information after the address by the disassembler.
+	/// Uses the current slot.
+	/// @returns E.g. "8A4Fh.2" or "8AF2h" or "$8A4Fh.2" or "$8AF2"
+	public funcFormatLongAddressHex(addr64k: number): string {
+		// Convert to long address
+		const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
+		// Formatting
+		let addrString = Format.getHexFormattedString(addr64k, 4);
+		const shortName = this.memoryModel.getBankShortNameForAddress(longAddr);
 		if (shortName)
 			addrString += ReverseEngineeringLabelParser.bankSeparator + shortName;
 		return addrString;
@@ -119,6 +137,7 @@ export class SmartDisassembler {
 	 * @param memModel The memory model obtained from the settings through the Remote.
 	 */
 	public setMemoryModel(memModel: MemoryModel) {
+		this.memoryModel = memModel;
 		const slotLen = memModel.slotRanges.length;
 		for (let slot = 0; slot < slotLen; slot++) {
 			const range = memModel.slotRanges[slot];
@@ -128,7 +147,6 @@ export class SmartDisassembler {
 			const singleBank = (bank.bankType != BankType.UNUSED) && (range.banks.size == 1);
 			this.setSlotBankInfo(range.start, range.end, slot, singleBank);
 		}
-
 	}
 
 
@@ -1003,7 +1021,7 @@ export class SmartDisassembler {
 		//   JP LBL+1
 		if (!label) {
 			// In that case just return the address as hex (with bank)
-			label = Format.stringToHex(this.funcFormatLongAddress(addr64k));
+			label = this.funcFormatLongAddressHex(addr64k);
 		}
 
 		// Suffix?
