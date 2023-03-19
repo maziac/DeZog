@@ -400,7 +400,7 @@ export class DebugSessionClass extends DebugSession {
 			vscode.debug.removeBreakpoints(removeBps);
 
 			// Clear all decorations
-			if (this.state == DbgAdapterState.UNITTEST) {
+			if (this.state === DbgAdapterState.UNITTEST) {
 				// Cancel unit tests
 				await Z80UnitTestRunner.cancelUnitTests();
 				// Clear decoration
@@ -590,7 +590,7 @@ export class DebugSessionClass extends DebugSession {
 		const msg = await this.startEmulator();
 		if (msg) {
 			response.message = msg;
-			response.success = (msg == undefined);
+			response.success = (msg === undefined);
 		}
 		else {
 			// Check if reverse debugging is enabled and send capabilities
@@ -732,12 +732,12 @@ export class DebugSessionClass extends DebugSession {
 					if (Remote instanceof ZSimRemote) {
 						// Start custom code (if not unit test)
 						const zsim = Remote;
-						if (this.state == DbgAdapterState.NORMAL) {
+						if (this.state === DbgAdapterState.NORMAL) {
 							// Special handling for zsim: Re-init custom code.
 							zsim.customCode?.execute();
 						}
 
-						// At the end, if remote type == ZX simulator, open its window.
+						// At the end, if remote type === ZX simulator, open its window.
 						// Note: it was done this way and not in the Remote itself, otherwise
 						// there would be a dependency in RemoteFactory to vscode which in turn
 						// makes problems for the unit tests.
@@ -843,7 +843,7 @@ export class DebugSessionClass extends DebugSession {
 			const lineNr = gbp.line;
 			for (const cbp of currentBreakpoints) {
 				const cLineNr = this.convertDebuggerLineToClient(cbp.lineNr);
-				if (cLineNr == lineNr) {
+				if (cLineNr === lineNr) {
 					foundCbp = cbp;
 					break;
 				}
@@ -903,7 +903,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @returns undefined if filePath is ''.
 	 */
 	private createSource(filePath: string): Source | undefined {
-		if (filePath.length == 0)
+		if (filePath.length === 0)
 			return undefined;
 		const uFilePath = UnifiedPath.getUnifiedPath(filePath);
 		const fname = UnifiedPath.basename(uFilePath);
@@ -1099,7 +1099,7 @@ export class DebugSessionClass extends DebugSession {
 		// Set the right language ID, so that editor title menu buttons can be assigned
 //		vscode.languages.setTextDocumentLanguage(disasmTextDoc, 'disassembly');
 		// Set the path, so that editor title menu buttons can be assigned
-		// Note: For some reason the when clause "resourcePath == dezog.disassembler.disasmPath" in package.json does not work.
+		// Note: For some reason the when clause "resourcePath === dezog.disassembler.disasmPath" in package.json does not work.
 		// But instead "resourcePath in dezog.disassembler.disasmPath" does work.
 		vscode.commands.executeCommand('setContext', 'dezog.disassembler.disasmPath', [absFilePath]);
 		return disasmTextDoc;
@@ -1115,7 +1115,7 @@ export class DebugSessionClass extends DebugSession {
 		const docEditors: vscode.TextEditor[] = [];
 		const editors = vscode.window.visibleTextEditors;
 		for (const editor of editors) {
-			if (editor.document == doc) {
+			if (editor.document === doc) {
 				docEditors.push(editor);
 			}
 		}
@@ -1170,7 +1170,7 @@ export class DebugSessionClass extends DebugSession {
 		const sbps = bps.filter(bp => {
 			if (bp.location) {
 				const sbpSrc = bp.location.uri.fsPath;
-				if (sbpSrc == filePath)
+				if (sbpSrc === filePath)
 					return true;
 			}
 			return false;
@@ -1369,7 +1369,7 @@ export class DebugSessionClass extends DebugSession {
 		// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 
 		// Safety check on termination
-		if (Remote == undefined)
+		if (Remote === undefined)
 			return new StoppedEvent('exception', DebugSessionClass.THREAD_ID);
 
 		// Display break reason
@@ -1385,7 +1385,7 @@ export class DebugSessionClass extends DebugSession {
 		await this.endStepInfo();
 
 		// Check if in unit test mode
-		if (this.state == DbgAdapterState.UNITTEST) {
+		if (this.state === DbgAdapterState.UNITTEST) {
 			const finished = await Z80UnitTestRunner.dbgCheckUnitTest(breakReasonString);
 			if (!finished) {
 				this.sendEventBreakAndUpdate();
@@ -1595,7 +1595,7 @@ export class DebugSessionClass extends DebugSession {
 				const pc = Remote.getPCLong();
 				const nextFileLoc = Labels.getFileAndLineForAddress(pc);
 				// Compare with start location
-				if (prevFileLoc.fileName == '')
+				if (prevFileLoc.fileName === '')
 					break;
 				if (nextFileLoc.lineNr != prevFileLoc.lineNr)
 					break;
@@ -1618,7 +1618,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Check if in unit test mode
-			if (this.state == DbgAdapterState.UNITTEST) {
+			if (this.state === DbgAdapterState.UNITTEST) {
 				await Z80UnitTestRunner.dbgCheckUnitTest(breakReason);
 			}
 
@@ -1719,7 +1719,7 @@ export class DebugSessionClass extends DebugSession {
 		const pc = Remote.getPC();
 		const pcStr = Utility.getHexString(pc, 4);
 		// Check if count too high
-		if (count == maxInstructionCount)
+		if (count === maxInstructionCount)
 			return pcStr + ' ...';
 		if (count > maxInstructionCount)
 			return undefined;
@@ -1786,7 +1786,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Check if in unit test mode
-			if (this.state == DbgAdapterState.UNITTEST) {
+			if (this.state === DbgAdapterState.UNITTEST) {
 				await Z80UnitTestRunner.dbgCheckUnitTest(breakReason);
 			}
 
@@ -1833,7 +1833,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Check if in unit test mode
-			if (this.state == DbgAdapterState.UNITTEST) {
+			if (this.state === DbgAdapterState.UNITTEST) {
 				await Z80UnitTestRunner.dbgCheckUnitTest(breakReasonString);
 			}
 
@@ -2036,7 +2036,7 @@ export class DebugSessionClass extends DebugSession {
 		const expression = args.expression.trim();
 		const tokens = expression.split(' ');
 		const cmd = tokens.shift();
-		if (cmd == undefined) {
+		if (cmd === undefined) {
 			this.sendResponse(response);
 			return;
 		}
@@ -2197,7 +2197,7 @@ export class DebugSessionClass extends DebugSession {
 		// Endianess
 		const endianess = (tokens[3] || 'little').trim().toLowerCase();
 		let littleEndian = true;
-		if (endianess == 'big')
+		if (endianess === 'big')
 			littleEndian = false;	// At the moment it is used only for immediate values
 		else if (endianess != 'little') {
 			throw Error("Unknown endianes: " + endianess);
@@ -2256,14 +2256,14 @@ export class DebugSessionClass extends DebugSession {
 			// If yes, use it. If no use labelValue.
 			let distAddr = Labels.getNumberForLabel(labelString);
 			// If not a long address then use the 64k value
-			if (distAddr == undefined)
+			if (distAddr === undefined)
 				distAddr = labelValue;
 			// Try to get the distance to the next label:
 			// Note: Does not work for structs as the next label would
 			// be inside the struct.
 			elemCount = Labels.getDistanceToNextLabel(distAddr as number) || 1;
 			// Check special case
-			if (!lblType && elemCount == 2) {
+			if (!lblType && elemCount === 2) {
 				// Special case: 1 word. Exchange size and count
 				elemSize = 2;
 				elemCount = 1;
@@ -2297,7 +2297,7 @@ export class DebugSessionClass extends DebugSession {
 			propsLength = props.length;
 		}
 		// Get sub properties
-		if (propsLength == 0) {
+		if (propsLength === 0) {
 			// Check for elem size. If bigger than 6 rounding errors could occur.
 			if (elemSize > 6)
 				throw Error('The size of an element must be smaller than 7.');
@@ -2449,7 +2449,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	 */
 	protected async evalEval(tokens: Array<string>): Promise<string> {
 		const expr = tokens.join(' ').trim();	// restore expression
-		if (expr.length == 0) {
+		if (expr.length === 0) {
 			// Error Handling: No arguments
 			throw new Error("Expression expected.");
 		}
@@ -2496,7 +2496,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	 */
 	protected async evalLabel(tokens: Array<string>): Promise<string> {
 		const expr = tokens.join(' ').trim();	// restore expression
-		if (expr.length == 0) {
+		if (expr.length === 0) {
 			// Error Handling: No arguments
 			return "Label expected.";
 		}
@@ -2549,7 +2549,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	 */
 	protected async evalDasm(tokens: Array<string>): Promise<string> {
 		// Check count of arguments
-		if (tokens.length == 0) {
+		if (tokens.length === 0) {
 			// Error Handling: No arguments
 			throw new Error("Address and number of lines expected.");
 		}
@@ -2603,7 +2603,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		// One or none arguments ?
 		const slots = Remote.getSlots();
 		let txt = '';
-		if (tokens.length == 1) {
+		if (tokens.length === 1) {
 			// One argument:
 			// Get address
 			const addressString = tokens[0];
@@ -2651,7 +2651,7 @@ E.g. use "-help -view" to put the help text in an own view.
 					txt += Utility.getHexString(addr, 4) + 'h: ' + e.fileName + ', line: ' + (e.lineNr + 1) + ', size: ' + e.size + '\n';
 				}
 			}
-			if (count == 0)
+			if (count === 0)
 				txt += 'None.\n';
 		}
 
@@ -2745,7 +2745,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		// Evaluate arguments
 		let title;
 		let params: Array<number> | undefined = [];
-		if (tokens.length == 0) {
+		if (tokens.length === 0) {
 			// The view should choose the visible sprites automatically
 			title = 'Sprite Patterns: 0-63';
 			params.push(0);
@@ -2774,7 +2774,7 @@ E.g. use "-help -view" to put the help text in an own view.
 					countValue = Utility.parseValue(match[4]);
 					if (isNaN(countValue))	// Error Handling
 						throw new Error("Can't parse: '" + match[4] + "'");
-					if (match[3] == "-")	// turn range into count
+					if (match[3] === "-")	// turn range into count
 						countValue += 1 - start;
 				}
 				// Check
@@ -2818,7 +2818,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		// Evaluate arguments
 		let title;
 		let params: Array<number> | undefined;
-		if (tokens.length == 0) {
+		if (tokens.length === 0) {
 			// The view should choose the visible sprites automatically
 			title = 'Visible Sprites';
 		}
@@ -2846,7 +2846,7 @@ E.g. use "-help -view" to put the help text in an own view.
 					countValue = Utility.parseValue(match[4]);
 					if (isNaN(countValue))	// Error Handling
 						throw new Error("Can't parse: '" + match[4] + "'");
-					if (match[3] == "-")	// turn range into count
+					if (match[3] === "-")	// turn range into count
 						countValue += 1 - start;
 				}
 				// Check
@@ -2889,21 +2889,21 @@ E.g. use "-help -view" to put the help text in an own view.
 		const param = tokens[0] || '';
 		const stateName = tokens[1];
 		if (!stateName &&
-			(param == 'save' || param == 'restore' || param == 'clear'))
+			(param === 'save' || param === 'restore' || param === 'clear'))
 			throw new Error("Parameter missing: You need to add a name for the state, e.g. '0', '1' or more descriptive 'start'");
 
-		if (param == 'save') {
+		if (param === 'save') {
 			// Save current state
 			await this.stateSave(stateName);
 			// Send response
 			return "Saved state '" + stateName + "'.";
 		}
-		else if (param == 'restore') {
+		else if (param === 'restore') {
 			// Restores the state
 			await this.stateRestore(stateName);
 			return "Restored state '" + stateName + "'.";
 		}
-		else if (param == 'list') {
+		else if (param === 'list') {
 			// List all files in the state dir.
 			let files;
 			try {
@@ -2912,13 +2912,13 @@ E.g. use "-help -view" to put the help text in an own view.
 			}
 			catch {}
 			let text;
-			if (files == undefined || files.length == 0)
+			if (files === undefined || files.length === 0)
 				text = "No states saved yet.";
 			else
 				text = "All states:\n" + files.join('\n');
 			return text;
 		}
-		else if (param == 'clearall') {
+		else if (param === 'clearall') {
 			// Removes the files in the states directory
 			try {
 				const dir = Utility.getAbsStateFileName('');
@@ -2933,7 +2933,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			}
 			return "All states deleted.";
 		}
-		else if (param == 'clear') {
+		else if (param === 'clear') {
 			// Removes one state
 			try {
 				const path = Utility.getAbsStateFileName(stateName);
@@ -3355,7 +3355,7 @@ E.g. use "-help -view" to put the help text in an own view.
 				return;
 			const longAddrString = addressesString.substring(k + 1);	// Skip #
 			// Check if empty
-			if (longAddrString == '') {
+			if (longAddrString === '') {
 				// No associated address found
 				this.showWarning('No associated file/line.');
 				return;
@@ -3366,7 +3366,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			// Find associations with file/line
 			const fileLines = new Map<string, number[]>();
 			addresses.reverse();
-			if (addresses[0] == '') {
+			if (addresses[0] === '') {
 				// Remove first (empty) object
 				addresses.shift();
 			}
@@ -3459,7 +3459,7 @@ E.g. use "-help -view" to put the help text in an own view.
 				let document;
 				for(const doc of vscode.workspace.textDocuments) {
 					const docPath = UnifiedPath.getUnifiedPath(doc.uri.fsPath);
-					if(docPath == fileName) {
+					if(docPath === fileName) {
 						document = doc;
 						break;
 					}
@@ -3669,7 +3669,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			const len = notSupported.length;
 			if (len > 0) {
 				const unsupportedString = hjoin.join(notSupported, {quote: {enabled: true, quoteWith: "'"}});
-				const isAre = (len == 1) ? "is" : "are";
+				const isAre = (len === 1) ? "is" : "are";
 				this.showWarning(unsupportedString + " " + isAre + " not supported by this Remote.");
 			}
 
