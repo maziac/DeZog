@@ -308,8 +308,8 @@ export class ZesaruxSocket extends Socket {
 
 			LogTransport.log('Socket: Connected to zesarux server!');
 		});
-
 	}
+
 
 	/**
 	 * Checks if the queue is empty.

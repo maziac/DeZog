@@ -1,5 +1,11 @@
 # Changelog
 
+
+
+# 3.2.3-rc1
+- Fix for #110: Attempts to start debugging result in error Cannot evaluate 'execAddress'.
+setLaunchExecAddress moved after readListFiles.
+
 # 3.2.3
 - Fix for #109: Extension host terminated unexpectedly 3 times within the last 5 minutes. aduh95/graphviz.js has been replaced with node-graphviz.
 - Changed disassembly of e.g. 'LD DE,8000.1' to 'LD DE,$8000.1'

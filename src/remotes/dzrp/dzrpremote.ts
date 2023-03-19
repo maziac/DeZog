@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import {RemoteBase, RemoteBreakpoint, BREAK_REASON_NUMBER, Remote} from '../remotebase';
+import {RemoteBase, RemoteBreakpoint, BREAK_REASON_NUMBER} from '../remotebase';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersClass, Z80_REG, Z80Registers} from '../z80registers';
 import {MemBank16k} from './membank16k';
@@ -256,12 +256,6 @@ export class DzrpRemote extends RemoteBase {
 					throw Error("Unknown machine type " + resp.machineType + " received.");
 			}
 			this.memoryModel.init();
-
-			// Set Program Counter to execAddress
-			await Remote.setLaunchExecAddress();
-
-			// Get initial registers
-			await this.getRegistersFromEmulator();
 
 			// Ready
 			const text = "'" + resp.programName + "' initialized.";

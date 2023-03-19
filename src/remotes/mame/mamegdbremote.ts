@@ -7,7 +7,7 @@ import {Settings} from '../../settings/settings';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';
-import {BREAK_REASON_NUMBER, Remote} from '../remotebase';
+import {BREAK_REASON_NUMBER} from '../remotebase';
 import {MemoryModelUnknown} from '../MemoryModel/predefinedmemorymodels';
 import {SnaFile} from '../dzrp/snafile';
 import {MemBank16k} from '../dzrp/membank16k';
@@ -136,12 +136,6 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			// 64k ROM
 			this.memoryModel = new MemoryModelUnknown()
 			this.memoryModel.init();
-
-			// Set Program Counter to execAddress
-			await Remote.setLaunchExecAddress();
-
-			// Get initial registers
-			await this.getRegistersFromEmulator();
 
 			// Ready
 			this.emit('initialized', 'MAME connected!')

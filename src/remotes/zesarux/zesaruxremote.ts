@@ -253,22 +253,8 @@ export class ZesaruxRemote extends RemoteBase {
 				// Init
 				this.memoryModel.init();
 
-				// Set Program Counter to execAddress
-				this.setLaunchExecAddress();
-
 				// Initialize more
 				await this.initAfterLoad();
-
-				/*
-				// Check for console.error
-				if (error) {
-					this.emit('error', error);
-				}
-				else {
-					// Send 'initialize' to Machine.
-					this.emit('initialized');
-				}
-				*/
 
 				// Send 'initialize' to Machine.
 				this.emit('initialized');

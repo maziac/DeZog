@@ -704,6 +704,9 @@ export class DebugSessionClass extends DebugSession {
 					// Instantiate file watchers for revEng auto re-load
 					this.installReloadFileWatchers();
 
+					// Set Program Counter to execAddress
+					await Remote.setLaunchExecAddress();
+
 					// Get initial registers
 					await Remote.getRegistersFromEmulator();
 					await Remote.getCallStackFromEmulator();

@@ -5,7 +5,6 @@ import {Z80Cpu} from './z80cpu';
 import {Settings, ZSimType} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
-import {Labels} from '../../labels/labels';
 import {MemBuffer} from '../../misc/membuffer';
 import {CodeCoverageArray} from './codecovarray';
 import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhistory';
@@ -387,15 +386,6 @@ export class ZSimRemote extends DzrpRemote {
 
 		// Load sna/nex and loadObjs:
 		await this.loadExecutable();
-
-		// Set Program Counter to execAddress
-		if (Settings.launch.execAddress) {
-			const execAddress = Labels.getNumberFromString64k(Settings.launch.execAddress);
-			if (isNaN(execAddress))
-				throw Error("Cannot evaluate 'execAddress' (" + Settings.launch.execAddress + ").");
-			// Set PC
-			await this.setRegisterValue("PC", execAddress);
-		}
 
 		// Ready
 		this.emit('initialized')
