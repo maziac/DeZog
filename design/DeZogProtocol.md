@@ -409,9 +409,9 @@ Response (Length=1):
 Command (Length=7):
 | Index | Size | Value | Description               |
 | ----- | ---- | ----- | ------------------------- |
-| 1     | 1    | 0     | reserved                  |
-| 2     | 2    | addr  | Start of the memory block |
-| 4     | 2    | n     | Size of the memory block  |
+| 0     | 1    | 0     | reserved                  |
+| 1     | 2    | addr  | Start of the memory block |
+| 3     | 2    | n     | Size of the memory block  |
 
 
 Response (Length=N+1):
@@ -428,11 +428,11 @@ Response (Length=N+1):
 Command (Length=4+N):
 | Index | Size | Value     | Description                |
 | ----- | ---- | --------- | -------------------------- |
-| 1     | 1    | 0         | reserved                   |
-| 2     | 2    | addr      | Start of the memory block  |
-| 4     | 1    | addr[0]   | First byte of memory block |
+| 0     | 1    | 0         | reserved                   |
+| 1     | 2    | addr      | Start of the memory block  |
+| 3     | 1    | addr[0]   | First byte of memory block |
 | ...   | ...  | ...       | ...                        |
-| 4+n-1 | 1    | addr[n-1] | Last byte of memory block  |
+| 3+n-1 | 1    | addr[n-1] | Last byte of memory block  |
 
 
 Response (Length=1):
