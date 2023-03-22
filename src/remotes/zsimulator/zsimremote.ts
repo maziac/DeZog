@@ -385,6 +385,7 @@ export class ZSimRemote extends DzrpRemote {
 		this.configureMachine(Settings.launch.zsim);
 
 		// Load sna/nex and loadObjs:
+		this.customCode?.execute('init');	// Need to be initialized here also because e.g. nex loading sets the border (port).
 		await this.loadExecutable();
 
 		// Ready
