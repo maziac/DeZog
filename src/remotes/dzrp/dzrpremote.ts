@@ -1311,9 +1311,9 @@ export class DzrpRemote extends RemoteBase {
 	protected async loadBin(filePath: string): Promise<void> {
 		// Check file extension
 		const ext = path.extname(filePath);
-		if (ext == '.sna')
+		if (ext === '.sna')
 			await this.loadBinSna(filePath);
-		else if (ext == '.nex')
+		else if (ext === '.nex')
 			await this.loadBinNex(filePath);
 		else {
 			// Error: neither sna nor nex file

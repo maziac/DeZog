@@ -749,9 +749,11 @@ export class RemoteBase extends EventEmitter {
 		let labelCalledAddrArr = Labels.getLabelsForLongAddress(calledAddr);
 		if (labelCalledAddrArr.length == 0) {
 			// check if maybe the disassembly has defined something
-			const label = Disassembly.getLabelForAddr64k(calledAddr & 0xFFFF);
-			if (label)
-				labelCalledAddrArr.push(label);
+			if (Disassembly) {	// Is undefined in case of Unit tests
+				const label = Disassembly.getLabelForAddr64k(calledAddr & 0xFFFF);
+				if (label)
+					labelCalledAddrArr.push(label);
+			}
 		}
 		const labelCalledAddr = (labelCalledAddrArr.length > 0) ? labelCalledAddrArr[0] : Utility.getHexString(calledAddr & 0xFFFF, 4) + 'h';
 
