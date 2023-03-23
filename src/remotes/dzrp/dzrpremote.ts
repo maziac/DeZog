@@ -1531,7 +1531,7 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
 		Utility.assert(false);
-		return {error: undefined, dzrpVersion: "", programName: "", machineType: 0};
+		return {error: undefined, dzrpVersion: "", programName: "", machineType: DzrpMachineType.ZX48K};
 	}
 
 
