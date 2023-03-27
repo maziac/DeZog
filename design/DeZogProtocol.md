@@ -757,5 +757,5 @@ Notification (Length=6+n):
 | 3     | 2    | 0-65535       | Breakpoint or watchpoint address.                                                                                                                                                                                                            |
 | *5    | 1    | 0-255         | The bank+1 of the breakpoint or watchpoint address.                                                                                                                                                                                          |
 | 6     | 1-n  | reason string | Null-terminated break reason string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.                                                                                                            |
-If error string is empty it will contain at least a 0. |
+If reason string is empty it will contain at least a 0. |
 
