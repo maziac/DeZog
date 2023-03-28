@@ -54,6 +54,11 @@ export enum DZRP {
 	CMD_GET_SPRITES = 18,
 	CMD_GET_SPRITE_PATTERNS = 19,
 
+	CMD_READ_PORT = 20,
+	CMD_WRITE_PORT = 21,
+	CMD_EXEC_ASM = 22,
+	CMD_INTERRUPT_ON_OFF = 23,
+
 	// Breakpoint
 	CMD_ADD_BREAKPOINT = 40,
 	CMD_REMOVE_BREAKPOINT = 41,
@@ -448,6 +453,56 @@ export class DzrpRemote extends RemoteBase {
 			// Create data to send
 			const longAddress = address + ((bank + 1) << 16);
 			await this.sendDzrpCmdRestoreMem([{address: longAddress, value}]);
+		}
+		else if (cmd_name == "cmd_read_port") {
+			// "cmd_read_port port"
+			if (cmdArray.length != 1) {
+				// Error
+				throw Error("Expecting 1 parameter: port.");
+			}
+			const port = Utility.parseValue(cmdArray[0]);
+			// Send
+			const portValue = await this.sendDzrpCmdReadPort(port);
+			response += '\n in (0x' + Utility.getHexString(port, 4) + '): 0x' + Utility.getHexString(portValue, 2);
+		}
+		else if (cmd_name == "cmd_write_port") {
+			// "cmd_write_port port value"
+			if (cmdArray.length != 2) {
+				// Error
+				throw Error("Expecting 2 parameters: port and value.");
+			}
+			const port = Utility.parseValue(cmdArray[0]);
+			const portValue = Utility.parseValue(cmdArray[1]);
+			// Send
+			await this.sendDzrpCmdWritePort(port, portValue);
+		}
+		else if (cmd_name == "cmd_exec_asm") {
+			// "cmd_exec_asm val [val ...]"
+			if (cmdArray.length == 0) {
+				// Error
+				throw Error("Expecting 1 or more values (the code).");
+			}
+			// Convert strings to numbers
+			const code = cmdArray.map(value => Utility.parseValue(value));
+			// Send
+			const resp = await this.sendDzrpCmdExecAsm(code);
+			response += `
+error: ${resp.error}
+a: 0x${Utility.getHexString(resp.a, 2)}
+f: 0x${Utility.getHexString(resp.f, 2)}
+bc: 0x${Utility.getHexString(resp.bc, 4)}
+de: 0x${Utility.getHexString(resp.de, 4)}
+hl: 0x${Utility.getHexString(resp.hl, 4)}`;
+		}
+		else if (cmd_name == "cmd_interrupt_on_off") {
+			// "cmd_interrupt_on_off val"
+			if (cmdArray.length != 1) {
+				// Error
+				throw Error("Expecting 1 parameter: enable (0 or 1).");
+			}
+			const enable = Utility.parseValue(cmdArray[0]) !== 0;
+			// Send
+			await this.sendDzrpCmdInterruptOnOff(enable);
 		}
 		else if (cmd_name == "cmd_add_breakpoint") {
 			// "cmd_add_breakpoint address bank"
@@ -1794,6 +1849,53 @@ export class DzrpRemote extends RemoteBase {
 	 * @param elems The addresses + memory content.
 	 */
 	protected async sendDzrpCmdRestoreMem(elems: Array<{address: number, value: number}>): Promise<void> {
+		Utility.assert(false);
+	}
+
+
+	/**
+	 * Override.
+	 * Sends the command to read from a port.
+	 * @param port The port address.
+	 * @returns The value read from the port.
+	 */
+	protected async sendDzrpCmdReadPort(port: number): Promise<number> {
+		Utility.assert(false);
+		return 0;
+	}
+
+
+	/**
+	 * Override.
+	 * Sends the command to write to a port.
+	 * @param port The port address.
+	 * @param value the value to write.
+	 */
+	protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
+		Utility.assert(false);
+	}
+
+
+	/**
+	 * Override.
+	 * Sends Z80 to execute in the remote.
+	 * The code needs no trailing RET.
+	 * Returns registers AF, BC, DE, HL.
+	 * @param code A buffer with the code to send.
+	 * @returns An error code (0=no error). The registers AF, BC, DE, HL.
+	 */
+	protected async sendDzrpCmdExecAsm(code: Array<number>): Promise<{error: number, a: number, f: number, bc: number, de: number, hl: number}> {
+		Utility.assert(false);
+		return {error: 0, f: 0, a: 0, bc: 0, de: 0, hl: 0};
+	}
+
+
+	/**
+	 * Override.
+	 * Sends the command to enable or disable the interrupts.
+	 * @param enable true to enable, false to disable interrupts.
+	 */
+	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
 		Utility.assert(false);
 	}
 }

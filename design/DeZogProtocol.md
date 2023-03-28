@@ -73,6 +73,10 @@ I.e. different remotes may use a different subset of commands. For one this is b
 [CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL]: #cmd_get_sprites_clip_window_and_control17
 [CMD_GET_SPRITES]: #cmd_get_sprites18
 [CMD_GET_SPRITE_PATTERNS]: #cmd_get_sprite_patterns19
+[CMD_GET_READ_PORT]: #cmd_read_port20
+[CMD_GET_WRITE_PORT]: #cmd_write_port21
+[CMD_GET_EXEC_ASM]: #cmd_exec_asm22
+[CMD_INTERRUPT_ON_OFF]: #cmd_interrupt_on_off23
 [CMD_ADD_BREAKPOINT]: #cmd_add_breakpoint40
 [CMD_REMOVE_BREAKPOINT]: #cmd_remove_breakpoint41
 [CMD_ADD_WATCHPOINT]: #cmd_add_watchpoint42
@@ -103,6 +107,10 @@ The table below shows which commands are used with what remote:
 | [CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL] | X    | X      | X      |
 | [CMD_GET_SPRITES]                         | X    | X      | -      |
 | [CMD_GET_SPRITE_PATTERNS]                 | X    | X      | -      |
+| [CMD_GET_READ_PORT]                       | -    | -      | X      |
+| [CMD_GET_WRITE_PORT]                      | -    | -      | X      |
+| [CMD_GET_EXEC_ASM]                        | -    | -      | X      |
+| [CMD_INTERRUPT_ON_OFF]                    | -    | -      | X      |
 | [CMD_ADD_BREAKPOINT]                      | X    | X      | -      |
 | [CMD_REMOVE_BREAKPOINT]                   | X    | X      | -      |
 | [CMD_ADD_WATCHPOINT]                      | X    | -      | -      |
@@ -122,6 +130,15 @@ DeZog knows with which remote it communicates and chooses the right subset.
 - Enabling/disabling of the interrupt. For loading 48k and 128k SNA files: index 0x13 (iff2), bit 2 contains 0=di, 1=ei. https://sinclair.wiki.zxnet.co.uk/wiki/SNA_format (sjasmplus always sets 0),
 - To be a little bit more future proof: Execute a little binary.
 - Note: .nex files do not contain the info at all.
+
+
+### 2.1.0
+
+Added:
+- CMD_GET_READ_PORT: Reading a port.
+- CMD_GET_WRITE_PORT: Writing to a port.
+- CMD_GET_EXEC_ASM: Executing a small assembler program.
+
 
 ### 2.0.0
 
@@ -644,6 +661,78 @@ Response (Length=1+256*N):
 | 2     | N*256 | 0-255 | Pattern memory data. |
 
 Note: 512 = 16x16x2.
+
+
+## CMD_READ_PORT=20
+
+Command (Length=2):
+| Index | Size | Value | Description                       |
+| ----- | ---- | ----- | --------------------------------- |
+| 0     | 2    | 0-65535 | The port to read.               |
+
+
+Response (Length=2):
+| Index | Size  | Value | Description          |
+| ----- | ----- | ----- | -------------------- |
+| 0     | 1     | 1-255 | Same seq no          |
+| 2     | 1     | 0-255 | The read port value. |
+
+
+## CMD_WRITE_PORT=21
+
+Command (Length=3):
+| Index | Size | Value | Description                       |
+| ----- | ---- | ----- | --------------------------------- |
+| 0     | 2    | 0-65535 | The port to write to.           |
+| 2     | 1    | 0-255 | The port value.                   |
+
+
+Response (Length=1):
+| Index | Size  | Value | Description          |
+| ----- | ----- | ----- | -------------------- |
+| 0     | 1     | 1-255 | Same seq no          |
+
+
+## CMD_EXEC_ASM=22
+
+Command (Length=23):
+| Index | Size | Value | Description                       |
+| ----- | ---- | ----- | --------------------------------- |
+| 0     | 1    | 0     | The context. At the moment only 0=debugger context is defined.
+| 1     | N    | 0-255 | The assembler code.               |
+
+Notes:
+- The assembler code does not need to be terminated with a RET.
+A RET is inserted automatically at the end.
+- The code is executed in the debugger context. I.e. it does not change anything in the debugged program.
+
+
+Response (Length=10):
+| Index | Size | Value   | Description                                                   |
+| ----- | ---- | ------- | ------------------------------------------------------------- |
+| 0     | 1    | 1-255   | Same seq no                                                   |
+| 1     | 1    | 0-255   | Error codes: 0=no error, 1=length too long (receive buffer too short) |
+| 2     | 2    | 0-65535 | AF |
+| 4     | 2    | 0-65535 | BC |
+| 6     | 2    | 0-65535 | DE |
+| 8     | 2    | 0-65535 | HL |
+
+Note: in the response the register values are returned.
+
+
+## CMD_INTERRUPT_ON_OFF=23
+
+Command (Length=1):
+| Index | Size | Value | Description                             |
+| ----- | ---- | ----- | --------------------------------------- |
+| 0     | 1    | 0-1   | 0=disable interrupt, 1=enable interrupt |
+
+
+Response (Length=1):
+| Index | Size  | Value | Description          |
+| ----- | ----- | ----- | -------------------- |
+| 0     | 1     | 1-255 | Same seq no          |
+
 
 
 ## CMD_ADD_BREAKPOINT=40

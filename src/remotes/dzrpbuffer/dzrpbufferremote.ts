@@ -797,6 +797,5 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		}
 		await this.sendDzrpCmd(DZRP.CMD_RESTORE_MEM, buffer);
 	}
-
 }
 
