@@ -797,5 +797,15 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		}
 		await this.sendDzrpCmd(DZRP.CMD_RESTORE_MEM, buffer);
 	}
+
+
+	/**
+	 * Sends the command to enable or disable the interrupts.
+	 * @param enable true to enable, false to disable interrupts.
+	 */
+	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
+		const on = enable ? 1 : 0;
+		await this.sendDzrpCmd(DZRP.CMD_INTERRUPT_ON_OFF, [on]);
+	}
 }
 

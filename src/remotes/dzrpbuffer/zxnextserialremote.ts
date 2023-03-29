@@ -622,11 +622,9 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	 * @param enable true to enable, false to disable interrupts.
 	 */
 	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
-		const on = enable ? 1 : 0;
-		await this.sendDzrpCmd(DZRP.CMD_INTERRUPT_ON_OFF, [on]);
+		// TODO: Currently the function is disabled.
+		// Enable it when dezogif > 2.1.0 is released.
 	}
-
-
 	/**
 	 * This command is not used. Use the NMI button instead.
 	 */

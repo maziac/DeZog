@@ -110,7 +110,7 @@ The table below shows which commands are used (X) with what remote:
 | [CMD_GET_READ_PORT]                       | -    | -      | *      |  -  |
 | [CMD_GET_WRITE_PORT]                      | -    | -      | *      |  -  |
 | [CMD_GET_EXEC_ASM]                        | -    | -      | *      |  -  |
-| [CMD_INTERRUPT_ON_OFF]                    | -    | -      | *      |  -  |
+| [CMD_INTERRUPT_ON_OFF]                    | X    | -      | X      |  -  |
 | [CMD_ADD_BREAKPOINT]                      | X    | X      | -      |  X  |
 | [CMD_REMOVE_BREAKPOINT]                   | X    | X      | -      |  X  |
 | [CMD_ADD_WATCHPOINT]                      | X    | -      | -      |  X  |

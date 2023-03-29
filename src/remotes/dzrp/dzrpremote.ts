@@ -1438,6 +1438,10 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
+
+		// Check if interrupt should be enabled
+		const interrupt_enabled = (snaFile.iff2 & 0b00000100) !== 0;
+		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
 	}
 
 

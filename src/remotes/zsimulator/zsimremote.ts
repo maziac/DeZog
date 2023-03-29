@@ -1016,9 +1016,8 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.im);
 
 		// Interrupt (IFF2)
-		const enableInterrupt = (snaFile.iff2 >>> 2) & 0x01;
-		this.z80Cpu.iff1 = enableInterrupt;
-		this.z80Cpu.iff2 = enableInterrupt;
+		const interrupt_enabled = (snaFile.iff2 & 0b00000100) !== 0;
+		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
 
 		// Set ROM1 or ROM0
 		if (snaFile.is128kSnaFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNextTwoRom)) {
@@ -1362,6 +1361,43 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
 		// Set port for border
 		this.ports.write(0xFE, borderColor);
+	}
+
+
+	/**
+	 * Not used/supported.
+	 */
+	protected async sendDzrpCmdReadPort(port: number): Promise<number> {
+		throw Error("'sendDzrpCmdReadPort' is not implemented.");
+		return 0;
+	}
+
+
+	/**
+	 * Not used/supported.
+	 */
+	protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
+		throw Error("'sendDzrpCmdWritePort' is not implemented.");
+	}
+
+
+	/**
+	 * Not used/supported.
+	 */
+	protected async sendDzrpCmdExecAsm(code: Array<number>): Promise<{error: number, a: number, f: number, bc: number, de: number, hl: number}> {
+		throw Error("'sendDzrpCmdExecAsm' is not implemented.");
+		return {error: 0, f: 0, a: 0, bc: 0, de: 0, hl: 0};
+	}
+
+
+	/**
+	 * Sends the command to enable or disable the interrupts.
+	 * @param enable true to enable, false to disable interrupts.
+	 */
+	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
+		const enableInterrupt = (enable) ? 1 : 0;
+		this.z80Cpu.iff1 = enableInterrupt;
+		this.z80Cpu.iff2 = enableInterrupt;
 	}
 }
 
