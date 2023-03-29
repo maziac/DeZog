@@ -74,6 +74,8 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		this.supportsLOGPOINT = true;
 		this.supportsBreakOnInterrupt = false;
 		this.cmdRespTimeoutTime = CMD_RESP_TIMEOUT;
+		// Overwrite minimal required version
+		//this.DZRP_VERSION = [2, 1, 0]; TODO: Enable this requirement when dezogif is released.
 		//console.log('ZxNextSerialRemote: constructor()');
 	}
 

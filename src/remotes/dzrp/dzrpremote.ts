@@ -134,6 +134,10 @@ export interface BreakInfo {
  * like 'continue'.
  */
 export class DzrpRemote extends RemoteBase {
+	// The current required version of the protocol.
+	// Remotes may overwrite this.
+	protected DZRP_VERSION = [2, 0, 0];
+
 	// The function to hold the Promise's resolve function for a continue request.
 	// Note:  The 'any' type is chosen here so that other Remotes (like MAME)
 	// can extend the parameter list.
