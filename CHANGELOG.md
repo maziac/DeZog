@@ -1,10 +1,11 @@
 # Changelog
 
-# 3.2.4-rc1
+# 3.2.4
 - Fix for #110: Attempts to start debugging result in error Cannot evaluate 'execAddress'.
 setLaunchExecAddress moved after readListFiles.
 - Small fixes for unit tests and custom code.
-- Experimental implementation of DZRP 2.1.0 (cmd_write_port, cmd_read_port, cmd_exec_asm, cmd_interrupt_on_off) for zxnextserialremote.
+- Experimental implementation of DZRP 2.1.0 (cmd_interrupt_on_off) for zxnextserialremote.
+- Tests for the serial interface.
 
 # 3.2.3
 - Fix for #109: Extension host terminated unexpectedly 3 times within the last 5 minutes. aduh95/graphviz.js has been replaced with node-graphviz.
