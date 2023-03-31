@@ -51,9 +51,9 @@ export class DzrpTransportTest extends EventEmitter {
 		// cmdList.push(async () => {
 		// 	await this.remote.sendDzrpCmdContinue();
 		// });
-		// cmdList.push(async () => {
+		// async () => {
 		// 	await this.remote.sendDzrpCmdPause();
-		// });
+		// },
 		async () => {
 			console.log('sendDzrpCmdReadMem');
 			const addr = this.rndInt(0, 0xFFFF);
