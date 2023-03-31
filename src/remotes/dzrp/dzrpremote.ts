@@ -15,11 +15,9 @@ import {Log} from '../../log';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {PromiseCallbacks} from '../../misc/promisecallbacks';
 import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextOneROM} from '../MemoryModel/predefinedmemorymodels';
+import {DzrpTransportTest} from './dzrptransporttest';
 
 
-
-// The current implemented version of the protocol.
-export const DZRP_VERSION = [2, 0, 0];
 
 // The program name and version transmitted during CMD_INIT.
 export const DZRP_PROGRAM_NAME = "DeZog v" + process.version;
@@ -173,6 +171,9 @@ export class DzrpRemote extends RemoteBase {
 	// address or that they overlap(they have size).
 	protected addedWatchpoints = new Set<GenericWatchpoint>();
 
+	// Used for testing the tranport mechanism, i.e. the serial transport.
+	protected dzrpTransportTest: DzrpTransportTest | undefined;
+
 
 	/// Constructor.
 	/// Override this.
@@ -318,22 +319,22 @@ export class DzrpRemote extends RemoteBase {
 	public async dbgExec(cmd: string): Promise<string> {
 		const cmdArray = cmd.split(' ');
 		const cmd_name = cmdArray.shift();
-		if (cmd_name == "help") {
+		if (cmd_name === "help") {
 			return "Use e.g. 'cmd_init' to send a DZRP command to the ZX Next.";
 		}
 
 		let response = "";
-		if (cmd_name == "cmd_init") {
+		if (cmd_name === "cmd_init") {
 			const resp = await this.sendDzrpCmdInit();
 			response = "Program: '" + resp.programName + "', DZRP Version: " + resp.dzrpVersion + "', machineType: " + resp.machineType + ", Error: " + resp.error;
 		}
-		else if (cmd_name == "cmd_continue") {
+		else if (cmd_name === "cmd_continue") {
 			await this.sendDzrpCmdContinue();
 		}
-		else if (cmd_name == "cmd_pause") {
+		else if (cmd_name === "cmd_pause") {
 			await this.sendDzrpCmdPause();
 		}
-		else if (cmd_name == "cmd_get_registers") {
+		else if (cmd_name === "cmd_get_registers") {
 			const regs = await this.sendDzrpCmdGetRegisters();
 			// Registers
 			const regNames = ["PC", "SP", "AF", "BC", "DE", "HL", "IX", "IY", "AF'", "BC'", "DE'", "HL'", "IR", "IM"];
@@ -349,7 +350,7 @@ export class DzrpRemote extends RemoteBase {
 			for (let k = 0; k < slotCount; k++)
 				response += '\n slots[' + k + ']=' + regs[k + i];
 		}
-		else if (cmd_name == "cmd_set_register") {
+		else if (cmd_name === "cmd_set_register") {
 			if (cmdArray.length < 2) {
 				// Error
 				throw Error("Expecting 2 parameters: regIndex and value.");
@@ -358,7 +359,7 @@ export class DzrpRemote extends RemoteBase {
 			const value = Utility.parseValue(cmdArray[1]);
 			await this.sendDzrpCmdSetRegister(regIndex as Z80_REG, value);
 		}
-		else if (cmd_name == "cmd_write_bank") {
+		else if (cmd_name === "cmd_write_bank") {
 			if (cmdArray.length < 1) {
 				// Error
 				throw Error("Expecting 1 parameter: 8k bank number [0-223].");
@@ -370,7 +371,7 @@ export class DzrpRemote extends RemoteBase {
 				data[i] = i & 0xFF;
 			await this.sendDzrpCmdWriteBank(bank, data);
 		}
-		else if (cmd_name == "cmd_read_mem") {
+		else if (cmd_name === "cmd_read_mem") {
 			if (cmdArray.length < 2) {
 				// Error
 				throw Error("Expecting at least 2 parameters: address and count.");
@@ -383,7 +384,7 @@ export class DzrpRemote extends RemoteBase {
 			for (const dat of data)
 				response += Utility.getHexString(dat, 2) + "h ";
 		}
-		else if (cmd_name == "cmd_write_mem") {
+		else if (cmd_name === "cmd_write_mem") {
 			if (cmdArray.length < 2) {
 				// Error
 				throw Error("Expecting at least 2 parameters: address and memory content list.");
@@ -396,7 +397,7 @@ export class DzrpRemote extends RemoteBase {
 				data[i] = Utility.parseValue(cmdArray[i]) & 0xFF;
 			await this.sendDzrpCmdWriteMem(addr, data);
 		}
-		else if (cmd_name == "cmd_set_slot") {
+		else if (cmd_name === "cmd_set_slot") {
 			if (cmdArray.length != 2) {
 				// Error
 				throw Error("Expecting 2 parameters: slot and bank.");
@@ -405,7 +406,7 @@ export class DzrpRemote extends RemoteBase {
 			const bank = Utility.parseValue(cmdArray[1]);
 			await this.sendDzrpCmdSetSlot(slot, bank);
 		}
-		else if (cmd_name == "cmd_get_tbblue_reg") {
+		else if (cmd_name === "cmd_get_tbblue_reg") {
 			if (cmdArray.length < 1) {
 				// Error
 				throw Error("Expecting 1 parameter: register.");
@@ -414,7 +415,7 @@ export class DzrpRemote extends RemoteBase {
 			const value = await this.sendDzrpCmdGetTbblueReg(reg);
 			response += "\nReg[" + Utility.getHexString(reg, 2) + "h/" + reg + "]: " + Utility.getHexString(value, 2) + "h/" + value;
 		}
-		else if (cmd_name == "cmd_get_sprites_palette") {
+		else if (cmd_name === "cmd_get_sprites_palette") {
 			if (cmdArray.length < 1) {
 				// Error
 				throw Error("Expecting 1 parameter: palette number (0 or 1).");
@@ -425,11 +426,11 @@ export class DzrpRemote extends RemoteBase {
 			for (const p of palette)
 				response += Utility.getHexString(p, 3) + " ";
 		}
-		else if (cmd_name == "cmd_get_sprites_clip_window_and_control") {
+		else if (cmd_name === "cmd_get_sprites_clip_window_and_control") {
 			const clip = await this.sendDzrpCmdGetSpritesClipWindow();
 			response += "xl=" + clip.xl + ", xr=" + clip.xr + ", yt=" + clip.yt + ", yb=" + clip.yb + ", control=" + Utility.getBitsString(clip.control, 8);
 		}
-		else if (cmd_name == "cmd_set_breakpoints") {
+		else if (cmd_name === "cmd_set_breakpoints") {
 			// Note: This command supports only the setting of 1 breakpoint:
 			// "cmd_set_breakpoints address bank"
 			if (cmdArray.length != 2) {
@@ -444,7 +445,7 @@ export class DzrpRemote extends RemoteBase {
 			const value = memValues[0];
 			response += '\n Response: 0x' + Utility.getHexString(value, 2) + '/' + value;
 		}
-		else if (cmd_name == "cmd_restore_mem") {
+		else if (cmd_name === "cmd_restore_mem") {
 			// Note: This command supports only the restoring of 1 breakpoint:
 			// "cmd_restore_mem address bank value"
 			if (cmdArray.length != 3) {
@@ -458,7 +459,7 @@ export class DzrpRemote extends RemoteBase {
 			const longAddress = address + ((bank + 1) << 16);
 			await this.sendDzrpCmdRestoreMem([{address: longAddress, value}]);
 		}
-		else if (cmd_name == "cmd_read_port") {
+		else if (cmd_name === "cmd_read_port") {
 			// "cmd_read_port port"
 			if (cmdArray.length != 1) {
 				// Error
@@ -469,7 +470,7 @@ export class DzrpRemote extends RemoteBase {
 			const portValue = await this.sendDzrpCmdReadPort(port);
 			response += '\n in (0x' + Utility.getHexString(port, 4) + '): 0x' + Utility.getHexString(portValue, 2);
 		}
-		else if (cmd_name == "cmd_write_port") {
+		else if (cmd_name === "cmd_write_port") {
 			// "cmd_write_port port value"
 			if (cmdArray.length != 2) {
 				// Error
@@ -480,9 +481,9 @@ export class DzrpRemote extends RemoteBase {
 			// Send
 			await this.sendDzrpCmdWritePort(port, portValue);
 		}
-		else if (cmd_name == "cmd_exec_asm") {
+		else if (cmd_name === "cmd_exec_asm") {
 			// "cmd_exec_asm val [val ...]"
-			if (cmdArray.length == 0) {
+			if (cmdArray.length === 0) {
 				// Error
 				throw Error("Expecting 1 or more values (the code).");
 			}
@@ -498,7 +499,7 @@ bc: 0x${Utility.getHexString(resp.bc, 4)}
 de: 0x${Utility.getHexString(resp.de, 4)}
 hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		}
-		else if (cmd_name == "cmd_interrupt_on_off") {
+		else if (cmd_name === "cmd_interrupt_on_off") {
 			// "cmd_interrupt_on_off val"
 			if (cmdArray.length != 1) {
 				// Error
@@ -508,7 +509,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			// Send
 			await this.sendDzrpCmdInterruptOnOff(enable);
 		}
-		else if (cmd_name == "cmd_add_breakpoint") {
+		else if (cmd_name === "cmd_add_breakpoint") {
 			// "cmd_add_breakpoint address bank"
 			if (cmdArray.length != 2) {
 				// Error
@@ -524,7 +525,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			await this.sendDzrpCmdAddBreakpoint(bp);
 			response += '\n Breakpoint ID: ' + bp.bpId;
 		}
-		else if (cmd_name == "cmd_remove_breakpoint") {
+		else if (cmd_name === "cmd_remove_breakpoint") {
 			// "cmd_remove_breakpoint breakpointId"
 			if (cmdArray.length != 1) {
 				// Error
@@ -536,6 +537,47 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			};
 			// Create data to send
 			await this.sendDzrpCmdRemoveBreakpoint(bp);
+		}
+		else if (cmd_name === "test") {
+			// "test start 0 100" or "test end"
+			if (cmdArray.length === 0) {
+				// Error
+				throw Error("Expecting parameter 'start' or 'end'.");
+			}
+			// start or end
+			const startEnd = cmdArray[0];
+			if (startEnd === "start") {
+				// "test start 0 100"
+				// 0 100 = the pause to use between messages
+				if (cmdArray.length !== 3) {
+					// Error
+					throw Error("Expecting parameter 3 parameters: start min_time max_time.");
+				}
+				const minTime = Utility.parseValue(cmdArray[1]);
+				const maxTime = Utility.parseValue(cmdArray[2]);
+				await this.dzrpTransportTest?.end();
+				this.dzrpTransportTest = new DzrpTransportTest(this);
+				this.dzrpTransportTest.on('debug_console', msg => {
+					// Forward
+					this.emit('debug_console', msg);
+				});
+				await this.dzrpTransportTest.start(minTime, maxTime);
+				return "Started test loop sending commands...";
+			}
+			else if (startEnd === "end") {
+				// "test end"
+				await this.dzrpTransportTest?.end();
+				this.dzrpTransportTest = undefined;
+				return "Stopped sending commands.";
+			}
+			else {
+				// Error
+				throw Error("Expecting parameter 'start' or 'end'.");
+			}
+
+		}
+		else if (cmd_name === "test_end") {
+
 		}
 
 		/*
@@ -704,12 +746,12 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		// Find breakpoint ID
 		for (let i = 0; i < len; i++) {
 			const bpa = bpArray[i];
-			if (bpa.bpId == bp.bpId) {
+			if (bpa.bpId === bp.bpId) {
 				// Breakpoint found
 				// Remove element
 				bpArray.splice(i, 1);
 				// Check if complete array is empty
-				if (bpArray.length == 0)
+				if (bpArray.length === 0)
 					this.tmpBreakpoints.delete(bpAddress);
 				return;
 			}
@@ -768,7 +810,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 	protected async constructBreakReasonString(breakNumber: number, breakAddress: number, condition: string, breakReasonString: string): Promise<string> {
 		Utility.assert(condition != undefined);
-		if (breakReasonString == undefined)
+		if (breakReasonString === undefined)
 			breakReasonString = '';
 
 		// Generate reason text
@@ -782,9 +824,9 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				break;
 			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
 				// Check if it was an ASSERTION.
-				const abps = this.assertionBreakpoints.filter(abp => abp.longAddress == breakAddress);
+				const abps = this.assertionBreakpoints.filter(abp => abp.longAddress === breakAddress);
 				for (const abp of abps) {
-					if (condition == abp.condition) {
+					if (condition === abp.condition) {
 						const assertionCond = Utility.getAssertionFromCondition(condition);
 						//reasonString = "Assertion failed: " + assertionCond;
 						const replaced = Utility.replaceVarsWithValues(assertionCond);
@@ -808,7 +850,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
 				// Watchpoint
 				const address = breakAddress;
-				reasonString = "Watchpoint " + ((breakNumber == BREAK_REASON_NUMBER.WATCHPOINT_READ) ? "read" : "write") + " access at address " + Utility.getLongAddressString(address);
+				reasonString = "Watchpoint " + ((breakNumber === BREAK_REASON_NUMBER.WATCHPOINT_READ) ? "read" : "write") + " access at address " + Utility.getLongAddressString(address);
 				const labels = Labels.getLabelsPlusIndexForNumber64k(address);
 				if (labels.length > 0) {
 					const labelsString = labels.join(', ');
@@ -883,7 +925,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				const wps = this.getWatchpointsByAddress(breakAddress);
 				for (const wp of wps) {
 					let found = false;
-					if (breakType == BREAK_REASON_NUMBER.WATCHPOINT_READ) {
+					if (breakType === BREAK_REASON_NUMBER.WATCHPOINT_READ) {
 						found = wp.access.includes('r');
 					}
 					else {
@@ -932,9 +974,9 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				}
 
 				// Handle continue-breakpoints
-				if (breakType == BREAK_REASON_NUMBER.NO_REASON) {
+				if (breakType === BREAK_REASON_NUMBER.NO_REASON) {
 					// Only if other breakpoints not found or condition is false
-					if (condition == undefined) {
+					if (condition === undefined) {
 						// Temporary breakpoint hit.
 						condition = '';
 					}
@@ -950,7 +992,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		}
 
 		// Check for pause
-		if (correctedBreakNumber == BREAK_REASON_NUMBER.NO_REASON || condition == undefined) {
+		if (correctedBreakNumber === BREAK_REASON_NUMBER.NO_REASON || condition === undefined) {
 			// Check for manual pause
 			if (this.pauseStep) {
 				condition = '';	// Break
@@ -985,7 +1027,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 					const {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakInfo.reasonNumber, breakInfo.longAddr);
 
 					// Check for continue
-					if (condition == undefined) {
+					if (condition === undefined) {
 						// Continue
 						this.funcContinueResolve = funcContinueResolve;
 						await this.sendDzrpCmdContinue();
@@ -1053,7 +1095,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakInfo.reasonNumber, breakInfo.longAddr);
 
 				// Check for continue
-				if (condition == undefined) {
+				if (condition === undefined) {
 					// Calculate the breakpoints to use for step-over/step-into
 					//	[, bp1, bp2]=await this.calcStepBp(stepOver);
 					// Note: we need to use the original bp addresses
@@ -1123,11 +1165,11 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 					// Check for break condition
 					let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakInfo.reasonNumber, breakInfo.longAddr);
 					// For StepOut ignore the stepping tmp breakpoints
-					if (correctedBreakNumber == BREAK_REASON_NUMBER.NO_REASON)
+					if (correctedBreakNumber === BREAK_REASON_NUMBER.NO_REASON)
 						condition = undefined;
 
 					// Check if instruction was a RET(I/N)
-					if (condition == undefined) {
+					if (condition === undefined) {
 						const currSp = Z80Registers.getRegValue(Z80_REG.SP);
 						if (currSp > startSp && currSp > prevSp) {
 							// Something has been popped. This is to exclude unexecuted RET cc.
@@ -1142,7 +1184,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 					}
 
 					// Check for continue
-					if (condition == undefined) {
+					if (condition === undefined) {
 						// Calculate the breakpoints to use for step-over
 						let [, sobp1, sobp2] = await this.calcStepBp(true);
 						// Continue
@@ -1187,19 +1229,19 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	public isRet(opcodes: number): boolean {
 		// Check for RET
 		const opcode0 = opcodes & 0xFF;
-		if (0xC9 == opcode0)
+		if (0xC9 === opcode0)
 			return true;
 
 		// Check for RETI or RETN
-		if (0xED == opcode0) {
+		if (0xED === opcode0) {
 			const opcode1 = (opcodes >>> 8) & 0xFF;
-			if (0x4D == opcode1 || 0x45 == opcode1)
+			if (0x4D === opcode1 || 0x45 === opcode1)
 				return true;
 		}
 
 		// Now check for RET cc
 		const mask = 0b11000111;
-		if ((opcode0 & mask) == 0b11000000) {
+		if ((opcode0 & mask) === 0b11000000) {
 			// RET cc
 			return true;
 		}
@@ -1308,7 +1350,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 		// Set breakpoint
 		await this.sendDzrpCmdAddBreakpoint(bp);
-		if (bp.bpId == 0)
+		if (bp.bpId === 0)
 			bp.longAddress = -1;
 
 		// Add to list

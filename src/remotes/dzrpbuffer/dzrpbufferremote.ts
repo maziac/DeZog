@@ -1,5 +1,5 @@
 import {Log, LogTransport} from '../../log';
-import {AlternateCommand, DzrpMachineType, DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
+import {AlternateCommand, DzrpMachineType, DZRP, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
 import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {GenericBreakpoint} from '../../genericwatchpoint';
@@ -362,7 +362,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	 */
 	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
 		const nameBuffer = Utility.getBufferFromString(DZRP_PROGRAM_NAME);
-		const resp = await this.sendDzrpCmd(DZRP.CMD_INIT, [...DZRP_VERSION, ...nameBuffer], this.initCloseRespTimeoutTime);
+		const resp = await this.sendDzrpCmd(DZRP.CMD_INIT, [...this.DZRP_VERSION, ...nameBuffer], this.initCloseRespTimeoutTime);
 		// Error
 		let error;
 		if (resp[0] != 0)
@@ -375,10 +375,10 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		const program_name = Utility.getStringFromBuffer(resp, 5);
 
 		// Check version number. Check only major and minor number.
-		if (DZRP_VERSION[0] != resp[1]
-			|| DZRP_VERSION[1] != resp[2]) {
+		if (this.DZRP_VERSION[0] != resp[1]
+			|| this.DZRP_VERSION[1] > resp[2]) {
 			error = "DZRP versions do not match.\n";
-			error += "Required version is " + DZRP_VERSION[0] + "." + DZRP_VERSION[1] + ".\n";
+			error += "Required version is " + this.DZRP_VERSION[0] + "." + this.DZRP_VERSION[1] + " or higher.\n";
 			error += "But this remote (" + program_name + ") supports only version " + resp[1] + "." + resp[2] + ".";
 		}
 
