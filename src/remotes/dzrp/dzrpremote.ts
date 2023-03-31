@@ -182,7 +182,6 @@ export class DzrpRemote extends RemoteBase {
 	}
 
 
-
 	/// Initializes the machine.
 	/// When ready it emits this.emit('initialized') or this.emit('error', exception);
 	/// Don't override this, override 'doInitialization' instead.
@@ -555,24 +554,42 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				}
 				const minTime = Utility.parseValue(cmdArray[1]);
 				const maxTime = Utility.parseValue(cmdArray[2]);
-				await this.dzrpTransportTest?.end();
+				await this.dzrpTransportTest?.cmdsEnd();
 				this.dzrpTransportTest = new DzrpTransportTest(this);
 				this.dzrpTransportTest.on('debug_console', msg => {
 					// Forward
 					this.emit('debug_console', msg);
 				});
-				await this.dzrpTransportTest.start(minTime, maxTime);
+				await this.dzrpTransportTest.cmdsStart(minTime, maxTime);
 				return "Started test loop sending commands...";
 			}
 			else if (startEnd === "end") {
 				// "test end"
-				await this.dzrpTransportTest?.end();
+				await this.dzrpTransportTest?.cmdsEnd();
 				this.dzrpTransportTest = undefined;
 				return "Stopped sending commands.";
 			}
+			if (startEnd === "timeout") {
+				// "test timeout 100 200 400 6"
+				// 100 = first part length
+				// 200 = second part length
+				// 400 = 400ms pause between parts
+				// 6 = sequence number to use
+				if (cmdArray.length < 3) {
+					// Error
+					throw Error("Expecting at least 3 parameters: timeout len1 len2 [pause [seqNumber]].");
+				}
+				const len1 = Utility.parseValue(cmdArray[1]);
+				const len2 = Utility.parseValue(cmdArray[2]);
+				const pause = Utility.parseValue(cmdArray[3]);
+				const seqno = Utility.parseValue(cmdArray[4]);
+				const dzrpTimeoutTest = new DzrpTransportTest(this);
+				dzrpTimeoutTest.sendCmdWithPause(len1, len2, pause, seqno);
+				return "Two parts sent.";
+			}
 			else {
 				// Error
-				throw Error("Expecting parameter 'start' or 'end'.");
+				throw Error("Expecting parameter 'start', 'end' or 'timeout'.");
 			}
 
 		}

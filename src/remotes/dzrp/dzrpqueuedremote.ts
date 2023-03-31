@@ -183,6 +183,5 @@ export class DzrpQueuedRemote extends DzrpRemote {
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
 		Utility.assert(false);
 	}
-
 }
 

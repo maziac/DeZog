@@ -2,7 +2,8 @@ import {EventEmitter} from "stream";
 import {LogTransport} from "../../log";
 import {Utility} from "../../misc/utility";
 import {Z80_REG} from "../z80registers";
-import {DzrpRemote} from "./dzrpremote";
+import {DzrpQueuedRemote} from "./dzrpqueuedremote";
+import {DZRP, DzrpRemote} from "./dzrpremote";
 
 /**
  * Class to test the communication with a DZRP client.
@@ -12,7 +13,7 @@ import {DzrpRemote} from "./dzrpremote";
  */
 export class DzrpTransportTest extends EventEmitter {
 	// The remote to use for sending commands.
-	protected remote: DzrpRemote | any;	// "any" to easily access the protected methods.
+	protected remote: DzrpQueuedRemote | any;	// "any" to easily access the protected methods.
 
 	// Indicates if the test loop is running.
 	protected running = false;
@@ -165,9 +166,9 @@ export class DzrpTransportTest extends EventEmitter {
 	 * @param minTime The minimum time between sent commands.
 	 * @param maxTime The maximum time between sent commands.
 	 */
-	public async start(minTime: number, maxTime: number) {
+	public async cmdsStart(minTime: number, maxTime: number) {
 		// Stop any probably running test loop.
-		await this.end();
+		await this.cmdsEnd();
 		// Start asynchronous loop
 		(async () => {
 			let counter = 0;
@@ -199,7 +200,7 @@ export class DzrpTransportTest extends EventEmitter {
 			catch (e) {
 				// Error -> stop
 				console.log("Stopped on error (count=" + counter + "):", e);
-				const msg = "Stopped after " + counter + " messages on error:" + e.message;
+				const msg = "Stopped after " + counter + " messages on error: " + e.message;
 				LogTransport.log(msg);
 				this.emit('debug_console', msg);
 				this.running = false;
@@ -212,7 +213,7 @@ export class DzrpTransportTest extends EventEmitter {
 	 * Ends the test started in 'start'.
 	 * After 'end' returns, 'this.running' is false.
 	 */
-	public async end() {
+	public async cmdsEnd() {
 		// Check if a test is ongoing
 		if (this.running) {
 			return new Promise<void>(resolve => {
@@ -272,5 +273,50 @@ export class DzrpTransportTest extends EventEmitter {
 			max = min;
 		const r = Math.floor(Math.random() * (max - min + 1) + min);
 		return r;
+	}
+
+
+	/** Sends one big message with a adjustable pause in between.
+	 * Used to test draining in dezogif.
+	 * @param len1 Length of first part
+	 * @param len2 Length of second part
+	 * @param pause The pause between the 2 parts in ms
+	 * @param sequenceNumber The sequence number to use. Defaults to 10.
+	 */
+	public async sendCmdWithPause(len1: number, len2: number, pause = 0, sequenceNumber = 10) {
+		if (len1 < 10) {
+			this.emit('debug_console', "Length should be bigger/equal 10.");
+			return;
+		}
+		const totalLen = len1 + len2;
+		const buffer1 = Buffer.alloc(len1);
+		// Encode length
+		const payloadLen = totalLen - (4 + 2);
+		buffer1[0] = payloadLen & 0xFF;
+		buffer1[1] = (payloadLen >>> 8) & 0xFF;
+		buffer1[2] = (payloadLen >>> 16) & 0xFF;
+		buffer1[3] = (payloadLen >>> 24) & 0xFF;
+		// Sequence number
+		buffer1[4] = sequenceNumber;
+		// Command
+		buffer1[5] = DZRP.CMD_WRITE_MEM;
+		// Reserved
+		buffer1[6] = 0;
+		// Address
+		buffer1[7] = 0;
+		buffer1[8] = 0x4000 >>> 8;
+		// Send first part
+		await this.remote.sendBuffer(buffer1);
+
+		if (len2 > 0) {
+			// Pause
+			if (pause > 0) {
+				await Utility.timeout(pause);
+			}
+
+			// Send remaining buffer
+			const buffer2 = Buffer.alloc(len2);
+			await this.remote.sendBuffer(buffer2);
+		}
 	}
 }
