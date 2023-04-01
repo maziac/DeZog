@@ -76,6 +76,7 @@ Notes:
 
 
 # Disassembly
+
 The disassembly fetches the entire 64k memory from the remote for disassembly.
 DeZog does its best to analyze the code intelligently and disassemble the entire code.
 
@@ -116,6 +117,46 @@ There are a few ways you can deal with this:
 - a) Use 'zsim: the internal simulator keeps a list of the most recently executed addresses used by DeZog for disassembly.
 - b) Use the command '-dasm' in the debug console: Simply specify an address slightly before that of the current PC (program counter). 'dasm' will perform a brute force disassembly. But this only works if the 'dasm' address is not too far away from the current PC. And of course it can fail because Z80 commands can be up to 4 bytes long, so you might choose an address somewhere in the middle of a command. In that case, try a slightly different address.
 - c) Use '-dasm', but also take a look at the callstack and use the address from the callstack.
+
+
+## Memory Model
+
+Choosing the right memory model is essential for a good disassembly.
+This is because the disassembly normally stops at the border to a pageable memory bank.
+The disassembly stops because it is uncertain if the memory is still valid when reached or if another bank will be paged-in.
+Therefore, if you e.g. have a 48K Spectrum program but use a ZXNext memory model or even a Z128K memory model, the disassembly will not completely disassemble the 48K space but will stop at a possibly bank boundary.
+This will not produce wrong disassemblies, but you would have got longer disassemblies with the right memory model.
+The other way round, if you have a ZX128 program and you would try to analyze it with a 48K memory model, does have other problems: The disassembler assumes that the memory space is non-pageable, without bank boundaries.
+In this case it might happen that some code is disassembled that will not be there once the PC reaches the address, simply because the bank has been swapped meanwhile.
+
+So, to conclude: before starting reverse engineering the code, make sure you have setup the correct memory model.
+If none of the existing ones suits your needs than create a [custom memory model](Usage.md/#custommemory)).
+And please note: if you change the memory model later and this affects bank/addresses of already disassembled code that you have put in your "revEng" list file, this can mean that you have to edit your code for the new bank assignments.
+
+
+### Debug Console ("-memmodel")
+
+There is a new debug console command to print the current used memory model. I.e. the used slot ranges and available banks together with their names.
+Here is an example output:
+
+~~~
+-memmodel
+Slot ranges:
+0000-2FFF: unnamed, banks: R0
+3000-37FF: unnamed, banks: R1
+3800-3BFF: unnamed, banks: R2
+3C00-3FFF: unnamed, banks: U
+4000-43FF: unnamed, banks: R3
+4400-FFFF: unnamed, banks: U
+Memory banks:
+R0: ROM0, size=12288, RAM
+R1: ROM1, size=2048, RAM
+R2: ROM2, size=1024, RAM
+R3: ROM3, size=1024, RAM
+U: UNASSIGNED, size=48128, RAM
+~~~
+
+You can use this also to test your custom memory models.
 
 
 # Breakpoints
@@ -510,7 +551,6 @@ Unfortunately, in MAME state save/restore is not available because of implementa
 ## Memory Model
 
 There is a new debug console command to print the current used memory model. I.e. the used slot ranges and available banks together with their names.
-This can be particular helpful in case MAME is used as remote.
 Here is an example output:
 
 ~~~
