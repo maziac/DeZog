@@ -627,6 +627,8 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		// TODO: Currently the function is disabled.
 		// Enable it when dezogif > 2.1.0 is released.
 	}
+
+
 	/**
 	 * This command is not used. Use the NMI button instead.
 	 */

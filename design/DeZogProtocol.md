@@ -125,12 +125,6 @@ Notes:
 
 ## History
 
-
-### For a future release, TODO
-
-- Enabling/disabling of the interrupt. For loading 48k and 128k SNA files: index 0x13 (iff2), bit 2 contains 0=di, 1=ei. https://sinclair.wiki.zxnet.co.uk/wiki/SNA_format (sjasmplus always sets 0) => implement in zsim.
-
-
 ### 2.1.0
 
 Added:
