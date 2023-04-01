@@ -957,7 +957,6 @@ suite('MemoryModel', () => {
 
 
 		test('ZXNEXT (MemoryModelZxNextTwoRom)', () => {
-			//TODO
 			const mm = new MemoryModelZxNextTwoRom() as any;
 			assert.equal(mm.slotRanges.length, 8);
 			assert.equal(mm.slotRanges[0].start, 0x0000);
