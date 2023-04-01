@@ -523,7 +523,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			if (destMemModel instanceof MemoryModelZxNextBase) {
 				this.funcConvertBank = (address: number, bank: number) => {
 					if (bank > 7)
-						this.throwError("Bank " + bank + " of ZXNext memory model cannot be converted to target ZX128K memory model.");
+						this.throwError("Bank " + bank + " of ZX128K memory model cannot be converted to target ZXNext memory model.");
 					let convBank = 2 * bank;
 					convBank += (address >>> 13) & 0x01;
 					return convBank;
