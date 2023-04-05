@@ -97,7 +97,6 @@ opt zsim
 	remote -> remote: loadExecutable
 	remote -> remote: createZ80RegistersDecoder
 	note over remote: create memory model\n and init
-	remote -> remote: setLaunchExecAddress
 	remote -> remote: getRegistersFromEmulator
 	da <- remote: event('initialized')
 else cspect
@@ -109,7 +108,6 @@ else cspect
 		remote -> remote: loadExecutable
 		remote -> remote: createZ80RegistersDecoder
 		note over remote: create memory model\n and init
-		remote -> remote: setLaunchExecAddress
 		remote -> remote: getRegistersFromEmulator
 		da <- remote: event('initialized')
 	end
@@ -127,7 +125,6 @@ else zesarux
 	remote -> remote: loadExecutable
 	remote -> remote: createZ80RegistersDecoder
 	note over remote: create memory model\n and init
-	remote -> remote: setLaunchExecAddress
 	da <- remote: event('initialized')
 else mame
 	note over remote: connect socket
@@ -136,7 +133,6 @@ else mame
 	remote -> remote: loadExecutable
 	remote -> remote: createZ80RegistersDecoder
 	note over remote: create memory model\n and init
-	remote -> remote: setLaunchExecAddress
 	remote -> remote: getRegistersFromEmulator
 	da <- remote: event('initialized')
 end
@@ -147,6 +143,7 @@ da -> remote: initWpmemAssertionLogpoints
 remote -> labels: getWatchPointLines
 remote -> labels: getAssertionLines
 remote -> labels: getLogPointLines
+da -> remote: setLaunchExecAddress
 da -> remote: getRegistersFromEmulator
 da -> remote: getCallStackFromEmulator
 
