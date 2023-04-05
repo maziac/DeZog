@@ -121,7 +121,10 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		this.serialPort.on('error', err => {
 			LogTransport.log('ZxNextSerialRemote: ' + err);
 			// Error
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		});
 
 		// Receive data
@@ -193,7 +196,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		this.stopCmdRespTimeout();
 		this.cmdRespTimeout = setTimeout(() => {
 			this.stopCmdRespTimeout();
-			const err = new Error('No response received from remote. A simple reason for this message is that the ZX Next is running the debugged program and cannot answer. In that case press the yellow NMI button on the ZX Next to pause execution. It can, of course, be also any other connection problem.');
+			const err = new Error('No response received from remote.');
 			// Log
 			LogTransport.log('Warning: ' + err.message);
 			// Show warning (only if a few moments have gone after the last CMD_CONTINUE)
@@ -377,8 +380,10 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 			// If tmp breakpoint and real breakpoint was hit, i.e. both are the same
 			// then the 'dezogif' cannot determine the tmp breakpoint correctly.
 			// I.e. it is corrected here.
-			if (breakInfo.longAddr == longBp1Address || breakInfo.longAddr == longBp2Address)
-				breakInfo.reasonNumber = BREAK_REASON_NUMBER.NO_REASON;
+			if (breakInfo.reasonNumber !== BREAK_REASON_NUMBER.MANUAL_BREAK) {
+				if (breakInfo.longAddr === longBp1Address || breakInfo.longAddr === longBp2Address)
+					breakInfo.reasonNumber = BREAK_REASON_NUMBER.NO_REASON;
+			}
 
 			// Restore breakpoint addresses
 			const count = this.breakpointsAndOpcodes.length;

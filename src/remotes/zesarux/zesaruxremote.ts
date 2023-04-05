@@ -146,7 +146,10 @@ export class ZesaruxRemote extends RemoteBase {
 				return;
 			// and terminate
 			err.message += " (Error in connection to ZEsarUX!)";
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		});
 		zSocket.on('close', () => {
 			if (this.terminating)
@@ -155,14 +158,20 @@ export class ZesaruxRemote extends RemoteBase {
 			this.breakpoints.length = 0;
 			// and terminate
 			const err = new Error('ZEsarUX terminated the connection!');
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		});
 		zSocket.on('end', () => {
 			if (this.terminating)
 				return;
 			// and terminate
 			const err = new Error('ZEsarUX terminated the connection!');
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		});
 		zSocket.on('connected', async () => {
 			if (this.terminating)
@@ -178,7 +187,10 @@ export class ZesaruxRemote extends RemoteBase {
 				if (this.zesaruxVersion < MIN_ZESARUX_VERSION) {
 					zSocket.quit();
 					const err = new Error('Please update ZEsarUX. Need at least version ' + MIN_ZESARUX_VERSION + '.');
-					this.emit('error', err);
+					try {
+						this.emit('error', err);
+					}
+					catch {};
 					return;
 				}
 
@@ -186,7 +198,10 @@ export class ZesaruxRemote extends RemoteBase {
 				if (this.zesaruxVersion >= 10.2) {
 					zSocket.quit();
 					const err = new Error('Please use only a ZEsarUX version <= 10.1. At the moment 10.2 and higher is incompatible with DeZog.');
-					this.emit('error', err);
+					try {
+						this.emit('error', err);
+					}
+					catch {};
 					return;
 				}
 
@@ -261,7 +276,10 @@ export class ZesaruxRemote extends RemoteBase {
 			}
 			catch (e) {
 				// Some error occurred
-				this.emit('error', e);
+				try {
+					this.emit('error', e);
+				}
+				catch {};
 			}
 		});
 	}

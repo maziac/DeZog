@@ -81,7 +81,10 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			LogTransport.log('MameRemote: MAME terminated the connection: ' + hadError);
 			// Error
 			const err = new Error('MameRemote: MAME terminated the connection!');
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		});
 
 		// Handle errors
@@ -89,7 +92,10 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			//console.log('Error: ', err);
 			LogTransport.log('MameRemote: Error: ' + err);
 			// Error
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		});
 
 		// Receive data
@@ -141,7 +147,10 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			this.emit('initialized', 'MAME connected!')
 		}
 		catch (err) {
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		}
 	}
 
@@ -303,7 +312,10 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		}
 		catch (e) {
 			this.receivedData = '';
-			this.emit('error', e);
+			try {
+				this.emit('error', e);
+			}
+			catch {};
 		}
 	}
 
@@ -661,7 +673,10 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			await this.sendPacketData('c');
 		}
 		catch (e) {
-			this.emit('error', e);
+			try {
+				this.emit('error', e);
+			}
+			catch {};
 		}
 	}
 
@@ -697,7 +712,10 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			}
 		}
 		catch (e) {
-			this.emit('error', e);
+			try {
+				this.emit('error', e);
+			}
+			catch {};
 		}
 
 		// Return

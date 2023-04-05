@@ -65,7 +65,10 @@ export class CSpectRemote extends DzrpBufferRemote {
 			//console.log('Close.');
 			// Error
 			const err = new Error('CSpect plugin terminated the connection!');
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		});
 
 		// Handle errors
@@ -73,7 +76,10 @@ export class CSpectRemote extends DzrpBufferRemote {
 			LogTransport.log('CSpectRemote: Error: ' + err);
 			//console.log('Error: ', err);
 			// Error
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		});
 
 		// Receive data

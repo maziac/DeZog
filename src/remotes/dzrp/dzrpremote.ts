@@ -271,7 +271,10 @@ export class DzrpRemote extends RemoteBase {
 			this.emit('initialized', text)
 		}
 		catch (err) {
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		}
 	}
 
@@ -326,6 +329,9 @@ export class DzrpRemote extends RemoteBase {
 		if (cmd_name === "cmd_init") {
 			const resp = await this.sendDzrpCmdInit();
 			response = "Program: '" + resp.programName + "', DZRP Version: " + resp.dzrpVersion + "', machineType: " + resp.machineType + ", Error: " + resp.error;
+		}
+		else if (cmd_name === "cmd_close") {
+			await this.sendDzrpCmdClose();
 		}
 		else if (cmd_name === "cmd_continue") {
 			await this.sendDzrpCmdContinue();
@@ -1174,7 +1180,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			const funcContinueResolve = async (breakInfo: BreakInfo) => {
 				try {
 					// Give vscode a little time
-					await this.timeWait.waitAtInterval();
+					await this.timeWait.waitAtInterval();	// TODO: can I remove all waitAtInterval ?
 
 					// Get registers
 					await this.getRegistersFromEmulator();

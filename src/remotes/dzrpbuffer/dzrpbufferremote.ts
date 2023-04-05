@@ -255,7 +255,13 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 			if (recSeqno != seqno) {
 				const error = Error("DZRP: Received wrong SeqNo. '" + recSeqno + "' instead of expected '" + seqno + "'");
 				LogTransport.log("Error: " + error);
-				this.emit('error', error);
+				// Note: 'error' events have a special handling and throw an error if event was not handled:
+				// "For all EventEmitter objects, if an 'error' event handler is not provided, the error will be thrown."
+				try {
+					this.emit('error', error);
+				}
+				catch {};
+				msg.reject(error);
 				return;
 			}
 			data = data.subarray(1);  // Cut off seq number
@@ -278,7 +284,10 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 			// Log
 			LogTransport.log('Error: ' + err.message);
 			// Error
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		}, CHUNK_TIMEOUT);
 	}
 
