@@ -227,7 +227,7 @@ export class ZesaruxRemote extends RemoteBase {
 				await Utility.timeout(waitBeforeMs);
 
 				// Load executable
-				await this.loadExecutable();
+				await this.load();
 
 				// Get the machine type, e.g. tbblue, zx48k etc.
 				// Is required to find the right slot/bank paging.

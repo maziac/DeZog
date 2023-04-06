@@ -74,8 +74,8 @@ participant vscode
 participant da as "DeZog/\nDebug Adapter"
 participant remote as "Remote"
 participant emulator as "Emulator"
-participant lbls as "Labels"
-participant model as "Memory Model"
+participant labels as "Labels"
+'participant model as "Memory Model"
 
 
 vscode -> da: initialize
@@ -94,10 +94,9 @@ remote -> remote: doInitialization
 
 opt zsim
 	remote -> remote: configureMachine
-	remote -> remote: loadExecutable
+	remote -> remote: load
 	remote -> remote: createZ80RegistersDecoder
 	note over remote: create memory model\n and init
-	remote -> remote: getRegistersFromEmulator
 	da <- remote: event('initialized')
 else cspect
 	note over remote: connect socket
@@ -105,10 +104,9 @@ else cspect
 	group dzrpremote
 		remote -> remote: onConnect
 		remote -> remote: sendDzrpCmdInit
-		remote -> remote: loadExecutable
+		remote -> remote: load
 		remote -> remote: createZ80RegistersDecoder
 		note over remote: create memory model\n and init
-		remote -> remote: getRegistersFromEmulator
 		da <- remote: event('initialized')
 	end
 else zxnext
@@ -122,23 +120,22 @@ else zxnext
 else zesarux
 	note over remote: connect socket
 	remote -> remote: event('connected')
-	remote -> remote: loadExecutable
-	remote -> remote: createZ80RegistersDecoder
-	note over remote: create memory model\n and init
+	remote -> remote: load
+	note over remote: create Z80registers.decoder,\nmemory model\nand init
 	da <- remote: event('initialized')
 else mame
 	note over remote: connect socket
 	remote -> remote: event('connect')
 	remote -> remote: onConnect
-	remote -> remote: loadExecutable
+	remote -> remote: load
 	remote -> remote: createZ80RegistersDecoder
-	note over remote: create memory model\n and init
-	remote -> remote: getRegistersFromEmulator
+	note over remote: create memory model\nand init
 	da <- remote: event('initialized')
 end
 
 da -> remote: readListfiles
 remote -> labels: readListfiles
+da -> remote: loadObjs
 da -> remote: initWpmemAssertionLogpoints
 remote -> labels: getWatchPointLines
 remote -> labels: getAssertionLines
@@ -151,48 +148,11 @@ vscode <- da: sendEvent(InitializedEvent)
 
 alt Settings.launch.startAutomatically == true
 	da -> da: remoteContinue
-	da -> Remote: continue
+	da -> remote: continue
 else
 	vscode <- da: sendEvent(StoppedEvent)
 end
 
 vscode <- da: sendResponse(launch)
 
-
-
-
-ZXSocket <- da: connect
-ZXSocket -> da: connected
-vscode <- da: sendEvent(stopped)
-vscode <- da: sendEvent(initialized)
-
-
-
-da -> remote: createRemote
-da -> remote: init()
-activate remote
-remote -> emulator: Connect
-remote -> emulator: read memory model
-remote <-- emulator
-remote -> model
-activate model
-note over model: Instantiate\nMemoryModelXXX
-da <-- remote: emit('initialized')
-da -> remote: readListFiles()
-remote -> lbls: readListFiles(MemoryModelXXX)
-lbls -> model:
-lbls <-- model
-note over lbls: Calculate long address\nwith memory model
-
-
-note over lbls: Write all (long)\nlabels to store
-remote <-- lbls
-
--> da: Step
-da -> remote: Step
-remote -> emulator: getSlots
-remote <-- emulator:
-note over remote: Calculate long address\nfrom addr64k and slots
-remote -> lbls: Get label for\nlong address
-remote <-- lbls
 ~~~

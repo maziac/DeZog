@@ -239,7 +239,7 @@ export class DzrpRemote extends RemoteBase {
 				throw Error(resp.error);
 
 			// Load executable
-			await this.loadExecutable();
+			await this.load();
 
 			Z80Registers.decoder = this.createZ80RegistersDecoder();
 			// Set memory model according machine type

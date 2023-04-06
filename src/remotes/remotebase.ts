@@ -226,30 +226,45 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Loads the sna/nex file and the obj files.
+	 * Loads the sna or nex file.
 	 * Do not override.
-	 * Override
 	 */
-	public async loadExecutable(): Promise<void> {
+	public async load(): Promise<void> {
 		// Load sna or nex file
 		const loadPath = Settings.launch.load;
 		if (loadPath) {
 			await this.loadBin(loadPath);
 		}
 
-		// Load obj file(s) unit
+		// Load registers
+		//await this.getRegistersFromEmulator();
+	}
+
+
+	/**
+	 * Loads the obj files.
+	 * Do not override.
+	 * Note: This is a separate function (not combined with 'load').
+	 * The reason is that labels should be available to make use of labels for the 'start' property (launch.json).
+	 * 'load' in the zesarux case leads to a change of the memory model.
+	 * The memory module is required to read the list files.
+	 * I.e. 'load' is required to be done before reading list files.
+	 * But for loadObjs we need the labels to be present.
+	 */
+	public async loadObjs(): Promise<void> {
+		// Load obj file(s)
 		for (const loadObj of Settings.launch.loadObjs) {
 			if (loadObj.path) {
 				// Convert start address
 				const start = Labels.getNumberFromString64k(loadObj.start);
 				if (isNaN(start))
-					throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
+					throw Error('Cannot evaluate: "loadObjs[].start:" ' + loadObj.start + '.');
 				await this.loadObj(loadObj.path, start);
 			}
 		}
 
 		// Load registers
-		await this.getRegistersFromEmulator();
+		//await this.getRegistersFromEmulator();
 	}
 
 

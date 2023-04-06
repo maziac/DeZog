@@ -684,8 +684,12 @@ export class DebugSessionClass extends DebugSession {
 				// Load files
 				try {
 					// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
-					// Note: readListfiles cannot be done before loadExecutable as zesarux might change the used memory model (which is required for readlistfiles)
+					// Note: 'loadObjs' is done after 'load'. Reason is:
+					// loadObjs needs labels ('start'), labels require the memory model.
+					// And zesarux might change the memory model on 'load'.
 					Remote.readListFiles(Settings.launch);
+					// Load objs to memory
+					Remote.loadObjs();
 					// This needs to be done after the labels have been read
 					await Remote.initWpmemAssertionLogpoints();
 				}

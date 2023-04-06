@@ -135,7 +135,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			this.parseXml(qXmlReply);
 
 			// Load executable
-			await this.loadExecutable();
+			await this.load();
 
 			Z80Registers.decoder = this.createZ80RegistersDecoder();
 
