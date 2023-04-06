@@ -2,6 +2,7 @@
 
 # 3.2.5
 - Improvements in disconnection handling.
+- launch.json: 'loadObjs' 'start' also supports labels.
 
 # 3.2.4
 - Fix for #110: Attempts to start debugging result in error Cannot evaluate 'execAddress'.
