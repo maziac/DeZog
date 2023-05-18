@@ -289,3 +289,26 @@ SUB530F:
 
 	RET
 
+
+	DEFS 0x6000-$
+	; Access through bank border into multi bank slot
+	LD DE,0x8000
+	CALL 0x8000
+
+	; Or in same bank
+	LD DE,0x5900
+	LD BC,0x5910
+	CALL 0x5910
+
+	; Access through bank border into single bank slot
+	LD DE,0xC000
+	LD BC,0xC010
+	CALL 0xC010
+
+	RET
+
+	DEFS 0x8010-$
+	RET
+
+	DEFS 0xC010-$
+	RET

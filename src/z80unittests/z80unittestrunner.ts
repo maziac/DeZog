@@ -276,11 +276,11 @@ export class Z80UnitTestRunner {
 		if (!testConfig)
 			throw Error("No test config found.");
 		// Check if already setup
-		if (this.testConfig == testConfig)
+		if (this.testConfig === testConfig)
 			return;
 		this.testConfig = testConfig;
 
-		// Terminate any probably runnning instance
+		// Terminate any probably running instance
 		await DebugSessionClass.singleton().terminateRemote();
 		this.debugAdapter = undefined as any;
 
@@ -461,8 +461,7 @@ export class Z80UnitTestRunner {
 		const utLabel = ut.utLabel;
 		// Special handling for zsim: Re-init custom code.
 		if (Remote instanceof ZSimRemote) {
-			const zsim = Remote;
-			zsim.customCode?.execute(utLabel);
+			Remote.customCode?.execute(utLabel);
 		}
 
 		// Start the part that is executed before each unit test

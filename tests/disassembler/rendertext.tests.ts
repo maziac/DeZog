@@ -29,7 +29,22 @@ suite('Disassembler - RenderText', () => {
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 		disasm = new SmartDisassembler();
 		disasm.funcGetLabel = addr64k => undefined;
-		disasm.funcFormatLongAddress = addr64k => Utility.getHexString(addr64k, 4) + '.1';
+		disasm.funcFormatLongAddress = (addr64k) => {
+			let addrString = Utility.getHexString(addr64k, 4);
+			const slotBank = (disasm as any).addressesSlotBankInfo[addr64k]
+			if (!slotBank.singleBank) {
+				addrString += '.' + (slotBank.slot + 1);	// Fake a bank number by simply using the slot number.
+			}
+			return addrString;
+		}
+		disasm.funcFormatLongAddressHex = (addr64k) => {
+			let addrString = Format.getHexFormattedString(addr64k, 4);
+			const slotBank = (disasm as any).addressesSlotBankInfo[addr64k]
+			if (!slotBank.singleBank) {
+				addrString +=  '.' + (slotBank.slot + 1);	// Fake a bank number by simply using the slot number.
+			}
+			return addrString;
+		}
 		r = new RenderText(disasm);
 		r.clmnsAddress = 7;
 		r.clmnsBytes = 10;
@@ -68,60 +83,60 @@ suite('Disassembler - RenderText', () => {
 		test('formatAddressLabel', () => {
 			r.clmnsAddress = 12;
 			let s = r.formatAddressLabel(0x1234, 'LABEL1');
-			assert.equal(stripHtml(s), '1234.1      LABEL1:');
+			assert.equal(stripHtml(s), '1234        LABEL1:');
 
 			r.clmnsAddress = 3;
 			s = r.formatAddressLabel(0x1234, 'LABEL1');
-			assert.equal(stripHtml(s), '1234.1 LABEL1:');
+			assert.equal(stripHtml(s), '1234 LABEL1:');
 		});
 
 		test('formatAddressInstruction', () => {
 			r.clmnsAddress = 12;
 			r.clmnsBytes = 8;
 			let s = r.formatAddressPlusText(0x1234, [], 'LD A,5');
-			assert.equal(stripHtml(s), '1234.1              LD A,5');
+			assert.equal(stripHtml(s), '1234                LD A,5');
 
 			r.clmnsAddress = 3;
 			s = r.formatAddressPlusText(0x1234, [], 'LD A,5');
-			assert.equal(stripHtml(s), '1234.1         LD A,5');
+			assert.equal(stripHtml(s), '1234         LD A,5');
 
 			r.clmnsAddress = 3;
 			s = r.formatAddressPlusText(0x1234, [0xAF], 'LD A,5');
-			assert.equal(stripHtml(s), '1234.1 AF      LD A,5');
+			assert.equal(stripHtml(s), '1234 AF      LD A,5');
 
 			r.clmnsAddress = 3;
 			s = r.formatAddressPlusText(0x1234, [0xAF, 0x02], 'LD A,5');
-			assert.equal(stripHtml(s), '1234.1 AF 02   LD A,5');
+			assert.equal(stripHtml(s), '1234 AF 02   LD A,5');
 
 			r.clmnsAddress = 3;
 			s = r.formatAddressPlusText(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
-			assert.equal(stripHtml(s), '1234.1 AF ...  LD A,5');
+			assert.equal(stripHtml(s), '1234 AF ...  LD A,5');
 
 			r.clmnsAddress = 3;
 			r.clmnsBytes = 9;
 			s = r.formatAddressPlusText(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
-			assert.equal(stripHtml(s), '1234.1 AF 0...  LD A,5');
+			assert.equal(stripHtml(s), '1234 AF 0...  LD A,5');
 
 			r.clmnsAddress = 3;
 			r.clmnsBytes = 10;
 			s = r.formatAddressPlusText(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
-			assert.equal(stripHtml(s), '1234.1 AF 02 45  LD A,5');
+			assert.equal(stripHtml(s), '1234 AF 02 45  LD A,5');
 
 			r.clmnsAddress = 3;
 			r.clmnsBytes = 11;
 			s = r.formatAddressPlusText(0x1234, [0xAF, 0x02, 0x45], 'LD A,5');
-			assert.equal(stripHtml(s), '1234.1 AF 02 45   LD A,5');
+			assert.equal(stripHtml(s), '1234 AF 02 45   LD A,5');
 		});
 
 		test('formatAddressPlusText', () => {
 			r.clmnsAddress = 12;
 			r.clmnsBytes = 8;
 			let s = r.formatAddressPlusText(0x1234, [], ';');
-			assert.equal(c(s), c('1234.1 ;'));
+			assert.equal(c(s), c('1234 ;'));
 			s = r.formatAddressPlusText(0x1234, [0x00], 'NOP');
-			assert.equal(c(s), c('1234.1 00 NOP'));
+			assert.equal(c(s), c('1234 00 NOP'));
 			s = r.formatAddressPlusText(0x1234, [0x3E, 0x05], 'LD A,5');
-			assert.equal(c(s), c('1234.1 3E 05 LD A,5'));
+			assert.equal(c(s), c('1234 3E 05 LD A,5'));
 		});
 	});
 
@@ -144,23 +159,23 @@ suite('Disassembler - RenderText', () => {
 		test('getCompleteDataLine', () => {
 			r.clmnsBytes = 8;
 			disasm.memory.setMemory(0x1000, new Uint8Array([]));
-			assert.equal(c(r.getCompleteDataLine(0x1000, 0)), '1000.1 DEFB ; ASCII: ');
+			assert.equal(c(r.getCompleteDataLine(0x1000, 0)), '1000 DEFB ; ASCII: ');
 
 			disasm.memory.setMemory(0x1000, new Uint8Array([65]));
-			assert.equal(c(r.getCompleteDataLine(0x1000, 1)), '1000.1 41 DEFB 41 ; ASCII: A');
+			assert.equal(c(r.getCompleteDataLine(0x1000, 1)), '1000 41 DEFB 41 ; ASCII: A');
 
 			disasm.memory.setMemory(0x1000, new Uint8Array([65, 66]));
-			assert.equal(c(r.getCompleteDataLine(0x1000, 2)), '1000.1 41 42 DEFB 41 42 ; ASCII: AB');
+			assert.equal(c(r.getCompleteDataLine(0x1000, 2)), '1000 41 42 DEFB 41 42 ; ASCII: AB');
 
 			disasm.memory.setMemory(0x1000, new Uint8Array([65, 66, 0]));
-			assert.equal(c(r.getCompleteDataLine(0x1000, 3)), '1000.1 41 ... DEFB 41 42 00 ; ASCII: AB?');
+			assert.equal(c(r.getCompleteDataLine(0x1000, 3)), '1000 41 ... DEFB 41 42 00 ; ASCII: AB?');
 
 			disasm.memory.setMemory(0x1000, new Uint8Array([0x0A, 0xFC]));
-			assert.equal(c(r.getCompleteDataLine(0x1000, 2)), '1000.1 0A FC DEFB 0A FC ; ASCII: ??');
+			assert.equal(c(r.getCompleteDataLine(0x1000, 2)), '1000 0A FC DEFB 0A FC ; ASCII: ??');
 		});
 
 		test('getAddressLabel', () => {
-			assert.equal(c(r.getAddressLabel(0x1000, 'LBL')), '1000.1 LBL:');
+			assert.equal(c(r.getAddressLabel(0x1000, 'LBL')), '1000 LBL:');
 		});
 
 		suite('printData', () => {
@@ -176,8 +191,8 @@ suite('Disassembler - RenderText', () => {
 				(disasm as any).otherLabels.set(0x1000, 'LBL');
 				r.dataReferences.push(0x1000);
 				r.printData(lines, 0x1000, 4);
-				assert.equal(c(lines.getText()), `1000.1 LBL:
-1000.1 00 ... DEFB 00 00 00 00 ; ASCII: ????
+				assert.equal(c(lines.getText()), `1000 LBL:
+1000 00 ... DEFB 00 00 00 00 ; ASCII: ????
 `);
 
 				lines = new RenderedLines();
@@ -185,8 +200,8 @@ suite('Disassembler - RenderText', () => {
 				(disasm as any).otherLabels.set(0x1000, 'LBL');
 				r.dataReferences.push(0x1000);
 				r.printData(lines, 0x1000, 2);
-				assert.equal(c(lines.getText()), `1000.1 LBL:
-1000.1 41 42 DEFB 41 42 ; ASCII: AB
+				assert.equal(c(lines.getText()), `1000 LBL:
+1000 41 42 DEFB 41 42 ; ASCII: AB
 `);
 			});
 
@@ -198,8 +213,8 @@ suite('Disassembler - RenderText', () => {
 				(disasm as any).otherLabels.set(0x1000, 'LBL');
 				r.dataReferences.push(0x1000);
 				r.printData(lines, 0x1000, 20);
-				assert.equal(c(lines.getText()), `1000.1 LBL:
-1000.1 01 ... DEFB 01 02 03 04 05 06 07 08 ; ASCII: ????????
+				assert.equal(c(lines.getText()), `1000 LBL:
+1000 01 ... DEFB 01 02 03 04 05 06 07 08 ; ASCII: ????????
 `);
 			});
 
@@ -211,8 +226,8 @@ suite('Disassembler - RenderText', () => {
 				(disasm as any).otherLabels.set(0x1001, 'LBL');
 				r.dataReferences.push(0x1001);
 				r.printData(lines, 0x1000, 20);
-				assert.equal(c(lines.getText()), `1001.1 LBL:
-1001.1 02 ... DEFB 02 03 04 05 06 07 08 09 ; ASCII: ????????
+				assert.equal(c(lines.getText()), `1001 LBL:
+1001 02 ... DEFB 02 03 04 05 06 07 08 09 ; ASCII: ????????
 `);
 			});
 
@@ -227,10 +242,10 @@ suite('Disassembler - RenderText', () => {
 				r.dataReferences.push(0x1002);
 				r.dataReferences.sort((a, b) => b - a);
 				r.printData(lines, 0x1000, 20);
-				assert.equal(c(lines.getText()), `1001.1 LBL1:
-1001.1 02 DEFB 02 ; ASCII: ?
-1002.1 LBL2:
-1002.1 03 ... DEFB 03 04 05 06 07 08 09 0A ; ASCII: ????????
+				assert.equal(c(lines.getText()), `1001 LBL1:
+1001 02 DEFB 02 ; ASCII: ?
+1002 LBL2:
+1002 03 ... DEFB 03 04 05 06 07 08 09 0A ; ASCII: ????????
 `);
 			});
 
@@ -245,10 +260,10 @@ suite('Disassembler - RenderText', () => {
 				r.dataReferences.push(0x1003);
 				r.dataReferences.sort((a, b) => b - a);
 				r.printData(lines, 0x1000, 20);
-				assert.equal(c(lines.getText()), `1001.1 LBL1:
-1001.1 02 03 DEFB 02 03 ; ASCII: ??
-1003.1 LBL2:
-1003.1 04 ... DEFB 04 05 06 07 08 09 0A 0B ; ASCII: ????????
+				assert.equal(c(lines.getText()), `1001 LBL1:
+1001 02 03 DEFB 02 03 ; ASCII: ??
+1003 LBL2:
+1003 04 ... DEFB 04 05 06 07 08 09 0A 0B ; ASCII: ????????
 `);
 			});
 
@@ -263,10 +278,10 @@ suite('Disassembler - RenderText', () => {
 				r.dataReferences.push(0x100A);
 				r.dataReferences.sort((a, b) => b - a);
 				r.printData(lines, 0x1000, 20);
-				assert.equal(c(lines.getText()), `1001.1 LBL1:
-1001.1 02 ... DEFB 02 03 04 05 06 07 08 09 ; ASCII: ????????
-100A.1 LBL2:
-100A.1 0B ... DEFB 0B 0C 0D 0E 0F 10 11 12 ; ASCII: ????????
+				assert.equal(c(lines.getText()), `1001 LBL1:
+1001 02 ... DEFB 02 03 04 05 06 07 08 09 ; ASCII: ????????
+100A LBL2:
+100A 0B ... DEFB 0B 0C 0D 0E 0F 10 11 12 ; ASCII: ????????
 `);
 			});
 		});
@@ -276,8 +291,10 @@ suite('Disassembler - RenderText', () => {
 		suite('renderNodes', () => {
 			// Disassemble
 			function disassemble(startAddrs64k: number[]): string {
-				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
-				disasm.setCurrentSlots([0]);
+				(disasm as any).setSlotBankInfo(0, 0x7FFF, 0, false);	// Multibank
+				(disasm as any).setSlotBankInfo(0x8000, 0xBFFF, 1, false);	// Multibank
+				(disasm as any).setSlotBankInfo(0xC000, 0xFFFF, 2, true); // Singlebank
+				disasm.setCurrentSlots([0, 1, 2]);
 				readBinFile(disasm, './tests/disassembler/projects/render_text/main.bin');
 
 				disasm.getFlowGraph(startAddrs64k, []);
@@ -459,7 +476,7 @@ suite('Disassembler - RenderText', () => {
 1308.1 34 12 DEFB 34 12 ; ASCII: 4?
 
 130A.1           LBL_130A:
-130A.1 11 DE DE    LD DE,DEDE.1
+130A.1 11 DE DE    LD DE,$DEDE
 
 130D.1 .LOOP:
 130D.1 18 FE JR .LOOP
@@ -502,12 +519,35 @@ suite('Disassembler - RenderText', () => {
 5120.1 01 02... DEFB 01 02 03 04 05 06 07 08 ; ASCII: ????????
 `));
 			});
+
+			test('Hex and label / bank boundaries', () => {
+				// 3 slots:
+				// 0-7FFF: multi bank
+				// 8000-BFFF: multi bank
+				// C000-FFFF: single bank
+				const text = disassemble([0x6000, 0x6006, 0x600F]);
+				assert.equal(c(text), c(
+`6000.1 11 00 80 LD DE,$8000
+
+; Note: The address $8000 is in a different bank.
+6003.1 CD 00 80 CALL $8000
+
+6006.1 11 00 59 LD DE,$5900.1
+6009.1 01 10 59 LD BC,SUB_5910
+600C.1 CD 10 59 CALL SUB_5910
+
+600F.1 11 00 C0 LD DE,$C000
+6012.1 01 10 C0 LD BC,SUB_C010
+6015.1 CD 10 C0 CALL SUB_C010
+`));
+			});
 		});
+
 
 		suite('renderForDepth', () => {
 			// Disassemble
 			function disassembleDepth(startAddrs64k: number[], depth: number): string {
-				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
+				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, false);
 				disasm.setCurrentSlots([0]);
 				readBinFile(disasm, './tests/disassembler/projects/render_text/main.bin');
 
@@ -731,13 +771,11 @@ suite('Disassembler - RenderText', () => {
 		});
 
 
-
-
 		suite('1000 nodes', () => {
 			// Disassemble. To reach maximum number of nodes fill
 			// all memory with 0xFF which is RST 38h.
 			function disassemble(startAddrs64k: number[]): string {
-				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
+				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, false);
 				disasm.setCurrentSlots([0]);
 				const bin = new Uint8Array(0x10000);
 				bin.fill(0);
@@ -816,7 +854,7 @@ suite('Disassembler - RenderText', () => {
 			// Note: disassembly does not continue from 0xFFFF to 0x0000
 			test('last address RST', () => {
 				const startAddrs64k = [0xFFFE];
-				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
+				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, false);
 				disasm.setCurrentSlots([0]);
 				const bin = new Uint8Array(0x10000);
 				bin.fill(0xFF);
@@ -856,7 +894,7 @@ FFFF.1 FF RST RST_38
 
 			// Disassemble
 			function disassemble(startAddrs64k: number[]): string {
-				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
+				(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, false);
 				disasm.setCurrentSlots([0]);
 				readBinFile(disasm, './tests/disassembler/projects/render_text_strange/main.bin');
 
@@ -888,7 +926,7 @@ FFFF.1 FF RST RST_38
 0104.1 00 NOP
 
 ; Note: The disassembly is ambiguous at $0102.
-0105.1 C3 02 01 JP 0101.1+1
+0105.1 C3 02 01 JP $0101.1+1
 `));
 			});
 
@@ -905,7 +943,7 @@ FFFF.1 FF RST RST_38
 0104.1 00 NOP
 
 ; Note: The disassembly is ambiguous at $0102.
-0105.1 C3 02 01 JP 0101.1+1
+0105.1 C3 02 01 JP $0101.1+1
 `));
 			});
 
@@ -928,10 +966,10 @@ FFFF.1 FF RST RST_38
 0207.1 CF RST RST_08
 
 ; Note: The disassembly is ambiguous at $020A.
-0208.1 01 10 21 LD BC,2110.1
+0208.1 01 10 21 LD BC,$2110.1
 
 020A.1 SUB_020A:
-020A.1 21 00 80 LD HL,8000.1
+020A.1 21 00 80 LD HL,$8000.1
 020D.1 00 NOP
 020E.1 00 NOP
 020F.1 00 NOP
@@ -957,10 +995,10 @@ FFFF.1 FF RST RST_38
 0307.1 CF RST RST_08
 
 ; Note: The disassembly is ambiguous at $030A.
-0308.1 01 10 21 LD BC,2110.1
+0308.1 01 10 21 LD BC,$2110.1
 
 030A.1 SUB_030A:
-030A.1 21 00 80 LD HL,8000.1
+030A.1 21 00 80 LD HL,$8000.1
 030D.1 00 NOP
 030E.1 00 NOP
 030F.1 00 NOP
@@ -984,14 +1022,14 @@ FFFF.1 FF RST RST_38
 0404.1 CF RST RST_08
 
 ; Note: The disassembly is ambiguous at $0407.
-0405.1 01 10 21 LD BC,2110.1
+0405.1 01 10 21 LD BC,$2110.1
 0408.1 00 NOP
 0409.1 80 ADD A,B
 040A.1 00 NOP
 040B.1 00 NOP
 
 ; Note: The disassembly is ambiguous at $0407.
-040C.1 28 F9 JR Z,0405.1+2
+040C.1 28 F9 JR Z,$0405.1+2
 
 040E.1 C9 RET
 `));
@@ -1003,7 +1041,7 @@ FFFF.1 FF RST RST_38
 
 				assert.equal(c(text), c(
 					`; Note: The disassembly branches into unassigned memory at $C000.
-0500.1 C3 00 C0         JP C000.1
+0500.1 C3 00 C0         JP $C000.1
 `));
 			});
 		});
@@ -1015,7 +1053,7 @@ FFFF.1 FF RST RST_38
 
 		// Disassemble
 		function disassemble(startAddrs64k: number[]): string {
-			(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
+			(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, false);
 			disasm.setCurrentSlots([0]);
 			readBinFile(disasm, './tests/disassembler/projects/render_text_special_commands/main.bin');
 
@@ -1085,7 +1123,7 @@ FFFF.1 FF RST RST_38
 	suite('local labels', () => {
 		// Disassemble
 		function disassemble(startAddrs64k: number[]): string {
-			(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, true);
+			(disasm as any).setSlotBankInfo(0, 0xFFFF, 0, false);
 			disasm.setCurrentSlots([0]);
 			readBinFile(disasm, './tests/disassembler/projects/render_local_labels/main.bin');
 

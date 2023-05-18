@@ -264,7 +264,10 @@ export class ZesaruxSocket extends Socket {
 				{
 					const err = new Error('Connection timeout!');
 					LogTransport.log('Socket timeout: ' + err);
-					this.emit('error', err);
+					try {
+						this.emit('error', err);
+					}
+					catch {};
 				}
 				break;
 
@@ -272,7 +275,10 @@ export class ZesaruxSocket extends Socket {
 				{
 					const err = new Error('Connected ZEsarUX, but ZEsarUX does not communicate!');
 					LogTransport.log('ZEsarUX does not communicate: ' + err);
-					this.emit('error', err);
+					try {
+						this.emit('error', err);
+					}
+					catch {};
 				}
 				break;
 
@@ -280,7 +286,10 @@ export class ZesaruxSocket extends Socket {
 				{
 					const err = new Error('ZEsarUX did not answer in time!');
 					LogTransport.log('ZEsarUX did not answer in time: ' + err);
-					this.emit('error', err);
+					try {
+						this.emit('error', err);
+					}
+					catch {};
 				}
 				break;
 			}
@@ -308,8 +317,8 @@ export class ZesaruxSocket extends Socket {
 
 			LogTransport.log('Socket: Connected to zesarux server!');
 		});
-
 	}
+
 
 	/**
 	 * Checks if the queue is empty.

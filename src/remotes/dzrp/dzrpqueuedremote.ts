@@ -59,11 +59,11 @@ export class DzrpQueuedRemote extends DzrpRemote {
 
 	/**
 	 * This will disconnect the socket and un-use all data.
-	 * Additionally, on disconnect, clears the message (send) queue..
+	 * Additionally, on disconnect, clears the message (send) queue.
 	 * Called e.g. when vscode sends a disconnectRequest.
 	 */
 	public async disconnect(): Promise<void> {
-		this.messageQueue.length = 0;
+	//	this.messageQueue.length = 0; Can lead to a seqno problem if done when a cmd has been sent but no response received yet.
 		await super.disconnect();
 		try {
 			//console.log("disconnect: started");
@@ -183,6 +183,5 @@ export class DzrpQueuedRemote extends DzrpRemote {
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
 		Utility.assert(false);
 	}
-
 }
 

@@ -4,13 +4,29 @@
 - ZEsarUX:
 	- Support for ZEsarUX version 10.3
 	- Closes all ZEsarUX menus (close-all-menus) when a debug session starts
+- Improvements in disconnection handling.
+- launch.json: 'loadObjs' 'start' also supports labels.
+- ZXNext: Requires now dezogif v2.2.0. Older versions not supported anymore.
+- Exchanged aduh95 with node-graphviz library.
+
+# 3.2.4
+- Fix for #110: Attempts to start debugging result in error Cannot evaluate 'execAddress'.
+setLaunchExecAddress moved after readListFiles.
+- Small fixes for unit tests and custom code.
+- Experimental implementation of DZRP 2.1.0 (cmd_interrupt_on_off) for zxnextserialremote.
+- debug console: "-e test ...": Tests for the serial interface.
+
+# 3.2.3
+- Fix for #109: Extension host terminated unexpectedly 3 times within the last 5 minutes. aduh95/graphviz.js has been replaced with node-graphviz.
+- Changed disassembly of e.g. 'LD DE,8000.1' to 'LD DE,$8000.1'
 
 # 3.2.2
-- Fix for #108: Reverse engineering: Call Graph and Flow Chart failing to render
-- Changed disassembly "out (c),f" to "out (c),0"
+- Fix for #108: Reverse engineering: Call Graph and Flow Chart failing to render.
+- Changed disassembly "out (c),f" to "out (c),0".
+- Fixed display of hex number in flowchart.
 
 # 3.2.1
-- Fix for #107: Z80CPU Error: TypeError: Cannot read properties of undefined (reading 'start')
+- Fix for #107: Z80CPU Error: TypeError: Cannot read properties of undefined (reading 'start').
 
 # 3.2.0
 - Changed to esbuild. Package size decreased.

@@ -69,15 +69,21 @@ export class Format {
 	/**
 	 * Returns a hex string with a fixed number of digits.
 	 * @param value The value to convert.
-	 * @param countDigits The number of digits.
-	 * @returns a string, e.g. "0x04fd".
+	 * @param countDigits The number of digits without the pre- or suffix.
+	 * @returns a string, e.g. "0x04fd", "$0x04fd", "4fh" or "0fdh".
 	 */
 	public static getHexFormattedString(value: number, countDigits = 4): string {
 		let s = this.getHexString(value, countDigits);
-		if (this.hexFormat == '$')
+		if (this.hexFormat === '$')
 			s = '$' + s;
-		else if (this.hexFormat == 'h')
+		else if (this.hexFormat === 'h') {
+			// If the first character is not a digit, then a '0' is added at the front.
+			// This is, so that values are not mixed with labels.
+			const firstChar = s.charCodeAt(0);
+			if (firstChar < 48 || firstChar > 57)
+				s = '0' + s;
 			s += 'h';
+		}
 		else
 			s = '0x' + s;
 		return s;

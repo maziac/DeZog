@@ -27,6 +27,7 @@ suite('Disassembler - RenderHtml', () => {
 		disasm = new SmartDisassembler();
 		disasm.funcGetLabel = addr64k => undefined;
 		disasm.funcFormatLongAddress = addr64k => Utility.getHexString(addr64k, 4) + '.1';
+		disasm.funcFormatLongAddressHex = addr64k => '$' + Utility.getHexString(addr64k, 4) + '.1';
 		r = new RenderHtml(disasm);
 		r.clmnsAddress = 7;
 		r.clmnsBytes = 10;
@@ -120,10 +121,10 @@ suite('Disassembler - RenderHtml', () => {
 			const html2 = html.substring(0, k);
 			assert.equal(c(html2), c(
 				`<pre><span class="comment">; Note: The disassembly is ambiguous at $0201.</span>
-<span class="startlabel"><a href="#0200.1"><span class="bytes">0200.1 01 34 12</span> <span id="D10_200"><span class="instruction">LD BC,1234.1</span></span></a></span>
+<span class="startlabel"><a href="#0200.1"><span class="bytes">0200.1 01 34 12</span> <span id="D10_200"><span class="instruction">LD BC,$1234.1</span></span></a></span>
 
 <span class="comment">; Note: The disassembly is ambiguous at $0201.</span>
-<a href="#0203.1"><span class="bytes">0203.1 C3 01 02</span> <span id="D10_203"><span class="instruction">JP 0200.1+1</span></span></a>
+<a href="#0203.1"><span class="bytes">0203.1 C3 01 02</span> <span id="D10_203"><span class="instruction">JP $0200.1+1</span></span></a>
 </pre>
  `));
 		});

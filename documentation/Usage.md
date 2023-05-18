@@ -1049,12 +1049,12 @@ With the buttons you can directly copy the interface name to the clipboard.
 #### Setup
 
 Prerequisites:
-1. Install core 03.01.10 (or 03.01.05) on the ZX Next.
+1. Install core 03.01.10 on the ZX Next. (03.01.05 is not supported by DeZog anymore.)
 2. You need an USB/Serial converter and a D-Sub female connector (9 pins). See next chapter on HW.
 
 
 Setup a debug session:
-1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif] project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/tree/main/releases) section. You need to download the correct ```enNextMf.rom``` for the core version you are using. Currently 03.01.10 and 03.01.05 are supported.
+1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif] project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/tree/main/releases) section. You need to download the ```enNextMf.rom```, at least version 2.2.0. This supports Core 03.01.10. Core 03.01.05 is not supported anymore.
 (Don't forget to make a backup of the original ```enNextMf.rom```.)
 2. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program]).
 3. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferable Joy 2).
@@ -1216,19 +1216,8 @@ However, you can still use "read-only paging" in your program, you just shouldn'
 
 ##### NMI
 
-To interrupt the debugged program an NMI can be used (pressing the yellow NMI button).
-As an NMI places the current PC on the stack and can occur anytime it can and will corrupt the stack **if** it happens while the debugged program is manipulating the SP.
-
-There is nothing to do about it other than
-- use core 03.01.10 (or bigger): it uses the "stackless NMI" feature. In that case an NMI will not write to memory. I.e. it cannot corrupt any memory.
-- never increase the SP if the value on the stack is still required
-- disable the M1 (NMI) button via the Next register 0x06 during these critical sections
-
-For the debugged program this means
-- If your program heavily relies on SP manipulation (increasing SP **while values below SP are still required**) then take care to guard the code section with NMI disable/enable via disabling/enabling the M1 button in register 0x06. You could also re-write the code such that it loads the SP into another register (e.g. IX) and access the stack values through that register.
-- If you don't manipulate the SP in that way you don't have to bother with disabling the NMI M1 button.
-- If you only rarely use the SP in that way: the probability for the scenario above is certainly quite low. I.e. you can simply ignore it. But you should keep in mind that if something odd happens when you press the NMI M1 button that it could be the reason described above.
-
+Note: The dezogif (enNextMf.rom) uses core 03.01.10 which supports the "stackless NMI".
+I.e. interrupting the debugged program (by pressing the yellow NMI button) cannot corrupt the stack of the debugged program.
 
 
 ### MAME - Multiple Machine Arcade Emulator

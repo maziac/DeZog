@@ -353,7 +353,7 @@ export class RenderHtml extends RenderText {
 					let tgtObj;
 					let endSide
 					// LeaderLine does not allow same source as target
-					if(src == tgt) {
+					if(src === tgt) {
 						// Create a new object just before the current one
 						tgtObj = document.createElement('span');
 						srcObj.parentNode.insertBefore(tgtObj, srcObj);
@@ -431,6 +431,8 @@ export class RenderHtml extends RenderText {
 	 * @returns The disassembly text.
 	 */
 	public renderNodes(nodes: AsmNode[], startNodes: AsmNode[] = []): string {
+		const MAX_ARROWS = 100;
+
 		// Call super
 		let rendered = '<pre>' + super.renderNodes(nodes, startNodes) + '</pre>';
 
@@ -440,74 +442,76 @@ export class RenderHtml extends RenderText {
 		// Loop all nodes and branches
 		let localArrows = '';
 		let callArrows = '';
-		for (const node of nodes) {
-			// Note: CALLs and branches are put together:
-			// Everything that branches/calls outside the block will get an interactive
-			// line that needs to be hovered before shown and can be clicked.
-			// Everything in the block (i.e. local) will be shown directly.
-			const allBranches = [...node.branchNodes];
-			if (node.callee)
-				allBranches.push(node.callee);
 
-			// Check all branches
-			const blockNode = this.disasm.getBlockNode(node.start);
-			for (const branchNode of allBranches) {
-				// Skip all branch nodes that are anyhow not seen
-				if (!nodes.includes(branchNode))
-					continue;
+		if (nodes.length <= MAX_ARROWS) {
+			for (const node of nodes) {
+				// Note: CALLs and branches are put together:
+				// Everything that branches/calls outside the block will get an interactive
+				// line that needs to be hovered before shown and can be clicked.
+				// Everything in the block (i.e. local) will be shown directly.
+				const allBranches = [...node.branchNodes];
+				if (node.callee)
+					allBranches.push(node.callee);
 
-				// Check if local
-				const isLocal = (blockNode == this.disasm.getBlockNode(branchNode.start));
-				// Get start and end addresses
-				const lastInstr = node.instructions.length - 1;	// Note: there must be at least one instruction otherwise there would be no branch.
-				const nextAddr = node.start + node.length;
-				const tgtAddr64k = branchNode.start;
-				// Check if "natural" flow
-				if (isLocal && nextAddr == tgtAddr64k)
-					continue;
-				const addr64k = nextAddr - node.instructions[lastInstr].length;
-				const src = this.getHtmlId(addr64k);
-				// Get target
-				const tgt = this.getHtmlId(tgtAddr64k);
-				const distance = Math.abs(addr64k - tgtAddr64k);
+				// Check all branches
+				const blockNode = this.disasm.getBlockNode(node.start);
+				for (const branchNode of allBranches) {
+					// Skip all branch nodes that are anyhow not seen
+					if (!nodes.includes(branchNode))
+						continue;
 
-				// Check if same block
-				if (isLocal) {
-					// Same block (local):
+					// Check if local
+					const isLocal = (blockNode == this.disasm.getBlockNode(branchNode.start));
+					// Get start and end addresses
+					const lastInstr = node.instructions.length - 1;	// Note: there must be at least one instruction otherwise there would be no branch.
+					const nextAddr = node.start + node.length;
+					const tgtAddr64k = branchNode.start;
+					// Check if "natural" flow
+					if (isLocal && nextAddr == tgtAddr64k)
+						continue;
+					const addr64k = nextAddr - node.instructions[lastInstr].length;
+					const src = this.getHtmlId(addr64k);
+					// Get target
+					const tgt = this.getHtmlId(tgtAddr64k);
+					const distance = Math.abs(addr64k - tgtAddr64k);
 
-					// Add arrow
-					let gravity;	// gravity is multiplied by fontSize (e.g. 14)
-					let side;
-					if (addr64k < tgtAddr64k) {
-						// Forward
-						gravity = 200 / 14 * asymptotic(3 * distance);
-						side = 'right';
-					}
-					else {
-						// Backward
-						gravity = - 60 / 14 * asymptotic(distance);
-						side = 'left';
-					}
-					const color = this.getRndColor(addr64k);
-					localArrows += `
+					// Check if same block
+					if (isLocal) {
+						// Same block (local):
+
+						// Add arrow
+						let gravity;	// gravity is multiplied by fontSize (e.g. 14)
+						let side;
+						if (addr64k < tgtAddr64k) {
+							// Forward
+							gravity = 200 / 14 * asymptotic(3 * distance);
+							side = 'right';
+						}
+						else {
+							// Backward
+							gravity = - 60 / 14 * asymptotic(distance);
+							side = 'left';
+						}
+						const color = this.getRndColor(addr64k);
+						localArrows += `
 						arrows.push(createLocalLeaderLine('${src}', '${tgt}', '${side}', '${color}', '${gravity}'));
 						`;
-				}
-				else {
-					// CALL or JP to non-local address:
-					// Add arrow
-					//const gravity = 1.5 + 15 * Math.random();
-					const gravity = 1.5 + 200 / 14 * asymptotic(2 * distance);
-					const color = this.getRndColor(addr64k);
-					callArrows += `
+					}
+					else {
+						// CALL or JP to non-local address:
+						// Add arrow
+						//const gravity = 1.5 + 15 * Math.random();
+						const gravity = 1.5 + 200 / 14 * asymptotic(2 * distance);
+						const color = this.getRndColor(addr64k);
+						callArrows += `
 					createGlobalBranchSource('${src}','${tgt}', '${color}', ${gravity});
 `;
+					}
 				}
 			}
-		}
 
-		// Combine
-		rendered += `
+			// Combine
+			rendered += `
 			<script>
 				// Wait for HTML document to get ready
 				window.addEventListener('load', () => {
@@ -522,8 +526,13 @@ export class RenderHtml extends RenderText {
    				//# sourceURL=Arrows${this.depth}.js
 			</script>
 		`;
-	//	console.log(rendered);
+		}
+		else {
+			// Could not render arrows, there would be too many of them
+			rendered = '<pre>Note: Rendering of arrows omitted, too many calls.\n\n</pre>' + rendered;
+		}
 
+		//	console.log(rendered);
 		return rendered;
 	}
 

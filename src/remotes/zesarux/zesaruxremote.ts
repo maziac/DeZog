@@ -146,7 +146,10 @@ export class ZesaruxRemote extends RemoteBase {
 				return;
 			// and terminate
 			err.message += " (Error in connection to ZEsarUX!)";
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		});
 		zSocket.on('close', () => {
 			if (this.terminating)
@@ -155,14 +158,20 @@ export class ZesaruxRemote extends RemoteBase {
 			this.breakpoints.length = 0;
 			// and terminate
 			const err = new Error('ZEsarUX terminated the connection!');
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		});
 		zSocket.on('end', () => {
 			if (this.terminating)
 				return;
 			// and terminate
 			const err = new Error('ZEsarUX terminated the connection!');
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		});
 		zSocket.on('connected', async () => {
 			if (this.terminating)
@@ -179,7 +188,10 @@ export class ZesaruxRemote extends RemoteBase {
 				if (this.zesaruxVersion < MIN_ZESARUX_VERSION) {
 					zSocket.quit();
 					const err = new Error('Please update ZEsarUX. Need at least version ' + MIN_ZESARUX_VERSION + '.');
-					this.emit('error', err);
+					try {
+						this.emit('error', err);
+					}
+					catch {};
 					return;
 				}
 
@@ -204,7 +216,7 @@ export class ZesaruxRemote extends RemoteBase {
 				await Utility.timeout(waitBeforeMs);
 
 				// Load executable
-				await this.loadExecutable();
+				await this.load();
 
 				// Get the machine type, e.g. tbblue, zx48k etc.
 				// Is required to find the right slot/bank paging.
@@ -245,29 +257,18 @@ export class ZesaruxRemote extends RemoteBase {
 				// Init
 				this.memoryModel.init();
 
-				// Set Program Counter to execAddress
-				this.setLaunchExecAddress();
-
 				// Initialize more
 				await this.initAfterLoad();
-
-				/*
-				// Check for console.error
-				if (error) {
-					this.emit('error', error);
-				}
-				else {
-					// Send 'initialize' to Machine.
-					this.emit('initialized');
-				}
-				*/
 
 				// Send 'initialize' to Machine.
 				this.emit('initialized');
 			}
 			catch (e) {
 				// Some error occurred
-				this.emit('error', e);
+				try {
+					this.emit('error', e);
+				}
+				catch {};
 			}
 		});
 	}

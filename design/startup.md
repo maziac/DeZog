@@ -1,14 +1,13 @@
-# Startup
+# vscode debug startup
 
 Traced startup sequence.
 Is here just for reference.
 
 
 ```puml
-title Startup
+title vscode debug startup
 
 hide footbox
-
 
 participant vscode
 participant DeZog
@@ -64,3 +63,96 @@ vscode <- DeZog: <font color=red><b>sendResponse, variables</b></font>({"variabl
 
 ```
 
+
+# Remote startup
+
+~~~puml
+title Remote startup
+hide footbox
+
+participant vscode
+participant da as "DeZog/\nDebug Adapter"
+participant remote as "Remote"
+participant emulator as "Emulator"
+participant labels as "Labels"
+'participant model as "Memory Model"
+
+
+vscode -> da: initialize
+vscode <- da: sendResponse(initialize)
+
+vscode -> da: launch
+note over da: clear variables
+da -> da: launch
+note over da: create disassembler
+da -> da: startEmulator
+da -> remote:
+activate remote
+
+da -> remote: init
+remote -> remote: doInitialization
+
+opt zsim
+	remote -> remote: configureMachine
+	remote -> remote: load
+	remote -> remote: createZ80RegistersDecoder
+	note over remote: create memory model\n and init
+	da <- remote: event('initialized')
+else cspect
+	note over remote: connect socket
+	remote -> remote: event('connect')
+	group dzrpremote
+		remote -> remote: onConnect
+		remote -> remote: sendDzrpCmdInit
+		remote -> remote: load
+		remote -> remote: createZ80RegistersDecoder
+		note over remote: create memory model\n and init
+		da <- remote: event('initialized')
+	end
+else zxnext
+	note over remote: connect serial
+	remote -> remote: event('open')
+	group dzrpremote
+		remote -> remote: onConnect
+		...
+		da <- remote: event('initialized')
+	end
+else zesarux
+	note over remote: connect socket
+	remote -> remote: event('connected')
+	remote -> remote: load
+	note over remote: create Z80registers.decoder,\nmemory model\nand init
+	da <- remote: event('initialized')
+else mame
+	note over remote: connect socket
+	remote -> remote: event('connect')
+	remote -> remote: onConnect
+	remote -> remote: load
+	remote -> remote: createZ80RegistersDecoder
+	note over remote: create memory model\nand init
+	da <- remote: event('initialized')
+end
+
+da -> remote: readListfiles
+remote -> labels: readListfiles
+da -> remote: loadObjs
+da -> remote: initWpmemAssertionLogpoints
+remote -> labels: getWatchPointLines
+remote -> labels: getAssertionLines
+remote -> labels: getLogPointLines
+da -> remote: setLaunchExecAddress
+da -> remote: getRegistersFromEmulator
+da -> remote: getCallStackFromEmulator
+
+vscode <- da: sendEvent(InitializedEvent)
+
+alt Settings.launch.startAutomatically == true
+	da -> da: remoteContinue
+	da -> remote: continue
+else
+	vscode <- da: sendEvent(StoppedEvent)
+end
+
+vscode <- da: sendResponse(launch)
+
+~~~

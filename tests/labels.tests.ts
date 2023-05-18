@@ -506,7 +506,11 @@ suite('Labels', () => {
 		test('Target: MemoryModelZxNextTwoRom', () => {
 			const mm = new MemoryModelZxNextTwoRom();
 			createParser(mm);
-			// TODO: Tests for FC and FD
+
+			// Note: these are the same tests as for MemoryModelZxNextOneROM.
+			// Because 'checkMappingToTargetMemoryModel' is used which converts
+			// from a non-banking scheme to another.
+			// I.e. the possibly ROM paging is ignored.
 
 			assert.equal(parser.createLongAddress(0x0000, 0), 0x0FF0000);
 			assert.equal(parser.createLongAddress(0x2000, 0), 0x1002000);

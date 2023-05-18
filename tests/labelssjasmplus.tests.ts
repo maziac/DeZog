@@ -469,7 +469,9 @@ main.asm|12||0|-1|-1|Z|pages.size:65536,pages.count:32,slots.count:1,slots.adr:0
 			test('Target: MemoryModelZxNextTwoRom', () => {
 				const mm = new MemoryModelZxNextTwoRom();
 				createSldFile(mm);
-				// TODO: TC and FD
+
+				// Note: ROM is not considered while source to target mapping conversion.
+
 				assert.equal(parser.createLongAddress(0x0000, 0), 0x0FF0000);
 				assert.equal(parser.createLongAddress(0x2000, 0), 0x1002000);
 				assert.equal(parser.createLongAddress(0x4000, 0), 0x00B4000);
@@ -617,7 +619,9 @@ main.asm|12||0|-1|-1|Z|pages.size:16384,pages.count:4,slots.count:4,slots.adr:0,
 			test('Target: MemoryModelZxNextTwoRom', () => {	// NOSONAR
 				const mm = new MemoryModelZxNextTwoRom();
 				createSldFile(mm);
-// TODO
+
+				// Note: ROM is not considered while source to target mapping conversion.
+
 				assert.equal(parser.createLongAddress(0x0000, 0), 0x0FF0000);
 				assert.equal(parser.createLongAddress(0x2000, 0), 0x1002000);
 				assert.equal(parser.createLongAddress(0x4000, 0), 0x00B4000);
@@ -805,7 +809,9 @@ main.asm|11||0|-1|-1|Z|pages.size:16384,pages.count:8,slots.count:4,slots.adr:0,
 			test('Target: MemoryModelZxNextTwoRom', () => {
 				const mm = new MemoryModelZxNextTwoRom();
 				createSldFile(mm);
-// TODO
+
+				// Note: ROM is not considered while source to target mapping conversion.
+
 				assert.equal(parser.createLongAddress(0x4000, 5), 0xB4000);
 				assert.equal(parser.createLongAddress(0x6000, 5), 0xC6000);
 				assert.equal(parser.createLongAddress(0x8000, 2), 0x58000);

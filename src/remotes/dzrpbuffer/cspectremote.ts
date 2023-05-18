@@ -65,7 +65,10 @@ export class CSpectRemote extends DzrpBufferRemote {
 			//console.log('Close.');
 			// Error
 			const err = new Error('CSpect plugin terminated the connection!');
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		});
 
 		// Handle errors
@@ -73,7 +76,10 @@ export class CSpectRemote extends DzrpBufferRemote {
 			LogTransport.log('CSpectRemote: Error: ' + err);
 			//console.log('Error: ', err);
 			// Error
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		});
 
 		// Receive data
@@ -191,5 +197,39 @@ export class CSpectRemote extends DzrpBufferRemote {
 	 */
 	protected async sendDzrpCmdRestoreMem(elems: Array<{address: number, value: number}>): Promise<void> {
 		throw Error("'sendDzrpCmdRestoreMem' is not implemented.");
+	}
+
+
+	/**
+	 * Not used/supported.
+	 */
+	protected async sendDzrpCmdReadPort(port: number): Promise<number> {
+		throw Error("'sendDzrpCmdReadPort' is not implemented.");
+		return 0;
+	}
+
+
+	/**
+	 * Not used/supported.
+	 */
+	protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
+		throw Error("'sendDzrpCmdWritePort' is not implemented.");
+	}
+
+
+	/**
+	 * Not used/supported.
+	 */
+	protected async sendDzrpCmdExecAsm(code: Array<number>): Promise<{error: number, a: number, f: number, bc: number, de: number, hl: number}> {
+		throw Error("'sendDzrpCmdExecAsm' is not implemented.");
+		return {error: 0, f: 0, a: 0, bc: 0, de: 0, hl: 0};
+	}
+
+
+	/**
+	 * Is called by loadBinSna but not supported by the CSpect plugin.
+	 * Therefore it does nothing.
+	 */
+	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
 	}
 }

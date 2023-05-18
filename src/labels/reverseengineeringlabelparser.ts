@@ -329,7 +329,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	 * E.g. ZX48, ZX128, ZXNext or Custom.
 	 * The rev-eng does not assume any particular memory model.
 	 * In fact it assumes that the right target memory model is chosen.
-	 * Nevertheless it can happen that certain bank are not available in the target
+	 * Nevertheless it can happen that certain banks are not available in the target
 	 * which produces an error.
 	 */
 	protected checkMappingToTargetMemoryModel() {

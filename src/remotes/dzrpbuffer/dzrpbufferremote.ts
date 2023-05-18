@@ -1,5 +1,5 @@
 import {Log, LogTransport} from '../../log';
-import {AlternateCommand, DzrpMachineType, DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
+import {AlternateCommand, DzrpMachineType, DZRP, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
 import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {GenericBreakpoint} from '../../genericwatchpoint';
@@ -255,7 +255,13 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 			if (recSeqno != seqno) {
 				const error = Error("DZRP: Received wrong SeqNo. '" + recSeqno + "' instead of expected '" + seqno + "'");
 				LogTransport.log("Error: " + error);
-				this.emit('error', error);
+				// Note: 'error' events have a special handling and throw an error if event was not handled:
+				// "For all EventEmitter objects, if an 'error' event handler is not provided, the error will be thrown."
+				try {
+					this.emit('error', error);
+				}
+				catch {};
+				msg.reject(error);
 				return;
 			}
 			data = data.subarray(1);  // Cut off seq number
@@ -278,7 +284,10 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 			// Log
 			LogTransport.log('Error: ' + err.message);
 			// Error
-			this.emit('error', err);
+			try {
+				this.emit('error', err);
+			}
+			catch {};
 		}, CHUNK_TIMEOUT);
 	}
 
@@ -362,7 +371,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	 */
 	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
 		const nameBuffer = Utility.getBufferFromString(DZRP_PROGRAM_NAME);
-		const resp = await this.sendDzrpCmd(DZRP.CMD_INIT, [...DZRP_VERSION, ...nameBuffer], this.initCloseRespTimeoutTime);
+		const resp = await this.sendDzrpCmd(DZRP.CMD_INIT, [...this.DZRP_VERSION, ...nameBuffer], this.initCloseRespTimeoutTime);
 		// Error
 		let error;
 		if (resp[0] != 0)
@@ -375,10 +384,10 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		const program_name = Utility.getStringFromBuffer(resp, 5);
 
 		// Check version number. Check only major and minor number.
-		if (DZRP_VERSION[0] != resp[1]
-			|| DZRP_VERSION[1] != resp[2]) {
+		if (this.DZRP_VERSION[0] != resp[1]
+			|| this.DZRP_VERSION[1] > resp[2]) {
 			error = "DZRP versions do not match.\n";
-			error += "Required version is " + DZRP_VERSION[0] + "." + DZRP_VERSION[1] + ".\n";
+			error += "Required version is " + this.DZRP_VERSION[0] + "." + this.DZRP_VERSION[1] + " or higher.\n";
 			error += "But this remote (" + program_name + ") supports only version " + resp[1] + "." + resp[2] + ".";
 		}
 
@@ -798,5 +807,14 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		await this.sendDzrpCmd(DZRP.CMD_RESTORE_MEM, buffer);
 	}
 
+
+	/**
+	 * Sends the command to enable or disable the interrupts.
+	 * @param enable true to enable, false to disable interrupts.
+	 */
+	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
+		const on = enable ? 1 : 0;
+		await this.sendDzrpCmd(DZRP.CMD_INTERRUPT_ON_OFF, [on]);
+	}
 }
 

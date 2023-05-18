@@ -3,6 +3,7 @@ import {strict as assert} from 'assert';
 import {BaseMemory} from './basememory';
 import {NumberType} from './numbertype'
 import {Format} from './format';
+import {Utility} from '../../misc/utility';
 
 
 /// Classifies opcodes.
@@ -1544,19 +1545,16 @@ export class Opcode {
 			valueName = (val >= 0) ? '+' : '';
 			valueName += val.toString();
 		}
+		else if (this.valueType == NumberType.NUMBER_BYTE) {
+			// byte
+			valueName = Format.getHexFormattedString(this.value, 2);
+		}
 		else {
-			// Add comment
-			if (this.valueType == NumberType.NUMBER_BYTE) {
-				// byte
-				valueName = Format.getHexFormattedString(this.value, 2);
-			}
-			else {
-				// Word, interpret as label
-				if (this.value < 0x100)
-					valueName = Format.getHexFormattedString(this.value, 4);
-				else
-					valueName = funcGetLabel(this.value);
-			}
+			// Word, interpret as label
+			if (this.value < 0x100)
+				valueName = Format.getHexFormattedString(this.value, 4);
+			else
+				valueName = funcGetLabel(this.value);
 		}
 
 		// Normal disassembly
@@ -1963,20 +1961,8 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 				break;
 
 			case 5: // REG_PERIPHERAL_1
-				switch (regValue) {
-					case 0x00: valuename = "RP1_JOY1_SINCLAIR"; break;
-					case 0x40: valuename = "RP1_JOY1_KEMPSTON"; break;
-					case 0x80: valuename = "RP1_JOY1_CURSOR"; break;
-					/* TODO: Fix double case
-					case 0x00: valuename = "RP1_JOY2_SINCLAIR"; break;
-					case 0x10: valuename = "RP1_JOY2_KEMPSTON"; break;
-					case 0x20: valuename = "RP1_JOY2_CURSOR"; break;
-					case 0x00: valuename = "RP1_RATE_50"; break;
-					case 0x04: valuename = "RP1_RATE_60"; break;
-					case 0x02: valuename = "RP1_ENABLE_SCANLINES"; break;
-					case 0x01: valuename = "RP1_ENABLE_SCANDOUBLER"; break;
-					*/
-				}
+				// Is a bitfield. Decoding would create a very long line, therefore only a conversion into binary is done.
+				valuename = Utility.getBitsString(regValue, 8) + "b";
 				break;
 
 			case 6: // REG_PERIPHERAL_2
@@ -2102,24 +2088,8 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 				break;
 
 			case 67: // REG_PALETTE_CONTROL
-				switch (regValue) {
-					case 0x80: valuename = "RPC_DISABLE_AUTOINC"; break;
-					case 0x00: valuename = "RPC_SELECT_ULA_PALETTE_0"; break;
-					case 0x40: valuename = "RPC_SELECT_ULA_PALETTE_1"; break;
-					case 0x10: valuename = "RPC_SELECT_LAYER_2_PALETTE_0"; break;
-					case 0x50: valuename = "RPC_SELECT_LAYER_2_PALETTE_1"; break;
-					case 0x20: valuename = "RPC_SELECT_SPRITES_PALETTE_0"; break;
-					case 0x60: valuename = "RPC_SELECT_SPRITES_PALETTE_1"; break;
-					/* TODO: Fix double case
-					case 0x00: valuename = "RPC_ENABLE_SPRITES_PALETTE_0"; break;
-					case 0x08: valuename = "RPC_ENABLE_SPRITES_PALETTE_1"; break;
-					case 0x00: valuename = "RPC_ENABLE_LAYER_2_PALETTE_0"; break;
-					case 0x04: valuename = "RPC_ENABLE_LAYER_2_PALETTE_1"; break;
-					case 0x00: valuename = "RPC_ENABLE_ULA_PALETTE_0"; break;
-					case 0x02: valuename = "RPC_ENABLE_ULA_PALETTE_1"; break;
-					case 0x01: valuename = "RPC_ENABLE_ULANEXT"; break;
-					*/
-				}
+				// Is a bitfield. Decoding would create a very long line, therefore only a conversion into binary is done.
+				valuename = Utility.getBitsString(regValue, 8) + "b";
 				break;
 
 			case 68: // REG_PALETTE_VALUE_16
