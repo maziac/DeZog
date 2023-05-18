@@ -2129,8 +2129,6 @@ Please see [here](https://github.com/maziac/DeZog/blob/master/documentation/Unit
 
 ## Known Issues
 
-- **ZEsarUX v10.2** is unfortunately incompatible with DeZog. The way breakpoints (actions) behave had been changed. For now the recommendation is to use DeZog 2.7 or DeZog 3.0 with [ZEsarUX 10.1](https://github.com/chernandezba/zesarux/releases/tag/ZEsarUX-10.1) instead.
-With 10.3 the compatibility should be restored. See [issue #101](https://github.com/maziac/DeZog/issues/101).
 - **ZEsarUX** (found with v8.1)
     - **Windows** only: Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session. If that is true for you as well you can experiment with the "[loadDelay](#zesarux)" option which adds an additional delay at startup. This mitigates the problem.
 The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).

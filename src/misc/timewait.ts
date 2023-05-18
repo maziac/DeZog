@@ -46,6 +46,8 @@ export class TimeWait {
 	 * The first time this is called it does immediately wait.
 	 */
 	public async waitAtInterval(): Promise<void> {
+		// TODO: Remove this function completely in DeZog 3.3.1.
+		// Do this as the only commit for version 3.3.1-
 		const currentTime=Date.now();
 		if (currentTime<this.time)
 			return;
