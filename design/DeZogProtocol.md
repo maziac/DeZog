@@ -128,8 +128,8 @@ Notes:
 ### 2.1.0
 
 Added:
-- CMD_GET_READ_PORT: Reading a port.
-- CMD_GET_WRITE_PORT: Writing to a port.
+- CMD_READ_PORT: Reading a port.
+- CMD_WRITE_PORT: Writing to a port.
 - CMD_GET_EXEC_ASM: Executing a small assembler program.
 - CMD_INTERRUPT_ON_OFF: Command to enable disable the interrupts.
 
