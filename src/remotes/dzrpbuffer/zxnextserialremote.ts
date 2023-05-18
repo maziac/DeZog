@@ -75,7 +75,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		this.supportsBreakOnInterrupt = false;
 		this.cmdRespTimeoutTime = CMD_RESP_TIMEOUT;
 		// Overwrite minimal required version
-		//this.DZRP_VERSION = [2, 1, 0]; TODO: Enable this requirement when dezogif is released.
+		this.DZRP_VERSION = [2, 1, 0];
 		//console.log('ZxNextSerialRemote: constructor()');
 	}
 
@@ -621,16 +621,6 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 			de: data[5] + 256 * data[6],
 			hl: data[7] + 256 * data[8]
 		};
-	}
-
-
-	/**
-	 * Sends the command to enable or disable the interrupts.
-	 * @param enable true to enable, false to disable interrupts.
-	 */
-	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
-		// TODO: Currently the function is disabled.
-		// Enable it when dezogif > 2.1.0 is released.
 	}
 
 
