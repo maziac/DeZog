@@ -1090,10 +1090,11 @@ export class ZesaruxRemote extends RemoteBase {
 
 	/** The setting of the breakpoint for zrcp was centralized in this function to ease
 	 * making changes for the zesarux versions.
-	 * With zesarux version 10.3 this should be finally changed (about May-2023).
+	 * With zesarux version 10.3 this was finally changed (about May-2023).
 	 * Version 10.2 is not supported (as it opens a window after the zrcp connection).
 	 * Version 10.1 is supported with the old breakpoint actions ("prints"). This is also
 	 * the only version that DeZog 2.7.x supports.
+	 * DeZog 3.3.0 only supports ZEsarUX 10.3 and up.
 	 * @param bpId The breakpoint id to use.
 	 * @param condition A breakpoint condition.
 	 */

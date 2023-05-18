@@ -128,8 +128,8 @@ For more demanding projects you have the choice to install a real emulator.
 
 These are the options:
 
-- the [CSpect](http://www.cspect.org) emulator (known to be interoperable is version 2.19.1.0)
-- the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable is version 10.1. Note: 10.2 is unfortunately incompatible)
+- the [CSpect](http://www.cspect.org) emulator (known to be interoperable is version 2.19.3.0)
+- the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable is version 10.3. Older versions are not compatible.)
 - [MAME](https://www.mamedev.org/release.html) (known to be interoperable is version 0.242)
 
 The different DeZog/emulator configurations have different advantages.
@@ -137,21 +137,6 @@ But which one you choose mainly depends on your personal preference.
 The table [here](documentation/Usage.md#remote-capabilities-comparison) shows a comparison of the features.
 
 If you own a ZX Next you also have the option to debug your SW directly on the Next.
-
-
-
-To use DeZog, at least vscode is required (available for Linux, macOS, or Windows).
-
-For pure Z80 programs or simple ZX Spectrum 48K programs, the internal Z80 Simulator within vscode may be sufficient.
-
-For more demanding projects, you can choose to install a real emulator. The following are available options:
-
-CSpect emulator (interoperable with version 2.19.1.0)
-ZEsarUX emulator (interoperable with version 10.1, but not with 10.2)
-MAME (interoperable with version 0.242)
-Different DeZog/emulator configurations have their own unique advantages, but the choice mainly depends on personal preference. A comparison of features can be found in the [table](documentation/Usage.md#remote-capabilities-comparison) available in the documentation.
-
-If you own a ZX Next, you have the option to directly debug your software on the Next, too.
 
 
 ### DeZog

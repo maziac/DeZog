@@ -1,6 +1,27 @@
 This guide will provide some info what to do to update your projects from an earlier version.
 
 
+# Migrate from DeZog 3.2 to DeZog 3.3
+
+There are 2 main updates required for DeZog 3.3 to work correctly.
+
+1. ZEsarUX 10.3: Because of changes in the zrcp DeZog 3.3 does not work anymore with previous versions of ZEsarUX. I.e. you need to update ZEsarUX to (at least) version 10.3.
+2. dezogif (ZX Next debugging): There was a change in the serial interfacing to the ZX Next. So, if you debug programs on the ZX Next you need to update the dezogif to version 2.2.0 (at least).
+You find the dezogif [here](https://github.com/maziac/dezogif/releases).
+([Description how to install the dezogif enNextMf.rom on the ZXNext](https://github.com/maziac/dezogif#deployment)).
+
+
+
+# Migrate from DeZog 3.1 to DeZog 3.2
+
+No required updates.
+
+
+# Migrate from DeZog 3.0 to DeZog 3.1
+
+No required updates.
+
+
 # Migrate from DeZog 2.7 to DeZog 3.0
 
 Many internals have been changed, especially in the use of banks and long addresses.
