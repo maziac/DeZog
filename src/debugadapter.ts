@@ -81,8 +81,6 @@ export class DebugSessionClass extends DebugSession {
 	/// is started and initialized.
 	protected unitTestsStartCallbacks: PromiseCallbacks<DebugSessionClass> | undefined;
 
-	/// The text document used for the temporary disassembly.
-
 	/// A list for the VARIABLES (references)
 	protected listVariables = new RefList<ShallowVar>();
 
