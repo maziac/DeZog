@@ -73,8 +73,8 @@ I.e. different remotes may use a different subset of commands. For one this is b
 [CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL]: #cmd_get_sprites_clip_window_and_control17
 [CMD_GET_SPRITES]: #cmd_get_sprites18
 [CMD_GET_SPRITE_PATTERNS]: #cmd_get_sprite_patterns19
-[CMD_GET_READ_PORT]: #cmd_read_port20
-[CMD_GET_WRITE_PORT]: #cmd_write_port21
+[CMD_READ_PORT]: #cmd_read_port20
+[CMD_WRITE_PORT]: #cmd_write_port21
 [CMD_GET_EXEC_ASM]: #cmd_exec_asm22
 [CMD_INTERRUPT_ON_OFF]: #cmd_interrupt_on_off23
 [CMD_ADD_BREAKPOINT]: #cmd_add_breakpoint40
@@ -86,37 +86,37 @@ I.e. different remotes may use a different subset of commands. For one this is b
 
 The table below shows which commands are used (X) with what remote:
 
-| Command                                   | zsim | CSpect | ZXNext | MAME**|
-| ----------------------------------------- | ---- | ------ | ------ | --- |
-| [CMD_INIT]                                | -    | X      | X      |  -  |
-| [CMD_CLOSE]                               | -    | X      | X      |  X  |
-| [CMD_GET_REGISTERS]                       | X    | X      | X      |  -  |
-| [CMD_SET_REGISTER]                        | X    | X      | X      |  X  |
-| [CMD_WRITE_BANK]                          | X    | X      | X      |  -  |
-| [CMD_CONTINUE]                            | X    | X      | X      |  X  |
-| [CMD_PAUSE]                               | X    | X      | -      |  X  |
-| [CMD_READ_MEM]                            | X    | X      | X      |  X  |
-| [CMD_WRITE_MEM]                           | X    | X      | X      |  X  |
-| [CMD_SET_SLOT]                            | X    | X      | X      |  -  |
-| [CMD_GET_TBBLUE_REG]                      | X    | X      | X      |  -  |
-| [CMD_SET_BORDER]                          | X    | X      | X      |  -  |
-| [CMD_SET_BREAKPOINTS]                     | -    | -      | X      |  -  |
-| [CMD_RESTORE_MEM]                         | -    | -      | X      |  -  |
-| [CMD_LOOPBACK]                            | -    | -      | X      |  -  |
-| [CMD_GET_SPRITES_PALETTE]                 | X    | X      | X      |  -  |
-| [CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL] | X    | X      | X      |  -  |
-| [CMD_GET_SPRITES]                         | X    | X      | -      |  -  |
-| [CMD_GET_SPRITE_PATTERNS]                 | X    | X      | -      |  -  |
-| [CMD_GET_READ_PORT]                       | -    | -      | *      |  -  |
-| [CMD_GET_WRITE_PORT]                      | -    | -      | *      |  -  |
-| [CMD_GET_EXEC_ASM]                        | -    | -      | *      |  -  |
-| [CMD_INTERRUPT_ON_OFF]                    | X    | -      | X      |  -  |
-| [CMD_ADD_BREAKPOINT]                      | X    | X      | -      |  X  |
-| [CMD_REMOVE_BREAKPOINT]                   | X    | X      | -      |  X  |
-| [CMD_ADD_WATCHPOINT]                      | X    | -      | -      |  X  |
-| [CMD_REMOVE_WATCHPOINT]                   | X    | -      | -      |  X  |
-| [CMD_READ_STATE]                          | X    | -      | -      |  -  |
-| [CMD_WRITE_STATE]                         | X    | -      | -      |  -  |
+| Command                                   | zsim | CSpect | ZXNext | MAME** |
+| ----------------------------------------- | ---- | ------ | ------ | ------ |
+| [CMD_INIT]                                | -    | X      | X      | -      |
+| [CMD_CLOSE]                               | -    | X      | X      | X      |
+| [CMD_GET_REGISTERS]                       | X    | X      | X      | -      |
+| [CMD_SET_REGISTER]                        | X    | X      | X      | X      |
+| [CMD_WRITE_BANK]                          | X    | X      | X      | -      |
+| [CMD_CONTINUE]                            | X    | X      | X      | X      |
+| [CMD_PAUSE]                               | X    | X      | -      | X      |
+| [CMD_READ_MEM]                            | X    | X      | X      | X      |
+| [CMD_WRITE_MEM]                           | X    | X      | X      | X      |
+| [CMD_SET_SLOT]                            | X    | X      | X      | -      |
+| [CMD_GET_TBBLUE_REG]                      | X    | X      | X      | -      |
+| [CMD_SET_BORDER]                          | X    | X      | X      | -      |
+| [CMD_SET_BREAKPOINTS]                     | -    | -      | X      | -      |
+| [CMD_RESTORE_MEM]                         | -    | -      | X      | -      |
+| [CMD_LOOPBACK]                            | -    | -      | X      | -      |
+| [CMD_GET_SPRITES_PALETTE]                 | X    | X      | X      | -      |
+| [CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL] | X    | X      | X      | -      |
+| [CMD_GET_SPRITES]                         | X    | X      | -      | -      |
+| [CMD_GET_SPRITE_PATTERNS]                 | X    | X      | -      | -      |
+| [CMD_READ_PORT]                           | -    | -      | *      | -      |
+| [CMD_WRITE_PORT]                          | -    | -      | *      | -      |
+| [CMD_GET_EXEC_ASM]                        | -    | -      | *      | -      |
+| [CMD_INTERRUPT_ON_OFF]                    | X    | -      | X      | -      |
+| [CMD_ADD_BREAKPOINT]                      | X    | X      | -      | X      |
+| [CMD_REMOVE_BREAKPOINT]                   | X    | X      | -      | X      |
+| [CMD_ADD_WATCHPOINT]                      | X    | -      | -      | X      |
+| [CMD_REMOVE_WATCHPOINT]                   | X    | -      | -      | X      |
+| [CMD_READ_STATE]                          | X    | -      | -      | -      |
+| [CMD_WRITE_STATE]                         | X    | -      | -      | -      |
 
 Notes:
 - DeZog knows with which remote it communicates and chooses the right subset.
@@ -257,13 +257,13 @@ Command (Length=4+n):
 
 
 Response (Length=7+n):
-| Index | Size | Value               | Description                                                                                                                                                                                                                            |
-| ----- | ---- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | 1    | 1-255               | Same seq no                                                                                                                                                                                                                            |
-| 1     | 1    | 0/1-255             | Error: 0=no error, 1=general (unknown) error.                                                                                                                                                                                          |
-| 2     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch                                                                                                                                                              |
+| Index | Size | Value               | Description                                                                                                                                     |
+| ----- | ---- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | 1    | 1-255               | Same seq no                                                                                                                                     |
+| 1     | 1    | 0/1-255             | Error: 0=no error, 1=general (unknown) error.                                                                                                   |
+| 2     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch                                                                       |
 | *5    | 1    | 0-255               | Machine type (memory model): 0 = UNKNOWN, 1 = ZX16K, 2 = ZX48K, 3 = ZX128K, 4 = ZXNEXT. Note: CSpect and the ZX Next will always return ZXNEXT. |
-| 6     | 1-n  | 0-terminated string | The responding program name + version as a string. E.g. "dbg_uart_if v2.0.0"                                                                                                                                                           |
+| 6     | 1-n  | 0-terminated string | The responding program name + version as a string. E.g. "dbg_uart_if v2.0.0"                                                                    |
 
 
 ## CMD_CLOSE=2
@@ -660,40 +660,40 @@ Note: 512 = 16x16x2.
 ## CMD_READ_PORT=20
 
 Command (Length=2):
-| Index | Size | Value | Description                       |
-| ----- | ---- | ----- | --------------------------------- |
-| 0     | 2    | 0-65535 | The port to read.               |
+| Index | Size | Value   | Description       |
+| ----- | ---- | ------- | ----------------- |
+| 0     | 2    | 0-65535 | The port to read. |
 
 
 Response (Length=2):
-| Index | Size  | Value | Description          |
-| ----- | ----- | ----- | -------------------- |
-| 0     | 1     | 1-255 | Same seq no          |
-| 2     | 1     | 0-255 | The read port value. |
+| Index | Size | Value | Description          |
+| ----- | ---- | ----- | -------------------- |
+| 0     | 1    | 1-255 | Same seq no          |
+| 2     | 1    | 0-255 | The read port value. |
 
 
 ## CMD_WRITE_PORT=21
 
 Command (Length=3):
-| Index | Size | Value | Description                       |
-| ----- | ---- | ----- | --------------------------------- |
-| 0     | 2    | 0-65535 | The port to write to.           |
-| 2     | 1    | 0-255 | The port value.                   |
+| Index | Size | Value   | Description           |
+| ----- | ---- | ------- | --------------------- |
+| 0     | 2    | 0-65535 | The port to write to. |
+| 2     | 1    | 0-255   | The port value.       |
 
 
 Response (Length=1):
-| Index | Size  | Value | Description          |
-| ----- | ----- | ----- | -------------------- |
-| 0     | 1     | 1-255 | Same seq no          |
+| Index | Size | Value | Description |
+| ----- | ---- | ----- | ----------- |
+| 0     | 1    | 1-255 | Same seq no |
 
 
 ## CMD_EXEC_ASM=22
 
 Command (Length=23):
-| Index | Size | Value | Description                       |
-| ----- | ---- | ----- | --------------------------------- |
-| 0     | 1    | 0     | The context. At the moment only 0=debugger context is defined.
-| 1     | N    | 0-255 | The assembler code.               |
+| Index | Size | Value | Description                                                    |
+| ----- | ---- | ----- | -------------------------------------------------------------- |
+| 0     | 1    | 0     | The context. At the moment only 0=debugger context is defined. |
+| 1     | N    | 0-255 | The assembler code.                                            |
 
 Notes:
 - The assembler code does not need to be terminated with a RET.
@@ -702,14 +702,14 @@ A RET is inserted automatically at the end.
 
 
 Response (Length=10):
-| Index | Size | Value   | Description                                                   |
-| ----- | ---- | ------- | ------------------------------------------------------------- |
-| 0     | 1    | 1-255   | Same seq no                                                   |
+| Index | Size | Value   | Description                                                           |
+| ----- | ---- | ------- | --------------------------------------------------------------------- |
+| 0     | 1    | 1-255   | Same seq no                                                           |
 | 1     | 1    | 0-255   | Error codes: 0=no error, 1=length too long (receive buffer too short) |
-| 2     | 2    | 0-65535 | AF |
-| 4     | 2    | 0-65535 | BC |
-| 6     | 2    | 0-65535 | DE |
-| 8     | 2    | 0-65535 | HL |
+| 2     | 2    | 0-65535 | AF                                                                    |
+| 4     | 2    | 0-65535 | BC                                                                    |
+| 6     | 2    | 0-65535 | DE                                                                    |
+| 8     | 2    | 0-65535 | HL                                                                    |
 
 Note: in the response the register values are returned.
 
@@ -723,9 +723,9 @@ Command (Length=1):
 
 
 Response (Length=1):
-| Index | Size  | Value | Description          |
-| ----- | ----- | ----- | -------------------- |
-| 0     | 1     | 1-255 | Same seq no          |
+| Index | Size | Value | Description |
+| ----- | ---- | ----- | ----------- |
+| 0     | 1    | 1-255 | Same seq no |
 
 
 
