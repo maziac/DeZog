@@ -520,7 +520,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				const start = slotRanges.shift();
 				if (start == undefined)
 					break;
-				let end = slotRanges.shift() || 0;
+				let end = slotRanges.shift() ?? 0;
 				Utility.assert(end > 0);
 				end += start;
 				for (let k = start; k < end; k++) {

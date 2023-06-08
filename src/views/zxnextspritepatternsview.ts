@@ -118,7 +118,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 			const start = indexRanges.shift();
 			if (start == undefined)
 				break;
-			let end = indexRanges.shift() || -1;
+			let end = indexRanges.shift() ?? -1;
 			Utility.assert(end >= 0);
 			end += start;
 			for (let k = start; k < end; k++) {
