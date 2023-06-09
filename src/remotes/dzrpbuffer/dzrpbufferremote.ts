@@ -105,38 +105,40 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	 * @returns The response (payload data after seq no) is returned in the Promise.
 	 */
 	protected async sendDzrpCmd(cmd: DZRP, data?: Buffer | Array<number>, respTimeoutTime?: number): Promise<Buffer> {
-		return new Promise<Buffer>(async (resolve, reject) => {
-			// Calculate length
-			let len = 0;
-			if (data) {
-				if (Array.isArray(data))
-					data = Buffer.from(data);	// Convert to Buffer if Array
-				len += data.length;
-			}
-			// Put length in buffer
-			const totalLength = 4 + 2 + len;
-			const buffer = Buffer.alloc(totalLength);
-			// Encode length
-			buffer[0] = len & 0xFF;
-			buffer[1] = (len >>> 8) & 0xFF;
-			buffer[2] = (len >>> 16) & 0xFF;
-			buffer[3] = (len >>> 24) & 0xFF;
-			// Put sequence number in buffer
-			const seqno = this.getNextSeqNo();
-			buffer[4] = seqno;
-			// Put command in buffer
-			buffer[5] = cmd;
-			// Copy data
-			data?.copy(buffer, 6);
+		return new Promise<Buffer>((resolve, reject) => {
+			(async () => {
+				// Calculate length
+				let len = 0;
+				if (data) {
+					if (Array.isArray(data))
+						data = Buffer.from(data);	// Convert to Buffer if Array
+					len += data.length;
+				}
+				// Put length in buffer
+				const totalLength = 4 + 2 + len;
+				const buffer = Buffer.alloc(totalLength);
+				// Encode length
+				buffer[0] = len & 0xFF;
+				buffer[1] = (len >>> 8) & 0xFF;
+				buffer[2] = (len >>> 16) & 0xFF;
+				buffer[3] = (len >>> 24) & 0xFF;
+				// Put sequence number in buffer
+				const seqno = this.getNextSeqNo();
+				buffer[4] = seqno;
+				// Put command in buffer
+				buffer[5] = cmd;
+				// Copy data
+				data?.copy(buffer, 6);
 
-			// Put into queue
-			if (respTimeoutTime == undefined)
-				respTimeoutTime = this.cmdRespTimeoutTime;
-			this.putIntoQueue(buffer, respTimeoutTime, resolve, reject);
+				// Put into queue
+				if (respTimeoutTime == undefined)
+					respTimeoutTime = this.cmdRespTimeoutTime;
+				this.putIntoQueue(buffer, respTimeoutTime, resolve, reject);
 
-			// Try to send immediately
-			if (this.messageQueue.length == 1)
-				this.sendNextMessage();
+				// Try to send immediately
+				if (this.messageQueue.length == 1)
+					await this.sendNextMessage();
+			})();
 		});
 	}
 

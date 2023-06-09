@@ -157,6 +157,8 @@ export interface MameType {
 export interface ZxNextSerialType {
 	// The serial usb device.
 	serial: string;	// E.g. "/dev/cu.usbserial-AQ007PCD" on macOS
+	/// The serial timeout in seconds.
+	timeout: number;
 }
 
 
@@ -581,9 +583,13 @@ export class Settings {
 
 
 		// zxnext
-		if (!launchCfg.zxnext)
+		if (!launchCfg.zxnext) {
 			launchCfg.zxnext = {} as ZxNextSerialType;
-		// Note: if 'serial' is undefined and type is 'zxnext', this will create an error
+			// Note: if 'serial' is undefined and type is 'zxnext', this will create an error
+		}
+		if (launchCfg.zxnext.timeout === undefined) {
+			launchCfg.zxnext.timeout = 5;	// Seconds
+		}
 
 		// sjasmplus
 		if (launchCfg.sjasmplus) {

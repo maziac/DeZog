@@ -18,7 +18,6 @@ import {Z80RegistersZxNextDecoder} from './z80registerszxnextdecoder';
 const MESSAGE_START_BYTE = 0xA5;
 
 // Timeout until when a response on a command should have been received.
-const CMD_RESP_TIMEOUT = 1000;	// 1000 ms = 1 s
 
 
 /**
@@ -73,9 +72,8 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		this.supportsWPMEM = false;
 		this.supportsLOGPOINT = true;
 		this.supportsBreakOnInterrupt = false;
-		this.cmdRespTimeoutTime = CMD_RESP_TIMEOUT;
 		// Overwrite minimal required version
-		this.DZRP_VERSION = [2, 1, 0];
+		this.DZRP_VERSION = [2, 1, 0];	// TODO: 2.1.1
 		//console.log('ZxNextSerialRemote: constructor()');
 	}
 
@@ -93,6 +91,8 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization(): Promise<void> {
+		// Set timeout
+		this.cmdRespTimeoutTime = Settings.launch.zxnext.timeout * 1000;
 		// Open the serial port
 		const serialPath = Settings.launch.zxnext.serial;
 		this.serialPort = new SerialPort({
@@ -102,19 +102,21 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		});
 
 		// React on-open
-		this.serialPort.on('open', async () => {
-			LogTransport.log('ZxNextSerialRemote: Connected to ZX Next!');
+		this.serialPort.on('open', () => {
+			(async () => {
+				LogTransport.log('ZxNextSerialRemote: Connected to ZX Next!');
 
-			this.receivedData = Buffer.alloc(0);
-			this.msgStartByteFound = false;
-			this.expectedLength = 4;	// for length
-			this.receivingHeader = true;
-			this.stopChunkTimeout();
+				this.receivedData = Buffer.alloc(0);
+				this.msgStartByteFound = false;
+				this.expectedLength = 4;	// for length
+				this.receivingHeader = true;
+				this.stopChunkTimeout();
 
-			this.longBreakedAddress = undefined;
-			//this.restorableBreakpoints = new Map<number, RestorableBreakpoint>();
-			this.breakpointIdLastIndex = 0;
-			this.onConnect();
+				this.longBreakedAddress = undefined;
+				//this.restorableBreakpoints = new Map<number, RestorableBreakpoint>();
+				this.breakpointIdLastIndex = 0;
+				await this.onConnect();
+			})();
 		});
 
 		// Handle errors

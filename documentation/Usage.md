@@ -1046,6 +1046,16 @@ For convenience a palette command exists that lists the connected serial ports:
 Press F1 and then enter "DeZog: Get list of all available serial ports".
 With the buttons you can directly copy the interface name to the clipboard.
 
+If you encounter problems with the connection you can try to increase the timeout value.
+The value is given in 2 seconds and the default is 5.
+E.g.
+~~~json
+    "zxnext": {
+        "serial": "COM8",
+        "timeout": 8
+    }
+~~~
+
 #### Setup
 
 Prerequisites:

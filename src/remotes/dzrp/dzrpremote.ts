@@ -569,7 +569,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				await this.dzrpTransportTest.cmdsStart(minTime, maxTime);
 				return "Started test loop sending commands...";
 			}
-			else if (startEnd === "end") {
+			if (startEnd === "end") {
 				// "test end"
 				await this.dzrpTransportTest?.cmdsEnd();
 				this.dzrpTransportTest = undefined;

@@ -13,13 +13,13 @@ import {DZRP, DzrpRemote} from "./dzrpremote";
  */
 export class DzrpTransportTest extends EventEmitter {
 	// The remote to use for sending commands.
-	protected remote: DzrpQueuedRemote | any;	// "any" to easily access the protected methods.
+	protected remote: DzrpQueuedRemote | any;	// NOSONAR: "any" to easily access the protected methods.
 
 	// Indicates if the test loop is running.
 	protected running = false;
 
 	// Command list.
-	protected cmdList: Array<() => void> = [
+	protected cmdList: Array<() => Promise<void>> = [
 		async () => {
 			console.log('sendDzrpCmdClose');
 			await this.remote.sendDzrpCmdClose();
@@ -163,8 +163,8 @@ export class DzrpTransportTest extends EventEmitter {
 	 * At first a CMD_INIT is send.
 	 * Afterwards other commands are sent randomly with a pause in the range [minTime;maxTime].
 	 * Returns immediately. The commands are sent asynchronously until 'end' is called.
-	 * @param minTime The minimum time between sent commands.
-	 * @param maxTime The maximum time between sent commands.
+	 * @param minTime The minimum time between sent commands (ms).
+	 * @param maxTime The maximum time between sent commands (ms).
 	 */
 	public async cmdsStart(minTime: number, maxTime: number) {
 		// Stop any probably running test loop.
@@ -231,8 +231,8 @@ export class DzrpTransportTest extends EventEmitter {
 
 	/** Waits for a random time.
 	 * If myTime == minTime the function at least waits 1 ms.
-	 * @param minTime The minimum pause time.
-	 * @param maxTime The maximum pause time.
+	 * @param minTime The minimum pause time (ms).
+	 * @param maxTime The maximum pause time (ms).
 	 */
 	protected async pause(minTime: number, maxTime: number) {
 		// Check boundaries
@@ -245,14 +245,6 @@ export class DzrpTransportTest extends EventEmitter {
 			// Pause
 			await Utility.timeout(pause);
 		}
-	}
-
-
-	/** Sends a random command.
-	 */
-	protected async setupCmdList() {
-		// Create function list
-		this.cmdList = new Array<() => void>();
 	}
 
 

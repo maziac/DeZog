@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.3.0",
+	"version": "3.3.0-timeoutsetting",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum.",
 	"author": {
@@ -628,6 +628,10 @@
 										"type": "string",
 										"description": "The name of the serial port interface, on macOS e.g. \"/dev/tty.usbserial-AQ\", on Windows e.g. \"COM8\"",
 										"default": ""
+									},
+									"timeout": {
+										"type": "number",
+										"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
 									}
 								}
 							},
