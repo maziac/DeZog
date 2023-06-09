@@ -156,7 +156,7 @@ export class ZSimulationView extends BaseView {
 		});
 
 		// Handle vertical sync
-		this.simulator.on('vertSync', async () => {
+		this.simulator.on('vertSync', () => {
 			this.vertSync();
 		});
 
@@ -293,7 +293,7 @@ export class ZSimulationView extends BaseView {
 			case 'warning':
 				// A warning has been received, e.g. sample rate was not possible.
 				const warningText = message.text;
-				vscode.window.showWarningMessage(warningText);
+				await vscode.window.showWarningMessage(warningText);
 				break;
 			case 'keyChanged':
 				this.keyChanged(message.key, message.value);

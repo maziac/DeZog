@@ -684,7 +684,7 @@ export class Z80UnitTestRunner {
 	 * @param position (Optional) if error was located already it is set here. Otherwise the pc is used for locating.
 	 */
 	protected static testFailed(reason?: string, position?: {filename, line, column}) {
-		const testMsg = new vscode.TestMessage(reason || "Failure.");
+		const testMsg = new vscode.TestMessage(reason || "Failure."); // NOSONAR
 		if (position) {
 			// Use existing position
 			const uri = vscode.Uri.file(position.filename);

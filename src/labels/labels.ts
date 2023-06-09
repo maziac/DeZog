@@ -44,7 +44,7 @@ export interface ListFileLine extends SourceFileEntry {
  * purposes.
  */
 interface NextLabelDistance {
-	distance: number;		/// The distance in bytes to the next label
+	distance: number;		/// The distance in bytes to the next label. Is > 0.
 	nextLabel: string;		/// The next label as string.
 }
 
@@ -428,7 +428,7 @@ export class LabelsClass {
 	 */
 	public getLabelsForLongAddress(longAddress: number): Array<string> {
 		const labels = this.labelsForLongAddress.get(longAddress);
-		return labels || [];
+		return labels ?? [];
 	}
 
 

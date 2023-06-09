@@ -178,7 +178,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param configName The debug launch configuration name.
 	 * @returns If it was not possible to start unit test: false.
 	 */
-	public unitTestsStart(configName: string): Promise<DebugSessionClass> {
+	public async unitTestsStart(configName: string): Promise<DebugSessionClass> {
 		// Return if currently a debug session is running
 		if (this.running)
 			throw Error("There is already an active debug session.");
@@ -200,7 +200,7 @@ export class DebugSessionClass extends DebugSession {
 
 		// Start debugger
 		this.state = DbgAdapterState.UNITTEST;
-		vscode.debug.startDebugging(workspaceFolder, configName);
+		await vscode.debug.startDebugging(workspaceFolder, configName);
 
 		return res;
 	}
@@ -211,8 +211,10 @@ export class DebugSessionClass extends DebugSession {
 	 * @param message The message to show.
 	 */
 	private showWarning(message: string) {
-		Log.log(message)
-		vscode.window.showWarningMessage(message);
+		Log.log(message);
+		(async () => {
+			await vscode.window.showWarningMessage(message);
+		})();
 	}
 
 
@@ -222,7 +224,9 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	private showError(message: string) {
 		Log.log(message);
-		vscode.window.showErrorMessage(message);
+		(async () => {
+			await vscode.window.showErrorMessage(message);
+		})();
 	}
 
 
@@ -249,29 +253,33 @@ export class DebugSessionClass extends DebugSession {
 	 * This in turn will stop the debug session.
 	 */
 	public async terminateRemote(): Promise<void> {
-		return new Promise<void>(async resolve => {
-			// Wait until vscode debugger has stopped.
-			if (Remote) {
-				// Terminate emulator
-				await Remote.terminate();
-				RemoteFactory.removeRemote();
-			}
-
-			// (Unfortunately there is no event for this, so we need to wait)
-			Utility.delayedCall(time => {
-				// After 5 secs give up
-				if (time >= 5.0) {
-					// Give up
-					vscode.window.showErrorMessage('Could not terminate active debug session. Please try manually.');
-					resolve();
-					return true;
+		return new Promise<void>(resolve => {
+			(async () => {
+				// Wait until vscode debugger has stopped.
+				if (Remote) {
+					// Terminate emulator
+					await Remote.terminate();
+					RemoteFactory.removeRemote();
 				}
-				// Check for active debug session
-				if (this.running)
-					return false;  // Try again
-				resolve();
-				return true;  // Stop
-			});
+
+				// (Unfortunately there is no event for this, so we need to wait)
+				Utility.delayedCall(time => {
+					// After 5 secs give up
+					if (time >= 5.0) {
+						// Give up
+						(async () => {
+							await vscode.window.showErrorMessage('Could not terminate active debug session. Please try manually.');
+						})();
+						resolve();
+						return true;
+					}
+					// Check for active debug session
+					if (this.running)
+						return false;  // Try again
+					resolve();
+					return true;  // Stop
+				});
+			})();
 		});
 	}
 
@@ -423,7 +431,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async initializeRequest(response: DebugProtocol.InitializeResponse, _args: DebugProtocol.InitializeRequestArguments): Promise<void> {
 		//const dbgSession = vscode.debug.activeDebugSession;
 		// build and return the capabilities of this debug adapter:
-		response.body = response.body || {};
+		response.body = response.body ?? {};
 
 		// the adapter implements the configurationDoneRequest.
 		response.body.supportsConfigurationDoneRequest = false;
@@ -631,10 +639,12 @@ export class DebugSessionClass extends DebugSession {
 			this.debugConsoleIndentedText(message);
 		});
 
-		Remote.once('error', async err => {
-			// Some error occurred
-			await Remote.disconnect();
-			this.terminate(err?.message);
+		Remote.once('error', err => {
+			(async () => {
+				// Some error occurred
+				await Remote.disconnect();
+				this.terminate(err?.message);
+			})();
 		});
 
 		Remote.once('terminated', message => {
@@ -672,138 +682,142 @@ export class DebugSessionClass extends DebugSession {
 			});
 		});
 
-		return new Promise<undefined>(async (resolve, reject) => {	// For now there is no unsuccessful (reject) execution
-			Remote.once('initialized', async (text) => {
-				// Print text if available, e.g. "dbg_uart_if initialized".
-				if (text) {
-					this.debugConsoleAppendLine(text);
-				}
+		return new Promise<undefined>((resolve, reject) => {	// For now there is no unsuccessful (reject) execution
+			(async () => {
+				Remote.once('initialized', text => {
+					(async () => {
+						// Print text if available, e.g. "dbg_uart_if initialized".
+						if (text) {
+							this.debugConsoleAppendLine(text);
+						}
 
-				// Load files
+						// Load files
+						try {
+							// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
+							// Note: 'loadObjs' is done after 'load'. Reason is:
+							// loadObjs needs labels ('start'), labels require the memory model.
+							// And zesarux might change the memory model on 'load'.
+							Remote.readListFiles(Settings.launch);
+							// Load objs to memory
+							await Remote.loadObjs();
+							// This needs to be done after the labels have been read
+							await Remote.initWpmemAssertionLogpoints();
+						}
+						catch (e) {
+							// Some error occurred during loading, e.g. file not found.
+							const error = e.message || "Error";
+							await Remote.terminate('Init remote (readListFiles): ' + error);
+							reject(e);
+							DebugSessionClass.singleton().unitTestsStartCallbacks?.reject(e);
+							return;
+						}
+
+						try {
+							// Inform Disassembler of MemoryModel and other arguments.
+							Disassembly.setMemoryModel(Remote.memoryModel);
+
+							// Instantiate file watchers for revEng auto re-load
+							this.installReloadFileWatchers();
+
+							// Set Program Counter to execAddress
+							await Remote.setLaunchExecAddress();
+
+							// Get initial registers
+							await Remote.getRegistersFromEmulator();
+							await Remote.getCallStackFromEmulator();
+
+							// Initialize Cpu- or StepHistory.
+							if (!StepHistory.decoder)
+								StepHistory.decoder = Z80Registers.decoder;
+							StepHistory.init();
+
+							// Run user commands after load.
+							for (const cmd of Settings.launch.commandsAfterLaunch) {
+								this.debugConsoleAppendLine(cmd);
+								try {
+									const outText = await this.evaluateCommand(cmd);
+									this.debugConsoleAppendLine(outText);
+								}
+								catch (err) {
+									// Some problem occurred
+									const output = "Error while executing '" + cmd + "' in 'commandsAfterLaunch': " + err.message;
+									this.showWarning(output);
+								}
+							}
+
+
+							// Special handling for custom code
+							if (Remote instanceof ZSimRemote) {
+								// Start custom code (if not unit test)
+								const zsim = Remote;
+								if (this.state === DbgAdapterState.NORMAL) {
+									// Special handling for zsim: Re-init custom code.
+									zsim.customCode?.execute();
+								}
+
+								// At the end, if remote type === ZX simulator, open its window.
+								// Note: it was done this way and not in the Remote itself, otherwise
+								// there would be a dependency in RemoteFactory to vscode which in turn
+								// makes problems for the unit tests.
+								// Adds a window that displays the ZX screen.
+								const zsimView = new ZSimulationView(zsim);
+								await zsimView.waitOnInitView();
+							}
+						}
+						catch (e) {
+							// Some error occurred during loading, e.g. file not found.
+							const error = e.message || "Error";
+							await Remote.terminate('Error during initialization: ' + error);
+							reject(e);
+							DebugSessionClass.singleton().unitTestsStartCallbacks?.reject(e);
+							return;
+						}
+
+						// Socket is connected, allow setting breakpoints
+						this.sendEvent(new InitializedEvent());
+						// Respond
+						resolve(undefined);
+
+						// Check if program should be automatically started
+						StepHistory.clear();
+						if (this.unitTestsStartCallbacks) {
+							this.unitTestsStartCallbacks.resolve(this);
+						}
+						else {
+							if (Settings.launch.startAutomatically) {
+								// Delay call because the breakpoints are set afterwards.
+								setTimeout(() => {
+									// Save start address for a possibly later disassembly.
+									// Note: for !startAutomatically it is not required because the stackTraceRequest will do the same.
+									const pcLong = Remote.getPCLong();
+									Disassembly.pushLongPcAddress(pcLong);
+									// Do a "continue"
+									this.handleRequest(undefined, async () => {
+										// Normal operation
+										return this.remoteContinue();
+									});
+								}, 500);
+							}
+							else {
+								// Break
+								this.sendEvent(new StoppedEvent('stop on start', DebugSessionClass.THREAD_ID));
+							}
+						}
+					})();
+				});
+
+				// Initialize Remote
 				try {
-					// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
-					// Note: 'loadObjs' is done after 'load'. Reason is:
-					// loadObjs needs labels ('start'), labels require the memory model.
-					// And zesarux might change the memory model on 'load'.
-					Remote.readListFiles(Settings.launch);
-					// Load objs to memory
-					Remote.loadObjs();
-					// This needs to be done after the labels have been read
-					await Remote.initWpmemAssertionLogpoints();
+					await Remote.init();
 				}
 				catch (e) {
-					// Some error occurred during loading, e.g. file not found.
+					// Some error occurred
 					const error = e.message || "Error";
-					Remote.terminate('Init remote (readListFiles): ' + error);
+					await Remote.terminate('Init remote: ' + error);
 					reject(e);
 					DebugSessionClass.singleton().unitTestsStartCallbacks?.reject(e);
-					return;
 				}
-
-				try {
-					// Inform Disassembler of MemoryModel and other arguments.
-					Disassembly.setMemoryModel(Remote.memoryModel);
-
-					// Instantiate file watchers for revEng auto re-load
-					this.installReloadFileWatchers();
-
-					// Set Program Counter to execAddress
-					await Remote.setLaunchExecAddress();
-
-					// Get initial registers
-					await Remote.getRegistersFromEmulator();
-					await Remote.getCallStackFromEmulator();
-
-					// Initialize Cpu- or StepHistory.
-					if (!StepHistory.decoder)
-						StepHistory.decoder = Z80Registers.decoder;
-					StepHistory.init();
-
-					// Run user commands after load.
-					for (const cmd of Settings.launch.commandsAfterLaunch) {
-						this.debugConsoleAppendLine(cmd);
-						try {
-							const outText = await this.evaluateCommand(cmd);
-							this.debugConsoleAppendLine(outText);
-						}
-						catch (err) {
-							// Some problem occurred
-							const output = "Error while executing '" + cmd + "' in 'commandsAfterLaunch': " + err.message;
-							this.showWarning(output);
-						}
-					}
-
-
-					// Special handling for custom code
-					if (Remote instanceof ZSimRemote) {
-						// Start custom code (if not unit test)
-						const zsim = Remote;
-						if (this.state === DbgAdapterState.NORMAL) {
-							// Special handling for zsim: Re-init custom code.
-							zsim.customCode?.execute();
-						}
-
-						// At the end, if remote type === ZX simulator, open its window.
-						// Note: it was done this way and not in the Remote itself, otherwise
-						// there would be a dependency in RemoteFactory to vscode which in turn
-						// makes problems for the unit tests.
-						// Adds a window that displays the ZX screen.
-						const zsimView = new ZSimulationView(zsim);
-						await zsimView.waitOnInitView();
-					}
-				}
-				catch(e) {
-					// Some error occurred during loading, e.g. file not found.
-					const error = e.message || "Error";
-					Remote.terminate('Error during initialization: ' + error);
-					reject(e);
-					DebugSessionClass.singleton().unitTestsStartCallbacks?.reject(e);
-					return;
-				}
-
-				// Socket is connected, allow setting breakpoints
-				this.sendEvent(new InitializedEvent());
-				// Respond
-				resolve(undefined);
-
-				// Check if program should be automatically started
-				StepHistory.clear();
-				if (this.unitTestsStartCallbacks) {
-					this.unitTestsStartCallbacks.resolve(this);
-				}
-				else {
-					if (Settings.launch.startAutomatically) {
-						// Delay call because the breakpoints are set afterwards.
-						setTimeout(() => {
-							// Save start address for a possibly later disassembly.
-							// Note: for !startAutomatically it is not required because the stackTraceRequest will do the same.
-							const pcLong = Remote.getPCLong();
-							Disassembly.pushLongPcAddress(pcLong);
-							// Do a "continue"
-							this.handleRequest(undefined, async () => {
-								// Normal operation
-								return this.remoteContinue();
-							});
-						}, 500);
-					}
-					else {
-						// Break
-						this.sendEvent(new StoppedEvent('stop on start', DebugSessionClass.THREAD_ID));
-					}
-				}
-			});
-
-			// Initialize Remote
-			try {
-				await Remote.init();
-			}
-			catch (e) {
-				// Some error occurred
-				const error = e.message || "Error";
-				Remote.terminate('Init remote: ' + error);
-				reject(e);
-				DebugSessionClass.singleton().unitTestsStartCallbacks?.reject(e);
-			}
+			})();
 		});
 	}
 
@@ -817,7 +831,7 @@ export class DebugSessionClass extends DebugSession {
 		const path = UnifiedPath.getUnifiedPath(<string>args.source.path);
 
 		// Convert breakpoints
-		const givenBps = args.breakpoints || [];
+		const givenBps = args.breakpoints ?? [];
 		const bps = new Array<RemoteBreakpoint>();
 		for (const bp of givenBps) {
 			try {
@@ -872,7 +886,7 @@ export class DebugSessionClass extends DebugSession {
 			if (!verified) {
 				const text = JSON.stringify(bp);	// Shows line number starting at 1.
 				this.debugConsoleAppendLine('Unverified breakpoint: ' + text);
-				if (foundCbp && foundCbp.error) {
+				if (foundCbp?.error) {
 					this.debugConsoleAppendLine('  Additional info: ' + foundCbp.error);
 				}
 			}
@@ -1107,7 +1121,7 @@ export class DebugSessionClass extends DebugSession {
 		// Set the path, so that editor title menu buttons can be assigned
 		// Note: For some reason the when clause "resourcePath === dezog.disassembler.disasmPath" in package.json does not work.
 		// But instead "resourcePath in dezog.disassembler.disasmPath" does work.
-		vscode.commands.executeCommand('setContext', 'dezog.disassembler.disasmPath', [absFilePath]);
+		await vscode.commands.executeCommand('setContext', 'dezog.disassembler.disasmPath', [absFilePath]);
 		return disasmTextDoc;
 	}
 
@@ -1394,7 +1408,7 @@ export class DebugSessionClass extends DebugSession {
 		if (this.state === DbgAdapterState.UNITTEST) {
 			const finished = await Z80UnitTestRunner.dbgCheckUnitTest(breakReasonString);
 			if (!finished) {
-				this.sendEventBreakAndUpdate();
+				await this.sendEventBreakAndUpdate();
 			}
 			// Send no further break
 			return undefined as any;
@@ -1894,7 +1908,7 @@ export class DebugSessionClass extends DebugSession {
 		response.success = false;	// will be changed if successful.
 		// Get immediate value
 		const item = this.constExpressionsList.get(args.expression);
-		if (item && item.immediateValue) {
+		if (item?.immediateValue) {
 			// Now set the value.
 			const value = Utility.parseValue(args.value);
 			const formattedString = await item.immediateValue.setValue(value);
@@ -2189,7 +2203,7 @@ export class DebugSessionClass extends DebugSession {
 			throw Error("No expression found.");
 
 		// Index inside label
-		const matchIndex = /(.*)[^\[]*\[([^\]]+)\]/.exec(labelString);	// Instead this simpler one could be used: /(.*?)\[(.+?)\]/
+		const matchIndex = /(.*)[^[]*\[([^\]]+)\]/.exec(labelString);	// Instead this simpler one could be used: /(.*?)\[(.+?)\]/
 		let lblIndexString = '';
 		if (matchIndex) {
 			labelString = matchIndex[1].trim();
@@ -2267,7 +2281,7 @@ export class DebugSessionClass extends DebugSession {
 			// Try to get the distance to the next label:
 			// Note: Does not work for structs as the next label would
 			// be inside the struct.
-			elemCount = Labels.getDistanceToNextLabel(distAddr as number) || 1;
+			elemCount = Labels.getDistanceToNextLabel(distAddr as number) ?? 1;
 			// Check special case
 			if (!lblType && elemCount === 2) {
 				// Special case: 1 word. Exchange size and count
@@ -3207,8 +3221,8 @@ E.g. use "-help -view" to put the help text in an own view.
 			this.debugConsoleAppend(text + '\n');
 
 			// Copy to clipboard
-			vscode.env.clipboard.writeText(text);
-			vscode.window.showInformationMessage('Disassembly copied to clipboard.');
+			await vscode.env.clipboard.writeText(text);
+			await vscode.window.showInformationMessage('Disassembly copied to clipboard.');
 		}
 		catch (e) {
 			this.debugConsoleAppendLine("Error: " + e.message);
@@ -3354,134 +3368,136 @@ E.g. use "-help -view" to put the help text in an own view.
 	 */
 	protected installHtmlClickHandler(view: HtmlView) {
 		// Handler for mouse clicks: navigate to files/lines
-		view.on('click', async message => {
-			const addressesString: string = message.data;	// Format e.g. "#800A.4" or "8010.4;8012.4;8013.4;" or for the renderText: "vscode-webview://....#8000"
-			const k = addressesString.lastIndexOf('#');
-			if (k < 0)
-				return;
-			const longAddrString = addressesString.substring(k + 1);	// Skip #
-			// Check if empty
-			if (longAddrString === '') {
-				// No associated address found
-				this.showWarning('No associated file/line.');
-				return;
-			}
-
-			// Separate addresses
-			const addresses = longAddrString.split(';');
-			// Find associations with file/line
-			const fileLines = new Map<string, number[]>();
-			addresses.reverse();
-			if (addresses[0] === '') {
-				// Remove first (empty) object
-				addresses.shift();
-			}
-
-			// Loop over all addresses
-			for (const addressString of addresses) {
-				if (!addressString)
-					continue;	// Last (first) item might be ''
-				// Check for long address
-				let longAddr;
-				try{
-					// A long address
-					longAddr = Remote.memoryModel.parseAddress(addressString);
+		view.on('click', message => {
+			(async () => {
+				const addressesString: string = message.data;	// Format e.g. "#800A.4" or "8010.4;8012.4;8013.4;" or for the renderText: "vscode-webview://....#8000"
+				const k = addressesString.lastIndexOf('#');
+				if (k < 0)
+					return;
+				const longAddrString = addressesString.substring(k + 1);	// Skip #
+				// Check if empty
+				if (longAddrString === '') {
+					// No associated address found
+					this.showWarning('No associated file/line.');
+					return;
 				}
-				catch(e) {
-					// It might happen that a 64k address is given here instead of a long address (in case the disassembly does not know which bank is correct).
-					// In that case the current bank is paged.
-					if (addressString.includes('.')) {
-						this.showError(e.message);
-						//throw e;	// Rethrow if a bank was explicitly given
-						return;
+
+				// Separate addresses
+				const addresses = longAddrString.split(';');
+				// Find associations with file/line
+				const fileLines = new Map<string, number[]>();
+				addresses.reverse();
+				if (addresses[0] === '') {
+					// Remove first (empty) object
+					addresses.shift();
+				}
+
+				// Loop over all addresses
+				for (const addressString of addresses) {
+					if (!addressString)
+						continue;	// Last (first) item might be ''
+					// Check for long address
+					let longAddr;
+					try {
+						// A long address
+						longAddr = Remote.memoryModel.parseAddress(addressString);
 					}
-					// Otherwise take the current address and warn
-					const addr64k = parseInt(addressString, 16);	// Convert hex, e.g. ("C000h")
-					longAddr = Z80Registers.createLongAddress(addr64k, Remote.getSlots());
-				}
-				const entry = Remote.getFileAndLineForAddress(longAddr);
-				const fileName = entry.fileName;
-				if (fileName) {
-					// Associated file found
-					let addrs = fileLines.get(fileName);
-					if (!addrs) {
-						addrs = new Array<number>();
-						fileLines.set(fileName, addrs);
+					catch (e) {
+						// It might happen that a 64k address is given here instead of a long address (in case the disassembly does not know which bank is correct).
+						// In that case the current bank is paged.
+						if (addressString.includes('.')) {
+							this.showError(e.message);
+							//throw e;	// Rethrow if a bank was explicitly given
+							return;
+						}
+						// Otherwise take the current address and warn
+						const addr64k = parseInt(addressString, 16);	// Convert hex, e.g. ("C000h")
+						longAddr = Z80Registers.createLongAddress(addr64k, Remote.getSlots());
 					}
-					addrs.push(entry.lineNr);
-				}
-				else {
-					// No associated file found
-					this.showWarning('Address ' + addressString + ' has no associated file/line.');
-				}
-			}
-
-			// Loop over all files
-			for (const [fileName, lineNrs] of fileLines) {
-				// Loop over all lines
-				const selections: vscode.Selection[] = [];
-				let visibleStart = Number.MAX_SAFE_INTEGER;
-				let visibleEnd = 0;
-
-				// Find consecutive lines
-				lineNrs.sort((a, b) => a - b);
-				const compressed: number[][] = [];
-				let i = 0;
-				while (i < lineNrs.length) {
-					// Search until a gap of more than 1 line
-					let lineNr = lineNrs[i];
-					let k = i + 1;
-					for (; k < lineNrs.length; k++) {
-						lineNr++;
-						if (lineNr != lineNrs[k])
-							break;
+					const entry = Remote.getFileAndLineForAddress(longAddr);
+					const fileName = entry.fileName;
+					if (fileName) {
+						// Associated file found
+						let addrs = fileLines.get(fileName);
+						if (!addrs) {
+							addrs = new Array<number>();
+							fileLines.set(fileName, addrs);
+						}
+						addrs.push(entry.lineNr);
 					}
-					compressed.push([lineNrs[i], lineNrs[k - 1]]);
-					// Next
-					i = k;
+					else {
+						// No associated file found
+						this.showWarning('Address ' + addressString + ' has no associated file/line.');
+					}
 				}
 
-				// Create selections
-				for (const lineStartEnd of compressed) {
-					// Start/end
-					const lineStart = lineStartEnd[0];
-					const lineEnd = lineStartEnd[1];
-					// Set selection
-					const clmEnd = Number.MAX_SAFE_INTEGER;
-					selections.push(new vscode.Selection(lineStart, 0, lineEnd, clmEnd));
+				// Loop over all files
+				for (const [fileName, lineNrs] of fileLines) {
+					// Loop over all lines
+					const selections: vscode.Selection[] = [];
+					let visibleStart = Number.MAX_SAFE_INTEGER;
+					let visibleEnd = 0;
+
+					// Find consecutive lines
+					lineNrs.sort((a, b) => a - b);
+					const compressed: number[][] = [];
+					let i = 0;
+					while (i < lineNrs.length) {
+						// Search until a gap of more than 1 line
+						let lineNr = lineNrs[i];
+						let k = i + 1;
+						for (; k < lineNrs.length; k++) {
+							lineNr++;
+							if (lineNr != lineNrs[k])
+								break;
+						}
+						compressed.push([lineNrs[i], lineNrs[k - 1]]);
+						// Next
+						i = k;
+					}
+
+					// Create selections
+					for (const lineStartEnd of compressed) {
+						// Start/end
+						const lineStart = lineStartEnd[0];
+						const lineEnd = lineStartEnd[1];
+						// Set selection
+						const clmEnd = Number.MAX_SAFE_INTEGER;
+						selections.push(new vscode.Selection(lineStart, 0, lineEnd, clmEnd));
+						// Extend visible range
+						if (lineStart < visibleStart)
+							visibleStart = lineStart;
+						if (lineEnd > visibleEnd)
+							visibleEnd = lineEnd;
+					}
 					// Extend visible range
-					if (lineStart < visibleStart)
-						visibleStart = lineStart;
-					if (lineEnd > visibleEnd)
-						visibleEnd = lineEnd;
-				}
-				// Extend visible range
-				visibleStart -= 3;
-				if (visibleStart < 0)
-					visibleStart = 0;
-				visibleEnd += 3;
+					visibleStart -= 3;
+					if (visibleStart < 0)
+						visibleStart = 0;
+					visibleEnd += 3;
 
-				// Try to find if the file is already open in an editor.
-				let document;
-				for(const doc of vscode.workspace.textDocuments) {
-					const docPath = UnifiedPath.getUnifiedPath(doc.uri.fsPath);
-					if(docPath === fileName) {
-						document = doc;
-						break;
+					// Try to find if the file is already open in an editor.
+					let document;
+					for (const doc of vscode.workspace.textDocuments) {
+						const docPath = UnifiedPath.getUnifiedPath(doc.uri.fsPath);
+						if (docPath === fileName) {
+							document = doc;
+							break;
+						}
 					}
-				}
-				if(!document) {
-					// Doc not found, open it
-					const uri = vscode.Uri.file(fileName);
-					document = await vscode.workspace.openTextDocument(uri);
-				}
-				// Get editor
-				const editor: vscode.TextEditor = await vscode.window.showTextDocument(document);
+					if (!document) {
+						// Doc not found, open it
+						const uri = vscode.Uri.file(fileName);
+						document = await vscode.workspace.openTextDocument(uri);
+					}
+					// Get editor
+					const editor: vscode.TextEditor = await vscode.window.showTextDocument(document);
 
-				// Set selections and visible range
-				editor.selections = selections;
-				editor.revealRange(new vscode.Range(visibleStart, 0, visibleEnd, Number.MAX_SAFE_INTEGER));
-			}
+					// Set selections and visible range
+					editor.selections = selections;
+					editor.revealRange(new vscode.Range(visibleStart, 0, visibleEnd, Number.MAX_SAFE_INTEGER));
+				}
+			})();
 		});
 	}
 
@@ -3583,7 +3599,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		}
 		catch (e) {
 			// Some error occurred
-			Remote.terminate('Labels: ' + e.message);
+			await Remote.terminate('Labels: ' + e.message);
 		}
 	}
 
@@ -3634,7 +3650,9 @@ E.g. use "-help -view" to put the help text in an own view.
 			this.fileWatchers.push(fileWatcher);
 			// Watch for changes
 			fileWatcher.onDidChange(() => {
-				this.reloadLabels();
+				(async () => {
+					await this.reloadLabels();
+				})();
 			});
 		}
 	}
@@ -3660,7 +3678,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			// Reformat info to easier access it.
 			const exceptionMap = new Map<string, string>();
 			args.filterOptions.forEach(filterOption => {
-				exceptionMap.set(filterOption.filterId, filterOption.condition || '');
+				exceptionMap.set(filterOption.filterId, filterOption.condition ?? '');
 			});
 
 			// Enable/disable

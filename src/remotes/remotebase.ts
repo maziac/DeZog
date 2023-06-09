@@ -1138,7 +1138,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns Returns a list of logpoints for a certain group.
 	 */
 	public getLogpointsForGroup(group: string): Array<GenericBreakpoint> {
-		const lps = this.logpoints.get(group) || [];
+		const lps = this.logpoints.get(group) ?? [];
 		return lps;
 	}
 

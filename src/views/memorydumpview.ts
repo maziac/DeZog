@@ -106,11 +106,11 @@ export class MemoryDumpView extends BaseView {
 					}
 					else {
 						// Error
-						vscode.window.showWarningMessage("Value (" + value + ") out of range.");
+						await vscode.window.showWarningMessage("Value (" + value + ") out of range.");
 					}
 				}
 				catch (e) {
-					vscode.window.showWarningMessage("Could not evaluate: '" + message.value + "'");
+					await vscode.window.showWarningMessage("Could not evaluate: '" + message.value + "'");
 				}
 				break;
 
@@ -297,7 +297,7 @@ export class MemoryDumpView extends BaseView {
 			// Updates the shown memory dump.
 			const data = await Remote.readMemoryDump(metaBlock.address, metaBlock.size);
 			// Store data
-			metaBlock.prevData = metaBlock.data || new Uint8Array(data);	// For the first time the same data is copied also to prevData.
+			metaBlock.prevData = metaBlock.data ?? new Uint8Array(data);	// For the first time the same data is copied also to prevData.
 			metaBlock.data = data;
 		}
 
@@ -1007,7 +1007,7 @@ window.addEventListener('load', () => {
 	 */
 	protected createHtmlTableTemplate(index: number, metaBlock: MetaBlock): string {
 		// Add html body
-		let caption = metaBlock.title || '...';
+		let caption = metaBlock.title || '...';	// NOSONAR
 
 		const table = this.createHtmlTable(metaBlock);	// Is necessary, otherwise nothing might be shown the first time
 
