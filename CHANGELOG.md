@@ -1,4 +1,8 @@
 # Changelog
+# 3.1.1
+- New setting for launch.json/"zxnext": "timeout". If there are connection problems try increasing this value (default is 5 seconds).
+- Sonar linting.
+
 
 # 3.3.0
 - ZEsarUX:
