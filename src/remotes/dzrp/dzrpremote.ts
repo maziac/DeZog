@@ -157,7 +157,7 @@ export class DzrpRemote extends RemoteBase {
 	// It may happen seldom, but it can happen that 2 breakpoints share
 	// the same address. Therefore the array contains an Array of GenericBreakpoints.
 	// normally the inner array contains only 1 element.
-	// The tmpBreakpoints are created when a Continue, StepOver, Stepinto
+	// The tmpBreakpoints are created when a Continue, StepOver, StepInto
 	// or StepOut starts.
 	// It is used mainly in 'evalBpConditionAndLog()'.
 	// If a breakpoint is set during the debugged program being run
@@ -923,7 +923,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * condition text:
 	 * If the breakpoint condition is not true: undefined is returned.
 	 * If the condition is true:
-	 * - If a log is present the logtext is evaluated and a 'debug_console' with the text will be emitted. 'undefined' is returned.
+	 * - If a log is present the log text is evaluated and a 'debug_console' with the text will be emitted. 'undefined' is returned.
 	 * - If no log is present the condition text is returned.
 	 * All in all:
 	 * If undefined is returned no break should be done.

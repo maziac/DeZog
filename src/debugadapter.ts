@@ -1054,7 +1054,7 @@ export class DebugSessionClass extends DebugSession {
 			const file = Labels.getFileAndLineForAddress(addr);
 			// Store file, if it does not exist the name is empty
 			let src;
-			if (file.size > 0) { // This is required, otherwise a label with a bp only in rev-eng would lead to a non-disaassembled instruction at that line. Unfortunately this makes the annotated rom-48.list for the spectrum useless as it does not contain byte columns.
+			if (file.size > 0) { // This is required, otherwise a label with a bp only in rev-eng would lead to a non-disassembled instruction at that line. Unfortunately this makes the annotated rom-48.list for the spectrum useless as it does not contain byte columns.
 				src = this.createSource(file.fileName);
 			}
 			const lineNr = (src) ? this.convertDebuggerLineToClient(file.lineNr) : 0;
@@ -2214,13 +2214,13 @@ export class DebugSessionClass extends DebugSession {
 		let lblType = (tokens[1] || '').trim();
 		let elemCountString = (tokens[2] || '').trim();
 
-		// Endianess
-		const endianess = (tokens[3] || 'little').trim().toLowerCase();
+		// Endianness
+		const endianness = (tokens[3] || 'little').trim().toLowerCase();
 		let littleEndian = true;
-		if (endianess === 'big')
+		if (endianness === 'big')
 			littleEndian = false;	// At the moment it is used only for immediate values
-		else if (endianess != 'little') {
-			throw Error("Unknown endianes: " + endianess);
+		else if (endianness != 'little') {
+			throw Error("Unknown endianness: " + endianness);
 		}
 
 		// Defaults

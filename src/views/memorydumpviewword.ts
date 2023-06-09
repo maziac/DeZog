@@ -33,7 +33,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	constructor(littleEndian: boolean) {
 		super();
 		this.littleEndian = littleEndian;
-		// Title prefix depends on endianess
+		// Title prefix depends on endianness
 		if (!littleEndian)
 			this.titlePrefix += "(big endian) ";
 	}

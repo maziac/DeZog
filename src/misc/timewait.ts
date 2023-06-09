@@ -1,9 +1,13 @@
 import {Utility} from "./utility";
 
 
+/** THis timer is used to give some time to the UI (vscode UI).
+ * It is e.g. required on time travel back-continue.
+ * Otherwise the UI would not show the pause (break) menu.
+ */
 export class TimeWait {
 
-	// THe
+	// The internal time to keep track how long to wait.
 	protected time: number;
 
 	// The delta time.
@@ -12,24 +16,22 @@ export class TimeWait {
 	// The time to wait.
 	protected waitTimeMs: number;
 
-	/**
-	 * Constructor.
+	/** Constructor.
 	 * The object should be called periodically. It takes care of the time by itself.
 	 * If the interval time is exceeded. It will execute a wait for 'waitTimeMs'.
-	 * @param startDelayMs The time to wait the first time. This can be higher, e.g. 1 second, because it normally tkaes a human some time to react.
+	 * @param startDelayMs The time to wait the first time. This can be higher, e.g. 1 second, because it normally takes a human some time to react.
 	 * @param intervalMs The time between to waits.
 	 * @param waitTimeMs The wait time.
 	 */
 	constructor(startDelayMs: number, intervalMs: number, waitTimeMs: number) {
-		this.time=Date.now();
-		this.intervalMs=intervalMs;
-		this.waitTimeMs=waitTimeMs;
-		this.time=Date.now()+startDelayMs;
+		this.time = Date.now();
+		this.intervalMs = intervalMs;
+		this.waitTimeMs = waitTimeMs;
+		this.time = Date.now() + startDelayMs;
 	}
 
 
-	/**
-	 * Immediately waits.
+	/** Immediately waits.
 	 */
 	/*
 	public async wait(): Promise<void> {
@@ -40,20 +42,17 @@ export class TimeWait {
 	}
 	*/
 
-	/**
-	 * If time is up it will wait for waitTimeMs.
+	/** If time is up it will wait for waitTimeMs.
 	 * Otherwise it returns immediately.
 	 * The first time this is called it does immediately wait.
 	 */
 	public async waitAtInterval(): Promise<void> {
-		// TODO: Remove this function completely in DeZog 3.3.1.
-		// Do this as the only commit for version 3.3.1-
-		const currentTime=Date.now();
-		if (currentTime<this.time)
+		const currentTime = Date.now();
+		if (currentTime < this.time)
 			return;
 		// Execute wait
 		await Utility.timeout(this.waitTimeMs);
 		// New time
-		this.time=Date.now()+this.intervalMs;
+		this.time = Date.now() + this.intervalMs;
 	}
 }
