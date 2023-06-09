@@ -242,7 +242,9 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 					reasonString = undefined as any;
 
 				// Handle the break.
-				continueHandler({reasonNumber: type, longAddr, reasonString});
+				(async () => {
+					await continueHandler({reasonNumber: type, longAddr, reasonString});
+				})();
 			}
 		}
 		else {
@@ -269,9 +271,12 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 			data = data.subarray(1);  // Cut off seq number
 			// Queue next message
 			this.messageQueue.shift();
-			this.sendNextMessage();
-			// Pass received data to right consumer
-			msg.resolve(data);
+			// Try to send it
+			(async () => {
+				await this.sendNextMessage();
+				// Pass received data to right consumer
+				msg.resolve(data);
+			})();
 		}
 	}
 

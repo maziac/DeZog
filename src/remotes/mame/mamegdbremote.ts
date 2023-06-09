@@ -62,17 +62,19 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		this.socket.unref();
 
 		// React on-open
-		this.socket.on('connect', async () => {
-			LogTransport.log('MameRemote: Connected to server!');
+		this.socket.on('connect', () => {
+			(async () => {
+				LogTransport.log('MameRemote: Connected to server!');
 
-			this.receivedData = '';
+				this.receivedData = '';
 
-			// Check for unsupported settings
-			if (Settings.launch.history.codeCoverageEnabled) {
-				this.emit('warning', "launch.json: codeCoverageEnabled==true: MAME gdb does not support code coverage.");
-			}
+				// Check for unsupported settings
+				if (Settings.launch.history.codeCoverageEnabled) {
+					this.emit('warning', "launch.json: codeCoverageEnabled==true: MAME gdb does not support code coverage.");
+				}
 
-			this.onConnect();
+				await this.onConnect();
+			})();
 		});
 
 		// Handle disconnect
@@ -288,7 +290,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			const len = this.receivedData.length;
 			if (len < 4)	// Minimum length: '$#00'
 				return;
-			if (this.receivedData[0] != '$')
+			if (!this.receivedData.startsWith('$'))
 				throw Error("Wrong packet format. Expected '$'.");
 			// Find the '#' that ends the packet
 			let i = this.receivedData.indexOf('#');
@@ -338,14 +340,16 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 				const result = this.parseStopReplyPacket(packetData);
 				const longAddr = Z80Registers.createLongAddress(result.addr64k);
 				// Handle the break.
-				continueHandler({
-					reasonNumber: result.breakReason,
-					longAddr,
-					reasonString: '',
-					data: {
-						pc64k: result.pc64k
-					}
-				});
+				(async () => {
+					await continueHandler({
+						reasonNumber: result.breakReason,
+						longAddr,
+						reasonString: '',
+						data: {
+							pc64k: result.pc64k
+						}
+					});
+				})();
 			}
 		}
 		else {
@@ -357,10 +361,12 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 			// Queue next message
 			this.messageQueue.shift();
-			this.sendNextMessage();
-
-			// Pass received data to right consumer
-			msg.resolve(packetData);
+			// Try to send it
+			(async () => {
+				await this.sendNextMessage();
+				// Pass received data to right consumer
+				msg.resolve(packetData);
+			})();
 		}
 	}
 
@@ -439,27 +445,29 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * @returns E.g. 'OK'
 	 */
 	protected async sendPacketData(packetData: string, withCtrlC?: boolean): Promise<string> {
-		return new Promise<string>(async (resolve, reject) => {
-			// Calculate checksum
-			const checkSum = this.checksum(packetData);
-			// Construct packet
-			let packet = '$' + packetData + '#' + checkSum;
-			LogTransport.log('>>> MameRemote: Sending ' + (withCtrlC ? 'CTRL-C, ' : '') + packet);
-			if (withCtrlC)
-				packet = CTRL_C + packet;
+		return new Promise<string>((resolve, reject) => {
+			(async () => {
+				// Calculate checksum
+				const checkSum = this.checksum(packetData);
+				// Construct packet
+				let packet = '$' + packetData + '#' + checkSum;
+				LogTransport.log('>>> MameRemote: Sending ' + (withCtrlC ? 'CTRL-C, ' : '') + packet);
+				if (withCtrlC)
+					packet = CTRL_C + packet;
 
-			// Convert to buffer
-			const buffer = Buffer.from(packet);
-			// Put into queue
-			const entry = this.putIntoQueue(buffer, this.cmdRespTimeoutTime, resolve, reject);
-			entry.customData = {
-				packet,	// Note: packet is used only for debugging.
-				noReply: (packetData == 'c')
-			};
+				// Convert to buffer
+				const buffer = Buffer.from(packet);
+				// Put into queue
+				const entry = this.putIntoQueue(buffer, this.cmdRespTimeoutTime, resolve, reject);
+				entry.customData = {
+					packet,	// Note: packet is used only for debugging.
+					noReply: (packetData == 'c')
+				};
 
-			// Try to send immediately
-			if (this.messageQueue.length == 1)
-				await this.sendNextMessage();
+				// Try to send immediately
+				if (this.messageQueue.length == 1)
+					await this.sendNextMessage();
+			})();
 		});
 	}
 
@@ -665,7 +673,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 					breakInfo.reasonNumber = BREAK_REASON_NUMBER.NO_REASON;
 				}
 				// Call "real" function
-				originalFuncContinueResolve(breakInfo);
+				await originalFuncContinueResolve(breakInfo);
 			};
 
 			// C(ontinue)

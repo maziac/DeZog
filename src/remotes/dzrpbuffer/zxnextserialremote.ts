@@ -144,19 +144,21 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	 * Closes the serial port.
 	 */
 	public async closeSerialPort(): Promise<void> {
-		return new Promise<void>(async resolve => {
-			if (this.serialPort) {
-				//console.log('serialPort.close();');
-				const serialPort = this.serialPort;
-				this.serialPort = undefined;
-				serialPort.close(() => {
-					//console.log('  serialPort.close() -> done');
-					resolve();
-				});
-				return;
-			}
-			// If no serialPort exists immediately return
-			resolve();
+		return new Promise<void>(resolve => {
+			(async () => {
+				if (this.serialPort) {
+					//console.log('serialPort.close();');
+					const serialPort = this.serialPort;
+					this.serialPort = undefined;
+					serialPort.close(() => {
+						//console.log('  serialPort.close() -> done');
+						resolve();
+					});
+					return;
+				}
+				// If no serialPort exists immediately return
+				resolve();
+			})();
 		});
 	}
 
@@ -207,9 +209,12 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 				this.emit('warning', err.message);
 			// Remove message / Queue next message
 			const msg = this.messageQueue.shift()!;
-			this.sendNextMessage();
-			// Pass error data to right consumer
-			msg.reject(err);
+			// Send next message and throw error
+			(async () => {
+				await this.sendNextMessage();
+				// Pass error data to right consumer
+				msg.reject(err);
+			})();
 		}, respTimeoutTime);
 	}
 
@@ -367,7 +372,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 				reasonNumber: BREAK_REASON_NUMBER.STEPPING_NOT_ALLOWED
 			};
 			this.emit('warning', breakInfo.reasonString);
-			this.funcContinueResolve!(breakInfo);
+			await this.funcContinueResolve!(breakInfo);
 			return;
 		}
 
@@ -406,7 +411,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 			await this.sendDzrpCmdRestoreMem(memValues);
 			this.breakpointsAndOpcodes = undefined as any;
 			// Call original handler
-			originalContinueResolve(breakInfo);
+			await originalContinueResolve(breakInfo);
 		};
 
 		// Get all breakpoint addresses (without breakedAddress)
@@ -451,7 +456,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 					|| breakInfo.reasonNumber == BREAK_REASON_NUMBER.BREAKPOINT_HIT) {
 					// Either a "real" breakpoint was hit or one of the original temporary breakpoints.
 					// In any case we don't need to continue here.
-					resolveWithBp(breakInfo);
+					await resolveWithBp(breakInfo);
 				}
 				else {
 					// Restore resolve function

@@ -43,20 +43,22 @@ export class CSpectRemote extends DzrpBufferRemote {
 		this.socket.unref();
 
 		// React on-open
-		this.socket.on('connect', async () => {
-			LogTransport.log('CSpectRemote: Connected to server!');
+		this.socket.on('connect', () => {
+			(async () => {
+				LogTransport.log('CSpectRemote: Connected to server!');
 
-			this.receivedData = Buffer.alloc(0);
-			this.expectedLength = 4;	// for length
-			this.receivingHeader = true;
-			this.stopChunkTimeout();
+				this.receivedData = Buffer.alloc(0);
+				this.expectedLength = 4;	// for length
+				this.receivingHeader = true;
+				this.stopChunkTimeout();
 
-			// Check for unsupported settings
-			if (Settings.launch.history.codeCoverageEnabled) {
-				this.emit('warning', "launch.json: codeCoverageEnabled==true: CSpect does not support code coverage.");
-			}
+				// Check for unsupported settings
+				if (Settings.launch.history.codeCoverageEnabled) {
+					this.emit('warning', "launch.json: codeCoverageEnabled==true: CSpect does not support code coverage.");
+				}
 
-			this.onConnect();
+				await this.onConnect();
+			})();
 		});
 
 		// Handle disconnect
@@ -205,7 +207,6 @@ export class CSpectRemote extends DzrpBufferRemote {
 	 */
 	protected async sendDzrpCmdReadPort(port: number): Promise<number> {
 		throw Error("'sendDzrpCmdReadPort' is not implemented.");
-		return 0;
 	}
 
 
@@ -222,7 +223,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	 */
 	protected async sendDzrpCmdExecAsm(code: Array<number>): Promise<{error: number, a: number, f: number, bc: number, de: number, hl: number}> {
 		throw Error("'sendDzrpCmdExecAsm' is not implemented.");
-		return {error: 0, f: 0, a: 0, bc: 0, de: 0, hl: 0};
+		//return {error: 0, f: 0, a: 0, bc: 0, de: 0, hl: 0};
 	}
 
 
@@ -231,5 +232,6 @@ export class CSpectRemote extends DzrpBufferRemote {
 	 * Therefore it does nothing.
 	 */
 	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
+		// NOSONAR
 	}
 }

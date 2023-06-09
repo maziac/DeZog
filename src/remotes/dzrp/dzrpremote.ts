@@ -139,7 +139,7 @@ export class DzrpRemote extends RemoteBase {
 	// The function to hold the Promise's resolve function for a continue request.
 	// Note:  The 'any' type is chosen here so that other Remotes (like MAME)
 	// can extend the parameter list.
-	protected funcContinueResolve?: (breakInfo: BreakInfo) => void;
+	protected funcContinueResolve?: (breakInfo: BreakInfo) => Promise<void>;
 
 	// The associated Promise resolve. Stored here to be called at dispose.
 	protected continueResolve?: PromiseCallbacks<string>;
@@ -590,16 +590,13 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				const pause = Utility.parseValue(cmdArray[3]);
 				const seqno = Utility.parseValue(cmdArray[4]);
 				const dzrpTimeoutTest = new DzrpTransportTest(this);
-				dzrpTimeoutTest.sendCmdWithPause(len1, len2, pause, seqno);
+				await dzrpTimeoutTest.sendCmdWithPause(len1, len2, pause, seqno);
 				return "Two parts sent.";
 			}
 			else {
 				// Error
 				throw Error("Expecting parameter 'start', 'end' or 'timeout'.");
 			}
-
-		}
-		else if (cmd_name === "test_end") {
 
 		}
 
@@ -711,7 +708,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	protected getBreakpointsByAddress(bpAddress: number): Array<GenericBreakpoint> {
 		let foundBps = this.tmpBreakpoints.get(bpAddress);
 		if (!foundBps) // Try 64k address
-			foundBps = this.tmpBreakpoints.get(bpAddress&0xFFFF) || [];
+			foundBps = this.tmpBreakpoints.get(bpAddress&0xFFFF) ?? [];
 		// Nothing found
 		return foundBps;
 	}
@@ -1032,53 +1029,55 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * @returns A Promise with a string containing the break reason.
 	 */
 	public async continue(): Promise<string> {
-		return new Promise<string>(async resolve => {
-			// Remember the promise resolve for dispose
-			Utility.assert(!this.continueResolve);
-			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
+		return new Promise<string>(resolve => {
+			(async () => {
+				// Remember the promise resolve for dispose
+				Utility.assert(!this.continueResolve);
+				this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
 
-			// Use a custom function here to evaluate breakpoint condition and log string.
-			const funcContinueResolve = async (breakInfo: BreakInfo) => {
-				try {
-					// Give vscode a little time
-					// await this.timeWait.waitAtInterval();  // REMARK: I think I don't need it anymore
-
-					// Get registers
-					await this.getRegistersFromEmulator();
-
-					// Check for break condition
-					const {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakInfo.reasonNumber, breakInfo.longAddr);
-
-					// Check for continue
-					if (condition === undefined) {
-						// Continue
-						this.funcContinueResolve = funcContinueResolve;
-						await this.sendDzrpCmdContinue();
-					}
-					else {
-						// Construct break reason string to report
-						const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
-						// Clear registers
-						await this.getRegistersFromEmulator();
-						await this.getCallStackFromEmulator();
-						// return
-						this.continueResolve!.resolve(breakReasonString);
-					}
-				}
-				catch (e) {
-					// Clear registers
+				// Use a custom function here to evaluate breakpoint condition and log string.
+				const funcContinueResolve = async (breakInfo: BreakInfo) => {
 					try {
-						await this.getRegistersFromEmulator();
-						await this.getCallStackFromEmulator();
-					} catch {}	// Ignore if error already happened
-					const reason: string = e.message;
-					this.continueResolve!.resolve(reason);
-				}
-			};
+						// Give vscode a little time
+						// await this.timeWait.waitAtInterval();  // REMARK: I think I don't need it anymore
 
-			// Send 'run' command
-			this.funcContinueResolve = funcContinueResolve;
-			await this.sendDzrpCmdContinue();
+						// Get registers
+						await this.getRegistersFromEmulator();
+
+						// Check for break condition
+						const {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakInfo.reasonNumber, breakInfo.longAddr);
+
+						// Check for continue
+						if (condition === undefined) {
+							// Continue
+							this.funcContinueResolve = funcContinueResolve;
+							await this.sendDzrpCmdContinue();
+						}
+						else {
+							// Construct break reason string to report
+							const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
+							// Clear registers
+							await this.getRegistersFromEmulator();
+							await this.getCallStackFromEmulator();
+							// return
+							this.continueResolve!.resolve(breakReasonString);
+						}
+					}
+					catch (e) {
+						// Clear registers
+						try {
+							await this.getRegistersFromEmulator();
+							await this.getCallStackFromEmulator();
+						} catch {}	// Ignore if error already happened
+						const reason: string = e.message;
+						this.continueResolve!.resolve(reason);
+					}
+				};
+
+				// Send 'run' command
+				this.funcContinueResolve = funcContinueResolve;
+				await this.sendDzrpCmdContinue();
+			})();
 		});
 	}
 
@@ -1101,49 +1100,51 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * Or 'undefined' if no reason.
 	 */
 	public async stepOver(stepOver = true): Promise<string | undefined> {
-		return new Promise<string | undefined>(async resolve => {
-			// Remember the promise resolve for dispose
-			Utility.assert(!this.continueResolve);
-			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
+		return new Promise<string | undefined>(resolve => {
+			(async () => {
+				// Remember the promise resolve for dispose
+				Utility.assert(!this.continueResolve);
+				this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
 
-			// Prepare for break: This function is called by the PAUSE (break) notification:
-			const funcContinueResolve = async (breakInfo: BreakInfo) => {
-				// Give vscode a little time
-				await this.timeWait.waitAtInterval();
+				// Prepare for break: This function is called by the PAUSE (break) notification:
+				const funcContinueResolve = async (breakInfo: BreakInfo) => {
+					// Give vscode a little time
+					await this.timeWait.waitAtInterval();
 
-				// Get registers
-				await this.getRegistersFromEmulator();
+					// Get registers
+					await this.getRegistersFromEmulator();
 
-				// Check for break condition
-				let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakInfo.reasonNumber, breakInfo.longAddr);
+					// Check for break condition
+					let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakInfo.reasonNumber, breakInfo.longAddr);
 
-				// Check for continue
-				if (condition === undefined) {
-					// Calculate the breakpoints to use for step-over/step-into
-					//	[, bp1, bp2]=await this.calcStepBp(stepOver);
-					// Note: we need to use the original bp addresses
-					// Continue
-					this.funcContinueResolve = funcContinueResolve;
-					await this.sendDzrpCmdContinue(bp1, bp2);
-				}
-				else {
-					// Construct break reason string to report
-					const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
-					// Clear registers
-					await this.getCallStackFromEmulator();
-					// return
-					this.continueResolve!.resolve(breakReasonString);
-				}
-			};
+					// Check for continue
+					if (condition === undefined) {
+						// Calculate the breakpoints to use for step-over/step-into
+						//	[, bp1, bp2]=await this.calcStepBp(stepOver);
+						// Note: we need to use the original bp addresses
+						// Continue
+						this.funcContinueResolve = funcContinueResolve;
+						await this.sendDzrpCmdContinue(bp1, bp2);
+					}
+					else {
+						// Construct break reason string to report
+						const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
+						// Clear registers
+						await this.getCallStackFromEmulator();
+						// return
+						this.continueResolve!.resolve(breakReasonString);
+					}
+				};
 
-			// Calculate the breakpoints (64k) to use for step-over
-			//await this.getRegisters();
-			let [, bp1, bp2] = await this.calcStepBp(stepOver);
-			//this.emit('debug_console', instruction);
-			// Send 'run' command
-			this.funcContinueResolve = funcContinueResolve;
-			// Send command to 'continue'
-			await this.sendDzrpCmdContinue(bp1, bp2);
+				// Calculate the breakpoints (64k) to use for step-over
+				//await this.getRegisters();
+				let [, bp1, bp2] = await this.calcStepBp(stepOver);
+				//this.emit('debug_console', instruction);
+				// Send 'run' command
+				this.funcContinueResolve = funcContinueResolve;
+				// Send command to 'continue'
+				await this.sendDzrpCmdContinue(bp1, bp2);
+			})();
 		});
 	}
 
@@ -1166,80 +1167,82 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * @returns A Promise with a string containing the break reason.
 	 */
 	public async stepOut(): Promise<string | undefined> {
-		return new Promise<string | undefined>(async resolve => {
-			// Remember the promise resolve for dispose
-			Utility.assert(!this.continueResolve);
-			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
+		return new Promise<string | undefined>(resolve => {
+			(async () => {
+				// Remember the promise resolve for dispose
+				Utility.assert(!this.continueResolve);
+				this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
 
-			// Get current SP
-			const startSp = Z80Registers.getRegValue(Z80_REG.SP);
-			let prevSp = startSp;
-			let prevPc = 0;
+				// Get current SP
+				const startSp = Z80Registers.getRegValue(Z80_REG.SP);
+				let prevSp = startSp;
+				let prevPc = 0;
 
-			// Use a custom function here to evaluate breakpoint condition and log string.
-			const funcContinueResolve = async (breakInfo: BreakInfo) => {
-				try {
-					// Give vscode a little time
-					await this.timeWait.waitAtInterval();	// TODO: can I remove all waitAtInterval ?
+				// Use a custom function here to evaluate breakpoint condition and log string.
+				const funcContinueResolve = async (breakInfo: BreakInfo) => {
+					try {
+						// Give vscode a little time
+						await this.timeWait.waitAtInterval();	// TODO: can I remove all waitAtInterval ?
 
-					// Get registers
-					await this.getRegistersFromEmulator();
+						// Get registers
+						await this.getRegistersFromEmulator();
 
-					// Check for break condition
-					let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakInfo.reasonNumber, breakInfo.longAddr);
-					// For StepOut ignore the stepping tmp breakpoints
-					if (correctedBreakNumber === BREAK_REASON_NUMBER.NO_REASON)
-						condition = undefined;
+						// Check for break condition
+						let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakInfo.reasonNumber, breakInfo.longAddr);
+						// For StepOut ignore the stepping tmp breakpoints
+						if (correctedBreakNumber === BREAK_REASON_NUMBER.NO_REASON)
+							condition = undefined;
 
-					// Check if instruction was a RET(I/N)
-					if (condition === undefined) {
-						const currSp = Z80Registers.getRegValue(Z80_REG.SP);
-						if (currSp > startSp && currSp > prevSp) {
-							// Something has been popped. This is to exclude unexecuted RET cc.
-							const bytes = await this.readMemoryDump(prevPc, 2);
-							const opcodes = bytes[0] + (bytes[1] << 8);
-							if (this.isRet(opcodes)) {
-								// Stop here
-								condition = '';
-								correctedBreakNumber = BREAK_REASON_NUMBER.NO_REASON;
+						// Check if instruction was a RET(I/N)
+						if (condition === undefined) {
+							const currSp = Z80Registers.getRegValue(Z80_REG.SP);
+							if (currSp > startSp && currSp > prevSp) {
+								// Something has been popped. This is to exclude unexecuted RET cc.
+								const bytes = await this.readMemoryDump(prevPc, 2);
+								const opcodes = bytes[0] + (bytes[1] << 8);
+								if (this.isRet(opcodes)) {
+									// Stop here
+									condition = '';
+									correctedBreakNumber = BREAK_REASON_NUMBER.NO_REASON;
+								}
 							}
 						}
-					}
 
-					// Check for continue
-					if (condition === undefined) {
-						// Calculate the breakpoints to use for step-over
-						let [, sobp1, sobp2] = await this.calcStepBp(true);
-						// Continue
-						this.funcContinueResolve = funcContinueResolve;
-						prevPc = Z80Registers.getPC();
-						await this.sendDzrpCmdContinue(sobp1, sobp2);
+						// Check for continue
+						if (condition === undefined) {
+							// Calculate the breakpoints to use for step-over
+							let [, sobp1, sobp2] = await this.calcStepBp(true);
+							// Continue
+							this.funcContinueResolve = funcContinueResolve;
+							prevPc = Z80Registers.getPC();
+							await this.sendDzrpCmdContinue(sobp1, sobp2);
+						}
+						else {
+							// Construct break reason string to report
+							const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
+							// Clear registers
+							await this.getRegistersFromEmulator();
+							await this.getCallStackFromEmulator();
+							// return
+							this.continueResolve!.resolve(breakReasonString);
+						}
 					}
-					else {
-						// Construct break reason string to report
-						const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
+					catch (e) {
 						// Clear registers
 						await this.getRegistersFromEmulator();
 						await this.getCallStackFromEmulator();
-						// return
-						this.continueResolve!.resolve(breakReasonString);
+						const reason: string = e;
+						this.continueResolve!.resolve(reason);
 					}
-				}
-				catch (e) {
-					// Clear registers
-					await this.getRegistersFromEmulator();
-					await this.getCallStackFromEmulator();
-					const reason: string = e;
-					this.continueResolve!.resolve(reason);
-				}
-			};
+				};
 
-			// Calculate the breakpoints to use for step-over
-			let [, bp1, bp2] = await this.calcStepBp(true);
-			// Send 'run' command
-			this.funcContinueResolve = funcContinueResolve;
-			prevPc = Z80Registers.getPC();
-			await this.sendDzrpCmdContinue(bp1, bp2);
+				// Calculate the breakpoints to use for step-over
+				let [, bp1, bp2] = await this.calcStepBp(true);
+				// Send 'run' command
+				this.funcContinueResolve = funcContinueResolve;
+				prevPc = Z80Registers.getPC();
+				await this.sendDzrpCmdContinue(bp1, bp2);
+			})();
 		});
 	}
 

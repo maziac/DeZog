@@ -98,9 +98,11 @@ export class DzrpQueuedRemote extends DzrpRemote {
 				// Remove message / Queue next message
 				const msg = this.messageQueue.shift()!;
 				// Send next
-				this.sendNextMessage();
-				// Pass error data to right consumer
-				msg.reject(err);
+				(async () => {
+					await this.sendNextMessage();
+					// Pass error data to right consumer
+					msg.reject(err);
+				})();
 			}, respTimeoutTime);
 		}
 	}
@@ -160,7 +162,7 @@ export class DzrpQueuedRemote extends DzrpRemote {
 			if (this.cmdRespTimeoutTime == 0) {
 				// Queue next message
 				this.messageQueue.shift();
-				this.sendNextMessage();
+				await this.sendNextMessage();
 				msg.resolve([]);
 			}
 		}
