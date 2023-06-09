@@ -57,5 +57,15 @@ dezog.donated
 	</ul>
 
 </body>
-<script src="out/html/donate.js"></script>
+<script>
+	const vscode = acquireVsCodeApi();
+	/** Send message to show the extensions.
+	 */
+	function showExtension(extensionName) {
+		vscode.postMessage({
+			command: 'showExtension',
+			data: extensionName
+		});
+	}
+</script>
 </html>
