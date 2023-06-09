@@ -3081,7 +3081,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	 */
 	protected async memoryHasBeenChanged() {
 		//this.sendEvent(new InvalidatedEvent(['variables'])); // Not required. The VARIABLES and the WATCHes will be updated anyway. If uncommented then the WATCHes are not highlighted on a change. // NOSONAR
-		await BaseView.staticCallUpdateFunctions();
+		await BaseView.staticCallUpdateFunctionsAsync();
 	}
 
 

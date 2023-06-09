@@ -307,7 +307,7 @@ export class MemoryCommands {
 		await this.memSet(1, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/);
 
 		// Update possibly memory views
-		BaseView.staticCallUpdateFunctions();
+		BaseView.staticCallUpdateFunctionsAsync();
 
 		return 'OK';
 	}
@@ -335,7 +335,7 @@ export class MemoryCommands {
 		await this.memSet(2, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/, tokens[3] /*endianness*/);
 
 		// Update possibly memory views
-		BaseView.staticCallUpdateFunctions();
+		BaseView.staticCallUpdateFunctionsAsync();
 
 		return 'OK';
 	}

@@ -41,14 +41,13 @@ export class BaseView {
 	}
 
 
-	/**
-	 * Is called on 'update' event.
+	/** Is called on 'update' event.
 	 * First calls the static update functions.
 	 * Afterwards the update functions of all views.
 	 * @param reason The reason is a data object that contains additional information.
 	 * E.g. for 'step' it contains { step: true };
 	 */
-	public static async staticCallUpdateFunctions(reason?: any): Promise<void> {
+	public static async staticCallUpdateFunctionsAsync(reason?: any): Promise<void> {
 		// Loop all view classes
 		for(const viewClass of BaseView.staticViewClasses) {
 			await viewClass.staticUpdate(reason);
@@ -57,6 +56,13 @@ export class BaseView {
 		for(const view of BaseView.staticViews) {
 			await view.update(reason);
 		}
+	}
+
+	// Same as above but the sync version.
+	public static staticCallUpdateFunctions(reason?: any) {
+		(async () => {
+			await BaseView.staticCallUpdateFunctionsAsync(reason);
+		})();
 	}
 
 

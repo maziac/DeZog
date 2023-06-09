@@ -227,7 +227,7 @@ export class MemoryDumpView extends BaseView {
 	protected async changeMemory(address: number, value: number) {
 		await Remote.writeMemory(address, value);
 		// Also update the all webviews
-		await BaseView.staticCallUpdateFunctions();
+		await BaseView.staticCallUpdateFunctionsAsync();
 		// Inform vscode
 		BaseView.sendChangeEvent();
 	}
