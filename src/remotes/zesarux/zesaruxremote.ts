@@ -103,9 +103,14 @@ export class ZesaruxRemote extends RemoteBase {
 			return;
 		return new Promise<void>(resolve => {
 			// Terminate the socket
-			zSocket.quit(() => {
+			(async () => {
+				try {
+					await zSocket.quit();
+				}
+				catch {};
 				resolve();
-			});
+			})();
+
 		});
 	}
 
@@ -187,9 +192,12 @@ export class ZesaruxRemote extends RemoteBase {
 					this.zesaruxVersion = parseFloat(data);
 					// Check version
 					if (this.zesaruxVersion < MIN_ZESARUX_VERSION) {
-						zSocket.quit();
-						const err = new Error('Please update ZEsarUX. Need at least version ' + MIN_ZESARUX_VERSION + '.');
 						try {
+							await zSocket.quit();
+						}
+						catch {};
+						try {
+							const err = new Error('Please update ZEsarUX. Need at least version ' + MIN_ZESARUX_VERSION + '.');
 							this.emit('error', err);
 						}
 						catch {};

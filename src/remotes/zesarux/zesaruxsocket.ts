@@ -2,6 +2,7 @@ import { Log, LogTransport } from '../../log';
 import { Socket } from 'net';
 import { Settings } from '../../settings/settings';
 import {Utility} from '../../misc/utility';
+import {Mutex} from '../../misc/mutex';
 
 
 /*
@@ -129,14 +130,11 @@ zxevo-get-nvram               Get ZX-Evo NVRAM value at index
 
 
 /// Timeouts.
-const CONNECTION_TIMEOUT = 1000;	///< 1 sec
-const QUIT_TIMEOUT = 800;	///< 0.8 sec
-
-export const NO_TIMEOUT = 0;	///< Can be used as timeout value and has the special meaning: Don't use any timeout
+const CONNECTION_TIMEOUT = 1000;	// 1 sec
+export const NO_TIMEOUT = 0;	// Can be used as timeout value and has the special meaning: Don't use any timeout
 
 
-/**
- * A command send to Zesarux debugger as it is being put in the queue.
+/** A command send to Zesarux debugger as it is being put in the queue.
  */
 class CommandEntry {
 	public command: string|undefined;	///< The command string
@@ -169,6 +167,9 @@ enum SocketState {
  * Defines a queue that guarantees that each command is send one-by-one.
  */
 export class ZesaruxSocket extends Socket {
+
+	// The mutex used for disconnecting.
+	protected quitMutex: Mutex;
 
 	protected state: SocketState;	///< connected, etc.
 
@@ -224,6 +225,7 @@ export class ZesaruxSocket extends Socket {
 		this.lastCallQueue = new Array<()=>void>();
 		this.zesaruxState = 'unknown';
 		this.interruptableRunCmd = undefined;
+		this.quitMutex = new Mutex();
 
 		// Wait on first text from zesarux after connection
 		const cEntry = new CommandEntry('connected', data => {
@@ -646,109 +648,80 @@ export class ZesaruxSocket extends Socket {
 	}
 
 
-	/**
-	 * Sends a "quit" to zesarux. In response zesarux will close the connection.
+	/** Sends a "quit" to zesarux. In response zesarux will close the connection.
 	 * This sends "quit" immediately. I.e. it does not wait on the queue.
 	 * In fact it clears the queue.
-	 * @param handler is called after the connection is disconnected. Can be omitted.
 	 */
-	public quit(handler = () => {}) {	// NOSONAR
-		// Clear queues
-		this.queue.length = 0;
-		this.lastCallQueue.length = 0;
+	public async quit() {
+		return new Promise<void>((resolve, _reject) => {
+			(async () => {
+				// Skip if already disconnected
+				if (this.state === SocketState.UNCONNECTED) {
+					// Immediately return
+					resolve();
+					return;
+				}
 
-		// Exchange listeners
-		this.myRemoveAllListeners();
+				// Lock
+				await this.quitMutex.lock();
 
-		// Keep the data listener
-		this.on('data', data => {
-			//console.log('quit-receiveData: ' + data.toString());
-			this.receiveSocket(data);
-		});
+				// Clear queues
+				this.queue.length = 0;
+				this.lastCallQueue.length = 0;
 
-		// inform caller
-		let handlerCalled = false;
-		const func = () => {
-			handlerCalled = true;
-			zSocket.myRemoveAllListeners();
-			handler();
-		}
-		func.bind(this);
-		// The new listeners
-		this.on('error', () => {
-			if (handlerCalled)
-				return;
-			LogTransport.log('Socket error (should be close).');
-			func();
-			zSocket.end();
-		});
-		this.on('timeout', () => {
-			if (handlerCalled)
-				return;
-			LogTransport.log('Socket timeout (should be close).');
-			func();
-			zSocket.end();
-		});
-		this.on('close', () => {
-			LogTransport.log('Socket closed. OK.');
-			this.state = SocketState.UNCONNECTED;
-			if (handlerCalled)
-				return;
-			func();
-		});
-		this.on('end', () => {
-			LogTransport.log('Socket end. OK.');
-			this.state = SocketState.UNCONNECTED;
-			if (handlerCalled)
-				return;
-			func();
-		});
+				// Exchange listeners
+				this.myRemoveAllListeners();
 
-		// Check state
-		//if(this.state != SocketState.CONNECTED)
-		/*
-		{
-			// Already disconnected or not really connected.
-			if(!zSocket.connected || this.state == SocketState.CONNECTING)
-				zSocket.end();
-			else
-				func();
-			return;
-		}
-		*/
+				// Keep the data listener
+				this.on('data', data => {
+					//console.log('quit-receiveData: ' + data.toString());
+					this.receiveSocket(data);
+				});
 
-		// Terminate if connected
-		if (this.state==SocketState.CONNECTED) {
-			//func();
-			//zSocket.destroy();
-			//return;
-			// Terminate connection
-			LogTransport.log('Quitting:');
-			this.setTimeout(QUIT_TIMEOUT);
-			this.send('\n');	// Just for the case that we are waiting on a breakpoint.
-			this.send('cpu-history enabled no', () => {}, true);	// NOSONAR
-			this.send('cpu-code-coverage enabled no', () => {}, true);	// NOSONAR
-			this.send('extended-stack enabled no', () => {}, true);	// NOSONAR
-			this.send('clear-membreakpoints');
-			this.send('disable-breakpoints', () => {
-				this.send('quit');
+				// The new listeners
+				this.on('error', () => {
+					LogTransport.log('Socket error (should be close).');
+					zSocket.removeAllListeners();
+					zSocket.end();
+					this.quitMutex.unlock();
+					resolve();
+				});
+				this.on('timeout', () => {
+					LogTransport.log('Socket timeout (should be close).');
+					zSocket.removeAllListeners();
+					zSocket.end();
+					this.quitMutex.unlock();
+					resolve();
+				});
+				this.on('close', () => {
+					LogTransport.log('Socket closed. OK.');
+					this.state = SocketState.UNCONNECTED;
+					zSocket.removeAllListeners();
+					this.quitMutex.unlock();
+					resolve();
+				});
+				this.on('end', () => {
+					LogTransport.log('Socket end. OK.');
+					this.state = SocketState.UNCONNECTED;
+					zSocket.removeAllListeners();
+					this.quitMutex.unlock();
+					resolve();
+				});
+
+				// Terminate connection by sending quit to zesarux
+				LogTransport.log('Quitting:');
+				await this.sendAwait('\n');	// Just for the case that we are waiting on a breakpoint.
+				await this.sendAwait('cpu-history enabled no', false);	// NOSONAR
+				await this.sendAwait('cpu-code-coverage enabled no', false);	// NOSONAR
+				await this.sendAwait('extended-stack enabled no', false);	// NOSONAR
+				await this.sendAwait('clear-membreakpoints', false);
+				await this.sendAwait('disable-breakpoints', false);
+				await this.sendAwait('quit', false);
 				// Close connection (ZEsarUX also closes the connection)
 				//zSocket.end(); // "end()" takes too long > 1 s
 				zSocket.destroy();
-
-			});
-
-			return;
-		}
-
-		// Otherwise just end (and call func)
-		this.end();
-
-		// If already destroyed directly call the handler
-		if(this.destroyed)
-			handler();
-		else
-			this.destroy();
+			})();
+		});
 	}
 
 

@@ -761,7 +761,6 @@ export class Z80UnitTestRunner {
 				if (this.debugAdapter) {
 					if (Remote)
 						await Remote.waitForBeingQuietFor(300);
-					this.debugAdapter.sendEvent(new TerminatedEvent());
 				}
 
 				// For reverse debugging.
@@ -769,10 +768,18 @@ export class Z80UnitTestRunner {
 
 				if (Remote) {
 					// Exit
-					await Remote.terminate();
+					try {
+						await Remote.terminate();
+					}
+					catch {}
 					// Remove event handling for the emulator
 					Remote.removeAllListeners();
 					Remote.dispose();
+				}
+
+				// Send terminated event after Remote connection is closed.
+				if (this.debugAdapter) {
+					this.debugAdapter.sendEvent(new TerminatedEvent());
 				}
 
 				this.testRunActive = false;

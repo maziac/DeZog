@@ -1,7 +1,4 @@
-
-import * as assert from 'assert';
 import {Mutex} from '../src/misc/mutex';
-
 
 
 suite('Mutex', () => {
