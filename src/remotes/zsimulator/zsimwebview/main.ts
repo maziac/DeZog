@@ -266,7 +266,9 @@ function findCell(keyCode) {
 // Copies the complete html of the document to the clipboard.
 globalThis.copyHtmlToClipboard = function () {
 	const copyText = document.documentElement.innerHTML;
-	navigator.clipboard.writeText(copyText);
+	(async () => {
+		await navigator.clipboard.writeText(copyText);
+	})();
 }
 
 

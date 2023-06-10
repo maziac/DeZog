@@ -65,7 +65,7 @@ export class RenderFlowChart extends RenderBase {
 						// Define end
 						end = 'end' + dotId;
 					}
-					const nodeLabelName = this.disasm.funcGetLabel(nodeAddr) || node.label || Format.getHexFormattedString(nodeAddr);
+					const nodeLabelName = this.disasm.funcGetLabel(nodeAddr) || node.label || Format.getHexFormattedString(nodeAddr);	// NOSONAR
 					const callerDotId = 'caller' + dotId;
 					lines.push(callerDotId + ' [label="' + nodeLabelName + '" fillcolor="' + emphasizeColor + '" style=filled, shape=' + shape + ' ' + href + '];');
 					lines.push(callerDotId + ' -> ' + dotId + ' [headport=n tailport=s];');
@@ -81,7 +81,7 @@ export class RenderFlowChart extends RenderBase {
 					// Color 2nd branch differently
 					let dotBranchLabel = '';
 					if (i > 0) {
-						let branchLabel = this.disasm.funcGetLabel(branch.start) || branch.label;
+						let branchLabel = this.disasm.funcGetLabel(branch.start) || branch.label;	// NOSONAR
 						if (branchLabel) {
 							// Check if in same block (i.e. local label)
 							if (blockNode == this.disasm.getBlockNode(branch.start)) {

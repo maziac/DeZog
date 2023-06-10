@@ -45,7 +45,7 @@ export class ZxUlaScreen implements Serializable {
 		}
 		else {
 			// Only one bank
-			throw Error("ulaScreen is not available with memory model '" + memoryModel + "'.");
+			throw Error("ulaScreen is not available with memory model '" + memoryModel.name + "'.");
 		}
 	}
 

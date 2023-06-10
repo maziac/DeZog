@@ -194,11 +194,10 @@ initAnchors();
 		vscodePanel.webview.onDidReceiveMessage(message => {
 			switch (message.command) {
 				case 'showExtension':
-					// Switch to Extension Manager
-					vscode.commands.executeCommand("workbench.extensions.search", PackageInfo.extension.packageJSON.publisher)
-					// And select the given extension
-					const extensionName = PackageInfo.extension.packageJSON.publisher + '.' + message.data;
-					vscode.commands.executeCommand("extension.open", extensionName);
+					(async () => {
+						// Switch to Extension Manager
+						await vscode.commands.executeCommand("workbench.extensions.search", PackageInfo.extension.packageJSON.publisher);
+					})();
 					break;
 			}
 		});

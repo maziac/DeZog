@@ -53,7 +53,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	public static bankSeparator = '.';	// Note: need to be changed in regexAddr as well
 
 	// Regex to parse the address
-	protected regexEqu = /^\s*([a-z_][\w\.]*):\s*EQU\s+([^;]+)/i;
+	protected regexEqu = /^\s*([a-z_][\w.]*):\s*EQU\s+([^;]+)/i;
 
 	// Regex to parse the address
 	protected regexAddr = /^(([\da-f]+)(\.(\w+))?\s*)/i;
@@ -62,7 +62,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 	protected regexByte = /^([\da-f][\da-f]\s)/i;
 
 	// Regex to parse the label or the special commands (SKIP, SKIPWORD)
-	protected regexLabel = /^\s*(\.?[a-z_][\w\.]*):/i;
+	protected regexLabel = /^\s*(\.?[a-z_][\w.]*):/i;
 
 	// Regex to parse for special commands like SKIP, SKIPWORD or CODE.
 	protected regexSpecialCommand = /^\s*([a-z]+)/i;

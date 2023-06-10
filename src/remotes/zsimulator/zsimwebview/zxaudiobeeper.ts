@@ -83,8 +83,7 @@ export class ZxAudioBeeper {
 	protected beeperOutput: HTMLElement;
 
 
-	/**
-	 * Constructor.
+	/** Constructor.
 	 */
 	constructor(sampleRate: number, beeperOutput: HTMLElement) {
 		//sampleRate = 22050;
@@ -115,16 +114,14 @@ export class ZxAudioBeeper {
 	}
 
 
-	/**
-	 * For testing this function is overwritten to return a mocked AudioContext.
+	/** For testing this function is overwritten to return a mocked AudioContext.
 	 */
 	protected createAudioContext(sampleRate: number): AudioContext {
 		return new AudioContext({sampleRate});
 	}
 
 
-	/**
-	 * Stops audio.
+	/** Stops audio.
 	 * Creates a fading audio frame.
 	 */
 	public stop() {
@@ -135,8 +132,7 @@ export class ZxAudioBeeper {
 	}
 
 
-	/**
-	 * Resume is called regularly to overcome a Chrome issue:
+	/** Resume is called regularly to overcome a Chrome issue:
 	 * https://developer.chrome.com/blog/autoplay/
 	 * Chrome will disallow audio until the user interacts with the page.
 	 * 'resume' should be called on every simulator 'update'.
@@ -145,14 +141,16 @@ export class ZxAudioBeeper {
 	 */
 	public resume() {
 		if (!this.stopped) {
-			if (this.ctx.state === 'suspended')
-				this.ctx.resume();
+			if (this.ctx.state === 'suspended') {
+				(async () => {
+					await this.ctx.resume();
+				})();
+			}
 		}
 	}
 
 
-	/**
-	 * Sets the volume.
+	/** Sets the volume.
 	 * @param volume [0;1]
 	 */
 	public setVolume(volume: number) {
@@ -164,8 +162,7 @@ export class ZxAudioBeeper {
 	}
 
 
-	/**
-	 * Gets the volume.
+	/** Gets the volume.
 	 * @returns volume [0;1]
 	 */
 	public getVolume() {
@@ -173,8 +170,7 @@ export class ZxAudioBeeper {
 	}
 
 
-	/**
-	 * Creates an audio frame from the beeperBuffer.
+	/** Creates an audio frame from the beeperBuffer.
 	 * @param beeperBuffer The beeper changes.
 	 */
 
@@ -287,8 +283,7 @@ export class ZxAudioBeeper {
 	}
 
 
-	/**
-	 * Resets the ctx time.
+	/** Resets the ctx time.
 	 */
 	protected resetTime() {
 		this.audioCtxStartTime = this.ctx.currentTime;
@@ -306,8 +301,7 @@ export class ZxAudioBeeper {
 	}
 
 
-	/**
-	 * Prepares an empty frame.
+	/** Prepares an empty frame.
 	 */
 	protected prepareNextFrame() {
 		this.nextBuffer = this.ctx.createBuffer(1, this.fixedFrameLength, this.sampleRate);
@@ -316,8 +310,7 @@ export class ZxAudioBeeper {
 	}
 
 
-	/**
-	 * Returns an audio sample value [-1;1] from the boolean beeper value.
+	/** Returns an audio sample value [-1;1] from the boolean beeper value.
 	 * @param beeperValue true/false. 1/0
 	 * @returns [-1;1]
 	 */
@@ -329,8 +322,7 @@ export class ZxAudioBeeper {
 	}
 
 
-	/**
-	 * Creates a gap filler frame with all samples containing value
+	/** Creates a gap filler frame with all samples containing value
 	 * and starts it at the next starting time.
 	 * Skips creation if lastEnqueuedAudioSampleValue is 0 and there is no
 	 * pending frame.
@@ -348,8 +340,7 @@ export class ZxAudioBeeper {
 	}
 
 
-	/**
-	 * Returns the last decoded audio value.
+	/** Returns the last decoded audio value.
 	 */
 	protected getLastAudioValue(): number {
 		if (this.nextFrameIndex == 0)
@@ -358,8 +349,7 @@ export class ZxAudioBeeper {
 	}
 
 
-	/**
-	 * Creates a frame that fades to 0 if current value is 1 or -1.
+	/** Creates a frame that fades to 0 if current value is 1 or -1.
 	 * The frame is enqueued. It will be the last played frame until another
 	 * writeBeeperSamples is received.
 	 * This happens while stepping in the simulator.
@@ -400,8 +390,7 @@ export class ZxAudioBeeper {
 	}
 
 
-	/**
-	 * Assumes the audio frame (this.nextFrame) is filled and enqueues it for
+	/** Assumes the audio frame (this.nextFrame) is filled and enqueues it for
 	 * playing.
 	 */
 	protected playNextFrame(logDescription: string) {
@@ -455,8 +444,7 @@ export class ZxAudioBeeper {
 	}
 
 
-	/**
-	 * Sets the visual state of the beeper: 0 or 1.
+	/** Sets the visual state of the beeper: 0 or 1.
 	 */
 	protected setVisualBeeperState(beeperBuffer: BeeperBuffer) {
 		// Check if changing by the length
@@ -480,8 +468,7 @@ export class ZxAudioBeeper {
 	}
 
 
-	/**
-	 * Called periodically to update the beeper displayed value.
+	/** Called periodically to update the beeper displayed value.
 	 */
 	protected updateVisualBeeper() {
 		if (this.visualBeeperChanging) {

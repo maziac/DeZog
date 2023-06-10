@@ -392,40 +392,42 @@ export class Utility {
 		logString = logString.replace(regex, (match, statement /*p1*/, _p2, format /*p3*/, offset) => {
 			// 'statement' contains the statement, e.g. "b@(HL)".
 			// 'format' contains the formatting, e.g. "hex".
-			let promise = new Promise<string>(async resolve => {
-				let size = 1;
-				try {
-					let value;
-					const reMatch = reAt.exec(statement);
-					if (reMatch) {
-						// Found something like "b@(HL)", "w@(LABEL)" or "(DE)".
-						size = (reMatch[1]?.startsWith('w')) ? 2 : 1;
-						// Get value of 'inner'
-						const addrString = reMatch[2];
-						const addr = Utility.evalExpression(addrString);
-						// Get memory contents
-						const memValues = await Remote.readMemoryDump(addr, size);
-						value = memValues[0];
-						if (size > 1)
-							value += memValues[1] << 8;
-					}
-					else {
-						// It's a simple value, register or label.
-						value = Utility.evalExpression(statement, true);
-						if (Z80RegistersClass.isRegister(statement) && statement.length > 1)
-							size = 2;	// Two byte register, e.g. "DE"
-					}
+			let promise = new Promise<string>(resolve => {
+				(async () => {
+					let size = 1;
+					try {
+						let value;
+						const reMatch = reAt.exec(statement);
+						if (reMatch) {
+							// Found something like "b@(HL)", "w@(LABEL)" or "(DE)".
+							size = (reMatch[1]?.startsWith('w')) ? 2 : 1;
+							// Get value of 'inner'
+							const addrString = reMatch[2];
+							const addr = Utility.evalExpression(addrString);
+							// Get memory contents
+							const memValues = await Remote.readMemoryDump(addr, size);
+							value = memValues[0];
+							if (size > 1)
+								value += memValues[1] << 8;
+						}
+						else {
+							// It's a simple value, register or label.
+							value = Utility.evalExpression(statement, true);
+							if (Z80RegistersClass.isRegister(statement) && statement.length > 1)
+								size = 2;	// Two byte register, e.g. "DE"
+						}
 
-					// Now format value
-					let formatString = format || 'unsigned';
-					formatString = '${' + formatString + '}';
-					const formattedNumber = await this.numberFormatted('', value, size, formatString, undefined);
-					resolve(formattedNumber);
-				}
-				catch (e) {
-					// Return the error in case of an error.
-					resolve(e);
-				}
+						// Now format value
+						let formatString = format || 'unsigned';
+						formatString = '${' + formatString + '}';
+						const formattedNumber = await this.numberFormatted('', value, size, formatString, undefined);
+						resolve(formattedNumber);
+					}
+					catch (e) {
+						// Return the error in case of an error.
+						resolve(e);
+					}
+				})();
 			});
 			// Store
 			offset -= offsCorrection;
@@ -626,8 +628,8 @@ export class Utility {
 	 */
 	public static numberFormattedSync(value: number, size: number, format: string, regsAsWell = false, paramName?: string, paramWordAtAddress?: number, tabSizeArr?: Array<string>): string {
 		// Check for defaults
-		const name = paramName || '';
-		const wordAtAddress = paramWordAtAddress || 0;
+		const name = paramName ?? '';
+		const wordAtAddress = paramWordAtAddress ?? 0;
 		// Search for format string '${...}'
 		// Note: [\s\S] is the same as . but also includes newlines.
 		// First search for '${'
@@ -643,7 +645,7 @@ export class Utility {
 			const p1 = p.substring(0, k);
 			const restP = p.substring(k + 1);
 			// Complete '${...}' found. now check content
-			const innerMatch = /^([^\|]*?:)?([^\|]*?)(\|[\s\S]*?)?(\|[\s\S]*?)?$/.exec(p1);
+			const innerMatch = /^([^|]*?:)?([^|]*?)(\|[\s\S]*?)?(\|[\s\S]*?)?$/.exec(p1);
 			if (innerMatch == undefined)
 				return '${' + p1 + '???}' + restP;
 			// Modifier
@@ -1303,7 +1305,7 @@ export class Utility {
 	 * @returns {line, column} The line number and column. Lines/columns start at 0. undefined if something was wrong.
 	 */
 	public static getLineNumberFromError(e: Error, depth = 0, file?: string): {line: number, column: number} | undefined {
-		if (e && e.stack) {
+		if (e?.stack) {
 			// e.stack contains the error location with the line number.
 			// Remove windows \r
 			const stackWo = e.stack.replace(/\r/g, '');
@@ -1571,7 +1573,7 @@ export class Utility {
 	public static assert(test: any, message?: string) {
 		if (!test) {
 			try {
-				throw Error("'assert'" + (message || ""));
+				throw Error("'assert'" + (message ?? ""));
 			}
 			catch (err) {
 				if (message == undefined)

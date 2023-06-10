@@ -622,7 +622,7 @@ export class MemoryModel {
 		let txt = "Slot ranges:\n";
 		// Slots
 		for (const slotRange of this.slotRanges) {
-			let line = Utility.getHexString(slotRange.start, 4) + "-" + Utility.getHexString(slotRange.end, 4) + ": " + (slotRange.name || "unnamed") + ", banks: ";
+			let line = Utility.getHexString(slotRange.start, 4) + "-" + Utility.getHexString(slotRange.end, 4) + ": " + (slotRange.name || "unnamed") + ", banks: ";	// NOSONAR
 			// Banks
 			const banks = [...slotRange.banks];
 			line += banks.map(val => this.banks[val].shortName).join(", ");

@@ -5,7 +5,7 @@ import {Z80Registers} from './z80registers';
 
 /// Used for the data received fom the remote.
 // I.e. holds any data.
-export type RegisterData = any;
+export type RegisterData = any;	// NOSONAR
 
 
 /**
@@ -15,7 +15,7 @@ export class DecodeRegisterData {
 
 	/// All values of the registers are provided in a map.
 	/// Together with a function to retrieve the value from the data string.
-	protected regMap = new Map<string, {(data: string): number}>();
+	protected regMap = new Map<string, (data: string) => number>();
 
 
 	/**
@@ -68,7 +68,7 @@ export class DecodeRegisterData {
 	 */
 	public getRegValueByName(regName: string, data: RegisterData): number {
 		Utility.assert(data);
-		const handler = this.regMap.get(regName.toUpperCase()) || (_data => NaN);
+		const handler = this.regMap.get(regName.toUpperCase()) ?? (_data => NaN);
 		const value = handler(data);
 		return value;
 	}

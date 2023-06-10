@@ -617,7 +617,7 @@ export class LabelParserBase {
 	 * @param label The last part of the label, e.g. "udiv_c_d"
 	 */
 	protected getFullLabel(modulePrefix: string | undefined, label: string) {
-		let result = modulePrefix || '';
+		let result = modulePrefix ?? '';
 		if (result.length == 0)
 			return label;
 		result += label;

@@ -153,7 +153,7 @@ export class SimulatedMemory implements Serializable {
 						// Read file
 						const romData = this.readRomFile(rom);	// Note: is already a unified path
 						// Use data
-						const offs = bank.romOffset || 0;
+						const offs = bank.romOffset ?? 0;
 						memBank.set(romData.slice(offs, offs + memBank.length));
 					}
 				}
@@ -245,7 +245,7 @@ export class SimulatedMemory implements Serializable {
 			// Check if bank belongs to slot
 			const banks = this.slotRanges[i].banks;
 			if (!banks.has(bankNr)) {
-				const slotName = this.slotRanges[i].name || i.toString;
+				const slotName = this.slotRanges[i].name || i.toString;	// NOSONAR
 				throw Error("Trying to switch to bank " + bankNr + " which is not available for slot " + slotName + ".");
 			}
 		}

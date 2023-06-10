@@ -602,8 +602,8 @@ export class ZesaruxSocket extends Socket {
 			const interCmd = this.interruptableRunCmd;
 
 			// Check on error from zesarux
-			if(concData.substring(0,5).toLowerCase() == 'error') {
-				if(!cEntry || !(cEntry.suppressErrorHandling)) {
+			if (concData.substring(0, 5).toLowerCase() == 'error') {
+				if(!cEntry?.suppressErrorHandling) {
 					// send message through to UI
 					let msg = '';
 					if(cEntry)
@@ -669,31 +669,38 @@ export class ZesaruxSocket extends Socket {
 		// inform caller
 		let handlerCalled = false;
 		const func = () => {
-			if(handlerCalled)
-				return;
 			handlerCalled = true;
 			zSocket.myRemoveAllListeners();
 			handler();
 		}
+		func.bind(this);
 		// The new listeners
-		this.once('error', () => {
+		this.on('error', () => {
+			if (handlerCalled)
+				return;
 			LogTransport.log('Socket error (should be close).');
 			func();
 			zSocket.end();
 		});
-		this.once('timeout', () => {
+		this.on('timeout', () => {
+			if (handlerCalled)
+				return;
 			LogTransport.log('Socket timeout (should be close).');
 			func();
 			zSocket.end();
 		});
-		this.once('close', () => {
+		this.on('close', () => {
 			LogTransport.log('Socket closed. OK.');
 			this.state = SocketState.UNCONNECTED;
+			if (handlerCalled)
+				return;
 			func();
 		});
-		this.once('end', () => {
+		this.on('end', () => {
 			LogTransport.log('Socket end. OK.');
 			this.state = SocketState.UNCONNECTED;
+			if (handlerCalled)
+				return;
 			func();
 		});
 

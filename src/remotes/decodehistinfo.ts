@@ -7,7 +7,7 @@ import {Utility} from '../misc/utility';
 /// For full cpu history the memory content at PC (the instruction)
 /// and the content at SP (the potential return address)
 /// will be added.
-export type HistoryInstructionInfo=any;
+export type HistoryInstructionInfo = any;	// NOSONAR
 
 
 /**

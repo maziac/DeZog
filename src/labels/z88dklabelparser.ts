@@ -26,10 +26,10 @@ export class Z88dkLabelParser extends LabelParserBase {
 	protected matchBytesRegEx = /[0-9a-f]{4}\s\s(([0-9a-f][0-9a-f]\s)+)/i;
 
 	// RegEx to extract the line number for Sources-mode.
-	protected matchLineNumberRegEx = /^\s*(\d+)[\s\+]+(.*)/;
+	protected matchLineNumberRegEx = /^\s*(\d+)[\s+]+(.*)/;
 
 	// Checks for "include".
-	protected matchInclStartRegEx = /^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i;
+	protected matchInclStartRegEx = /^[0-9a-f]+\s+include\s+"([^\s]*)"/i;
 
 	// To correct address by the values given in the map file.
 	protected z88dkMapOffset: number;
@@ -111,7 +111,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 							if (valueString.indexOf('$') >= 0) {
 								// Replace $ with current address
 								const addressString = addr64k.toString();
-								const cAddrString = valueString.replace(/(?<![a-z_0-9\$])\$(?![a-z_0-9\$])/i, addressString);
+								const cAddrString = valueString.replace(/(?<![a-z_0-9$])\$(?![a-z_0-9$])/i, addressString);
 								valueString = cAddrString;
 							}
 							// Evaluate

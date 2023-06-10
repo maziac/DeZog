@@ -361,7 +361,7 @@ export class MemoryDump {
 			const baseData = baseMemDump.metaBlocks[i].data!;
 			const data = this.metaBlocks[i].data!;
 			const start = this.metaBlocks[i].address;
-			const len = data!.length;
+			const len = data.length;
 			for (let k = 0; k < len; k++) {
 				const val = data[k];
 				const prevVal = baseData[k];

@@ -118,7 +118,7 @@ export class MemoryRegisterView extends MemoryDumpView {
 	public async updateRegisterChanged(): Promise<void> {
 		// The memory ranges could have been changed.
 		// Update the whole displayed memory ranges.
-		this.update();
+		await this.update();
 	}
 
 

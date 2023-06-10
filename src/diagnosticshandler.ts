@@ -49,7 +49,7 @@ export class DiagnosticsHandler {
 		const diagSeverity = (severity == 'error') ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning;
 		const diagnostic = new vscode.Diagnostic(range, message, diagSeverity);
 		diagnostic.source = 'DeZog';
-		const allFileProblems: readonly vscode.Diagnostic[] = DiagnosticsHandler.diagnosticsCollection.get(uri) || [];
+		const allFileProblems: readonly vscode.Diagnostic[] = DiagnosticsHandler.diagnosticsCollection.get(uri) ?? [];
 		DiagnosticsHandler.diagnosticsCollection.set(uri, [...allFileProblems, diagnostic]);
 	}
 }

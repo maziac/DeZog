@@ -11,10 +11,10 @@ export class Z80asmLabelParser extends LabelParserBase {
 
 	// Regex to find labels
 	// Allow labels without ":"
-	protected labelRegEx = /^[0-9a-f]+[\s0-9a-f\.]*\s+>?([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i;
+	protected labelRegEx = /^[0-9a-f]+[\s0-9a-f.]*\s+>?([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i;
 
 	// Find the bytes after the address
-	protected matchBytesRegEx = /^[0-9a-f]+((\s[\.0-9a-f]+)+)/i;
+	protected matchBytesRegEx = /^[0-9a-f]+((\s[.0-9a-f]+)+)/i;
 
 	// To check the keyword after the bytes above. I.e. to check for data or instruction (on a trimmed string).
 	// Note: This would result in wrong decisions for the NEXTREG macros which are made out of defb.
@@ -27,7 +27,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 	protected matchFileEndRegEx = /^# End of file\s+(.*)/;
 
 	// RegEx to find an include file
-	protected matchInclStartRegEx = /^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i;
+	protected matchInclStartRegEx = /^[0-9a-f]+\s+include\s+"([^\s]*)"/i;
 
 
 	// Current line number in reverse looping
@@ -68,7 +68,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 							if (valueString.indexOf('$') >= 0) {
 								// Replace $ with current address
 								const addressString = addr64k.toString();
-								const cAddrString = valueString.replace(/(?<![a-z_0-9\$])\$(?![a-z_0-9\$])/i, addressString);
+								const cAddrString = valueString.replace(/(?<![a-z_0-9$])\$(?![a-z_0-9$])/i, addressString);
 								valueString = cAddrString;
 							}
 							// Evaluate

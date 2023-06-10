@@ -701,7 +701,7 @@ export class ZSimRemote extends DzrpRemote {
 				this.stopCpu = true;
 				// Send Notification
 				Utility.assert(this.funcContinueResolve);
-				this.funcContinueResolve!({
+				await this.funcContinueResolve!({
 						reasonNumber: breakNumber,
 						reasonString: breakReasonString,
 						longAddr: longBreakAddress,
@@ -752,7 +752,7 @@ export class ZSimRemote extends DzrpRemote {
 
 					// Send Notification
 					//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
-					this.funcContinueResolve({
+					await this.funcContinueResolve({
 						reasonNumber: breakNumber,
 						reasonString: breakReasonString,
 						longAddr: longBreakAddress,
@@ -1369,7 +1369,6 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 */
 	protected async sendDzrpCmdReadPort(port: number): Promise<number> {
 		throw Error("'sendDzrpCmdReadPort' is not implemented.");
-		return 0;
 	}
 
 
@@ -1386,7 +1385,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 */
 	protected async sendDzrpCmdExecAsm(code: Array<number>): Promise<{error: number, a: number, f: number, bc: number, de: number, hl: number}> {
 		throw Error("'sendDzrpCmdExecAsm' is not implemented.");
-		return {error: 0, f: 0, a: 0, bc: 0, de: 0, hl: 0};
+		//return {error: 0, f: 0, a: 0, bc: 0, de: 0, hl: 0};
 	}
 
 

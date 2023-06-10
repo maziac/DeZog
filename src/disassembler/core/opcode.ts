@@ -1468,7 +1468,7 @@ export class Opcode {
 	 * @param address The address of the opcode.
 	 * @returns this
 	 */
-	public getOpcodeAt(memory: BaseMemory, address: number): Opcode {
+	public getOpcodeAt(memory: BaseMemory, address: number): Opcode {	// NOSONAR
 		// Get value (if any)
 		switch (this.valueType) {
 			case NumberType.CODE_RST:
@@ -1476,7 +1476,6 @@ export class Opcode {
 				// no value
 				break;
 			case NumberType.CODE_LBL:
-			case NumberType.CODE_SUB:
 			case NumberType.CODE_SUB:
 			case NumberType.DATA_LBL:
 			case NumberType.NUMBER_WORD:

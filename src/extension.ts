@@ -69,10 +69,10 @@ export function activate(context: vscode.ExtensionContext) {
 			const selection = await vscode.window.showInformationMessage('Serial ports (click to copy):', ...items);
 			// Copy selected item to clipboard.
 			if(selection)
-				vscode.env.clipboard.writeText(selection);
+				await vscode.env.clipboard.writeText(selection);
 		}
 		else {
-			vscode.window.showInformationMessage('No serial port found!');
+			await vscode.window.showInformationMessage('No serial port found!');
 		}
 	}));
 
@@ -337,42 +337,43 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 	 * I.e. each window has a separate environment.
 	 */
 	resolveDebugConfiguration(_folder: WorkspaceFolder | undefined, config: DebugConfiguration, _token?: CancellationToken): ProviderResult<DebugConfiguration> {
-		return new Promise<DebugConfiguration | undefined>(async (resolve, reject) => {
-
-			// Remove current debug session
-			const session = DebugSessionClass.singleton();
-			if (session.running) {
-				// Note: this point is not reached on a "normal" restart, instead
-				// a) if a restart is done and at the same time the launch.json was also changed.
-				// b) a different launch.json should be started.
-				// Show warning and return.
-				const result = await vscode.window.showWarningMessage('DeZog is already active.', 'Terminate current session', 'Cancel');
-				// Check user selection
-				if (result?.toLowerCase().startsWith('terminate')) {
-					// Terminate current session and start a new one
-					await session.terminateRemote();	// Can lead to a 'cannot find session', see https://github.com/maziac/DeZog/issues/91
-					// Because of this we will stop here simply (reject)
+		return new Promise<DebugConfiguration | undefined>((resolve, reject) => {
+			(async () => {
+				// Remove current debug session
+				const session = DebugSessionClass.singleton();
+				if (session.running) {
+					// Note: this point is not reached on a "normal" restart, instead
+					// a) if a restart is done and at the same time the launch.json was also changed.
+					// b) a different launch.json should be started.
+					// Show warning and return.
+					const result = await vscode.window.showWarningMessage('DeZog is already active.', 'Terminate current session', 'Cancel');
+					// Check user selection
+					if (result?.toLowerCase().startsWith('terminate')) {
+						// Terminate current session and start a new one
+						await session.terminateRemote();	// Can lead to a 'cannot find session', see https://github.com/maziac/DeZog/issues/91
+						// Because of this we will stop here simply (reject)
+					}
+					// Stop here.
+					reject();
+					return;
 				}
-				// Stop here.
-				reject();
-				return;
-			}
 
-			// Check if (DeZog) already running
-			if (!this._server) {
-				// Start port listener on launch of first debug session (random port)
-				this._server = Net.createServer(socket => {
-					session.setRunAsServer(true);
-					session.start(<NodeJS.ReadableStream>socket, socket);
-				}).listen(0);
-			}
+				// Check if (DeZog) already running
+				if (!this._server) {
+					// Start port listener on launch of first debug session (random port)
+					this._server = Net.createServer(socket => {
+						session.setRunAsServer(true);
+						session.start(<NodeJS.ReadableStream>socket, socket);
+					}).listen(0);
+				}
 
-			// Make VS Code connect to debug server
-			const addrInfo = this._server.address() as Net.AddressInfo;
-			Utility.assert(typeof addrInfo != 'string');
-			config.debugServer = addrInfo.port;
+				// Make VS Code connect to debug server
+				const addrInfo = this._server.address() as Net.AddressInfo;
+				Utility.assert(typeof addrInfo != 'string');
+				config.debugServer = addrInfo.port;
 
-			resolve(config);
+				resolve(config);
+			})();
 		});
 	}
 

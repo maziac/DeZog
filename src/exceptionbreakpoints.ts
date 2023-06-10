@@ -108,7 +108,7 @@ export class ExceptionBreakpoints {
 			const entry = exceptionMap.get(bp.name);
 			const entryEnabled = (entry != undefined);
 			const entryChanged = (entryEnabled != bp.enabled);
-			const conditionChanged = ((bp.conditionString || '') != (entry || ''));	// entry is also used for the condition string.
+			const conditionChanged = ((bp.conditionString ?? '') != (entry ?? ''));	// entry is also used for the condition string.
 			if (entryChanged || (conditionChanged && entryEnabled)) {
 				if (bp.funcSupported()) {
 					// Change state
@@ -123,7 +123,7 @@ export class ExceptionBreakpoints {
 				// Remember
 				bp.enabled = entryEnabled;
 				if (bp.conditionString != undefined)
-					bp.conditionString = entry || '';
+					bp.conditionString = entry ?? '';
 			}
 		}
 
@@ -224,7 +224,7 @@ export class ExceptionBreakpoints {
 	 */
 	protected async enableLOGPOINTs(enable: boolean, conditionString?: string): Promise<string> {
 		// Convert condition string into groups
-		let groupsString = (conditionString || '').replace(/[,;]/g, ' ');
+		let groupsString = (conditionString ?? '').replace(/[,;]/g, ' ');
 		groupsString = groupsString.replace(/\s+/g, ' ').trim();
 		const groups = (groupsString.length > 0) ? groupsString.split(' ') : [];
 

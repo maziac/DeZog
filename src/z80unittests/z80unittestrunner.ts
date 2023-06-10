@@ -110,12 +110,12 @@ export class Z80UnitTestRunner {
 		// For test case discovery
 		this.rootTestSuite = new RootTestSuite(this.testController);
 		// Add profiles for test case execution
-		this.testController.createRunProfile('Run', vscode.TestRunProfileKind.Run, (request, token) => {
-			this.runHandler(request, token);
+		this.testController.createRunProfile('Run', vscode.TestRunProfileKind.Run, async (request, token) => {
+			await this.runHandler(request, token);
 		});
 
-		this.testController.createRunProfile('Debug', vscode.TestRunProfileKind.Debug, (request, token) => {
-			this.runDebugHandler(request, token);
+		this.testController.createRunProfile('Debug', vscode.TestRunProfileKind.Debug, async (request, token) => {
+			await this.runDebugHandler(request, token);
 		});
 
 	}
@@ -212,7 +212,7 @@ export class Z80UnitTestRunner {
 				}
 				catch (e) {
 					// Output error
-					vscode.window.showErrorMessage(e.message);
+					await vscode.window.showErrorMessage(e.message);
 					// Leave loop
 					break;
 				}
@@ -225,7 +225,9 @@ export class Z80UnitTestRunner {
 							timeoutHandle = setTimeout(() => {
 								this.timedOut = true;
 								// Failure: Timeout. Send a break.
-								Remote.pause();
+								(async () => {
+									await Remote.pause();
+								})();
 							}, toMs);
 						}
 					}
@@ -310,83 +312,89 @@ export class Z80UnitTestRunner {
 			StepHistory.decoder = Z80Registers.decoder;
 		}
 
-		return new Promise<void>(async (resolve, reject) => {
-			// Events
-			Remote.once('initialized', async () => {
+		return new Promise<void>((resolve, reject) => {
+			(async () => {
+				// Events
+				Remote.once('initialized', () => {
+					(async () => {
+						try {
+							// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
+							Remote.readListFiles(configuration);
+							// This needs to be done after the labels have been read
+							await Remote.initWpmemAssertionLogpoints();
+
+							// Initialize Cpu- or StepHistory.
+							StepHistory.init();  // might call the socket
+
+							// Execute command to enable wpmem, logpoints, assertions.
+							await Remote.enableLogpointGroup(undefined, true);
+							try {
+								await Remote.enableWPMEM(true);
+							}
+							catch (e) {
+								// It's not essential anymore to have watchpoints running.
+								// So catch this error from CSpect and show a warning instead
+								await vscode.window.showWarningMessage(e.message);
+							}
+							await Remote.enableAssertionBreakpoints(true);
+
+							if (this.debug) {
+								// After initialization vscode might send breakpoint requests
+								// to set the breakpoints.
+								// Unfortunately this request is sent only if breakpoints exist.
+								// I.e. there is no safe way to wait for something to
+								// know when vscode is ready.
+								// So just wait some time:
+								if (Settings.launch.startAutomatically)
+									await Utility.timeout(500);
+							}
+
+							// Initialize
+							await this.initUnitTests();
+
+							// End
+							resolve();
+						}
+						catch (e) {
+							// Some error occurred
+							reject(e);
+						}
+					})();
+				});
+
+				Remote.on('coverage', coveredAddresses => {
+					Decoration.showCodeCoverage(coveredAddresses);
+				});
+
+				Remote.on('warning', message => {
+					// Some problem occurred
+					(async () => {
+						await vscode.window.showWarningMessage(message);
+					})();
+				});
+
+				Remote.on('debug_console', message => {
+					// Show the message in the debug console
+					vscode.debug.activeDebugConsole.appendLine(message);
+
+				});
+
+				Remote.once('error', e => {
+					// Some error occurred
+					Remote?.dispose();
+					reject(e);
+				});
+
+
+				// Connect to debugger.
 				try {
-					// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
-					Remote.readListFiles(configuration);
-					// This needs to be done after the labels have been read
-					await Remote.initWpmemAssertionLogpoints();
-
-					// Initialize Cpu- or StepHistory.
-					StepHistory.init();  // might call the socket
-
-					// Execute command to enable wpmem, logpoints, assertions.
-					await Remote.enableLogpointGroup(undefined, true);
-					try {
-						await Remote.enableWPMEM(true);
-					}
-					catch (e) {
-						// It's not essential anymore to have watchpoints running.
-						// So catch this error from CSpect and show a warning instead
-						vscode.window.showWarningMessage(e.message);
-					}
-					await Remote.enableAssertionBreakpoints(true);
-
-					if (this.debug) {
-						// After initialization vscode might send breakpoint requests
-						// to set the breakpoints.
-						// Unfortunately this request is sent only if breakpoints exist.
-						// I.e. there is no safe way to wait for something to
-						// know when vscode is ready.
-						// So just wait some time:
-						if (Settings.launch.startAutomatically)
-							await Utility.timeout(500);
-					}
-
-					// Initialize
-					await this.initUnitTests();
-
-					// End
-					resolve();
+					await Remote.init();
 				}
 				catch (e) {
 					// Some error occurred
 					reject(e);
 				}
-			});
-
-			Remote.on('coverage', coveredAddresses => {
-				Decoration.showCodeCoverage(coveredAddresses);
-			});
-
-			Remote.on('warning', message => {
-				// Some problem occurred
-				vscode.window.showWarningMessage(message);
-			});
-
-			Remote.on('debug_console', message => {
-				// Show the message in the debug console
-				vscode.debug.activeDebugConsole.appendLine(message);
-
-			});
-
-			Remote.once('error', e => {
-				// Some error occurred
-				Remote?.dispose();
-				reject(e);
-			});
-
-
-			// Connect to debugger.
-			try {
-				await Remote.init();
-			}
-			catch (e) {
-				// Some error occurred
-				reject(e);
-			}
+			})();
 		});
 	}
 
@@ -432,7 +440,7 @@ export class Z80UnitTestRunner {
 			catch (e) {
 				// It's not essential anymore to have watchpoints running.
 				// So catch this error from CSpect and show a warning instead
-				vscode.window.showWarningMessage(e.message);
+				await vscode.window.showWarningMessage(e.message);
 			}
 			await Remote.enableAssertionBreakpoints(true);
 
@@ -741,32 +749,35 @@ export class Z80UnitTestRunner {
 	 */
 	protected static async stopUnitTests(): Promise<void> {
 		// Async
-		return new Promise<void>(async resolve => {
-			this.stoppingTests = true;
+		return new Promise<void>(resolve => {
+			(async () => {
+				this.stoppingTests = true;
 
-			// Call reject if on.
-			if (this.waitOnDebugger)
-				this.waitOnDebugger.reject(Error("Unit tests cancelled"));
+				// Call reject if on.
+				if (this.waitOnDebugger)
+					this.waitOnDebugger.reject(Error("Unit tests cancelled"));
 
-			// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
-			if (this.debugAdapter) {
-				if (Remote)
-					await Remote.waitForBeingQuietFor(300);
-				this.debugAdapter.sendEvent(new TerminatedEvent());
-			}
+				// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
+				if (this.debugAdapter) {
+					if (Remote)
+						await Remote.waitForBeingQuietFor(300);
+					this.debugAdapter.sendEvent(new TerminatedEvent());
+				}
 
-			// For reverse debugging.
-			StepHistory.clear();
+				// For reverse debugging.
+				StepHistory?.clear();
 
-			if (Remote) {
-				// Exit
-				await Remote.terminate();
-				// Remove event handling for the emulator
-				Remote.removeAllListeners();
-				Remote.dispose();
-			}
+				if (Remote) {
+					// Exit
+					await Remote.terminate();
+					// Remove event handling for the emulator
+					Remote.removeAllListeners();
+					Remote.dispose();
+				}
 
-			resolve();
+				this.testRunActive = false;
+				resolve();
+			})();
 		});
 	}
 

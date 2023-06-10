@@ -465,13 +465,13 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 					await this.changeMemory((address + 1) & 0xFFFF, (value >> 8) & 0xFF);	// Masking is still required here
 				}
 				catch (e) {
-					vscode.window.showWarningMessage("Could not evaluate: '" + message.value + "'");
+					await vscode.window.showWarningMessage("Could not evaluate: '" + message.value + "'");
 				}
 				break;
 
 			default:
 				// Handle by parent
-				super.webViewMessageReceived(message);
+				await super.webViewMessageReceived(message);
 				break;
 		}
 	}

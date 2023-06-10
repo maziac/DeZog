@@ -172,7 +172,7 @@ export class RenderCallGraph extends RenderBase {
 
 			// Find label
 			const address = node.start;
-			const labelName = this.disasm.funcGetLabel(address) || node.label || '';
+			const labelName = this.disasm.funcGetLabel(address) || node.label || '';	// NOSONAR
 
 			// Output
 			const dotId = this.getDotId(node);
