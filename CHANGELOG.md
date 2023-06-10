@@ -2,8 +2,7 @@
 # 3.1.1
 - New setting for launch.json/"zxnext": "timeout". If there are connection problems try increasing this value (default is 5 seconds).
 - Sonar linting.
-
-
+- Improved zesarux disconnect for unit tests.
 # 3.3.0
 - ZEsarUX:
 	- Support for ZEsarUX version 10.3
