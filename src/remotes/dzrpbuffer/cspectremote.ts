@@ -27,8 +27,6 @@ export class CSpectRemote extends DzrpBufferRemote {
 		this.supportsWPMEM = false;
 		this.supportsLOGPOINT = true;
 		this.supportsBreakOnInterrupt = false;
-
-		this.cmdRespTimeoutTime = Settings.launch.cspect.socketTimeout * 1000;
 	}
 
 
@@ -41,6 +39,10 @@ export class CSpectRemote extends DzrpBufferRemote {
 		// Init socket
 		this.socket = new Socket();
 		this.socket.unref();
+
+		// Set timeouts
+		this.cmdRespTimeoutTime = Settings.launch.cspect.socketTimeout * 1000;
+		this.chunkTimeout = this.cmdRespTimeoutTime;
 
 		// React on-open
 		this.socket.on('connect', () => {

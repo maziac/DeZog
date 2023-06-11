@@ -8,9 +8,6 @@ import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 
 /// Timeouts.
 export const CONNECTION_TIMEOUT = 1000;	// 1 sec
-const CHUNK_TIMEOUT = 1000;	// 1 sec
-
-
 
 
 /**
@@ -57,14 +54,15 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	// Sequence Number 1-255. Used for sending.
 	protected sequenceNumber: number;
 
-	// The used timeout time. (ms)
-	protected cmdRespTimeoutTime = 500;	// Will be overwritten.
-	protected initCloseRespTimeoutTime = 900;	// Timeout for CMD_INIT and CMD_CLOSE. This is not configurable and depends on vscode internal times.
-
 	// To collect received chunks.
 	protected receivedData: Buffer;
 	protected expectedLength: number;
 	protected receivingHeader: boolean;
+
+	// Handle for timeout between data chunks
+	protected chunkTimeoutHandle?: NodeJS.Timeout;
+	// The used chunk time out time in ms.
+	protected chunkTimeout: number;
 
 
 	/// Constructor.
@@ -286,7 +284,8 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	 */
 	protected startChunkTimeout() {
 		this.stopChunkTimeout();
-		this.chunkTimeout = setTimeout(() => {
+		Utility.assert(this.chunkTimeout !== undefined, 'Chunk timeout not set!');
+		this.chunkTimeoutHandle = setTimeout(() => {
 			const err = new Error('Socket chunk timeout.');
 			// Log
 			LogTransport.log('Error: ' + err.message);
@@ -295,7 +294,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 				this.emit('error', err);
 			}
 			catch {};
-		}, CHUNK_TIMEOUT);
+		}, this.chunkTimeout);
 	}
 
 
@@ -303,9 +302,9 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	 * Stops the chunk timeout.
 	 */
 	protected stopChunkTimeout() {
-		if (this.chunkTimeout)
-			clearTimeout(this.chunkTimeout);
-		this.chunkTimeout = undefined;
+		if (this.chunkTimeoutHandle)
+			clearTimeout(this.chunkTimeoutHandle);
+		this.chunkTimeoutHandle = undefined;
 	}
 
 

@@ -31,10 +31,6 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	// The socket connection.
 	public socket: Socket;
 
-	// The used timeout time. (ms)
-	protected cmdRespTimeoutTime = 500;	// Will be overwritten.
-	protected initCloseRespTimeoutTime = 900;	// Timeout for CMD_INIT and CMD_CLOSE. This is not configurable and depends on vscode internal times.
-
 	// Stores the received data.
 	protected receivedData: string;
 
@@ -47,7 +43,6 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		this.supportsWPMEM = true;
 		this.supportsLOGPOINT = true;
 		this.supportsBreakOnInterrupt = false;
-		this.cmdRespTimeoutTime = Settings.launch.mame.socketTimeout * 1000;
 	}
 
 
@@ -60,6 +55,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		// Init socket
 		this.socket = new Socket();
 		this.socket.unref();
+		this.cmdRespTimeoutTime = Settings.launch.mame.socketTimeout * 1000;
 
 		// React on-open
 		this.socket.on('connect', () => {

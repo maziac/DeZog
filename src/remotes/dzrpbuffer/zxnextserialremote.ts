@@ -73,7 +73,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		this.supportsLOGPOINT = true;
 		this.supportsBreakOnInterrupt = false;
 		// Overwrite minimal required version
-		this.DZRP_VERSION = [2, 1, 0];	// TODO: 2.1.1
+		this.DZRP_VERSION = [2, 1, 0];
 		//console.log('ZxNextSerialRemote: constructor()');
 	}
 
@@ -91,8 +91,9 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization(): Promise<void> {
-		// Set timeout
+		// Set timeouts
 		this.cmdRespTimeoutTime = Settings.launch.zxnext.timeout * 1000;
+		this.chunkTimeout = this.cmdRespTimeoutTime;
 		// Open the serial port
 		const serialPath = Settings.launch.zxnext.serial;
 		this.serialPort = new SerialPort({
@@ -198,7 +199,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	 */
 	protected startCmdRespTimeout(respTimeoutTime: number) {
 		this.stopCmdRespTimeout();
-		this.cmdRespTimeout = setTimeout(() => {
+		this.cmdRespTimeoutHandle = setTimeout(() => {
 			this.stopCmdRespTimeout();
 			const err = new Error('No response received from remote.');
 			// Log

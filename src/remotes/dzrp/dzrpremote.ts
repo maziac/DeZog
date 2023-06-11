@@ -1182,7 +1182,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				const funcContinueResolve = async (breakInfo: BreakInfo) => {
 					try {
 						// Give vscode a little time
-						await this.timeWait.waitAtInterval();	// TODO: can I remove all waitAtInterval ?
+						await this.timeWait.waitAtInterval();
 
 						// Get registers
 						await this.getRegistersFromEmulator();

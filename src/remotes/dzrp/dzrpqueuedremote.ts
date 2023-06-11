@@ -39,14 +39,11 @@ export class DzrpQueuedRemote extends DzrpRemote {
 	protected messageQueue: Array<MessageBuffer>;
 
 	// Timeout between sending command and receiving response.
-	protected cmdRespTimeout?: NodeJS.Timeout;
+	protected cmdRespTimeoutHandle?: NodeJS.Timeout;
 
 	// The used timeout time. (ms)
 	protected cmdRespTimeoutTime = 500;	// Will be overwritten.
 	protected initCloseRespTimeoutTime = 900;	// Timeout for CMD_INIT and CMD_CLOSE. This is not configurable and depends on vscode internal times.
-
-	// Timeout between data chunks
-	protected chunkTimeout?: NodeJS.Timeout;
 
 
 	/// Constructor.
@@ -88,7 +85,7 @@ export class DzrpQueuedRemote extends DzrpRemote {
 	protected startCmdRespTimeout(respTimeoutTime: number) {
 		this.stopCmdRespTimeout();
 		if (respTimeoutTime > 0) {
-			this.cmdRespTimeout = setTimeout(() => {
+			this.cmdRespTimeoutHandle = setTimeout(() => {
 				this.stopCmdRespTimeout();
 				const err = new Error('No response received from remote.');
 				// Log
@@ -112,9 +109,9 @@ export class DzrpQueuedRemote extends DzrpRemote {
 	 * Stops the command/response timeout.
 	 */
 	protected stopCmdRespTimeout() {
-		if (this.cmdRespTimeout)
-			clearTimeout(this.cmdRespTimeout);
-		this.cmdRespTimeout = undefined;
+		if (this.cmdRespTimeoutHandle)
+			clearTimeout(this.cmdRespTimeoutHandle);
+		this.cmdRespTimeoutHandle = undefined;
 	}
 
 
