@@ -713,10 +713,6 @@ window.addEventListener('load', () => {
 		<script>
 		const vscode = acquireVsCodeApi();
 
-		// For highlighting the found addresses
-		let foundAddressesHexObjs = [];
-		let foundAddressesAsciiObjs = [];
-
 		// The changed memory. Is an array of triples: [address, value, ASCII]
 		let changedAddressValues = [];
 
