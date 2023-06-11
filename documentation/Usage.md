@@ -746,7 +746,7 @@ Note: The simulated ULA screen supports flashing of color attributes (bit 7 of c
 If the output keeps changing you'll see this:
 ![](images/zxbeeper_changing.jpg)
 Don't expect high quality sound. This is not an emulation. The simulator speed is only very roughly synchronized with the host system's time. Therefore there will be lost frames or gaps.
-The status for the audio is experimental. It may or may not work for you.
+Note also that audio is not available before you interact with the simulator view.
 - "cpuFrequency": The used CPU frequency. If "limitSpeed" is enabled (default) the simulation speed is throttled to simulate the correct frequency. The CPU frequency is also used printout of the correspondent time when t-states are printed.
 - "limitSpeed": If enabled the simulated CPU performance is throttled to fit the given CPU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.
 - "updateFrequency": The update frequency of the simulator view in Hz. Defaults to 10Hz. Possible range is 5 to 100 Hz.
@@ -1232,7 +1232,6 @@ I.e. interrupting the debugged program (by pressing the yellow NMI button) canno
 
 ### MAME - Multiple Machine Arcade Emulator
 
-Support for [MAME] is new and at the moment only experimental.
 MAME implements a gdbstub that can be accessed from DeZog via a socket.
 Therefore it is necessary to start MAME (v0.242) with e.g. these options:
 ~~~bash
