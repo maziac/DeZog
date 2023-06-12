@@ -721,6 +721,12 @@ window.addEventListener('load', () => {
 		let foundAddresses = [];
 		let selectedLength = 0;
 
+		// Lazy initialized values
+		let allHexObjs;
+		let allHexMap;
+		let allAsciiObjs;
+		let allAsciiMap;
+
 		//---- Handle Mouse Over, Calculation of hover text -------
 		function mouseOverValue(obj) {
 			const address = obj.getAttribute("address");
@@ -935,13 +941,27 @@ window.addEventListener('load', () => {
 				{
 					// De-highlight the previous found addresses
 					// HEX
-					const hexObjs = document.querySelectorAll("td[address]");
-					for(const obj of hexObjs) {
+					if(!allHexObjs) {
+						allHexObjs = document.querySelectorAll("td[address]");
+						allHexMap = new Map();
+						for(const elem of allHexObjs) {
+							const addr = elem.getAttribute('address');
+							allHexMap.set(parseInt(addr), elem);
+						}
+					}
+					for(const obj of allHexObjs) {
 						obj.classList.remove("foundAddress");
 					}
 					// ASCII
-					const asciiObjs = document.querySelectorAll("span[address]");
-					for(const obj of asciiObjs) {
+					if(!allAsciiObjs) {
+						allAsciiObjs = document.querySelectorAll("span[address]");
+						allAsciiMap = new Map();
+						for(const elem of allAsciiObjs) {
+							const addr = elem.getAttribute('address');
+							allAsciiMap.set(parseInt(addr), elem);
+						}
+					}
+					for(const obj of allAsciiObjs) {
 						obj.classList.remove("foundAddressAscii");
 					}
 
@@ -961,28 +981,18 @@ window.addEventListener('load', () => {
 					foundAddresses = message.addresses;
 
 					// HEX
-					const hexMap = new Map();
-					for(const elem of hexObjs) {
-						const addr = elem.getAttribute('address');
-						hexMap.set(parseInt(addr), elem);
-					}
 					for(let i=0; i<selectedLength; i++) {
 						for(const address of foundAddresses) {
-							const elem = hexMap.get(address+i);
+							const elem = allHexMap.get(address+i);
 							if(elem)
 								elem.classList.add("foundAddress");
 						}
 					}
 
 					// ASCII
-					const asciiMap = new Map();
-					for(const elem of asciiObjs) {
-						const addr = elem.getAttribute('address');
-						asciiMap.set(parseInt(addr), elem);
-					}
 					for(let i=0; i<selectedLength; i++) {
 						for(const address of foundAddresses) {
-							const elem = asciiMap.get(address+i);
+							const elem = allAsciiMap.get(address+i);
 							if(elem)
 								elem.classList.add("foundAddressAscii");
 						}
