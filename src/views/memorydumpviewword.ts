@@ -222,6 +222,11 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		let foundAddresses = [];
 		let selectedLength = 0;
 
+		// Lazy initialized values
+		let allHexObjs;
+		let allHexMap;
+		let allAsciiObjs;	// Will stay undefined
+
 		//---- Handle Mouse Over, Calculation of hover text -------
 		function mouseOverValue(obj) {
 			const address = obj.getAttribute("address");
@@ -395,7 +400,16 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				case 'foundAddresses':
 				{
 					// De-highlight the previous found addresses
-					for(const obj of foundAddressesHexObjs) {
+					// HEX
+					if(!allHexObjs) {
+						allHexObjs = document.querySelectorAll("td[address]");
+						allHexMap = new Map();
+						for(const elem of allHexObjs) {
+							const addr = elem.getAttribute('address');
+							allHexMap.set(parseInt(addr), elem);
+						}
+					}
+					for(const obj of allHexObjs) {
 						obj.classList.remove("foundAddress");
 					}
 
@@ -413,15 +427,13 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 					// Highlight the new  found addresses:
 					selectedLength = message.length;
 					foundAddresses = message.addresses;
+
 					// HEX
-					foundAddressesHexObjs = [];
-					for(const address of foundAddresses) {
-						for(let i=0; i<selectedLength; i++) {
-							const objs = getHexObjsForAddressSingleByte(address+i);
-							for(const obj of objs) {
-								foundAddressesHexObjs.push(obj);
-								obj.classList.add("foundAddress");
-							}
+					for(let i=0; i<selectedLength; i++) {
+						for(const address of foundAddresses) {
+							const elem = allHexMap.get(address+i);
+							if(elem)
+								elem.classList.add("foundAddress");
 						}
 					}
 

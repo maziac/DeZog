@@ -566,11 +566,13 @@ function selectAddress() {
 				prevSelectedHex.push(obj);
 			}
 		}
-		const spanObjs = getAsciiObjsForAddress(address+i);
-		if(spanObjs) {
-			for(const obj of spanObjs) {
-				obj.classList.add("selectedAddressAscii");
-				prevSelectedAscii.push(obj);
+		if(allAsciiObjs) {	// Check if for memorydumpviewword
+			const spanObjs = getAsciiObjsForAddress(address+i);
+			if(spanObjs) {
+				for(const obj of spanObjs) {
+					obj.classList.add("selectedAddressAscii");
+					prevSelectedAscii.push(obj);
+				}
 			}
 		}
 	}
