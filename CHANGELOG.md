@@ -1,10 +1,9 @@
 # Changelog
 # 3.3.1
-- New setting for launch.json/"zxnext": "timeout". If there are connection problems try increasing this value (default is 5 seconds).
+- New setting for launch.json/"zxnext": "timeout". If there are connection problems try increasing this value (the default has been increased from 1 to 5 seconds).
 - Sonar linting.
 - Improved zesarux disconnect for unit tests.
 - Improved performance of search in memory dump view.
-
 
 # 3.3.0
 - ZEsarUX:

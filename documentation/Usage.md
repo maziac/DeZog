@@ -1059,12 +1059,12 @@ E.g.
 #### Setup
 
 Prerequisites:
-1. Install core 03.01.10 on the ZX Next. (03.01.05 is not supported by DeZog anymore.)
+1. Install core 03.02.00 (or core 03.01.10) on the ZX Next. (03.01.05 is not supported by DeZog anymore.)
 2. You need an USB/Serial converter and a D-Sub female connector (9 pins). See next chapter on HW.
 
 
 Setup a debug session:
-1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif] project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/tree/main/releases) section. You need to download the ```enNextMf.rom```, at least version 2.2.0. This supports Core 03.01.10. Core 03.01.05 is not supported anymore.
+1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif] project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/tree/main/releases) section. You need to download the ```enNextMf.rom```, at least version 2.2.1. This supports Core 03.01.10 and Core 03.02.00. Core 03.01.05 is not supported anymore.
 (Don't forget to make a backup of the original ```enNextMf.rom```.)
 2. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program]).
 3. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferable Joy 2).
