@@ -2385,8 +2385,6 @@ the value correspondents to a label.
   match the searched string. If several sequences are found the memory might be dumped several times.
   The idea is to find strings also if they are not coded as ASCII sequence but with some other, unknown coding
   scheme.
-Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes.
-  But if chosen, words are output. Last argument is the endianness which is little endian by default.
 "-memmodel": Prints slot and bank info of the currently used memory model.
 "-msetb address value [repeat]":
 	- address: The address to fill. Can also be a label or expression.
