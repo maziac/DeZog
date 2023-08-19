@@ -60,6 +60,7 @@
 		"posthtml": "^0.16.6",
 		"posthtml-toc": "^1.0.3",
 		"rng": "^0.2.2",
+		"semver": "^7.5.4",
 		"serialport": "^10.4.0",
 		"showdown": "^2.1.0"
 	},

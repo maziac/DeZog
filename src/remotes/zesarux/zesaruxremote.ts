@@ -9,11 +9,11 @@ import {Z80RegistersClass, Z80Registers} from '../z80registers';
 import {DecodeZesaruxRegisters, DecodeZesaruxRegistersColecovision, DecodeZesaruxRegistersZx128k, DecodeZesaruxRegistersZx16k, DecodeZesaruxRegistersZx48k, DecodeZesaruxRegistersZxNext} from './decodezesaruxdata';
 import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
 import {PromiseCallbacks} from '../../misc/promisecallbacks';import {MemoryModelColecoVision, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextTwoRom} from '../MemoryModel/predefinedmemorymodels';
-
+import * as semver from 'semver';
 
 
 /// Minimum required ZEsarUX version.
-const MIN_ZESARUX_VERSION = 10.3;
+const MIN_ZESARUX_VERSION = '10.3';
 
 
 // Some Zesarux constants.
@@ -44,8 +44,8 @@ export class ZesaruxRemote extends RemoteBase {
 	/// Array that contains free breakpoint IDs.
 	private freeBreakpointIds = new Array<number>();
 
-	/// The read ZEsarUx version number as float, e.g. 7.1. Is read directly after socket connection setup.
-	public zesaruxVersion = 0.0;
+	/// The read ZEsarUx version number as string, e.g. 7.1. Is read directly after socket connection setup.
+	public zesaruxVersion = "";
 
 	/// Set to true after 'terminate()' is called. Errors will not be sent
 	/// when terminating.
@@ -187,12 +187,13 @@ export class ZesaruxRemote extends RemoteBase {
 					// Initialize
 					await zSocket.sendAwait('close-all-menus');
 					await zSocket.sendAwait('about');
-					const data = await zSocket.sendAwait('get-version');
-					// e.g. "7.1-SN"
-					this.zesaruxVersion = parseFloat(data);
-					// Check version
-					if (this.zesaruxVersion < MIN_ZESARUX_VERSION) {
+					this.zesaruxVersion = await zSocket.sendAwait('get-version');
+					const version = semver.coerce(this.zesaruxVersion);
+					const min_version = semver.coerce(MIN_ZESARUX_VERSION);
+					// Check version. E.g. "7.1-SN", "10.3" or "10.10"
+					if (semver.lt(version, min_version)) {
 						try {
+							// Version too low
 							await zSocket.quit();
 						}
 						catch {};
