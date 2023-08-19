@@ -1,6 +1,6 @@
 # Changelog
 # 3.3.2
-- Fixed version numbering parsing for zesarux
+- Fixed version numbering parsing for zesarux.
 - Removed human.join package.
 
 # 3.3.1
