@@ -913,7 +913,7 @@ export class Utility {
 		if (UnifiedPath.isAbsolute(relFilePath))
 			return relFilePath;
 		// Change from relative to absolute
-		const usedRootPath = (rootPath) ? rootPath : Utility.rootPath || '';
+		const usedRootPath = ((rootPath) ?? Utility.rootPath) ?? '';
 		const filePath = UnifiedPath.join(usedRootPath, relFilePath);
 		return filePath;
 	}

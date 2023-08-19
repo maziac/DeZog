@@ -3690,7 +3690,8 @@ E.g. use "-help -view" to put the help text in an own view.
 			// Show warnings for unsupported but enabled breakpoints
 			const len = notSupported.length;
 			if (len > 0) {
-				const unsupportedString = hjoin.join(notSupported, {quote: {enabled: true, quoteWith: "'"}});
+				const quotedNotSupported = notSupported.map(s => "'" + s + "'");
+				const unsupportedString = Utility.hjoin(quotedNotSupported);
 				const isAre = (len === 1) ? "is" : "are";
 				this.showWarning(unsupportedString + " " + isAre + " not supported by this Remote.");
 			}
