@@ -37,7 +37,6 @@ import {RenderCallGraph} from './disassembler/rendercallgraph';
 import {RenderFlowChart} from './disassembler/renderflowchart';
 import {RenderHtml} from './disassembler/renderhtml';
 import {ExceptionBreakpoints} from './exceptionbreakpoints';
-import * as hjoin from '@bartificer/human-join';
 import {MemoryCommands} from './commands/memorycommands';
 
 
@@ -2641,7 +2640,8 @@ E.g. use "-help -view" to put the help text in an own view.
 			txt += 'Label: ';
 			const labels = Labels.getLabelsForLongAddress(address);
 			if (labels.length > 0) {
-				txt += hjoin.join(labels, {quote: {enabled: true, quoteWith: "'"}}) + '\n';
+				const quotedLabels = labels.map(label => "'" + label + "'");
+				txt += Utility.hjoin(quotedLabels) + '\n';
 			}
 			else {
 				txt += 'None.\n';

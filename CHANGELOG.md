@@ -1,4 +1,8 @@
 # Changelog
+# 3.3.2
+- Fixed version numbering parsing for zesarux
+- Removed human.join package.
+
 # 3.3.1
 - New setting for launch.json/"zxnext": "timeout". If there are connection problems try increasing this value (the default has been increased from 1 to 5 seconds).
 - Sonar linting.

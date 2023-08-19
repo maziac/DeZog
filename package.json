@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.3.1",
+	"version": "3.3.2",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum.",
 	"author": {
@@ -46,7 +46,6 @@
 		"check-env": "node -e 'console.log(process.env)' | grep npm"
 	},
 	"dependencies": {
-		"@bartificer/human-join": "^1.1.3",
 		"@vscode/debugadapter": "^1.57.0",
 		"@vscode/debugprotocol": "^1.57.0",
 		"fast-glob": "^3.2.12",

@@ -1647,6 +1647,27 @@ export class Utility {
 		const diffns = diff * 1000000;	// convert to ns
 		return diffns;
 	}
+
+
+	/** Does a "human" join of a string list.
+	 * @param labels list of strings, e.g. empty, ["1"] or "["1", "2", "3"]
+	 * @param sep The normal seperator string
+	 * @param lastSep the seprator to use for the last string
+	 * @returns E.g. "", "1", "1, 2 and 3"
+	 */
+	public static hjoin(labels: string[], sep = ', ', lastSep = ' and '): string {
+		const len = labels.length;
+		if (len == 0)
+			return '';
+		let s = labels[0];
+		if (len > 1) {
+			for (let k = 1; k < len - 1; k++) {
+				s += sep + labels[k];
+			}
+			s += lastSep + labels[len - 1];
+		}
+		return s;
+	}
 }
 
 // !SECTION
