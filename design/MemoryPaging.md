@@ -1,35 +1,31 @@
 # Introduction
 
-This documents deals with the problems of memory paging.
+This document addresses the challenges associated with memory paging in the context of DeZog.
 
-Traditionally DeZog was working on an address space of 64k only.
-As this is the address space a Z80 CPU can directly address.
+Historically, DeZog operated within a 64k address space, as this aligns with the address space directly accessible by a Z80 CPU. When additional memory is required, it needs to be paged in using specific commands. Typically, this involves writing to a port or register (as seen with ZX Next).
 
-If more memory is to be used the memory has to be paged in with certain commands.
-Usually a write to some port or register (see ZX Next).
+Several issues arise when memory is managed in this manner:
 
-Several problems arise if memory is used in this way.
-- Address <-> file/line number association is not unambigious anymore. I.e. several files or line numbers could share the same address. When DeZog needs to find the file/line number to display for a certain PC it may find several files to display.
-- File/line number <-> breakpoint association: If a breakpoint is set by 64k address in one file this breakpoint would be true for all sources, i.e. all memory banks.
-- Code coverage: The addresses returned by the emulator for code coverage need to contain the memory bank. Otherwise the wrong file might be colored. Or if several files are candidates it is not clear what file to color.
-- History (cpu history): A similar problem. The emulator needs to return address and memory bank of the instruction.
-- History (lite history): This is independent of the emulator. I.e. if the current PC address and bank number can be retrieved it is possible to store it.
+- Ambiguity in Address <-> File/Line Number Association: Multiple files or line numbers may share the same address, making it challenging for DeZog to determine which file/line number to display for a given program counter (PC).
+- File/Line Number <-> Breakpoint Association: If a breakpoint is set by a 64k address in one file, it will apply to all sources (i.e., memory banks).
+- Code Coverage: The addresses provided by the emulator for code coverage must include memory bank information to ensure proper file coloring. Without this information, the wrong file might be colored, or if multiple files are candidates, it may be unclear which file to color.
+- History (CPU History): Similar to code coverage, CPU history requires the emulator to return both the address and memory bank of an instruction.
+- History (Lite History): Independent of the emulator, if the current PC address and bank number can be retrieved, it becomes possible to store it.
 
 
 # Long Address, Slots, Bank
 
 ## Slots, Banks, Paging
 
-A slot is a memory range.
-E.g. 0x0000-0x3FFF or 0xC000-0xFFFF
+A slot represents a memory range, e.g. 0x0000-0x3FFF or 0xC000-0xFFFF
 
-Slots have indices, e.g. for the ZX128K there exist 4 slots:
+Each slot has an index. For example, the ZX128K has four slots:
 - Slot 0: 0x0000-0x3FFF
 - Slot 1: 0x4000-0x7FFF
 - Slot 2: 0x8000-0xBFFF
 - Slot 3: 0xC000-0xFFFF
 
-In a ZXNext we have 8 slots:
+In a ZXNext, there are eight slots:
 - Slot 0: 0x0000-0x1FFF
 - Slot 1: 0x2000-0x3FFF
 - Slot 2: 0x4000-0x5FFF
@@ -40,55 +36,37 @@ In a ZXNext we have 8 slots:
 - Slot 3: 0xE000-0xFFFF
 
 
-Certain slots can be assigned to certain memory.
-Eg.
+Certain slots can be assigned to certain memory areas.
+For instance:
 - Slot 0: 0x0000-0x3FFF:  ROM
 - Slot 1: 0x4000-0x7FFF:  Bank 2
 - Slot 2: 0x8000-0xBFFF:  Bank 5
 - Slot 3: 0xC000-0xFFFF:  Bank 0
 
-Slot sizes don't need to be equal in size, e.g. the ZX16K would use:
+lot sizes can vary; they don't need to be of equal size. For example, the ZX16K would use:
 - Slot 0: 0x0000-0x3FFF:  ROM
 - Slot 1: 0x4000-0x7FFF:  RAM
 - Slot 2: 0x8000-0xFFFF:  Unassigned
 
-A slot can be paged but does not have to.
-Paging means that different memory banks can be paged into a slot.
-E.g. slot 1 could either contain bank 4, bank 7 or bank 12.
-If a slot is pageable and what banks are usable depends on the MemoryModel used.
+A slot can be pageable but doesn't have to be. Paging allows different memory banks to be swapped into a slot. For example, Slot 1 could contain Bank 4, Bank 7, or Bank 12. Whether a slot is pageable and which banks can be used depends on the Memory Model employed.
 E.g. ZX16K and ZX128K use different MemoryModels: MemoryModelZx16k and MemoryModelZx128k.
 
-The term bank is used here for memory that can be bank switched but also for memory that can't. E.g. the ZX48K has 2 banks: 16k ROM and 48k RAM.
+The term bank is used here for memory that can be bank switched but also for memory that can't. E.g. the ZX48K has 2 banks: 16k ROM and 48k RAM. These banks cannot be switched.
 
-Slots that are not assigned will internally be set to a special bank (bank number is 1 higher than the maximum bank number used).
-This bank is not seen in the UI.
-This "trick" makes the handling easier and faster.
-
+Unassigned slots are internally set to a special bank, which has a bank number one higher than the maximum bank number used. This special bank is hidden in the user interface. It simplifies the handling.
 
 ## Long Addresses Representation
 
-To store a "long address", i.e. an address with bank number information, it is necessary to know the bank size at first.
-For the ZXNext this is usually 8k and any examples here will use this as assumption.
+To store a "long address," which includes bank number information, the bank size must first be known. For ZXNext, this is typically 8k, and the examples here assume this size.
 
-<!--
-The long address will consist of the address inside the bank plus the bank number (shifted appropriately).
-E.g. an address in bank 107 and an address inside the bank of 0x10B0 with bank size of 8k will be calculated like:
-~~~
-long_address = (107)<<13 + 0x10B0
-~~~
--->
-
-To easily distinguish between long address and normal addresses all addresses <= 0xFFFF will be normal 64k addresses.
-Everything bigger is a long address with the coding:
+To distinguish between long addresses and normal addresses, all addresses up to 0xFFFF are treated as normal 64k addresses. Anything greater is considered a long address and is coded as follows:
 ~~~
 (bank_nr+1)<<16 + address
 ~~~
-where address includes the upper bits for the slot index.
-It is necessary to increase the bank_nr by 1 because 0 is left for normal addresses.
 
-Note: long addresses are (with DeZog 3.x) used in any case. Even for a 64k only non-banked system.
-In this case a pseudo bank is used.
-So internally all addresses are long addresses. There is no need anymore to distinguish.
+Here, the address includes the upper bits for the slot index. Adding 1 to the bank number is necessary to leave room for normal addresses (0 is reserved for these).
+
+Note: Long addresses are used consistently in DeZog 3.x, even for non-banked systems. In this case, a pseudo bank is employed, so all addresses are long addresses, eliminating the need for differentiation.
 
 
 # SLD (sjasmplus)
@@ -107,23 +85,17 @@ E.g. In ZEsarUX for working with the breakpoints it is necessary to know the slo
 
 ## PC <-> File/Line Association
 
-Is possible with all Remotes.
 Additionally to the PC the slot/bank association needs to be retrieved.
-But this is done already anyway.
-
-Questionable is maybe OpenMSX?
 
 
 ## File/line number <-> Breakpoint Association
 
-If the file/line to address association is using long addresses then long addresses are also used for breakpoints.
-If not then normal 64k addresses are used.
+Breakpoints also use long addresses.
 
-For long addresses:
-
-Still the remote (e.g. emulator) might not support long breakpoints.
+Still the remote (e.g. emulator) might not support "long address" breakpoints.
 In this case the emulator would set a normal 64k address instead.
 When the break happens, as a fallback, DeZog will check the long BP address on it's own. If the bank is not the correct one (the one from the long BP) then DeZog will send a 'continue' to the remote (emulator).
+This fallback comes with a performance penalty, of course.
 
 Note: If the remote supports long breakpoints DeZog would still additionally do a check but the check would always be 'true'.
 
@@ -154,16 +126,15 @@ CSpect offers ```SetPhysicalBreakpoint```which should allow for breakpoints even
 
 
 
-# Parser / Target Combinations
+# Label Parser / Target Combinations
 
-The parser already uses a memory model (bank schema).
+The label parser already uses a memory model (bank schema).
 When this is loaded into an emulator the emulator might have the same or an other one.
 E.g. a ZX48K program could be loaded into a ZXNext.
 
 Therefore the label addresses are converted into the target/emulator memory model/banking scheme.
 
-##  puml
-
+##  Message Sequence Charts
 
 ~~~puml
 hide footbox
@@ -402,35 +373,4 @@ This call stack is saved to history on each step.
 It is already enough to get the correct file <-> address association.
 The last frame of the call stack is also used as (long) PC address instead of the value from the Z80 registers.
 As the breakpoints are also long addresses the BP address can be directly compared to the call stack PC.
-
-
-# Misc
-
-- 24bit addresses:
-  - sld-parsing:
-    - Ask ped7g
-  - Parsing:
-    - Adjust the mem address for the sld file
-    - store 24bit addresses for file <-> address association
-    - store 16bit addresses for labels
-  - Stepping:
-    - Get slots
-    - Calculate 24bit address: bank[slot]*page.size+PC
-    - Use this address to get source file location
-  - Code coverage:
-    - Zesarux: still 16bit, not possible to change (check)
-    - zsim: for now 16bit, could be changed to 24bit
-    - cspect: NA
-    - zxnext: NA
-  - Breakpoints
-    - Zesarux: still 16bit, could be changed to 24bit
-    - zsim: for now 16bit, could be changed to 24bit
-    - cspect: Check if it allows for 24bit breakpoints directly, otherwise an additional condition could be added.
-    - zxnext: change of DZRP, change of dezogif required, but possible.
-  - History
-    - Zesarux: still 16bit, check if slot is included in trace
-    - zsim: for now 16bit, could be changed to 24bit
-    - cspect: Lite history could also save the slot
-    - zxnext: same as cspect
-
 
