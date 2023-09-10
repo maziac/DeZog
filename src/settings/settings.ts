@@ -330,7 +330,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// If defined the path to a snapshot (or tap) file to load at startup
 	load: string;
 
-	/// If defined the path to a snapshot (or tap) file to load at startup
+	/// If defined, an array of paths to binary files together with start addresses to load at startup
 	loadObjs: Array<LoadObj>;
 
 	/// Start automatically after launch.

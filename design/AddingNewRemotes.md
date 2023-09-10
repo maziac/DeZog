@@ -14,80 +14,23 @@ In DeZog, a Remote class is derived from RemoteBase and represents the emulator 
 For the simulator zsim, both terms are synonymous, and the capital "Remote" is used.
 
 
-# Required Classes
+# Derive from DzrpQueuedRemote
 
-To add a new Remote, it must inherit from RemoteBase. RemoteBase defines an API that DeZog uses to communicate with the actual remote. It encompasses all methods that you may or must override. All "must override" methods in RemoteBase include an assertion. Other methods are left empty. If you choose to override some of the non-assertion methods, you can provide additional functionality. The debug adapter will automatically determine which functions have been overridden.
+To introduce a new Remote, it is advisable to inherit from the DzrpQueuedRemote class. The Dzrp... classes exhibit a similar behavior among derived Remotes, making maintenance and the addition of new features more straightforward. This approach eliminates the need to modify all Remotes for new features but only the base classes.
 
-Since you also need a transport layer for communicating with the remote, this layer can either be implemented as a separate class or directly within the Remote class.
-
-
-# RemoteBase API
-
-Here are examples of methods that require overriding:
-- Lifecycle
-    - init: Initializes the Remote and is called by the DebugSessioncCass when DeZog receives a launchRequest from vscode (also used by Z80UnitTestRunner).
-    - disconnect: : Disconnects the Remote, which may involve disconnecting the transport layer. Called by the DebugSessionClass when disconnectRequest is received from vscode (also by Z80UnitTestRunner).
-    - terminate: Terminates the Remote. Z80UnitTestRunner uses this to terminate a possibly running Remote instance before starting. The key difference from disconnect is that "terminated" is emitted. terminate also triggers a disconnectRequest as it sends the TerminatedEvent.
-- Data
-    - getRegisters: Requests the Transport to fetch register values from the external Remote.
-    - setRegisterValue: Communicates with the Transport to set a specific Register value.
-    - getMemoryDump: Reads raw memory.
-    - writeMemoryDump: Writes raw memory.
-    - continue, pause, stepOver, stepInto, stepOut: Debugger commands sent to the Transport.
-    - breakIfRunning: Sent to the transport to halt a running program.
-- Breakpoints
-    - setBreakpoint: Sets a specific breakpoint.
-    - removeBreakpoint: Deletes a specific breakpoint.
-
-The following methods can be overridden for additional functionality:
-- Watchpoints
-    - enableWPMEM: Enable/disable the watchpoints.
-- Assertions
-    - setASSERTIONArray: Sets the given assertion array.
-    - enableAssertionBreakpoints: Enable/disable all ASSERTIONs.
-- Logpoints
-    - setLOGPOINTArray: Sets the logpoint array.
-    - setLogpoints: Set all logpoints.
-- Program flow
-    - reverseContinue, stepBack: Special Debug Commands. Only required if the remote supports real CPU execution history like ZEsarUX.
-- Debugger
-    - dbgExec: Can be used to send remote-specific commands to the remote, bypassing DeZog.
-- Memory
-    - getMemoryBanks: Returns the memory banks. (e.g. ZX Next memory banks)
+DzrpQueuedRemote (or better DzrpRemote) establishes a well-defined set of messages sent to the external remote. In your custom implementation, your primary task is to create a transport layer (e.g. socket) for transmitting these messages to the remote device.
+For guidance, consult examples such as ZXNextRemote or CSpectRemote.
+ZXNextRemote employs a serial connection as its transport method, while CSpectRemote utilizes a socket connection to the CSpect DeZog Plugin.
+If your remote (emulator or hardware) already supports a different protocol (e.g. gdb in the case of MAME), you can override the sendDzrpCmd... functions and implement the protocol within.
+It's worth noting that using the DZRP **binary** protocol isn't mandatory; however, implementing its functionality (in the sendDzrpCmd... functions) is crucial.
+Refer to DZRP for more details.
+See [DZRP](DeZogProtocol.md#important-note).
 
 
-# Simpler
+Note: Please be aware that the ZEsarUX Remote was the initial implementation and functions somewhat differently compared to the other Remotes.
+I recommend avoiding the derivation of new Remotes from the ZEsarUX Remote or the RemoteBase. Instead, start with the DzrpQueuedRemote.
+Only consider deriving from RemoteBase if you encounter specific issues that cannot be addressed through the former approach.
 
-A simpler implementation can be achieved by deriving the Remote from DzrpRemote. DzrpRemote defines a clear set of messages sent to the external remote. In your derivative, you only need to implement a transport layer (e.g. socket) to send these messages to the remote. Refer to examples like ZXNextRemote or CSpectRemote for guidance. ZXNextRemote employs a serial connection as the transport, while CSpectRemote utilizes a socket connection to the CSpect DeZog Plugin.
-
-Note: The ZEsarUX was the first implemented Remote. It works a little different than the other remotes and I would not recommend to derive new Remotes from the ZEsarUX Remote.
-
-
-# Selecting The New Remote
-
-The RemoteFactory generates the appropriate Remote based on the 'remoteType' (e.g., 'zrcp,' 'cspect,' or 'zsim').
-
-
-# Example
-
-The following example demonstrates the implementation of the ZX Next Remote.
-
-## System Overview
-
-~~~
-┌───────────────┐              ┌─────────────────┐    ┌───┐                     ┌────────────────────┐
-│               │   Request    │                 │    │ / │                     │      ZX Next       │
-│               │─────────────▶│                 │    │ d │                     │     (ZXNextHW)     │
-│               │              │                 │    │ e │    ┌──────────┐     │                    │
-│    vscode     │              │      DeZog      │────┼─v─┼────┤USB/Serial├────▶├────┐               │
-│               │◀─────────────│  Debug Adapter  │    │ / │    │Converter │     │UART│               │
-│               │              │                 │◀───┼─t─┼────┤          ├─────├────┘               │
-│               │   Response   │                 │    │ t │    └──────────┘     │                    │
-│               │              │                 │    │ y │                     └────────────────────┘
-└───────────────┘              └─────────────────┘    └───┘
-~~~
-
-## SW Overview
 
 ~~~
                                        ┌─────────────────────────────┐
@@ -112,29 +55,59 @@ The following example demonstrates the implementation of the ZX Next Remote.
 │                    │                             └────────────────────┘                           ┌─────────┐  ┌─────────┐  ┌─────────┐
 └────────────────────┘                                        △                                     │ NexFile │  │ SnaFile │  │   Obj   │
            ▲                                                  │                                     └─────────┘  └─────────┘  └─────────┘
-           │                                                  │
-           ▼                               ┌──────────────────┴────────────────────────┬──────────────────────────────────────────┐
-   ┌───────────────┐                       │                                           │                                          │
-   │ ZesaruxSocket │                       │                                           │                                          │
-   └───────────────┘                       │                                           │                                          │
-           ▲                  ┌─────────────────────────┐                   ┌────────────────────┐                     ┌────────────────────┐
-           │                  │                         │                   │                    │                     │                    │
-           ▼                  │       ZSimRemote        │                   │  DzrpBufferRemote  │                     │     MameRemote     │
-   ┌──────────────┐           │                         │                   │                    │                     │                    │
-   │    socket    │           └─────────────────────────┘                   └────────────────────┘                     └────────────────────┘
-   └──────────────┘                      ◆                                             △                                          ▲
-                                         │                                ┌────────────┴─────────────────┐                        │
-                                  ┌─────────────┐                         │                              │                        │
-                                  │   Z80Cpu    │              ┌─────────────────────┐        ┌────────────────────┐              │
-                                  └─────────────┘              │                     │        │                    │              │
-                                         ◆                     │ ZxNextSerialRemote  │        │    CSpectRemote    │              │
-                                ┌────────┴──────┐              │                     │        │                    │              │
-                                │               │              └─────────────────────┘        └────────────────────┘              │
-                          ┌──────────┐    ┌──────────┐                    ▲                              ▲                        │
-                          │ ZxMemory │    │ ZxPorts  │                    │                              │                        │
-                          └──────────┘    └──────────┘                    ▼                              ▼                        ▼
-                                                                  ┌──────────────┐               ┌──────────────┐         ┌──────────────┐
-                                                                  │    Serial    │               │    Socket    │         │    Socket    │
-                                                                  └──────────────┘               └──────────────┘         └──────────────┘
+           │                               ┌──────────────────┴──────────────────────────┐
+           ▼                               │                                             │
+   ┌───────────────┐                       │                                             │
+   │ ZesaruxSocket │                       │                                             │
+   └───────────────┘          ┌─────────────────────────┐                     ┌────────────────────┐
+           ▲                  │                         │                     │                    │
+           │                  │       ZSimRemote        │                     │  DzrpQueuedRemote  │
+           ▼                  │                         │                     │                    │
+   ┌──────────────┐           └─────────────────────────┘                     └────────────────────┘
+   │    socket    │                      ◆                                               △
+   └──────────────┘                      │                                               │
+                                         │                                               ├─────────────────────────────────────────┐
+                                  ┌─────────────┐                                        │                                         │
+                                  │   Z80Cpu    │                                        │                                         │
+                                  └─────────────┘                             ┌────────────────────┐                    ┌────────────────────┐
+                                         ◆                                    │                    │                    │                    │
+                                ┌────────┴──────┐                             │  DzrpBufferRemote  │                    │     MameRemote     │
+                                │               │                             │                    │                    │                    │
+                          ┌──────────┐    ┌──────────┐                        └────────────────────┘                    └────────────────────┘
+                          │ ZxMemory │    │ ZxPorts  │                                   △                                         ▲
+                          └──────────┘    └──────────┘                     ┌─────────────┴────────────────┐                        │
+                                                                           │                              │                        │
+                                                                ┌─────────────────────┐        ┌────────────────────┐              │
+                                                                │                     │        │                    │              │
+                                                                │ ZxNextSerialRemote  │        │    CSpectRemote    │              │
+                                                                │                     │        │                    │              │
+                                                                └─────────────────────┘        └────────────────────┘              │
+                                                                           ▲                              ▲                        │
+                                                                           │                              │                        │
+                                                                           ▼                              ▼                        ▼
+                                                                   ┌──────────────┐               ┌──────────────┐         ┌──────────────┐
+                                                                   │    Serial    │               │    Socket    │         │    Socket    │
+                                                                   └──────────────┘               └──────────────┘         └──────────────┘
+~~~
+
+
+# Selecting The New Remote
+
+The RemoteFactory generates the appropriate Remote based on the 'remoteType' (e.g., 'zrcp,' 'cspect,' or 'zsim').
+
+
+# Example ZX Next Remote System Overview
+
+~~~
+┌───────────────┐              ┌─────────────────┐    ┌───┐                     ┌────────────────────┐
+│               │   Request    │                 │    │ / │                     │      ZX Next       │
+│               │─────────────▶│                 │    │ d │                     │     (ZXNextHW)     │
+│               │              │                 │    │ e │    ┌──────────┐     │                    │
+│    vscode     │              │      DeZog      │────┼─v─┼────┤USB/Serial├────▶├────┐               │
+│               │◀─────────────│  Debug Adapter  │    │ / │    │Converter │     │UART│               │
+│               │              │                 │◀───┼─t─┼────┤          ├─────├────┘               │
+│               │   Response   │                 │    │ t │    └──────────┘     │                    │
+│               │              │                 │    │ y │                     └────────────────────┘
+└───────────────┘              └─────────────────┘    └───┘
 ~~~
 
