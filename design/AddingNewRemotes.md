@@ -58,9 +58,9 @@ The following methods can be overridden for additional functionality:
 
 # Simpler
 
-A simpler implementation can be achieved by deriving the Remote from DzrpRemote. DzrpRemote defines a clear set of messages sent to the external remote. In your derivative, you only need to implement a transport layer (e.g., socket) to send these messages to the remote. Refer to examples like ZXNextRemote or CSpectRemote for guidance. ZXNextRemote employs a serial connection as the transport, while CSpectRemote utilizes a socket connection to the CSpect DeZog Plugin.
+A simpler implementation can be achieved by deriving the Remote from DzrpRemote. DzrpRemote defines a clear set of messages sent to the external remote. In your derivative, you only need to implement a transport layer (e.g. socket) to send these messages to the remote. Refer to examples like ZXNextRemote or CSpectRemote for guidance. ZXNextRemote employs a serial connection as the transport, while CSpectRemote utilizes a socket connection to the CSpect DeZog Plugin.
 
-Note: The ZEsarUX was the first implemented Remote. It works a little different that the other remotes and I would not recommend to derive new Remotes from the ZEsarUX Remote.
+Note: The ZEsarUX was the first implemented Remote. It works a little different than the other remotes and I would not recommend to derive new Remotes from the ZEsarUX Remote.
 
 
 # Selecting The New Remote

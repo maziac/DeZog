@@ -662,7 +662,7 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Returns the 'letiable' formatted register value.
+	 * Returns the formatted register value.
 	 * @param reg The name of the register, e.g. "A" or "BC"
 	 * @returns The formatted string.
 	 */
