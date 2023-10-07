@@ -64,9 +64,6 @@ n = not supported
 
 # MAME
 
-(not implemented)
-
-
 ## gdbstub
 
 The Remote communicates with MAME via the gdb remote protocol via a socket.

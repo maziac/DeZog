@@ -37,9 +37,7 @@ interface SlotName {
  * It is a base class to allow memory paging etc.
  * The simulated memory always works with slots although they might not be visible
  * to the outside.
- * I.e. the ZX48K is built of 4 slots per 16K. 1rst is ROM the other 3 are RAM.
- * To the outside is does not show any of these slots.
- * But for configuration (what is ROM/RAM) it is required.
+ * The bank/slot association is taken from the MemoryModel.
  */
 export class SimulatedMemory implements Serializable {
 	// Function used to add an error to the diagnostics.

@@ -73,12 +73,10 @@ Note: Long addresses are used consistently in DeZog 3.x, even for non-banked sys
 
 sjsasmplus has an option to create SLD (Source Level Debug) information.
 For each label it not only codes the used address but also the bank (page) it is located.
-The address is 64k, i.e. it not only codes the address inside the bank but also the used slot.
+The address is 64k, i.e. for the ZXNext it not only codes the address inside the bank but also the used slot.
 In other words the upper 3 bits (bit 13, 14, 15) can be interpreted as slot address.
 
-If working with long addresses the slot information is not needed.
-But if some of the involved entities (e.g. emulator) would be not able to handle long addresses the full 64k address information could be useful though.
-E.g. In ZEsarUX for working with the breakpoints it is necessary to know the slot as well.
+If working with long addresses, the slot information is not needed. However, if some of the involved entities (e.g., emulator) cannot handle long addresses, the full 64k address information could be useful. For example, in ZEsarUX, for working with breakpoints, it is necessary to know the slot as well.
 
 
 # Remotes
@@ -128,11 +126,9 @@ CSpect offers ```SetPhysicalBreakpoint```which should allow for breakpoints even
 
 # Label Parser / Target Combinations
 
-The label parser already uses a memory model (bank schema).
-When this is loaded into an emulator the emulator might have the same or an other one.
-E.g. a ZX48K program could be loaded into a ZXNext.
+The label parser already uses a memory model (bank schema). When this is loaded into an emulator, the emulator might have the same or another one. For example, a ZX48K program could be loaded into a ZXNext.
 
-Therefore the label addresses are converted into the target/emulator memory model/banking scheme.
+Therefore, the label addresses are converted into the target/emulator memory model/banking scheme.
 
 ##  Message Sequence Charts
 
@@ -258,15 +254,9 @@ remote -> lbls: Get label for\nlong address
 remote <-- lbls
 ~~~
 
-Note: The main order has changed. In Dezog 2.7 the labels (list) files were read and afterwards the emulator has been connected.
-The banking was required to be known before connecting.
-But in fact this is not always the case.
-E.g. a ZX128K could have been used for the sld (list) file but connected is only a ZX48K.
-What makes it even more complicated: each of the list files could have a different bank model in mind.
+Note: The main order has changed. In DeZog 2.7, the label files were read first, and then the emulator was connected. The banking information was required to be known before connecting. However, this is not always the case. For example, a ZX128K list file could be used, but only a ZX48K is connected. What makes it even more complicated is that each of the list files could have a different bank model in mind.
 
-Now the memory model is read from the emulator prior to reading the labels.
-While reading the labels it can be directly checked if the model allows the banking used in the sld/list file.
-If there are compatible memory models, e.g. the list file is for a ZX48K (no banks) and this is used in a ZX128K memory model, there could also be a conversion from the list file addresses to the memory model addresses.
+Now the memory model is read from the emulator prior to reading the labels. While reading the labels, it can be directly checked if the model allows the banking used in the SLD/list file. If there are compatible memory models, e.g., the list file is for a ZX48K (no banks), and this is used in a ZX128K memory model, there will also be a conversion from the list file addresses to the memory model addresses.
 
 The 'slots' returned by the emulator also need conversion.
 E.g. the format is different as in zesarux. But also the numbering could be different.
@@ -283,9 +273,10 @@ Some combinations might be compatible.
 E.g. a ZX128K list/sld file can be converted into long addresses for a ZXNext memory model.
 Or a ZXNext sld file that uses only certain banks could be converted into a ZX128K memory model.
 
-The z80asm and z88dk list files (which are 64k only) would convert the 64k addresses to (banked) long addresses.
+The parsers for the z80asm and z88dk list files (which are 64k only) would convert the 64k addresses to (banked) long addresses.
 This would also distinguish them from other EQU which reside only in the 64k area.
-The reverse engineering list file is a mix. It contains 64k addresses (for non bank switched slots) and long (banked) addresses.
+
+The parser for the reverse engineering list file is a mix. It contains 64k addresses (for non bank switched slots) and long (banked) addresses.
 The long addresses are checked if they are the same as the memory model. (They cannot be converted as the new banking number scheme would confuse the user.)
 The 64k addresses are converted to long (banked) addresses according the memory model.
 
@@ -315,14 +306,9 @@ Combination
 sjasmplus uses long addresses.
 Memory Model uses 2 (non-switched) banks.
 The simulated memory uses only 64k since no bank-switched banks are found.
-Is a problem:
-The Memory Model would have no knowledge of banks and could not convert to long addresses.
-3 possible solutions:
-- non-banked slots get a 'special' 'slots' array which contains the non-bank-switched banks.
-These banks would not change so they can be local to the simulated memory.
-- The simulated memory reports 64k address only. On converting long addresses to labels the fallback to 64k addresses is used.
-- Labels.convertLabelsTo() is called to convert long addresses to 64k addresses.
-
+This would be a problem: The Memory Model would have no knowledge of banks and could not convert to long addresses.
+Therefore, the memory areas which cannot be switched are treated similar to the ones which can be paged to several different banks.
+I.e. we use a memory area (slot) which can contain only one bank and use this to generate long addresses.
 
 ### sjasmplus, ZX48K, zesarux
 
@@ -333,23 +319,25 @@ Combination
 
 sjasmplus uses long addresses.
 Memory Model uses 2 (non-switched) banks.
-zesarux uses 64k addresses.
-
-Is maybe no problem since Labels.convertLabelsTo() is called to convert long addresses to 64k addresses.
-
+zesarux uses 64k addresses. But by reading the paging information from zesarux we can generate long addresses.
 
 
 # Classes
 
 ~~~
-                                          ┌─────────────────────┐                                                          ┌ ─ ─ ─ ─ ─ ─ ┐
-                                          │     MemoryModel     │                                                           Serializable
-                                          └─────────────────────┘                                                          └ ─ ─ ─ ─ ─ ─ ┘
-                                                     ▲                                                                            ▲
-           ┌──────────────────────────┬──────────────┴──────────────┬─────────────────────────────┐                               │
-           │                          │                             │                             │                    ┌─────────────────────┐
-┌─────────────────────┐    ┌─────────────────────┐     ┌─────────────────────────┐    ┌───────────────────────┐        │   SimulatedMemory   │
-│ MemoryModelUnknown  │    │  MemoryModelAllRam  │     │MemoryModelZxSpectrumBase│    │MemoryModelColecoVision│        └─────────────────────┘
+                                                                                                                        ┌ ─ ─ ─ ─ ─ ─ ┐
+                                                                                                                         Serializable
+                                                                                                                        └ ─ ─ ─ ─ ─ ─ ┘
+                                                                                                                               ▲
+                                                                                                                               │
+                                          ┌─────────────────────┐                                                   ┌─────────────────────┐
+                                          │     MemoryModel     │──────────────────────────────────────────────────■│   SimulatedMemory   │
+                                          └─────────────────────┘                                                   └─────────────────────┘
+                                                     ▲
+           ┌──────────────────────────┬──────────────┴──────────────┬─────────────────────────────┐
+           │                          │                             │                             │
+┌─────────────────────┐    ┌─────────────────────┐     ┌─────────────────────────┐    ┌───────────────────────┐
+│ MemoryModelUnknown  │    │  MemoryModelAllRam  │     │MemoryModelZxSpectrumBase│    │MemoryModelColecoVision│
 └─────────────────────┘    └─────────────────────┘     └─────────────────────────┘    └───────────────────────┘
                                                                     ▲
                                                                     │

@@ -1,13 +1,12 @@
 # Adding a New Assembler
 
-This file is about adding a new assembler list file parsing.
-At the moment of writing 3 different Z80 assemblers are supported: sjasmplus, z80asm and z88dk.
+This document outlines the process of integrating a new assembler list file parser into the system. Currently, DeZog supports three different Z80 assemblers: sjasmplus, z80asm, and z88dk, along with an additional parser for reverse engineering disassembly.
 
-This dcument describes what need to be done to add an parser for another assembler.
+This document describes the steps required to add a parser for another assembler.
 
 # Background
 
-DeZog uses the assemblers list file as main source of information about the debugged program.
+DeZog uses the assemblers list file (in case of sjasmplus, the SLD file) as main source of information about the debugged program.
 
 The main extracted information is:
 - source code line to address association
@@ -24,14 +23,14 @@ Apart from this it also looks for instrumentation in the comments to extract
 
 To make it even more complicated there exist two modes when parsing a list file:
 1. ListFile-Mode: The list file is the source. I.e. when stepping through a program the list file itself is shown and you are stepping through the list file no matter from what sources the list file was generated
-2. Sources-Mode: The list file is used to find the association between the source files (your assembler files) with the step addresses. When you step through the code you step through your source files.
+2. Sources-Mode: In this mode, the list file is used to associate source files (assembler files) with step addresses. When you step through the code, you step through your source (asm) files.
 
-The mode is determined by the "srcDirs" launch.json parameter. This is an array which contains the directories where source file can be located. If the array has length 0 (is empty) ListFile-Mode is assumed. If directories are given Sources-Mode is assumed.
+The mode is determined by the "srcDirs" launch.json parameter. This is an array which contains the directories where source files (asm) can be located. If the array has length 0 (is empty) ListFile-Mode is assumed. If directories are given Sources-Mode is assumed.
 
 
 # Process
 
-The way this information is extracted is a 2 step process:
+The way the information is extracted is a 2 step process:
 1. The list file is analyzed.
 	- Labels (normal and EQU) are extracted
 	- An array is created which holds for each address:
@@ -64,15 +63,15 @@ In particular here are some problem areas one need to take care of:
 Is done in ```parseLabelAndAddress(line: string)```.
 It is called subsequently for each line of the list file.
 
-You need to extract the label and address. I.e. all labels at the start of the line (normally ended by a ":") and all EQUs and their value.
-Note: You may omit EQUs if they are too complicated to parse, e.g. if these contain are calculation of other labels.
+You need to extract the label and address. I.e. all labels at the start of the line (normally ended by a ":" ) and all EQUs and their value.
+Note: You may omit EQUs if they are too complicated to parse, e.g. if these contain calculations with other labels.
 
 Then call ```addLabelForNumber(value: number, label: string)``` to associate the label (or EQU) name with the value (address or number).
 If your assembler can differentiate local and global labels you should also add the LabelType.
 
 You can have a look at sjasmplus to see how the different types are used.
 Default is the GLOBAL type.
-Then if your assembler supports modules you would use NORMAL for your labels and LOCAL if it is a local label (e.g. a label started with a dot '.').
+Then if your assembler supports modules you would use NORMAL for your labels and LOCAL if it is a local label (e.g. a label starting with a dot '.').
 
 If your assembler supports modules than you also need to call ```moduleStart(name: string)``` when the module starts and ```moduleEnd()``` when it ends.
 This is required to create correct label names, i.e. the module name is automatically added to the label name that you pass in ```addLabelForNumber```.
@@ -139,7 +138,7 @@ longAddress == ((bank+1) << 16) + address
 I.e. an address < 0x10000 is always an address without banking information.
 Everything >= 0x10000 contains banking information.
 
-So if your assembler gives you the information what bank an address is you should use it.
+So if your assembler gives you the information what bank an address is, you should use it.
 Use the 'createLongAddress' to create a long address from bank and address.
 
 
@@ -149,9 +148,9 @@ Implementing the new label parser class is not enough to take the new assembler 
 It is also necessary to adjust some code to make sure that the new classes are used.
 And you might also use special parameters for your assembler, so you need to provide those, too.
 
-setting.ts:
+settings.ts:
 - Add a new interface for your assembler e.g. have a look at SjasmplusConfig, Z80asmConfig or Z88dkConfig.
-The interface need to be derived from AsmConfigBase which provide the basic information available to all assemblers.
+The interface need to be derived from AsmConfigBase which provides the basic information available to all assemblers.
 - Add the new interface to SettingsParameters. Just beneath the other assemblers.
 - In SettingsParameters.Init make sure that all of your parameters are initialized with some default value. I.e. everything that the user left undefined should get a reasonable default here.
 - Update the ```GetAllAssemblerListFiles```function with the new assembler.
@@ -160,7 +159,7 @@ The interface need to be derived from AsmConfigBase which provide the basic info
 
 
 package.json:
-All of your assembler parameters (declared in setting.ts) should also get a description in the package.json.
+All of your assembler parameters (declared in settings.ts) should also get a description in the package.json.
 You also need to define the base parameters from AsmConfigBase here.
 
 
@@ -192,11 +191,11 @@ Create unit tests that:
 - checks occurrence of at least one LOPGPOINT
 
 
-Although only a list file is required for testing it is best to store the whole assembler project so that it easier to re-create the list file e.g. if you want to extend the test.
+Although only a list file is required for testing it is best to store the whole assembler project so that it is easier to re-create the list file in case you want to extend the test cases.
 The different assembler projects are store here:
 .../tests/data/labels/projects
 Your project will generate a list file which is then referenced in your test.
-The project and the list file will stored to git.
+The project and the list file will be stored to git.
 
 The actual tests for each assembler are found here:
 .../tests/labelsXXX.tests.ts
