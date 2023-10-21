@@ -19,7 +19,7 @@ dezog -> program: Command
 dezog <- program: Response
 ~~~
 
-In the other direction (remote program to DeZog) there are notifcations.
+In the other direction (remote program to DeZog) there are notifications.
 Notifications are not acknowledged, i.e. there is no response on a notification.
 
 There is only one notification at the moment.
