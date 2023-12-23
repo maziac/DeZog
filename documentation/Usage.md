@@ -448,6 +448,11 @@ Here are the parameters for "z88dkv2":
 }]
 ~~~
 
+Note:
+With z88dk DeZog supports only the assembler, not the c-compiler.
+I.e. it is not possible to step through or set breakpoints in c-files.
+The closest you can get is to use a .lis file created from the c-file and use the .lis file for stepping or setting a breakpoint.
+
 
 **Reverse Engineering configuration**
 
@@ -493,12 +498,12 @@ I.e. the disassembly at the current PC is always correct while an older disassem
 
 The following table lists the differences of the different assemblers in respect to the labels:
 
-| Feature | Savannah/z80asm | z88dk/z80asm | sjasmplus |
-|:--|:--|:--|:--|
-| Local lables | no | no | yes |
-| Needs a ':' | yes | yes | no
-| Dots (.) are allowed (also at start of label) | no | no | yes |
-| Misc | | | @ for global labels, numbers for labels |
+| Feature                                       | Savannah/z80asm | z88dk/z80asm | sjasmplus                               |
+| :-------------------------------------------- | :-------------- | :----------- | :-------------------------------------- |
+| Local lables                                  | no              | no           | yes                                     |
+| Needs a ':'                                   | yes             | yes          | no                                      |
+| Dots (.) are allowed (also at start of label) | no              | no           | yes                                     |
+| Misc                                          |                 |              | @ for global labels, numbers for labels |
 
 sjasmplus:
 
@@ -570,26 +575,26 @@ Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbs
 The different Remotes have different capabilities in conjunction with DeZog.
 The following table gives an overview.
 
-|                     | Internal Z80 Simulator | ZEsarUX | ZX Next  | CSpect   | MAME         |
-|:------------------------|:-------------------|:--------|:---------|:---------|:-------------|
-| State                   | stable             | stable  | stable   | stable   | stable |
-| Breakpoints             | yes                | yes     | yes      | yes      | yes          |
-| Break reason output     | yes                | no      | yes      | yes      | yes          |
-| Conditional Breakpoints | yes                | yes     | yes 6)   | yes 6)   | yes 6)       |
-| ASSERTION support       | yes                | yes     | yes 6)   | yes 6)   | yes 6)       |
-| WPMEM (Watchpoints) support | yes            | yes 2)  | no       | no       | yes          |
-| LOGPOINT support        | yes                | no      | yes 6)   | yes 6)   | yes 6)       |
-| Long addresses/breakpoints | yes             | yes     | yes      | yes      | yes          |
-| Extended callstack      | no                 | yes     | no       | no       | no           |
-| Code coverage           | yes                | yes 1)  | no       | no       | no           |
-| Reverse debugging       | true               | true    | lite     | lite     | lite         |
-| ZX Next capable         | no                 | yes     | yes      | yes      | no           |
-| Save/restore the state  | yes                | yes     | no       | no       | no           |
-| Output of T-States      | yes                | yes     | no       | no       | no           |
-| Display of sprite attributes/patterns | yes  | yes     | no       | yes      | no           |
-| Load .sna/.nex/.obj file through DeZog | yes | yes     | yes      | yes      | yes 7)       |
-| Load .tap file through DeZog | no            | yes     | no       | no       | no           |
-| Run Z80 Unit Tests      | yes                | yes     | no 4)    | yes 3)   | yes 5)       |
+|                                        | Internal Z80 Simulator | ZEsarUX | ZX Next | CSpect | MAME   |
+| :------------------------------------- | :--------------------- | :------ | :------ | :----- | :----- |
+| State                                  | stable                 | stable  | stable  | stable | stable |
+| Breakpoints                            | yes                    | yes     | yes     | yes    | yes    |
+| Break reason output                    | yes                    | no      | yes     | yes    | yes    |
+| Conditional Breakpoints                | yes                    | yes     | yes 6)  | yes 6) | yes 6) |
+| ASSERTION support                      | yes                    | yes     | yes 6)  | yes 6) | yes 6) |
+| WPMEM (Watchpoints) support            | yes                    | yes 2)  | no      | no     | yes    |
+| LOGPOINT support                       | yes                    | no      | yes 6)  | yes 6) | yes 6) |
+| Long addresses/breakpoints             | yes                    | yes     | yes     | yes    | yes    |
+| Extended callstack                     | no                     | yes     | no      | no     | no     |
+| Code coverage                          | yes                    | yes 1)  | no      | no     | no     |
+| Reverse debugging                      | true                   | true    | lite    | lite   | lite   |
+| ZX Next capable                        | no                     | yes     | yes     | yes    | no     |
+| Save/restore the state                 | yes                    | yes     | no      | no     | no     |
+| Output of T-States                     | yes                    | yes     | no      | no     | no     |
+| Display of sprite attributes/patterns  | yes                    | yes     | no      | yes    | no     |
+| Load .sna/.nex/.obj file through DeZog | yes                    | yes     | yes     | yes    | yes 7) |
+| Load .tap file through DeZog           | no                     | yes     | no      | no     | no     |
+| Run Z80 Unit Tests                     | yes                    | yes     | no 4)   | yes 3) | yes 5) |
 
 Notes:
 - State:
@@ -1122,11 +1127,11 @@ You need to attach a female D-SUB 9 connector to your serial cable:
 ![](images/dsub9.jpg)
 
 You need to connect:
-| Serial cable | connected to | D-Sub 9 |
-|:------------:|:------------:|:-------:|
-| GND          | <->          | 8 (Next GND) |
-| RX           | <->          | 7 (Next Tx) |
-| TX           | <->          | 9 (Next Rx) |
+| Serial cable | connected to |   D-Sub 9    |
+| :----------: | :----------: | :----------: |
+|     GND      |     <->      | 8 (Next GND) |
+|      RX      |     <->      | 7 (Next Tx)  |
+|      TX      |     <->      | 9 (Next Rx)  |
 
 Note: You connect the serial cable's Tx to the Next's Rx and the Rx with the Tx.
 
@@ -1137,11 +1142,11 @@ Alternatively, if you need to use both joysticks while debugging you directly co
 ![](images/uart_cn9.jpg)
 
 You need to connect:
-| Serial cable | connected to | CN9        |
-|:------------:|:------------:|:----------:|
-| GND          | <->          | 4 (GND)    |
-| RX           | <->          | 1 (ESP RX) |
-| TX           | <->          | 5 (ESP_TX) |
+| Serial cable | connected to |    CN9     |
+| :----------: | :----------: | :--------: |
+|     GND      |     <->      |  4 (GND)   |
+|      RX      |     <->      | 1 (ESP RX) |
+|      TX      |     <->      | 5 (ESP_TX) |
 
 You can solder it directly or use the socket that is already available on the board:
 ![](images/uart_socket.jpg)
