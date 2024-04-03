@@ -5,9 +5,9 @@ Reverse Debugging relies on the instruction history. I.e. the executed instructi
 
 There are 2 basic types of instruction history:
 - the step (or lite) history (base class StepHistory)
-- and the cpu (or true) history (vase class CpuHistory)
+- and the cpu (or true) history (base class CpuHistory)
 
-The step history works with all kind of remotes. It just records the the instructions where the user stepped or breaked.
+The step history works with all kind of remotes. It just records the instructions where the user stepped or breaked.
 I.e. it basically records your actions in the debugger and you can replay the locations backwards.
 It is not a true instruction history as it misses instructions. E.g. if you press 'continue' and then break it records only the start an the end point, not all the instructions in between.
 Although this is less powerful than a true cpu history it has the big advantage that it works without support from the remote.
@@ -53,6 +53,7 @@ note over CpuHistory: Does not store\nanything
 DebugAdapter -> Remote: Step forward
 note over Remote: Store registers and \ninstruction + (SP) for all\nexecuted instructions
 ...
+-> DebugAdapter: Step back
 DebugAdapter -> CpuHistory: Step back
 CpuHistory -> Remote: Get History Entry
 note over Remote: Recall registers\n+ instruction + (SP)
@@ -69,7 +70,7 @@ Paradigm:
 
 # Reverse Debugging with ZEsarUX
 
-ZEsarUx supports a true cpu-history.
+ZEsarUX supports a true cpu-history.
 This can record for each executed opcode
 - the address
 - the opcode
@@ -283,3 +284,54 @@ If a breakpoint address is reached "execution" is stopped.
 - scopesRequest: No special behavior.
 - stackTraceRequest: The stack trace request does not request the stack from Remote but uses the internal reverse debug stack instead.
 - variablesRequest: No special behavior. The only special variables that change are the registers. These are set by theStep/CpuHistory in the Z80Registers.
+
+
+# State Restoration
+
+At the moment (DeZog 3.3) no state restoration is supported.
+The remote is not really involved.
+Memory, port or sprites states do not change when going back in history.
+Also the register state does not really change.
+The only thing that changes are the register (and memory slot) values **displayed** to the user.
+
+For spot history on every breakpoint the complete machine state would have to be stored/restored.
+I.e. all memory pages (not only 64k).
+This is probably too much either memory or performance-wise.
+
+For true cpu-history for each step the diff (mainly the memory diff) could be taken.
+True history is only supported bei zsim and ZEsarUX.
+ZEsarUX 11 will get support to restore the memory for each history step. But probably without DMA support.
+DMA support is a problem. Without for each cpu cycle a max of 2 bytes would be changed per instruction.
+With DMA this could be much more.
+ZEsarUX will not support history with DMA (at least not in the near future).
+Zsim does not support DMA at all.
+
+Here are some thoughts on state preservation/restoring.
+- port states:
+  - zesarux: not supported
+  - zsim:
+    - could be done
+    - E.g. keypresses and audio out would be visualized during reverse debugging
+- memory:
+  - zesarux: support in v11
+  - zsim:
+    - could be done
+    - for each cpu step the memory before and after is saved
+    - a max of 2 bytes
+    - both directions are stored to easily move forwards and backwards
+- sprites:
+  - zesarux: not supported
+  - zsim: sprites are not supported
+
+
+## Open
+
+Currently (v3.3) the true cpu history is handled mainly in DeZog.
+I.e. DeZog only retrieves the history from the Remote.
+Display of register history values is solely done inside DeZog.
+
+With ZEsarUX v11 it will support a 'cpu-history restore' command that will restore the registers and the memory in the Remote.
+
+If DeZog would use this command the responsibilities would be shared between both.
+With this command it would be possible to move the responsibility completely to ZEsarUX.
+The drawback is that the interface would be changed and so also the internal zsim would have to be changed accordingly.
