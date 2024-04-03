@@ -986,7 +986,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Furthermore "b@(...)" and "w@(...)" are converted to "peek(...)" and "peekw(...)".
 	 * And "!(...)" is converted to "not(...)" (only with brackets).
 	 * Note: The original ZEsarUX operators are not forbidden. E.g. "A=1" is allowed as well as "A==1".
-	 * Labels: ZESarUX does not know the labels only addresses. Therefore all
+	 * Labels: ZEsarUX does not know the labels only addresses. Therefore all
 	 * labels need to be evaluated first and converted to addresses.
 	 * @param condition The general condition format, e.g. "A < 10 && HL != 0".
 	 * Even complex parenthesis forms are supported, e.g. "(A & 0x7F) == 127".
@@ -1084,10 +1084,13 @@ export class ZesaruxRemote extends RemoteBase {
 					// ZXNext
 					const slot = Z80Registers.getSlotFromAddress(address);
 					// Treat ROM banks special for ZEsarUX
-					if (bank == 0xFE)
-						bank = 0x8000;
-					else if (bank == 0xFF)
-						bank = 0x8001;
+					if (bank >= 0xFC && bank <= 0xFF) {	// 252 - 255
+						// 0xFC = 252 -> 8000h
+						// 0xFD = 253 -> 8001h
+						// 0xFE = 254 -> 8002h
+						// 0xFF = 255 -> 8003h
+						bank = 0x8000 + (bank & 0x3)
+					}
 					condition += ' and SEG' + slot + '=' + bank;
 				}
 			}

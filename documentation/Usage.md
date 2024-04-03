@@ -562,7 +562,7 @@ They are distinguished via the "remoteType":
 ### What is a 'Remote'?
 
 A Remote is normally an external emulator that is running independently of DeZog.
-ZesarUX e.g is such a Remote.
+ZEsarUX e.g is such a Remote.
 It is connected via some interface (for ZEsarUX this is a socket) and a protocol (for ZEsarUX ZRCP - ZEsarUX Remote Communication Protocol).
 
 But a Remote could also be real HW. E.g. real ZX Next hardware.
@@ -1365,7 +1365,7 @@ Registers and the callstack are updated accordingly.
 
 But please note: The history stores only the register values and stack contents. I.e. the memory or other HW state is not stored.
 So whenever a memory location is changed from the program code in reverse debugging this will not be reflected in e.g. the memory view.
-You can only rely on the register values.
+You can only rely on the register values, though.
 
 
 #### History Spot
