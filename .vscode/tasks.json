@@ -106,7 +106,7 @@
 				//"48k",
 				//"128k",
 				"--tbblue-fast-boot-mode", // Boots tbblue directly to a 48 rom but with all the Next features enabled
-				"--snap-no-change-machine", // Do not change machine when loading sna or z80 snapshots. Just load it on memory
+				//"--snap-no-change-machine", // Do not change machine when loading sna or z80 snapshots. Just load it on memory
 				"--enable-esxdos-handler", // Enable ESXDOS traps handler
 				"--enable-remoteprotocol", // Enable ZRCP remote protocol
 				"--disable-autoframeskip", // Dissable auto skip
@@ -116,7 +116,7 @@
 			"options": {
 				"cwd": "${config:zesarux_dir}",
 			},
-			"detail": "zesarux --noconfigfile --machine tbblue --tbblue-fast-boot-mode --snap-no-change-machine --enable-esxdos-handler --enable-remoteprotocol --disable-autoframeskip --esxdos-root-dir .",
+			"detail": "zesarux --noconfigfile --machine tbblue --tbblue-fast-boot-mode --enable-esxdos-handler --enable-remoteprotocol --disable-autoframeskip --esxdos-root-dir .",
 			"problemMatcher": []
 		},
 
