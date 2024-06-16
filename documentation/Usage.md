@@ -1052,7 +1052,7 @@ Press F1 and then enter "DeZog: Get list of all available serial ports".
 With the buttons you can directly copy the interface name to the clipboard.
 
 If you encounter problems with the connection you can try to increase the timeout value.
-The value is given in 2 seconds and the default is 5.
+The value is given in seconds and the default is 5.
 E.g.
 ~~~json
     "zxnext": {
