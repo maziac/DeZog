@@ -1,5 +1,8 @@
 # Changelog
 # 3.3.2
+- Added palette command "dezog.serialport.test" to test the serial connection.
+
+# 3.3.2
 - Fixed version numbering parsing for zesarux.
 - Removed human.join package.
 

@@ -78,8 +78,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * Override to create another decoder.
+	/** Override to create another decoder.
 	 */
 	protected createZ80RegistersDecoder(): Z80RegistersStandardDecoder {
 		return new Z80RegistersZxNextDecoder();
@@ -220,8 +219,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * Called when data has been received.
+	/** Called when data has been received.
 	 * If not configured for UART the ZX Next emits zeros through the serial cable.
 	 * Therefore we wait until the first indication of a message is received.
 	 * I.e. all received messages start with 0xA5.
@@ -276,7 +274,8 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 			}
 			catch (e) {
 				outerError = e;
-				reject(e);
+				const msg = (e?.msg) ? e.msg : "Serial port write error!";
+				reject(new Error(msg));
 			}
 		});
 	}

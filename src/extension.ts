@@ -13,6 +13,7 @@ import {Utility} from './misc/utility';
 import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
+import {ZxNextSerialLoopback} from './remotes/dzrpbuffer/zxnextserialloopback';
 
 
 
@@ -74,6 +75,45 @@ export function activate(context: vscode.ExtensionContext) {
 		else {
 			await vscode.window.showInformationMessage('No serial port found!');
 		}
+	}));
+
+
+	// Command to test communication on a serial port
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.serialport.test', async () => {
+		// Test first if in debug mode (= not allowed)
+		const session = DebugSessionClass.singleton();
+		if (session.running) {
+			await vscode.window.showInformationMessage('Cannot test the serial interface.\nPlease close the debug session first!');
+			return;
+		}
+
+		// Create list of ports for the user to choose from
+		const list = await SerialPort.list();	// PortInfo[]
+		const options = list.map(portInfo => {
+			return {
+				label: portInfo.path,
+				description: portInfo.manufacturer ?? "",
+				value: portInfo.path
+			};
+		});
+
+		// Show the quick pick to the user
+		const selectedPortPath = await vscode.window.showQuickPick(options, {placeHolder: 'Select a port'});
+		// Check if an option was selected
+		if (!selectedPortPath)
+			return;
+		//console.log('Selected option:', selectedPortPath);
+
+		// Start loopback test
+		const zxnextLoopback = new ZxNextSerialLoopback();
+		zxnextLoopback.on('info', async msg => {
+			await vscode.window.showInformationMessage(msg);
+		});
+		zxnextLoopback.on('error', async msg => {
+			await vscode.window.showErrorMessage(msg);
+		});
+		await zxnextLoopback.runLoopbackTest(selectedPortPath.value, 1000, 10);
+		// zxnextLoopback will close itself when the loopback test is finished.
 	}));
 
 
@@ -354,7 +394,7 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 						// Because of this we will stop here simply (reject)
 					}
 					// Stop here.
-					reject();
+					reject(new Error("Another session was already running."));
 					return;
 				}
 

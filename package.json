@@ -204,6 +204,11 @@
 				"category": "DeZog"
 			},
 			{
+				"command": "dezog.serialport.test",
+				"title": "Test communication through a serial port",
+				"category": "DeZog"
+			},
+			{
 				"command": "dezog.reload",
 				"title": "Reload the list file(s).",
 				"category": "DeZog"
@@ -290,6 +295,9 @@
 				},
 				{
 					"command": "dezog.serialport.list"
+				},
+				{
+					"command": "dezog.serialport.test"
 				},
 				{
 					"command": "dezog.reload"

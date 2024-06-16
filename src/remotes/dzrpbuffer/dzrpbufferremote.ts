@@ -141,8 +141,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Called when data has been received.
+	/** Called when data has been received.
 	 */
 	protected dataReceived(data: Buffer) {
 		//LogSocket.log('dataReceived, count='+data.length);
@@ -811,6 +810,15 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 			buffer[i++] = elem.value;
 		}
 		await this.sendDzrpCmd(DZRP.CMD_RESTORE_MEM, buffer);
+	}
+
+	/** Sends the command to loopback data.
+	 * Only used for testing.
+	 * @param elems The addresses + memory content.
+	 */
+	protected async sendDzrpCmdLoopback(data: Buffer): Promise<Buffer> {
+		const recData = await this.sendDzrpCmd(DZRP.CMD_LOOPBACK, data);
+		return recData;
 	}
 
 
