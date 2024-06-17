@@ -1064,20 +1064,27 @@ E.g.
 #### Setup
 
 Prerequisites:
-1. Install core 03.02.00 (or core 03.01.10) on the ZX Next. (03.01.05 is not supported by DeZog anymore.)
-2. You need an USB/Serial converter and a D-Sub female connector (9 pins). See next chapter on HW.
+- Install core 03.02.00 (or core 03.01.10) on the ZX Next. (03.01.05 is not supported by DeZog anymore.)
+- You need an USB/Serial converter and a D-Sub female connector (9 pins). See next chapter on HW.
+
+Test the serial connection:
+1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif] project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/tree/main/releases) section. You need to download the ```enNextMf.rom```, at least version 2.2.1. This supports Core 03.01.10 and Core 03.02.00. Core 03.01.05 is not supported anymore.
+(Don't forget to make a backup of the original ```enNextMf.rom```.)
+2. Connect your PC/Mac with the ZX Next via a serial cable. On the ZX Next use the joystick ports for the UART connection (preferable Joy 2).
+3. On the ZX Next press the yellow NMI button once to initialize the debugger on the ZX Next.
+![](images/dezog_zxnext_main.jpg)
+(If you later need to re-initialize press "Symbol Shift", or CTRL on a PS2 keyboard, and while being pressed hit the yellow NMI button.)
+4. In vscode open the palette and select "DeZog: Test communication through a serial port". Then select the right COM port.
+6. Now a loopback test is started: vscode sends packets to the ZX Next and the ZX Next returns them to vscode. The test lasts a few seconds. On success you get an info message like this:
+![](images/dezog_loopback_result.jpg)
+Otherwise a failure note.
 
 
 Setup a debug session:
-1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif] project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/tree/main/releases) section. You need to download the ```enNextMf.rom```, at least version 2.2.1. This supports Core 03.01.10 and Core 03.02.00. Core 03.01.05 is not supported anymore.
-(Don't forget to make a backup of the original ```enNextMf.rom```.)
-2. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program]).
-3. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferable Joy 2).
-4. On the ZX Next press the yellow NMI button once to initialize the debugger on the ZX Next.
-![](images/dezog_zxnext_main.jpg)
-(If you later need to re-initialize press "Symbol Shift", or CTRL on a PS2 keyboard, and while being pressed hit the yellow NMI button.)
-5. In vscode start the debug session.
-6. Step through your code.
+1. Follow steps 1-3 in "Test the serial connection"
+2. Add a configuration as shown in [Overview](#overview) to your launch.json (For an example look at the [z80-sample-program]).
+3. In vscode start the debug session.
+4. Step through your code.
 
 You should see that the debugged program is transmitted to the ZX Next: the border colors change similar as when you would load a program from tape.
 ![](images/dezog_zxnext_loading.jpg)
