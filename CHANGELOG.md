@@ -1,5 +1,5 @@
 # Changelog
-# 3.3.2
+# 3.3.3
 - Added palette command "dezog.serialport.test" to test the serial connection.
 
 # 3.3.2
