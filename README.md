@@ -290,3 +290,10 @@ Please note: The tutorial is a bit outdated, it uses 'z80-debug'. This was the f
 
 Nevertheless Cesar (W. M.) also shows how to setup the system under Windows and explains a few features of z80-debug/DeZog so that it is a great advice to get you started.
 
+# Fork
+
+The [ZX81 Debugger](https://github.com/andrivet/ZX81-Debugger) by [Sebastien Andrivet](https://github.com/andrivet) is a fork of DeZog that contains a complete development environment for the ZX81. I.e. it comes with an integrated Z80 assembler, an integrated ZX81 simulator, syntax highlighting, sample code that you just need to paste to get started and DeZog as a debugging backend.
+So if you're looking for a development program for the ZX81, you should give it a try.
+It's also much easier to set up than DeZog because you don't have any external dependencies.
+If you want to test the capabilities of DeZog without configuring anything, then you should also check it out.
+
