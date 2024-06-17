@@ -73,7 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
 				await vscode.env.clipboard.writeText(selection);
 		}
 		else {
-			await vscode.window.showInformationMessage('No serial port found!');
+			await vscode.window.showWarningMessage('No serial port found!');
 		}
 	}));
 
@@ -83,12 +83,18 @@ export function activate(context: vscode.ExtensionContext) {
 		// Test first if in debug mode (= not allowed)
 		const session = DebugSessionClass.singleton();
 		if (session.running) {
-			await vscode.window.showInformationMessage('Cannot test the serial interface.\nPlease close the debug session first!');
+			await vscode.window.showWarningMessage('Cannot test the serial interface.\nPlease close the debug session first!');
 			return;
 		}
 
 		// Create list of ports for the user to choose from
 		const list = await SerialPort.list();	// PortInfo[]
+		if (list.length == 0) {
+			await vscode.window.showErrorMessage('No serial port found!');
+			return;
+		}
+
+		// Show the quick pick to the user
 		const options = list.map(portInfo => {
 			return {
 				label: portInfo.path,
@@ -96,8 +102,6 @@ export function activate(context: vscode.ExtensionContext) {
 				value: portInfo.path
 			};
 		});
-
-		// Show the quick pick to the user
 		const selectedPortPath = await vscode.window.showQuickPick(options, {placeHolder: 'Select a port'});
 		// Check if an option was selected
 		if (!selectedPortPath)
