@@ -1,4 +1,8 @@
 # Changelog
+
+# 3.3.4
+- Fix for #126: Data misalignment for ZX128K SNA with Active BANK6 in zsim. Banks in SNA loading fixed.
+
 # 3.3.3
 - Added palette command "dezog.serialport.test" to test the serial connection.
 

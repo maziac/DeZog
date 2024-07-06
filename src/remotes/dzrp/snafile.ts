@@ -113,7 +113,7 @@ export class SnaFile {
 		Utility.assert(index == 49183);
 
 		// Correct 3rd bank
-		const pagedInBank = this.port7ffd & 0x03;
+		const pagedInBank = this.port7ffd & 0x07;
 		this.memBanks[2].bank = pagedInBank;
 
 		// Read up to 6 more memory banks (48k), bank 0, 1, 3, 4, 6, 7
