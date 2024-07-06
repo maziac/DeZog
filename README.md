@@ -47,6 +47,7 @@ This includes functionalities like
 - easy data access through hover-over information
 - data display in structures
 - a unit test framework
+
 Additionally it offers some ZX Next specific capabilities like displaying sprites.
 
 DeZog facilitates the debugging of Z80 assembler programs using Visual Studio Code (vscode) as the development environment. This tool can be used to build programs, step through sources, use labels, watches, memory views, and other useful features. Additionally, it can be used to reverse engineer old Z80 programs, such as ZX Spectrum or MAME arcade games, by debugging and creating commented list files of the program.
