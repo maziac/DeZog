@@ -270,61 +270,47 @@ export class ZSimRemote extends DzrpRemote {
 		// Configure different memory models
 		switch (zsim.memoryModel) {
 			case "RAM":
-				{
-					// 64K RAM, no ZX
-					// Memory Model
-					this.memoryModel = new MemoryModelAllRam();
-				}
+				// 64K RAM, no ZX
+				// Memory Model
+				this.memoryModel = new MemoryModelAllRam();
 				break;
 			case "ZX16K":
-				{
-					// ZX 16K
-					// Memory Model
-					this.memoryModel = new MemoryModelZx16k();
-				}
+				// ZX 16K
+				// Memory Model
+				this.memoryModel = new MemoryModelZx16k();
 				break;
 			case "ZX48K":
-				{
-					// ZX 48K
-					// Memory Model
-					this.memoryModel = new MemoryModelZx48k();
-				}
+				// ZX 48K
+				// Memory Model
+				this.memoryModel = new MemoryModelZx48k();
 				break;
 			case "ZX128K":
-				{
-					// ZX 128K
-					// Memory Model
-					this.memoryModel = new MemoryModelZx128k();
-				}
+				// ZX 128K
+				// Memory Model
+				this.memoryModel = new MemoryModelZx128k();
 				break;
 			case "ZXNEXT":
-				{
-					// ZX Next
-					// Memory Model
-					this.memoryModel = new MemoryModelZxNextTwoRom();
-					// Bank switching.
-					for (let tbblueRegister = 0x50; tbblueRegister <= 0x57; tbblueRegister++) {
-						this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
-						this.tbblueRegisterReadHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsRead.bind(this));
-					}
-					// Connect to port
-					this.ports.registerSpecificOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
-					this.ports.registerSpecificOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
-					this.ports.registerSpecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
+				// ZX Next
+				// Memory Model
+				this.memoryModel = new MemoryModelZxNextTwoRom();
+				// Bank switching.
+				for (let tbblueRegister = 0x50; tbblueRegister <= 0x57; tbblueRegister++) {
+					this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
+					this.tbblueRegisterReadHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsRead.bind(this));
 				}
+				// Connect to port
+				this.ports.registerSpecificOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
+				this.ports.registerSpecificOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
+				this.ports.registerSpecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
 				break;
 			case "COLECOVISION":
-				{
-					// ZX 48K
-					// Memory Model
-					this.memoryModel = new MemoryModelColecoVision();
-				}
+				// ZX 48K
+				// Memory Model
+				this.memoryModel = new MemoryModelColecoVision();
 				break;
 			case "CUSTOM":
-				{
-					// Custom Memory Model
-					this.memoryModel = new MemoryModel(zsim.customMemory);
-				}
+				// Custom Memory Model
+				this.memoryModel = new MemoryModel(zsim.customMemory);
 				break;
 			default:
 				throw Error("Unknown memory model: '" + zsim.memoryModel + "'.");
