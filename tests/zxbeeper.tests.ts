@@ -28,6 +28,16 @@ suite('ZxBeeper', () => {
 	});
 
 
+	test('setCpuFrequency', () => {
+		let zxBeeper = new ZxBeeper(3500000, 22050, 50);
+		let zxBeeperAny = zxBeeper as any;
+		assert.equal(zxBeeperAny.cpuFrequency, 3500000);
+
+		zxBeeperAny.setCpuFrequency(123456);
+		assert.equal(zxBeeperAny.cpuFrequency, 123456);
+	});
+
+
 	suite('setLastBeeperValue', () => {
 
 		test('Add samples', () => {

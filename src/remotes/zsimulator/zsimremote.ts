@@ -228,8 +228,8 @@ export class ZSimRemote extends DzrpRemote {
 		// Set the cpu frequency
 		const cpuFrequency = (2 ** cpuSpeed) * 3.5e6;	// 3.5MHz, 7MHz, 14MHz, 28Mhz
 		this.z80Cpu.setCpuFreq(cpuFrequency);
-
-		// TODO: Need to update also the ZXBeeper
+		// Update also the ZXBeeper
+		this.zxBeeper?.setCpuFrequency(cpuFrequency);
 		// Remember the speed
 		this.tbblueCpuSpeed = cpuSpeed;
 	}

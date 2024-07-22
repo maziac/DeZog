@@ -2,8 +2,7 @@ import {Log} from "../../log";
 import {Serializable, MemBuffer} from "../../misc/membuffer";
 
 
-/**
- * The buffer exchanged with the zsim simulator webview.
+/** The buffer exchanged with the zsim simulator webview.
  * It contains only the lengths for the stats changes of the beeper.
  */
 export interface BeeperBuffer {
@@ -14,8 +13,7 @@ export interface BeeperBuffer {
 }
 
 
-/**
- * ZX beeper audio simulation.
+/** ZX beeper audio simulation.
  */
 export class ZxBeeper implements Serializable {
 
@@ -48,8 +46,7 @@ export class ZxBeeper implements Serializable {
 
 	//protected logBuf = new Array<any>();
 
-	/**
-	 * Constructor.
+	/** Constructor.
 	 * @param cpuFrequency The used CPU frequency, e.g. 3500000 Hz.
 	 * @param sampleRate The sample rate to use.
 	 * @param updateFrequency The used update frequency. E.g. with 50 Hz
@@ -71,8 +68,17 @@ export class ZxBeeper implements Serializable {
 	}
 
 
-	/**
-	 * Returns the last set beeper value.
+	/** Sets the cpu frequency.
+	 * Note: cpuFrequency is used to calculate the length of the beeper values.
+	 * Changing it may cause the time to be inaccurate for a moment.
+	 * @param cpuFrequency The used CPU frequency, e.g. 3500000 Hz.
+	 */
+	public setCpuFrequency(cpuFrequency: number) {
+		this.cpuFrequency = cpuFrequency;
+	}
+
+
+	/** Returns the last set beeper value.
 	 * @returns 0 or 1.
 	 */
 	public getCurrentBeeperValue(): number {
@@ -97,8 +103,7 @@ export class ZxBeeper implements Serializable {
 	}
 
 
-	/**
-	 * Sets the length of the last beeper value.
+	/** Sets the length of the last beeper value.
 	 * Length is calculated from current t-states to
 	 * last (beeper) t-states.
 	 * Length is put into the array in samples (at sampleRate).
@@ -148,8 +153,7 @@ export class ZxBeeper implements Serializable {
 	}
 
 
-	/**
-	 * Returns the buffer with beeper values.
+	/** Returns the buffer with beeper values.
 	 * Fills the remaining samples before returning.
 	 * @param passedTstates The current t-states count.
 	 * @returns Structure with:
@@ -217,8 +221,7 @@ export class ZxBeeper implements Serializable {
 	}
 
 
-	/**
-	 * Returns the size the serialized object would consume.
+	/** Returns the size the serialized object would consume.
 	 */
 	public getSerializedSize(): number {
 		// Create a MemBuffer to calculate the size.
@@ -231,8 +234,7 @@ export class ZxBeeper implements Serializable {
 	}
 
 
-	/**
-	 * Serializes the object.
+	/** Serializes the object.
 	 * Basically the last beeper value.
 	 */
 	public serialize(memBuffer: MemBuffer) {
@@ -243,8 +245,7 @@ export class ZxBeeper implements Serializable {
 	}
 
 
-	/**
-	 * Deserializes the object.
+	/** Deserializes the object.
 	 */
 	public deserialize(memBuffer: MemBuffer) {
 		// Read beeper state
