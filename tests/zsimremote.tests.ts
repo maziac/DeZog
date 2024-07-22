@@ -9,6 +9,7 @@ import {MemoryModelColecoVision} from '../src/remotes/MemoryModel/predefinedmemo
 
 suite('ZSimRemote', () => {
 	let zsim: ZSimRemote;
+	let zsimAny: any; // Same as any
 
 	suite('48k', () => {
 
@@ -34,12 +35,11 @@ suite('ZSimRemote', () => {
 			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
 			zsim = new ZSimRemote();
+			zsimAny = zsim as any;
+			zsimAny.configureMachine(Settings.launch.zsim);
 		});
 
 		test('Check ROM', () => {
-			// @ts-ignore: protected access
-			zsim.configureMachine(Settings.launch.zsim);
-
 			// Check first 2 bytes
 			let value = zsim.memory.read8(0x0000);
 			assert.equal(0xF3, value);
@@ -55,9 +55,6 @@ suite('ZSimRemote', () => {
 
 
 		test('ula bank', () => {
-			// @ts-ignore: protected access
-			zsim.configureMachine(Settings.launch.zsim);
-
 			let ulaBank = zsim.zxUlaScreen.currentUlaBank;
 			assert.equal(1, ulaBank);
 			// Should not switch
@@ -92,8 +89,8 @@ suite('ZSimRemote', () => {
 			Z80RegistersClass.createRegisters();
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			zsim = new ZSimRemote();
-			// @ts-ignore: protected access
-			zsim.configureMachine(Settings.launch.zsim);
+			zsimAny = zsim as any;
+			zsimAny.configureMachine(Settings.launch.zsim);
 		});
 
 		test('Check ROM 0 / 1', () => {
@@ -204,6 +201,74 @@ suite('ZSimRemote', () => {
 	});
 
 
+
+	suite('tbblue', () => {
+		suite('REG_TURBO_MODE', () => {
+			setup(() => {
+				Utility.setExtensionPath('.');
+				const cfg: any = {
+					remoteType: 'zsim',
+					zsim: {
+						cpuFrequency: 12345,
+						tbblue: {
+							REG_TURBO_MODE: true
+						}
+					},
+					history: {
+						reverseDebugInstructionCount: 0,
+						spotCount: 0,
+						codeCoverageEnabled: false
+					}
+				};
+				Settings.launch = Settings.Init(cfg);
+				Z80RegistersClass.createRegisters();
+				Utility.setRootPath('/');	// Does not matter but must be set.
+				zsim = new ZSimRemote() as any;
+				zsimAny = zsim as any;
+				zsimAny.configureMachine(Settings.launch.zsim);
+			});
+
+			test('set / get', () => {
+				assert.equal(zsimAny.tbblueCpuSpeed, 0b000000);
+				assert.equal(zsim.z80Cpu.cpuFreq, 12345);
+
+				// Change frequency
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				zsim.ports.write(0x253B, 0b00);	// 3.5MHz
+				assert.equal(zsimAny.tbblueCpuSpeed, 0b00);
+				assert.equal(zsim.z80Cpu.cpuFreq, 3500000);
+				// Read back
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				assert.equal(zsim.ports.read(0x253B), 0b000000);
+
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				zsim.ports.write(0x253B, 0b01);	// 7MHz
+				assert.equal(zsimAny.tbblueCpuSpeed, 0b01);
+				assert.equal(zsim.z80Cpu.cpuFreq, 7000000);
+				// Read back
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				assert.equal(zsim.ports.read(0x253B), 0b010001);
+
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				zsim.ports.write(0x253B, 0b10);	// 14MHz
+				assert.equal(zsimAny.tbblueCpuSpeed, 0b10);
+				assert.equal(zsim.z80Cpu.cpuFreq, 14000000);
+				// Read back
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				assert.equal(zsim.ports.read(0x253B), 0b100010);
+
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				zsim.ports.write(0x253B, 0b11);	// 28MHz
+				assert.equal(zsimAny.tbblueCpuSpeed, 0b11);
+				assert.equal(zsim.z80Cpu.cpuFreq, 28000000);
+				// Read back
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				assert.equal(zsim.ports.read(0x253B), 0b110011);
+			});
+		});
+	});
+
+
 	suite('tbblueMemoryManagementSlots', () => {
 
 		setup(() => {
@@ -229,8 +294,8 @@ suite('ZSimRemote', () => {
 			Z80RegistersClass.createRegisters();
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			zsim = new ZSimRemote();
-			// @ts-ignore
-			zsim.configureMachine(Settings.launch.zsim);
+			zsimAny = zsim as any;
+			zsimAny.configureMachine(Settings.launch.zsim);
 		});
 
 		test('bank switching RAM', () => {
@@ -334,12 +399,11 @@ suite('ZSimRemote', () => {
 			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
 			zsim = new ZSimRemote();
+			zsimAny = zsim as any;
+			zsimAny.configureMachine(Settings.launch.zsim);
+
 		});
-
 		test('Check Memory Model', () => {
-			// @ts-ignore: protected access
-			zsim.configureMachine(Settings.launch.zsim);
-
 			assert.ok(zsim.memoryModel instanceof MemoryModelColecoVision);
 		});
 	});
