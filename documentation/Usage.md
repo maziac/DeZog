@@ -755,7 +755,7 @@ Note also that audio is not available before you interact with the simulator vie
 - "cpuFrequency": The used CPU frequency. If "limitSpeed" is enabled (default) the simulation speed is throttled to simulate the correct frequency. The CPU frequency is also used printout of the correspondent time when t-states are printed.
 - "limitSpeed": If enabled the simulated CPU performance is throttled to fit the given CPU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.
 - "updateFrequency": The update frequency of the simulator view in Hz. Defaults to 10Hz. Possible range is 5 to 100 Hz.
-- "customCode": This enables the custom code to run inside the simulator, e.g. to simulate additional ports. See [zsimPeripherals.md](https://github.com/maziac/DeZog/blob/master/documentation/zsimPeripherals.md) for more details.
+- "customCode": This enables custom code to run inside the simulator, e.g. to simulate additional ports. See [zsimPeripherals.md](https://github.com/maziac/DeZog/blob/master/documentation/zsimPeripherals.md) for more details.
 - "customMemory": see [customMemory](#custommemory)
 
 

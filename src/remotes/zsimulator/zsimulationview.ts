@@ -97,20 +97,18 @@ export class ZSimulationView extends BaseView {
 			this.simulatedPorts.set(0xBFFE, 0xFF);
 			this.simulatedPorts.set(0x7FFE, 0xFF);
 		}
-		else {
-			// If keyboard id not defined, check for ZX Interface 2
-			if (Settings.launch.zsim.zxInterface2Joy) {
-				// Prepare all used ports
-				this.simulatedPorts.set(0xF7FE, 0xFF);	// Joystick 2 (left): Bits: xxxLRDUF, low active, keys 1-5
-				this.simulatedPorts.set(0xEFFE, 0xFF);	// Joystick 1 (right): Bits: xxxFUDRL, low active, keys 6-0
+		// If keyboard id not defined, check for ZX Interface 2
+		else if (Settings.launch.zsim.zxInterface2Joy) {
+			// Prepare all used ports
+			this.simulatedPorts.set(0xF7FE, 0xFF);	// Joystick 2 (left): Bits: xxxLRDUF, low active, keys 1-5
+			this.simulatedPorts.set(0xEFFE, 0xFF);	// Joystick 1 (right): Bits: xxxFUDRL, low active, keys 6-0
 
-				// Set call backs
-				for (const [simPort,] of this.simulatedPorts) {
-					this.simulator.ports.registerSpecificInPortFunction(simPort, (port: number) => {
-						const value = this.simulatedPorts.get(port)!;
-						return value;
-					});
-				}
+			// Set call backs
+			for (const [simPort,] of this.simulatedPorts) {
+				this.simulator.ports.registerSpecificInPortFunction(simPort, (port: number) => {
+					const value = this.simulatedPorts.get(port)!;
+					return value;
+				});
 			}
 		}
 

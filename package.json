@@ -577,11 +577,6 @@
 										"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
 										"default": 1
 									},
-									"Z80N": {
-										"type": "boolean",
-										"description": "Default is false. If enabled the Z80N extended instructions are supported. Default: If 'tbblueMemoryManagementSlots' defaults to true, otherwise false.",
-										"default": false
-									},
 									"vsyncInterrupt": {
 										"type": "boolean",
 										"description": "Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).",
@@ -607,23 +602,39 @@
 										"description": "The default value that is read if the read port is unused.",
 										"default": 255
 									},
-									"customCode": {
-										"debug": {
+									"Z80N": {
+										"type": "boolean",
+										"description": "Default is false. If enabled the Z80N extended instructions are supported. Default: If 'tbblueMemoryManagementSlots' defaults to true, otherwise false.",
+										"default": false
+									},
+									"tbblue": {
+										"description": "Experimental. Use to enable some specific tbblue features.",
+										"REG_TURBO_MODE": {
 											"type": "boolean",
-											"description": "If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).",
+											"description": "If true the register 0x07 is simulated which controls the CPU speed.",
 											"default": false
-										},
-										"jsPath": {
-											"type": "string",
-											"description": "A relative path to additional javascript code that is included into the Z80 simulator."
-										},
-										"uiPath": {
-											"type": "string",
-											"description": "A relative path to additional javascript code that is included into the Z80 simulator view/UI. This code acts as UI for the code in 'jsPath'"
-										},
-										"timeStep": {
-											"type": "number",
-											"description": "You can set a time step (interval) to call the tick() function. If not set then tick() will not be called (although time/t-states still do advance)."
+										}
+									},
+									"customCode": {
+										"description": "This enables custom code to run inside the simulator, e.g. to simulate additional ports.",
+										"properties": {
+											"debug": {
+												"type": "boolean",
+												"description": "If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).",
+												"default": false
+											},
+											"jsPath": {
+												"type": "string",
+												"description": "A relative path to additional javascript code that is included into the Z80 simulator."
+											},
+											"uiPath": {
+												"type": "string",
+												"description": "A relative path to additional javascript code that is included into the Z80 simulator view/UI. This code acts as UI for the code in 'jsPath'"
+											},
+											"timeStep": {
+												"type": "number",
+												"description": "You can set a time step (interval) to call the tick() function. If not set then tick() will not be called (although time/t-states still do advance)."
+											}
 										}
 									}
 								}
