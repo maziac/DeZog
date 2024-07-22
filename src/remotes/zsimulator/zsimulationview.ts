@@ -19,6 +19,9 @@ export class ZSimulationView extends BaseView {
 	static MESSAGE_HIGH_WATERMARK = 100;
 	static MESSAGE_LOW_WATERMARK = 10;
 
+	// The previous value for the cpu frequency, used to check on a change.
+	protected prevCpuFreq: number;
+
 	// A map to hold the values of the simulated ports.
 	protected simulatedPorts: Map<number, number>;	// Port <-> value
 
@@ -57,6 +60,9 @@ export class ZSimulationView extends BaseView {
 
 	// Used to determine when the web view ahs been loaded.
 	protected resolveLoaded: () => void;
+
+	// To create human readable numbers.
+	protected numberFormatter = new Intl.NumberFormat('en', {notation: 'compact', compactDisplay: 'short'});
 
 
 	/**
@@ -290,11 +296,12 @@ export class ZSimulationView extends BaseView {
 				this.resolveLoaded = undefined as any;
 				break;
 
-			case 'warning':
+			case 'warning': {
 				// A warning has been received, e.g. sample rate was not possible.
 				const warningText = message.text;
 				await vscode.window.showWarningMessage(warningText);
 				break;
+			}
 			case 'keyChanged':
 				this.keyChanged(message.key, message.value);
 				break;
@@ -304,13 +311,14 @@ export class ZSimulationView extends BaseView {
 			case 'portBit':
 				this.setPortBit(message.value.port, message.value.on, message.value.bitByte);
 				break;
-			case 'sendToCustomLogic':
+			case 'sendToCustomLogic': {
 				// Unwrap message
 				const innerMsg = message.value;
 				LogCustomCode.log("UI: UIAPI.sendToCustomLogic: " + JSON.stringify(innerMsg));
 				this.sendToCustomLogic(innerMsg);
 				break;
-			case 'reloadCustomLogicAndUi':
+			}
+			case 'reloadCustomLogicAndUi': {
 				// Clear any diagnostics
 				DiagnosticsHandler.clear();
 				// Reload the custom code
@@ -329,11 +337,13 @@ export class ZSimulationView extends BaseView {
 				// Inform custom code that UI is ready.
 				this.simulator.customCode?.uiReady();
 				break;
-			case 'log':
+			}
+			case 'log': {
 				// Log a message
 				const text = message.args.map(elem => elem.toString()).join(', ');
 				LogCustomCode.log("UI: " + text);
 				break;
+			}
 			case 'countOfProcessedMessages':
 				// For balancing the number of processed messages (since last time) is provided.;
 				this.countOfOutstandingMessages -= message.value;
@@ -549,6 +559,7 @@ export class ZSimulationView extends BaseView {
 		this.restartStopTimer();
 
 		try {
+			let cpuFreq;
 			let cpuLoad;
 			let slots;
 			let slotNames;
@@ -557,7 +568,13 @@ export class ZSimulationView extends BaseView {
 			let audio;
 			let borderColor;
 
-			// Update values
+			// Update frequency
+			if (this.prevCpuFreq !== this.simulator.z80Cpu.cpuFreq) {
+				this.prevCpuFreq = this.simulator.z80Cpu.cpuFreq;
+				cpuFreq = this.numberFormatter.format(this.prevCpuFreq) + 'Hz';
+			}
+
+			// Update cpuload
 			if (Settings.launch.zsim.cpuLoadInterruptRange > 0)
 				cpuLoad = (this.simulator.z80Cpu.cpuLoad * 100).toFixed(0).toString();
 
@@ -592,6 +609,7 @@ export class ZSimulationView extends BaseView {
 			// Create message to update the webview
 			const message = {
 				command: 'update',
+				cpuFreq,
 				cpuLoad,
 				slotNames,
 				visualMem,
@@ -666,17 +684,26 @@ export class ZSimulationView extends BaseView {
 			}
 		}
 
+		// CPU frequency
+		html += `
+			<p>
+			<!-- CPU frequency -->
+				<label>CPU frequency:</label>
+				<label id="cpu_freq_id">0</label>
+			`;
+
 		// CPU Load
 		if (zsim.cpuLoadInterruptRange > 0) {
 			html += `
 			<!-- Z80 CPU load -->
-			<p>
-				<label>Z80 CPU load:</label>
+				<label> - CPU load:</label>
 				<label id="cpu_load_id">100</label>
 				<label>%</label>
-			</p>
 			`;
 		}
+		html += `
+			</p>
+			`;
 
 		// Memory Pages / Visual Memory
 		if (zsim.visualMemory) {

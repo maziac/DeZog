@@ -7,6 +7,9 @@ import {UIAPI, UiBit} from "./helper";
 
 
 
+// HTML element used for the cpu frequency.
+let cpuFreq: HTMLLabelElement
+
 // HTML element used for the cpu load.
 let cpuLoad: HTMLLabelElement
 
@@ -59,42 +62,44 @@ window.addEventListener('message', event => {// NOSONAR
 			break;
 
 		case 'update':
-			{
-				if (cpuLoad && message.cpuLoad)
-					cpuLoad.innerHTML = message.cpuLoad;
+			if (message.cpuFreq) {
+				cpuFreq.innerHTML = message.cpuFreq
+			}
 
-				if (message.slotNames) {
-					let i = 0;
-					for (const slotString of message.slotNames) {
-						const slot = slots[i++];
-						if (slot)
-							slot.textContent = slotString;
-					}
+			if (cpuLoad && message.cpuLoad)
+				cpuLoad.innerHTML = message.cpuLoad;
+
+			if (message.slotNames) {
+				let i = 0;
+				for (const slotString of message.slotNames) {
+					const slot = slots[i++];
+					if (slot)
+						slot.textContent = slotString;
 				}
+			}
 
-				if (message.visualMem) {
-					VisualMem.drawVisualMemory(message.visualMem);
-				}
+			if (message.visualMem) {
+				VisualMem.drawVisualMemory(message.visualMem);
+			}
 
-				if (message.screenImg) {
-					const data = message.screenImg.ulaData;
-					const time = message.screenImg.time;
-					UlaScreen.drawUlaScreen(screenImgContext, screenImgImgData, data, time);
-				}
+			if (message.screenImg) {
+				const data = message.screenImg.ulaData;
+				const time = message.screenImg.time;
+				UlaScreen.drawUlaScreen(screenImgContext, screenImgImgData, data, time);
+			}
 
-				if (message.borderColor != undefined) {
-					// Convert ZX color to html color
-					const htmlColor = UlaScreen.getHtmlColor(message.borderColor);
-					// Set color
-					screenImg.style.borderColor = htmlColor;
-				}
+			if (message.borderColor != undefined) {
+				// Convert ZX color to html color
+				const htmlColor = UlaScreen.getHtmlColor(message.borderColor);
+				// Set color
+				screenImg.style.borderColor = htmlColor;
+			}
 
-				if (zxAudioBeeper) {
-					zxAudioBeeper.resume();
-					if (message.audio) {
-						const audio = message.audio;
-						zxAudioBeeper.writeBeeperSamples(audio);
-					}
+			if (zxAudioBeeper) {
+				zxAudioBeeper.resume();
+				if (message.audio) {
+					const audio = message.audio;
+					zxAudioBeeper.writeBeeperSamples(audio);
 				}
 			}
 			break;
@@ -119,11 +124,11 @@ window.addEventListener('message', event => {// NOSONAR
  */
 function initSimulation(audioSampleRate: number, volume: number) {
 
+	// Store the cpu_freq_id
+	cpuFreq = document.getElementById("cpu_freq_id") as HTMLLabelElement;
+
 	// Store the cpu_load_id
-	const cpuLoad = document.getElementById("cpu_load_id") as HTMLLabelElement;
-	if (cpuLoad) {
-		setCpuLoadHtmlElement(cpuLoad);
-	}
+	cpuLoad = document.getElementById("cpu_load_id") as HTMLLabelElement;
 
 	// Store the visual mem image source
 	const visualMemCanvas = document.getElementById("visual_mem_img_id") as HTMLCanvasElement;
@@ -199,12 +204,6 @@ function initSimulation(audioSampleRate: number, volume: number) {
 
 	// Start joystick polling (if joystick is setup)
 	initJoystickPolling();
-}
-
-
-// Set the HTML element used for the cpu load.
-export function setCpuLoadHtmlElement(elem: HTMLLabelElement) {
-	cpuLoad = elem;
 }
 
 
