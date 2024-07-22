@@ -178,6 +178,13 @@ export interface CustomCodeType {
 }
 
 
+/// TBBlue registers. Only a very limited set is supported.
+export interface TBBlueType {
+	/// If true the cpu speed selection is enabled.
+	REG_TURBO_MODE: boolean;
+}
+
+
 /// Definitions for the 'zsim' remote type.
 export interface ZSimType {
 	// If enabled the simulator shows a keyboard to simulate keypresses.
@@ -227,9 +234,6 @@ export interface ZSimType {
 	// The number of interrupts to calculate the average from. 0 to disable.
 	cpuLoadInterruptRange: number,
 
-	// If enabled the Z80N extended instructions are supported.
-	Z80N: boolean,
-
 	// If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
 	vsyncInterrupt: boolean,
 
@@ -250,6 +254,15 @@ export interface ZSimType {
 
 	// Settings to execute custom javascript code inside the zsim simulator.
 	customCode: CustomCodeType;
+
+	// If enabled the Z80N extended instructions are supported.
+	Z80N: boolean,
+
+	// Inside the tbblue registers available can be specified.
+	// Please note: the MMU registers are enabled already by the memoryModel
+	// "ZXNEXT" and do not appear here.
+	// TODO: Experimental
+	tbblue: TBBlueType,
 }
 
 
@@ -511,8 +524,6 @@ export class Settings {
 		if (launchCfg.zsim.memoryModel == undefined)
 			launchCfg.zsim.memoryModel = "RAM";
 		launchCfg.zsim.memoryModel = launchCfg.zsim.memoryModel.toUpperCase();
-		if (launchCfg.zsim.Z80N == undefined)
-			launchCfg.zsim.Z80N = false;
 		if (launchCfg.zsim.vsyncInterrupt == undefined)
 			launchCfg.zsim.vsyncInterrupt = false;
 		if (launchCfg.zsim.cpuFrequency == undefined)
@@ -523,6 +534,10 @@ export class Settings {
 			launchCfg.zsim.updateFrequency = 10.0;
 		if (launchCfg.zsim.defaultPortIn == undefined)
 			launchCfg.zsim.defaultPortIn = 0xFF;
+		if (launchCfg.zsim.Z80N == undefined)
+			launchCfg.zsim.Z80N = false;
+		if (launchCfg.zsim.tbblue == undefined)
+			launchCfg.zsim.tbblue = {REG_TURBO_MODE: false} as TBBlueType;
 
 		// Check update frequency ranges
 		if (launchCfg.zsim.updateFrequency < 5.0)

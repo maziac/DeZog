@@ -21,7 +21,6 @@ import {MemoryModelAllRam, MemoryModelColecoVision, MemoryModelZx128k, MemoryMod
 import {ZxUlaScreen} from './zxulascreen';
 
 
-
 /**
  * The representation of a Z80 remote.
  * With options to simulate ZX Spectrum or some ZX Next features.
@@ -87,6 +86,10 @@ export class ZSimRemote extends DzrpRemote {
 	// Can be enabled through commands to break when an interrupt occurs.
 	protected breakOnInterrupt: boolean;
 
+	// The current TBBlue CPU speed.
+	// b00 = 3.5MHz, b01 = 7MHz, b10 = 14MHz, b11 = 28MHz.
+	protected tbblueCpuSpeed: number;
+
 
 	/// Constructor.
 	constructor() {
@@ -109,6 +112,7 @@ export class ZSimRemote extends DzrpRemote {
 		this.lastBpId = 0;
 		this.zxBorderColor = 7;	// White initially
 		this.breakOnInterrupt = false;
+		this.tbblueCpuSpeed = 0;
 		// Set decoder
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 		// Reverse debugging / CPU history
@@ -130,8 +134,7 @@ export class ZSimRemote extends DzrpRemote {
 	}
 
 
-	/**
-	 * Selects active port for TBBlue/Next feature configuration.
+	/** Selects active port for TBBlue/Next feature configuration.
 	 * See https://wiki.specnext.dev/TBBlue_Register_Select
 	 * The value is just stored, no further action.
 	 * @param port The written port. (0x243B)
@@ -142,8 +145,7 @@ export class ZSimRemote extends DzrpRemote {
 	}
 
 
-	/**
-	 * Writes the selected TBBlue control register.
+	/** Writes the selected TBBlue control register.
 	 * See https://wiki.specnext.dev/TBBlue_Register_Access
 	 * Acts according the value and tbblueRegisterSelectValue,
 	 * i.e. calls the mapped function for the selected register.
@@ -158,8 +160,7 @@ export class ZSimRemote extends DzrpRemote {
 	}
 
 
-	/**
-	 * Reads the selected TBBlue control register.
+	/** Reads the selected TBBlue control register.
 	 * See https://wiki.specnext.dev/TBBlue_Register_Access
 	 * Acts according the value and tbblueRegisterSelectValue,
 	 * i.e. calls the mapped function for the selected register.
@@ -176,8 +177,7 @@ export class ZSimRemote extends DzrpRemote {
 	}
 
 
-	/**
-	 * Changes the tbblue slot/bank association for slots 0-7.
+	/** Changes the tbblue slot/bank association for slots 0-7.
 	 * See https://wiki.specnext.dev/Memory_management_slot_0_bank
 	 * tbblueRegisterSelectValue contains the register (0x50-0x57) respectively the
 	 * slot.
@@ -201,8 +201,7 @@ export class ZSimRemote extends DzrpRemote {
 	}
 
 
-	/**
-	 * Reads the tbblue slot/bank association for slots 0-7.
+	/** Reads the tbblue slot/bank association for slots 0-7.
 	 * See https://wiki.specnext.dev/Memory_management_slot_0_bank
 	 * tbblueRegisterSelectValue contains the register (0x50-0x57) respectively the
 	 * slot.
@@ -210,11 +209,42 @@ export class ZSimRemote extends DzrpRemote {
 	protected tbblueMemoryManagementSlotsRead(): number {
 		const slot = this.tbblueRegisterSelectValue & 0x07;
 		// Change the slot/bank
-		let bank = this.memory.getSlots()![slot];
+		let bank = this.memory.getSlots()[slot];
 		// Check for ROM = 0xFE
 		if (bank == 0xFE)
 			bank = 0xFF;
 		return bank;
+	}
+
+
+	/** Changes the cpu speed.
+	 * @param value Last 2 bits = the new speed:
+	 * b00 = 3.5MHz, b01 = 7MHz, b10 = 14MHz, b11 = 28MHz.
+	 * Note: 28Mhz will add an extra NOP for each instruction.
+	 * NOT IMPLEMENTED.
+	 */
+	protected tbblueCpuSpeedWrite(value: number) {
+		const cpuSpeed = value & 0b11;
+		// Set the cpu frequency
+		const cpuFrequency = (2 ** cpuSpeed) * 3.5e6;	// 3.5MHz, 7MHz, 14MHz, 28Mhz
+		this.z80Cpu.setCpuFreq(cpuFrequency);
+
+		// TODO: Need to update also the ZXBeeper
+		// Remember the speed
+		this.tbblueCpuSpeed = cpuSpeed;
+	}
+
+
+	/** Reads the tbblue cpu speed.
+	 * The real port read makes a difference between programmed and actual speed.
+	 * This function here does not.
+	 * @returns Bit 4-5: current speed, bits 0-1: programmed speed.
+	 * b00 = 3.5MHz, b01 = 7MHz, b10 = 14MHz, b11 = 28MHz.
+	 */
+	protected tbblueCpuSpeedRead(): number {
+		const cpuSpeed = this.tbblueCpuSpeed;
+		const cpuSpeedBoth = (cpuSpeed << 4) | cpuSpeed;
+		return cpuSpeedBoth;
 	}
 
 
@@ -267,6 +297,14 @@ export class ZSimRemote extends DzrpRemote {
 			});
 		}
 
+		// Check for tbblue port
+		const regTurboMode = zsim.tbblue.REG_TURBO_MODE;
+		if (regTurboMode) {
+			// Register the tbblue register
+			this.tbblueRegisterWriteHandler.set(0x07, this.tbblueCpuSpeedWrite.bind(this));
+			this.tbblueRegisterReadHandler.set(0x07, this.tbblueCpuSpeedRead.bind(this));
+		}
+
 		// Configure different memory models
 		switch (zsim.memoryModel) {
 			case "RAM":
@@ -298,10 +336,6 @@ export class ZSimRemote extends DzrpRemote {
 					this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
 					this.tbblueRegisterReadHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsRead.bind(this));
 				}
-				// Connect to port
-				this.ports.registerSpecificOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
-				this.ports.registerSpecificOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
-				this.ports.registerSpecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
 				break;
 			case "COLECOVISION":
 				// ZX 48K
@@ -335,6 +369,18 @@ export class ZSimRemote extends DzrpRemote {
 			this.emit('vertSync');
 		});
 		this.serializeObjects.push(this.z80Cpu);
+
+		// If tbblue write or read handler are used, then
+		// install them.
+		if (this.tbblueRegisterWriteHandler.size ||
+			this.tbblueRegisterReadHandler.size) {
+			// Register out port 0x243B
+			this.ports.registerSpecificOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
+			// Register out port 0x253B
+			this.ports.registerSpecificOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
+			// Register in port 0x253B
+			this.ports.registerSpecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
+		}
 
 		// Initialize custom code e.g. for ports.
 		// But the customCode is not yet executed. (Because of unit tests).

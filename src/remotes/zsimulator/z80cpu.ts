@@ -358,8 +358,20 @@ export class Z80Cpu implements Serializable {
 	}
 
 
-	/**
-	 * Converts the Z80 flags object into a number.
+	/** Changes the cpu frequncy, e.g. called when the tbblue REG_TURBO_MODE
+	 * is set.
+	 * Also corrects the remainingInterruptTstates.
+	 * @param cpuFrequency The used CPU frequency, e.g. 3500000 Hz.
+	*/
+	public setCpuFreq(cpuFrequency: number) {
+		this.INTERRUPT_TIME_AS_T_STATES = 0.02 * cpuFrequency;  // 20ms * 3.5 Mhz
+		const remainingTime = this.remainingInterruptTstates / this.cpuFreq;
+		this.remainingInterruptTstates = remainingTime * cpuFrequency;
+		this.cpuFreq = cpuFrequency;
+	}
+
+
+	/** Converts the Z80 flags object into a number.
 	 */
 	protected convertFlags(flags: {
 		S: number,
