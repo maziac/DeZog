@@ -671,7 +671,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	protected getWatchpointsByAddress(address: number): Array<GenericWatchpoint> {
 		const address64 = address & 0xFFFF;
 		const arr = new Array<GenericWatchpoint>();
-		const slots = this.getSlots()!;
+		const slots = this.getSlots();
 		for (const wp of this.addedWatchpoints) {
 			// Check if address falls in range
 			const longWpAddr = wp.longOr64kAddress;
@@ -842,7 +842,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			case BREAK_REASON_NUMBER.MANUAL_BREAK:
 				reasonString = "Manual break.";
 				break;
-			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
+			case BREAK_REASON_NUMBER.BREAKPOINT_HIT: {
 				// Check if it was an ASSERTION.
 				const abps = this.assertionBreakpoints.filter(abp => abp.longAddress === breakAddress);
 				for (const abp of abps) {
@@ -865,9 +865,10 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				if (condition)
 					reasonString += " Condition: " + condition;
 				return reasonString;
+			}
 
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
-			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
+			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE: {
 				// Watchpoint
 				const address = breakAddress;
 				reasonString = "Watchpoint " + ((breakNumber === BREAK_REASON_NUMBER.WATCHPOINT_READ) ? "read" : "write") + " access at address " + Utility.getLongAddressString(address);
@@ -878,6 +879,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				}
 				reasonString += ". " + breakReasonString;
 				break;
+			}
 
 			case BREAK_REASON_NUMBER.BREAK_INTERRUPT:
 				reasonString = "Break on interrupt.";
@@ -939,7 +941,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		let correctedBreakNumber = breakType;
 		switch (breakType) {
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
-			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
+			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE: {
 				// Check if watchpoint really exists, i.e. it could be that a watchpoint for a wrong bank was hit.
 				// If no watchpoint is found condition stays undefined.
 				const wps = this.getWatchpointsByAddress(breakAddress);
@@ -960,9 +962,10 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 					}
 				}
 				break;
+			}
 
 			case BREAK_REASON_NUMBER.NO_REASON:
-			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
+			case BREAK_REASON_NUMBER.BREAKPOINT_HIT: {
 				// Get corresponding breakpoint
 				const bps = this.getBreakpointsByAddress(breakAddress);
 				// Note: If breakAddress is not found (e.g. break in wrong bank) then bps is empty.
@@ -1002,6 +1005,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 					}
 				}
 				break;
+			}
 
 			case BREAK_REASON_NUMBER.STEPPING_NOT_ALLOWED:
 			// Flow through
@@ -1038,9 +1042,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				// Use a custom function here to evaluate breakpoint condition and log string.
 				const funcContinueResolve = async (breakInfo: BreakInfo) => {
 					try {
-						// Give vscode a little time
-						// await this.timeWait.waitAtInterval();  // REMARK: I think I don't need it anymore
-
 						// Get registers
 						await this.getRegistersFromEmulator();
 
@@ -1316,12 +1317,10 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 					await this.sendDzrpCmdAddBreakpoint(abp);	// Sets sbp.bpId
 				}
 			}
-			else {
-				// Remove breakpoint
-				if (abp.bpId) {
-					await this.sendDzrpCmdRemoveBreakpoint(abp);
-					abp.bpId = undefined;
-				}
+			// Remove breakpoint
+			else if (abp.bpId) {
+				await this.sendDzrpCmdRemoveBreakpoint(abp);
+				abp.bpId = undefined;
 			}
 		}
 		this.assertionBreakpointsEnabled = enable;
@@ -1347,12 +1346,10 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 					await this.sendDzrpCmdAddBreakpoint(lp);
 				}
 			}
-			else {
-				// Remove breakpoint
-				if (lp.bpId) {
-					await this.sendDzrpCmdRemoveBreakpoint(lp);
-					lp.bpId = undefined;
-				}
+			// Remove breakpoint
+			else if (lp.bpId) {
+				await this.sendDzrpCmdRemoveBreakpoint(lp);
+				lp.bpId = undefined;
 			}
 		}
 	}

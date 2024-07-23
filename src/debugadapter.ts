@@ -597,12 +597,10 @@ export class DebugSessionClass extends DebugSession {
 			response.message = msg;
 			response.success = (msg === undefined);
 		}
-		else {
-			// Check if reverse debugging is enabled and send capabilities
-			if (Settings.launch.history.reverseDebugInstructionCount > 0) {
-				// Enable reverse debugging
-				this.sendEvent(new CapabilitiesEvent({supportsStepBack: true}));
-			}
+		// Check if reverse debugging is enabled and send capabilities
+		else if (Settings.launch.history.reverseDebugInstructionCount > 0) {
+			// Enable reverse debugging
+			this.sendEvent(new CapabilitiesEvent({supportsStepBack: true}));
 		}
 
 		// Return
@@ -782,25 +780,23 @@ export class DebugSessionClass extends DebugSession {
 						if (this.unitTestsStartCallbacks) {
 							this.unitTestsStartCallbacks.resolve(this);
 						}
+						else if (Settings.launch.startAutomatically) {
+							// Delay call because the breakpoints are set afterwards.
+							setTimeout(() => {
+								// Save start address for a possibly later disassembly.
+								// Note: for !startAutomatically it is not required because the stackTraceRequest will do the same.
+								const pcLong = Remote.getPCLong();
+								Disassembly.pushLongPcAddress(pcLong);
+								// Do a "continue"
+								this.handleRequest(undefined, async () => {
+									// Normal operation
+									return this.remoteContinue();
+								});
+							}, 500);
+						}
 						else {
-							if (Settings.launch.startAutomatically) {
-								// Delay call because the breakpoints are set afterwards.
-								setTimeout(() => {
-									// Save start address for a possibly later disassembly.
-									// Note: for !startAutomatically it is not required because the stackTraceRequest will do the same.
-									const pcLong = Remote.getPCLong();
-									Disassembly.pushLongPcAddress(pcLong);
-									// Do a "continue"
-									this.handleRequest(undefined, async () => {
-										// Normal operation
-										return this.remoteContinue();
-									});
-								}, 500);
-							}
-							else {
-								// Break
-								this.sendEvent(new StoppedEvent('stop on start', DebugSessionClass.THREAD_ID));
-							}
+							// Break
+							this.sendEvent(new StoppedEvent('stop on start', DebugSessionClass.THREAD_ID));
 						}
 					})();
 				});
@@ -2063,7 +2059,7 @@ export class DebugSessionClass extends DebugSession {
 		// Check context
 		switch (args.context) {
 			// Debug Console
-			case 'repl':
+			case 'repl': {
 				let text;
 				try {
 					text = await this.evaluateCommand(expression);
@@ -2083,9 +2079,10 @@ export class DebugSessionClass extends DebugSession {
 					indexedVariables: undefined
 				};
 				break;
+			}
 
 			// Hover
-			case 'hover':
+			case 'hover': {
 				let formattedValue = '';
 				try {
 					// Check for registers
@@ -2133,6 +2130,7 @@ export class DebugSessionClass extends DebugSession {
 					variablesReference: 0
 				}
 				break;
+			}
 
 			// Watch
 			case 'watch':

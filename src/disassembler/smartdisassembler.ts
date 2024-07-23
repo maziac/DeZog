@@ -734,11 +734,9 @@ export class SmartDisassembler {
 				for (const predec of node.predecessors)
 					predec.markPredecessorsAsSubroutine();
 			}
-			else {
-				// Now mark node if it has callers
-				if (node.callers.length) {
-					node.isSubroutine = true;
-				}
+			// Now mark node if it has callers
+			else if (node.callers.length) {
+				node.isSubroutine = true;
 			}
 		}
 	}
