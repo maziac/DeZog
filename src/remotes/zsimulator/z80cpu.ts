@@ -34,6 +34,9 @@ export class Z80Cpu implements Serializable {
 	// Is reset by the remote.
 	public cpuTstatesCounter: number;
 
+	// The number of extra t-states per instruction.
+	public extraTstatesPerInstruction: number;
+
 	// Set to true if a ZX Spectrum like interrupt should be generated.
 	protected vsyncInterrupt: boolean;
 
@@ -55,8 +58,7 @@ export class Z80Cpu implements Serializable {
 	protected vertInterruptFunc: () => void;
 
 
-	/**
-	 * Constructor.
+	/** Constructor.
 	 * @param memory The Z80 memory.
 	 * @param ports The Z80 ports.
 	 * @param vertInterruptFunc An optional function that is called on a vertical interrupt.
@@ -76,6 +78,7 @@ export class Z80Cpu implements Serializable {
 		IM 2: Uses an interrupt vector table, indexed by value on data bus.
 		*/
 		this.cpuTstatesCounter = 0
+		this.extraTstatesPerInstruction = 0;
 		this.cpuLoadTstates = 0;
 		this.cpuWithHaltTstates = 0;
 		this.cpuLoad = 1.0;	// Start with full load
@@ -112,8 +115,7 @@ export class Z80Cpu implements Serializable {
 	}
 
 
-	/**
-	 * Executes one instruction.
+	/** Executes one instruction.
 	 * @returns The number of t-states used for execution.
 	 * Sets also the 'update' variable:
 	 * true if a (vertical) interrupt happened or would have happened.
@@ -127,7 +129,7 @@ export class Z80Cpu implements Serializable {
 		const z80 = this.z80;
 
 		// Handle instruction
-		const tStates = z80.run_instruction();
+		const tStates = z80.run_instruction() + this.extraTstatesPerInstruction;
 		let accumulatedTstates = tStates;
 
 		// Statistics
@@ -173,8 +175,7 @@ export class Z80Cpu implements Serializable {
 	}
 
 
-	/**
-	 * Properties.
+	/** Properties.
 	 */
 	set pc(value) {
 		this.z80.pc = value;
@@ -337,8 +338,7 @@ export class Z80Cpu implements Serializable {
 	get interruptOccurred() {return this.z80.interruptOccurred;}
 
 
-	/**
-	 * Simulates pulsing the processor's INT (or NMI) pin.
+	/** Simulates pulsing the processor's INT (or NMI) pin.
 	 * Is called for the ULA vertical sync and also from custom code.
 	 * @param non_maskable - true if this is a non-maskable interrupt.
 	 * @param data - the value to be placed on the data bus, if needed.
@@ -358,7 +358,7 @@ export class Z80Cpu implements Serializable {
 	}
 
 
-	/** Changes the cpu frequncy, e.g. called when the tbblue REG_TURBO_MODE
+	/** Changes the cpu frequency, e.g. called when the tbblue REG_TURBO_MODE
 	 * is set.
 	 * Also corrects the remainingInterruptTstates.
 	 * @param cpuFrequency The used CPU frequency, e.g. 3500000 Hz.
@@ -368,6 +368,15 @@ export class Z80Cpu implements Serializable {
 		const remainingTime = this.remainingInterruptTstates / this.cpuFreq;
 		this.remainingInterruptTstates = remainingTime * cpuFrequency;
 		this.cpuFreq = cpuFrequency;
+	}
+
+
+	/** Sets the number of extra t-states per instruction.
+	 * Is used for ZX Next and 28Mhz where 1 extra cycle needs to be added.
+	 * @param extraTstates 0...N. Normally 0 or 1.
+	*/
+	public setExtraTstatesPerInstruction(extraTstates: number) {
+		this.extraTstatesPerInstruction = extraTstates;
 	}
 
 
@@ -388,8 +397,7 @@ export class Z80Cpu implements Serializable {
 	}
 
 
-	/**
-	 * Returns all registers.
+	/** Returns all registers.
 	 */
 	protected getAllRegisters(): {
 		pc: number,
@@ -436,8 +444,7 @@ export class Z80Cpu implements Serializable {
 	}
 
 
-	/**
-	 * Returns the register data in the Z80Registers format.
+	/** Returns the register data in the Z80Registers format.
 	 */
 	public getRegisterData(): Uint16Array {
 		const r = this.getAllRegisters();
@@ -455,8 +462,7 @@ export class Z80Cpu implements Serializable {
 	}
 
 
-	/**
-	 * Returns the register, opcode and sp contents data,
+	/** Returns the register, opcode and sp contents data,
 	 */
 	public getHistoryData(): Uint16Array {
 		// Get registers
@@ -481,8 +487,7 @@ export class Z80Cpu implements Serializable {
 	}
 
 
-	/**
-	 * Returns the size the serialized object would consume.
+	/** Returns the size the serialized object would consume.
 	 */
 	public getSerializedSize(): number {
 		// Create a MemBuffer to calculate the size.
@@ -495,8 +500,7 @@ export class Z80Cpu implements Serializable {
 	}
 
 
-	/**
-	 * Converts the Z80 flags object into a number.
+	/** Converts the Z80 flags object into a number.
 	 */
 	protected revConvertFlags(flags: number): {
 		S: number,
@@ -522,8 +526,7 @@ export class Z80Cpu implements Serializable {
 	}
 
 
-	/**
-	 * Serializes the object.
+	/** Serializes the object.
 	 */
 	public serialize(memBuffer: MemBuffer) {
 		// Save all registers etc.
@@ -561,8 +564,7 @@ export class Z80Cpu implements Serializable {
 	}
 
 
-	/**
-	 * Deserializes the object.
+	/** Deserializes the object.
 	 */
 	public deserialize(memBuffer: MemBuffer) {
 		// Store

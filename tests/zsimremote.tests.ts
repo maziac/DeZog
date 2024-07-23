@@ -4,7 +4,6 @@ import {Settings} from '../src/settings/settings';
 import {Utility} from '../src/misc/utility';
 import {Z80RegistersClass} from '../src/remotes/z80registers';
 import {MemoryModelColecoVision} from '../src/remotes/MemoryModel/predefinedmemorymodels';
-import {ZxBeeper} from '../src/remotes/zsimulator/zxbeeper';
 
 
 
@@ -209,6 +208,7 @@ suite('ZSimRemote', () => {
 				Utility.setExtensionPath('.');
 				const cfg: any = {
 					remoteType: 'zsim',
+					memoryModel: 'RAM',
 					zsim: {
 						cpuFrequency: 12345,
 						tbblue: {
@@ -277,6 +277,53 @@ suite('ZSimRemote', () => {
 				zsim.ports.write(0x253B, 0b11);	// 28Mhz
 				// Read back
 				assert.equal(zxBeeper.cpuFrequency, 28000000);
+			});
+
+			test('T-States', () => {
+				const cpu = zsim.z80Cpu;
+				const mem = zsim.memory;
+				// 3.5Mhz
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				assert.equal(zsim.ports.read(0x253B), 0b000000);
+
+				// Check default
+				mem.write8(0x0000, 0x00 /* NOP */);
+				cpu.pc = 0x0000;
+				let tStates = cpu.execute();
+				assert.equal(tStates, 4);
+
+				// Switch to 28Mhz
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				zsim.ports.write(0x253B, 0b11);	// 28Mhz
+
+				// Check 5 t-states
+				cpu.pc = 0x0000;
+				tStates = cpu.execute();
+				assert.equal(tStates, 5);
+
+				// Switch to 14MHz
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				zsim.ports.write(0x253B, 0b10);	// 14Mhz
+				// Check 4 t-states
+				cpu.pc = 0x0000;
+				tStates = cpu.execute();
+				assert.equal(tStates, 4);
+
+				// Switch to 7MHz
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				zsim.ports.write(0x253B, 0b10);	// 7Mhz
+				// Check 4 t-states
+				cpu.pc = 0x0000;
+				tStates = cpu.execute();
+				assert.equal(tStates, 4);
+
+				// Switch to 3.5MHz
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				zsim.ports.write(0x253B, 0b10);	// 3.5Mhz
+				// Check 4 t-states
+				cpu.pc = 0x0000;
+				tStates = cpu.execute();
+				assert.equal(tStates, 4);
 			});
 		});
 	});
