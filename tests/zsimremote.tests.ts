@@ -4,6 +4,7 @@ import {Settings} from '../src/settings/settings';
 import {Utility} from '../src/misc/utility';
 import {Z80RegistersClass} from '../src/remotes/z80registers';
 import {MemoryModelColecoVision} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {ZxBeeper} from '../src/remotes/zsimulator/zxbeeper';
 
 
 
@@ -212,7 +213,8 @@ suite('ZSimRemote', () => {
 						cpuFrequency: 12345,
 						tbblue: {
 							REG_TURBO_MODE: true
-						}
+						},
+						zxBeeper: true
 					},
 					history: {
 						reverseDebugInstructionCount: 0,
@@ -264,6 +266,17 @@ suite('ZSimRemote', () => {
 				// Read back
 				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
 				assert.equal(zsim.ports.read(0x253B), 0b110011);
+			});
+
+			test('zxBeeper', () => {
+				const zxBeeper = zsim.zxBeeper as any;
+				assert.equal(zxBeeper.cpuFrequency, 12345);
+
+				// Change frequency
+				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
+				zsim.ports.write(0x253B, 0b11);	// 28Mhz
+				// Read back
+				assert.equal(zxBeeper.cpuFrequency, 28000000);
 			});
 		});
 	});
