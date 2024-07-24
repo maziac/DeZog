@@ -18,27 +18,30 @@ suite('ZxnDma', function () {
 	});
 
 	suite('writeWR0', function () {
-		test('should set the transferDirectionPortAtoB properties', function () {
-			dma.writeWR0(0b0000_0100);
+		test('transferDirectionPortAtoB', function () {
+			dma.writePortFunc(0b0000_0101);
 			assert.ok(dma.transferDirectionPortAtoB);
 			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
 
-			dma.writeWR0(0b0000_0000);
+			dma.writePortFunc(0b0000_0001);
 			assert.ok(!dma.transferDirectionPortAtoB);
 			assert.equal(dma.nextDecodeBitMask, 0);
-
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
 		});
 		test('full sequence', function () {
-			dma.writeWR0(0b0111_1000);
+			dma.writePortFunc(0b0111_1001);
 			assert.notEqual(dma.nextDecodeBitMask, 0);
-			dma.writeWR0(0xF1);	// Port A start low
+			assert.equal(dma.writePortFunc, dma.writeWR0);
+			dma.writePortFunc(0xF1);	// Port A start low
 			assert.notEqual(dma.nextDecodeBitMask, 0);
-			dma.writeWR0(0xA7);	// Port A start high
+			dma.writePortFunc(0xA7);	// Port A start high
 			assert.notEqual(dma.nextDecodeBitMask, 0);
-			dma.writeWR0(0x02);	// Block len low
+			dma.writePortFunc(0x02);	// Block len low
 			assert.notEqual(dma.nextDecodeBitMask, 0);
-			dma.writeWR0(0xFC);	// Block len high
+			dma.writePortFunc(0xFC);	// Block len high
 			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
 
 			// Check values
 			assert.equal(dma.portAstartAddress, 0xA7F1);
@@ -50,37 +53,41 @@ suite('ZxnDma', function () {
 			dma.blockLength = 0x1234;
 
 			// Exchange 1 by one
-			dma.writeWR0(0b0001_0000);
+			dma.writePortFunc(0b0001_0001);
 			assert.notEqual(dma.nextDecodeBitMask, 0);
-			dma.writeWR0(0x7C);	// Port A start high
+			dma.writePortFunc(0x7C);	// Port A start high
 			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
 			// Check values
 			assert.equal(dma.portAstartAddress, 0x7CDE);
 			assert.equal(dma.blockLength, 0x1234);
 
 			// Exchange 1 by one
-			dma.writeWR0(0b0000_1000);
+			dma.writePortFunc(0b0000_1001);
 			assert.notEqual(dma.nextDecodeBitMask, 0);
-			dma.writeWR0(0x8E);	// Port A start low
+			dma.writePortFunc(0x8E);	// Port A start low
 			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
 			// Check values
 			assert.equal(dma.portAstartAddress, 0x7C8E);
 			assert.equal(dma.blockLength, 0x1234);
 
 			// Exchange 1 by one
-			dma.writeWR0(0b0100_0000);
+			dma.writePortFunc(0b0100_0001);
 			assert.notEqual(dma.nextDecodeBitMask, 0);
-			dma.writeWR0(0x4F);	// Block len high
+			dma.writePortFunc(0x4F);	// Block len high
 			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
 			// Check values
 			assert.equal(dma.portAstartAddress, 0x7C8E);
 			assert.equal(dma.blockLength, 0x4F34);
 
 			// Exchange 1 by one
-			dma.writeWR0(0b0010_0000);
+			dma.writePortFunc(0b0010_0001);
 			assert.notEqual(dma.nextDecodeBitMask, 0);
-			dma.writeWR0(0xD3);	// Block len low
+			dma.writePortFunc(0xD3);	// Block len low
 			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
 			// Check values
 			assert.equal(dma.portAstartAddress, 0x7C8E);
 			assert.equal(dma.blockLength, 0x4FD3);
@@ -88,39 +95,104 @@ suite('ZxnDma', function () {
 	});
 
 	suite('writeWR1', function () {
-		test('should set the correct properties', function () {
-			dma.writeWR1(0x34);
-			//assert.equal(dma.anotherProperty, 0x34, 'anotherProperty should be set to 0x34');
+		test('decode', function () {
+			// Default
+			assert.notEqual(dma.cycleLength, 2);
+			// Port A is IO or Memory
+			dma.writePortFunc(0b0000_1100);
+			assert.ok(dma.portAisIo);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
+
+			dma.writePortFunc(0b0000_0100);
+			assert.ok(!dma.portAisIo);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
+
+			// Port A address increment/decrement
+			dma.writePortFunc(0b0000_0100);
+			assert.equal(dma.portAadd, -1);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
+
+			dma.writePortFunc(0b0001_0100);
+			assert.equal(dma.portAadd, 1);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
+
+			dma.writePortFunc(0b0010_0100);
+			assert.equal(dma.portAadd, 0);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
+
+			dma.writePortFunc(0b0011_0100);
+			assert.equal(dma.portAadd, 0);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
+
+		});
+		test('full sequence', function () {
+			// Cycle len 4
+			dma.writePortFunc(0b0100_0100);
+			assert.notEqual(dma.nextDecodeBitMask, 0);
+			dma.writePortFunc(0b00);	// Cycle length
+			assert.equal(dma.cycleLength, 4);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
+
+			// Cycle len 3
+			dma.writePortFunc(0b0100_0100);
+			assert.notEqual(dma.nextDecodeBitMask, 0);
+			dma.writePortFunc(0b01);	// Cycle length
+			assert.equal(dma.cycleLength, 3);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
+
+			// Cycle len 2
+			dma.writePortFunc(0b0100_0100);
+			assert.notEqual(dma.nextDecodeBitMask, 0);
+			dma.writePortFunc(0b10);	// Cycle length
+			assert.equal(dma.cycleLength, 2);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
+
+			// Do not use
+			dma.writePortFunc(0b0100_0100);
+			assert.notEqual(dma.nextDecodeBitMask, 0);
+			dma.writePortFunc(0b11);	// Cycle length
+			assert.equal(dma.cycleLength, 2);	// Last value
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePortFunc);
 		});
 	});
 
 	suite('writeWR2', function () {
 		test('should set the correct properties', function () {
-			dma.writeWR2(0x56);
+			dma.writePortFunc(0x56);
 			//assert.equal(dma.yetAnotherProperty, 0x56, 'yetAnotherProperty should be set to 0x56');
 		});
 	});
 
 	suite('writeWR3', function () {
 		test('should set the correct properties', function () {
-			dma.writeWR3(0x78);
+			dma.writePortFunc(0x78);
 			//assert.equal(dma.differentProperty, 0x78, 'differentProperty should be set to 0x78');
 		});
 	});
 
 	suite('writeWR4', function () {
 		test('should set the correct properties', function () {
-			dma.writeWR4(0x9A);
+			dma.writePortFunc(0x9A);
 			//assert.equal(dma.someOtherProperty, 0x9A, 'someOtherProperty should be set to 0x9A');
 		});
 	});
 
 	suite('writeWR5', function () {
 		test('should set autoRestart correctly', function () {
-			dma.writeWR5(0b0010_0000); // Set autoRestart bit
+			dma.writePortFunc(0b0010_0000); // Set autoRestart bit
 			assert.ok(dma.autoRestart);
 
-			dma.writeWR5(0b0000_0000); // Clear autoRestart bit
+			dma.writePortFunc(0b0000_0000); // Clear autoRestart bit
 			assert.ok(!dma.autoRestart);
 		});
 	});
@@ -137,31 +209,31 @@ suite('ZxnDma', function () {
 			const continueSpy = sinon.spy(dma, 'continue');
 			const enableDmaSpy = sinon.spy(dma, 'enableDma');
 
-			dma.writeWR6(0xC3);
+			dma.writePortFunc(0xC3);
 			assert.ok(resetSpy.calledOnce, 'reset should be called once');
 
-			dma.writeWR6(0xC7);
+			dma.writePortFunc(0xC7);
 			assert.ok(resetPortAtimingSpy.calledOnce, 'resetPortAtiming should be called once');
 
-			dma.writeWR6(0xCB);
+			dma.writePortFunc(0xCB);
 			assert.ok(resetPortBtimingSpy.calledOnce, 'resetPortBtiming should be called once');
 
-			dma.writeWR6(0xBF);
+			dma.writePortFunc(0xBF);
 			assert.ok(readStatusByteSpy.calledOnce, 'readStatusByte should be called once');
 
-			dma.writeWR6(0x8B);
+			dma.writePortFunc(0x8B);
 			assert.ok(reinitializeStatusByteSpy.calledOnce, 'reinitializeStatusByte should be called once');
 
-			dma.writeWR6(0xA7);
+			dma.writePortFunc(0xA7);
 			assert.ok(initializeReadSequenceSpy.calledOnce, 'initializeReadSequence should be called once');
 
-			dma.writeWR6(0xCF);
+			dma.writePortFunc(0xCF);
 			assert.ok(loadSpy.calledOnce, 'load should be called once');
 
-			dma.writeWR6(0xD3);
+			dma.writePortFunc(0xD3);
 			assert.ok(continueSpy.calledOnce, 'continue should be called once');
 
-			dma.writeWR6(0x87);
+			dma.writePortFunc(0x87);
 			assert.ok(enableDmaSpy.calledOnce, 'enableDma should be called once');
 		});
 	});
