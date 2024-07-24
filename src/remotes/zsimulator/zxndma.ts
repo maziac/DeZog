@@ -45,8 +45,11 @@ export class ZxnDma implements Serializable {
 	// The number to add on each loop for port B address (-1, 1, 0)
 	protected portBadd: number = 0;
 
-	// The cycle length.
-	protected cycleLength: number = 2;
+	// The cycle length for port A.
+	protected portAcycleLength: number = 2;
+
+	// The cycle length for port B.
+	protected portBcycleLength: number = 2;
 
 	// ZX Next prescalar. If non-zero a delay is inserted after each byte transfer.
 	protected zxnPrescalar: number = 0;
@@ -60,6 +63,9 @@ export class ZxnDma implements Serializable {
 	// The read mask. A read from port 0x7F cycles through the values
 	// associated with the flags.
 	protected readMask: number = 0b0111_1111;
+
+	// State of the DMA. Enabled or disabled.
+	protected enabled: boolean = false;
 
 
 	/** Constructor.
@@ -82,7 +88,7 @@ export class ZxnDma implements Serializable {
 	/** Write to the port of the zxnDMA.
 	 * @param value The value that is written.
 	 */
-	public writePort(value: number) {
+	public writePort(value: number) {	// TODO: make writePort functions protected.
 		// Decode the Write Register (WR0-WR6)
 		const AA = value & 0b11;
 		if (value & 0x80) {
@@ -127,7 +133,7 @@ export class ZxnDma implements Serializable {
 	 * Sets port A starting address and length.
 	 * @param value The value that is written.
 	 */
-	public writeWR0(value: number) {	// TODO: make writeWR functions protected.
+	protected writeWR0(value: number) {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
 			// Decode transfer direction
@@ -169,7 +175,7 @@ export class ZxnDma implements Serializable {
 	 * - Cycle length.
 	 * @param value The value that is written.
 	 */
-	public writeWR1(value: number) {
+	protected writeWR1(value: number) {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
 			// Decode
@@ -188,7 +194,7 @@ export class ZxnDma implements Serializable {
 			// Cycle length
 			const clBits = (value & 0b011);
 			if (clBits !== 0b011) {
-				this.cycleLength = 1 + (clBits ^ 0b011);
+				this.portAcycleLength = 1 + (clBits ^ 0b011);
 			}
 			// End sequence
 			this.nextDecodeBitMask = 0;
@@ -205,7 +211,7 @@ export class ZxnDma implements Serializable {
 	 * - Cycle length.
 	 * @param value The value that is written.
 	 */
-	public writeWR2(value: number) {
+	protected writeWR2(value: number) {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
 			// Decode
@@ -225,7 +231,7 @@ export class ZxnDma implements Serializable {
 			// Cycle length
 			const clBits = (value & 0b011);
 			if (clBits !== 0b011) {
-				this.cycleLength = 1 + (clBits ^ 0b011);
+				this.portBcycleLength = 1 + (clBits ^ 0b011);
 			}
 			// Next
 			this.nextDecodeBitMask = (value & 0b0010_0000);
@@ -250,7 +256,7 @@ export class ZxnDma implements Serializable {
 	 * DMA enable.
 	 * @param value The value that is written.
 	 */
-	public writeWR3(value: number) {
+	protected writeWR3(value: number) {
 		// Very simple function, just set DMA
 		this.enableDma((value & 0b0100_0000) !== 0);
 		// End
@@ -264,7 +270,7 @@ export class ZxnDma implements Serializable {
 	 * - Port B starting address.
 	 * @param value The value that is written.
 	 */
-	public writeWR4(value: number) {
+	protected writeWR4(value: number) {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
 			// Decode
@@ -280,7 +286,7 @@ export class ZxnDma implements Serializable {
 		else if (this.nextDecodeBitMask & 0b0100) {
 			// Port A starting address (low)
 			this.portBstartAddress = (this.portBstartAddress & 0xFF00) | value;
-			this.nextDecodeBitMask &= ~0b0_1000;
+			this.nextDecodeBitMask &= ~0b0100;
 		}
 		else if (this.nextDecodeBitMask & 0b1000) {
 			// Port A starting address (high)
@@ -299,7 +305,7 @@ export class ZxnDma implements Serializable {
 	 * Sets auto-restart/stop behavior.
 	 * @param value The value that is written.
 	 */
-	public writeWR5(value: number) {
+	protected writeWR5(value: number) {
 		// Very simple function, just set auto restart
 		// Decode (/ce and /wait is HW -> ignored):
 		this.autoRestart = (value & 0b0010_0000) !== 0;
@@ -314,7 +320,7 @@ export class ZxnDma implements Serializable {
 	 * address.
 	 * @param value The value that is written.
 	 */
-	public writeWR6(value: number) {
+	protected writeWR6(value: number) {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
 			// Decode
@@ -388,6 +394,7 @@ export class ZxnDma implements Serializable {
 	/** Sets the DMA enable.
 	 */
 	protected enableDma(on: boolean) {
+		this.enabled = on;
 		// TODO: implement
 	}
 
