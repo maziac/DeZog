@@ -1,3 +1,4 @@
+import {isAsyncFunction} from "util/types";
 import {Log} from "../../log";
 import {Serializable, MemBuffer} from "../../misc/membuffer";
 
@@ -58,6 +59,15 @@ export class ZxnDma implements Serializable {
 	}
 
 
+	/** Checks for the last byte of a sequence and resets the write function
+	 * appropriately.
+	 */
+	protected checkLastByte() {
+		if (this.nextDecodeBitMask == 0) {
+			this.writePortFunc = this.writePort;
+		}
+	}
+
 
 	/** Write to the port of the zxnDMA.
 	 * @param value The value that is written.
@@ -89,49 +99,19 @@ export class ZxnDma implements Serializable {
 			// WR1-2
 			if (value & 0b100) {
 				// WR1
-				// Decode
-				this.portAisIo = (value & 0b0_1000) === 0b0_1000;	// memory or IO
-				if (value & 0b10_0000) {
-					this.portAadd = 0;	// fixed
-				} else if (value & 0b01_0000) {
-					this.portAadd = 1;	// Increment
-				} else {
-					this.portAadd = -1;	// Decrement
-				}
-				// Next byte
-				this.nextDecodeBitMask = value & 0b0100_0000;
-				if (this.nextDecodeBitMask) {
-					this.writePortFunc = this.writeWR1;
-				}
+				this.writePortFunc = this.writeWR1;
 			}
 			else {
 				// WR2
-				// Decode
-				this.portBisIo = (value & 0b0_1000) === 0b0_1000;	// memory or IO
-				if (value & 0b10_0000) {
-					this.portBadd = 0;	// fixed
-				} else if (value & 0b01_0000) {
-					this.portBadd = 1;	// Increment
-				} else {
-					this.portBadd = -1;	// Decrement
-				}
-				// Next byte
-				this.nextDecodeBitMask = value & 0b0100_0000;
-				if (this.nextDecodeBitMask) {
-					this.writePortFunc = this.writeWR2;
-				}
+				this.writePortFunc = this.writeWR2;
 			}
 		}
 		else {
 			// WR0
-			// Decode transfer direction
-			this.transferDirectionPortAtoB = (value & 0b100) === 0b100;
-			// Next byte
-			this.nextDecodeBitMask = value & 0b0111_1000;
-			if (this.nextDecodeBitMask) {
-				this.writePortFunc = this.writeWR0;
-			}
+			this.writePortFunc = this.writeWR0;
 		}
+		// Call the Wrx function
+		this.writePortFunc(value);
 	}
 
 
@@ -140,8 +120,15 @@ export class ZxnDma implements Serializable {
 	 * @param value The value that is written.
 	 */
 	public writeWR0(value: number) {
-		// Decode the value
-		if (this.nextDecodeBitMask & 0b0_1000) {
+		// Check for first byte in sequence
+		if (this.nextDecodeBitMask == 0) {
+			// Decode transfer direction
+			this.transferDirectionPortAtoB = (value & 0b100) === 0b100;
+			// Next byte
+			this.nextDecodeBitMask = value & 0b0111_1000;
+		}
+		// Check next byte in sequence
+		else if (this.nextDecodeBitMask & 0b0_1000) {
 			// Port A starting address (low)
 			this.portAstartAddress = (this.portAstartAddress & 0xFF00) | value;
 			this.nextDecodeBitMask &= ~0b0_1000;
@@ -161,11 +148,9 @@ export class ZxnDma implements Serializable {
 			this.blockLength = (this.blockLength & 0x00FF) | (value << 8);
 			this.nextDecodeBitMask &= ~0b100_0000;
 		}
-		// End reached
-		if (this.nextDecodeBitMask === 0) {
-			// Start again
-			this.writePortFunc = this.writePort;
-		}
+
+		// Check if last byte in sequence
+		this.checkLastByte();
 	}
 
 
@@ -176,13 +161,32 @@ export class ZxnDma implements Serializable {
 	 * @param value The value that is written.
 	 */
 	public writeWR1(value: number) {
-		// Cycle length
-		const clBits = (value & 0b011);
-		if (clBits !== 0b011) {
-			this.cycleLength = 1 + (clBits ^ 0b011);
+		// Check for first byte in sequence
+		if (this.nextDecodeBitMask == 0) {
+			// Decode
+			this.portAisIo = (value & 0b0_1000) === 0b0_1000;	// memory or IO
+			if (value & 0b10_0000) {
+				this.portAadd = 0;	// fixed
+			} else if (value & 0b01_0000) {
+				this.portAadd = 1;	// Increment
+			} else {
+				this.portAadd = -1;	// Decrement
+			}
+			// Next byte
+			this.nextDecodeBitMask = value & 0b0100_0000;
 		}
-		// Start again
-		this.writePortFunc = this.writePort;
+		else {
+			// Cycle length
+			const clBits = (value & 0b011);
+			if (clBits !== 0b011) {
+				this.cycleLength = 1 + (clBits ^ 0b011);
+			}
+			// End sequence
+			this.nextDecodeBitMask = 0;
+		}
+
+		// Check if last byte in sequence
+		this.checkLastByte();
 	}
 
 
@@ -193,8 +197,22 @@ export class ZxnDma implements Serializable {
 	 * @param value The value that is written.
 	 */
 	public writeWR2(value: number) {
-		// Decode the value
-		if (this.nextDecodeBitMask & 0b0100_0000) {
+		// Check for first byte in sequence
+		if (this.nextDecodeBitMask == 0) {
+			// Decode
+			this.portBisIo = (value & 0b0_1000) === 0b0_1000;	// memory or IO
+			if (value & 0b10_0000) {
+				this.portBadd = 0;	// fixed
+			} else if (value & 0b01_0000) {
+				this.portBadd = 1;	// Increment
+			} else {
+				this.portBadd = -1;	// Decrement
+			}
+			// Next
+			this.nextDecodeBitMask = (value & 0b0100_0000);
+		}
+		// Check next byte in sequence
+		else if (this.nextDecodeBitMask & 0b0100_0000) {
 			// Cycle length
 			const clBits = (value & 0b011);
 			if (clBits !== 0b011) {
@@ -206,16 +224,16 @@ export class ZxnDma implements Serializable {
 		else if (this.nextDecodeBitMask & 0b0010_0000) {
 			// ZXN prescalar
 			this.zxnPrescalar = value;
+			// End sequence
+			this.nextDecodeBitMask = 0;
 		}
 		else {
 			// Probably a write error.
 			this.nextDecodeBitMask = 0;
 		}
-		// End reached
-		if (this.nextDecodeBitMask === 0) {
-			// Start again
-			this.writePortFunc = this.writePort;
-		}
+
+		// Check if last byte in sequence
+		this.checkLastByte();
 	}
 
 
