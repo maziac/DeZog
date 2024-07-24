@@ -241,6 +241,9 @@ suite('ZxnDma', function () {
 	suite('writeWR3', function () {
 		test('DMA Enable', function () {
 			const enableDmaSpy = sinon.spy(dma, 'enableDma');
+			// Default
+			assert.ok(!dma.enabled);
+
 			// Enable dma
 			dma.writePortFunc(0b1100_0000);
 			assert.ok(dma.enabled);
@@ -333,12 +336,21 @@ suite('ZxnDma', function () {
 	});
 
 	suite('writeWR5', function () {
-		test('should set autoRestart correctly', function () {
-			dma.writePortFunc(0b0010_0000); // Set autoRestart bit
-			assert.ok(dma.autoRestart);
-
-			dma.writePortFunc(0b0000_0000); // Clear autoRestart bit
+		test('Auto Restart', function () {
+			// Default
 			assert.ok(!dma.autoRestart);
+
+			// Enable dma
+			dma.writePortFunc(0b1010_0010);
+			assert.ok(dma.autoRestart);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePort);
+
+			// Disable dma
+			dma.writePortFunc(0b1000_0010);
+			assert.ok(!dma.autoRestart);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePort);
 		});
 	});
 
