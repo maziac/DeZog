@@ -57,6 +57,13 @@ export class ZxnDma implements Serializable {
 	// The burst mode. true = burst, false = continuous.
 	protected burstMode: boolean = true;
 
+	// auto-restart: true = auto-restart, false = stop on end of block.
+	protected autoRestart: boolean = false;
+
+	// The read mask. A read from port 0x7F cycles through the values
+	// associated with the flags.
+	protected readMask: number = 0b0111_1111;
+
 
 	/** Constructor.
 	 */
@@ -215,7 +222,7 @@ export class ZxnDma implements Serializable {
 				this.portBadd = -1;	// Decrement
 			}
 			// Next
-			this.nextDecodeBitMask = (value & 0b0100_0000);
+			this.nextDecodeBitMask = value & 0b0100_0000;
 		}
 		// Check next byte in sequence
 		else if (this.nextDecodeBitMask & 0b0100_0000) {
@@ -249,7 +256,7 @@ export class ZxnDma implements Serializable {
 	 */
 	public writeWR3(value: number) {
 		// Very simple function, just set DMA
-		this.setDmaEnable((value & 0b0100_0000) !== 0);
+		this.enableDma((value & 0b0100_0000) !== 0);
 		// End
 		this.writePortFunc = this.writePort;
 	}
@@ -271,7 +278,7 @@ export class ZxnDma implements Serializable {
 				this.burstMode = (mode === 0b10);
 			}
 			// Next
-			this.nextDecodeBitMask = (value & 0b1100);
+			this.nextDecodeBitMask = value & 0b1100;
 		}
 		// Check next byte in sequence
 		else if (this.nextDecodeBitMask & 0b0100) {
@@ -305,7 +312,6 @@ export class ZxnDma implements Serializable {
 	}
 
 
-
 	/** Write to to WR6.
 	 * Sets the command (Load, Continue, Enable DMA, etc.)
 	 * Or sets a read mask for the counter, port A or port B
@@ -316,16 +322,28 @@ export class ZxnDma implements Serializable {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
 			// Decode
-
-			// Next
-			this.nextDecodeBitMask = (value & 0b0100_0000);
+			switch (value) {	// Command
+				case 0xC3: this.reset(); break;
+				case 0xC7: this.resetPortAtiming(); break;
+				case 0xCB: this.resetPortBtiming(); break;
+				case 0xBF: this.readStatusByte(); break;
+				case 0x8B: this.reinitializeStatusByte(); break;
+				case 0xA7: this.initializeReadSequence(); break;
+				case 0xCF: this.load(); break;
+				case 0xD3: this.continue(); break;
+				case 0x87: this.enableDma(true); break;
+				case 0x83: this.enableDma(false); break;
+				// Next read read-mask
+				case 0xBB: this.nextDecodeBitMask = value & 0b1000_0000; break;
+			}
 		}
-		// Check next byte in sequence
-		else if (this.nextDecodeBitMask & 0b0100_0000) {
-			// Next
-			this.nextDecodeBitMask = (value & 0b0010_0000);
+		// Check read mask
+		else if (this.nextDecodeBitMask & 0b1000_0000) {
+			// Decode read mask
+			this.readMask = value & 0b0111_1111;
+			// End
+			this.nextDecodeBitMask = 0;
 		}
-
 		// Check if last byte in sequence
 		this.checkLastByte();
 	}
@@ -333,7 +351,7 @@ export class ZxnDma implements Serializable {
 
 	/** Sets the DMA enable.
 	 */
-	protected setDmaEnable(on: boolean) {
+	protected enableDma(on: boolean) {
 		// TODO: implement
 	}
 
