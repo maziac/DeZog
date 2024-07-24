@@ -18,11 +18,8 @@ export class ZxnDma implements Serializable {
 	// The function is switched from wrtiePort to writeWR0-6.
 	protected writePortFunc: (value: number) => void;
 
-	// The written bitmask.
-	protected bitmask: number;
-
 	// The next bit to decode.
-	protected nextDecodeBitMask: number;
+	protected nextDecodeBitMask: number = 0;
 
 	// Decode transfer direction: true: A->B, false: B->A
 	protected transferDirectionPortAtoB: boolean = false;
@@ -86,8 +83,6 @@ export class ZxnDma implements Serializable {
 	 * @param value The value that is written.
 	 */
 	public writePort(value: number) {
-		// Store
-		this.bitmask = value;
 		// Decode the Write Register (WR0-WR6)
 		const AA = value & 0b11;
 		if (value & 0x80) {
@@ -132,10 +127,11 @@ export class ZxnDma implements Serializable {
 	 * Sets port A starting address and length.
 	 * @param value The value that is written.
 	 */
-	public writeWR0(value: number) {
+	public writeWR0(value: number) {	// TODO: make writeWR functions protected.
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
 			// Decode transfer direction
+			// Note: bit0,1 are not decoded (always transfer)
 			this.transferDirectionPortAtoB = (value & 0b100) === 0b100;
 			// Next byte
 			this.nextDecodeBitMask = value & 0b0111_1000;

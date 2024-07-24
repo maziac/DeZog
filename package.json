@@ -70,6 +70,7 @@
 		"@types/vscode-webview": "^1.57.0",
 		"esbuild": "^0.17.10",
 		"mocha": "^10.2.0",
+		"sinon": "^18.0.0",
 		"source-map-support": "^0.5.21",
 		"typescript": "^4.8.4"
 	},
