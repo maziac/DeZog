@@ -1,5 +1,4 @@
-import {isAsyncFunction} from "util/types";
-import {Log} from "../../log";
+import {Log} from "../../log";	// TODO: implement logging for the zxndma
 import {Serializable, MemBuffer} from "../../misc/membuffer";
 
 
@@ -9,7 +8,8 @@ import {Serializable, MemBuffer} from "../../misc/membuffer";
  * The ZX Next DMA controller is a simple device that allows the Z80 to transfer data with the peripherals without the need for the CPU to be involved in the process.
  *
  * Not the whole zxnDMA is implemented:
- * - No compatibility with Z80 DMA
+ * - No compatibility with Z80 DMA (bit 6 of nextreg 0x06 is ignored).
+ * - No interrupts
  * - TODO: What else is missing?
  *
  */
@@ -45,11 +45,11 @@ export class ZxnDma implements Serializable {
 	// The number to add on each loop for port B address (-1, 1, 0)
 	protected portBadd: number = 0;
 
-	// The cycle length for port A.
-	protected portAcycleLength: number = 2;
+	// The cycle length for port A. 0 = no variable cycle timing is used.
+	protected portAcycleLength: number = 0;
 
-	// The cycle length for port B.
-	protected portBcycleLength: number = 2;
+	// The cycle length for port B. 0 = no variable cycle timing is used.
+	protected portBcycleLength: number = 0;
 
 	// ZX Next prescalar. If non-zero a delay is inserted after each byte transfer.
 	protected zxnPrescalar: number = 0;
@@ -67,11 +67,34 @@ export class ZxnDma implements Serializable {
 	// State of the DMA. Enabled or disabled.
 	protected enabled: boolean = false;
 
+	/** The status byte:
+	Bit 0: 1 = DMA operation has occurred
+	Bit 1: 0 = Ready Active
+	Bit 2: Undefined
+	Bit 3: 0 = Interrupt pending
+	Bit 4: 0 = Match found (not used)
+	Bit 5: 0 = End of block
+	Bit 6: Undefined
+	Bit 7: Undefined
+	*/
+	protected statusByteRR0: number = 0;
+
+	// The byte counter (how many bytes are transferred).
+	protected blockCounterRR12: number = 0;
+
+	// The port A address counter.
+	protected portAaddressCounterRR34: number = 0;
+
+	// The port B address counter.
+	protected portBaddressCounterRR56: number = 0;
+
+
 
 	/** Constructor.
 	 */
 	constructor() {
 		this.writePortFunc = this.writePort
+		this.reset();
 	}
 
 
@@ -351,13 +374,15 @@ export class ZxnDma implements Serializable {
 	}
 
 
+	// Resets to standard Z80 timing.
 	protected resetPortAtiming() {
-	// TODO: implement
+		this.portAcycleLength = 0;
 	}
 
 
+	// Resets to standard Z80 timing.
 	protected resetPortBtiming() {
-	// TODO: implement
+		this.portBcycleLength = 0;
 	}
 
 
@@ -366,8 +391,9 @@ export class ZxnDma implements Serializable {
 	}
 
 
+	// Resets (1) the block ended (and the search) flag.
 	protected reinitializeStatusByte() {
-	// TODO: implement
+		this.statusByteRR0 |= 0b0011_0000;
 	}
 
 
@@ -376,22 +402,29 @@ export class ZxnDma implements Serializable {
 	}
 
 
+	// Loads the starting addresses to the counters.
 	protected load() {
-	// TODO: implement
+		this.portAaddressCounterRR34 = this.portAstartAddress;
+		this.portBaddressCounterRR56 = this.portBstartAddress;
+		this.blockCounterRR12 = 0;
 	}
 
 
+	// Clears the block counter.
 	protected continue() {
-	// TODO: implement
+		this.blockCounterRR12 = 0;
 	}
 
 
 	protected reset() {
-	// TODO: implement
+		this.autoRestart = false;
+		this.portAcycleLength = 0;
+		this.portBcycleLength = 0;
 	}
 
 
 	/** Sets the DMA enable.
+	 * This starts the DMA transfer.
 	 */
 	protected enableDma(on: boolean) {
 		this.enabled = on;
