@@ -23,8 +23,7 @@ import {DzrpTransportTest} from './dzrptransporttest';
 export const DZRP_PROGRAM_NAME = "DeZog v" + process.version;
 
 
-/**
- * The DZP commands and responses.
+/** The DRZP commands and responses.
  * The response contains the command with the bit 7 set.
  */
 export enum DZRP {
@@ -78,8 +77,7 @@ export enum DZRP_NTF {
 }
 
 
-/**
- * Used for the DZRP CMD_CONTINUE alternate command for performance
+/** Used for the DZRP CMD_CONTINUE alternate command for performance
  * improvement.
  * Is not implemented yet in DeZog but the DZRP already defines it.
  */
@@ -90,8 +88,7 @@ export enum AlternateCommand {
 }
 
 
-/**
- * Defines the machine type that is returned in CMD_INIT.
+/** Defines the machine type that is returned in CMD_INIT.
  * It is required to determine the memory model.
  */
 export enum DzrpMachineType {
@@ -101,8 +98,7 @@ export enum DzrpMachineType {
 	ZXNEXT = 4,
 }
 
-/**
- * This interface is passed after a break occurs and contains
+/** This interface is passed after a break occurs and contains
  * break address and reason.
  */
 export interface BreakInfo {
@@ -115,13 +111,12 @@ export interface BreakInfo {
 	// The address where the break occurred. A long address. Either the PC value or e.g. a watched address.
 	longAddr: number;
 
-	// Optional data packet. E.g. used b MAME for the PC value.
+	// Optional data packet. E.g. used by MAME for the PC value.
 	data?: any;
 }
 
 
-/**
- * A class that communicates with the remote via the DZRP protocol.
+/** A class that communicates with the remote via the DZRP protocol.
  * It is base class for all DZRP remote classes that implement
  * special transports like serial connection or socket.
  *
@@ -192,8 +187,7 @@ export class DzrpRemote extends RemoteBase {
 	// }
 
 
-	/**
-	 * Checks if there still is an open promise and runs it.
+	/** Checks if there still is an open promise and runs it.
 	 */
 	public dispose() {
 		// Check for open promise
@@ -208,26 +202,25 @@ export class DzrpRemote extends RemoteBase {
 	}
 
 
-	/// Override.
-	/// Initializes the machine.
-	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
-	/// The successful emit takes place in 'onConnect' which should be called
-	/// by 'doInitialization' after a successful connect.
+	/** Override.
+	 * Initializes the machine.
+	 * When ready it emits this.emit('initialized') or this.emit('error', Error(...)).
+	 * The successful emit takes place in 'onConnect' which should be called
+	 * by 'doInitialization' after a successful connect.
+	 */
 	public async doInitialization(): Promise<void> {
 		//
 	}
 
 
-	/**
-	 * Override to create another decoder.
+	/** Override to create another decoder.
 	 */
 	protected createZ80RegistersDecoder(): Z80RegistersStandardDecoder {
 		return new Z80RegistersStandardDecoder();
 	}
 
 
-	/**
-	 * Call this from 'doInitialization' when a successful connection
+	/** Call this from 'doInitialization' when a successful connection
 	 * has been opened to the Remote.
 	 * @emits this.emit('initialized') or this.emit('error', Error(...))
 	 */
@@ -279,8 +272,7 @@ export class DzrpRemote extends RemoteBase {
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Stops the emulator.
 	 * This will disconnect e.g. any socket and un-use all data.
 	 * Called e.g. when vscode sends a disconnectRequest
@@ -290,8 +282,7 @@ export class DzrpRemote extends RemoteBase {
 	// }
 
 
-	/**
-	 * If cache is empty retrieves the registers from
+	/** If cache is empty retrieves the registers from
 	 * the Remote.
 	 */
 	public async getRegistersFromEmulator(): Promise<void> {
@@ -312,8 +303,7 @@ export class DzrpRemote extends RemoteBase {
 	}
 
 
-	/**
-	 * Execute specific commands.
+	/** Execute specific commands.
 	 * Used to send (for testing) specific DZRP commands to the ZXNext.
 	 * @param cmd E.g. 'cmd_continue.
 	 * @returns A Promise with a return string, i.e. the decoded response.
@@ -633,8 +623,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Sets the value for a specific register.
+	/** Sets the value for a specific register.
 	 * Reads the value from the emulator and returns it in the promise.
 	 * Note: if in reverse debug mode the function should do nothing and the promise should return the previous value.
 	 * @param register The register to set, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
@@ -650,8 +639,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Sets the slot to a specific bank.
+	/** Sets the slot to a specific bank.
 	 * Used by the unit tests.
 	 * @param slot The slot to set.
 	 * @param bank The bank for the slot.
@@ -661,8 +649,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Returns the array of watchpoint for a given address.
+	/** Returns the array of watchpoint for a given address.
 	 * Normally the array is empty or contains only 1 watchpoint.
 	 * But it could happen that several watchpoints are defined for the same address.
 	 * @param address The address to check. Could be a long address.
@@ -696,8 +683,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Searches the 'breakpoints', the 'assertionBreakpoints' and the
+	/** Searches the 'breakpoints', the 'assertionBreakpoints' and the
 	 * 'logpoints' arrays for the given breakpoint ID.
 	 * In fact searches tmpBreakpoints. Therefore make sure you called
 	 * createTemporaryBreakpoints before.
@@ -713,8 +699,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		return foundBps;
 	}
 
-	/**
-	 * Creates a temporary map from the breakpoints, logpoints and assertions.
+	/** Creates a temporary map from the breakpoints, logpoints and assertions.
 	 * If one entry is set the entry contains a pointer to the breakpoint.
 	 * Or better it contains an array of breakpoints that all share the
 	 * same address.
@@ -735,8 +720,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Adds a breakpoint to the temporary array.
+	/** Adds a breakpoint to the temporary array.
 	 * Is called by createTemporaryBreakpoints or if a BP
 	 * is created during a running debugged program.
 	 */
@@ -753,8 +737,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Removes a breakpoint from the temporary array.
+	/** Removes a breakpoint from the temporary array.
 	 * Is called by createTemporaryBreakpoints or if a BP
 	 * is removed during a running debugged program.
 	 */
@@ -779,8 +762,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Takes a breakpoint and checks if it's condition is true and if
+	/** Takes a breakpoint and checks if it's condition is true and if
 	 * log needs to be done.
 	 * @param bp The GenericBreakpoint.
 	 * @returns [condition, log]
@@ -817,8 +799,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Constructs a human readable break-reason-string from the break number, data and
+	/** Constructs a human readable break-reason-string from the break number, data and
 	 * an already existing reason string.
 	 * @param breakNumber E.g. BREAK_REASON_NUMBER.WATCHPOINT_READ.
 	 * @param breakAddress E.g. the breakpoint or the watchpoint address.
@@ -893,8 +874,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * This method is called before a step (stepOver, stepInto, stepOut,
+	/** This method is called before a step (stepOver, stepInto, stepOut,
 	 * continue, stepBack, etc.) is called.
 	 */
 	public startProcessing() {
@@ -906,8 +886,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * This method is called after a step (stepOver, stepInto, stepOut,
+	/** This method is called after a step (stepOver, stepInto, stepOut,
 	 * continue, stepBack, etc.) is called.
 	 */
 	/*
@@ -916,8 +895,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	*/
 
 
-	/**
-	 * Evaluates the breakpoint condition and log (logpoint).
+	/** Evaluates the breakpoint condition and log (logpoint).
 	 * Checks also pauseStep and returns '' if it is true.
 	 * @param breakType The break reason as number, e.g. BREAK_REASON_NUMBER.BREAKPOINT_HIT
 	 * @param breakAddress The address of the breakpoint or watchpoint.
@@ -1028,8 +1006,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * 'continue' debugger program execution.
+	/** 'continue' debugger program execution.
 	 * @returns A Promise with a string containing the break reason.
 	 */
 	public async continue(): Promise<string> {
@@ -1083,8 +1060,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * 'pause' the debugger.
+	/** 'pause' the debugger.
 	 */
 	public async pause(): Promise<void> {
 		// Set this flag to pause a stepOut etc
@@ -1094,8 +1070,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * 'step over' an instruction in the debugger.
+	/** 'step over' an instruction in the debugger.
 	 * @param stepOver true=step-over, false=step-into.
 	 * @returns A Promise with a string with the break reason.
 	 * Or 'undefined' if no reason.
@@ -1150,8 +1125,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * 'step into' an instruction in the debugger.
+	/** 'step into' an instruction in the debugger.
 	 * @returns A Promise with a string with the break reason.
 	 * Or 'undefined' if no reason.
 	 */
@@ -1160,8 +1134,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * 'step out' of current subroutine.
+	/** 'step out' of current subroutine.
 	 * The step-out uses normal step (into) functionality and checks
 	 * after each step if the last instruction was some RET and
 	 * the stackpointer is bigger than at the beginning.
@@ -1248,8 +1221,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Tests if the opcode is a RET instruction.
+	/** Tests if the opcode is a RET instruction.
 	 * @param opcodes E.g. 0xe52a785c
 	 * @returns false=if not RET (or RETI or RETN or RET cc).
 	 */
@@ -1278,8 +1250,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Sets one watchpoint in the remote.
+	/** Sets one watchpoint in the remote.
 	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
 	 * @param wp The watchpoint to set.
 	 */
@@ -1292,8 +1263,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Removes one watchpoint from the remote.
+	/** Removes one watchpoint from the remote.
 	 * @param wp The watchpoint to remove.
 	 */
 	public async removeWatchpoint(wp: GenericWatchpoint): Promise<void> {
@@ -1305,8 +1275,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Enables/disables all assertion breakpoints set from the sources.
+	/** Enables/disables all assertion breakpoints set from the sources.
 	 * @param enable true=enable, false=disable.
 	 */
 	public async enableAssertionBreakpoints(enable: boolean): Promise<void> {
@@ -1327,8 +1296,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Enables/disable all given points.
+	/** Enables/disable all given points.
 	 * Called at startup and once by enableLogpointGroup (to turn a group on or off).
 	 * Promise is called after the last logpoint is set.
 	 * @param logpoints A list of addresses to put a log breakpoint on.
@@ -1355,8 +1323,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/*
-	 * Sets breakpoint in the Remote.
+	/** Sets breakpoint in the Remote.
 	 * Sets the breakpoint ID (bpId) in bp.
 	 * @param bp The breakpoint.
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
@@ -1389,8 +1356,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Clears one breakpoint.
+	/** Clears one breakpoint.
 	 */
 	public async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
 		// Remove from list
@@ -1408,8 +1374,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Reads a memory.
+	/** Reads a memory.
 	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
@@ -1419,8 +1384,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Writes a memory dump.
+	/** Writes a memory dump.
 	 * @param address The memory start address.
 	 * @param dataArray The data to write.
 	 */
@@ -1429,8 +1393,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Loads .nex or .sna files.
+	/** Loads .nex or .sna files.
 	 */
 	protected async loadBin(filePath: string): Promise<void> {
 		// Check file extension
@@ -1446,8 +1409,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Loads object file (binary without any meta data).
+	/** Loads object file (binary without any meta data).
 	 * @param filePath The absolute path to the file.
 	 * @param startAddress The address where the data should be loaded.
 	 */
@@ -1464,8 +1426,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Loads a .sna file.
+	/** Loads a .sna file.
 	 * See https://faqwiki.zxnet.co.uk/wiki/SNA_format
 	 */
 	protected async loadBinSna(filePath: string): Promise<void> {
@@ -1514,8 +1475,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Loads a .nex file.
+	/** Loads a .nex file.
 	 * See https://wiki.specnext.dev/NEX_file_format
 	 */
 	protected async loadBinNex(filePath: string): Promise<void> {
@@ -1550,8 +1510,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Called from "-state save" command.
+	/** Called from "-state save" command.
 	 * Stores all RAM, registers etc.
 	 * Override.
 	 * @param filePath The file path to store to.
@@ -1566,8 +1525,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Called from "-state restore" command.
+	/** Called from "-state restore" command.
 	 * Restores all RAM + the registers from a former "-state save".
 	 * Override.
 	 * @param filePath The file path to retore from.
@@ -1589,8 +1547,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	// ZX Next related ---------------------------------
 
 
-	/**
-	 * Retrieves the TBBlue register value from the emulator.
+	/** Retrieves the TBBlue register value from the emulator.
 	 * @param registerNr The number of the register.
 	 * @returns A promise with the value of the register.
 	 */
@@ -1600,8 +1557,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Retrieves the sprites palette from the emulator.
+	/** Retrieves the sprites palette from the emulator.
 	 * @param paletteNr 0 or 1.
 	 * @returns A Promise that returns a 256 element Array<number> with the palette values.
 	 */
@@ -1611,8 +1567,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Retrieves the sprites clipping window from the emulator.
+	/** Retrieves the sprites clipping window from the emulator.
 	 * @returns A Promise that returns the clipping dimensions and the control byte(xl, xr, yt, yb, control).
 	 */
 	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
@@ -1621,8 +1576,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Retrieves the sprites from the emulator.
+	/** Retrieves the sprites from the emulator.
 	 * @param slot The start slot.
 	 * @param count The number of slots to retrieve.
 	 * @returns A Promise with an array of sprite attribute data.
@@ -1633,8 +1587,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Retrieves the sprite patterns from the emulator.
+	/** Retrieves the sprite patterns from the emulator.
 	 * @param index The start index.
 	 * @param count The number of patterns to retrieve.
 	 * @preturns A Promise with an array of sprite pattern data.
@@ -1650,8 +1603,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 	//------- Send Commands -------
 
-	/**
-	 * Override.
+	/** Override.
 	 * The first command send. Includes the version number.
 	 * @returns The error, program name (incl. version), dzrp version and the machine type.
 	 * error is 0 on success. 0xFF if version numbers not match.
@@ -1663,8 +1615,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * The last command sent. Closes the debug session.
 	 */
 	protected async sendDzrpCmdClose(): Promise<void> {
@@ -1672,8 +1623,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to get all registers.
 	 * @returns An Uint16Array with the register data. Same order as in
 	 * 'Z80Registers.getRegisterData'.
@@ -1684,8 +1634,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to set a register value.
 	 * @param regIndex E.g. Z80_REG.BC or Z80_REG.A2
 	 * @param value A 1 byte or 2 byte value.
@@ -1695,8 +1644,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to continue ('run') the program.
 	 * @param bp1Addr64k The 64k address (not long address) of breakpoint 1 or undefined if not used.
 	 * @param bp2Addr64k The 64k address (not long address) of breakpoint 2 or undefined if not used.
@@ -1706,8 +1654,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to pause a running program.
 	 */
 	protected async sendDzrpCmdPause(): Promise<void> {
@@ -1715,8 +1662,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to add a breakpoint.
 	 * @param bp The breakpoint. sendDzrpCmdAddBreakpoint will set bp.bpId with the breakpoint
 	 * ID. If the breakpoint could not be set it is set to 0.
@@ -1726,8 +1672,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Removes a breakpoint from the list.
 	 * @param bp The breakpoint to remove.
 	 */
@@ -1736,8 +1681,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to add a watchpoint.
 	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
@@ -1748,8 +1692,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to remove a watchpoint for an address range.
 	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
@@ -1760,8 +1703,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to retrieve a memory dump.
 	 * @param addr64k The memory start address.
 	 * @param size The memory size.
@@ -1773,8 +1715,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to write a memory dump.
 	 * @param addr64k The memory start address (64k).
 	 * @param dataArray The data to write.
@@ -1784,8 +1725,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to write a memory bank.
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
@@ -1796,8 +1736,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to set a slot/bank associations (8k banks).
 	 * @param slot The slot to set
 	 * @param bank The 8k bank to associate the slot with.
@@ -1809,8 +1748,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to read the current state of the machine.
 	 * I.e. memory, registers etc.
 	 * @returns A Promise with state data. Format is unknown (remote specific).
@@ -1822,8 +1760,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to wite a previously saved state to the remote.
 	 * I.e. memory, registers etc.
 	 * @param The state data. Format is unknown (remote specific).
@@ -1834,8 +1771,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 
 
-	/**
-	 * Returns the value of one TBBlue register.
+	/** Returns the value of one TBBlue register.
 	 * @param register  The Tbblue register.
 	 * @returns A promise with the value.
 	  */
@@ -1844,8 +1780,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Sends the command to get a sprites palette.
+	/** Sends the command to get a sprites palette.
 	 * @param index 0/1. The first or the second palette.
 	 * @returns An array with 256 entries with the 9 bit color.
 	  */
@@ -1855,8 +1790,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Sends the command to get a number of sprite attributes.
+	/** Sends the command to get a number of sprite attributes.
 	 * @param index The index of the sprite.
 	 * @param count The number of sprites to return.
 	 * @returns An array with 5 byte attributes for each sprite.
@@ -1867,8 +1801,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Sends the command to retrieve sprite patterns.
+	/** Sends the command to retrieve sprite patterns.
 	 * Retrieves only 256 byte patterns. If a 128 byte patterns is required
 	 * the full 256 bytes are returned.
 	 * @param index The index of the pattern [0-63]
@@ -1881,8 +1814,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Sends the command to get the sprites clipping window.
+	/** Sends the command to get the sprites clipping window.
 	 * @returns A Promise that returns the clipping dimensions and the control byte (xl, xr, yt, yb, control).
 	  */
 	public async sendDzrpCmdGetSpritesClipWindow(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
@@ -1891,16 +1823,14 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Sends the command to set the border.
-	  */
+	/** Sends the command to set the border.
+	 */
 	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
 		Utility.assert(false);
 	}
 
 
-	/**
-	 * Sends the command to set all breakpoints.
+	/** Sends the command to set all breakpoints.
 	 * For the ZXNext all breakpoints are set at once just before the
 	 * next 'continue' is executed.
 	 * @param bpAddresses The breakpoint addresses. Each 0x0000-0xFFFF.
@@ -1912,8 +1842,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Sends the command to restore the memory for all breakpoints.
+	/** Sends the command to restore the memory for all breakpoints.
 	 * This is send just after the 'continue' command.
 	 * So that the user only sees correct memory contents even if doing
 	 * a disassembly or memory read.
@@ -1926,8 +1855,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to read from a port.
 	 * @param port The port address.
 	 * @returns The value read from the port.
@@ -1938,8 +1866,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to write to a port.
 	 * @param port The port address.
 	 * @param value the value to write.
@@ -1949,8 +1876,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends Z80 to execute in the remote.
 	 * The code needs no trailing RET.
 	 * Returns registers AF, BC, DE, HL.
@@ -1963,8 +1889,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to enable or disable the interrupts.
 	 * @param enable true to enable, false to disable interrupts.
 	 */
