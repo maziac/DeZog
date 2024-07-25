@@ -22,8 +22,7 @@ const CONNECTION_TIMEOUT = 1000;	// 1 sec
 const CTRL_C = '\x03';
 
 
-/**
- * The representation of a MAME remote.
+/** The representation of a MAME remote.
  * Can handle the MAME gdbstub but only for Z80.
  */
 export class MameGdbRemote extends DzrpQueuedRemote {
@@ -46,10 +45,11 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/// Initializes the machine.
-	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
-	/// The successful emit takes place in 'onConnect' which should be called
-	/// by 'doInitialization' after a successful connect.
+	/** Initializes the machine.
+	 * When ready it emits this.emit('initialized') or this.emit('error', Error(...));
+	 * The successful emit takes place in 'onConnect' which should be called
+	 * by 'doInitialization' after a successful connect.
+	 */
 	public async doInitialization(): Promise<void> {
 
 		// Init socket
@@ -109,16 +109,14 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Override to create another decoder.
+	/** Override to create another decoder.
 	 */
 	protected createZ80RegistersDecoder(): Z80RegistersStandardDecoder {
 		return new Z80RegistersMameDecoder();
 	}
 
 
-	/**
-	 * Call this from 'doInitialization' when a successful connection
+	/** Call this from 'doInitialization' when a successful connection
 	 * has been opened to the Remote.
 	 * @emits this.emit('initialized') or this.emit('error', Error(...))
 	 */
@@ -153,8 +151,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * This will disconnect the socket and un-use all data.
+	/** This will disconnect the socket and un-use all data.
 	 * Called e.g. when vscode sends a disconnectRequest
 	 */
 	public async disconnect(): Promise<void> {
@@ -201,8 +198,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Closes the socket.
+	/** Closes the socket.
 	 */
 	// Note: Remove once MAME issue 9578 (https://github.com/mamedev/mame/issues/9578) is clarified
 	protected socketClose(): Promise<void> {
@@ -231,8 +227,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Checks the XML received from MAME.
+	/** Checks the XML received from MAME.
 	 * Throws an exception if the architecture is not 'z80'.
 	 */
 	protected parseXml(xml: string) {
@@ -246,8 +241,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Called when data has been received.
+	/** Called when data has been received.
 	 * If the packet is broken in several chunks this function might be called several times.
 	 * It always analyzes the complete packet that is held in
 	 * 'receivedData'.
@@ -317,8 +311,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		}
 	}
 
-	/**
-	 * A response has been received.
+	/** A response has been received.
 	 * If there are still messages in the queue the next message is sent.
 	 */
 		// The function to hold the Promise's resolve function for a continue request.
@@ -367,8 +360,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Returns the break reason.
+	/** Returns the break reason.
 	 * Parses the Stop Reply Packet and retrieves the info.
 	 * E.g. 'T050a:0000;0b:0100;'
 	 * Note: it should have been checked already that it is a Stop Reply,
@@ -410,8 +402,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Calculates the checksum.
+	/** Calculates the checksum.
 	 * A simple addition of the ASCII value mod 256.
 	 * @param packetData E.g. 'z0,C000,0'
 	 * @returns The checksum in hex, e.g. 'A7'
@@ -429,8 +420,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends data to MAME.
+	/** Sends data to MAME.
 	 * The format is:
 	 * $packet-data#checksum
 	 * The packet is answer with an ACK (NACK) followed by a reply/response.
@@ -468,8 +458,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends a packet to MAME that expects an 'OK' as reply.
+	/** Sends a packet to MAME that expects an 'OK' as reply.
 	 * If something else is received an exception is thrown.
 	 * @param packetData E.g. 'z1,C000,0'
 	 */
@@ -482,8 +471,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Writes the buffer to the socket.
+	/** Writes the buffer to the socket.
 	 */
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
@@ -497,8 +485,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Execute specific commands.
+	/** Execute specific commands.
 	 * Used to send (for testing) specific DZRP commands to the ZXNext.
 	 * @param cmd E.g. 'cmd_continue.
 	 * @returns A Promise with a return string, i.e. the decoded response.
@@ -561,8 +548,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 	//------- Send Commands -------
 
-	/**
-	 * Sends the command to init the remote.
+	/** Sends the command to init the remote.
 	 * @returns The error, program name (incl. version), dzrp version and the machine type.
 	 * error is 0 on success. 0xFF if version numbers not match.
 	 * Other numbers indicate an error on remote side.
@@ -571,10 +557,9 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
 		return {error: undefined, dzrpVersion: '', programName: 'MAME', machineType: DzrpMachineType.ALL_ROM};
 	}
-*/
+	*/
 
-	/**
-	 * If cache is empty retrieves the registers from
+	/** If cache is empty retrieves the registers from
 	 * the Remote.
 	 */
 	public async getRegistersFromEmulator(): Promise<void> {
@@ -583,8 +568,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to set a register value.
+	/** Sends the command to set a register value.
 	 * @param regIndex E.g. Z80_REG.BC or Z80_REG.A2
 	 * @param value A 1 byte or 2 byte value.
 	 */
@@ -642,8 +626,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to continue ('run') the program.
+	/** Sends the command to continue ('run') the program.
 	 * @param bp1Addr64k The 64k address of breakpoint 1 or undefined if not used.
 	 * @param bp2Addr64k The 64k address of breakpoint 2 or undefined if not used.
 	 */
@@ -685,8 +668,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Removes temporary breakpoints that might have been set by a
+	/** Removes temporary breakpoints that might have been set by a
 	 * step function.
 	 * Additionally it is checked if PC is currently at one of the bps.
 	 * @param pc The current PC value.
@@ -727,8 +709,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to pause a running program.
+	/** Sends the command to pause a running program.
 	 */
 	public async sendDzrpCmdPause(): Promise<void> {
 		// Send CTRL-C:
@@ -736,8 +717,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Adds a breakpoint.
+	/** Adds a breakpoint.
 	 * @param bp The breakpoint. sendDzrpCmdAddBreakpoint will set bp.bpId with the breakpoint
 	 * ID.
 	 */
@@ -749,8 +729,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Removes a breakpoint.
+	/** Removes a breakpoint.
 	 * @param bp The breakpoint to remove.
 	 */
 	public async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
@@ -760,8 +739,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to add a watchpoint.
+	/** Sends the command to add a watchpoint.
 	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 * @param access 'r', 'w' or 'rw'.
@@ -778,8 +756,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to remove a watchpoint for an address range.
+	/** Sends the command to remove a watchpoint for an address range.
 	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 * @param access 'r', 'w' or 'rw'.
@@ -796,8 +773,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to retrieve a memory dump.
+	/** Sends the command to retrieve a memory dump.
 	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
@@ -817,8 +793,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to write a memory dump.
+	/** Sends the command to write a memory dump.
 	 * @param addr64k The memory start address (64k).
 	 * @param dataArray The data to write.
 	  */
@@ -848,16 +823,14 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Ignore command.
+	/** Ignore command.
 	 */
 	protected async sendDzrpCmdClose(): Promise<void> {
 		// Do nothing
 	}
 
 
-	/**
-	 * Loads a .sna file.
+	/** Loads a .sna file.
 	 * This does not use sendDrzpCmdWriteBank as MAME gdbstub does not
 	 * support slots and banking the way Dezog would require it.
 	 * Therefore only 48k Spectrum .sna files are supported and this is
@@ -906,8 +879,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Loads a .nex file.
+	/** Loads a .nex file.
 	 * See https://wiki.specnext.dev/NEX_file_format
 	 */
 	protected async loadBinNex(filePath: string): Promise<void> {

@@ -67,7 +67,7 @@ n = not supported
 ## gdbstub
 
 The Remote communicates with MAME via the gdb remote protocol via a socket.
-MAME needs to be like so:
+MAME needs to be started like this:
 ~~~bash
 ./mame -window <rom> -debugger gdbstub -debug -debugger_port 12000
 ~~~
@@ -459,7 +459,7 @@ Lua is very limited when it comes to implement a useful interface to DeZog.
 Here are a few problems:
 - socket implementation: The mame socket implementation is also used for Lua. It is not possible to determine that a socket has been closed.
 As a workaround the DZRP close command could be used. That at least would work on graceful terminations.
-- I also thought about using the lua as a mediator to the gdbstub and implement only additional functionality in Lua. But this is not possible, wwhen the mame debugger stops the Lua is not served anymore.
+- I also thought about using the lua as a mediator to the gdbstub and implement only additional functionality in Lua. But this is not possible, when the mame debugger stops the Lua is not served anymore.
 - Stopping: Mame does not react on setting the ```manager.machine.debugger.execution_state``` to "stop". Or better: only for a short time. Then it turns "run" on by itself. Therefore it is necessary to block mame from running in the lua script with a busy loop (there is no "sleep" command available).
 - But the main problem in the end: There is no reliable way to get the banking information. I thought I found a way and it was working with lwings, but e.g. with spec128 it was failing, showing no banks.
 
