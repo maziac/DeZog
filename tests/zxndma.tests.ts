@@ -355,7 +355,7 @@ suite('ZxnDma', function () {
 	});
 
 	suite('writeWR6', function () {
-		test('should call the correct methods based on value', function () {
+		test('call right methods', function () {
 			const resetSpy = sinon.spy(dma, 'reset');
 			const resetPortAtimingSpy = sinon.spy(dma, 'resetPortAtiming');
 			const resetPortBtimingSpy = sinon.spy(dma, 'resetPortBtiming');
@@ -367,31 +367,63 @@ suite('ZxnDma', function () {
 			const enableDmaSpy = sinon.spy(dma, 'enableDma');
 
 			dma.writePortFunc(0xC3);
-			assert.ok(resetSpy.calledOnce, 'reset should be called once');
+			assert.ok(resetSpy.calledOnce);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePort);
 
 			dma.writePortFunc(0xC7);
-			assert.ok(resetPortAtimingSpy.calledOnce, 'resetPortAtiming should be called once');
+			assert.ok(resetPortAtimingSpy.calledOnce);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePort);
 
 			dma.writePortFunc(0xCB);
-			assert.ok(resetPortBtimingSpy.calledOnce, 'resetPortBtiming should be called once');
+			assert.ok(resetPortBtimingSpy.calledOnce);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePort);
 
 			dma.writePortFunc(0xBF);
-			assert.ok(readStatusByteSpy.calledOnce, 'readStatusByte should be called once');
+			assert.ok(readStatusByteSpy.calledOnce);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePort);
 
 			dma.writePortFunc(0x8B);
-			assert.ok(reinitializeStatusByteSpy.calledOnce, 'reinitializeStatusByte should be called once');
+			assert.ok(reinitializeStatusByteSpy.calledOnce);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePort);
 
 			dma.writePortFunc(0xA7);
-			assert.ok(initializeReadSequenceSpy.calledOnce, 'initializeReadSequence should be called once');
+			assert.ok(initializeReadSequenceSpy.calledOnce);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePort);
 
 			dma.writePortFunc(0xCF);
-			assert.ok(loadSpy.calledOnce, 'load should be called once');
+			assert.ok(loadSpy.calledOnce);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePort);
 
 			dma.writePortFunc(0xD3);
-			assert.ok(continueSpy.calledOnce, 'continue should be called once');
+			assert.ok(continueSpy.calledOnce);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePort);
 
 			dma.writePortFunc(0x87);
-			assert.ok(enableDmaSpy.calledOnce, 'enableDma should be called once');
+			assert.ok(enableDmaSpy.calledOnce);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePort);
 		});
+		test('set read mask', function () {
+			// Check default
+			assert.equal(dma.readMask, 0x7F);
+
+			// Set mask
+			dma.writePortFunc(0xBB);
+			assert.notEqual(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writeWR6);
+			dma.writePortFunc(0b1000_0000 | 0b0101_1010);
+			assert.equal(dma.nextDecodeBitMask, 0);
+			assert.equal(dma.writePortFunc, dma.writePort);
+			assert.equal(dma.readMask, 0b0101_1010);
+		});
+
 	});
 });

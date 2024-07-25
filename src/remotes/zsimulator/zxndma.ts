@@ -352,42 +352,42 @@ export class ZxnDma implements Serializable {
 
 
 	protected resetPortAtiming() {
-		throw new Error("Method not implemented.");
+	// TODO: implement
 	}
 
 
 	protected resetPortBtiming() {
-		throw new Error("Method not implemented.");
+	// TODO: implement
 	}
 
 
 	protected readStatusByte() {
-		throw new Error("Method not implemented.");
+	// TODO: implement
 	}
 
 
 	protected reinitializeStatusByte() {
-		throw new Error("Method not implemented.");
+	// TODO: implement
 	}
 
 
 	protected initializeReadSequence() {
-		throw new Error("Method not implemented.");
+	// TODO: implement
 	}
 
 
 	protected load() {
-		throw new Error("Method not implemented.");
+	// TODO: implement
 	}
 
 
 	protected continue() {
-		throw new Error("Method not implemented.");
+	// TODO: implement
 	}
 
 
 	protected reset() {
-		throw new Error("Method not implemented.");
+	// TODO: implement
 	}
 
 
