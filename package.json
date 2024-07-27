@@ -887,7 +887,7 @@
 										},
 										"start": {
 											"type": "string",
-											"description": "The start address, e.g. 32768. Defaults to 0."
+											"description": "The start address of the object file, e.g. 32768. Can also be a label."
 										}
 									}
 								}
