@@ -17,13 +17,10 @@ ZXN_DMA_PORT:   equ 0x6b
 
 main:
     di
+.loop:
     ld a,0x12
     ld de,0x9000
     ld bc,0x100
     call zxndma.fill
-    call zxndma.fill
-    call zxndma.fill
-    call zxndma.fill
-    call zxndma.fill
-    call zxndma.fill
-	nop
+    nop
+    jr .loop

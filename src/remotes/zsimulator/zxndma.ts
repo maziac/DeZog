@@ -476,11 +476,11 @@ export class ZxnDma implements Serializable {
 	}
 
 
-	/** Copies a block in burst mode.
+	/** Copies a block in continuous mode.
 	 * Copies blockLength bytes from portAstartAddress to portBstartAddress.
 	 * Or vice versa.
 	 */
-	protected copyBurst(): number {
+	protected copyContinuous(): number {
 		// Check for prescalar
 		if (this.zxnPrescalar === 0) {
 			// Simple copy
@@ -618,12 +618,11 @@ export class ZxnDma implements Serializable {
 			return 0;
 		// Check if something to execute.
 		if (this.burstMode) {
-			return this.copyBurst();
+			// TODO: Implement burst mode
+			return 0;
 		}
 		else {
-			// Continuous mode
-			// TODO: Implement
-			return 0;
+			return this.copyContinuous();
 		}
 	}
 
