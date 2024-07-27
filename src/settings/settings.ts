@@ -263,6 +263,9 @@ export interface ZSimType {
 	// "ZXNEXT" and do not appear here.
 	// TODO: Experimental
 	tbblue: TBBlueType,
+
+	// TODO: Experimental
+	zxnDMA: boolean;
 }
 
 

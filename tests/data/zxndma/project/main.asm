@@ -13,10 +13,17 @@ ZXN_DMA_PORT:   equ 0x6b
 
 	include "zxndma.asm"
 
-	defs 0x1000-$
+	defs 0x100-$
 
+main:
+    di
     ld a,0x12
     ld de,0x9000
     ld bc,0x100
+    call zxndma.fill
+    call zxndma.fill
+    call zxndma.fill
+    call zxndma.fill
+    call zxndma.fill
     call zxndma.fill
 	nop

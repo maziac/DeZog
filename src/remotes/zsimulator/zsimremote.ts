@@ -19,6 +19,7 @@ import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {MemoryModelAllRam, MemoryModelColecoVision, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../MemoryModel/predefinedmemorymodels';
 import {ZxUlaScreen} from './zxulascreen';
+import {ZxnDma} from './zxndma';
 
 
 /**
@@ -89,6 +90,13 @@ export class ZSimRemote extends DzrpRemote {
 	// The current TBBlue CPU speed.
 	// b00 = 3.5MHz, b01 = 7MHz, b10 = 14MHz, b11 = 28MHz.
 	protected tbblueCpuSpeed: number;
+
+	// Called to execute an instruction. May point directly to the
+	// Z80Cpu.execute() or to the DMA.
+	protected executeInstruction: () => number;
+
+	// The zxnDMA object. Or undefined if not used.
+	protected zxnDMA: ZxnDma;
 
 
 	/// Constructor.
@@ -384,6 +392,42 @@ export class ZSimRemote extends DzrpRemote {
 			this.ports.registerSpecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
 		}
 
+		// Look for DMA. If present it will wrap the instruction execute function
+		// and if a DMA operation is present it will do the DMA instead.
+		const zxnDMA = zsim.zxnDMA;
+		if (zxnDMA) {
+			// Create the zxnDMA object
+			this.zxnDMA = new ZxnDma();
+			this.serializeObjects.push(this.zxnDMA);
+			// Bind the DMA execution function
+			this.executeInstruction = () => {
+				// Execute the DMA function
+				let tStates = this.zxnDMA.execute();
+				// If nothing executed, then run Z80 CPU
+				if (tStates === 0)
+					tStates = this.z80Cpu.execute();
+				return tStates;
+			}
+			// Create the read/write port
+			// Register out port $xx6B
+			this.ports.registerGenericOutPortFunction((port: number, value: number) => {
+				if ((port & 0x6B) !== 0x6B)
+					return undefined;
+				this.zxnDMA.writePort(value)
+			});
+			// Register in port $xx6B
+			this.ports.registerGenericInPortFunction((port: number) => {
+				if ((port & 0x6B) !== 0x6B)
+					return undefined;
+				return this.zxnDMA.readPort();
+			});
+		}
+		else {
+			// Bind directly the Z80 execution function
+			this.executeInstruction = this.z80Cpu.execute.bind(this.z80Cpu);
+		}
+
+
 		// Initialize custom code e.g. for ports.
 		// But the customCode is not yet executed. (Because of unit tests).
 		const jsPath = Settings.launch.zsim.customCode.jsPath;
@@ -619,7 +663,7 @@ export class ZSimRemote extends DzrpRemote {
 					}
 
 					// Execute one instruction
-					const tStates = this.z80Cpu.execute();
+					const tStates = this.executeInstruction();
 
 					// For custom code: Increase passed t-states
 					this.passedTstates += tStates;

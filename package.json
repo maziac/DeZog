@@ -866,7 +866,7 @@
 							},
 							"execAddress": {
 								"type": "string",
-								"description": "The start address of program execution. Use a label or a number. Can only be omitted if a .sna file is loaded."
+								"description": "The start address of program execution. Use a label or a number. Can only be omitted if a .sna or .nex file is loaded."
 							},
 							"load": {
 								"type": "string",

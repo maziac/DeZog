@@ -8,7 +8,6 @@ import {Serializable, MemBuffer} from "../../misc/membuffer";
  * The ZX Next DMA controller is a simple device that allows the Z80 to transfer data with the peripherals without the need for the CPU to be involved in the process.
  *
  * Not the whole zxnDMA is implemented:
- * - No compatibility with Z80 DMA (bit 6 of nextreg 0x06 is ignored).
  * - No interrupts
  * - TODO: What else is missing?
  *
@@ -474,8 +473,160 @@ export class ZxnDma implements Serializable {
 	 */
 	protected enableDma(on: boolean) {
 		this.enabled = on;
-		// TODO: implement
 	}
+
+
+	/** Copies a block in burst mode.
+	 * Copies blockLength bytes from portAstartAddress to portBstartAddress.
+	 * Or vice versa.
+	 */
+	protected copyBurst(): number {
+		// Check for prescalar
+		if (this.zxnPrescalar === 0) {
+			// Simple copy
+			for (let i = 0; i < this.blockLength; i++) {
+				// Read
+				const value = this.readSrc();
+				// Write
+				this.writeDst(value);
+				// Next
+				this.portAaddressCounterRR34 = (this.portAaddressCounterRR34 + this.portAadd) & 0xFFFF;
+				this.portBaddressCounterRR56 = (this.portBaddressCounterRR56 + this.portBadd) & 0xFFFF;
+			}
+
+			// End
+			this.blockCounterRR12 = 0;
+			// Set flags: End-of-block, T (1=at least one byte transferred) etc.
+			this.statusByteRR0 = 0b0001_1010 | (this.blockLength === 0 ? 0 : 0b01);
+			// Calculate required t-states
+			const tStates = (this.portAtstates() + this.portBtstates()) * this.blockLength;
+			// Ready
+			this.enabled = false;
+			return tStates;
+		}
+		else {
+			// Burst mode with prescalar: DMA give time for the CPU in between
+			// TODO: IMPLEMENT
+			return 0;
+		}
+	}
+
+
+	/** Reads a byte from either Port A or B.
+	 */
+	protected readSrc(): number {
+		if (this.transferDirectionPortAtoB) {
+			// Read Port A
+			return this.getSrcAtAddress(this.portAaddressCounterRR34, this.portAisIo);
+		}
+		else {
+			// Read Port B
+			return this.getSrcAtAddress(this.portBaddressCounterRR56, this.portBisIo);
+		}
+	}
+
+
+	/** Reads a byte from either memory or IO.
+	 * @param address The address to read from.
+	 * @param isIo True if IO, false if memory.
+	 */
+	protected getSrcAtAddress(address: number, isIo: boolean): number {
+		if (isIo) {
+			// IO port read
+			// TODO: Implement
+			return 0;
+		}
+		else {
+			// Memory read
+			// TODO: Implement
+			return 0;
+		}
+	}
+
+
+	/** Writes a byte to either Port A or B.
+	 * @param value The value to write.
+	 */
+	protected writeDst(value: number) {
+		if (this.transferDirectionPortAtoB) {
+			// Write Port B
+			this.setDstAtAddress(this.portBaddressCounterRR56, this.portBisIo, value);
+		}
+		else {
+			// Write Port A
+			this.setDstAtAddress(this.portAaddressCounterRR34, this.portAisIo, value);
+		}
+	}
+
+
+	/** Writes a byte to either memory or IO.
+	 * @param address The address to write to.
+	 * @param isIo True if IO, false if memory.
+	 * @param value The value to write.
+	 */
+	protected setDstAtAddress(address: number, isIo: boolean, value: number) {
+		if (isIo) {
+			// IO port write
+			// TODO: Implement
+		}
+		else {
+			// Memory write
+			// TODO: Implement
+		}
+	}
+
+
+	/** Returns the number of t-states needed to read/write a byte for port A.
+	 */
+	protected portAtstates(): number {
+		if (this.portAcycleLength === 0) {
+			// Standard Z80 timing. Depends on the memory or IO.
+			if (this.portAisIo)
+				return 4;
+			// Memory
+			return 3;
+		}
+		// Otherwise return the set cycle length
+		return this.portAcycleLength;
+	}
+
+
+	/** Returns the number of t-states needed to read/write a byte for port B.
+	 */
+	protected portBtstates(): number {
+		if (this.portBcycleLength === 0) {
+			// Standard Z80 timing. Depends on the memory or IO.
+			if (this.portBisIo)
+				return 4;
+			// Memory
+			return 3;
+		}
+		// Otherwise return the set cycle length
+		return this.portBcycleLength;
+	}
+
+
+	/** Executes the DMA. Is called by ZSimRemote executeInstruction
+	 * and is just called similar as the Z80.execute.
+	 * It is called before the Z80 would execute it's instruction.
+	 * @returns The number of t-states the DMA needed.
+	 * If 0 is returned, the DMA didn't occupy the bus.
+	 */
+	public execute(): number {
+		// Check if enabled at all
+		if (!this.enabled)
+			return 0;
+		// Check if something to execute.
+		if (this.burstMode) {
+			return this.copyBurst();
+		}
+		else {
+			// Continuous mode
+			// TODO: Implement
+			return 0;
+		}
+	}
+
 
 	/** Returns the size the serialized object would consume.
 	 */
