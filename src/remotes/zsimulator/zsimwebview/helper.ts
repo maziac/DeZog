@@ -220,6 +220,7 @@ export class UiBit extends HTMLElement {
 		const self = this as any;
 		if (self.digitvalue != newVal) {
 			self.digitvalue = newVal;
+			this.innerHTML = newVal;
 			// Check if someone waits on a notification
 			if (self.onstatechange) {
 				self.onstatechange();
@@ -294,10 +295,11 @@ class UiByte extends HTMLElement {
 
 		// Create byte from bits
 		self.bits = [];
-		let k;
-		if (self.startindex && !useDigitValue)
+		let k, j;
+		if (self.startindex && !useDigitValue) {
 			k = parseInt(self.startindex);
-		let j = self.numberofbits - 1;
+			j = self.numberofbits - 1;
+		}
 		for (let i = 0; i < self.numberofbits; i++) {
 			const bit = document.createElement('ui-bit');
 			// Togglemode
@@ -305,17 +307,11 @@ class UiByte extends HTMLElement {
 			// Add object
 			this.appendChild(bit);
 			self.bits[i] = bit;
-			// Set a number in the bit
-			if (useDigitValue) {
-				// Check bit index
-				const mask = 1 << j;
-				(bit as any).setBitIndex((mask & self.digitvalue) ? 1 : 0);
-			}
-			// Use start index
-			else if (k !== undefined) {
+			// Use start index and show as text inside the box
+			if (k !== undefined) {
 				(bit as any).setBitIndex(j + k);
+				j--;
 			}
-			j--;
 			// Color
 			(bit as any).digitcolor = self.digitcolor;
 			(bit as any).oncolor = self.oncolor;
@@ -408,8 +404,8 @@ class UiByte extends HTMLElement {
 		for (let i = 0; i < self.numberofbits; i++) {
 			const bit = self.bits[i];
 			// Set value
-			bit.bitvalue = (newVal >> bitMaskIndex) & 0x01;
-			console.log("UiByte bitMaskIndex: " + bitMaskIndex + ", bitvalue: " + bit.bitvalue);
+			bit.setBitValue((newVal >> bitMaskIndex) & 0x01);
+			console.log("UiByte bytevalue bitMaskIndex: " + bitMaskIndex + ", bitvalue: " + bit.bitvalue);
 			bitMaskIndex--;
 			// Color
 			bit.setColor();
@@ -436,17 +432,15 @@ class UiByte extends HTMLElement {
 
 	// Set value
 	set digitvalue(newVal) {
-		console.log("UiByte set bytevalue: " + newVal);
+		console.log("UiByte set digitvalue: " + newVal);
 		const self = this as any;
 		let bitMaskIndex = self.numberofbits - 1;
 		for (let i = 0; i < self.numberofbits; i++) {
 			const bit = self.bits[i];
 			// Set value
-			bit.digitvalue = (newVal >> bitMaskIndex) & 0x01;
-			console.log("UiByte bitMaskIndex: " + bitMaskIndex + ", bitvalue: " + bit.bitvalue);
+			bit.setDigitValue((newVal >> bitMaskIndex) & 0x01);
+			console.log("UiByte digitvalue bitMaskIndex: " + bitMaskIndex + ", bitvalue: " + bit.digitvalue);
 			bitMaskIndex--;
-			// Color
-		//	bit.setColor();
 		}
 		// Notify
 		if (self.onstatechange)
