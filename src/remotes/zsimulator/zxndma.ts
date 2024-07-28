@@ -1,6 +1,9 @@
 //import {Log} from "../../log";	// TODO: implement logging for the zxndma
 import {EventEmitter} from "stream";
 import {Serializable, MemBuffer} from "../../misc/membuffer";
+import {SimulatedMemory} from "./simulatedmemory";
+import {Z80Ports} from "./z80ports";
+import {Z80} from "../../3rdparty/z80.js/Z80";
 
 
 /** The zxnDMA simulation.
@@ -14,9 +17,14 @@ import {Serializable, MemBuffer} from "../../misc/membuffer";
  *
  */
 export class ZxnDma extends EventEmitter implements Serializable {
+	// Gets the memory handler for the DMA.
+	protected memory: SimulatedMemory;
+
+	// Gets the IO handler for the DMA.
+	protected ports: Z80Ports;
 
 	// The function is switched from decodeWRGroup to writeWR0-6.
-	public writePortFunc: (value: number) => void;
+	protected writePortFunc: (value: number) => void;
 
 	// The next bit to decode.
 	protected nextDecodeBitMask: number = 0;
@@ -97,8 +105,10 @@ export class ZxnDma extends EventEmitter implements Serializable {
 
 	/** Constructor.
 	 */
-	constructor() {
+	constructor(memory: SimulatedMemory, ports: Z80Ports) {
 		super();
+		this.memory = memory;
+		this.ports = ports;
 		this.writePortFunc = this.decodeWRGroup
 		this.reset();
 		this.initializeReadSequence();
@@ -115,21 +125,16 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	public getState(): any {
 		this.bl++;
 		return {
-			"blockLength": this.bl,
-//			"blockLength": this.blockLength,
+			"blockLength": this.blockLength,
 			"portAstartAddress": this.portAstartAddress,
 			"portBstartAddress": this.portBstartAddress,
 			"transferDirectionPortAtoB": this.transferDirectionPortAtoB,
-			//"portAisIo": this.portAisIo,
-			//"portBisIo": this.portBisIo,
 			"portAmode": this.portAisIo ? "IO" : "Memory",
 			"portBmode": this.portBisIo ? "IO" : "Memory",
 			"portAadd": this.portAadd,
 			"portBadd": this.portBadd,
 			"portAcycleLength": this.portAcycleLength,
 			"portBcycleLength": this.portBcycleLength,
-			//"burstMode": this.burstMode,
-			//"autoRestart": this.autoRestart,
 			"mode": this.burstMode ? "Burst" : "Continuous",
 			"zxnPrescalar": this.zxnPrescalar,
 			"eobAction": this.autoRestart ? "Auto-Restart" : "Stop",
@@ -626,13 +631,13 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	protected getSrcAtAddress(address: number, isIo: boolean): number {
 		if (isIo) {
 			// IO port read
-			// TODO: Implement
-			return 0;
+			const value = this.ports.read(address);
+			return value;
 		}
 		else {
 			// Memory read
-			// TODO: Implement
-			return 0;
+			const value = this.memory.read8(address);
+			return value;
 		}
 	}
 
@@ -660,11 +665,11 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	protected setDstAtAddress(address: number, isIo: boolean, value: number) {
 		if (isIo) {
 			// IO port write
-			// TODO: Implement
+			this.ports.write(address, value);
 		}
 		else {
 			// Memory write
-			// TODO: Implement
+			this.memory.write8(address, value);
 		}
 	}
 
