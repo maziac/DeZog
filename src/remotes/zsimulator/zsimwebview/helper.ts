@@ -114,8 +114,7 @@ export class UiBit extends HTMLElement {
 		console.log("UiBit offcolor: " + self.offcolor);
 		if (self.bitvalue == undefined)
 			self.bitvalue = 0;
-		if (self.digitvalue == undefined)
-			self.digitvalue = 0;
+		// Note: do not set digitvalue here
 		if (self.oncolor == undefined)
 			self.oncolor = "red";
 		if (self.offcolor == undefined)
@@ -130,9 +129,11 @@ export class UiBit extends HTMLElement {
 		this.setBitValue(bitvalue);
 
 		// Inform about initial digit value
-		const digitvalue = self.digitvalue;
-		self.digitvalue = undefined;	// To make sure it is different
-		this.setDigitValue(digitvalue);
+		if (self.digitvalue !== undefined) {
+			const digitvalue = self.digitvalue;
+			self.digitvalue = undefined;	// To make sure it is different
+			this.setDigitValue(digitvalue);
+		}
 
 		// Listeners for the mouse, depending on this.onstatechange
 		this.registerMouseListeners();
@@ -206,7 +207,7 @@ export class UiBit extends HTMLElement {
 
 	setBitValue(newVal) {
 		const self = this as any;
-		if (self.bitvalue != newVal) {
+		if (self.bitvalue !== newVal) {
 			self.bitvalue = newVal;
 			// Check if someone waits on a notification
 			if (self.onstatechange) {
@@ -218,7 +219,11 @@ export class UiBit extends HTMLElement {
 
 	setDigitValue(newVal) {
 		const self = this as any;
-		if (self.digitvalue != newVal) {
+		this.style.color = self.digitcolor;	// TODO: Can I move it to the connectedCallback?
+
+		console.log("UiBit setDigitValue: " + newVal + ", oldvalue: " + self.digitvalue);
+		if (self.digitvalue !== newVal) {
+			console.log("UiBit setDigitValue: set new value");
 			self.digitvalue = newVal;
 			this.innerHTML = newVal;
 			// Check if someone waits on a notification
@@ -226,7 +231,6 @@ export class UiBit extends HTMLElement {
 				self.onstatechange();
 			}
 		}
-		this.style.color = self.digitcolor;	// TODO: Can I move it to the connectedCallback?
 	}
 
 	toggle() {
@@ -330,7 +334,8 @@ class UiByte extends HTMLElement {
 
 		// Set the value through setter. Send notification.
 		this.bytevalue = self.initialbytevalue;
-		this.digitvalue = self.initialdigitvalue;
+		if (useDigitValue)
+			this.digitvalue = self.initialdigitvalue;
 
 		// Set onchange
 		if (self.onstatechange) {

@@ -912,9 +912,42 @@ export class ZSimulationView extends BaseView {
 				<!-- Read Mask, last sequence bit -->
 				<div style="white-space: nowrap;display: inline-flex;align-items: center;">
 					<span>Read Mask:</span>
-					<span><ui-byte startindex="0" numberofbits="7" digitcolor="black" offcolor="white" bytevalue="235" digitvalue="176" title="Last read bit is highlighted" />
+					<span><ui-byte numberofbits="7" digitcolor="black" offcolor="white" bytevalue="235" digitvalue="176" title="Last read bit is highlighted" />
 					</span>
 				</div>
+				<x!--
+				<div>
+					<span>Read Mask:</span>
+					<span><ui-byte bytevalue="235" />
+					</span>
+				</div>
+				<div>
+					<span>Read Mask:</span>
+					<span><ui-byte bytevalue="235" startindex="0"/>
+					</span>
+				</div>
+				<div>
+					<span>Bit:</span>
+					<span><ui-bit bitvalue="1" />
+					</span>
+				</div>
+				<div>
+					<span>Bit:</span>
+					<span><ui-bit bitvalue="0" />
+					</span>
+				</div>
+				<div>
+					<span>Bit:</span>
+					<span><ui-bit digitvalue="1" />
+					</span>
+				</div>
+				<div>
+					<span>Bit:</span>
+					<span><ui-bit digitvalue="0" />
+					</span>
+				</div>
+
+				-->
 			</div>
 
 			</details>
