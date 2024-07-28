@@ -110,8 +110,6 @@ export class UiBit extends HTMLElement {
 
 		// Init undefined
 		const self = this as any;
-		console.log("UiBit digitcolor: " + self.digitcolor);
-		console.log("UiBit offcolor: " + self.offcolor);
 		if (self.bitvalue == undefined)
 			self.bitvalue = 0;
 		// Note: do not set digitvalue here
@@ -134,6 +132,7 @@ export class UiBit extends HTMLElement {
 			self.digitvalue = undefined;	// To make sure it is different
 			this.setDigitValue(digitvalue);
 		}
+		this.setDigitColor(self.digitcolor);
 
 		// Listeners for the mouse, depending on this.onstatechange
 		this.registerMouseListeners();
@@ -142,7 +141,6 @@ export class UiBit extends HTMLElement {
 
 	attributeChangedCallback(name, oldValue, newValue) {
 		const self = this as any;
-		console.log("UiBit attributeChangedCallback: " + name + "=" + newValue);
 		if (name === "bitvalue") {
 			self.bitvalue = newValue;
 		}
@@ -205,6 +203,11 @@ export class UiBit extends HTMLElement {
 			this.style.backgroundColor = self.offcolor;
 	}
 
+	setDigitColor(dig_color) {
+		(this as any).digitcolor = dig_color;
+		this.style.color = dig_color;
+	}
+
 	setBitValue(newVal) {
 		const self = this as any;
 		if (self.bitvalue !== newVal) {
@@ -219,11 +222,7 @@ export class UiBit extends HTMLElement {
 
 	setDigitValue(newVal) {
 		const self = this as any;
-		this.style.color = self.digitcolor;	// TODO: Can I move it to the connectedCallback?
-
-		console.log("UiBit setDigitValue: " + newVal + ", oldvalue: " + self.digitvalue);
 		if (self.digitvalue !== newVal) {
-			console.log("UiBit setDigitValue: set new value");
 			self.digitvalue = newVal;
 			this.innerHTML = newVal;
 			// Check if someone waits on a notification
@@ -279,11 +278,6 @@ class UiByte extends HTMLElement {
 
 		// Init undefined
 		const self = this as any;
-		console.log("UiByte connectedCallback", "digitcolor: " + self.digitcolor);
-		console.log("UiByte connectedCallback", "offcolor: " + self.offcolor);
-
-		console.log("UiByte connectedCallback", "initialbytevalue: " + self.initialbytevalue);
-
 		const useDigitValue = (self.initialdigitvalue !== undefined);
 		if (self.initialbytevalue == undefined)
 			self.initialbytevalue = 0;
@@ -320,7 +314,7 @@ class UiByte extends HTMLElement {
 				j--;
 			}
 			// Color
-			(bit as any).digitcolor = self.digitcolor;
+			(bit as any).setDigitColor(self.digitcolor);
 			(bit as any).oncolor = self.oncolor;
 			(bit as any).offcolor = self.offcolor;
 			// Copy style (e.g. border-radius)
@@ -354,7 +348,6 @@ class UiByte extends HTMLElement {
 
 
 	attributeChangedCallback(name, oldValue, newValue) {
-		console.log("UiByte attributeChangedCallback: " + name + "=" + newValue);
 		const self = this as any;
 		if (name === "startindex") {
 			self.startindex = newValue;
@@ -406,14 +399,12 @@ class UiByte extends HTMLElement {
 
 	// Set value
 	set bytevalue(newVal) {
-		console.log("UiByte set bytevalue: " + newVal);
 		const self = this as any;
 		let bitMaskIndex = self.numberofbits - 1;
 		for (let i = 0; i < self.numberofbits; i++) {
 			const bit = self.bits[i];
 			// Set value
 			bit.setBitValue((newVal >> bitMaskIndex) & 0x01);
-			console.log("UiByte bytevalue bitMaskIndex: " + bitMaskIndex + ", bitvalue: " + bit.bitvalue);
 			bitMaskIndex--;
 			// Color
 			bit.setColor();
@@ -440,14 +431,12 @@ class UiByte extends HTMLElement {
 
 	// Set value
 	set digitvalue(newVal) {
-		console.log("UiByte set digitvalue: " + newVal);
 		const self = this as any;
 		let bitMaskIndex = self.numberofbits - 1;
 		for (let i = 0; i < self.numberofbits; i++) {
 			const bit = self.bits[i];
 			// Set value
 			bit.setDigitValue((newVal >> bitMaskIndex) & 0x01);
-			console.log("UiByte digitvalue bitMaskIndex: " + bitMaskIndex + ", bitvalue: " + bit.digitvalue);
 			bitMaskIndex--;
 		}
 		// Notify
