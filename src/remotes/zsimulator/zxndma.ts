@@ -21,7 +21,7 @@ export class ZxnDma implements Serializable {
 	protected nextDecodeBitMask: number = 0;
 
 	// Decode transfer direction: true: A->B, false: B->A
-	protected transferDirectionPortAtoB: boolean = false;
+	protected transferDirectionPortAtoB: boolean = true;
 
 	// The port A start address.
 	protected portAstartAddress: number = 0;
@@ -90,6 +90,8 @@ export class ZxnDma implements Serializable {
 	// The port B address counter.
 	protected portBaddressCounterRR56: number = 0;
 
+	// The last operation that was executed (in last cycle).
+	protected lastOperation: string = "reset";
 
 
 	/** Constructor.
@@ -106,11 +108,16 @@ export class ZxnDma implements Serializable {
 	 * the simulator web view.
 	 * @returns An object with all the internal state.
 	 */
+	protected bl: number = 0;
+
 	public getState(): any {
+		this.bl++;
 		return {
+			"blockLength": this.bl,
+//			"blockLength": this.blockLength,
 			"portAstartAddress": this.portAstartAddress,
 			"portBstartAddress": this.portBstartAddress,
-			"blockLength": this.blockLength,
+			"transferDirectionPortAtoB": this.transferDirectionPortAtoB,
 			//"portAisIo": this.portAisIo,
 			//"portBisIo": this.portBisIo,
 			"portAmode": this.portAisIo ? "IO" : "Memory",
@@ -118,18 +125,19 @@ export class ZxnDma implements Serializable {
 			"portAadd": this.portAadd,
 			"portBadd": this.portBadd,
 			"portAcycleLength": this.portAcycleLength,
-			"portABycleLength": this.portBcycleLength,
-			"zxnPrescalar": this.zxnPrescalar,
+			"portBcyleLength": this.portBcycleLength,
 			//"burstMode": this.burstMode,
 			//"autoRestart": this.autoRestart,
 			"mode": this.burstMode ? "Burst" : "Continuous",
+			"zxnPrescalar": this.zxnPrescalar,
 			"eobAction": this.autoRestart ? "Auto-Restart" : "Stop",
-			"readMask": this.readMask,
-			"lastReadSequenceBit": this.lastReadSequenceBit & 0x7F,
+			"readMask": this.readMask & 0x7F,
+			"lastReadSequenceBit": this.lastReadSequenceBit,
 			"statusByteRR0": this.statusByteRR0,
 			"blockCounterRR12": this.blockCounterRR12,
 			"portAaddressCounterRR34": this.portAaddressCounterRR34,
 			"portBaddressCounterRR56": this.portBaddressCounterRR56,
+			"lastOperation": this.lastOperation
 		};
 	}
 
@@ -453,29 +461,34 @@ export class ZxnDma implements Serializable {
 	// Resets to standard Z80 timing.
 	protected resetPortAtiming() {
 		this.portAcycleLength = 0;
+		this.lastOperation += "reset port A timing, ";
 	}
 
 
 	// Resets to standard Z80 timing.
 	protected resetPortBtiming() {
 		this.portBcycleLength = 0;
+		this.lastOperation += "reset port B timing, ";
 	}
 
 
 	protected readStatusByte() {
-	// TODO: implement
+		// TODO: implement
+		this.lastOperation += "read status byte, ";
 	}
 
 
 	// Resets (1) the block ended (and the search) flag.
 	protected reinitializeStatusByte() {
 		this.statusByteRR0 |= 0b0011_0000;
+		this.lastOperation += "re-initialize status byte, ";
 	}
 
 
 	// Resets the read sequence
 	protected initializeReadSequence() {
 		this.lastReadSequenceBit = 0b0100_0000;	// Next rotate will be at 0b0000_0001
+		this.lastOperation += "initialize read sequence, ";
 	}
 
 
@@ -484,12 +497,14 @@ export class ZxnDma implements Serializable {
 		this.portAaddressCounterRR34 = this.portAstartAddress;
 		this.portBaddressCounterRR56 = this.portBstartAddress;
 		this.blockCounterRR12 = 0;
+		this.lastOperation += "load, ";
 	}
 
 
 	// Clears the block counter.
 	protected continue() {
 		this.blockCounterRR12 = 0;
+		this.lastOperation += "continue, ";
 	}
 
 
@@ -497,6 +512,7 @@ export class ZxnDma implements Serializable {
 		this.autoRestart = false;
 		this.portAcycleLength = 0;
 		this.portBcycleLength = 0;
+		this.lastOperation += "reset, ";
 	}
 
 
@@ -505,6 +521,7 @@ export class ZxnDma implements Serializable {
 	 */
 	protected enableDma(on: boolean) {
 		this.enabled = on;
+		this.lastOperation += on ?  "enable DMA, " : "disable DMA, ";
 	}
 
 
@@ -529,11 +546,27 @@ export class ZxnDma implements Serializable {
 			// End
 			this.blockCounterRR12 = 0;
 			// Set flags: End-of-block, T (1=at least one byte transferred) etc.
-			this.statusByteRR0 = 0b0001_1010 | (this.blockLength === 0 ? 0 : 0b01);
+			this.statusByteRR0 = 0b0011_1010 | (this.blockLength === 0 ? 0 : 0b01);
 			// Calculate required t-states
 			const tStates = (this.portAtstates() + this.portBtstates()) * this.blockLength;
+			// Status byte
+			this.statusByteRR0 = 0b0001_1010 | (this.blockLength === 0 ? 0 : 0b01);
 			// Ready
 			this.enabled = false;
+			// Last operation
+			let src, dst;
+			const incrA = this.portAadd === 0 ? "" : (this.portAadd > 0 ? "++" : "--"); // NOSONAR
+			const incrB = this.portBadd === 0 ? "" : (this.portBadd > 0 ? "++" : "--"); // NOSONAR
+			const portA = "0x" + this.portAstartAddress.toString(16) + incrA + (this.portAisIo ? " (IO)" : "");
+			const portB = "0x" + this.portBstartAddress.toString(16) + incrB + (this.portBisIo ? " (IO)" : "");
+			if (this.transferDirectionPortAtoB) {
+				src = portA;
+				dst = portB;
+			}
+			else {
+				src = portB;
+				dst = portA;
+			} this.lastOperation = "" + this.blockLength + "x: " + src + " -> " + dst;
 			return tStates;
 		}
 		else {
@@ -645,6 +678,7 @@ export class ZxnDma implements Serializable {
 	 * If 0 is returned, the DMA didn't occupy the bus.
 	 */
 	public execute(): number {
+		this.lastOperation = "nop";
 		// Check if enabled at all
 		if (!this.enabled)
 			return 0;

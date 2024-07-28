@@ -661,7 +661,10 @@ export class ZSimulationView extends BaseView {
 			border-color:black;
 			width:70px;
 			}
-
+			span {
+			display: table-cell;
+			vertical-align: middle;
+			}
 			</style>
 
 			<script src="out/remotes/zsimulator/zsimwebview/main.js"></script>
@@ -831,7 +834,7 @@ export class ZSimulationView extends BaseView {
 			html += `
 			<details open="true">
 			<summary>ZX Beeper</summary>
-			<span style="display:table-cell; vertical-align: middle">
+			<span>
 				<img src="assets/loudspeaker.svg" width="20em"></img>
 				&nbsp;
 			</span>
@@ -842,10 +845,10 @@ export class ZSimulationView extends BaseView {
 			<!-- Volume slider -->
 			<span style="display:table-cell; vertical-align: middle;">-</span>
 
-			<span style="display:table-cell; vertical-align: middle">
+			<span>
 				<input id="audio.volume" type="range" min="0" max="1" step="0.01" value="0" oninput="volumeChanged(parseFloat(this.value))">
 			</span>
-			<span style="display:table-cell; vertical-align: middle">+</span>
+			<span>+</span>
 
 			</details>
 			`;
@@ -860,61 +863,77 @@ export class ZSimulationView extends BaseView {
 			<div style="padding-left: 1em;">
 				<!-- Port A/B Start, length -->
 				<div style="white-space: nowrap;">
-					<span style="display:table-cell; vertical-align: middle">Port A Start=</span>
-					<span style="display:table-cell; vertical-align: middle">0x1000</span>
-					<span style="display:table-cell; vertical-align: middle">&nbsp;->&nbsp;</span>
-					<span style="display:table-cell; vertical-align: middle">Port B Start=</span>
-					<span style="display:table-cell; vertical-align: middle">0x2000</span>
-					<span style="display:table-cell; vertical-align: middle">, Block Length=</span>
-					<span style="display:table-cell; vertical-align: middle">0x3000</span>
+					<span>Port A Start=</span>
+					<span id="zxnDMA.portAstartAddress"></span>
+					<span>&nbsp;</span>
+					<span id="zxnDMA.transferDirectionPortAtoB"></span>
+					<span>&nbsp;</span>
+					<span>Port B Start=</span>
+					<span id="zxnDMA.portBstartAddress"></span>
+					<span>, Block Length=</span>
+					<span id="zxnDMA.blockLength"></span>
 				</div>
 
 				<!-- Port A/B Counter, Block Counter -->
 				<div style="white-space: nowrap;" title="The current valuues">
-					<span style="display:table-cell; vertical-align: middle">Port A Address=</span>
-					<span style="display:table-cell; vertical-align: middle">0x1123</span>
-					<span style="display:table-cell; vertical-align: middle">, Port B Address=</span>
-					<span style="display:table-cell; vertical-align: middle">0x2123</span>
-					<span style="display:table-cell; vertical-align: middle">, Block Counter=</span>
-					<span style="display:table-cell; vertical-align: middle">0x0123</span>
+					<span>Port A Address=</span>
+					<span id="zxnDMA.portAaddressCounter"></span>
+					<span>, Port B Address=</span>
+					<span id="zxnDMA.portBaddressCounter"></span>
+					<span>, Block Counter=</span>
+					<span id="zxnDMA.blockCounter"></span>
 				</div>
 
 				<!-- Port A: memory/io, increment, cycle -->
 				<div style="white-space: nowrap;">
-					<span style="display:table-cell; vertical-align: middle">Port A:&nbsp;</span>
-					<span style="display:table-cell; vertical-align: middle">Memory</span>
-					<span style="display:table-cell; vertical-align: middle">, Increment=</span>
-					<span style="display:table-cell; vertical-align: middle">-1</span>
-					<span style="display:table-cell; vertical-align: middle">, Cycle length=</span>
-					<span style="display:table-cell; vertical-align: middle">Z80 standard</span>
+					<span>Port A:&nbsp;</span>
+					<span id="zxnDMA.portAmode"></span>
+					<span>, Increment=</span>
+					<span id="zxnDMA.portAadd"></span>
+					<span>, Cycle length=</span>
+					<span id="zxnDMA.portAcycleLength"></span>
 				</div>
 
 				<!-- Port B: memory/io, increment, cycle -->
 				<div style="white-space: nowrap;">
-					<span style="display:table-cell; vertical-align: middle">Port B:&nbsp;</span>
-					<span style="display:table-cell; vertical-align: middle">Memory</span>
-					<span style="display:table-cell; vertical-align: middle">, Increment=</span>
-					<span style="display:table-cell; vertical-align: middle">-1</span>
-					<span style="display:table-cell; vertical-align: middle">, Cycle length=</span>
-					<span style="display:table-cell; vertical-align: middle">Z80 standard</span>
+					<span>Port B:&nbsp;</span>
+					<span id="zxnDMA.portBmode"></span>
+					<span>, Increment=</span>
+					<span id="zxnDMA.portBadd"></span>
+					<span>, Cycle length=</span>
+					<span id="zxnDMA.portBcycleLength"></span>
 				</div>
 
 				<!-- Mode, pre-scalar, auto-restart -->
 				<div style="white-space: nowrap;">
-					<span style="display:table-cell; vertical-align: middle">Mode:&nbsp;</span>
-					<span style="display:table-cell; vertical-align: middle">Burst</span>
-					<span style="display:table-cell; vertical-align: middle">, Pre-scalar=</span>
-					<span style="display:table-cell; vertical-align: middle">63</span>
-					<span style="display:table-cell; vertical-align: middle">, EOB-action=</span>
-					<span style="display:table-cell; vertical-align: middle">stop</span>
+					<span>Mode:&nbsp;</span>
+					<span id="zxnDMA.mode"></span>
+					<span>, Pre-scalar=</span>
+					<span id="zxnDMA.zxnPrescalar"></span>
+					<span>, EOB-action=</span>
+					<span id="zxnDMA.eobAction"></span>
+				</div>
+
+				<!-- Status Byte -->
+				<div style="white-space: nowrap;">>
+					<span>Status Byte:&nbsp;</span>
+					<span><ui-byte id="zxnDMA.statusByte" digitvalue="0" title="Bit 0: T = 1 if at least one byte has been transferred\nBit 5: E = 0 if total block length at least transferred once" />
+					</span>
 				</div>
 
 				<!-- Read Mask, last sequence bit -->
-				<div>
-					<span>Read Mask:</span>
-					<span><ui-byte numberofbits="7" bytevalue="0" digitvalue="0" title="Last read bit is highlighted.\nBit 0: Status Byte\nBit 1: Block Counter Low\nBit 2: Block Counter High\nBit 3: Port A Address Low\nBit 4: Port A Address High\nBit 5: Port B Address Low\nBit 6: Port B Address High" />
+				<div style="white-space: nowrap;">>
+					<span>Read Mask:&nbsp;</span>
+					<span><ui-byte id="zxnDMA.readMask" numberofbits="7" bytevalue="0" digitvalue="0" title="Last read bit is highlighted.\nBit 0: Status Byte\nBit 1: Block Counter Low\nBit 2: Block Counter High\nBit 3: Port A Address Low\nBit 4: Port A Address High\nBit 5: Port B Address Low\nBit 6: Port B Address High" />
 					</span>
 				</div>
+
+				<!-- Last Operation -->
+				<div style="white-space: nowrap;">
+					<span id="zxnDMA.lastOperation">Last Operation:&nbsp;</span>
+					<span></span>
+				</div>
+
 			</div>
 
 			</details>

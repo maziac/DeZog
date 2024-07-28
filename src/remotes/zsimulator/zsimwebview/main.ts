@@ -6,7 +6,6 @@ import {joystickObjs, initJoystickPolling} from "./joysticks";
 import {UIAPI, UiBit} from "./helper";
 
 
-
 // HTML element used for the cpu frequency.
 let cpuFreq: HTMLLabelElement
 
@@ -31,6 +30,34 @@ let screenImg: HTMLCanvasElement;
 let screenImgImgData: ImageData;
 let screenImgContext: CanvasRenderingContext2D;
 
+// Holds the HTML (UI) elements for the zxnDMA.
+let zxnDmaHtml: {
+	blockLength: HTMLLabelElement,
+	portAstartAddress: HTMLLabelElement,
+	portBstartAddress: HTMLLabelElement,
+	transferDirectionPortAtoB: HTMLLabelElement,
+	portAMode: HTMLLabelElement,
+	portBMode: HTMLLabelElement,
+	portAadd: HTMLLabelElement,
+	portBadd: HTMLLabelElement,
+	portAcycleLength: HTMLLabelElement,
+	portBcycleLength: HTMLLabelElement,
+	mode: HTMLLabelElement,
+	zxnPrescalar: HTMLLabelElement,
+	eobAction: HTMLLabelElement,
+	readMask: HTMLElement,
+	statusByte: HTMLLabelElement,
+	blockCounter: HTMLLabelElement,
+	portAaddressCounter: HTMLLabelElement,
+	portBaddressCounter: HTMLLabelElement,
+	lastOperation: HTMLLabelElement;
+};
+
+// The previous zxnDMA state (used to print changes in bold).
+let prevZxnDmaState: any = {};
+
+// Holds the list of elements that were printed in bold (i.e. had changed).
+let prevZxnDmaBoldElements: Array<HTMLLabelElement> = [];
 
 
 //---- Handle Messages from vscode extension --------
@@ -104,7 +131,7 @@ window.addEventListener('message', event => {// NOSONAR
 			}
 
 			if (message.zxnDMA) {
-				// TODO: Implement
+				printZxnDma(message.zxnDMA);
 			}
 			break;
 
@@ -175,6 +202,32 @@ function initSimulation(audioSampleRate: number, volume: number) {
 		volumeSlider.value = zxAudioBeeper.getVolume().toString();
 	}
 
+	// zxnDMA
+	const portAstartAddressHtml = document.getElementById("zxnDMA.portAstartAddress") as HTMLLabelElement;
+	if (portAstartAddressHtml) {
+		zxnDmaHtml = {
+			portAstartAddress: portAstartAddressHtml,
+			portBstartAddress: document.getElementById("zxnDMA.portBstartAddress") as HTMLLabelElement,
+			blockLength: document.getElementById("zxnDMA.blockLength") as HTMLLabelElement,
+			transferDirectionPortAtoB: document.getElementById("zxnDMA.transferDirectionPortAtoB") as HTMLLabelElement,
+			portAMode: document.getElementById("zxnDMA.portAmode") as HTMLLabelElement,
+			portBMode: document.getElementById("zxnDMA.portBmode") as HTMLLabelElement,
+			portAadd: document.getElementById("zxnDMA.portAadd") as HTMLLabelElement,
+			portBadd: document.getElementById("zxnDMA.portBadd") as HTMLLabelElement,
+			portAcycleLength: document.getElementById("zxnDMA.portAcycleLength") as HTMLLabelElement,
+			portBcycleLength: document.getElementById("zxnDMA.portBcycleLength") as HTMLLabelElement,
+			zxnPrescalar: document.getElementById("zxnDMA.zxnPrescalar") as HTMLLabelElement,
+			mode: document.getElementById("zxnDMA.mode") as HTMLLabelElement,
+			eobAction: document.getElementById("zxnDMA.eobAction") as HTMLLabelElement,
+			readMask: document.getElementById("zxnDMA.readMask")!,
+			statusByte: document.getElementById("zxnDMA.statusByte") as HTMLLabelElement,
+			blockCounter: document.getElementById("zxnDMA.blockCounter") as HTMLLabelElement,
+			portAaddressCounter: document.getElementById("zxnDMA.portAaddressCounter") as HTMLLabelElement,
+			portBaddressCounter: document.getElementById("zxnDMA.portBaddressCounter") as HTMLLabelElement,
+			lastOperation: document.getElementById("zxnDMA.lastOperation") as HTMLLabelElement
+		};
+	}
+
 	// Joysticks (Interface II)
 	const if2Joy1Fire = document.getElementById("if2.joy1.fire") as UiBit;
 	if (if2Joy1Fire) {
@@ -227,6 +280,39 @@ function cellSelect(cell, on) {
 		value: on,
 		key: cell.id
 	});
+}
+
+
+// Print zxnDMA values, if changed in bold.
+function printZxnDma(zxnDMA) {
+	// Remove all bold elements
+	for (const elem of prevZxnDmaBoldElements) {
+		elem.style.fontWeight = 'normal';
+	}
+	prevZxnDmaBoldElements = [];
+	// Update zxnDMA HTML elements
+	if (prevZxnDmaState.blockLength !== zxnDMA.blockLength) {
+		zxnDmaHtml.blockLength.innerHTML = "0x" + zxnDMA.blockLength.toString(16).toUpperCase().padStart(4, '0');
+		zxnDmaHtml.blockLength.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.blockLength);
+	}
+	if (prevZxnDmaState.portAstartAddress !== zxnDMA.portAstartAddress) {
+		zxnDmaHtml.portAstartAddress.innerHTML = "0x" + zxnDMA.portAstartAddress.toString(16).toUpperCase().padStart(4, '0');
+		zxnDmaHtml.portAstartAddress.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.portAstartAddress);
+	}
+	if (prevZxnDmaState.transferDirectionPortAtoB !== zxnDMA.transferDirectionPortAtoB) {
+		zxnDmaHtml.transferDirectionPortAtoB.innerHTML = zxnDMA.transferDirectionPortAtoB ? '=>' : '<=';
+		zxnDmaHtml.transferDirectionPortAtoB.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.transferDirectionPortAtoB);
+	}
+	if (prevZxnDmaState.portBstartAddress !== zxnDMA.portBstartAddress) {
+		zxnDmaHtml.portBstartAddress.innerHTML = "0x" + zxnDMA.portBstartAddress.toString(16).toUpperCase().padStart(4, '0');
+		zxnDmaHtml.portBstartAddress.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.portBstartAddress);
+	}
+	// Remember previous state
+	prevZxnDmaState = zxnDMA;
 }
 
 
