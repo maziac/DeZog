@@ -1,4 +1,5 @@
 //import {Log} from "../../log";	// TODO: implement logging for the zxndma
+import {EventEmitter} from "stream";
 import {Serializable, MemBuffer} from "../../misc/membuffer";
 
 
@@ -12,10 +13,10 @@ import {Serializable, MemBuffer} from "../../misc/membuffer";
  * - TODO: What else is missing?
  *
  */
-export class ZxnDma implements Serializable {
+export class ZxnDma extends EventEmitter implements Serializable {
 
 	// The function is switched from decodeWRGroup to writeWR0-6.
-	public writePort: (value: number) => void;
+	public writePortFunc: (value: number) => void;
 
 	// The next bit to decode.
 	protected nextDecodeBitMask: number = 0;
@@ -97,7 +98,8 @@ export class ZxnDma implements Serializable {
 	/** Constructor.
 	 */
 	constructor() {
-		this.writePort = this.decodeWRGroup
+		super();
+		this.writePortFunc = this.decodeWRGroup
 		this.reset();
 		this.initializeReadSequence();
 	}
@@ -146,7 +148,7 @@ export class ZxnDma implements Serializable {
 	 */
 	protected checkLastByte() {
 		if (this.nextDecodeBitMask == 0) {
-			this.writePort = this.decodeWRGroup;
+			this.writePortFunc = this.decodeWRGroup;
 		}
 	}
 
@@ -157,38 +159,59 @@ export class ZxnDma implements Serializable {
 	 * Data of the read mask is read in circles.
 	 */
 	public readPort(): number {
+		let readValue = 0;
+		let extraLogText = "";
 		// Safety check
 		if (this.readMask === 0) {
-			return 0;
+			// No read mask set
+			extraLogText = "Warning: read mask is 0!";
 		}
-		// Find the next bit
-		do {
-			// Rotate
-			this.lastReadSequenceBit <<= 1;
-			if (this.lastReadSequenceBit > 0x7F) {
-				this.lastReadSequenceBit = 1;
-			}
-		} while ((this.readMask & this.lastReadSequenceBit) === 0);
-		// Bit 0?
-		if (this.lastReadSequenceBit & 0b0000_0001)
-			return this.statusByteRR0;
-		// Bit 1?
-		if (this.lastReadSequenceBit & 0b0000_0010)
-			return this.blockCounterRR12 & 0xFF;
-		// Bit 2?
-		if (this.lastReadSequenceBit & 0b0000_0100)
-			return (this.blockCounterRR12 >> 8) & 0xFF;
-		// Bit 3?
-		if (this.lastReadSequenceBit & 0b0000_1000)
-			return this.portAaddressCounterRR34 & 0xFF;
-		// Bit 4?
-		if (this.lastReadSequenceBit & 0b0001_0000)
-			return (this.portAaddressCounterRR34 >> 8) & 0xFF;
-		// Bit 5?
-		if (this.lastReadSequenceBit & 0b0010_0000)
-			return this.portBaddressCounterRR56 & 0xFF;
-		// Otherwise it is bit 6
-		return (this.portBaddressCounterRR56 >> 8) & 0xFF;
+		else {
+			// Find the next bit
+			do {
+				// Rotate
+				this.lastReadSequenceBit <<= 1;
+				if (this.lastReadSequenceBit > 0x7F) {
+					this.lastReadSequenceBit = 1;
+				}
+			} while ((this.readMask & this.lastReadSequenceBit) === 0);
+			// Bit 0?
+			if (this.lastReadSequenceBit & 0b0000_0001)
+				readValue = this.statusByteRR0;
+			// Bit 1?
+			else if (this.lastReadSequenceBit & 0b0000_0010)
+				readValue = this.blockCounterRR12 & 0xFF;
+			// Bit 2?
+			else if (this.lastReadSequenceBit & 0b0000_0100)
+				readValue = (this.blockCounterRR12 >> 8) & 0xFF;
+			// Bit 3?
+			else if (this.lastReadSequenceBit & 0b0000_1000)
+				readValue = this.portAaddressCounterRR34 & 0xFF;
+			// Bit 4?
+			else if (this.lastReadSequenceBit & 0b0001_0000)
+				readValue = (this.portAaddressCounterRR34 >> 8) & 0xFF;
+			// Bit 5?
+			else if (this.lastReadSequenceBit & 0b0010_0000)
+				readValue = this.portBaddressCounterRR56 & 0xFF;
+			// Otherwise it is bit 6
+			else readValue = (this.portBaddressCounterRR56 >> 8) & 0xFF;
+		}
+		// Log the read
+		const text = "zxnDMA port read: 0x" + readValue.toString(16).toUpperCase().padStart(2, '0') + " (0b" + readValue.toString(2).padStart(8, '0') + ")";
+		this.emit("log", text);
+		// Return
+		return readValue;
+	}
+
+
+	/** Writes a byte to the port and logs it.
+	 */
+	public writePort(value: number) {
+		// Log the write
+		const text = "zxnDMA port write: 0x" + value.toString(16).toUpperCase().padStart(2, '0') + " (0b" + value.toString(2).padStart(8, '0') + ")";
+		this.emit("log", text);
+		// Call the write function
+		this.writePortFunc(value);
 	}
 
 
@@ -202,16 +225,16 @@ export class ZxnDma implements Serializable {
 			// WR3-6
 			switch (AA) {
 				case 0:
-					this.writePort = this.writeWR3;
+					this.writePortFunc = this.writeWR3;
 					break;
 				case 1:
-					this.writePort = this.writeWR4;
+					this.writePortFunc = this.writeWR4;
 					break;
 				case 2:
-					this.writePort = this.writeWR5;
+					this.writePortFunc = this.writeWR5;
 					break;
 				case 3:
-					this.writePort = this.writeWR6;
+					this.writePortFunc = this.writeWR6;
 					break;
 			}
 		}
@@ -220,19 +243,19 @@ export class ZxnDma implements Serializable {
 			// WR1-2
 			if (value & 0b100) {
 				// WR1
-				this.writePort = this.writeWR1;
+				this.writePortFunc = this.writeWR1;
 			}
 			else {
 				// WR2
-				this.writePort = this.writeWR2;
+				this.writePortFunc = this.writeWR2;
 			}
 		}
 		else {
 			// WR0
-			this.writePort = this.writeWR0;
+			this.writePortFunc = this.writeWR0;
 		}
 		// Call the Wrx function
-		this.writePort(value);
+		this.writePortFunc(value);
 	}
 
 
@@ -243,6 +266,8 @@ export class ZxnDma implements Serializable {
 	protected writeWR0(value: number) {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
+			// Log
+			this.emit("log", 'zxnDMA: decoded as WR0');
 			// Decode transfer direction
 			// Note: bit0,1 are not decoded (always transfer)
 			this.transferDirectionPortAtoB = (value & 0b100) === 0b100;
@@ -285,6 +310,8 @@ export class ZxnDma implements Serializable {
 	protected writeWR1(value: number) {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
+			// Log
+			this.emit("log", 'zxnDMA: decoded as WR1');
 			// Decode
 			this.portAisIo = (value & 0b0_1000) === 0b0_1000;	// memory or IO
 			if (value & 0b10_0000) {
@@ -321,6 +348,8 @@ export class ZxnDma implements Serializable {
 	protected writeWR2(value: number) {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
+			// Log
+			this.emit("log", 'zxnDMA: decoded as WR2');
 			// Decode
 			this.portBisIo = (value & 0b0_1000) === 0b0_1000;	// memory or IO
 			if (value & 0b10_0000) {
@@ -364,10 +393,12 @@ export class ZxnDma implements Serializable {
 	 * @param value The value that is written.
 	 */
 	protected writeWR3(value: number) {
+		// Log
+		this.emit("log", 'zxnDMA: decoded as WR3');
 		// Very simple function, just set DMA
 		this.enableDma((value & 0b0100_0000) !== 0);
 		// End
-		this.writePort = this.decodeWRGroup;
+		this.writePortFunc = this.decodeWRGroup;
 	}
 
 
@@ -380,6 +411,8 @@ export class ZxnDma implements Serializable {
 	protected writeWR4(value: number) {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
+			// Log
+			this.emit("log", 'zxnDMA: decoded as WR4');
 			// Decode
 			const mode = (value & 0b0110_0000) >> 5;
 			if (mode !== 0b11) {	// 0b11: Do not use
@@ -413,11 +446,13 @@ export class ZxnDma implements Serializable {
 	 * @param value The value that is written.
 	 */
 	protected writeWR5(value: number) {
+		// Log
+		this.emit("log", 'zxnDMA: decoded as WR5');
 		// Very simple function, just set auto restart
 		// Decode (/ce and /wait is HW -> ignored):
 		this.autoRestart = (value & 0b0010_0000) !== 0;
 		// End
-		this.writePort = this.decodeWRGroup;
+		this.writePortFunc = this.decodeWRGroup;
 	}
 
 
@@ -430,6 +465,8 @@ export class ZxnDma implements Serializable {
 	protected writeWR6(value: number) {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
+			// Log
+			this.emit("log", 'zxnDMA: decoded as WR6');
 			// Decode
 			switch (value) {	// Command
 				case 0xC3: this.reset(); break;
@@ -548,8 +585,8 @@ export class ZxnDma implements Serializable {
 			let src, dst;
 			const incrA = this.portAadd === 0 ? "" : (this.portAadd > 0 ? "++" : "--"); // NOSONAR
 			const incrB = this.portBadd === 0 ? "" : (this.portBadd > 0 ? "++" : "--"); // NOSONAR
-			const portA = "0x" + this.portAstartAddress.toString(16) + incrA + (this.portAisIo ? " (IO)" : "");
-			const portB = "0x" + this.portBstartAddress.toString(16) + incrB + (this.portBisIo ? " (IO)" : "");
+			const portA = "0x" + this.portAstartAddress.toString(16) + incrA + (this.portAisIo ? ", IO" : "");
+			const portB = "0x" + this.portBstartAddress.toString(16) + incrB + (this.portBisIo ? ", IO" : "");
 			if (this.transferDirectionPortAtoB) {
 				src = portA;
 				dst = portB;
@@ -557,7 +594,7 @@ export class ZxnDma implements Serializable {
 			else {
 				src = portB;
 				dst = portA;
-			} this.lastOperation = "" + this.blockLength + "x: " + src + " -> " + dst;
+			} this.lastOperation = "" + this.blockLength + "x: (" + src + ") -> (" + dst + ")";
 			return tStates;
 		}
 		else {
@@ -669,7 +706,7 @@ export class ZxnDma implements Serializable {
 	 * If 0 is returned, the DMA didn't occupy the bus.
 	 */
 	public execute(): number {
-		this.lastOperation = "nop";
+		this.lastOperation = "NOP";
 		// Check if enabled at all
 		if (!this.enabled)
 			return 0;

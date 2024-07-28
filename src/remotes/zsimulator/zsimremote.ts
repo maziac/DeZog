@@ -399,6 +399,10 @@ export class ZSimRemote extends DzrpRemote {
 			// Create the zxnDMA object
 			this.zxnDMA = new ZxnDma();
 			this.serializeObjects.push(this.zxnDMA);
+			// Listen to zxndma logs
+			this.zxnDMA.on('log', (text: string) => {
+				this.emit('debug_console', text);
+			});
 			// Bind the DMA execution function
 			this.executeInstruction = () => {
 				// Execute the DMA function
