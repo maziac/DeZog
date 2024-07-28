@@ -118,6 +118,11 @@ export class ZSimulationView extends BaseView {
 			this.simulatedPorts.set(0x001F, 0x00);
 		}
 
+		// Check for DMA
+		if (Settings.launch.zsim.zxnDMA) {
+			// TODO: Implement
+		}
+
 		// Set callbacks for all simulated ports.
 		for (const [simPort,] of this.simulatedPorts) {
 			this.simulator.ports.registerSpecificInPortFunction(simPort, (port: number) => {
@@ -125,7 +130,6 @@ export class ZSimulationView extends BaseView {
 				return value;
 			});
 		}
-
 
 		// Add title
 		Utility.assert(this.vscodePanel);
@@ -557,14 +561,7 @@ export class ZSimulationView extends BaseView {
 		this.restartStopTimer();
 
 		try {
-			let cpuFreq;
-			let cpuLoad;
-			let slots;
-			let slotNames;
-			let visualMem;
-			let screenImg;
-			let audio;
-			let borderColor;
+			let cpuFreq, cpuLoad, slots, slotNames, visualMem, screenImg, audio, borderColor, zxnDMA;
 
 			// Update frequency
 			if (this.prevCpuFreq !== this.simulator.z80Cpu.cpuFreq) {
@@ -604,6 +601,11 @@ export class ZSimulationView extends BaseView {
 				audio = this.simulator.getZxBeeperBuffer();
 			}
 
+			if (this.simulator.zxnDMA) {	// TODO: Also check the others for zsim variable instead of settings.
+				// DMA
+				zxnDMA = this.simulator.zxnDMA.getState();
+			}
+
 			// Create message to update the webview
 			const message = {
 				command: 'update',
@@ -613,7 +615,8 @@ export class ZSimulationView extends BaseView {
 				visualMem,
 				screenImg,
 				borderColor,
-				audio
+				audio,
+				zxnDMA
 			};
 			this.sendMessageToWebView(message);
 			// Clear
@@ -845,6 +848,77 @@ export class ZSimulationView extends BaseView {
 			<span style="display:table-cell; vertical-align: middle">+</span>
 
 			</details>
+			`;
+		}
+
+		// Add code for the DMA
+		if (zsim.zxnDMA) {
+			html += `
+			<details open="true">
+			<summary>zxnDMA</summary>
+
+			<div style="padding-left: 1em;">
+				<!-- Port A/B Start, length -->
+				<div style="white-space: nowrap;">
+					<span style="display:table-cell; vertical-align: middle">Port A Start=</span>
+					<span style="display:table-cell; vertical-align: middle">0x1000</span>
+					<span style="display:table-cell; vertical-align: middle">&nbsp;->&nbsp;</span>
+					<span style="display:table-cell; vertical-align: middle">Port B Start=</span>
+					<span style="display:table-cell; vertical-align: middle">0x2000</span>
+					<span style="display:table-cell; vertical-align: middle">, Block Length=</span>
+					<span style="display:table-cell; vertical-align: middle">0x3000</span>
+				</div>
+
+				<!-- Port A/B Counter, Block Counter -->
+				<div style="white-space: nowrap;" title="The current valuues">
+					<span style="display:table-cell; vertical-align: middle">Port A Address=</span>
+					<span style="display:table-cell; vertical-align: middle">0x1123</span>
+					<span style="display:table-cell; vertical-align: middle">, Port B Address=</span>
+					<span style="display:table-cell; vertical-align: middle">0x2123</span>
+					<span style="display:table-cell; vertical-align: middle">, Block Counter=</span>
+					<span style="display:table-cell; vertical-align: middle">0x0123</span>
+				</div>
+
+				<!-- Port A: memory/io, increment, cycle -->
+				<div style="white-space: nowrap;">
+					<span style="display:table-cell; vertical-align: middle">Port A:&nbsp;</span>
+					<span style="display:table-cell; vertical-align: middle">Memory</span>
+					<span style="display:table-cell; vertical-align: middle">, Increment=</span>
+					<span style="display:table-cell; vertical-align: middle">-1</span>
+					<span style="display:table-cell; vertical-align: middle">, Cycle length=</span>
+					<span style="display:table-cell; vertical-align: middle">Z80 standard</span>
+				</div>
+
+				<!-- Port B: memory/io, increment, cycle -->
+				<div style="white-space: nowrap;">
+					<span style="display:table-cell; vertical-align: middle">Port B:&nbsp;</span>
+					<span style="display:table-cell; vertical-align: middle">Memory</span>
+					<span style="display:table-cell; vertical-align: middle">, Increment=</span>
+					<span style="display:table-cell; vertical-align: middle">-1</span>
+					<span style="display:table-cell; vertical-align: middle">, Cycle length=</span>
+					<span style="display:table-cell; vertical-align: middle">Z80 standard</span>
+				</div>
+
+				<!-- Mode, pre-scalar, auto-restart -->
+				<div style="white-space: nowrap;">
+					<span style="display:table-cell; vertical-align: middle">Mode:&nbsp;</span>
+					<span style="display:table-cell; vertical-align: middle">Burst</span>
+					<span style="display:table-cell; vertical-align: middle">, Pre-scalar=</span>
+					<span style="display:table-cell; vertical-align: middle">63</span>
+					<span style="display:table-cell; vertical-align: middle">, EOB-action=</span>
+					<span style="display:table-cell; vertical-align: middle">stop</span>
+				</div>
+
+				<!-- Read Mask, last sequence bit -->
+				<div style="white-space: nowrap;display: inline-flex;align-items: center;">
+					<span>Read Mask:</span>
+					<span><ui-byte startindex="0" numberofbits="7" digitcolor="black" offcolor="white" bytevalue="235" digitvalue="176" title="Last read bit is highlighted" />
+					</span>
+				</div>
+			</div>
+
+			</details>
+			<br>
 			`;
 		}
 

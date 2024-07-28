@@ -64,7 +64,7 @@ export class ZxnDma implements Serializable {
 	protected readMask: number = 0b0111_1111;
 
 	// Used to remember the last sent data from the readMask.
-	protected readSequenceBit: number = 0;
+	protected lastReadSequenceBit: number = 0;
 
 	// State of the DMA. Enabled or disabled.
 	protected enabled: boolean = false;
@@ -101,6 +101,38 @@ export class ZxnDma implements Serializable {
 	}
 
 
+	/** Returns the internal state.
+	 * Is used to visualize the internal registers in
+	 * the simulator web view.
+	 * @returns An object with all the internal state.
+	 */
+	public getState(): any {
+		return {
+			"portAstartAddress": this.portAstartAddress,
+			"portBstartAddress": this.portBstartAddress,
+			"blockLength": this.blockLength,
+			//"portAisIo": this.portAisIo,
+			//"portBisIo": this.portBisIo,
+			"portAmode": this.portAisIo ? "IO" : "Memory",
+			"portBmode": this.portBisIo ? "IO" : "Memory",
+			"portAadd": this.portAadd,
+			"portBadd": this.portBadd,
+			"portAcycleLength": this.portAcycleLength,
+			"portABycleLength": this.portBcycleLength,
+			"zxnPrescalar": this.zxnPrescalar,
+			//"burstMode": this.burstMode,
+			//"autoRestart": this.autoRestart,
+			"mode": this.burstMode ? "Burst" : "Continuous",
+			"eobAction": this.autoRestart ? "Auto-Restart" : "Stop",
+			"readMask": this.readMask,
+			"lastReadSequenceBit": this.lastReadSequenceBit & 0x7F,
+			"statusByteRR0": this.statusByteRR0,
+			"blockCounterRR12": this.blockCounterRR12,
+			"portAaddressCounterRR34": this.portAaddressCounterRR34,
+			"portBaddressCounterRR56": this.portBaddressCounterRR56,
+		};
+	}
+
 	/** Checks for the last byte of a sequence and resets the write function
 	 * appropriately.
 	 */
@@ -124,28 +156,28 @@ export class ZxnDma implements Serializable {
 		// Find the next bit
 		do {
 			// Rotate
-			this.readSequenceBit <<= 1;
-			if (this.readSequenceBit > 0x7F) {
-				this.readSequenceBit = 1;
+			this.lastReadSequenceBit <<= 1;
+			if (this.lastReadSequenceBit > 0x7F) {
+				this.lastReadSequenceBit = 1;
 			}
-		} while ((this.readMask & this.readSequenceBit) === 0);
+		} while ((this.readMask & this.lastReadSequenceBit) === 0);
 		// Bit 0?
-		if (this.readSequenceBit & 0b0000_0001)
+		if (this.lastReadSequenceBit & 0b0000_0001)
 			return this.statusByteRR0;
 		// Bit 1?
-		if (this.readSequenceBit & 0b0000_0010)
+		if (this.lastReadSequenceBit & 0b0000_0010)
 			return this.blockCounterRR12 & 0xFF;
 		// Bit 2?
-		if (this.readSequenceBit & 0b0000_0100)
+		if (this.lastReadSequenceBit & 0b0000_0100)
 			return (this.blockCounterRR12 >> 8) & 0xFF;
 		// Bit 3?
-		if (this.readSequenceBit & 0b0000_1000)
+		if (this.lastReadSequenceBit & 0b0000_1000)
 			return this.portAaddressCounterRR34 & 0xFF;
 		// Bit 4?
-		if (this.readSequenceBit & 0b0001_0000)
+		if (this.lastReadSequenceBit & 0b0001_0000)
 			return (this.portAaddressCounterRR34 >> 8) & 0xFF;
 		// Bit 5?
-		if (this.readSequenceBit & 0b0010_0000)
+		if (this.lastReadSequenceBit & 0b0010_0000)
 			return this.portBaddressCounterRR56 & 0xFF;
 		// Otherwise it is bit 6
 		return (this.portBaddressCounterRR56 >> 8) & 0xFF;
@@ -443,7 +475,7 @@ export class ZxnDma implements Serializable {
 
 	// Resets the read sequence
 	protected initializeReadSequence() {
-		this.readSequenceBit = 0b0100_0000;	// Next rotate will be at 0b0000_0001
+		this.lastReadSequenceBit = 0b0100_0000;	// Next rotate will be at 0b0000_0001
 	}
 
 

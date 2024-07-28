@@ -102,6 +102,10 @@ window.addEventListener('message', event => {// NOSONAR
 					zxAudioBeeper.writeBeeperSamples(audio);
 				}
 			}
+
+			if (message.zxnDMA) {
+				// TODO: Implement
+			}
 			break;
 
 		case 'receivedFromCustomLogic':

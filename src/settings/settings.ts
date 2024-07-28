@@ -542,6 +542,10 @@ export class Settings {
 		if (launchCfg.zsim.tbblue == undefined)
 			launchCfg.zsim.tbblue = {REG_TURBO_MODE: false} as TBBlueType;
 
+		// Check for DMA
+		if (launchCfg.zsim.zxnDMA == undefined)
+			launchCfg.zsim.zxnDMA = false;
+
 		// Check update frequency ranges
 		if (launchCfg.zsim.updateFrequency < 5.0)
 			launchCfg.zsim.updateFrequency = 5.0;	// 5 Hz

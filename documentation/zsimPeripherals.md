@@ -423,13 +423,24 @@ Combines 8 UiBit elements into one.
 
 These values can be set inside the html tag on creation:
 - bytevalue: The initial value. Default is 0.
+- digitvalue: A value shown as 0/1 inside the boxes. Cannot be used together with startindex.
 - startindex: If set an index is shown in the bits. The indices start at startindex.
 - oncolor: The color used to indicate state 'ON' of a bit, e.g. "red".
 - offcolor: The color used to indicate state 'OFF' of a bit, e.g. "white".
+- numberofbits: Default is 8, but you can define the size of elements (bits) to some other value.
 - onchange: If set the element is turned into an input element.
   'onchange' is a function that is called when the state changes because of mouse activity.
 - togglemode: "true" (default) to toggle state on each mouse click.
   "false" to set state of a bit to 'ON' only during button down.
+
+There are 2 modes of operation that can also be combined.
+The 2 modes use 2 different values: bytevalue and digitvalue.
+The bytevalue is shown in the boxes as colors for on and off (oncolor, offcolor).
+The digitvalue is shown in the boxes as digit 1 or 0.
+Both values are completely independent.
+E.g. bytevalue could be used to show a byte-mask wehreas at the same time the values of the bits can be visualized as 1's and 0's.
+Note: 'onchange' only affects the bytevalue.
+
 
 Examples:
 ~~~html

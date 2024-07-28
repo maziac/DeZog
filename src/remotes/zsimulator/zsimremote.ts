@@ -96,7 +96,7 @@ export class ZSimRemote extends DzrpRemote {
 	protected executeInstruction: () => number;
 
 	// The zxnDMA object. Or undefined if not used.
-	protected zxnDMA: ZxnDma;
+	public zxnDMA: ZxnDma;
 
 
 	/// Constructor.

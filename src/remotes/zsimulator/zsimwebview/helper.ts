@@ -52,7 +52,8 @@ globalThis.UIAPI = UIAPI;
  * Whenever a change happens the 'onchange' function is called.
  *
  * These values can be set inside the html tag on creation:
- * - bitvalue: The initial value. Default is 0.
+ * - bitvalue: The initial value to show as color. Default is 0.
+ * - digitvalue: The initial value to show as 1 or 0. Default is 0.
  * - oncolor: The color used to indicate state 'ON', e.g. "red".
  * - offcolor: The color used to indicate state 'OFF', e.g. "white".
  * - onchange: If set the element is turned into an input element.
@@ -68,7 +69,7 @@ globalThis.UIAPI = UIAPI;
 export class UiBit extends HTMLElement {
 
 	static get observedAttributes() {
-		return ['bitvalue', 'oncolor', 'offcolor', 'togglemode', 'onchange'];
+		return ['bitvalue', 'digitvalue', 'oncolor', 'offcolor', 'digitcolor', 'togglemode', 'onchange'];
 	}
 
 	connectedCallback() {
@@ -108,18 +109,30 @@ export class UiBit extends HTMLElement {
 			this.style.userSelect = "none";
 
 		// Init undefined
-		if ((this as any).bitvalue == undefined)
-			(this as any).bitvalue = 0;
-		if ((this as any).oncolor == undefined)
-			(this as any).oncolor = "red";
-		if ((this as any).offcolor == undefined)
-			(this as any).offcolor = "white";
+		const self = this as any;
+		console.log("UiBit digitcolor: " + self.digitcolor);
+		console.log("UiBit offcolor: " + self.offcolor);
+		if (self.bitvalue == undefined)
+			self.bitvalue = 0;
+		if (self.digitvalue == undefined)
+			self.digitvalue = 0;
+		if (self.oncolor == undefined)
+			self.oncolor = "red";
+		if (self.offcolor == undefined)
+			self.offcolor = "white";
+		if (self.digitcolor == undefined)
+			self.digitcolor = "black";
 		this.setColor();
 
-		// Inform about initial value
-		const bitvalue = (this as any).bitvalue;
-		(this as any).bitvalue = undefined;	// To make sure it is different
+		// Inform about initial bit value
+		const bitvalue = self.bitvalue;
+		self.bitvalue = undefined;	// To make sure it is different
 		this.setBitValue(bitvalue);
+
+		// Inform about initial digit value
+		const digitvalue = self.digitvalue;
+		self.digitvalue = undefined;	// To make sure it is different
+		this.setDigitValue(digitvalue);
 
 		// Listeners for the mouse, depending on this.onstatechange
 		this.registerMouseListeners();
@@ -127,22 +140,30 @@ export class UiBit extends HTMLElement {
 
 
 	attributeChangedCallback(name, oldValue, newValue) {
+		const self = this as any;
+		console.log("UiBit attributeChangedCallback: " + name + "=" + newValue);
 		if (name === "bitvalue") {
-			(this as any).bitvalue = newValue;
+			self.bitvalue = newValue;
+		}
+		if (name === "digitvalue") {
+			self.digitvalue = newValue;
 		}
 		else if (name === "oncolor") {
-			(this as any).oncolor = newValue;
+			self.oncolor = newValue;
 		}
 		else if (name === "offcolor") {
-			(this as any).offcolor = newValue;
+			self.offcolor = newValue;
+		}
+		else if (name === "digitcolor") {
+			self.digitcolor = newValue;
 		}
 		else if (name === "togglemode") {
-			(this as any).togglemode = (newValue === "true");
+			self.togglemode = (newValue === "true");
 		}
 		else if (name === "onchange") {
 			// Note: eval should not be used with esbuild, instead Function is used:
-			//(this as any).onstatechange = eval("() => { " + newValue + " }");
-			(this as any).onstatechange = new Function(newValue);
+			//self.onstatechange = eval("() => { " + newValue + " }");
+			self.onstatechange = new Function(newValue);
 		}
 	}
 
@@ -176,25 +197,40 @@ export class UiBit extends HTMLElement {
 	}
 
 	setColor() {
-		if ((this as any).bitvalue != 0)
-			this.style.backgroundColor = (this as any).oncolor;
+		const self = this as any;
+		if (self.bitvalue != 0)
+			this.style.backgroundColor = self.oncolor;
 		else
-			this.style.backgroundColor = (this as any).offcolor;
+			this.style.backgroundColor = self.offcolor;
 	}
 
 	setBitValue(newVal) {
-		if ((this as any).bitvalue != newVal) {
-			(this as any).bitvalue = newVal;
+		const self = this as any;
+		if (self.bitvalue != newVal) {
+			self.bitvalue = newVal;
 			// Check if someone waits on a notification
-			if ((this as any).onstatechange) {
-				(this as any).onstatechange();
+			if (self.onstatechange) {
+				self.onstatechange();
 			}
 		}
 		this.setColor();
 	}
 
+	setDigitValue(newVal) {
+		const self = this as any;
+		if (self.digitvalue != newVal) {
+			self.digitvalue = newVal;
+			// Check if someone waits on a notification
+			if (self.onstatechange) {
+				self.onstatechange();
+			}
+		}
+		this.style.color = self.digitcolor;	// TODO: Can I move it to the connectedCallback?
+	}
+
 	toggle() {
-		const newVal = ((this as any).bitvalue == 0) ? 1 : 0;
+		const self = this as any;
+		const newVal = (self.bitvalue == 0) ? 1 : 0;
 		this.setBitValue(newVal);
 	}
 }
@@ -206,7 +242,8 @@ customElements.define('ui-bit', UiBit);
  * Combines 8 UiBit elements into one.
  *
  * These values can be set inside the html tag on creation:
- * - bytevalue: The initial value. Default is 0.
+ * - bytevalue: The initial value to show with colors. Default is 0.
+ * - digitvalue: The initial value to show as 1's and 0's. Default is 0.
  * - startindex: If set an index is shown in the bits. The indices start
  *     at startindex.
  * - oncolor: The color used to indicate state 'ON' of a bit, e.g. "red".
@@ -224,7 +261,7 @@ customElements.define('ui-bit', UiBit);
 class UiByte extends HTMLElement {
 
 	static get observedAttributes() {
-		return ['startindex', 'bytevalue', 'oncolor', 'offcolor', 'togglemode', 'onchange'];
+		return ['startindex', 'bytevalue', 'digitvalue', 'oncolor', 'offcolor', 'togglemode', 'onchange', 'digitcolor', 'numberofbits'];
 	}
 
 	connectedCallback() {
@@ -233,35 +270,56 @@ class UiByte extends HTMLElement {
 			this.style.display = "inline-block";
 
 		// Init undefined
-		if ((this as any).initialbytevalue == undefined)
-			(this as any).initialbytevalue = 0;
-		if ((this as any).oncolor == undefined)
-			(this as any).oncolor = "red";
-		if ((this as any).offcolor == undefined)
-			(this as any).offcolor = "white";
-		if ((this as any).togglemode == undefined)
-			(this as any).togglemode = true;
+		const self = this as any;
+		console.log("UiByte connectedCallback", "digitcolor: " + self.digitcolor);
+		console.log("UiByte connectedCallback", "offcolor: " + self.offcolor);
+
+		console.log("UiByte connectedCallback", "initialbytevalue: " + self.initialbytevalue);
+
+		const useDigitValue = (self.initialdigitvalue !== undefined);
+		if (self.initialbytevalue == undefined)
+			self.initialbytevalue = 0;
+		if (self.initialdigitvalue == undefined)
+			self.initialdigitvalue = 0;
+		if (self.oncolor == undefined)
+			self.oncolor = "red";
+		if (self.offcolor == undefined)
+			self.offcolor = "white";
+		if (self.togglemode == undefined)
+			self.togglemode = true;
+		if (self.digitcolor == undefined)
+			self.digitcolor = "black";
+		if (self.numberofbits == undefined)	// undocumented, you can create UiByte with e.g. just 7 bits
+			self.numberofbits = 8;
 
 		// Create byte from bits
-		(this as any).bits = [];
-		let k = (this as any).startindex;
-		if (k != undefined)
-			k = 7 + parseInt(k);
-		for (let i = 0; i < 8; i++) {
+		self.bits = [];
+		let k;
+		if (self.startindex && !useDigitValue)
+			k = parseInt(self.startindex);
+		let j = self.numberofbits - 1;
+		for (let i = 0; i < self.numberofbits; i++) {
 			const bit = document.createElement('ui-bit');
 			// Togglemode
-			(bit as any).togglemode = (this as any).togglemode;
+			(bit as any).togglemode = self.togglemode;
 			// Add object
 			this.appendChild(bit);
-			(this as any).bits[i] = bit;
-			// Bit index
-			if (k != undefined) {
-				(bit as any).setBitIndex(k);
-				k--;
+			self.bits[i] = bit;
+			// Set a number in the bit
+			if (useDigitValue) {
+				// Check bit index
+				const mask = 1 << j;
+				(bit as any).setBitIndex((mask & self.digitvalue) ? 1 : 0);
 			}
+			// Use start index
+			else if (k !== undefined) {
+				(bit as any).setBitIndex(j + k);
+			}
+			j--;
 			// Color
-			(bit as any).oncolor = (this as any).oncolor;
-			(bit as any).offcolor = (this as any).offcolor;
+			(bit as any).digitcolor = self.digitcolor;
+			(bit as any).oncolor = self.oncolor;
+			(bit as any).offcolor = self.offcolor;
 			// Copy style (e.g. border-radius)
 			bit.style.borderWidth = this.style.borderWidth;
 			bit.style.borderRadius = this.style.borderRadius;
@@ -275,14 +333,15 @@ class UiByte extends HTMLElement {
 		}
 
 		// Set the value through setter. Send notification.
-		this.bytevalue = (this as any).initialbytevalue;
+		this.bytevalue = self.initialbytevalue;
+		this.digitvalue = self.initialdigitvalue;
 
 		// Set onchange
-		if ((this as any).onstatechange) {
-			for (let i = 0; i < 8; i++) {
-				const bit = (this as any).bits[i];
+		if (self.onstatechange) {
+			for (let i = 0; i < self.numberofbits; i++) {
+				const bit = self.bits[i];
 				bit.onstatechange = () => {
-					(this as any).onstatechange();
+					self.onstatechange();
 				};
 				bit.registerMouseListeners();
 			}
@@ -291,36 +350,48 @@ class UiByte extends HTMLElement {
 
 
 	attributeChangedCallback(name, oldValue, newValue) {
+		console.log("UiByte attributeChangedCallback: " + name + "=" + newValue);
+		const self = this as any;
 		if (name === "startindex") {
-			(this as any).startindex = newValue;
+			self.startindex = newValue;
 		}
 		else if (name === "bytevalue") {
-			(this as any).initialbytevalue = parseInt(newValue);
+			self.initialbytevalue = parseInt(newValue);
+		}
+		else if (name === "digitvalue") {
+			self.initialdigitvalue = parseInt(newValue);
+		}
+		else if (name === "digitcolor") {
+			self.digitcolor = newValue;
 		}
 		else if (name === "oncolor") {
-			(this as any).oncolor = newValue;
+			self.oncolor = newValue;
 		}
 		else if (name === "offcolor") {
-			(this as any).offcolor = newValue;
+			self.offcolor = newValue;
 		}
 		else if (name === "togglemode") {
-			(this as any).togglemode = (newValue === "true");
+			self.togglemode = (newValue === "true");
 		}
 		else if (name === "onchange") {
 			// Note: eval should not be used with esbuild, instead Function is used:
-			//(this as any).onstatechange = eval("() => { " + newValue + " }");
-			(this as any).onstatechange = new Function(newValue);
+			//self.onstatechange = eval("() => { " + newValue + " }");
+			self.onstatechange = new Function(newValue);
 
-			//(this as any).onstatechange = new Function("() => { " + newValue + " }");
+			//self.onstatechange = new Function("() => { " + newValue + " }");
+		}
+		else if (name === "numberofbits") {
+			self.numberofbits = parseInt(newValue);
 		}
 	}
 
 	// Get value
 	get bytevalue() {
-		let bitMaskIndex = 7;
+		const self = this as any;
+		let bitMaskIndex = self.numberofbits - 1;
 		let value = 0;
-		for (let i = 0; i < 8; i++) {
-			const bit = (this as any).bits[i];
+		for (let i = 0; i < self.numberofbits; i++) {
+			const bit = self.bits[i];
 			// Set value
 			const bitvalue = bit.bitvalue;
 			value += bitvalue << bitMaskIndex;
@@ -331,18 +402,55 @@ class UiByte extends HTMLElement {
 
 	// Set value
 	set bytevalue(newVal) {
-		let bitMaskIndex = 7;
-		for (let i = 0; i < 8; i++) {
-			const bit = (this as any).bits[i];
+		console.log("UiByte set bytevalue: " + newVal);
+		const self = this as any;
+		let bitMaskIndex = self.numberofbits - 1;
+		for (let i = 0; i < self.numberofbits; i++) {
+			const bit = self.bits[i];
 			// Set value
 			bit.bitvalue = (newVal >> bitMaskIndex) & 0x01;
+			console.log("UiByte bitMaskIndex: " + bitMaskIndex + ", bitvalue: " + bit.bitvalue);
 			bitMaskIndex--;
 			// Color
 			bit.setColor();
 		}
 		// Notify
-		if ((this as any).onstatechange)
-			(this as any).onstatechange();
+		if (self.onstatechange)
+			self.onstatechange();
+	}
+
+	// Get value
+	get digitvalue() {
+		const self = this as any;
+		let bitMaskIndex = self.numberofbits - 1;
+		let value = 0;
+		for (let i = 0; i < self.numberofbits; i++) {
+			const bit = self.bits[i];
+			// Set value
+			const bitvalue = bit.digitvalue;
+			value += bitvalue << bitMaskIndex;
+			bitMaskIndex--;
+		}
+		return value;
+	}
+
+	// Set value
+	set digitvalue(newVal) {
+		console.log("UiByte set bytevalue: " + newVal);
+		const self = this as any;
+		let bitMaskIndex = self.numberofbits - 1;
+		for (let i = 0; i < self.numberofbits; i++) {
+			const bit = self.bits[i];
+			// Set value
+			bit.digitvalue = (newVal >> bitMaskIndex) & 0x01;
+			console.log("UiByte bitMaskIndex: " + bitMaskIndex + ", bitvalue: " + bit.bitvalue);
+			bitMaskIndex--;
+			// Color
+		//	bit.setColor();
+		}
+		// Notify
+		if (self.onstatechange)
+			self.onstatechange();
 	}
 
 }
