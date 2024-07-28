@@ -262,7 +262,7 @@ customElements.define('ui-bit', UiBit);
  * <ui-byte togglemode="false" onchange="my_func(this)"/>
  * You can get the value (e.g. in 'my_func(this)' with 'this.bytevalue'.
  */
-class UiByte extends HTMLElement {
+export class UiByte extends HTMLElement {
 
 	static get observedAttributes() {
 		return ['startindex', 'bytevalue', 'digitvalue', 'oncolor', 'offcolor', 'togglemode', 'onchange', 'digitcolor', 'numberofbits'];

@@ -3,7 +3,7 @@ import {ZxAudioBeeper, zxAudioBeeper} from "./zxaudiobeeper";
 import {UlaScreen} from "./ulascreen";
 import {VisualMem} from "./visualmem";
 import {joystickObjs, initJoystickPolling} from "./joysticks";
-import {UIAPI, UiBit} from "./helper";
+import {UIAPI, UiBit, UiByte} from "./helper";
 
 
 // HTML element used for the cpu frequency.
@@ -36,8 +36,8 @@ let zxnDmaHtml: {
 	portAstartAddress: HTMLLabelElement,
 	portBstartAddress: HTMLLabelElement,
 	transferDirectionPortAtoB: HTMLLabelElement,
-	portAMode: HTMLLabelElement,
-	portBMode: HTMLLabelElement,
+	portAmode: HTMLLabelElement,
+	portBmode: HTMLLabelElement,
 	portAadd: HTMLLabelElement,
 	portBadd: HTMLLabelElement,
 	portAcycleLength: HTMLLabelElement,
@@ -45,8 +45,8 @@ let zxnDmaHtml: {
 	mode: HTMLLabelElement,
 	zxnPrescalar: HTMLLabelElement,
 	eobAction: HTMLLabelElement,
-	readMask: HTMLElement,
-	statusByte: HTMLLabelElement,
+	readMask: UiByte,
+	statusByte: UiByte,
 	blockCounter: HTMLLabelElement,
 	portAaddressCounter: HTMLLabelElement,
 	portBaddressCounter: HTMLLabelElement,
@@ -210,8 +210,8 @@ function initSimulation(audioSampleRate: number, volume: number) {
 			portBstartAddress: document.getElementById("zxnDMA.portBstartAddress") as HTMLLabelElement,
 			blockLength: document.getElementById("zxnDMA.blockLength") as HTMLLabelElement,
 			transferDirectionPortAtoB: document.getElementById("zxnDMA.transferDirectionPortAtoB") as HTMLLabelElement,
-			portAMode: document.getElementById("zxnDMA.portAmode") as HTMLLabelElement,
-			portBMode: document.getElementById("zxnDMA.portBmode") as HTMLLabelElement,
+			portAmode: document.getElementById("zxnDMA.portAmode") as HTMLLabelElement,
+			portBmode: document.getElementById("zxnDMA.portBmode") as HTMLLabelElement,
 			portAadd: document.getElementById("zxnDMA.portAadd") as HTMLLabelElement,
 			portBadd: document.getElementById("zxnDMA.portBadd") as HTMLLabelElement,
 			portAcycleLength: document.getElementById("zxnDMA.portAcycleLength") as HTMLLabelElement,
@@ -219,8 +219,8 @@ function initSimulation(audioSampleRate: number, volume: number) {
 			zxnPrescalar: document.getElementById("zxnDMA.zxnPrescalar") as HTMLLabelElement,
 			mode: document.getElementById("zxnDMA.mode") as HTMLLabelElement,
 			eobAction: document.getElementById("zxnDMA.eobAction") as HTMLLabelElement,
-			readMask: document.getElementById("zxnDMA.readMask")!,
-			statusByte: document.getElementById("zxnDMA.statusByte") as HTMLLabelElement,
+			readMask: document.getElementById("zxnDMA.readMask") as UiByte,
+			statusByte: document.getElementById("zxnDMA.statusByte") as UiByte,
 			blockCounter: document.getElementById("zxnDMA.blockCounter") as HTMLLabelElement,
 			portAaddressCounter: document.getElementById("zxnDMA.portAaddressCounter") as HTMLLabelElement,
 			portBaddressCounter: document.getElementById("zxnDMA.portBaddressCounter") as HTMLLabelElement,
@@ -310,6 +310,80 @@ function printZxnDma(zxnDMA) {
 		zxnDmaHtml.portBstartAddress.innerHTML = "0x" + zxnDMA.portBstartAddress.toString(16).toUpperCase().padStart(4, '0');
 		zxnDmaHtml.portBstartAddress.style.fontWeight = 'bold';
 		prevZxnDmaBoldElements.push(zxnDmaHtml.portBstartAddress);
+	}
+	if (prevZxnDmaState.portAaddressCounterRR34 !== zxnDMA.portAaddressCounterRR34) {
+		zxnDmaHtml.portAaddressCounter.innerHTML = "0x" + zxnDMA.portAaddressCounterRR34.toString(16).toUpperCase().padStart(4, '0');
+		zxnDmaHtml.portAaddressCounter.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.portAaddressCounter);
+	}
+	if (prevZxnDmaState.portBaddressCounterRR56 !== zxnDMA.portBaddressCounterRR56) {
+		zxnDmaHtml.portBaddressCounter.innerHTML = "0x" + zxnDMA.portBaddressCounterRR56.toString(16).toUpperCase().padStart(4, '0');
+		zxnDmaHtml.portBaddressCounter.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.portBaddressCounter);
+	}
+	if (prevZxnDmaState.blockCounterRR12 !== zxnDMA.blockCounterRR12) {
+		zxnDmaHtml.blockCounter.innerHTML = "0x" + zxnDMA.blockCounterRR12.toString(16).toUpperCase().padStart(4, '0');
+		zxnDmaHtml.blockCounter.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.blockCounter);
+	}
+	if (prevZxnDmaState.portAmode !== zxnDMA.portAmode) {
+		zxnDmaHtml.portAmode.innerHTML = zxnDMA.portAmode;
+		zxnDmaHtml.portAmode.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.portAmode);
+	}
+	if (prevZxnDmaState.portBmode !== zxnDMA.portBmode) {
+		zxnDmaHtml.portBmode.innerHTML = zxnDMA.portBmode;
+		zxnDmaHtml.portBmode.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.portBmode);
+	}
+	if (prevZxnDmaState.portAadd !== zxnDMA.portAadd) {
+		zxnDmaHtml.portAadd.innerHTML = zxnDMA.portAadd;
+		zxnDmaHtml.portAadd.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.portAadd);
+	}
+	if (prevZxnDmaState.portBadd !== zxnDMA.portBadd) {
+		zxnDmaHtml.portBadd.innerHTML = zxnDMA.portBadd;
+		zxnDmaHtml.portBadd.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.portBadd);
+	}
+	if (prevZxnDmaState.portAcycleLength !== zxnDMA.portAcycleLength) {
+		zxnDmaHtml.portAcycleLength.innerHTML = zxnDMA.portAcycleLength;
+		zxnDmaHtml.portAcycleLength.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.portAcycleLength);
+	}
+	if (prevZxnDmaState.portBcycleLength !== zxnDMA.portBcycleLength) {
+		zxnDmaHtml.portBcycleLength.innerHTML = zxnDMA.portBcycleLength
+		zxnDmaHtml.portBcycleLength.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.portBcycleLength);
+	}
+	if (prevZxnDmaState.zxnPrescalar !== zxnDMA.zxnPrescalar) {
+		zxnDmaHtml.zxnPrescalar.innerHTML = zxnDMA.zxnPrescalar;
+		zxnDmaHtml.zxnPrescalar.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.zxnPrescalar);
+	}
+	if (prevZxnDmaState.mode !== zxnDMA.mode) {
+		zxnDmaHtml.mode.innerHTML = zxnDMA.mode;
+		zxnDmaHtml.mode.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.mode);
+	}
+	if (prevZxnDmaState.eobAction !== zxnDMA.eobAction) {
+		zxnDmaHtml.eobAction.innerHTML = zxnDMA.eobAction;
+		zxnDmaHtml.eobAction.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.eobAction);
+	}
+	if (prevZxnDmaState.readMask !== zxnDMA.readMask) {
+		zxnDmaHtml.readMask.digitvalue = zxnDMA.readMask;
+	}
+	if (prevZxnDmaState.lastReadSequenceBit !== zxnDMA.lastReadSequenceBit) {
+		zxnDmaHtml.readMask.bytevalue = zxnDMA.lastReadSequenceBit;
+	}
+	if (prevZxnDmaState.statusByte !== zxnDMA.statusByte) {
+		zxnDmaHtml.statusByte.digitvalue = zxnDMA.statusByte;
+	}
+	if (prevZxnDmaState.lastOperation !== zxnDMA.lastOperation) {
+		zxnDmaHtml.lastOperation.innerHTML = zxnDMA.lastOperation;
+		zxnDmaHtml.lastOperation.style.fontWeight = 'bold';
+		prevZxnDmaBoldElements.push(zxnDmaHtml.lastOperation);
 	}
 	// Remember previous state
 	prevZxnDmaState = zxnDMA;

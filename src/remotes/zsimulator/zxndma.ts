@@ -125,7 +125,7 @@ export class ZxnDma implements Serializable {
 			"portAadd": this.portAadd,
 			"portBadd": this.portBadd,
 			"portAcycleLength": this.portAcycleLength,
-			"portBcyleLength": this.portBcycleLength,
+			"portBcycleLength": this.portBcycleLength,
 			//"burstMode": this.burstMode,
 			//"autoRestart": this.autoRestart,
 			"mode": this.burstMode ? "Burst" : "Continuous",
@@ -461,34 +461,29 @@ export class ZxnDma implements Serializable {
 	// Resets to standard Z80 timing.
 	protected resetPortAtiming() {
 		this.portAcycleLength = 0;
-		this.lastOperation += "reset port A timing, ";
 	}
 
 
 	// Resets to standard Z80 timing.
 	protected resetPortBtiming() {
 		this.portBcycleLength = 0;
-		this.lastOperation += "reset port B timing, ";
 	}
 
 
 	protected readStatusByte() {
 		// TODO: implement
-		this.lastOperation += "read status byte, ";
 	}
 
 
 	// Resets (1) the block ended (and the search) flag.
 	protected reinitializeStatusByte() {
 		this.statusByteRR0 |= 0b0011_0000;
-		this.lastOperation += "re-initialize status byte, ";
 	}
 
 
 	// Resets the read sequence
 	protected initializeReadSequence() {
-		this.lastReadSequenceBit = 0b0100_0000;	// Next rotate will be at 0b0000_0001
-		this.lastOperation += "initialize read sequence, ";
+		this.lastReadSequenceBit = 0b1000_0000;	// Next rotate will be at 0b0000_0001
 	}
 
 
@@ -497,14 +492,12 @@ export class ZxnDma implements Serializable {
 		this.portAaddressCounterRR34 = this.portAstartAddress;
 		this.portBaddressCounterRR56 = this.portBstartAddress;
 		this.blockCounterRR12 = 0;
-		this.lastOperation += "load, ";
 	}
 
 
 	// Clears the block counter.
 	protected continue() {
 		this.blockCounterRR12 = 0;
-		this.lastOperation += "continue, ";
 	}
 
 
@@ -512,7 +505,6 @@ export class ZxnDma implements Serializable {
 		this.autoRestart = false;
 		this.portAcycleLength = 0;
 		this.portBcycleLength = 0;
-		this.lastOperation += "reset, ";
 	}
 
 
@@ -521,7 +513,6 @@ export class ZxnDma implements Serializable {
 	 */
 	protected enableDma(on: boolean) {
 		this.enabled = on;
-		this.lastOperation += on ?  "enable DMA, " : "disable DMA, ";
 	}
 
 

@@ -915,14 +915,14 @@ export class ZSimulationView extends BaseView {
 				</div>
 
 				<!-- Status Byte -->
-				<div style="white-space: nowrap;">>
+				<div style="white-space: nowrap;">
 					<span>Status Byte:&nbsp;</span>
-					<span><ui-byte id="zxnDMA.statusByte" digitvalue="0" title="Bit 0: T = 1 if at least one byte has been transferred\nBit 5: E = 0 if total block length at least transferred once" />
+					<span><ui-byte id="zxnDMA.statusByte" bytevalue="33" oncolor="white" offcolor="gray" digitvalue="0" title="Bit 0: T = 1 if at least one byte has been transferred\nBit 5: E = 0 if total block length at least transferred once" />
 					</span>
 				</div>
 
 				<!-- Read Mask, last sequence bit -->
-				<div style="white-space: nowrap;">>
+				<div style="white-space: nowrap;">
 					<span>Read Mask:&nbsp;</span>
 					<span><ui-byte id="zxnDMA.readMask" numberofbits="7" bytevalue="0" digitvalue="0" title="Last read bit is highlighted.\nBit 0: Status Byte\nBit 1: Block Counter Low\nBit 2: Block Counter High\nBit 3: Port A Address Low\nBit 4: Port A Address High\nBit 5: Port B Address Low\nBit 6: Port B Address High" />
 					</span>
@@ -930,8 +930,8 @@ export class ZSimulationView extends BaseView {
 
 				<!-- Last Operation -->
 				<div style="white-space: nowrap;">
-					<span id="zxnDMA.lastOperation">Last Operation:&nbsp;</span>
-					<span></span>
+					<span>Last Operation:&nbsp;</span>
+					<span id="zxnDMA.lastOperation"></span>
 				</div>
 
 			</div>
