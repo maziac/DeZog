@@ -910,7 +910,7 @@ export class ZSimulationView extends BaseView {
 				</div>
 
 				<!-- Read Mask, last sequence bit -->
-				<div style="white-space: nowrap;display: inline-flex;align-items: center;">
+				<div>
 					<span>Read Mask:</span>
 					<span><ui-byte numberofbits="7" digitcolor="black" offcolor="white" bytevalue="235" digitvalue="176" title="Last read bit is highlighted" />
 					</span>
@@ -918,7 +918,7 @@ export class ZSimulationView extends BaseView {
 				<x!--
 				<div>
 					<span>Read Mask:</span>
-					<span><ui-byte bytevalue="235" />
+					<span><ui-byte bytevalue="235" onchange="console.log('UiByte onchange'))" />
 					</span>
 				</div>
 				<div>
@@ -927,13 +927,23 @@ export class ZSimulationView extends BaseView {
 					</span>
 				</div>
 				<div>
-					<span>Bit:</span>
-					<span><ui-bit bitvalue="1" />
+					<span>Read Mask:</span>
+					<span><ui-byte digitvalue="134"/>
+					</span>
+				</div>
+				<div>
+					<span>Read Mask:</span>
+					<span><ui-byte bytevalue="235" digitvalue="134"   onchange="togglePortBitNeg(this, 0xEFFE, 0x01)" />
 					</span>
 				</div>
 				<div>
 					<span>Bit:</span>
-					<span><ui-bit bitvalue="0" />
+					<span><ui-bit bitvalue="1" onchange="console.log('UiBit onchange'))" />
+					</span>
+				</div>
+				<div>
+					<span>Bit:</span>
+					<span><ui-bit bitvalue="0"  onchange="togglePortBitNeg(this, 0xEFFE, 0x01)" />
 					</span>
 				</div>
 				<div>

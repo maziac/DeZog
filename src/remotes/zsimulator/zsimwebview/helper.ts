@@ -271,8 +271,11 @@ class UiByte extends HTMLElement {
 
 	connectedCallback() {
 		this.innerHTML = "";
-		if (!this.style.display)
-			this.style.display = "inline-block";
+		if (!this.style.display) {
+			this.style.display = 'inline-flex';
+			this.style.flexWrap = 'nowrap';
+			this.style.alignItems = 'center';
+		}
 
 		// Init undefined
 		const self = this as any;
