@@ -36,4 +36,35 @@ fill:
 				db DMA_ENABLE
 .dma_len:		equ $-.dma_code
 
+
+;------------------------------------------------------------------------------
+; Reads all registers (RR1 - RR6) of the DMA controller
+; and writes them to the read_registers.registers structure.
+;------------------------------------------------------------------------------
+read_registers:
+	di
+	; DMA command to read the registers
+	ld hl,.dma_code
+	ld b,.dma_end-.dma_code
+	ld c,ZXN_DMA_PORT
+	otir
+	; Read the registers
+	ld hl,.registers
+	ld b,.registers_end-.registers
+	inir
+	ei
+	ret
+
+.dma_code:		db DMA_DISABLE
+				db 0b10111011	; Read mask follows
+				db 0b01111111	; Read mask
+.dma_end
+
+.registers:
+.statusByteRR0:		db 0
+.blockCounterRR12:	dw 0
+.portAaddessRR34:	dw 0
+.portBaddessRR56:	dw 0
+.registers_end
+
 	ENDMODULE

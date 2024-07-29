@@ -23,4 +23,5 @@ main:
     ld bc,8192 ;0x100
     call zxndma.fill
     nop
+    call zxndma.read_registers
     jr .loop
