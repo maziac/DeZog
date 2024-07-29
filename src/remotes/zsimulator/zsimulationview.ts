@@ -870,7 +870,8 @@ export class ZSimulationView extends BaseView {
 					<span>&nbsp;</span>
 					<span>Port B Start=</span>
 					<span id="zxnDMA.portBstartAddress"></span>
-					<span>, Block Length=</span>
+					<span>,&nbsp;</span>
+					<span>Block Length=</span>
 					<span id="zxnDMA.blockLength"></span>
 				</div>
 
@@ -878,9 +879,11 @@ export class ZSimulationView extends BaseView {
 				<div style="white-space: nowrap;" title="The current valuues">
 					<span>Port A Address=</span>
 					<span id="zxnDMA.portAaddressCounter"></span>
-					<span>, Port B Address=</span>
+					<span>,&nbsp;</span>
+					<span>Port B Address=</span>
 					<span id="zxnDMA.portBaddressCounter"></span>
-					<span>, Block Counter=</span>
+					<span>,&nbsp;</span>
+					<span>Block Counter=</span>
 					<span id="zxnDMA.blockCounter"></span>
 				</div>
 
@@ -888,9 +891,11 @@ export class ZSimulationView extends BaseView {
 				<div style="white-space: nowrap;">
 					<span>Port A:&nbsp;</span>
 					<span id="zxnDMA.portAmode"></span>
-					<span>, Increment=</span>
+					<span>,&nbsp;</span>
+					<span>Increment=</span>
 					<span id="zxnDMA.portAadd"></span>
-					<span>, Cycle length=</span>
+					<span>,&nbsp;</span>
+					<span>Cycle length=</span>
 					<span id="zxnDMA.portAcycleLength"></span>
 				</div>
 
@@ -898,9 +903,11 @@ export class ZSimulationView extends BaseView {
 				<div style="white-space: nowrap;">
 					<span>Port B:&nbsp;</span>
 					<span id="zxnDMA.portBmode"></span>
-					<span>, Increment=</span>
+					<span>,&nbsp;</span>
+					<span>Increment=</span>
 					<span id="zxnDMA.portBadd"></span>
-					<span>, Cycle length=</span>
+					<span>,&nbsp;</span>
+					<span>Cycle length=</span>
 					<span id="zxnDMA.portBcycleLength"></span>
 				</div>
 
@@ -908,9 +915,11 @@ export class ZSimulationView extends BaseView {
 				<div style="white-space: nowrap;">
 					<span>Mode:&nbsp;</span>
 					<span id="zxnDMA.mode"></span>
-					<span>, Pre-scalar=</span>
+					<span>,&nbsp;</span>
+					<span>Pre-scalar=</span>
 					<span id="zxnDMA.zxnPrescalar"></span>
-					<span>, EOB-action=</span>
+					<span>,&nbsp;</span>
+					<span>EOB-action=</span>
 					<span id="zxnDMA.eobAction"></span>
 				</div>
 

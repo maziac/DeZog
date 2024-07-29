@@ -57,7 +57,7 @@ let zxnDmaHtml: {
 let prevZxnDmaState: any = {};
 
 // Holds the list of elements that were printed in bold (i.e. had changed).
-let prevZxnDmaBoldElements: Array<HTMLLabelElement> = [];
+let prevZxnDmaHighlightedElements: Array<HTMLLabelElement> = [];
 
 
 //---- Handle Messages from vscode extension --------
@@ -283,93 +283,102 @@ function cellSelect(cell, on) {
 }
 
 
+// Highlights the element and it preceding element
+function highlightElem(elem: HTMLElement, on: boolean) {
+	const color = on ? 'red' : '';
+	elem.style.color = color; // Change the color of the current element to red
+	const prevElement = elem.previousElementSibling as HTMLElement;
+	prevElement.style.color = color;
+}
+
+
 // Print zxnDMA values, if changed in bold.
 function printZxnDma(zxnDMA) {
 	// Remove all bold elements
-	for (const elem of prevZxnDmaBoldElements) {
-		elem.style.fontWeight = 'normal';
+	for (const elem of prevZxnDmaHighlightedElements) {
+		highlightElem(elem, false);
 	}
-	prevZxnDmaBoldElements = [];
+	prevZxnDmaHighlightedElements = [];
 	// Update zxnDMA HTML elements
 	if (prevZxnDmaState.blockLength !== zxnDMA.blockLength) {
 		zxnDmaHtml.blockLength.innerHTML = "0x" + zxnDMA.blockLength.toString(16).toUpperCase().padStart(4, '0');
-		zxnDmaHtml.blockLength.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.blockLength);
+		highlightElem(zxnDmaHtml.blockLength, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.blockLength);
 	}
 	if (prevZxnDmaState.portAstartAddress !== zxnDMA.portAstartAddress) {
 		zxnDmaHtml.portAstartAddress.innerHTML = "0x" + zxnDMA.portAstartAddress.toString(16).toUpperCase().padStart(4, '0');
-		zxnDmaHtml.portAstartAddress.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.portAstartAddress);
+		highlightElem(zxnDmaHtml.portAstartAddress, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.portAstartAddress);
 	}
 	if (prevZxnDmaState.transferDirectionPortAtoB !== zxnDMA.transferDirectionPortAtoB) {
 		zxnDmaHtml.transferDirectionPortAtoB.innerHTML = zxnDMA.transferDirectionPortAtoB ? '=>' : '<=';
-		zxnDmaHtml.transferDirectionPortAtoB.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.transferDirectionPortAtoB);
+		highlightElem(zxnDmaHtml.transferDirectionPortAtoB, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.transferDirectionPortAtoB);
 	}
 	if (prevZxnDmaState.portBstartAddress !== zxnDMA.portBstartAddress) {
 		zxnDmaHtml.portBstartAddress.innerHTML = "0x" + zxnDMA.portBstartAddress.toString(16).toUpperCase().padStart(4, '0');
-		zxnDmaHtml.portBstartAddress.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.portBstartAddress);
+		highlightElem(zxnDmaHtml.portBstartAddress, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.portBstartAddress);
 	}
 	if (prevZxnDmaState.portAaddressCounterRR34 !== zxnDMA.portAaddressCounterRR34) {
 		zxnDmaHtml.portAaddressCounter.innerHTML = "0x" + zxnDMA.portAaddressCounterRR34.toString(16).toUpperCase().padStart(4, '0');
-		zxnDmaHtml.portAaddressCounter.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.portAaddressCounter);
+		highlightElem(zxnDmaHtml.portAaddressCounter, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.portAaddressCounter);
 	}
 	if (prevZxnDmaState.portBaddressCounterRR56 !== zxnDMA.portBaddressCounterRR56) {
 		zxnDmaHtml.portBaddressCounter.innerHTML = "0x" + zxnDMA.portBaddressCounterRR56.toString(16).toUpperCase().padStart(4, '0');
-		zxnDmaHtml.portBaddressCounter.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.portBaddressCounter);
+		highlightElem(zxnDmaHtml.portBaddressCounter, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.portBaddressCounter);
 	}
 	if (prevZxnDmaState.blockCounterRR12 !== zxnDMA.blockCounterRR12) {
 		zxnDmaHtml.blockCounter.innerHTML = "0x" + zxnDMA.blockCounterRR12.toString(16).toUpperCase().padStart(4, '0');
-		zxnDmaHtml.blockCounter.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.blockCounter);
+		highlightElem(zxnDmaHtml.blockCounter, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.blockCounter);
 	}
 	if (prevZxnDmaState.portAmode !== zxnDMA.portAmode) {
 		zxnDmaHtml.portAmode.innerHTML = zxnDMA.portAmode;
-		zxnDmaHtml.portAmode.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.portAmode);
+		highlightElem(zxnDmaHtml.portAmode, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.portAmode);
 	}
 	if (prevZxnDmaState.portBmode !== zxnDMA.portBmode) {
 		zxnDmaHtml.portBmode.innerHTML = zxnDMA.portBmode;
-		zxnDmaHtml.portBmode.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.portBmode);
+		highlightElem(zxnDmaHtml.portBmode, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.portBmode);
 	}
 	if (prevZxnDmaState.portAadd !== zxnDMA.portAadd) {
 		zxnDmaHtml.portAadd.innerHTML = zxnDMA.portAadd;
-		zxnDmaHtml.portAadd.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.portAadd);
+		highlightElem(zxnDmaHtml.portAadd, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.portAadd);
 	}
 	if (prevZxnDmaState.portBadd !== zxnDMA.portBadd) {
 		zxnDmaHtml.portBadd.innerHTML = zxnDMA.portBadd;
-		zxnDmaHtml.portBadd.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.portBadd);
+		highlightElem(zxnDmaHtml.portBadd, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.portBadd);
 	}
 	if (prevZxnDmaState.portAcycleLength !== zxnDMA.portAcycleLength) {
 		zxnDmaHtml.portAcycleLength.innerHTML = zxnDMA.portAcycleLength;
-		zxnDmaHtml.portAcycleLength.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.portAcycleLength);
+		highlightElem(zxnDmaHtml.portAcycleLength, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.portAcycleLength);
 	}
 	if (prevZxnDmaState.portBcycleLength !== zxnDMA.portBcycleLength) {
 		zxnDmaHtml.portBcycleLength.innerHTML = zxnDMA.portBcycleLength
-		zxnDmaHtml.portBcycleLength.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.portBcycleLength);
+		highlightElem(zxnDmaHtml.portBcycleLength, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.portBcycleLength);
 	}
 	if (prevZxnDmaState.zxnPrescalar !== zxnDMA.zxnPrescalar) {
 		zxnDmaHtml.zxnPrescalar.innerHTML = zxnDMA.zxnPrescalar;
-		zxnDmaHtml.zxnPrescalar.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.zxnPrescalar);
+		highlightElem(zxnDmaHtml.zxnPrescalar, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.zxnPrescalar);
 	}
 	if (prevZxnDmaState.mode !== zxnDMA.mode) {
 		zxnDmaHtml.mode.innerHTML = zxnDMA.mode;
-		zxnDmaHtml.mode.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.mode);
+		highlightElem(zxnDmaHtml.mode, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.mode);
 	}
 	if (prevZxnDmaState.eobAction !== zxnDMA.eobAction) {
 		zxnDmaHtml.eobAction.innerHTML = zxnDMA.eobAction;
-		zxnDmaHtml.eobAction.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.eobAction);
+		highlightElem(zxnDmaHtml.eobAction, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.eobAction);
 	}
 	if (prevZxnDmaState.readMask !== zxnDMA.readMask) {
 		zxnDmaHtml.readMask.digitvalue = zxnDMA.readMask;
@@ -382,8 +391,8 @@ function printZxnDma(zxnDMA) {
 	}
 	if (prevZxnDmaState.lastOperation !== zxnDMA.lastOperation) {
 		zxnDmaHtml.lastOperation.innerHTML = zxnDMA.lastOperation;
-		zxnDmaHtml.lastOperation.style.fontWeight = 'bold';
-		prevZxnDmaBoldElements.push(zxnDmaHtml.lastOperation);
+		highlightElem(zxnDmaHtml.lastOperation, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.lastOperation);
 	}
 	// Remember previous state
 	prevZxnDmaState = zxnDMA;
