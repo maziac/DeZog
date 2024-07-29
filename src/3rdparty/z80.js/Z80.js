@@ -281,9 +281,8 @@ let run_instruction = function()
    }
    else
    {
-      // While we're halted, claim that we spent a cycle doing nothing,
-      //  so that the rest of the emulator can still proceed.
-      return 1;
+      // T.Busse, Jul-2024: During HALT, NOPs are executed which is 4T
+      return 4;
    }
 };
 

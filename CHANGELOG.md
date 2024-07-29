@@ -1,4 +1,6 @@
 # Changelog
+# 3.3.5
+- Fixed instruction time display of HALT
 
 # 3.3.4
 - Fix for #126: Data misalignment for ZX128K SNA with Active BANK6 in zsim. Banks in SNA loading fixed.
