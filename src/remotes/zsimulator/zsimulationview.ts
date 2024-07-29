@@ -916,7 +916,7 @@ export class ZSimulationView extends BaseView {
 					<span>Mode:&nbsp;</span>
 					<span id="zxnDMA.mode"></span>
 					<span>,&nbsp;</span>
-					<span>Pre-scalar=</span>
+					<span>Prescalar=</span>
 					<span id="zxnDMA.zxnPrescalar"></span>
 					<span>,&nbsp;</span>
 					<span>EOB-action=</span>
