@@ -386,8 +386,8 @@ function printZxnDma(zxnDMA) {
 	if (prevZxnDmaState.lastReadSequenceBit !== zxnDMA.lastReadSequenceBit) {
 		zxnDmaHtml.readMask.bytevalue = zxnDMA.lastReadSequenceBit;
 	}
-	if (prevZxnDmaState.statusByte !== zxnDMA.statusByte) {
-		zxnDmaHtml.statusByte.digitvalue = zxnDMA.statusByte;
+	if (prevZxnDmaState.statusByteRR0 !== zxnDMA.statusByteRR0) {
+		zxnDmaHtml.statusByte.digitvalue = zxnDMA.statusByteRR0;
 	}
 	if (prevZxnDmaState.lastOperation !== zxnDMA.lastOperation) {
 		zxnDmaHtml.lastOperation.innerHTML = zxnDMA.lastOperation;
