@@ -69,6 +69,9 @@ export class ZSimRemote extends DzrpRemote {
 	// Is increased with every executed instruction.
 	protected passedTstates: number;
 
+	// Used to calculate the passed instruction time.
+	protected prevPassedTstates: number;
+
 	// The number of t-states to pass before a 'tick()' is send to the
 	// peripherals custom code.
 	protected timeStep: number;
@@ -114,6 +117,7 @@ export class ZSimRemote extends DzrpRemote {
 		this.tbblueRegisterWriteHandler = new Map<number, (value: number) => void>();
 		this.tbblueRegisterReadHandler = new Map<number, () => number>();
 		this.passedTstates = 0;
+		this.prevPassedTstates = 0;
 		this.timeStep = Settings.launch.zsim.customCode.timeStep;
 		this.nextStepTstates = 0;
 		this.stopCpu = true;
@@ -956,7 +960,8 @@ export class ZSimRemote extends DzrpRemote {
 	 * time.
 	 */
 	public async resetTstates(): Promise<void> {
-		this.z80Cpu.cpuTstatesCounter = 0;
+		//this.z80Cpu.cpuTstatesCounter = 0;
+		this.prevPassedTstates = this.passedTstates;
 	}
 
 
@@ -965,11 +970,13 @@ export class ZSimRemote extends DzrpRemote {
 	 * @returns The number of T-States or 0 if not supported.
 	 */
 	public async getTstates(): Promise<number> {
-		return this.z80Cpu.cpuTstatesCounter;
+		//return this.z80Cpu.cpuTstatesCounter;
+		return this.passedTstates - this.prevPassedTstates;
 	}
 	// Same as sync function.
 	public getTstatesSync(): number {
-		return this.z80Cpu.cpuTstatesCounter;
+		//return this.z80Cpu.cpuTstatesCounter;
+		return this.passedTstates - this.prevPassedTstates;
 	}
 
 
