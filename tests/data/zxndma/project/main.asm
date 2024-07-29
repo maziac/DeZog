@@ -20,7 +20,7 @@ main:
 .loop:
     ld a,0x12
     ld de,0x9000
-    ld bc,0x100
+    ld bc,8192 ;0x100
     call zxndma.fill
     nop
     jr .loop
