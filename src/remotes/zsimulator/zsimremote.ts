@@ -648,6 +648,7 @@ export class ZSimRemote extends DzrpRemote {
 			let slots = this.memory.getSlots();	// Z80 Registers may not be filled yet.
 			let pcLong = Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
 			const leaveAtTstates = this.passedTstates + 5000 * 4;	// Break from loop at least after 2000 instructions (on average). This is to break in case of a halt.
+			let break_happened = false;	// will be set to true if loop is left because of some break (e.g. breakpoint)
 			try {
 				// Run the Z80-CPU in a loop
 				while (this.passedTstates < leaveAtTstates) {
@@ -682,6 +683,7 @@ export class ZSimRemote extends DzrpRemote {
 						// E.g. an error in the custom code or in the memory model ioMmu
 						breakNumber = BREAK_REASON_NUMBER.CPU_ERROR;
 						breakReasonString = "CPU error: " + this.z80Cpu.error;
+						break_happened = true;
 						break;
 					}
 
@@ -715,12 +717,14 @@ export class ZSimRemote extends DzrpRemote {
 								// Condition met?
 								else if (condition != undefined) {
 									bp = bpElem;
+									break_happened = true;
 									break;
 								}
 							}
 							catch (e) {
 								// Some problem occurred, pass evaluation to DebugSessionClass
 								bp = bpElem;
+								break_happened = true;
 								break;
 							}
 						}
@@ -728,6 +732,7 @@ export class ZSimRemote extends DzrpRemote {
 						if (bp) {
 							breakNumber = BREAK_REASON_NUMBER.BREAKPOINT_HIT;
 							longBreakAddress = pcLong;
+							break_happened = true;
 							break;	// stop loop
 						}
 					}
@@ -741,6 +746,7 @@ export class ZSimRemote extends DzrpRemote {
 						longBreakAddress = Z80Registers.createLongAddress(memAddress, slots);
 						// NOTE: Check for long watchpoint address could be done already here.
 						// However it is done anyway in the DzrpRemote.
+						break_happened = true;
 						break;
 					}
 
@@ -748,6 +754,7 @@ export class ZSimRemote extends DzrpRemote {
 					// Check if given breakpoints are hit (64k address compare, not long addresses)
 					if (pc == bp1 || pc == bp2) {
 						longBreakAddress = pcLong;
+						break_happened = true;
 						break;
 					}
 
@@ -756,6 +763,7 @@ export class ZSimRemote extends DzrpRemote {
 						this.z80Cpu.interruptOccurred = false;
 						if (this.breakOnInterrupt) {
 							breakNumber = BREAK_REASON_NUMBER.BREAK_INTERRUPT;	// Interrupt break
+							break_happened = true;
 							break;
 						}
 					}
@@ -763,6 +771,7 @@ export class ZSimRemote extends DzrpRemote {
 					// Check if stopped from outside
 					if (this.stopCpu) {
 						breakNumber = BREAK_REASON_NUMBER.MANUAL_BREAK;	// Manual break
+						break_happened = true;
 						break;
 					}
 				}
@@ -775,7 +784,7 @@ export class ZSimRemote extends DzrpRemote {
 			}
 
 			// Check to leave
-			if (this.passedTstates < leaveAtTstates) {
+			if (break_happened) {
 				// Stop immediately
 				this.stopCpu = true;
 				// Send Notification
