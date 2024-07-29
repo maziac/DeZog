@@ -410,7 +410,7 @@ export class ZSimRemote extends DzrpRemote {
 			// Bind the DMA execution function
 			this.executeInstruction = () => {
 				// Execute the DMA function
-				let tStates = this.zxnDMA.execute(this.z80Cpu.cpuFreq);
+				let tStates = this.zxnDMA.execute(this.z80Cpu.cpuFreq, this.passedTstates);
 				// Afterwards run the CPU
 				tStates += this.z80Cpu.execute();
 				return tStates;

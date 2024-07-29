@@ -65,6 +65,9 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	// The burst mode. true = burst, false = continuous.
 	protected burstMode: boolean = true;
 
+	// The number of t-states to wait until the next byte is copied in burst mode with prescalar
+	protected nextTstates: number = 0;
+
 	// auto-restart: true = auto-restart, false = stop on end of block.
 	protected autoRestart: boolean = false;
 
@@ -88,7 +91,7 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	Bit 6: Undefined
 	Bit 7: Undefined
 	*/
-	protected statusByteRR0: number = 0;
+	protected statusByteRR0: number = 0b0011_1010;	// E=1, T=0
 
 	// The byte counter (how many bytes are transferred).
 	protected blockCounterRR12: number = 0;
@@ -169,7 +172,7 @@ export class ZxnDma extends EventEmitter implements Serializable {
 		// Safety check
 		if (this.readMask === 0) {
 			// No read mask set
-			extraLogText = "Warning: read mask is 0!";
+			extraLogText = "Warning: read mask is 0!";  // TODO: What happens here?
 		}
 		else {
 			// Find the next bit
@@ -517,9 +520,9 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	}
 
 
-	// Resets (1) the block ended (and the search) flag.
+	// Resets (1) the block ended and the T flag.
 	protected reinitializeStatusByte() {
-		this.statusByteRR0 |= 0b0011_0000;
+		this.statusByteRR0 |= 0b0011_1010;	// E=1, T=0
 	}
 
 
@@ -555,58 +558,130 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	 */
 	protected enableDma(on: boolean) {
 		this.enabled = on;
+		this.nextTstates = 0;
 	}
 
 
 	/** Copies a block in continuous mode.
 	 * Copies blockLength bytes from portAstartAddress to portBstartAddress.
 	 * Or vice versa.
+	 * In continuous mode the DMA will not give away time for the CPU until
+	 * the block is completely copied.
+	 * Prescalar only delays the timing. Even with a prescalar no time is given to the CPU.
+	 * @param cpuFreq The CPU frequency in Hz. Required to calculate the t-states if prescalar is used.
 	 */
-	protected copyContinuous(): number {
-		// Check for prescalar
-		if (this.zxnPrescalar === 0) {
-			// Simple copy
-			for (let i = 0; i < this.blockLength; i++) {
-				// Read
-				const value = this.readSrc();
-				// Write
-				this.writeDst(value);
-				// Next
-				this.portAaddressCounterRR34 = (this.portAaddressCounterRR34 + this.portAadd) & 0xFFFF;
-				this.portBaddressCounterRR56 = (this.portBaddressCounterRR56 + this.portBadd) & 0xFFFF;
-			}
+	protected copyContinuous(cpuFreq: number): number {
+		// Simple copy
+		for (let i = 0; i < this.blockLength; i++) {
+			// Read
+			const value = this.readSrc();
+			// Write
+			this.writeDst(value);
+			// Next
+			this.portAaddressCounterRR34 = (this.portAaddressCounterRR34 + this.portAadd) & 0xFFFF;
+			this.portBaddressCounterRR56 = (this.portBaddressCounterRR56 + this.portBadd) & 0xFFFF;
+		}
 
-			// End
-			this.blockCounterRR12 = 0;
-			// Set flags: End-of-block, T (1=at least one byte transferred) etc.
-			this.statusByteRR0 = 0b0011_1010 | (this.blockLength === 0 ? 0 : 0b01);
-			// Calculate required t-states
-			const tStates = (this.portAtstates() + this.portBtstates()) * this.blockLength;
-			// Status byte
-			this.statusByteRR0 = 0b0001_1010 | (this.blockLength === 0 ? 0 : 0b01);
-			// Ready
-			this.enabled = false;
-			// Last operation
-			let src, dst;
-			const incrA = this.portAadd === 0 ? "" : (this.portAadd > 0 ? "++" : "--"); // NOSONAR
-			const incrB = this.portBadd === 0 ? "" : (this.portBadd > 0 ? "++" : "--"); // NOSONAR
-			const portA = "0x" + this.portAstartAddress.toString(16) + incrA + (this.portAisIo ? ", IO" : "");
-			const portB = "0x" + this.portBstartAddress.toString(16) + incrB + (this.portBisIo ? ", IO" : "");
-			if (this.transferDirectionPortAtoB) {
-				src = portA;
-				dst = portB;
-			}
-			else {
-				src = portB;
-				dst = portA;
-			} this.lastOperation = "" + this.blockLength + "x: (" + src + ") -> (" + dst + ")";
-			return tStates;
+		// End
+		this.blockCounterRR12 = 0;
+		// Set flags: End-of-block, T (1=at least one byte transferred) etc.
+		this.statusByteRR0 = 0b0011_1010 | (this.blockLength === 0 ? 0 : 0b01);
+		// Calculate required t-states
+		let tStates = (this.portAtstates() + this.portBtstates()) * this.blockLength;
+		// Check for prescalar
+		if (this.zxnPrescalar !== 0) {
+			// Frate = 875kHz / prescalar, independent of CPU speed
+			const transferTime = this.zxnPrescalar / 875000;
+			const transferTstates = transferTime * cpuFreq;
+			tStates += transferTstates * this.blockLength;
+		}
+		// Status byte
+		this.statusByteRR0 = 0b0001_1010 | (this.blockLength === 0 ? 0 : 0b01);
+		// Ready
+		this.enabled = false;
+		// Last operation
+		let src, dst;
+		const incrA = this.portAadd === 0 ? "" : (this.portAadd > 0 ? "++" : "--"); // NOSONAR
+		const incrB = this.portBadd === 0 ? "" : (this.portBadd > 0 ? "++" : "--"); // NOSONAR
+		const portA = "0x" + this.portAstartAddress.toString(16) + incrA + (this.portAisIo ? ", IO" : "");
+		const portB = "0x" + this.portBstartAddress.toString(16) + incrB + (this.portBisIo ? ", IO" : "");
+		if (this.transferDirectionPortAtoB) {
+			src = portA;
+			dst = portB;
 		}
 		else {
-			// Burst mode with prescalar: DMA give time for the CPU in between
-			// TODO: IMPLEMENT
+			src = portB;
+			dst = portA;
+		} this.lastOperation = "" + this.blockLength + "x: (" + src + ") -> (" + dst + ")";
+		return tStates;
+	}
+
+
+
+	/** Copies a block in burst mode.
+	 * Copies blockLength bytes from portAstartAddress to portBstartAddress.
+	 * Or vice versa.
+	 * If prescalar set:
+	 *   DMA will give away time for the CPU.
+	 *   After each copied byte the CPU gets some time until the DMA kicks in again.
+	 * If no prescalar set:
+	 *   Same as continuous mode.
+	 * @param cpuFreq The CPU frequency in Hz. Required to calculate the t-states if prescalar is used.
+	 * @param pastTstates The t-states that have passed since starting the zsimulator. Used to
+	 * calculate the next time a byte will be copied if the prescalar is used.
+	 */
+	protected copyBurst(cpuFreq: number, pastTstates: number): number {
+		if (this.zxnPrescalar === 0) {
+			// No prescalar: same as continuous mode
+			return this.copyContinuous(cpuFreq);
+		}
+		// Check if block is finished
+		if (this.blockLength === 0) {
 			return 0;
 		}
+		// Check if enough time has passed
+		if (pastTstates < this.nextTstates)
+			return 0;	// Not enough time has passed
+		// Copy one byte and return
+		// Read
+		const value = this.readSrc();
+		// Write
+		this.writeDst(value);
+		// Next
+		this.portAaddressCounterRR34 = (this.portAaddressCounterRR34 + this.portAadd) & 0xFFFF;
+		this.portBaddressCounterRR56 = (this.portBaddressCounterRR56 + this.portBadd) & 0xFFFF;
+		this.blockCounterRR12++;
+		// Check for end of block
+		if (this.blockCounterRR12 >= this.blockLength) {
+			// Status byte: set E to 0
+			this.statusByteRR0 &= 0b11011111;
+			// Stop
+			this.enabled = false;
+		}
+		// Set T (1=at least one byte transferred) etc.
+		this.statusByteRR0 |= 0b01;
+		// Calculate required t-states
+		const tStates = this.portAtstates() + this.portBtstates();
+		// Calculate next time to copy a byte
+		const transferTime = this.zxnPrescalar / 875000;
+		const transferTstates = transferTime * cpuFreq;
+		const k = Math.floor(pastTstates / transferTstates);
+		this.nextTstates = Math.ceil((k+1) * transferTstates);
+		// Last operation
+		let src, dst;
+		const incrA = this.portAadd === 0 ? "" : (this.portAadd > 0 ? "++" : "--"); // NOSONAR
+		const incrB = this.portBadd === 0 ? "" : (this.portBadd > 0 ? "++" : "--"); // NOSONAR
+		const portA = "0x" + this.portAstartAddress.toString(16) + incrA + (this.portAisIo ? ", IO" : "");
+		const portB = "0x" + this.portBstartAddress.toString(16) + incrB + (this.portBisIo ? ", IO" : "");
+		if (this.transferDirectionPortAtoB) {
+			src = portA;
+			dst = portB;
+		}
+		else {
+			src = portB;
+			dst = portA;
+		} this.lastOperation = "(" + src + ") -> (" + dst + ")";
+		return tStates;
 	}
 
 
@@ -707,21 +782,22 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	/** Executes the DMA. Is called by ZSimRemote executeInstruction
 	 * and is just called similar as the Z80.execute.
 	 * It is called before the Z80 would execute it's instruction.
-	 * @returns The number of t-states the DMA needed.
-	 * If 0 is returned, the DMA didn't occupy the bus.
+	 * @param cpuFreq The CPU frequency in Hz. Required to calculate the t-states if prescalar is used.
+	 * @param pastTstates The t-states that have passed since starting the zsimulator. Used to
+	 * calculate the next time a byte will be copied if the prescalar is used.
+	 * @returns The number of t-states the DMA needed. If 0 is returned, the DMA didn't occupy the bus.
 	 */
-	public execute(): number {
+	public execute(cpuFreq: number, pastTstates: number): number {
 		this.lastOperation = "NOP";
 		// Check if enabled at all
 		if (!this.enabled)
 			return 0;
 		// Check if something to execute.
 		if (this.burstMode) {
-			// TODO: Implement burst mode
-			return 0;
+			return this.copyBurst(cpuFreq, pastTstates);
 		}
 		else {
-			return this.copyContinuous();
+			return this.copyContinuous(cpuFreq);
 		}
 	}
 
