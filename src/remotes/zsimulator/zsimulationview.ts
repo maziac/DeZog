@@ -582,8 +582,7 @@ export class ZSimulationView extends BaseView {
 			}
 
 			if (Settings.launch.zsim.ulaScreen) {
-				// A time in ms which is used for the flashing of the color attributes. The flash frequency is ca. 1.6Hz = 625ms.
-				// Every 16th frame the color attributes are changed (640ms cyle)
+				// A time in ms which is used for the flashing of the color attributes. The flash frequency is 1/640ms (~1.56Hz).
 				const time = this.simulator.getTstatesSync() / this.simulator.getCpuFrequencySync() * 1000;
 				const ulaData = this.simulator.getUlaScreen();
 				screenImg = {

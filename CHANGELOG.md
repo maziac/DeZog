@@ -1,6 +1,8 @@
 # Changelog
 # 3.3.5
-- Fixed instruction time display of HALT
+- zsim:
+  - Fixed instruction time display of HALT
+  - Fixed FLASH frequency from 1/625ms to 1/640ms.
 
 # 3.3.4
 - Fix for #126: Data misalignment for ZX128K SNA with Active BANK6 in zsim. Banks in SNA loading fixed.
