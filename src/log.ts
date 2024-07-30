@@ -68,8 +68,8 @@ export class Log {
 
 	/**
 	 * Logs to console.
-	 * Puts the caller name ('class.method'. E.g. "ZesaruxDebugSession.initializeRequest")
-	 * in front of each log.
+	 * Can put the caller name ('class.method'. E.g. "ZesaruxDebugSession.initializeRequest")
+	 * in front of each log if uncommented.
 	 * @param args The log arguments
 	 */
 	public log(...args) {
@@ -166,13 +166,15 @@ export class Log {
 	 */
 	public outputCache() {
 		if (this.cache) {
-			// Check if data lost
-			if (this.cacheLogsLost) {
-				this.logOutput.appendLine('[...]');
-			}
-			// Output
-			for (const text of this.cache) {
-				this.logOutput.appendLine(text);
+			if (this.logOutput) {
+				// Check if data lost
+				if (this.cacheLogsLost) {
+					this.logOutput.appendLine('[...]');
+				}
+				// Output
+				for (const text of this.cache) {
+					this.logOutput.appendLine(text);
+				}
 			}
 			// Clear cache
 			this.cache.length = 0;
@@ -228,7 +230,6 @@ export const LogGlobal = new Log();
 
 /// Logging for zsim hardware is instantiated.
 export const LogZsimHardware = new Log();
-LogZsimHardware.setCacheLength(100);
 
 /// Logging for zsim custom code is instantiated.
 export const LogZsimCustomCode = new Log();
