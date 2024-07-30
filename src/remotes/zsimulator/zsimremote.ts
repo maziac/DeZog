@@ -411,8 +411,9 @@ export class ZSimRemote extends DzrpRemote {
 			this.executeInstruction = () => {
 				// Execute the DMA function
 				let tStates = this.zxnDMA.execute(this.z80Cpu.cpuFreq, this.passedTstates);
-				// Afterwards run the CPU
-				tStates += this.z80Cpu.execute();
+				// If DMA does not occupy the bus, run CPU
+				if(tStates === 0)
+					tStates = this.z80Cpu.execute();
 				return tStates;
 			}
 			// Create the read/write port

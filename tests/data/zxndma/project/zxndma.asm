@@ -15,12 +15,43 @@ fill:
 	di
 	ld (.fill_value),a
 	ld (.dma_dest),de
+	ld bc,3
 	ld (.dma_length),bc
 	ld hl,.dma_code
 	ld b,.dma_len
 	ld c,ZXN_DMA_PORT
 	otir
+	nop
+	nop
+	nop  ; here both
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
 	ei
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+
 	ret
 
 .fill_value:	db 0
@@ -28,10 +59,16 @@ fill:
 				db 0b01111101
 .dma_source:	dw .fill_value
 .dma_length:	dw 0
-				db 0b00100100
+				db 0b01100100	; WR0:
+				db 0b00000010	; Cycle length (A) = 2
 				db 0b00010000
-				db 0b10101101
+				;db 0b10101101	; WR4: Continuous mode
+				db 0b11001101	; WR4: Burst mode
 .dma_dest:		dw 0
+				db 0b01010000 ; WR2
+				db 0b00100010 ; Cycle Length (B) = 2
+				db 3		  ; Prescalar = 3, every 12 T
+				;db 0b10100010 ; WR5: Auto restart
 				db DMA_LOAD
 				db DMA_ENABLE
 .dma_len:		equ $-.dma_code
