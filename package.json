@@ -116,8 +116,14 @@
 					"scope": "resource",
 					"default": false
 				},
-				"dezog.log.customCode": {
-					"description": "Write logs regarding custom (js) code to an output panel.",
+				"dezog.log.zsim.hardware": {
+					"description": "Write logs from simulated hardware, e.g. zxnDMA, to an output panel. For the internal simulator (zsim).",
+					"type": "boolean",
+					"scope": "resource",
+					"default": true
+				},
+				"dezog.log.zsim.customCode": {
+					"description": "Write logs regarding custom (js) code to an output panel. For the internal simulator (zsim).",
 					"type": "boolean",
 					"scope": "resource",
 					"default": true

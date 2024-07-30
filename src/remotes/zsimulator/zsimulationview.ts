@@ -3,7 +3,7 @@ import {BaseView} from '../../views/baseview';
 import {ZSimRemote} from './zsimremote';
 import {Settings} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
-import {LogCustomCode} from '../../log';
+import {LogZsimCustomCode} from '../../log';
 import {GlobalStorage} from '../../globalstorage';
 import {readFileSync} from 'fs';
 import {DiagnosticsHandler} from '../../diagnosticshandler';
@@ -170,7 +170,7 @@ export class ZSimulationView extends BaseView {
 
 		// Handle custom code messages
 		this.simulator.customCode?.on('sendToCustomUi', (message: any) => {
-			LogCustomCode.log('UI: UIAPI.receivedFromCustomLogic: ' + JSON.stringify(message));
+			LogZsimCustomCode.log('UI: UIAPI.receivedFromCustomLogic: ' + JSON.stringify(message));
 			// Wrap message from custom code
 			const outerMsg = {
 				command: 'receivedFromCustomLogic',
@@ -316,7 +316,7 @@ export class ZSimulationView extends BaseView {
 			case 'sendToCustomLogic': {
 				// Unwrap message
 				const innerMsg = message.value;
-				LogCustomCode.log("UI: UIAPI.sendToCustomLogic: " + JSON.stringify(innerMsg));
+				LogZsimCustomCode.log("UI: UIAPI.sendToCustomLogic: " + JSON.stringify(innerMsg));
 				this.sendToCustomLogic(innerMsg);
 				break;
 			}
@@ -343,7 +343,7 @@ export class ZSimulationView extends BaseView {
 			case 'log': {
 				// Log a message
 				const text = message.args.map(elem => elem.toString()).join(', ');
-				LogCustomCode.log("UI: " + text);
+				LogZsimCustomCode.log("UI: " + text);
 				break;
 			}
 			case 'countOfProcessedMessages':

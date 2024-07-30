@@ -1,20 +1,17 @@
-//import {Log} from "../../log";	// TODO: implement logging for the zxndma
+import {LogZsimHardware} from "../../log";	// TODO: implement logging for the zxndma
 import {EventEmitter} from "stream";
 import {Serializable, MemBuffer} from "../../misc/membuffer";
 import {SimulatedMemory} from "./simulatedmemory";
 import {Z80Ports} from "./z80ports";
-import {Z80} from "../../3rdparty/z80.js/Z80";
 
 
 /** The zxnDMA simulation.
- * See https://www.specnext.com/the-zxndma/.
+ * See https://wiki.specnext.dev/DMA.
  *
  * The ZX Next DMA controller is a simple device that allows the Z80 to transfer data with the peripherals without the need for the CPU to be involved in the process.
  *
- * Not the whole zxnDMA is implemented:
- * - No interrupts
- * - TODO: What else is missing?
- *
+ * The whole of the zxnDMA is implemented.
+ * (The Zilog DMA compatiblity mode is not implemented.)
  */
 export class ZxnDma extends EventEmitter implements Serializable {
 	// Gets the memory handler for the DMA.

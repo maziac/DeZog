@@ -239,7 +239,7 @@ Never use time dependend javascript like ```setinterval```or ```settimeout```ins
 
 All calls to/from the custom code are logged. You need to enable the log target in the DeZog's preferences:
 ~~~
-dezog.log.customCode=true
+dezog.log.zsim.customCode=true
 ~~~
 The output can be found in the OUTPUT panel if it has "DeZog Custom Code" selected.
 

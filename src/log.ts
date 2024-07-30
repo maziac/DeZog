@@ -224,11 +224,15 @@ export class Log {
 
 
 /// Global logging is instantiated.
-export let LogGlobal = new Log();
+export const LogGlobal = new Log();
 
-/// Logging for custom code is instantiated.
-export let LogCustomCode = new Log();
-LogCustomCode.setCacheLength(100);
+/// Logging for zsim hardware is instantiated.
+export const LogZsimHardware = new Log();
+LogZsimHardware.setCacheLength(100);
+
+/// Logging for zsim custom code is instantiated.
+export const LogZsimCustomCode = new Log();
+LogZsimCustomCode.setCacheLength(100);
 
 /// Socket logging.
-export let LogTransport = new Log();
+export const LogTransport = new Log();
