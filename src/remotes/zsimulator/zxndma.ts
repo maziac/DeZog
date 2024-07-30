@@ -76,7 +76,7 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	protected readMask: number = 0b0111_1111;
 
 	// Used to remember the last sent data from the readMask.
-	protected lastReadSequenceBit: number = 0;
+	protected lastReadSequenceBit: number = 0b0000_0000;
 
 	// State of the DMA. Enabled or disabled.
 	protected enabled: boolean = false;
@@ -165,11 +165,10 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	 */
 	public readPort(): number {
 		let readValue = 0;
-		let extraLogText = "";
 		// Safety check
 		if (this.readMask === 0) {
-			// No read mask set
-			extraLogText = "Warning: read mask is 0!";  // TODO: What happens here?
+			// No read mask set, return status byte
+			readValue = this.statusByteRR0;
 		}
 		else {
 			// Find the next bit
@@ -513,7 +512,9 @@ export class ZxnDma extends EventEmitter implements Serializable {
 
 
 	protected readStatusByte() {
-		// TODO: implement
+		// Like read mask = Status Byte
+		this.readMask = 0b0000_0001;
+		this.lastReadSequenceBit = 0b1000_0000;	// Next rotate will be at 0b0000_0001
 	}
 
 
