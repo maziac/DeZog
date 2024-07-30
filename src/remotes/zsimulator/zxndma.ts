@@ -1,5 +1,4 @@
 import {LogZsimHardware} from "../../log";	// TODO: implement logging for the zxndma
-import {EventEmitter} from "stream";
 import {Serializable, MemBuffer} from "../../misc/membuffer";
 import {SimulatedMemory} from "./simulatedmemory";
 import {Z80Ports} from "./z80ports";
@@ -13,7 +12,7 @@ import {Z80Ports} from "./z80ports";
  * The whole of the zxnDMA is implemented.
  * (The Zilog DMA compatiblity mode is not implemented.)
  */
-export class ZxnDma extends EventEmitter implements Serializable {
+export class ZxnDma implements Serializable {
 	// Gets the memory handler for the DMA.
 	protected memory: SimulatedMemory;
 
@@ -106,12 +105,18 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	/** Constructor.
 	 */
 	constructor(memory: SimulatedMemory, ports: Z80Ports) {
-		super();
 		this.memory = memory;
 		this.ports = ports;
 		this.writePortFunc = this.decodeWRGroup
 		this.reset();
 		this.initializeReadSequence();
+	}
+
+
+	/** Logs to LogZsimHardware.
+	 */
+	protected log(text: string) {
+		LogZsimHardware.log("zxnDMA: " + text);
 	}
 
 
@@ -198,8 +203,8 @@ export class ZxnDma extends EventEmitter implements Serializable {
 			else readValue = (this.portBaddressCounterRR56 >> 8) & 0xFF;
 		}
 		// Log the read
-		const text = "zxnDMA port read: 0x" + readValue.toString(16).toUpperCase().padStart(2, '0') + " (0b" + readValue.toString(2).padStart(8, '0') + ")";
-		this.emit("log", text);
+		const text = "Port read: 0x" + readValue.toString(16).toUpperCase().padStart(2, '0') + " (0b" + readValue.toString(2).padStart(8, '0') + ")";
+		this.log(text);
 		// Return
 		return readValue;
 	}
@@ -209,8 +214,8 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	 */
 	public writePort(value: number) {
 		// Log the write
-		const text = "zxnDMA port write: 0x" + value.toString(16).toUpperCase().padStart(2, '0') + " (0b" + value.toString(2).padStart(8, '0') + ")";
-		this.emit("log", text);
+		const text = "Port write: 0x" + value.toString(16).toUpperCase().padStart(2, '0') + " (0b" + value.toString(2).padStart(8, '0') + ")";
+		this.log(text);
 		// Call the write function
 		this.writePortFunc(value);
 	}
@@ -268,7 +273,7 @@ export class ZxnDma extends EventEmitter implements Serializable {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
 			// Log
-			this.emit("log", 'zxnDMA: decoded as WR0');
+			this.log('Decoded as WR0');
 			// Decode transfer direction
 			// Note: bit0,1 are not decoded (always transfer)
 			this.transferDirectionPortAtoB = (value & 0b100) === 0b100;
@@ -312,7 +317,7 @@ export class ZxnDma extends EventEmitter implements Serializable {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
 			// Log
-			this.emit("log", 'zxnDMA: decoded as WR1');
+			this.log('Decoded as WR1');
 			// Decode
 			this.portAisIo = (value & 0b0_1000) === 0b0_1000;	// memory or IO
 			if (value & 0b10_0000) {
@@ -350,7 +355,7 @@ export class ZxnDma extends EventEmitter implements Serializable {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
 			// Log
-			this.emit("log", 'zxnDMA: decoded as WR2');
+			this.log('Decoded as WR2');
 			// Decode
 			this.portBisIo = (value & 0b0_1000) === 0b0_1000;	// memory or IO
 			if (value & 0b10_0000) {
@@ -395,7 +400,7 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	 */
 	protected writeWR3(value: number) {
 		// Log
-		this.emit("log", 'zxnDMA: decoded as WR3');
+		this.log('Decoded as WR3');
 		// Very simple function, just set DMA
 		this.enableDma((value & 0b0100_0000) !== 0);
 		// End
@@ -413,7 +418,7 @@ export class ZxnDma extends EventEmitter implements Serializable {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
 			// Log
-			this.emit("log", 'zxnDMA: decoded as WR4');
+			this.log('Decoded as WR4');
 			// Decode
 			const mode = (value & 0b0110_0000) >> 5;
 			if (mode !== 0b11) {	// 0b11: Do not use
@@ -448,7 +453,7 @@ export class ZxnDma extends EventEmitter implements Serializable {
 	 */
 	protected writeWR5(value: number) {
 		// Log
-		this.emit("log", 'zxnDMA: decoded as WR5');
+		this.log('Decoded as WR5');
 		// Very simple function, just set auto restart
 		// Decode (/ce and /wait is HW -> ignored):
 		this.autoRestart = (value & 0b0010_0000) !== 0;
@@ -467,7 +472,7 @@ export class ZxnDma extends EventEmitter implements Serializable {
 		// Check for first byte in sequence
 		if (this.nextDecodeBitMask == 0) {
 			// Log
-			this.emit("log", 'zxnDMA: decoded as WR6');
+			this.log('Decoded as WR6');
 			// Decode
 			switch (value) {	// Command
 				case 0xC3: this.reset(); break;
@@ -607,6 +612,7 @@ export class ZxnDma extends EventEmitter implements Serializable {
 			dst = portA;
 		}
 		this.lastOperation = "" + this.blockLength + "x: (" + src + ") -> (" + dst + ")";
+		//this.log(this.lastOperation);
 		// Check for auto-restart
 		if (this.autoRestart)
 			this.load();	// Re-load
@@ -649,6 +655,7 @@ export class ZxnDma extends EventEmitter implements Serializable {
 			dst = portA;
 		}
 		this.lastOperation = "(" + src + ") -> (" + dst + ")";
+		//this.log(this.lastOperation);
 		// Next
 		this.portAaddressCounterRR34 = (this.portAaddressCounterRR34 + this.portAadd) & 0xFFFF;
 		this.portBaddressCounterRR56 = (this.portBaddressCounterRR56 + this.portBadd) & 0xFFFF;

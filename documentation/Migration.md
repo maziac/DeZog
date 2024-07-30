@@ -1,8 +1,10 @@
 This guide will provide some info what to do to update your projects from an earlier version.
 
+# Migrate from DeZog 3.3 to DeZog 3.4
+Logging:
+The Settings: 'dezog.log.customCode' changed to 'dezog.log.zsim.customCode'. Simply set the wanted value in the vscode Settings UI again.
 
 # Migrate from DeZog 3.2 to DeZog 3.3
-
 There are 2 main updates required for DeZog 3.3 to work correctly.
 
 1. ZEsarUX 10.3: Because of changes in the zrcp DeZog 3.3 does not work anymore with previous versions of ZEsarUX. I.e. you need to update ZEsarUX to (at least) version 10.3.
@@ -11,19 +13,13 @@ You find the dezogif [here](https://github.com/maziac/dezogif/releases).
 ([Description how to install the dezogif enNextMf.rom on the ZXNext](https://github.com/maziac/dezogif#deployment)).
 
 
-
 # Migrate from DeZog 3.1 to DeZog 3.2
-
 No required updates.
-
 
 # Migrate from DeZog 3.0 to DeZog 3.1
-
 No required updates.
 
-
 # Migrate from DeZog 2.7 to DeZog 3.0
-
 Many internals have been changed, especially in the use of banks and long addresses.
 All labels are now internally represented as long addresses.
 Prior to 3.0 there was a mixture of 64k and long addresses.
@@ -60,13 +56,10 @@ The old "z88dk" configuration is still available but will work only for older ve
 
 A note about ZEsarUX: There is currently an incompatibility between ZEsarUX version 10.2 and DeZog. For DeZog 2.7 and DeZog 3.0 please use [ZEsarUX version 10.1](https://github.com/chernandezba/zesarux/releases/tag/ZEsarUX-10.1) instead.
 
-
 # Migrate from DeZog 2.6 to DeZog 2.7
-
 No required updates.
 
 # Migrate from DeZog 2.5 to DeZog 2.6
-
 Major change is the integration of the serial port into DeZog.
 This removes the need for the extra program DeZogSerialInterface when connecting to a ZX Next via a serial interface.
 Along with this the launch.json parameters for the "zxnext" have been changed:
@@ -77,11 +70,9 @@ For completeness: In the settings the "log.socket" pane has been renamed to "log
 But for most users this shouldn't make any difference.
 
 # Migrate from DeZog 2.4 to DeZog 2.5
-
 No required updates.
 
 # Migrate from DeZog 2.3 to DeZog 2.4
-
 ## Unit tests
 
 Unit tests are now fully integrated into the vscode testing API. It is available since vscode v1.60.
@@ -102,43 +93,30 @@ However there is a new option that you can read the currently executed unit test
 With this you could implement different behavior depending on the executed unit test.
 See [UnitTests.md](UnitTests.md).
 
-
-
 ## Expressions
-
 Setting expressions: For years the vscode/debug-adapter was not able to set values in the WACTHes pane. Last month I decided to implement a workaround for this: the 'Expressions' section in the VARIABLES pane. This was bad timing. 4 weeks later with vscode 1.60 the setting of values was also supported by vscode. So I removed the 'Expressions' from the VARIABLES pane again. I.e. also the commands '-addexpr' and '-delexpr' have been removed.
 Instead, in the WATCHes pane, you can now right click and select 'Set value' to change the value.
 
 From migration point of view: If you've added '-addexpr' or '-delexpr' to the "commandsAfterLaunch" section of your launch.json file, you would have to remove them.
 
-
 # Migrate from DeZog 2.2 to DeZog 2.3
-
 No required updates.
 
 # Migrate from DeZog 2.1 to DeZog 2.2
-
 ## Required updates
-
 If you are using unit tests you need to update z80-unit-tests to v1.2.0.
 
 # Migrate from DeZog 2.0 to DeZog 2.1
-
 ## Required updates
-
 If you use CSpect you need to update:
 - Update CSpect to version >= 2.13.0
 - Update the [DeZog CSpect Plugin](https://github.com/maziac/DeZogPlugin/releases) to >= 2.0.1
 
-
 ## Help
-
 You will find the TOC for the help now also in the sidebar.
 It can be turned off in the DeZog settings.
 
-
 ## The Register Memory View
-
 This view:
 ![](images/memoryviewer2.jpg)
 
@@ -156,9 +134,7 @@ Or you manually launch it from the debug console when needed with:
 -rmv
 ~~~
 
-
 ## WATCHes
-
 One major change in 2.1 was the overworked WATCH window.
 Please have a look at chapter [WATCHes](https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#watch) in Usage.md.
 Together with sjasmplus the WATCH window can now display STRUCTs.
@@ -181,9 +157,7 @@ If you need the old behavior you now need to specify the count explicitly.
 Furthermore the parameters named 'b' and 'w' for byte and word have been removed.
 Simply use the size now instead. I.e. 1 for byte and 2 for word.
 
-
 # launch.json
-
 zsim is much faster now and has got a few more configurations:
 - "defaultPortIn": The default value that is read if the read port is unused. Formerly this was always 0xFF which is still the default.
 - "zxInterface2Joy": If enabled the simulator shows 2 joystick controls to simulate ZX Interface 2 joysticks. You can also attach a USB controller.
@@ -193,11 +167,8 @@ zsim is much faster now and has got a few more configurations:
 - "limitSpeed": If enabled the simulated CPU performance is throttled to fit the given CPU frequency. This was necessary due to the improved zsim speed.
 - "updateFrequency": The update frequency of the simulator view in Hz. Defaults to 10Hz. Possible range is 5 to 100 Hz.
 
-
 # Migrate your projects from DeZog 1.5 to 2.0
-
 ## Required updates
-
 If you use any of these you need to update:
 
 - sjasmplus: Update to >= 1.18.0.
@@ -209,9 +180,7 @@ If you use any of these you need to update:
     - Update the dezogif (i.e. [enNextMf.rom](https://github.com/maziac/dezogif/releases) to >= 2.0.0
     - Update [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface/releases) to >= 1.1.1
 
-
 ## launch.json
-
 A typical launch.json still looks like:
 
 ~~~
@@ -239,7 +208,6 @@ A typical launch.json still looks like:
 But there are changes inside.
 
 ### zsim
-
 ~~~
 	"zsim": {
 		...
@@ -267,11 +235,9 @@ New:
 
 
 ### zrcp (ZEsarUX)
-
 "skipInterrupt" and "resetOnLaunch" are no global parameters anymore. They have been moved to the "zrcp" parameters.
 
 ### sjasmplus
-
 This is one of the main changes: DeZog doesn't use the list file of sjasmplus anymore.
 Instead it uses the SLD file.
 sjasmplus includes special enhancements for DeZog. With the SLD format it is possible to use the ['long addresses'](Usage.md#long-addresses-explanation) feature which allows to debug much bigger projects that would otherwise not fit in 64k.
@@ -313,7 +279,6 @@ or
 
 
 ## Z80 unit tests
-
 You need to exchange the unit_test.inc file with this one [unit_tests.inc](unit_tests.inc) (or this one [unit_tests_savannah.inc](unit_tests_savannah.inc) for Savannah's z80asm assembler).
 
 The unit tests have been simplified. There are still a few macros left for testing but the majority has been removed.
@@ -347,9 +312,6 @@ Note the 'nop'. Although it is not essential it will make your life easier to fi
 ~~~
 
 
-
 The unit tests will automatically enable ASSERTION (and WPMEM and LOGPOINT).
 
 Together with this change DeZog supports ASSERTIONs now also for ZEsarUX.
-
-

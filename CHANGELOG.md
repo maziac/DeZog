@@ -1,5 +1,5 @@
 # Changelog
-# 3.3.5
+# 3.4.0
 - zsim:
   - Fixed instruction time display of HALT.
   - Fixed FLASH frequency from 1/625ms to 1/640ms.
@@ -7,6 +7,7 @@
 - Logging:
   - Settings: 'dezog.log.customCode' changed to 'dezog.log.zsim.customCode'.
   - Added new log for the zxnDMA under 'dezog.log.zsim.hardware'.
+  - Fixed problem with disabling 'dezog.log.zsim.customCode'.
 
 # 3.3.4
 - Fix for #126: Data misalignment for ZX128K SNA with Active BANK6 in zsim. Banks in SNA loading fixed.

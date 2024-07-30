@@ -441,7 +441,7 @@ function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 	// Global log
 	{
 		const logToPanel = configuration.get<boolean>('log.global');
-		if (LogGlobal.isEnabled() != logToPanel) {
+		if (LogGlobal.isEnabled() !== logToPanel) {
 			// State has changed
 			const channelOut = logToPanel ? vscode.window.createOutputChannel("DeZog") : undefined;
 			// Enable or dispose
@@ -452,7 +452,7 @@ function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 	// Hardware simulation log
 	{
 		const logToPanel = configuration.get<boolean>('log.zsim.hardware');
-		if (LogZsimCustomCode.isEnabled() != logToPanel) {
+		if (LogZsimHardware.isEnabled() !== logToPanel) {
 			// State has changed
 			const channelOut = logToPanel ? vscode.window.createOutputChannel("DeZog zsim: Hardware") : undefined;
 			// Enable or dispose
@@ -463,7 +463,7 @@ function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 	// Custom code log
 	{
 		const logToPanel = configuration.get<boolean>('log.zsim.customCode');
-		if (LogZsimCustomCode.isEnabled() != logToPanel) {
+		if (LogZsimCustomCode.isEnabled() !== logToPanel) {
 			// State has changed
 			const channelOut = logToPanel ? vscode.window.createOutputChannel("DeZog zsim: Custom Code") : undefined;
 			// Enable or dispose
@@ -474,7 +474,7 @@ function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 	// Transport log
 	{
 		const logToPanel = configuration.get<boolean>('log.transport');
-		if (LogTransport.isEnabled() != logToPanel) {
+		if (LogTransport.isEnabled() !== logToPanel) {
 			// State has changed
 			const channelOut = logToPanel ? vscode.window.createOutputChannel("DeZog Transport") : undefined;
 			// Enable or dispose
