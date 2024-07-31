@@ -118,11 +118,6 @@ export class ZSimulationView extends BaseView {
 			this.simulatedPorts.set(0x001F, 0x00);
 		}
 
-		// Check for DMA
-		if (Settings.launch.zsim.zxnDMA) {
-			// TODO: Implement
-		}
-
 		// Set callbacks for all simulated ports.
 		for (const [simPort,] of this.simulatedPorts) {
 			this.simulator.ports.registerSpecificInPortFunction(simPort, (port: number) => {
@@ -601,7 +596,7 @@ export class ZSimulationView extends BaseView {
 				audio = this.simulator.getZxBeeperBuffer();
 			}
 
-			if (this.simulator.zxnDMA) {	// TODO: Also check the others for zsim variable instead of settings.
+			if (this.simulator.zxnDMA) {
 				// DMA
 				zxnDMA = this.simulator.zxnDMA.getState();
 			}

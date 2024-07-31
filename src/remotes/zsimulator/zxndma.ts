@@ -1,4 +1,4 @@
-import {LogZsimHardware} from "../../log";	// TODO: implement logging for the zxndma
+import {LogZsimHardware} from "../../log";
 import {Serializable, MemBuffer} from "../../misc/membuffer";
 import {SimulatedMemory} from "./simulatedmemory";
 import {Z80Ports} from "./z80ports";
