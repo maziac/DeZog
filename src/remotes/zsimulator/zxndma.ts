@@ -74,8 +74,8 @@ export class ZxnDma implements Serializable {
 	// Used to remember the last sent data from the readMask.
 	protected lastReadSequenceBit: number = 0b0000_0000;
 
-	// State of the DMA. Enabled or disabled.
-	protected enabled: boolean = false;
+	// State of the DMA. Active or not.
+	protected dmaActive: boolean = false;
 
 	/** The status byte:
 	Bit 0: 1 = DMA operation has occurred
@@ -127,6 +127,7 @@ export class ZxnDma implements Serializable {
 	 */
 	public getState(): any {
 		return {
+			"dmaActive": this.dmaActive,
 			"blockLength": this.blockLength,
 			"portAstartAddress": this.portAstartAddress,
 			"portBstartAddress": this.portBstartAddress,
@@ -148,6 +149,14 @@ export class ZxnDma implements Serializable {
 			"portBaddressCounterRR56": this.portBaddressCounterRR56,
 			"lastOperation": this.lastOperation
 		};
+	}
+
+
+	/** Activates/deactivates the dma transfer.
+	 */
+	protected setDmaActive(active: boolean) {
+		this.dmaActive = active;
+		this.log("DMA " + (active ? "active" : "stopped"));
 	}
 
 	/** Checks for the last byte of a sequence and resets the write function
@@ -557,8 +566,8 @@ export class ZxnDma implements Serializable {
 	 * This starts the DMA transfer.
 	 */
 	protected enableDma(on: boolean) {
-		this.enabled = on;
 		this.nextTstates = 0;
+		this.setDmaActive(on);
 	}
 
 
@@ -617,7 +626,7 @@ export class ZxnDma implements Serializable {
 		if (this.autoRestart)
 			this.load();	// Re-load
 		else
-			this.enabled = false;	// Stop
+			this.setDmaActive(false);	// Stop
 		return tStates;
 	}
 
@@ -677,7 +686,7 @@ export class ZxnDma implements Serializable {
 			if (this.autoRestart)
 				this.load();	// Re-load
 			else
-				this.enabled = false;	// Stop
+				this.setDmaActive(false);	// Stop
 		}
 		return tStates;
 	}
@@ -814,7 +823,7 @@ export class ZxnDma implements Serializable {
 	 */
 	public execute(cpuFreq: number, pastTstates: number): number {
 		// Check if enabled at all
-		if (!this.enabled)
+		if (!this.dmaActive)
 			return 0;
 		// Copy bytes
 		return this.copy(cpuFreq, pastTstates);

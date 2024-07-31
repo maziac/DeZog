@@ -752,6 +752,17 @@ If the output keeps changing you'll see this:
 ![](images/zxbeeper_changing.jpg)
 Don't expect high quality sound. This is not an emulation. The simulator speed is only very roughly synchronized with the host system's time. Therefore there will be lost frames or gaps.
 Note also that audio is not available before you interact with the simulator view.
+- "zxnDMA": true/false. Defaults to false. If enabled the zxnDMA is available at port $xx6B. All internal register can be viewed:
+![](images/zxndma_active.jpg)
+What just has been changed is highlighted in red.
+At the bottom you can see the last copy operation.
+![](images/zxndma_stopped.jpg)
+Notes:
+    - when DMA is active it uses t-states. I.e. while CPU stepping the DMA operation is executed just before the next CPU instructions.
+So, if you see a higher t-state number than expected it is probably because of a DMA activity in the background.
+    - The zxnDMA supports all modes: continuous, burst and also the prescalar.
+    - The DMA activity (setting of the registers) is additionally logged into the "OUTPUT" tab of vscode.
+    You can activate it by selecting "DeZog zsim: Hardware".
 - "cpuFrequency": The used CPU frequency. If "limitSpeed" is enabled (default) the simulation speed is throttled to simulate the correct frequency. The CPU frequency is also used printout of the correspondent time when t-states are printed.
 - "limitSpeed": If enabled the simulated CPU performance is throttled to fit the given CPU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.
 - "updateFrequency": The update frequency of the simulator view in Hz. Defaults to 10Hz. Possible range is 5 to 100 Hz.

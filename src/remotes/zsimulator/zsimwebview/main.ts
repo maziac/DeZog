@@ -32,6 +32,7 @@ let screenImgContext: CanvasRenderingContext2D;
 
 // Holds the HTML (UI) elements for the zxnDMA.
 let zxnDmaHtml: {
+	dmaActive: HTMLLabelElement,
 	blockLength: HTMLLabelElement,
 	portAstartAddress: HTMLLabelElement,
 	portBstartAddress: HTMLLabelElement,
@@ -203,10 +204,11 @@ function initSimulation(audioSampleRate: number, volume: number) {
 	}
 
 	// zxnDMA
-	const portAstartAddressHtml = document.getElementById("zxnDMA.portAstartAddress") as HTMLLabelElement;
-	if (portAstartAddressHtml) {
+	const dmaActiveHtml = document.getElementById("zxnDMA.dmaActive") as HTMLLabelElement;
+	if (dmaActiveHtml) {
 		zxnDmaHtml = {
-			portAstartAddress: portAstartAddressHtml,
+			dmaActive: dmaActiveHtml,
+			portAstartAddress: document.getElementById("zxnDMA.portAstartAddress") as HTMLLabelElement,
 			portBstartAddress: document.getElementById("zxnDMA.portBstartAddress") as HTMLLabelElement,
 			blockLength: document.getElementById("zxnDMA.blockLength") as HTMLLabelElement,
 			transferDirectionPortAtoB: document.getElementById("zxnDMA.transferDirectionPortAtoB") as HTMLLabelElement,
@@ -300,6 +302,11 @@ function printZxnDma(zxnDMA) {
 	}
 	prevZxnDmaHighlightedElements = [];
 	// Update zxnDMA HTML elements
+	if (prevZxnDmaState.dmaActive !== zxnDMA.dmaActive) {
+		zxnDmaHtml.dmaActive.innerHTML = (zxnDMA.dmaActive ? "Active" : "Stopped");
+		highlightElem(zxnDmaHtml.dmaActive, true);
+		prevZxnDmaHighlightedElements.push(zxnDmaHtml.dmaActive);
+	}
 	if (prevZxnDmaState.blockLength !== zxnDMA.blockLength) {
 		zxnDmaHtml.blockLength.innerHTML = "0x" + zxnDMA.blockLength.toString(16).toUpperCase().padStart(4, '0');
 		highlightElem(zxnDmaHtml.blockLength, true);

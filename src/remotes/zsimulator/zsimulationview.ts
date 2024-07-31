@@ -861,6 +861,12 @@ export class ZSimulationView extends BaseView {
 			<summary>zxnDMA</summary>
 
 			<div style="padding-left: 1em;">
+				<!-- DMA Activated/Stopped-->
+				<div style="white-space: nowrap;">
+					<span>DMA&nbsp;</span>
+					<span id="zxnDMA.dmaActive"></span>
+				</div>
+
 				<!-- Port A/B Start, length -->
 				<div style="white-space: nowrap;">
 					<span>Port A Start=</span>
