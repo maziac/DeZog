@@ -224,13 +224,13 @@ suite('ZxnDma', function () {
 
 			// Enable dma
 			dma.writePort(0b1100_0000);
-			assert.ok(dma.enabled);
+			assert.ok(dma.dmaActive);
 			assert.ok(enableDmaSpy.calledOnce);
 			assert.equal(dma.nextDecodeBitMask, 0);
 
 			// Disable dma
 			dma.writePort(0b1100_0000);
-			assert.ok(dma.enabled);
+			assert.ok(dma.dmaActive);
 			assert.ok(enableDmaSpy.calledTwice);
 			assert.equal(dma.nextDecodeBitMask, 0);
 		});
@@ -481,7 +481,8 @@ suite('ZxnDma', function () {
 			// Set mask
 			dma.writePort(0xBB);
 			dma.writePort(0x80);
-			assert.equal(dma.readPort(), 0);
+			dma.statusByteRR0 = 0xA5;
+			assert.equal(dma.readPort(), 0xA5);	// The status byte should be returned
 			dma.readPort();	// The output itself is undefined, but it should not hang.
 		});
 		test('mask = 0', function () {
