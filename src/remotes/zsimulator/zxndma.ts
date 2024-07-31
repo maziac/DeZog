@@ -22,6 +22,9 @@ export class ZxnDma implements Serializable {
 	// The function is switched from decodeWRGroup to writeWR0-6.
 	protected writePortFunc: (value: number) => void;
 
+	// State of the DMA. Active or not.
+	protected dmaActive: boolean = false;
+
 	// The next bit to decode.
 	protected nextDecodeBitMask: number = 0;
 
@@ -73,9 +76,6 @@ export class ZxnDma implements Serializable {
 
 	// Used to remember the last sent data from the readMask.
 	protected lastReadSequenceBit: number = 0b0000_0000;
-
-	// State of the DMA. Active or not.
-	protected dmaActive: boolean = false;
 
 	/** The status byte:
 	Bit 0: 1 = DMA operation has occurred
@@ -841,12 +841,57 @@ export class ZxnDma implements Serializable {
 	 * Basically the last beeper value.
 	 */
 	public serialize(memBuffer: MemBuffer) {
-		// TODO: Implement Serializable interface
+		memBuffer.writeBoolean(this.dmaActive);
+		memBuffer.write8(this.nextDecodeBitMask);
+		memBuffer.writeBoolean(this.transferDirectionPortAtoB);
+		memBuffer.write16(this.portAstartAddress);
+		memBuffer.write16(this.portBstartAddress);
+		memBuffer.write16(this.blockLength);
+		memBuffer.writeBoolean(this.portAisIo);
+		memBuffer.writeBoolean(this.portBisIo);
+		memBuffer.write8(this.portAadd);
+		memBuffer.write8(this.portBadd);
+		memBuffer.write8(this.portAcycleLength);
+		memBuffer.write8(this.portBcycleLength);
+		memBuffer.write8(this.zxnPrescalar);
+		memBuffer.writeBoolean(this.burstMode);
+		memBuffer.writeNumber(this.nextTstates);
+		memBuffer.writeBoolean(this.autoRestart);
+		memBuffer.write8(this.readMask);
+		memBuffer.write8(this.lastReadSequenceBit);
+		memBuffer.write8(this.statusByteRR0);
+		memBuffer.write8(this.blockCounterRR12);
+		memBuffer.write8(this.portAaddressCounterRR34);
+		memBuffer.write8(this.portBaddressCounterRR56);
+		memBuffer.writeString(this.lastOperation);
 	}
 
 
 	/** Deserializes the object.
 	 */
 	public deserialize(memBuffer: MemBuffer) {
+		this.dmaActive = memBuffer.readBoolean();
+		this.nextDecodeBitMask = memBuffer.read8();
+		this.transferDirectionPortAtoB = memBuffer.readBoolean();
+		this.portAstartAddress = memBuffer.read16();
+		this.portBstartAddress = memBuffer.read16();
+		this.blockLength = memBuffer.read16();
+		this.portAisIo = memBuffer.readBoolean();
+		this.portBisIo = memBuffer.readBoolean();
+		this.portAadd = memBuffer.read8();
+		this.portBadd = memBuffer.read8();
+		this.portAcycleLength = memBuffer.read8();
+		this.portBcycleLength = memBuffer.read8();
+		this.zxnPrescalar = memBuffer.read8();
+		this.burstMode = memBuffer.readBoolean();
+		this.nextTstates = memBuffer.readNumber();
+		this.autoRestart = memBuffer.readBoolean();
+		this.readMask = memBuffer.read8();
+		this.lastReadSequenceBit = memBuffer.read8();
+		this.statusByteRR0 = memBuffer.read8();
+		this.blockCounterRR12 = memBuffer.read8();
+		this.portAaddressCounterRR34 = memBuffer.read8();
+		this.portBaddressCounterRR56 = memBuffer.read8();
+		this.lastOperation = memBuffer.readString();
 	}
 }

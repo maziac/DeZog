@@ -567,7 +567,7 @@ export class Z80Cpu implements Serializable {
 	/** Deserializes the object.
 	 */
 	public deserialize(memBuffer: MemBuffer) {
-		// Store
+		// Read
 		let r = new Object() as any;
 		r.pc = memBuffer.read16();
 		r.sp = memBuffer.read16();

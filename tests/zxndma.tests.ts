@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import {SimulatedMemory} from '../src/remotes/zsimulator/simulatedmemory';
 import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
 import {MemoryModelAllRam} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemBuffer} from '../src/misc/membuffer';
 
 
 
@@ -495,6 +496,126 @@ suite('ZxnDma', function () {
 			dma.writePort(0xBB);
 			dma.writePort(0);
 			dma.readPort();	// The output itself is undefined, but it should not hang.
+		});
+	});
+
+	suite('serialization', function () {
+		test('serialize - deserialize', function () {
+			// Prepare data
+			this.dmaActive = true;
+			this.nextDecodeBitMask = 10;
+			this.transferDirectionPortAtoB = true;
+			this.portAstartAddress = 0x1234;
+			this.portBstartAddress = 0x5678;
+			this.blockLength = 0x9ABC;
+			this.portAisIo = true;
+			this.portBisIo = false;
+			this.portAadd = 1;
+			this.portBadd = -1;
+			this.portAcycleLength = 4;
+			this.portBcycleLength = 3;
+			this.zxnPrescalar = 11;
+			this.burstMode = true;
+			this.nextTstates = 234000;
+			this.autoRestart = true;
+			this.readMask = 12;
+			this.lastReadSequenceBit = 13;
+			this.statusByteRR0 = 14;
+			this.blockCounterRR12 = 0xDEF0;
+			this.portAaddressCounterRR34 = 0x2345;
+			this.portBaddressCounterRR56 = 0x6789;
+			this.lastOperation = 'last op1';
+			// Get required size
+			let mem = new MemBuffer();
+			dma.serialize(mem);
+			const memSize = mem.getSize();
+			assert.ok(memSize > 0);
+			// Store
+			mem = new MemBuffer(memSize);
+			dma.serialize(mem);
+
+			// Deserialize into another object
+			const dma2 = new ZxnDma(undefined as any, undefined as any);
+			dma2.deserialize(mem);
+			// Test
+			assert.ok(this.dmaActive);
+			assert.equal(this.nextDecodeBitMask, 10);
+			assert.ok(this.transferDirectionPortAtoB);
+			assert.equal(this.portAstartAddress, 0x1234);
+			assert.equal(this.portBstartAddress, 0x5678);
+			assert.equal(this.blockLength, 0x9ABC);
+			assert.ok(this.portAisIo);
+			assert.ok(!this.portBisIo);
+			assert.equal(this.portAadd, 1);
+			assert.equal(this.portBadd, -1);
+			assert.equal(this.portAcycleLength, 4);
+			assert.equal(this.portBcycleLength, 3);
+			assert.equal(this.zxnPrescalar, 11);
+			assert.ok(this.burstMode);
+			assert.equal(this.nextTstates, 234000);
+			assert.ok(this.autoRestart);
+			assert.equal(this.readMask, 12);
+			assert.equal(this.lastReadSequenceBit, 13);
+			assert.equal(this.statusByteRR0, 14);
+			assert.equal(this.blockCounterRR12, 0xDEF0);
+			assert.equal(this.portAaddressCounterRR34, 0x2345);
+			assert.equal(this.portBaddressCounterRR56, 0x6789);
+			assert.equal(this.lastOperation, 'last op1');
+
+			// Change all values and test again
+			this.dmaActive = false;
+			this.nextDecodeBitMask = 110;
+			this.transferDirectionPortAtoB = false;
+			this.portAstartAddress = 0x9234;
+			this.portBstartAddress = 0x9678;
+			this.blockLength = 0x0ABC;
+			this.portAisIo = false;
+			this.portBisIo = true;
+			this.portAadd = -1;
+			this.portBadd = 1;
+			this.portAcycleLength = 2;
+			this.portBcycleLength = 4;
+			this.zxnPrescalar = 111;
+			this.burstMode = false;
+			this.nextTstates = 1234000;
+			this.autoRestart = false;
+			this.readMask = 112;
+			this.lastReadSequenceBit = 113;
+			this.statusByteRR0 = 114;
+			this.blockCounterRR12 = 0x9EF0;
+			this.portAaddressCounterRR34 = 0x9345;
+			this.portBaddressCounterRR56 = 0x9789;
+			this.lastOperation = 'last op2';
+			// Store
+			mem = new MemBuffer(memSize);
+			dma.serialize(mem);
+
+			// Deserialize
+			dma2.deserialize(mem);
+			// Test
+			assert.ok(!this.dmaActive);
+			assert.equal(this.nextDecodeBitMask, 110);
+			assert.ok(!this.transferDirectionPortAtoB);
+			assert.equal(this.portAstartAddress, 0x9234);
+			assert.equal(this.portBstartAddress, 0x9678);
+			assert.equal(this.blockLength, 0x0ABC);
+			assert.ok(!this.portAisIo);
+			assert.ok(this.portBisIo);
+			assert.equal(this.portAadd, -1);
+			assert.equal(this.portBadd, 1);
+			assert.equal(this.portAcycleLength, 2);
+			assert.equal(this.portBcycleLength, 4);
+			assert.equal(this.zxnPrescalar, 111);
+			assert.ok(!this.burstMode);
+			assert.equal(this.nextTstates, 1234000);
+			assert.ok(!this.autoRestart);
+			assert.equal(this.readMask, 112);
+			assert.equal(this.lastReadSequenceBit, 113);
+			assert.equal(this.statusByteRR0, 114);
+			assert.equal(this.blockCounterRR12, 0x9EF0);
+			assert.equal(this.portAaddressCounterRR34, 0x9345);
+			assert.equal(this.portBaddressCounterRR56, 0x9789);
+			assert.equal(this.lastOperation, 'last op2');
 		});
 	});
 });
