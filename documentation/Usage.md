@@ -755,7 +755,7 @@ Note also that audio is not available before you interact with the simulator vie
 - "zxnDMA": true/false. Defaults to false. If enabled the zxnDMA is available at port $xx6B. All internal register can be viewed:
 ![](images/zxndma_active.jpg)
 What just has been changed is highlighted in red.
-At the bottom you can see the last copy operation.
+At the bottom you can see the last DMA copy operation.
 ![](images/zxndma_stopped.jpg)
 Notes:
     - when DMA is active it uses t-states. I.e. while CPU stepping the DMA operation is executed just before the next CPU instructions.

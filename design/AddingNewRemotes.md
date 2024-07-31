@@ -74,7 +74,7 @@ Only consider deriving from RemoteBase if you encounter specific issues that can
                                 ┌────────┴──────┐                             │  DzrpBufferRemote  │                    │     MameRemote     │
                                 │               │                             │                    │                    │                    │
                           ┌──────────┐    ┌──────────┐                        └────────────────────┘                    └────────────────────┘
-                          │ ZxMemory │    │ ZxPorts  │                                   △                                         ▲
+                          │ ZxMemory │    │ Z80Ports │                                   △                                         ▲
                           └──────────┘    └──────────┘                     ┌─────────────┴────────────────┐                        │
                                                                            │                              │                        │
                                                                 ┌─────────────────────┐        ┌────────────────────┐              │
