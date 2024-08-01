@@ -760,9 +760,10 @@ export class SimulatedMemory implements Serializable {
 		switch (path.extname(filePath).toLowerCase()) {
 			case ".hex":
 				return this.readHexFromFile(filePath);
-			default:
+			default: {
 				const romBuffer = fs.readFileSync(filePath);
 				return new Uint8Array(romBuffer.buffer);
+			}
 		}
 	}
 }

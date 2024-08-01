@@ -36,7 +36,7 @@ suite('ZxnDma', function () {
 		test('full sequence', function () {
 			dma.writePort(0b0111_1001);
 			assert.notEqual(dma.nextDecodeBitMask, 0);
-			assert.equal(dma.writePortFunc, dma.writeWR0);
+			assert.equal(dma.wrFunc, 0);
 			dma.writePort(0xF1);	// Port A start low
 			assert.notEqual(dma.nextDecodeBitMask, 0);
 			dma.writePort(0xA7);	// Port A start high
@@ -272,7 +272,7 @@ suite('ZxnDma', function () {
 		test('full sequence', function () {
 			dma.writePort(0b1000_1101);
 			assert.notEqual(dma.nextDecodeBitMask, 0);
-			assert.equal(dma.writePortFunc, dma.writeWR4);
+			assert.equal(dma.wrFunc, 4);
 			dma.writePort(0xF1);	// Port B start low
 			assert.notEqual(dma.nextDecodeBitMask, 0);
 			dma.writePort(0xA7);	// Port B start high
@@ -288,7 +288,7 @@ suite('ZxnDma', function () {
 			// Exchange 1 by one
 			dma.writePort(0b1000_1001);
 			assert.notEqual(dma.nextDecodeBitMask, 0);
-			assert.equal(dma.writePortFunc, dma.writeWR4);
+			assert.equal(dma.wrFunc, 4);
 			dma.writePort(0x7C);	// Port B start high
 			assert.equal(dma.nextDecodeBitMask, 0);
 			// Check values
@@ -297,7 +297,7 @@ suite('ZxnDma', function () {
 			// Exchange 1 by one
 			dma.writePort(0b1000_0101);
 			assert.notEqual(dma.nextDecodeBitMask, 0);
-			assert.equal(dma.writePortFunc, dma.writeWR4);
+			assert.equal(dma.wrFunc, 4);
 			dma.writePort(0x8E);	// Port B start low
 			assert.equal(dma.nextDecodeBitMask, 0);
 			// Check values
@@ -377,7 +377,7 @@ suite('ZxnDma', function () {
 			// Set mask
 			dma.writePort(0xBB);
 			assert.notEqual(dma.nextDecodeBitMask, 0);
-			assert.equal(dma.writePortFunc, dma.writeWR6);
+			assert.equal(dma.wrFunc, 6);
 			dma.writePort(0b1000_0000 | 0b0101_1010);
 			assert.equal(dma.nextDecodeBitMask, 0);
 			assert.equal(dma.readMask, 0b0101_1010);
@@ -616,6 +616,48 @@ suite('ZxnDma', function () {
 			assert.equal(this.portAaddressCounterRR34, 0x9345);
 			assert.equal(this.portBaddressCounterRR56, 0x9789);
 			assert.equal(this.lastOperation, 'last op2');
+		});
+
+		test('store and continue', function () {
+			// Store a memcpy program
+			const portA = 0x2010;
+			const portB = 0x3040;
+			const blockLength = 0x10;
+			dma.writePort(0x83);	// Disable DMA
+			dma.writePort(0b0111_1101);	// WR0: Source
+			dma.writePort(portA & 0xFF); // Port A
+			dma.writePort(portA >> 8);	 // Port A high
+			dma.writePort(blockLength & 0xFF);	// Block length
+			dma.writePort(blockLength >> 8);
+			dma.writePort(0b0010_0100);	// WR1: A, IO, increment
+			dma.writePort(0b0001_0000);	// WR2: B, IO, increment
+			dma.writePort(0b1100_1101);	// WR4: Burst mode, Destination
+			dma.writePort(portB & 0xFF); // Port B low
+			// Save here the current state
+			let mem = new MemBuffer();
+			dma.serialize(mem);
+			const memSize = mem.getSize();
+			mem = new MemBuffer(memSize);
+			dma.serialize(mem);
+
+			// Continue with different dma instance
+			const ports2 = new Z80Ports(0xFF);
+			const memory2 = new SimulatedMemory(new MemoryModelAllRam(), ports2);
+			const dma2 = new ZxnDma(memory2, ports2) as any;
+			dma2.deserialize(mem);
+			// Contnue programming
+			memory2.write8(portA, 0xA4);
+			dma2.writePort(portB >> 8);	// Port B high
+			dma2.writePort(0xCF); // LOAD
+			dma2.writePort(0x87); // Enable DMA
+
+			// Execute the program
+			const tStates = dma2.execute(1000000, 0);
+
+			// Check the result
+			assert.ok(tStates > 0);
+			assert.equal(memory2.read8(portB), 0xA4);
+			assert.equal(memory2.read8(portB + blockLength - 1), 0xA4);
 		});
 	});
 });
