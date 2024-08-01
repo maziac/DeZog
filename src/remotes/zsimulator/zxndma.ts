@@ -19,8 +19,8 @@ export class ZxnDma implements Serializable {
 	// Gets the IO handler for the DMA.
 	protected ports: Z80Ports;
 
-	// The function is switched from decodeWRGroup to writeWR0-6.
-	protected writePortFunc: (value: number) => void;
+	// Use to switch functions from decodeWRGroup to writeWR0-6.
+	protected wrFunc: number = -1;	// -1 == decodeWRGroup
 
 	// State of the DMA. Active or not.
 	protected dmaActive: boolean = false;
@@ -107,7 +107,6 @@ export class ZxnDma implements Serializable {
 	constructor(memory: SimulatedMemory, ports: Z80Ports) {
 		this.memory = memory;
 		this.ports = ports;
-		this.writePortFunc = this.decodeWRGroup
 		this.reset();
 		this.initializeReadSequence();
 	}
@@ -164,7 +163,7 @@ export class ZxnDma implements Serializable {
 	 */
 	protected checkLastByte() {
 		if (this.nextDecodeBitMask == 0) {
-			this.writePortFunc = this.decodeWRGroup;
+			this.wrFunc = -1;
 		}
 	}
 
@@ -225,8 +224,25 @@ export class ZxnDma implements Serializable {
 		// Log the write
 		const text = "Port write: 0x" + value.toString(16).toUpperCase().padStart(2, '0') + " (0b" + value.toString(2).padStart(8, '0') + ")";
 		this.log(text);
+		// Call right function
+		this.callWritePortFunc(value);
+	}
+
+
+	/** Calls the righ write port function depending on this.wrFunc.
+	 */
+	protected callWritePortFunc(value: number) {
 		// Call the write function
-		this.writePortFunc(value);
+		switch (this.wrFunc) {
+			case 0: this.writeWR0(value); break;
+			case 1: this.writeWR1(value); break;
+			case 2: this.writeWR2(value); break;
+			case 3: this.writeWR3(value); break;
+			case 4: this.writeWR4(value); break;
+			case 5: this.writeWR5(value); break;
+			case 6: this.writeWR6(value); break;
+			default: this.decodeWRGroup(value); break;
+		}
 	}
 
 
@@ -238,39 +254,19 @@ export class ZxnDma implements Serializable {
 		const AA = value & 0b11;
 		if (value & 0x80) {
 			// WR3-6
-			switch (AA) {
-				case 0:
-					this.writePortFunc = this.writeWR3;
-					break;
-				case 1:
-					this.writePortFunc = this.writeWR4;
-					break;
-				case 2:
-					this.writePortFunc = this.writeWR5;
-					break;
-				case 3:
-					this.writePortFunc = this.writeWR6;
-					break;
-			}
+			this.wrFunc = AA + 3;
 		}
 		// WR0-2
 		else if (AA == 0) {
 			// WR1-2
-			if (value & 0b100) {
-				// WR1
-				this.writePortFunc = this.writeWR1;
-			}
-			else {
-				// WR2
-				this.writePortFunc = this.writeWR2;
-			}
+			this.wrFunc = (value & 0b100) ? 1 : 2;
 		}
 		else {
 			// WR0
-			this.writePortFunc = this.writeWR0;
+			this.wrFunc = 0;
 		}
 		// Call the Wrx function
-		this.writePortFunc(value);
+		this.callWritePortFunc(value);
 	}
 
 
@@ -411,9 +407,10 @@ export class ZxnDma implements Serializable {
 		// Log
 		this.log('Decoded as WR3');
 		// Very simple function, just set DMA
-		this.enableDma((value & 0b0100_0000) !== 0);
+		if (value & 0b0100_0000)
+			this.enableDma(true);
 		// End
-		this.writePortFunc = this.decodeWRGroup;
+		this.wrFunc = -1;
 	}
 
 
@@ -467,7 +464,7 @@ export class ZxnDma implements Serializable {
 		// Decode (/ce and /wait is HW -> ignored):
 		this.autoRestart = (value & 0b0010_0000) !== 0;
 		// End
-		this.writePortFunc = this.decodeWRGroup;
+		this.wrFunc = -1;
 	}
 
 
@@ -842,6 +839,7 @@ export class ZxnDma implements Serializable {
 	 */
 	public serialize(memBuffer: MemBuffer) {
 		memBuffer.writeBoolean(this.dmaActive);
+		memBuffer.write8(this.wrFunc);
 		memBuffer.write8(this.nextDecodeBitMask);
 		memBuffer.writeBoolean(this.transferDirectionPortAtoB);
 		memBuffer.write16(this.portAstartAddress);
@@ -871,6 +869,7 @@ export class ZxnDma implements Serializable {
 	 */
 	public deserialize(memBuffer: MemBuffer) {
 		this.dmaActive = memBuffer.readBoolean();
+		this.wrFunc = memBuffer.read8();
 		this.nextDecodeBitMask = memBuffer.read8();
 		this.transferDirectionPortAtoB = memBuffer.readBoolean();
 		this.portAstartAddress = memBuffer.read16();
