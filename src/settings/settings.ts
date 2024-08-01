@@ -264,7 +264,7 @@ export interface ZSimType {
 	// TODO: Experimental
 	tbblue: TBBlueType,
 
-	// TODO: Experimental
+	// The zxnDMA hardware simulation.
 	zxnDMA: boolean;
 }
 
