@@ -5,6 +5,7 @@ import {Utility} from '../misc/utility';
 import {ZesaruxRemote} from './zesarux/zesaruxremote';
 import {ZxNextSerialRemote} from './dzrpbuffer/zxnextserialremote';
 import {MameGdbRemote} from './mame/mamegdbremote';
+import { ZX81SimRemote } from './zx81simulator/zx81simremote';
 
 
 
@@ -29,6 +30,9 @@ export class RemoteFactory {
 				break;
 			case 'zsim':	// Simulator
 				RemoteFactory.setGlobalRemote(new ZSimRemote());
+				break;
+			case 'zx81sim':	// ZX81 Simulator
+				RemoteFactory.setGlobalRemote(new ZX81SimRemote());
 				break;
 			case 'mame':
 				RemoteFactory.setGlobalRemote(new MameGdbRemote());

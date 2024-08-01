@@ -646,6 +646,183 @@
 									}
 								}
 							},
+							"zx81sim": {
+								"description": "'The configuration of the internal ZX81 simulator.",
+								"type": "object",
+								"properties": {
+									"zxKeyboard": {
+										"type": "boolean",
+										"description": "If enabled the simulator shows a keyboard to simulate keypresses.",
+										"default": true
+									},
+									"visualMemory": {
+										"type": "boolean",
+										"description": "If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.",
+										"default": true
+									},
+									"memoryModel": {
+										"type": "string",
+										"description": "Chooses the right memory model. i.e. how the memory maps to ROM and RAM and if and how paging is done.\nPossible values:\n- 'RAM': One memory area of 64K, 1 bank.\n- 'ZX81-1K': ROM and RAM as of the ZX81 1K, 1 ROM, 1 RAM bank.\n- 'ZX81-2K': ROM and RAM as of the TS1000 2K, 1 ROM, 1 RAM bank.\n- 'ZX81-16K': ROM and RAM as of the ZX81 with a 16K RAM Pack, 1 ROM, 1 RAM bank.\n- 'ZX81-32K': ROM and RAM as of the ZX81 with a 32K RAM Pack, 1 ROM, 1 RAM bank.\n- 'ZX81-48K': ROM and RAM as of the ZX81 with a 48K RAM Pack, 1 ROM, 1 RAM bank.\n- 'ZX81-56K': ROM and RAM as of the ZX81 with a 56K RAM Pack, 1 ROM, 1 RAM bank.\n- 'CUSTOM': A customizable memory model. You define the memory in the 'customMemory' property.",
+										"default": "RAM"
+									},
+									"customMemory": {
+										"description": "Only evaluated if 'memoryModel' is set to 'CUSTOM'. Chooses the banks and their memory types. Please refer to the documentation.",
+										"type": "object",
+										"properties": {
+											"slots": {
+												"type": "array",
+												"description": "An array with the slot definitions.",
+												"items": {
+													"type": "object",
+													"properties": {
+														"name": {
+															"type": "string",
+															"description": "The name of the slot.\nOptional. Required for bank switching slots. This name can be used in 'ioMmu' to assign a different bank to the slot.",
+															"default": ""
+														},
+														"range": {
+															"type": "array",
+															"description": "Array with first and last (inclusive) address of the slot.\nEither use a decimal number or a hex string.",
+															"default": [],
+															"items": {
+																"type": [
+																	"number",
+																	"string"
+																]
+															}
+														},
+														"banks": {
+															"type": "array",
+															"description": "Array with the banks that can be associated with the slot.",
+															"default": [],
+															"items": {
+																"type": "object",
+																"description": "The bank description. You need to describe a bank only once. If it is also used in another slot just assign the bank via the index.",
+																"properties": {
+																	"name": {
+																		"type": "string",
+																		"description": "The name of the bank.\nOptional. Is used in the 'Memory Banks' section in the VARIABLE pane. If not set a name is given automatically.",
+																		"default": ""
+																	},
+																	"shortName": {
+																		"type": "string",
+																		"description": "The short name of the bank.\nOptional. Is used in the disassembly (disasm.list). If not set a name is given automatically.",
+																		"default": ""
+																	},
+																	"index": {
+																		"type": [
+																			"number",
+																			"array"
+																		],
+																		"description": "Either the single index/number of the bank. Or the start and end index of a range of banks.",
+																		"default": 0,
+																		"items": {
+																			"type": "number"
+																		}
+																	},
+																	"rom": {
+																		"type": "string",
+																		"description": "The path to a rom bin file.\nOptional. File content should be in raw format (i.e. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).",
+																		"default": ""
+																	},
+																	"romOffset": {
+																		"type": [
+																			"number",
+																			"string"
+																		],
+																		"description": "Optional offset of the ROM file/content.\nEither use a decimal number or a hex string.",
+																		"default": 0
+																	}
+																}
+															}
+														},
+														"initialBank": {
+															"type": "number",
+															"description": "For 'zsim': The number of the bank which is assigned to the slot initially.\nOptional. If not used the first given bank is used instead.",
+															"default": 0
+														}
+													}
+												}
+											},
+											"ioMmu": {
+												"description": "The javascript code for bank switching.\nOptional. Only required for memory models that use banking/paging. Please refer to the documentation.\nPlease enter the code as a string or (for readability) as an arra of strings.",
+												"type": [
+													"string",
+													"array"
+												],
+												"default": [
+													""
+												],
+												"items": {
+													"type": "string"
+												}
+											}
+										}
+									},
+									"ulaScreen": {
+										"type": "boolean",
+										"description": "If enabled it shows the contents of the ZX81 screen.",
+										"default": true
+									},
+									"zxBorderWidth": {
+										"type": "number",
+										"description": "The displayed border width in pixels. If set to 0 then no border is displayed. Works only if ulaScreen is set to true.",
+										"default": true
+									},
+									"cpuLoadInterruptRange": {
+										"type": "number",
+										"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
+										"default": 1
+									},
+									"vsyncInterrupt": {
+										"type": "boolean",
+										"description": "Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).",
+										"default": false
+									},
+									"cpuFrequency": {
+										"type": "number",
+										"description": "The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here.",
+										"default": 3250000
+									},
+									"limitSpeed": {
+										"type": "number",
+										"description": "If enabled the simulated CPU performance is throttled to fit the given PU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.",
+										"default": false
+									},
+									"updateFrequency": {
+										"type": "number",
+										"description": "The update frequency of the simulator view in Hz. Defaults to 10 Hz. Possible range is 5 to 100 Hz.",
+										"default": 10
+									},
+									"defaultPortIn": {
+										"type": "number",
+										"description": "The default value that is read if the read port is unused.",
+										"default": 255
+									},
+									"customCode": {
+										"description": "This enables custom code to run inside the simulator, e.g. to simulate additional ports.",
+										"properties": {
+											"debug": {
+												"type": "boolean",
+												"description": "If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).",
+												"default": false
+											},
+											"jsPath": {
+												"type": "string",
+												"description": "A relative path to additional javascript code that is included into the Z80 simulator."
+											},
+											"uiPath": {
+												"type": "string",
+												"description": "A relative path to additional javascript code that is included into the Z80 simulator view/UI. This code acts as UI for the code in 'jsPath'"
+											},
+											"timeStep": {
+												"type": "number",
+												"description": "You can set a time step (interval) to call the tick() function. If not set then tick() will not be called (although time/t-states still do advance)."
+											}
+										}
+									}
+								}
+							},
 							"zxnext": {
 								"description": "The configuration for debugging on the ZXNEXT device.",
 								"type": "object",
@@ -1274,6 +1451,37 @@
 							"startAutomatically": true,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}"
+						}
+					},
+					{
+						"label": "DeZog: Simulator - ZX81",
+						"description": "Configuration to use the internal simulator for a ZX81.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "ZX81 - Simulator",
+							"remoteType": "zx81sim",
+							"zx81sim": {
+								"visualMemory": false,
+								"memoryModel": "ZX81-16K",
+								"ulaScreen": true,
+								"vsyncInterrupt": true,
+								"zxKeyboard": true
+							},
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": true
+							},
+							"startAutomatically": false,
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
+							"load": "${2:.P or .p file to load}"
 						}
 					}
 				]

@@ -572,7 +572,7 @@ export class RemoteBase extends EventEmitter {
 			throw Error("Cannot evaluate 'topOfStack' (" + Settings.launch.topOfStack + ").");
 		// "Correct" the value if 0
 		if (this.topOfStack == 0)
-			this.topOfStack = 0x10000;
+			this.topOfStack = this.memoryModel.defaultTopOfStack; // @zx81
 	}
 
 
