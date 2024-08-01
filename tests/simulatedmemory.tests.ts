@@ -74,7 +74,7 @@ suite('SimulatedMemory', () => {
 			mem.write8(0xFFFF, 20);
 
 			// Get size
-			writeSize = mem.getSerializedSize();
+			writeSize = MemBuffer.getSize(mem);
 
 			// Serialize
 			memBuffer = new MemBufferInt(writeSize);

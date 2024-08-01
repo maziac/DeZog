@@ -15,7 +15,6 @@ fill:
 	di
 	ld (.fill_value),a
 	ld (.dma_dest),de
-	ld bc,3
 	ld (.dma_length),bc
 	ld hl,.dma_code
 	ld b,.dma_len
@@ -23,35 +22,9 @@ fill:
 	otir
 	nop
 	nop
-	nop  ; here both
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
 	nop
 	nop
 	ei
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-
 	ret
 
 .fill_value:	db 0
@@ -67,7 +40,7 @@ fill:
 .dma_dest:		dw 0
 				db 0b01010000 ; WR2
 				db 0b00100010 ; Cycle Length (B) = 2
-				db 3		  ; Prescalar = 3, every 12 T
+				db 0		  ; Prescalar = 3, every 12 T
 				;db 0b10100010 ; WR5: Auto restart
 				db DMA_LOAD
 				db DMA_ENABLE
@@ -86,6 +59,10 @@ read_registers:
 	ld c,ZXN_DMA_PORT
 	otir
 	; Read the registers
+.loop:
+	in a,(c)
+	jr .loop
+
 	ld hl,.registers
 	ld b,.registers_end-.registers
 	inir

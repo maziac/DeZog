@@ -73,7 +73,7 @@ suite('Z80Cpu', () => {
 				cpu.remainingInterruptTstates = 65536 + 12;
 
 				// Get size
-				writeSize = cpu.getSerializedSize();
+				writeSize = MemBuffer.getSize(cpu);
 
 				// Serialize
 				memBuffer = new MemBuffer(writeSize);

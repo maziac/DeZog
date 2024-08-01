@@ -4,20 +4,12 @@
  */
 export interface Serializable {
 
-	/**
-	 * Returns the size the serialized object would consume.
-	 */
-	getSerializedSize(): number;
-
-
-	/**
-	 * Serializes the object.
+	/** Serializes the object.
 	 */
 	serialize(memBuffer: MemBuffer);
 
 
-	/**
-	 * Deserializes the object.
+	/** Deserializes the object.
 	 */
 	deserialize(memBuffer: MemBuffer);
 }
@@ -88,32 +80,32 @@ export class MemBuffer {
 	}
 
 
-	/**
-	 * Returns the current size.
+	/** Returns the current size.
 	 */
-	public getSize() {
-		return this.writeOffset;
+	public static getSize(obj: Serializable): number {
+		// Create a buffer with no size to calculate the size.
+		const memBufferSize = new MemBuffer();
+		obj.serialize(memBufferSize);
+		const writeSize = memBufferSize.writeOffset;
+		return writeSize;
 	}
 
 
-	/**
-	 * Writes a value to the next position (offset).
+	/** Writes a value to the next position (offset).
 	 */
 	public write8(value: number) {
 		this.dataView?.setUint8(this.writeOffset, value);
 		this.writeOffset++;
 	}
 
-	/**
-	 * Writes a value to the next position (offset).
+	/** Writes a value to the next position (offset).
 	 */
 	public write16(value: number) {
 		this.dataView?.setUint16(this.writeOffset, value);
 		this.writeOffset += 2;
 	}
 
-	/**
-	 * Writes a value to the next position (offset).
+	/** Writes a value to the next position (offset).
 	 */
 	public write32(value: number) {
 		this.dataView?.setUint32(this.writeOffset, value);
@@ -121,8 +113,7 @@ export class MemBuffer {
 	}
 
 
-	/**
-	 * Writes an array to the next position (offset).
+	/** Writes an array to the next position (offset).
 	 */
 	public writeArrayBuffer(buffer: ArrayBuffer) {
 		const length = buffer.byteLength;
@@ -138,8 +129,7 @@ export class MemBuffer {
 	}
 
 
-	/**
-	 * Writes an array to the next position (offset).
+	/** Writes an array to the next position (offset).
 	 * @param s The string to write.
 	 */
 	public writeString(s: string) {
@@ -149,8 +139,7 @@ export class MemBuffer {
 	}
 
 
-	/**
-	 * Writes a java script number. I.e. a float 64.
+	/** Writes a java script number. I.e. a float 64.
 	 * Size = 8.
 	 */
 	public writeNumber(value: number) {
@@ -159,8 +148,7 @@ export class MemBuffer {
 	}
 
 
-	/**
-	 * Writes a boolean value to the next position (offset).
+	/** Writes a boolean value to the next position (offset).
 	 */
 	public writeBoolean(value: boolean) {
 		this.dataView?.setUint8(this.writeOffset, value ? 1 : 0);
@@ -168,8 +156,7 @@ export class MemBuffer {
 	}
 
 
-	/**
-	 * Returns an array of the required length.
+	/** Returns an array of the required length.
 	 */
 	public getUint8Array(): Uint8Array {
 		const view = new Uint8Array(this.buffer, 0, this.writeOffset);  // this.buffer.byteOffset is 0
@@ -177,8 +164,7 @@ export class MemBuffer {
 	}
 
 
-	/**
-	 * Reads a value from the next position (offset).
+	/** Reads a value from the next position (offset).
 	 */
 	public read8(): number {
 		const value = this.dataView.getUint8(this.readOffset);
@@ -186,8 +172,7 @@ export class MemBuffer {
 		return value;
 	}
 
-	/**
-	 * Reads a value from the next position (offset).
+	/** Reads a value from the next position (offset).
 	 */
 	public read16(): number {
 		const value = this.dataView.getUint16(this.readOffset);
@@ -196,8 +181,7 @@ export class MemBuffer {
 	}
 
 
-	/**
-	 * Reads a value from the next position (offset).
+	/** Reads a value from the next position (offset).
 	 */
 	public read32(): number {
 		const value = this.dataView.getUint32(this.readOffset);
@@ -206,8 +190,7 @@ export class MemBuffer {
 	}
 
 
-	/**
-	 * Reads an array from the next position (offset).
+	/** Reads an array from the next position (offset).
 	 */
 	public readArrayBuffer(): Uint8Array {
 		const wholeBuffer = new Uint8Array(this.buffer);
@@ -221,8 +204,7 @@ export class MemBuffer {
 	}
 
 
-	/**
-	 * Reads a string from the next position (offset).
+	/** Reads a string from the next position (offset).
 	 */
 	public readString(): string {
 		const array = this.readArrayBuffer();
@@ -232,8 +214,7 @@ export class MemBuffer {
 	}
 
 
-	/**
-	 * Reads a java script number from the next position (offset).
+	/** Reads a java script number from the next position (offset).
 	 * Size = 8.
 	 */
 	public readNumber(): number {
@@ -243,8 +224,7 @@ export class MemBuffer {
 	}
 
 
-	/**
-	 * Reads a boolean value from the next position (offset).
+	/** Reads a boolean value from the next position (offset).
 	 */
 	public readBoolean(): boolean {
 		const value = (this.dataView.getUint8(this.readOffset) != 0);

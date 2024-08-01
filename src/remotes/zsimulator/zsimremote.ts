@@ -916,11 +916,7 @@ export class ZSimRemote extends DzrpRemote {
 		const memBuffer = MemBuffer.from(data.buffer);
 
 		// Deserialize own properties
-		this.zxBorderColor = memBuffer.read8();
-
-		// Deserialize objects
-		for (const obj of this.serializeObjects)
-			obj.deserialize(memBuffer);
+		this.deserialize(memBuffer);
 
 		// Update the simulation view
 		this.emit('restored');
@@ -933,22 +929,40 @@ export class ZSimRemote extends DzrpRemote {
 	 * Serializes the CPU, memory etc. to save the state.
 	 */
 	protected serializeState(): Uint8Array {
-		// Get size of all serialized objects
-		let size = 0;
-		for (const obj of this.serializeObjects)
-			size += obj.getSerializedSize();
+		// Get size
+		const size = MemBuffer.getSize(this);
 
 		// Allocate memory
-		const memBuffer = new MemBuffer(size + 1);	// +1 for border color
+		const memBuffer = new MemBuffer(size);
 
+		// Deserialize
+		this.serialize(memBuffer);
+
+		return memBuffer.getUint8Array();
+	}
+
+
+	/** Serializes the object and all sub-objects.
+	 */
+	public serialize(memBuffer: MemBuffer) {
 		// Serialize own properties
 		memBuffer.write8(this.zxBorderColor);
 
 		// Serialize objects
 		for (const obj of this.serializeObjects)
 			obj.serialize(memBuffer);
+	}
 
-		return memBuffer.getUint8Array();
+
+	/** Deserializes the object and all sub-objects.
+	 */
+	public deserialize(memBuffer: MemBuffer) {
+		// Deserialize own properties
+		this.zxBorderColor = memBuffer.read8();
+
+		// Deserialize objects
+		for (const obj of this.serializeObjects)
+			obj.deserialize(memBuffer);
 	}
 
 

@@ -526,12 +526,10 @@ suite('ZxnDma', function () {
 			this.portBaddressCounterRR56 = 0x6789;
 			this.lastOperation = 'last op1';
 			// Get required size
-			let mem = new MemBuffer();
-			dma.serialize(mem);
-			const memSize = mem.getSize();
+			const memSize = MemBuffer.getSize(dma);
 			assert.ok(memSize > 0);
 			// Store
-			mem = new MemBuffer(memSize);
+			let mem = new MemBuffer(memSize);
 			dma.serialize(mem);
 
 			// Deserialize into another object
@@ -634,10 +632,8 @@ suite('ZxnDma', function () {
 			dma.writePort(0b1100_1101);	// WR4: Burst mode, Destination
 			dma.writePort(portB & 0xFF); // Port B low
 			// Save here the current state
-			let mem = new MemBuffer();
-			dma.serialize(mem);
-			const memSize = mem.getSize();
-			mem = new MemBuffer(memSize);
+			const memSize = MemBuffer.getSize(dma);;
+			const mem = new MemBuffer(memSize);
 			dma.serialize(mem);
 
 			// Continue with different dma instance

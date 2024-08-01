@@ -1,3 +1,5 @@
+; Code is used for interactive testing, it is not directly used
+; in unit tests.
 
     DEVICE NOSLOT64K
     SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
@@ -20,7 +22,7 @@ main:
 .loop:
     ld a,0x12
     ld de,0x9000
-    ld bc,8192 ;0x100
+    ld bc,8192
     call zxndma.fill
     nop
     call zxndma.read_registers

@@ -387,20 +387,6 @@ API.log('-------------------------------------\\n');`
 
 
 	/**
-	 * Returns the size the serialized object would consume.
-	 */
-	public getSerializedSize(): number {
-		// Create a MemBuffer to calculate the size.
-		const memBuffer = new MemBuffer();
-		// Serialize object to obtain size
-		this.serialize(memBuffer);
-		// Get size
-		const size = memBuffer.getSize();
-		return size;
-	}
-
-
-	/**
 	 * Serializes the object.
 	 */
 	public serialize(memBuffer: MemBuffer) {
