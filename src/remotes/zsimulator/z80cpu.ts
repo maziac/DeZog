@@ -30,10 +30,6 @@ export class Z80Cpu implements Serializable {
 	// Counts the current number of interrupts.
 	protected cpuLoadRangeCounter: number;
 
-	// Used to calculate the number of t-states for a step-over or similar.
-	// Is reset by the remote.
-	public cpuTstatesCounter: number;	 // TODO: Remove
-
 	// The number of extra t-states per instruction.
 	public extraTstatesPerInstruction: number;
 
@@ -77,7 +73,6 @@ export class Z80Cpu implements Serializable {
 		IM 1: Jumps to address &0038
 		IM 2: Uses an interrupt vector table, indexed by value on data bus.
 		*/
-		this.cpuTstatesCounter = 0;
 		this.extraTstatesPerInstruction = 0;
 		this.cpuLoadTstates = 0;
 		this.cpuWithHaltTstates = 0;
@@ -155,7 +150,6 @@ export class Z80Cpu implements Serializable {
 		}
 
 		// Add t-states
-		this.cpuTstatesCounter += accumulatedTstates;
 		this.cpuWithHaltTstates += accumulatedTstates;
 		// Interrupt
 		this.remainingInterruptTstates -= tStates;
@@ -547,7 +541,6 @@ export class Z80Cpu implements Serializable {
 
 		// Additional state
 		memBuffer.writeNumber(this.remainingInterruptTstates);
-		memBuffer.writeNumber(this.cpuTstatesCounter);
 	}
 
 
@@ -605,7 +598,6 @@ export class Z80Cpu implements Serializable {
 
 		// Additional state
 		this.remainingInterruptTstates = memBuffer.readNumber();
-		this.cpuTstatesCounter = memBuffer.readNumber();
 
 		// Reset statistics
 		this.cpuLoadTstates = 0;
