@@ -946,6 +946,7 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	public serialize(memBuffer: MemBuffer) {
 		// Serialize own properties
+		memBuffer.writeNumber(this.passedTstates);
 		memBuffer.write8(this.zxBorderColor);
 
 		// Serialize objects
@@ -958,6 +959,7 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	public deserialize(memBuffer: MemBuffer) {
 		// Deserialize own properties
+		this.passedTstates = memBuffer.readNumber();
 		this.zxBorderColor = memBuffer.read8();
 
 		// Deserialize objects
