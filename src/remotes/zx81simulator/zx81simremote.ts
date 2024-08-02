@@ -71,6 +71,11 @@ export class ZX81SimRemote extends DzrpRemote {
 	// Z80Cpu.execute() or to the DMA.
 	protected executeInstruction: () => number;
 
+	// When the debugger reaches the end of the program (last ret),
+	// I prefer that it stops on this last line and still display the simulator.
+	// Then, when the user presses the continue button, the simulator will be closed. 
+	protected terminated: boolean;
+
 
     /// Constructor.
 	constructor() {
@@ -236,6 +241,8 @@ export class ZX81SimRemote extends DzrpRemote {
 
 		// @zx81: Prepare the stack to trap the end of the program.
 		this.initTopOfStack();
+		// @zx81: Set the terminated flag
+		this.terminated = false;
 	}
 
 	/**
@@ -417,12 +424,10 @@ export class ZX81SimRemote extends DzrpRemote {
 			try {
 				// Run the Z80-CPU in a loop
 				while (this.passedTstates < leaveAtTstates) {
-					// @zx81 Special PC value when the program is finished
-					if(this.z80Cpu.pc == 0xFFFF) {
+					if(this.terminated) {
 						this.terminate();
 						break;
 					}
-
 					// Store current registers and opcode
 					const prevPc = this.z80Cpu.pc;
 					if (CpuHistory)
@@ -523,9 +528,12 @@ export class ZX81SimRemote extends DzrpRemote {
 
 					// @zx81 Special PC value to detect when the program is finished
 					if(pc == 0xFFFF) {
-						longBreakAddress = Z80Registers.createLongAddress(prevPc, slots);;
-						breakNumber = BREAK_REASON_NUMBER.END_OF_PROGRAM;
+						longBreakAddress = Z80Registers.createLongAddress(prevPc, slots);
+						this.z80Cpu.pc = prevPc;
+						breakNumber = BREAK_REASON_NUMBER.MANUAL_BREAK;
 						breakReasonString = "End of program";
+						break_happened = true;
+						this.terminated = true;
 						break;
 					}
 
@@ -743,6 +751,26 @@ export class ZX81SimRemote extends DzrpRemote {
 		return this.z80Cpu.cpuFreq;
 	}
 
+	/**
+	 * Returns the ROM charachers. @zx81
+	 * @returns The charachers as a UInt8Array.
+	 */
+	public async getRomCharacters(): Promise<Uint8Array> {
+		return await this.readMemoryDump(0x1e00, 0x200);
+	}
+
+	/**
+	 * Returns the DFILE (display file). @zx81
+	 * @returns The DFILE as a UInt8Array.
+	 */
+	public async getDFile(): Promise<Uint8Array> {
+		// Get the content of the D_FILE system variable (2 bytes).
+		const dfile_ptr = await this.readMemoryDump(0x400c, 2);
+		// Conversion from little endian.
+		const dfile = dfile_ptr[0] + 256 * dfile_ptr[1];
+		// 24 lines of 33 bytes (could be less).
+		return await this.readMemoryDump(dfile, 33 * 24);
+	}
 
 	/** zsim returns here the code coverage addresses since the last step.
 	 * This is an additional information for the disassembler.

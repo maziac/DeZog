@@ -4,7 +4,6 @@ import {ZX81SimRemote} from './zx81simremote';
 import {Settings} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {LogZsimCustomCode} from '../../log';
-import {GlobalStorage} from '../../globalstorage';
 import {readFileSync} from 'fs';
 import {DiagnosticsHandler} from '../../diagnosticshandler';
 
@@ -111,7 +110,7 @@ export class ZX81SimulationView extends BaseView {
 
 		// Add title
 		Utility.assert(this.vscodePanel);
-		this.vscodePanel.title = 'Z80 Simulator - ' + Settings.launch.zx81sim.memoryModel;
+		this.vscodePanel.title = 'ZX81 Simulator - ' + Settings.launch.zx81sim.memoryModel;
 
 		// Read path for additional javascript code
 		this.customUiPath = Settings.launch.zx81sim.customCode.uiPath;
@@ -282,15 +281,11 @@ export class ZX81SimulationView extends BaseView {
 				await vscode.window.showWarningMessage(warningText);
 				break;
 			}
+
 			case 'keyChanged':
-				this.keyChanged(message.key, message.value);
+				this.keyChanged(message.key, message.shift, message.value); // @zx81 Add shft
 				break;
-			case 'volumeChanged':
-				GlobalStorage.Set('audio.volume', message.value);
-				break;
-			case 'portBit':
-				this.setPortBit(message.value.port, message.value.on, message.value.bitByte);
-				break;
+
 			case 'sendToCustomLogic': {
 				// Unwrap message
 				const innerMsg = message.value;
@@ -298,6 +293,7 @@ export class ZX81SimulationView extends BaseView {
 				this.sendToCustomLogic(innerMsg);
 				break;
 			}
+
 			case 'reloadCustomLogicAndUi': {
 				// Clear any diagnostics
 				DiagnosticsHandler.clear();
@@ -318,12 +314,14 @@ export class ZX81SimulationView extends BaseView {
 				this.simulator.customCode?.uiReady();
 				break;
 			}
+
 			case 'log': {
 				// Log a message
 				const text = message.args.map(elem => elem.toString()).join(', ');
 				LogZsimCustomCode.log("UI: " + text);
 				break;
 			}
+
 			case 'countOfProcessedMessages':
 				// For balancing the number of processed messages (since last time) is provided.;
 				this.countOfOutstandingMessages -= message.value;
@@ -333,6 +331,7 @@ export class ZX81SimulationView extends BaseView {
 					this.simulator.setTimeoutRequest(false);
 				}
 				break;
+
 			default:
 				await super.webViewMessageReceived(message);
 				break;
@@ -368,67 +367,69 @@ export class ZX81SimulationView extends BaseView {
 	/**
 	 * Called on key press or key release.
 	 * Sets/clears the corresponding port bits.
-	 * @param key E.g. "key_Digit2", "key_KeyQ", "key_Enter", "key_Space", "key_ShiftLeft" (CAPS) or "key_ShiftRight" (SYMBOL).
+	 * @param key E.g. "Digit2", "KeyQ", "Enter", "Space", "ShiftLeft" (CAPS) or "ShiftRight" (SYMBOL).
+	 * @param shift true: pressed, false: released. @zx81
 	 * @param on true=pressed, false=released
 	 */
-	protected keyChanged(key: string, on: boolean) {
+	protected keyChanged(key: string, shift: boolean, on: boolean) {
 		// Determine port
 		let port;
 		switch (key) {
-			case 'key_Digit1':
-			case 'key_Digit2':
-			case 'key_Digit3':
-			case 'key_Digit4':
-			case 'key_Digit5':
+			case 'Digit1':
+			case 'Digit2':
+			case 'Digit3':
+			case 'Digit4':
+			case 'Digit5':
 				port = 0xF7FE;
 				break;
-			case 'key_Digit6':
-			case 'key_Digit7':
-			case 'key_Digit8':
-			case 'key_Digit9':
-			case 'key_Digit0':
+			case 'Digit6':
+			case 'Digit7':
+			case 'Digit8':
+			case 'Digit9':
+			case 'Digit0':
 				port = 0xEFFE;
 				break;
-			case 'key_KeyQ':
-			case 'key_KeyW':
-			case 'key_KeyE':
-			case 'key_KeyR':
-			case 'key_KeyT':
+			case 'KeyQ':
+			case 'KeyW':
+			case 'KeyE':
+			case 'KeyR':
+			case 'KeyT':
 				port = 0xFBFE;
 				break;
-			case 'key_KeyY':
-			case 'key_KeyU':
-			case 'key_KeyI':
-			case 'key_KeyO':
-			case 'key_KeyP':
+			case 'KeyY':
+			case 'KeyU':
+			case 'KeyI':
+			case 'KeyO':
+			case 'KeyP':
 				port = 0xDFFE;
 				break;
-			case 'key_KeyA':
-			case 'key_KeyS':
-			case 'key_KeyD':
-			case 'key_KeyF':
-			case 'key_KeyG':
+			case 'KeyA':
+			case 'KeyS':
+			case 'KeyD':
+			case 'KeyF':
+			case 'KeyG':
 				port = 0xFDFE;
 				break;
-			case 'key_KeyH':
-			case 'key_KeyJ':
-			case 'key_KeyK':
-			case 'key_KeyL':
-			case 'key_Enter':
+			case 'KeyH':
+			case 'KeyJ':
+			case 'KeyK':
+			case 'KeyL':
+			case 'Enter':
 				port = 0xBFFE;
 				break;
-			case 'key_ShiftLeft':	// CAPS
-			case 'key_KeyZ':
-			case 'key_KeyX':
-			case 'key_KeyC':
-			case 'key_KeyV':
+			// case 'ShiftLeft':	// CAPS not for @zx81
+			case 'KeyZ':
+			case 'KeyX':
+			case 'KeyC':
+			case 'KeyV':
 				port = 0xFEFE;
 				break;
-			case 'key_KeyB':
-			case 'key_KeyN':
-			case 'key_KeyM':
-			case 'key_ShiftRight':	// SYMBOL
-			case 'key_Space':
+			case 'KeyB':
+			case 'KeyN':
+			case 'KeyM':
+			// case 'ShiftRight':	// SYMBOL not for @zx81
+			case 'Period': // for @zx81
+			case 'Space':
 				port = 0x7FFE;
 				break;
 			default:
@@ -439,60 +440,64 @@ export class ZX81SimulationView extends BaseView {
 		// Determine bit
 		let bit;
 		switch (key) {
-			case 'key_ShiftLeft':	// CAPS
-			case 'key_KeyA':
-			case 'key_KeyQ':
-			case 'key_Digit1':
-			case 'key_Digit0':
-			case 'key_KeyP':
-			case 'key_Enter':
-			case 'key_Space':
+			// case 'ShiftLeft':	// CAPS not for @zx81
+			case 'KeyA':
+			case 'KeyQ':
+			case 'Digit1':
+			case 'Digit0':
+			case 'KeyP':
+			case 'Enter':
+			case 'Space':
 				bit = 0b00001;
 				break;
-			case 'key_KeyZ':
-			case 'key_KeyS':
-			case 'key_KeyW':
-			case 'key_Digit2':
-			case 'key_Digit9':
-			case 'key_KeyO':
-			case 'key_KeyL':
-			case 'key_ShiftRight':	// SYMBOL
+			case 'KeyZ':
+			case 'KeyS':
+			case 'KeyW':
+			case 'Digit2':
+			case 'Digit9':
+			case 'KeyO':
+			case 'KeyL':
+			// case 'ShiftRight':	// SYMBOL not for @zx81
+			case 'Period': // for @zx81
 				bit = 0b00010;
 				break;
-			case 'key_KeyX':
-			case 'key_KeyD':
-			case 'key_KeyE':
-			case 'key_Digit3':
-			case 'key_Digit8':
-			case 'key_KeyI':
-			case 'key_KeyK':
-			case 'key_KeyM':
+			case 'KeyX':
+			case 'KeyD':
+			case 'KeyE':
+			case 'Digit3':
+			case 'Digit8':
+			case 'KeyI':
+			case 'KeyK':
+			case 'KeyM':
 				bit = 0b00100;
 				break;
-			case 'key_KeyC':
-			case 'key_KeyF':
-			case 'key_KeyR':
-			case 'key_Digit4':
-			case 'key_Digit7':
-			case 'key_KeyU':
-			case 'key_KeyJ':
-			case 'key_KeyN':
+			case 'KeyC':
+			case 'KeyF':
+			case 'KeyR':
+			case 'Digit4':
+			case 'Digit7':
+			case 'KeyU':
+			case 'KeyJ':
+			case 'KeyN':
 				bit = 0b01000;
 				break;
-			case 'key_KeyV':
-			case 'key_KeyG':
-			case 'key_KeyT':
-			case 'key_Digit5':
-			case 'key_Digit6':
-			case 'key_KeyY':
-			case 'key_KeyH':
-			case 'key_KeyB':
+			case 'KeyV':
+			case 'KeyG':
+			case 'KeyT':
+			case 'Digit5':
+			case 'Digit6':
+			case 'KeyY':
+			case 'KeyH':
+			case 'KeyB':
 				bit = 0b10000;
 				break;
 			default:
 				Utility.assert(false);
 		}
 		Utility.assert(bit);
+
+		// @zx81 Special case for the Shift key. If on same port, add the bit.
+		if(shift && port === 0xFE) bit |= 0b00001;
 
 		// Get port value
 		Utility.assert(this.simulatedPorts);
@@ -504,33 +509,19 @@ export class ZX81SimulationView extends BaseView {
 			value |= bit;
 		// And set
 		this.simulatedPorts.set(port, value);
+
+		// @zx81 Special case for the Shift key. If not on same port, update the shift port
+		if(shift && port !== 0xFE) {
+			value = this.simulatedPorts.get(0xFEFE)!;
+			this.simulatedPorts.set(0xFEFE, on ? value & 0b11110 : value | 0b00001);		
+		}
 	}
-
-
-	/**
-	 * Called if a bit for a port should change.
-	 * @param port The port number.
-	 * @param on true = bit should be set, false = bit should be cleared
-	 * @param bitByte A byte with the right bit set.
-	 */
-	protected setPortBit(port: number, on: boolean, bitByte: number) {		// Get port value
-		Utility.assert(this.simulatedPorts);
-		let value = this.simulatedPorts.get(port)!;
-		Utility.assert(value != undefined);
-		if (on)
-			value |= bitByte;
-		else
-			value &= ~bitByte;
-		// And set
-		this.simulatedPorts.set(port, value);
-	}
-
 
 	/**
 	 * Retrieves the screen memory content and displays it.
 	 * @param reason Not used.
 	 */
-	public updateDisplay() {
+	public async updateDisplay() {
 		// Check if CPU did something
 		const tStates = this.simulator.getPassedTstates();
 		if (this.previousTstates == tStates)
@@ -539,7 +530,7 @@ export class ZX81SimulationView extends BaseView {
 		this.restartStopTimer();
 
 		try {
-			let cpuFreq, cpuLoad, slots, slotNames, visualMem, screenImg, audio, borderColor, zxnDMA;
+			let cpuFreq, cpuLoad, slots, slotNames, visualMem, romChars, dfile;
 
 			// Update frequency
 			if (this.prevCpuFreq !== this.simulator.z80Cpu.cpuFreq) {
@@ -559,6 +550,11 @@ export class ZX81SimulationView extends BaseView {
 				visualMem = this.simulator.memory.getVisualMemory();
 			}
 
+			if (Settings.launch.zx81sim.ulaScreen) {
+				romChars = await this.simulator.getRomCharacters();
+				dfile = await this.simulator.getDFile();
+			}
+
 			// Create message to update the webview
 			const message = {
 				command: 'update',
@@ -566,10 +562,8 @@ export class ZX81SimulationView extends BaseView {
 				cpuLoad,
 				slotNames,
 				visualMem,
-				screenImg,
-				borderColor,
-				audio,
-				zxnDMA
+				romChars,
+				dfile
 			};
 			this.sendMessageToWebView(message);
 			// Clear
@@ -618,9 +612,25 @@ export class ZX81SimulationView extends BaseView {
 			display: table-cell;
 			vertical-align: middle;
 			}
+
+			.keyboard {
+			width: 95%;
+			max-width: 800px;
+			border-style: solid;
+			border-width: 2px;
+			border-color: black;
+			}
+			.focus {
+			border-color: greenyellow;
+			}
+			.display {
+			image-rendering: pixelated;
+			width: 95%;
+			max-width: 800px;
+			}
 			</style>
 
-			<script src="out/remotes/zsimulator/zsimwebview/main.js"></script>
+			<script src="out/remotes/zx81simulator/zx81simwebview/main.js"></script>
 
 			<body>
 			`;
@@ -774,7 +784,7 @@ export class ZX81SimulationView extends BaseView {
 		if (zsim.ulaScreen) {
 			html += `
 			<!-- Display the screen gif -->
-			<canvas id="screen_img_id" width="256" height="192" style="image-rendering:pixelated; border:${zsim.zxBorderWidth}px solid white; outline: 1px solid var(--vscode-foreground); width:95%; height:95%">
+			<canvas id="screen_img_id" class="display" width="256" height="192">
 			</canvas>
 			`;
 		}
@@ -787,61 +797,7 @@ export class ZX81SimulationView extends BaseView {
 			<details open="true">
 			<summary>ZX Keyboard</summary>
 
-			<table style="width:100%">
-
-				<tr>
-					<td id="key_Digit1" class="td_off" onClick="cellClicked(this)">1</td>
-					<td id="key_Digit2" class="td_off" onClick="cellClicked(this)">2</td>
-					<td id="key_Digit3" class="td_off" onClick="cellClicked(this)">3</td>
-					<td id="key_Digit4" class="td_off" onClick="cellClicked(this)">4</td>
-					<td id="key_Digit5" class="td_off" onClick="cellClicked(this)">5</td>
-					<td id="key_Digit6" class="td_off" onClick="cellClicked(this)">6</td>
-					<td id="key_Digit7" class="td_off" onClick="cellClicked(this)">7</td>
-					<td id="key_Digit8" class="td_off" onClick="cellClicked(this)">8</td>
-					<td id="key_Digit9" class="td_off" onClick="cellClicked(this)">9</td>
-					<td id="key_Digit0" class="td_off" onClick="cellClicked(this)">0</td>
-				</tr>
-
-				<tr>
-					<td id="key_KeyQ" class="td_off" onClick="cellClicked(this)">Q</td>
-					<td id="key_KeyW" class="td_off" onClick="cellClicked(this)">W</td>
-					<td id="key_KeyE" class="td_off" onClick="cellClicked(this)">E</td>
-					<td id="key_KeyR" class="td_off" onClick="cellClicked(this)">R</td>
-					<td id="key_KeyT" class="td_off" onClick="cellClicked(this)">T</td>
-					<td id="key_KeyY" class="td_off" onClick="cellClicked(this)">Y</td>
-					<td id="key_KeyU" class="td_off" onClick="cellClicked(this)">U</td>
-					<td id="key_KeyI" class="td_off" onClick="cellClicked(this)">I</td>
-					<td id="key_KeyO" class="td_off" onClick="cellClicked(this)">O</td>
-					<td id="key_KeyP" class="td_off" onClick="cellClicked(this)">P</td>
-				</tr>
-
-				<tr>
-					<td id="key_KeyA" class="td_off" onClick="cellClicked(this)">A</td>
-					<td id="key_KeyS" class="td_off" onClick="cellClicked(this)">S</td>
-					<td id="key_KeyD" class="td_off" onClick="cellClicked(this)">D</td>
-					<td id="key_KeyF" class="td_off" onClick="cellClicked(this)">F</td>
-					<td id="key_KeyG" class="td_off" onClick="cellClicked(this)">G</td>
-					<td id="key_KeyH" class="td_off" onClick="cellClicked(this)">H</td>
-					<td id="key_KeyJ" class="td_off" onClick="cellClicked(this)">J</td>
-					<td id="key_KeyK" class="td_off" onClick="cellClicked(this)">K</td>
-					<td id="key_KeyL" class="td_off" onClick="cellClicked(this)">L</td>
-					<td id="key_Enter" class="td_off" onClick="cellClicked(this)">ENTER</td>
-				</tr>
-
-				<tr>
-					<td id="key_ShiftLeft" class="td_off" onClick="cellClicked(this)">CAPS S.</td>
-					<td id="key_KeyZ" class="td_off" onClick="cellClicked(this)">Z</td>
-					<td id="key_KeyX" class="td_off" onClick="cellClicked(this)">X</td>
-					<td id="key_KeyC" class="td_off" onClick="cellClicked(this)">C</td>
-					<td id="key_KeyV" class="td_off" onClick="cellClicked(this)">V</td>
-					<td id="key_KeyB" class="td_off" onClick="cellClicked(this)">B</td>
-					<td id="key_KeyN" class="td_off" onClick="cellClicked(this)">N</td>
-					<td id="key_KeyM" class="td_off" onClick="cellClicked(this)">M</td>
-					<td id="key_ShiftRight" class="td_off" onClick="cellClicked(this)">SYMB. S.</td>
-					<td id="key_Space" class="td_off" onClick="cellClicked(this)">SPACE</td>
-				</tr>
-
-			</table>
+			<img id="keyboard" class="keyboard" src="assets/ZX81_keyboard.png" alt="ZX81 Keyboard">
 		</details>
 		`;
 		}
@@ -891,7 +847,10 @@ export class ZX81SimulationView extends BaseView {
 	/** Sends the initialization message to the webview just after the 'loaded' has been received.
 	 */
 	protected sendInit() {
-		// Nothing to do
+		const sendMsg = {
+			command: 'init'
+		};
+		this.sendMessageToWebView(sendMsg);
 	}
 }
 

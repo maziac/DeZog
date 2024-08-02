@@ -48,7 +48,7 @@ window.addEventListener('message', event => {// NOSONAR
 		case 'init':
 			// Configuration received. Is received once after 'configRequest' was sent.
 			// Is only done once after loading.
-			initSimulation(message.audioSampleRate, message.volume);
+			initSimulation();
 			break;
 
 		case 'cpuStopped':
@@ -56,9 +56,8 @@ window.addEventListener('message', event => {// NOSONAR
 			break;
 
 		case 'update':
-			if (message.cpuFreq) {
+			if (cpuFreq && message.cpuFreq)
 				cpuFreq.innerHTML = message.cpuFreq
-			}
 
 			if (cpuLoad && message.cpuLoad)
 				cpuLoad.innerHTML = message.cpuLoad;
@@ -76,10 +75,8 @@ window.addEventListener('message', event => {// NOSONAR
 				VisualMem.drawVisualMemory(message.visualMem);
 			}
 
-			if (message.screenImg) {
-				const data = message.screenImg.ulaData;
-				const time = message.screenImg.time;
-				ZX81UlaScreen.drawUlaScreen(screenImgContext, screenImgImgData, data, time);
+			if (message.romChars && message.dfile) {
+				ZX81UlaScreen.drawUlaScreen(screenImgContext, screenImgImgData, message.dfile, message.romChars);
 			}
 			break;
 
@@ -98,10 +95,8 @@ window.addEventListener('message', event => {// NOSONAR
 
 
 /** Init: Initializes parts of the simulation.
- * @param audioSampleRate In Hz.
- * @param volume Number in range [0;1.0]
  */
-function initSimulation(audioSampleRate: number, volume: number) {
+function initSimulation() {
 
 	// Store the cpu_freq_id
 	cpuFreq = document.getElementById("cpu_freq_id") as HTMLLabelElement;
@@ -132,60 +127,6 @@ function initSimulation(audioSampleRate: number, volume: number) {
 	}
 }
 
-
-// Set cell to selected or unselected.
-function cellSelect(cell, on) {
-	cell.tag = on;
-	if (on) {
-		cell.className = "td_on";
-	}
-	else {
-		cell.className = "td_off";
-	}
-
-	// Send request to vscode
-	vscode.postMessage({
-		command: 'keyChanged',
-		value: on,
-		key: cell.id
-	});
-}
-
-
-// Toggle the cell.
-globalThis.cellClicked = function (cell) {
-	cell.tag = !cell.tag;
-	cellSelect(cell, cell.tag);
-}
-
-// Toggle the cell and the corresponding bit
-globalThis.togglePortBit = function (cell, port, bitByte) {
-	// Send request to vscode
-	vscode.postMessage({
-		command: 'portBit',
-		value: {port: port, on: cell.bitvalue, bitByte: bitByte}
-	});
-}
-
-// Toggle the cell and the corresponding bit.
-// Inverts the bit before sending.
-// I.e. Active=LOW
-globalThis.togglePortBitNeg = function (cell, port, bitByte) {
-	// Send request to vscode
-	vscode.postMessage({
-		command: 'portBit',
-		value: {port: port, on: !cell.bitvalue, bitByte: bitByte}
-	});
-}
-
-// Find right cell for keycode.
-function findCell(keyCode) {
-	// Find correspondent cell
-	const cell = document.getElementById("key_" + keyCode);
-	return cell;
-}
-
-
 // "Copy all HTML" button-- >
 
 // Copies the complete html of the document to the clipboard.
@@ -206,24 +147,6 @@ globalThis.reloadCustomLogicAndUi = function () {
 }
 
 
-// Handle key down presses.
-document.addEventListener('keydown', keydown);
-function keydown(e) {
-	// Find correspondent cell
-	const cell = findCell(e.code);
-	cellSelect(cell, true);
-}
-
-
-// Handle key up presses.
-document.addEventListener('keyup', keyup);
-function keyup(e) {
-	// Find correspondent cell
-	const cell = findCell(e.code);
-	cellSelect(cell, false);
-}
-
-
 // Handle initial load.
 window.addEventListener('load', () => {
 	// Inform vscode that page was loaded.
@@ -231,3 +154,36 @@ window.addEventListener('load', () => {
 		command: 'loaded'
 	});
 });
+
+window.addEventListener("keydown", onKeyDown);
+window.addEventListener("keyup", onKeyUp);
+window.addEventListener("focus", onFocus);
+window.addEventListener("blur", onBlur);
+
+function onKeyDown(e) {
+	vscode.postMessage({
+		command: 'keyChanged',
+		value: true,
+		key: e.code,
+		shift: e.shiftKey
+	});
+}
+
+function onKeyUp(e) {
+	vscode.postMessage({
+		command: 'keyChanged',
+		value: false,
+		key: e.code,
+		shift: e.shiftKey
+	});
+}
+
+function onFocus() {
+	const keyboard = document.querySelector(".keyboard");
+	if(keyboard) keyboard.classList.add("focus");
+}
+
+function onBlur() {
+	const keyboard = document.querySelector(".keyboard");
+	if(keyboard) keyboard.classList.remove("focus");
+}
