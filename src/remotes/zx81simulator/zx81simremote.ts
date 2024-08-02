@@ -206,6 +206,17 @@ export class ZX81SimRemote extends DzrpRemote {
 		}
 	}
 
+	/**
+	 * Initialize the CPU stack.
+	 */
+	private initTopOfStack() {
+		// Put 0xFFFF on the stack - will be catch and signifies that the programm is finished.
+		this.memory.write8(this.topOfStack - 1, 0xFF);
+		this.memory.write8(this.topOfStack - 2, 0xFF);
+		this.z80Cpu.sp = this.topOfStack - 2;
+		this.serializeObjects.push(this.z80Cpu);
+	}
+
 
 	/// Override.
 	/// Initializes the machine.
@@ -222,6 +233,9 @@ export class ZX81SimRemote extends DzrpRemote {
 
 		// Ready
 		this.emit('initialized')
+
+		// @zx81: Prepare the stack to trap the end of the program.
+		this.initTopOfStack();
 	}
 
 	/**
@@ -403,6 +417,12 @@ export class ZX81SimRemote extends DzrpRemote {
 			try {
 				// Run the Z80-CPU in a loop
 				while (this.passedTstates < leaveAtTstates) {
+					// @zx81 Special PC value when the program is finished
+					if(this.z80Cpu.pc == 0xFFFF) {
+						this.terminate();
+						break;
+					}
+
 					// Store current registers and opcode
 					const prevPc = this.z80Cpu.pc;
 					if (CpuHistory)
@@ -501,6 +521,13 @@ export class ZX81SimRemote extends DzrpRemote {
 						break;
 					}
 
+					// @zx81 Special PC value to detect when the program is finished
+					if(pc == 0xFFFF) {
+						longBreakAddress = Z80Registers.createLongAddress(prevPc, slots);;
+						breakNumber = BREAK_REASON_NUMBER.END_OF_PROGRAM;
+						breakReasonString = "End of program";
+						break;
+					}
 
 					// Check if given breakpoints are hit (64k address compare, not long addresses)
 					if (pc == bp1 || pc == bp2) {
