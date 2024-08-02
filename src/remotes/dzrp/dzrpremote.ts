@@ -1518,7 +1518,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	protected async loadBinP(filePath: string): Promise<void> {
 		// Load the content of the file
 		const objBuffer = fs.readFileSync(filePath);
-		// Write as memory dump. The start address is always 0x4009.
+		// Write as memory dump. The loading address is always 0x4009.
 		await this.sendDzrpCmdWriteMem(0x4009, objBuffer);
 	}
 
