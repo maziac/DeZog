@@ -17,16 +17,18 @@ export class Z80Cpu implements Serializable {
 	// Time for interrupt in T-States
 	protected INTERRUPT_TIME_AS_T_STATES: number;
 
-	// For calculation of the CPU load.
-	// Summarizes all instruction besides HALT.
-	protected cpuLoadTstates: number;
-	// Summarizes all instruction including HALT.
-	public cpuWithHaltTstates: number;
-	// cpuLoadTstates divided by cpuTotalTstates.
+	// Use for cpu load calculation:
+	// The number of passed t-states of the CPU.
+	// Includes HALT.
+	protected passedTstates: number;
+	// The t-states when the last interrupt occurred.
+	protected prevTstatesOnInterrupt: number;
+	// The t-states for all HALTs are accumulated until next interrupt.
+	protected haltTstates: number;
+	// The cpu load calculated by 1.0 - haltTstates/(intTstates-prevTstatesOnInterrupt)
 	public cpuLoad: number;
 	// The number of interrupts to calculate the average from.
 	protected cpuLoadRange: number;
-
 	// Counts the current number of interrupts.
 	protected cpuLoadRangeCounter: number;
 
@@ -50,18 +52,12 @@ export class Z80Cpu implements Serializable {
 	// undefined = no error
 	public error: string | undefined;
 
-	// A function that is called when a vertical interrupt is generated.
-	protected vertInterruptFunc: () => void;
-
 
 	/** Constructor.
 	 * @param memory The Z80 memory.
 	 * @param ports The Z80 ports.
-	 * @param vertInterruptFunc An optional function that is called on a vertical interrupt.
-	 * Can be used by the caller to sync the display.
 	 */
-	constructor(memory: SimulatedMemory, ports: Z80Ports, vertInterruptFunc = () => {}) {	// NOSONAR
-		this.vertInterruptFunc = vertInterruptFunc;
+	constructor(memory: SimulatedMemory, ports: Z80Ports) {
 		this.error = undefined;
 		this.memory = memory;
 		this.ports = ports;
@@ -74,12 +70,12 @@ export class Z80Cpu implements Serializable {
 		IM 2: Uses an interrupt vector table, indexed by value on data bus.
 		*/
 		this.extraTstatesPerInstruction = 0;
-		this.cpuLoadTstates = 0;
-		this.cpuWithHaltTstates = 0;
+		this.haltTstates = 0;
+		this.passedTstates = 0;
+		this.prevTstatesOnInterrupt = 0;
 		this.cpuLoad = 1.0;	// Start with full load
 		this.cpuLoadRangeCounter = 0;
 		this.cpuLoadRange = Settings.launch.zsim.cpuLoadInterruptRange;
-		this.vsyncInterrupt = Settings.launch.zsim.vsyncInterrupt;
 
 		// Initialize Z80, call constructor
 		const z80n_enabled = Settings.launch.zsim.Z80N;
@@ -125,47 +121,14 @@ export class Z80Cpu implements Serializable {
 
 		// Handle instruction
 		const tStates = z80.run_instruction() + this.extraTstatesPerInstruction;
-		let accumulatedTstates = tStates;
 
-		// Statistics
+		// For CPU load calculation
 		if (z80.halted) {
-			// HALT instruction
-			if (z80.interruptsEnabled && this.vsyncInterrupt) { // TODO: It would be better to calculate the "cpu load" in the ula screen and remove the vsync from Z80Cpu.
-				// HALT instructions are treated specially:
-				// If a HALT is found the t-states to the next interrupt are calculated.
-				// The t-states are added and the interrupt is executed immediately.
-				// So only one HALT is ever executed, skipping execution of the others
-				// saves processing time.
-				accumulatedTstates = this.remainingInterruptTstates;
-				this.remainingInterruptTstates = 0;
-			}
-			else {
-				// Simply count the HALT instruction, no optimization
-				this.cpuLoadTstates += tStates;
-			}
-		}
-		else {
-			// No HALT: Count everything besides the HALT instruction and add to cpu-load.
-			this.cpuLoadTstates += tStates;
+			// Count HALT instructions
+			this.haltTstates += tStates;
 		}
 
-		// Add t-states
-		this.cpuWithHaltTstates += accumulatedTstates;
-		// Interrupt
-		this.remainingInterruptTstates -= tStates;
-		if (this.remainingInterruptTstates <= 0) {
-			// Interrupt
-			this.remainingInterruptTstates = this.INTERRUPT_TIME_AS_T_STATES;
-			// Really generate interrupt?
-			if (this.vsyncInterrupt) {
-				// Inform e.g. ZSimulationView about interrupt, for synching of the display
-				this.vertInterruptFunc();
-				// And generate
-				this.generateInterrupt(false, 0);
-			}
-		}
-
-		return accumulatedTstates;
+		return tStates;
 	}
 
 
@@ -342,12 +305,12 @@ export class Z80Cpu implements Serializable {
 		// Measure CPU load
 		this.cpuLoadRangeCounter++;
 		if (this.cpuLoadRangeCounter >= this.cpuLoadRange) {
-			if (this.cpuWithHaltTstates > 0) {
-				this.cpuLoad = this.cpuLoadTstates / this.cpuWithHaltTstates;
-				this.cpuLoadTstates = 0;
-				this.cpuWithHaltTstates = 0;
-				this.cpuLoadRangeCounter = 0;
-			}
+			const intTstatesDiff = this.passedTstates - this.prevTstatesOnInterrupt;
+			this.cpuLoad = (intTstatesDiff === 0) ? 0 : this.haltTstates / intTstatesDiff;
+			// Next
+			this.haltTstates = 0;
+			this.prevTstatesOnInterrupt = this.passedTstates;
+			this.cpuLoadRangeCounter = 0;
 		}
 	}
 
@@ -541,6 +504,12 @@ export class Z80Cpu implements Serializable {
 
 		// Additional state
 		memBuffer.writeNumber(this.remainingInterruptTstates);
+
+		// Write values for cpu load
+		memBuffer.writeNumber(this.passedTstates);
+		memBuffer.writeNumber(this.prevTstatesOnInterrupt);
+		memBuffer.writeNumber(this.haltTstates);
+		memBuffer.writeNumber(this.cpuLoad);
 	}
 
 
@@ -599,9 +568,10 @@ export class Z80Cpu implements Serializable {
 		// Additional state
 		this.remainingInterruptTstates = memBuffer.readNumber();
 
-		// Reset statistics
-		this.cpuLoadTstates = 0;
-		this.cpuWithHaltTstates = 0;
-		this.cpuLoad = 1.0;	// Start with full load
+		// Read values for cpu load
+		this.passedTstates = memBuffer.readNumber();
+		this.prevTstatesOnInterrupt = memBuffer.readNumber();
+		this.haltTstates = memBuffer.readNumber();
+		this.cpuLoad = memBuffer.readNumber();
 	}
 }

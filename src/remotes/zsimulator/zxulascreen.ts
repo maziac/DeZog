@@ -9,6 +9,13 @@ import {Z80Ports} from "./z80ports";
  * Holds the bank used for the ULA screen and does the bank switching.
  */
 export class ZxUlaScreen implements Serializable {
+	// The vsync time of the ULA.
+	protected static VSYNC_TIME = 0.020;	// 20ms
+
+	// The vsync time window of the ULA. If missed, the interrupt
+	// function will not be called.
+	protected static VSYNC_TIME_WINDOW = 30 / 3500000;	// 20ms
+
 	// The bank used to show. ZX16K/48K bank 1. Others: (i.e. ZX128K) bank 5 or 7.
 	public currentUlaBank: number;
 
@@ -18,11 +25,22 @@ export class ZxUlaScreen implements Serializable {
 	// The "shadow" ula bank (e.g. bank 7)
 	protected shadowUlaBank: number;
 
+	// The time since the last vertical interrupt.
+	protected time: number;
 
-	/**
-	 * Constructor.
+	// A function that is called when the vertical interrupt is generated.
+	protected vertInterruptFunc: () => void;
+
+
+	/** Constructor.
+	 * @param memory The Z80 memory.
+	 * @param ports The Z80 ports.
+	 * @param vertInterruptFunc An optional function that is called on a vertical interrupt.
+	 * Can be used by the caller to sync the display.
 	 */
-	constructor(memoryModel: MemoryModel, ports: Z80Ports) {
+	constructor(memoryModel: MemoryModel, ports: Z80Ports, vertInterruptFunc = () => {}) {
+		this.time = 0;
+		this.vertInterruptFunc = vertInterruptFunc;
 		// Set ULA bank(s) depending on available banks
 		const bankCount = memoryModel.banks.length;
 		if (bankCount > 7) {
@@ -50,8 +68,7 @@ export class ZxUlaScreen implements Serializable {
 	}
 
 
-	/**
-	 * Switches the ula screen.
+	/** Switches the ula screen.
 	 * Note: Switching the bank is done already by the SimulatedMemory.
 	 * See https://www.worldofspectrum.org/faq/reference/128kreference.htm
 	 * @param port The written port.
@@ -67,6 +84,22 @@ export class ZxUlaScreen implements Serializable {
 			// bit 3: Select normal(0) or shadow(1) screen to be displayed.
 			const useShadowBank = ((value & 0b01000) != 0);
 			this.currentUlaBank = (useShadowBank) ? this.shadowUlaBank : this.normalUlaBank;
+		}
+	}
+
+
+	/** The ULA screen calls the vertInterruptFunc whenever
+	 * 20ms have passed.
+	 * @param addTime The passed time in ms since last call.
+	 */
+	public passedTime(addTime: number) {
+		this.time += addTime;
+		// Check for vertical interrupt
+		if (this.time >= ZxUlaScreen.VSYNC_TIME) {
+			this.time %= ZxUlaScreen.VSYNC_TIME;
+			// Check if within the time window
+			if(this.time <= ZxUlaScreen.VSYNC_TIME_WINDOW)
+				this.vertInterruptFunc();
 		}
 	}
 

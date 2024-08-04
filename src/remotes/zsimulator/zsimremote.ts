@@ -66,7 +66,7 @@ export class ZSimRemote extends DzrpRemote {
 	public customCode: CustomCode;
 
 	// The number of passed t-states. Starts at 0 and is never reset.
-	// Is increased with every executed instruction.
+	// Is increased with every executed instruction or by DMA.
 	protected passedTstates: number;
 
 	// Used to calculate the passed instruction time.
@@ -370,14 +370,17 @@ export class ZSimRemote extends DzrpRemote {
 		// Check if ULA screen is enabled
 		const zxUlaScreenEnabled = zsim.ulaScreen;
 		if (zxUlaScreenEnabled) {
-			this.zxUlaScreen = new ZxUlaScreen(this.memoryModel, this.ports);
+			this.zxUlaScreen = new ZxUlaScreen(this.memoryModel, this.ports, () => {
+				// Notify
+				this.emit('vertSync');
+				// And generate interrupt
+				this.z80Cpu.generateInterrupt(false, 0);
+			});
 			this.serializeObjects.push(this.zxUlaScreen);
 		}
 
 		// Create a Z80 CPU to emulate Z80 behavior
-		this.z80Cpu = new Z80Cpu(this.memory, this.ports, () => {
-			this.emit('vertSync');
-		});
+		this.z80Cpu = new Z80Cpu(this.memory, this.ports);
 		this.serializeObjects.push(this.z80Cpu);
 
 		// If tbblue write or read handler are used, then
@@ -616,15 +619,18 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected execute(): number {
 		let tStates = 0;
+		const cpuFreq = this.z80Cpu.cpuFreq;
 		// Execute the DMA function
 		if (this.zxnDMA)
-			tStates = this.zxnDMA.execute(this.z80Cpu.cpuFreq, this.passedTstates);
+			tStates = this.zxnDMA.execute(cpuFreq, this.passedTstates);
 		// If DMA does not occupy the bus, run CPU
 		if (tStates === 0)
 			tStates = this.z80Cpu.execute();
 		// Check for interrupt
 		if (this.zxUlaScreen) {
-		//	this.zxUlaScreen.checkInterrupt(this.passedTstates);
+			//	this.zxUlaScreen.checkInterrupt(this.passedTstates);
+			const passedTime = tStates / cpuFreq;
+			this.zxUlaScreen.passedTime(passedTime);
 		}
 		return tStates;
 	}
