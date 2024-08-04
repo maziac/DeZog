@@ -94,10 +94,6 @@ export class ZSimRemote extends DzrpRemote {
 	// b00 = 3.5MHz, b01 = 7MHz, b10 = 14MHz, b11 = 28MHz.
 	protected tbblueCpuSpeed: number;
 
-	// Called to execute an instruction. May point directly to the
-	// Z80Cpu.execute() or to the DMA.
-	protected executeInstruction: () => number;
-
 	// The zxnDMA object. Or undefined if not used.
 	public zxnDMA: ZxnDma;
 
@@ -403,15 +399,6 @@ export class ZSimRemote extends DzrpRemote {
 			// Create the zxnDMA object
 			this.zxnDMA = new ZxnDma(this.memory, this.ports);
 			this.serializeObjects.push(this.zxnDMA);
-			// Bind the DMA execution function
-			this.executeInstruction = () => {
-				// Execute the DMA function
-				let tStates = this.zxnDMA.execute(this.z80Cpu.cpuFreq, this.passedTstates);
-				// If DMA does not occupy the bus, run CPU
-				if(tStates === 0)
-					tStates = this.z80Cpu.execute();
-				return tStates;
-			}
 			// Create the read/write port
 			// Register out port $xx6B
 			this.ports.registerGenericOutPortFunction((port: number, value: number) => {
@@ -426,11 +413,6 @@ export class ZSimRemote extends DzrpRemote {
 				return this.zxnDMA.readPort();
 			});
 		}
-		else {
-			// Bind directly the Z80 execution function
-			this.executeInstruction = this.z80Cpu.execute.bind(this.z80Cpu);
-		}
-
 
 		// Initialize custom code e.g. for ports.
 		// But the customCode is not yet executed. (Because of unit tests).
@@ -607,8 +589,7 @@ export class ZSimRemote extends DzrpRemote {
 	}
 
 
-	/**
-	 * Stores the current registers, opcode and sp contents
+	/** Stores the current registers, opcode and sp contents
 	 * in the cpu history.
 	 * Called on every executed instruction.
 	 * @param pc The pc for the line. Is only used to compare with previous storage.
@@ -628,8 +609,28 @@ export class ZSimRemote extends DzrpRemote {
 	}
 
 
-	/**
-	 * Runs the cpu in time chunks in order to give time to other
+	/** Executes the next thing to happen.
+	 * This is normally a CPU instruction.
+	 * But it could also be a DMA operation.
+	 * Also the ula interrupt is handled here.
+	 */
+	protected execute(): number {
+		let tStates = 0;
+		// Execute the DMA function
+		if (this.zxnDMA)
+			tStates = this.zxnDMA.execute(this.z80Cpu.cpuFreq, this.passedTstates);
+		// If DMA does not occupy the bus, run CPU
+		if (tStates === 0)
+			tStates = this.z80Cpu.execute();
+		// Check for interrupt
+		if (this.zxUlaScreen) {
+		//	this.zxUlaScreen.checkInterrupt(this.passedTstates);
+		}
+		return tStates;
+	}
+
+
+	/** Runs the cpu in time chunks in order to give time to other
 	 * processes. E.g. to receive a pause command.
 	 * @param bp1 Breakpoint 1 address or -1 if not used.
 	 * @param bp2 Breakpoint 2 address or -1 if not used.
@@ -668,7 +669,7 @@ export class ZSimRemote extends DzrpRemote {
 					}
 
 					// Execute one instruction
-					const tStates = this.executeInstruction();
+					const tStates = this.execute();
 
 					// For custom code: Increase passed t-states
 					this.passedTstates += tStates;

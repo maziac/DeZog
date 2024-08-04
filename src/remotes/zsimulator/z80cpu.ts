@@ -130,7 +130,7 @@ export class Z80Cpu implements Serializable {
 		// Statistics
 		if (z80.halted) {
 			// HALT instruction
-			if (z80.interruptsEnabled && this.vsyncInterrupt) {
+			if (z80.interruptsEnabled && this.vsyncInterrupt) { // TODO: It would be better to calculate the "cpu load" in the ula screen and remove the vsync from Z80Cpu.
 				// HALT instructions are treated specially:
 				// If a HALT is found the t-states to the next interrupt are calculated.
 				// The t-states are added and the interrupt is executed immediately.
