@@ -269,67 +269,6 @@ export interface ZSimType {
 }
 
 
-/// Definitions for the 'zx81sim' remote type.
-export interface ZX81SimType {
-	// If enabled the simulator shows a keyboard to simulate keypresses.
-	zxKeyboard: boolean,
-
-	// If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.
-	visualMemory: boolean,
-
-	// If enabled it shows the contents of the ZX Spectrum screen.
-	ulaScreen: boolean,
-
-	// The displayed border width in pixels. No border if 0. Works only in conjunction with ulaScreen.
-	zxBorderWidth: number,
-
-	// Memory model: ZX16k, ZX48k, ZX128K or ZXNext.
-	// - "RAM": One memory area of 64K RAM, no banks.
-	// - "ZX81-1K": ROM and RAM as of the ZX81 1K.
-	// - "ZX81-2K": ROM and RAM as of the Timex Sinclair TS1000.
-	// - "ZX81-16K": ROM and RAM as of the ZX81 + 16K RAM Pack or the Timex Sinclair TS1500.
-	// - "ZX81-32k": ROM and RAM as of the ZX81 + 32K RAM Pack.
-	// - "ZX81-48k": ROM and RAM as of the ZX81 + 48K RAM Pack.
-	// - "ZX81-56K": ROM and RAM as of the ZX81 + 56K RAM Pack.
-	// - "customMemory": The user can define an own memory model, see customMemory.
-	memoryModel: string,
-
-	/** A user defined memory.
-	 * "customMemory": {
-	 *	"numberOfBanks": 4,
-	 *		"banks": {
-	 *			"0": "ROM",
-	 *			"1": "RAM"
-	 *		}
-	 *	},
-	 */
-	customMemory: CustomMemoryType,
-
-	// The number of interrupts to calculate the average from. 0 to disable.
-	cpuLoadInterruptRange: number,
-
-	// If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
-	vsyncInterrupt: boolean,
-
-	// The CPU frequency is only used for output. I.e. when the t-states are printed
-	// there is also a printout of the correspondent time. This is calculated via the CPU frequency here.
-	cpuFrequency: number,
-
-	// If enabled the simulated CPU performance is throttled to fit the given CPU frequency.
-	// Is enabled by default.If disabled the CPU will be simulated as fast as possible.
-	limitSpeed: boolean;
-
-	// The update frequency of the simulator view in Hz.
-	updateFrequency: number,
-
-	// Default value that is returned for the ports (if no "HW" is configured).
-	// Usually 0xFF.
-	defaultPortIn: number;
-
-	// Settings to execute custom javascript code inside the zsim simulator.
-	customCode: CustomCodeType;
-}
-
 /**
  * The settings for the disassembler in the VARIABLEs pane.
  */
@@ -352,7 +291,7 @@ export interface SmartDisassemblerArgs {
  */
 export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments {
 	/// The remote type: zesarux or zxnext.
-	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'zx81sim' | 'mame';
+	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame';
 
 	// The special settings for zrcp (ZEsarux).
 	zrcp: ZrcpType;
@@ -365,9 +304,6 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	// The special settings for the internal Z80 simulator.
 	zsim: ZSimType;
-
-	// The special settings for the internal ZX81 simulator.
-	zx81sim: ZX81SimType;
 
 	// The special settings for the serial connection.
 	zxnext: ZxNextSerialType;
@@ -483,7 +419,6 @@ export class Settings {
 				cspect: <any>undefined,
 				mame: <any>undefined,
 				zsim: <any>undefined,
-				zx81sim: <any>undefined,
 				zxnext: <any>undefined,
 				unitTests: <any>undefined,
 				rootFolder: <any>undefined,
@@ -647,90 +582,6 @@ export class Settings {
 			}
 			// Slots
 			for (const slotRange of custMem.slots) {
-				// Convert slot ranges from hex-string to number
-				const len = slotRange.range.length;
-				for (let i = 0; i < len; i++) {
-					// Convert hex into number
-					slotRange.range[i] = Utility.convertHexNumber(slotRange.range[i])!;
-				}
-				// Banks
-				for (const bank of slotRange.banks) {
-					// Create abs paths
-					if (bank.rom != undefined) {
-						if (typeof bank.rom == 'string') {
-							const path = UnifiedPath.getUnifiedPath(bank.rom);
-							bank.rom = Utility.getAbsFilePath(path, rootFolder);
-						}
-					}
-					// Convert rom offset from hex-string to number
-					bank.romOffset = Utility.convertHexNumber(bank.romOffset);
-				}
-			}
-		}
-
-		// zx81sim
-		if (!launchCfg.zx81sim)
-			launchCfg.zx81sim = {} as ZSimType;
-		if (launchCfg.zx81sim.zxKeyboard == undefined)
-			launchCfg.zx81sim.zxKeyboard = false;
-		if (launchCfg.zx81sim.ulaScreen == undefined)
-			launchCfg.zx81sim.ulaScreen = false;
-		if (launchCfg.zx81sim.zxBorderWidth == undefined || !launchCfg.zx81sim.ulaScreen)
-			launchCfg.zx81sim.zxBorderWidth = 0;
-		if (launchCfg.zx81sim.cpuLoadInterruptRange == undefined)
-			launchCfg.zx81sim.cpuLoadInterruptRange = 1;
-		if (launchCfg.zx81sim.visualMemory == undefined)
-			launchCfg.zx81sim.visualMemory = true;
-		if (launchCfg.zx81sim.memoryModel == undefined)
-			launchCfg.zx81sim.memoryModel = "RAM";
-		launchCfg.zx81sim.memoryModel = launchCfg.zx81sim.memoryModel.toUpperCase();
-		if (launchCfg.zx81sim.vsyncInterrupt == undefined)
-			launchCfg.zx81sim.vsyncInterrupt = false;
-		if (launchCfg.zx81sim.cpuFrequency == undefined)
-			launchCfg.zx81sim.cpuFrequency = 3250000.0;	// 3250000.0 for 3.25MHz.
-		if (launchCfg.zx81sim.limitSpeed == undefined)
-			launchCfg.zx81sim.limitSpeed = true;
-		if (launchCfg.zx81sim.updateFrequency == undefined)
-			launchCfg.zx81sim.updateFrequency = 10.0;
-		if (launchCfg.zx81sim.defaultPortIn == undefined)
-			launchCfg.zx81sim.defaultPortIn = 0xFF;
-
-		// Check update frequency ranges
-		if (launchCfg.zx81sim.updateFrequency < 5.0)
-			launchCfg.zx81sim.updateFrequency = 5.0;	// 5 Hz
-		else if (launchCfg.zx81sim.updateFrequency > 100.0)
-			launchCfg.zx81sim.updateFrequency = 100.0;	// 100 Hz
-
-
-		// zx81sim custom code
-		if (launchCfg.zx81sim.customCode == undefined) {
-			launchCfg.zx81sim.customCode = {} as any;
-		}
-		if (launchCfg.zx81sim.customCode.debug == undefined)
-			launchCfg.zx81sim.customCode.debug = false;
-		if (launchCfg.zx81sim.customCode.jsPath != undefined) {
-			const path = UnifiedPath.getUnifiedPath(launchCfg.zx81sim.customCode.jsPath);
-			launchCfg.zx81sim.customCode.jsPath = Utility.getAbsFilePath(path, rootFolder);
-		}
-		if (launchCfg.zx81sim.customCode.uiPath != undefined) {
-			const path = UnifiedPath.getUnifiedPath(launchCfg.zx81sim.customCode.uiPath);
-			launchCfg.zx81sim.customCode.uiPath = Utility.getAbsFilePath(path, rootFolder);
-		}
-		if (launchCfg.zx81sim.customCode.timeStep == undefined) {
-			// In fact: never call tick()
-			launchCfg.zx81sim.customCode.timeStep = Number.MAX_SAFE_INTEGER;
-		}
-
-		// zx81sim custom memory
-		const custZX81Mem = launchCfg.zx81sim.customMemory;
-		if (custZX81Mem != undefined) {
-			// io MMU concatenate
-			if (custZX81Mem.ioMmu != undefined) {
-				if (typeof custZX81Mem.ioMmu != "string")
-					custZX81Mem.ioMmu = custZX81Mem.ioMmu.join("\n");
-			}
-			// Slots
-			for (const slotRange of custZX81Mem.slots) {
 				// Convert slot ranges from hex-string to number
 				const len = slotRange.range.length;
 				for (let i = 0; i < len; i++) {
@@ -1065,7 +916,7 @@ export class Settings {
 
 		// Check remote type
 		const rType = Settings.launch.remoteType;
-		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'zx81sim', 'mame'];
+		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("'remoteType': Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
@@ -1100,13 +951,6 @@ export class Settings {
 		// Check if customMemory is defined if it was chosen.
 		if (Settings.launch.zsim.memoryModel == 'CUSTOM') {
 			const customMemory = Settings.launch.zsim.customMemory;
-			if (customMemory == undefined)
-				throw Error("If 'memoryModel' is set to 'CUSTOM', you need to define 'customMemory'.");
-		}
-
-		// Check if customMemory is defined if it was chosen.
-		if (Settings.launch.zx81sim.memoryModel == 'CUSTOM') {
-			const customMemory = Settings.launch.zx81sim.customMemory;
 			if (customMemory == undefined)
 				throw Error("If 'memoryModel' is set to 'CUSTOM', you need to define 'customMemory'.");
 		}

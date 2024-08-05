@@ -25,7 +25,7 @@ import {StepHistoryClass} from './remotes/stephistory';
 import {Z80RegisterHoverFormat, Z80Registers, Z80RegistersClass} from './remotes/z80registers';
 import {ZSimRemote} from './remotes/zsimulator/zsimremote';
 import {ZSimulationView} from './remotes/zsimulator/zsimulationview';
-import {ZX81SimulationView} from './remotes/zx81simulator/zx81simulationview';
+import {ZX81SimulationView} from './remotes/zsimulator/zx81simulationview';
 import {Settings, SettingsParameters} from './settings/settings';
 import {DisassemblyVar, ImmediateMemoryValue, MemDumpVar, MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, ShallowVar, StackVar, StructVar} from './variables/shallowvar';
 import {BaseView} from './views/baseview';
@@ -39,7 +39,6 @@ import {RenderFlowChart} from './disassembler/renderflowchart';
 import {RenderHtml} from './disassembler/renderhtml';
 import {ExceptionBreakpoints} from './exceptionbreakpoints';
 import {MemoryCommands} from './commands/memorycommands';
-import { ZX81SimRemote } from './remotes/zx81simulator/zx81simremote';
 
 
 
@@ -758,27 +757,20 @@ export class DebugSessionClass extends DebugSession {
 								// Note: it was done this way and not in the Remote itself, otherwise
 								// there would be a dependency in RemoteFactory to vscode which in turn
 								// makes problems for the unit tests.
-								// Adds a window that displays the ZX screen.
-								const zsimView = new ZSimulationView(zsim);
-								await zsimView.waitOnInitView();
-							}
 
-							// Special handling for custom code
-							if (Remote instanceof ZX81SimRemote) {
-								// Start custom code (if not unit test)
-								const zsim = Remote;
-								if (this.state === DbgAdapterState.NORMAL) {
-									// Special handling for zsim: Re-init custom code.
-									zsim.customCode?.execute();
+								switch(zsim.kind) {
+									case 'zxspectrum':
+										// Adds a window that displays the ZX screen.
+										const zsimView = new ZSimulationView(zsim);
+										await zsimView.waitOnInitView();
+										break;
+
+									case 'zx81':
+										// Adds a window that displays the ZX81 screen.
+										const zx81simView = new ZX81SimulationView(zsim);
+										await zx81simView.waitOnInitView();
+										break;
 								}
-
-								// At the end, if remote type === ZX simulator, open its window.
-								// Note: it was done this way and not in the Remote itself, otherwise
-								// there would be a dependency in RemoteFactory to vscode which in turn
-								// makes problems for the unit tests.
-								// Adds a window that displays the ZX screen.
-								const zsimView = new ZX81SimulationView(zsim);
-								await zsimView.waitOnInitView();
 							}
 						}
 						catch (e) {

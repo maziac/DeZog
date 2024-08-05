@@ -1,6 +1,7 @@
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
 import {MemoryModelAllRam, MemoryModelColecoVision, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextBase} from '../remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelZX81_1k, MemoryModelZX81_2k, MemoryModelZX81_16k, MemoryModelZX81_32k, MemoryModelZX81_48k, MemoryModelZX81_56k} from '../remotes/MemoryModel/zx81predefinedmemorymodels';
 import {AsmConfigBase, SjasmplusConfig} from '../settings/settings';
 import {LabelParserBase} from './labelparserbase';
 import {SourceFileEntry} from './labels';
@@ -458,6 +459,24 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			// Just 1 bank
 			this.funcConvertBank = (address: number, bank: number) => {
 				return 0;
+			};
+			return;
+		}
+
+		// Chek for ZX81 modes, sjasmplus NOSLOT64K
+		if(srcMemModel == SjasmplusMemoryModel.NOSLOT64K && (
+			destMemModel instanceof MemoryModelZX81_1k || 
+			destMemModel instanceof MemoryModelZX81_2k || 
+			destMemModel instanceof MemoryModelZX81_16k || 
+			destMemModel instanceof MemoryModelZX81_32k || 
+			destMemModel instanceof MemoryModelZX81_48k || 
+			destMemModel instanceof MemoryModelZX81_56k
+		)) {
+			this.funcConvertBank = (address: number /*, bank: number*/) => {
+				// Get slot
+				const slot = destMemModel.slotAddress64kAssociation[address];
+				const bank = destMemModel.initialSlots[slot];
+				return bank;
 			};
 			return;
 		}

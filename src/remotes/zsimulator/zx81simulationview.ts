@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import {BaseView} from '../../views/baseview';
-import {ZX81SimRemote} from './zx81simremote';
+import {ZSimRemote} from './zsimremote';
 import {Settings} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {LogZsimCustomCode} from '../../log';
@@ -28,7 +28,7 @@ export class ZX81SimulationView extends BaseView {
 	protected simulatedPorts: Map<number, number>;	// Port <-> value
 
 	// A pointer to the simulator.
-	protected simulator: ZX81SimRemote;
+	protected simulator: ZSimRemote;
 
 	// Taken from Settings. Path to the extra javascript code.
 	protected customUiPath: string;
@@ -71,14 +71,14 @@ export class ZX81SimulationView extends BaseView {
 	 * Creates the basic view.
 	 * @param memory The memory of the CPU.
 	 */
-	constructor(simulator: ZX81SimRemote) {
+	constructor(simulator: ZSimRemote) {
 		super(false);
 		// Init
 		this.simulator = simulator;
 		this.countOfOutstandingMessages = 0;
-		this.displayTime = 1000 / Settings.launch.zx81sim.updateFrequency;
+		this.displayTime = 1000 / Settings.launch.zsim.updateFrequency;
 		this.displayTimer = undefined as any;
-		this.displayTime = 1000 / Settings.launch.zx81sim.updateFrequency;
+		this.displayTime = 1000 / Settings.launch.zsim.updateFrequency;
 		this.displayTimer = undefined as any;
 		this.stopTime = 2 * this.displayTime;
 		if (this.stopTime < 500)
@@ -88,7 +88,7 @@ export class ZX81SimulationView extends BaseView {
 
 		// ZX Keyboard?
 		this.simulatedPorts = new Map<number, number>();
-		if (Settings.launch.zx81sim.zxKeyboard) {
+		if (Settings.launch.zsim.zxKeyboard) {
 			// Prepare all used ports
 			this.simulatedPorts.set(0xFEFE, 0xFF);
 			this.simulatedPorts.set(0xFDFE, 0xFF);
@@ -110,10 +110,10 @@ export class ZX81SimulationView extends BaseView {
 
 		// Add title
 		Utility.assert(this.vscodePanel);
-		this.vscodePanel.title = 'ZX81 Simulator - ' + Settings.launch.zx81sim.memoryModel;
+		this.vscodePanel.title = 'ZX81 Simulator - ' + Settings.launch.zsim.memoryModel;
 
 		// Read path for additional javascript code
-		this.customUiPath = Settings.launch.zx81sim.customCode.uiPath;
+		this.customUiPath = Settings.launch.zsim.customCode.uiPath;
 	}
 
 
@@ -298,7 +298,7 @@ export class ZX81SimulationView extends BaseView {
 				// Clear any diagnostics
 				DiagnosticsHandler.clear();
 				// Reload the custom code
-				const jsPath = Settings.launch.zx81sim.customCode?.jsPath;
+				const jsPath = Settings.launch.zsim.customCode?.jsPath;
 				if (jsPath) {
 					// Can throw an error
 					this.simulator.customCode.load(jsPath);
@@ -539,20 +539,20 @@ export class ZX81SimulationView extends BaseView {
 			}
 
 			// Update cpuload
-			if (Settings.launch.zx81sim.cpuLoadInterruptRange > 0)
+			if (Settings.launch.zsim.cpuLoadInterruptRange > 0)
 				cpuLoad = (this.simulator.z80Cpu.cpuLoad * 100).toFixed(0).toString();
 
 			// Visual Memory
-			if (Settings.launch.zx81sim.visualMemory) {
+			if (Settings.launch.zsim.visualMemory) {
 				slots = this.simulator.getSlots();
 				const banks = this.simulator.memoryModel.getMemoryBanks(slots);
 				slotNames = banks.map(bank => bank.name);
 				visualMem = this.simulator.memory.getVisualMemory();
 			}
 
-			if (Settings.launch.zx81sim.ulaScreen) {
-				romChars = await this.simulator.getRomCharacters();
-				dfile = await this.simulator.getDFile();
+			if (Settings.launch.zsim.ulaScreen) {
+				romChars = await this.simulator.getZX81RomCharacters();
+				dfile = await this.simulator.getZX81DFile();
 			}
 
 			// Create message to update the webview
@@ -625,18 +625,20 @@ export class ZX81SimulationView extends BaseView {
 			}
 			.display {
 			image-rendering: pixelated;
+			border:${Settings.launch.zsim.zxBorderWidth}px solid white;
+			outline: 1px solid var(--vscode-foreground);
 			width: 95%;
 			max-width: 800px;
 			}
 			</style>
 
-			<script src="out/remotes/zx81simulator/zx81simwebview/main.js"></script>
+			<script src="out/remotes/zsimulator/zx81simwebview/main.js"></script>
 
 			<body>
 			`;
 
 		// Setup the body
-		const zsim = Settings.launch.zx81sim;
+		const zsim = Settings.launch.zsim;
 		const visualMemoryZxScreen = zsim.memoryModel.includes("ZX");
 		let jsCustomCode = '';
 		if (this.customUiPath) {

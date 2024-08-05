@@ -9,7 +9,7 @@ export class ZX81UlaScreen {
 	public static SCREEN_WIDTH = 256;
 
 	/**
-	 * Draws a ZX Spectrum ULA screen into the given canvas.
+	 * Draws a ZX81 ULA screen into the given canvas.
 	 * @param ctx The canvas 2d context to draw to.
 	 * @param imgData A reusable array to create the pixel data in.
 	 * @param dfile The DFILE data.
