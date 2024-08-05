@@ -1,6 +1,9 @@
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
-import {MemoryModelAllRam, MemoryModelColecoVision, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextBase} from '../remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelUnknown} from '../remotes/MemoryModel/genericmemorymodels';
+import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../remotes/MemoryModel/zxspectrummemorymodels';
+import {MemoryModelZxNextBase} from '../remotes/MemoryModel/zxnextmemorymodels';
+import {MemoryModelColecoVision} from '../remotes/MemoryModel/colecovisionmemorymodels';
 import {AsmConfigBase, SjasmplusConfig} from '../settings/settings';
 import {LabelParserBase} from './labelparserbase';
 import {SourceFileEntry} from './labels';

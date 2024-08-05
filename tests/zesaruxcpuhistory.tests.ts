@@ -12,7 +12,8 @@ import {CallStackFrame} from '../src/callstackframe';
 import {RemoteFactory} from '../src/remotes/remotefactory';
 import {CpuHistory} from '../src/remotes/cpuhistory';
 import {Labels} from '../src/labels/labels';
-import {MemoryModelUnknown, MemoryModelZx48k} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelUnknown} from '../src/remotes/MemoryModel/genericmemorymodels';
+import {MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
 
 
 

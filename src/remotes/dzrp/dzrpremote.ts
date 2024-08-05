@@ -14,7 +14,8 @@ import {TimeWait} from '../../misc/timewait';
 import {Log} from '../../log';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {PromiseCallbacks} from '../../misc/promisecallbacks';
-import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextOneROM} from '../MemoryModel/predefinedmemorymodels';
+import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../MemoryModel/zxspectrummemorymodels';
+import {MemoryModelZxNextOneROM} from '../MemoryModel/zxnextmemorymodels';
 import {DzrpTransportTest} from './dzrptransporttest';
 
 

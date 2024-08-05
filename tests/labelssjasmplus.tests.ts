@@ -6,8 +6,10 @@ import * as os from 'os';
 import * as path from 'path';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {SjasmplusMemoryModel, SjasmplusSldLabelParser} from '../src/labels/sjasmplussldlabelparser';
-import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/predefinedmemorymodels';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
+import {MemoryModelAllRam, MemoryModelUnknown} from '../src/remotes/MemoryModel/genericmemorymodels';
+import {MemoryModelZx128k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
+import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 
 
 suite('Labels (sjasmplus)', () => {

@@ -114,6 +114,11 @@ export class MemoryModel {
 	// Also only required for the zsim memory.
 	public ioMmu: string;
 
+	// Default value of the top of the stack. Used to limit the call stack.
+	/// 64k address.
+	// TODO: handle differently
+	public defaultTopOfStack = 0x10000; // @zx81 0x8000 for ZX81
+
 
 	/**
 	 * Constructor.
@@ -124,12 +129,10 @@ export class MemoryModel {
 		// Create one string out of ioMmu.
 		if (cfg.ioMmu == undefined)
 			this.ioMmu = '';
-		else {
-			if (typeof cfg.ioMmu == "string")
-				this.ioMmu = cfg.ioMmu;
-			else
-				this.ioMmu = cfg.ioMmu.join('\n');
-		}
+		else if (typeof cfg.ioMmu == "string")
+			this.ioMmu = cfg.ioMmu;
+		else
+			this.ioMmu = cfg.ioMmu.join('\n');
 		// Parse the config
 		for (const custMemSlot of cfg.slots) {
 			// Check if block needs to be inserted
@@ -179,10 +182,9 @@ export class MemoryModel {
 				// Use first bank
 				[initialBank] = slotBanks;
 			}
-			else {
-				// Check if given bank is available
-				if (!slotBanks.has(initialBank))
-					throw Error("'initialBank=" + initialBank + "' does not exist in slot.");
+			// Check if given bank is available
+			else if (!slotBanks.has(initialBank)) {
+				throw Error("'initialBank=" + initialBank + "' does not exist in slot.");
 			}
 
 			// Initialize slot with bank

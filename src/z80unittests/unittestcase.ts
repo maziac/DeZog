@@ -5,7 +5,7 @@ import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
 import * as path from 'path';
 import {FileWatcher} from '../misc/filewatcher';
-import {MemoryModelUnknown} from '../remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelUnknown} from '../remotes/MemoryModel/genericmemorymodels';
 
 
 /**
@@ -250,7 +250,7 @@ export class RootTestSuite extends UnitTestSuite {
 			// The test id is at the same time the file name (if test item is a file)
 			const filePath = Utility.getLaunchJsonPath(wsFolder);
 			const fileWatcher = new FileWatcher(filePath);
-			this.wsFwMap.set(wsFolder, fileWatcher)!;
+			this.wsFwMap.set(wsFolder, fileWatcher);
 			let wsSuite: UnitTestSuiteLaunchJson;
 
 			fileWatcher.onDidCreate(() => {

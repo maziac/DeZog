@@ -5,7 +5,9 @@ import {UnifiedPath} from '../misc/unifiedpath';
 import {SourceFileEntry, ListFileLine} from './labels';
 import minimatch from 'minimatch';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
-import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx48k, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelUnknown} from '../remotes/MemoryModel/genericmemorymodels';
+import {MemoryModelZx128k, MemoryModelZx48k} from '../remotes/MemoryModel/zxspectrummemorymodels';
+import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../remotes/MemoryModel/zxnextmemorymodels';
 
 
 

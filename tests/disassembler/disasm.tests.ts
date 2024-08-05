@@ -4,7 +4,7 @@ import {Format} from '../../src/disassembler/core/format';
 import {AsmNode} from '../../src/disassembler/core/asmnode';
 import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
 import {Utility} from '../../src/misc/utility';
-import {MemoryModelAllRam} from '../../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam} from '../../src/remotes/MemoryModel/genericmemorymodels';
 import {Settings} from '../../src/settings/settings';
 import {Z80Registers, Z80RegistersClass} from '../../src/remotes/z80registers';
 import {Z80RegistersStandardDecoder} from '../../src/remotes/z80registersstandarddecoder';

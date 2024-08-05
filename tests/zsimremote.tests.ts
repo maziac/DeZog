@@ -3,7 +3,7 @@ import {ZSimRemote} from '../src/remotes/zsimulator/zsimremote';
 import {Settings} from '../src/settings/settings';
 import {Utility} from '../src/misc/utility';
 import {Z80RegistersClass} from '../src/remotes/z80registers';
-import {MemoryModelColecoVision} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelColecoVision} from '../src/remotes/MemoryModel/colecovisionmemorymodels';
 
 
 

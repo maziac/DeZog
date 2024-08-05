@@ -8,8 +8,12 @@ import {ZesaruxCpuHistory, DecodeZesaruxHistoryInfo} from './zesaruxcpuhistory';
 import {Z80RegistersClass, Z80Registers} from '../z80registers';
 import {DecodeZesaruxRegisters, DecodeZesaruxRegistersColecovision, DecodeZesaruxRegistersZx128k, DecodeZesaruxRegistersZx16k, DecodeZesaruxRegistersZx48k, DecodeZesaruxRegistersZxNext} from './decodezesaruxdata';
 import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
-import {PromiseCallbacks} from '../../misc/promisecallbacks';import {MemoryModelColecoVision, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextTwoRom} from '../MemoryModel/predefinedmemorymodels';
+import {PromiseCallbacks} from '../../misc/promisecallbacks';
+import {MemoryModelUnknown} from '../MemoryModel/genericmemorymodels';
+import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../MemoryModel/zxspectrummemorymodels';
+import {MemoryModelZxNextTwoRom} from '../MemoryModel/zxnextmemorymodels';
 import * as semver from 'semver';
+import {MemoryModelColecoVision} from '../MemoryModel/colecovisionmemorymodels';
 
 
 /// Minimum required ZEsarUX version.

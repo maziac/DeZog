@@ -4,7 +4,8 @@ import * as os from 'os';
 import * as path from 'path';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
-import {MemoryModelAllRam, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
+import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import {Z80asmLabelParser} from '../src/labels/z80asmlabelparser';
 
 

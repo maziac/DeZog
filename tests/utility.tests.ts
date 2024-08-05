@@ -7,7 +7,7 @@ import {Remote} from '../src/remotes/remotebase';
 import {Settings, SettingsParameters} from '../src/settings/settings';
 import {Labels} from '../src/labels/labels';
 import {DecodeZesaruxRegisters, DecodeZesaruxRegistersZx128k} from '../src/remotes/zesarux/decodezesaruxdata';
-import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 
 suite('Utility', () => {
 

@@ -7,7 +7,7 @@ import {Opcode} from '../src/disassembler/core/opcode';
 import {GenericBreakpoint, GenericWatchpoint} from '../src/genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../src/remotes/z80registersstandarddecoder';
 import {Disassembly, DisassemblyClass} from '../src/disassembler/disassembly';
-import {MemoryModelAllRam} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {Labels} from '../src/labels/labels';
 
 

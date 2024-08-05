@@ -6,7 +6,9 @@ import * as path from 'path';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {Z88dkLabelParserV2} from '../src/labels/z88dklabelparserv2';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
-import {MemoryModelAllRam, MemoryModelZx48k, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
+import {MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
+import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 
 suite('Labels (z88dk v2 format)', () => {
 	let lbls;

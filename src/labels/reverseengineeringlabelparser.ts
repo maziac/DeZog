@@ -1,6 +1,7 @@
 import {Utility} from '../misc/utility';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
-import {MemoryModelAllRam, MemoryModelUnknown, MemoryModelZx48k} from '../remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam, MemoryModelUnknown} from '../remotes/MemoryModel/genericmemorymodels';
+import {MemoryModelZx48k} from '../remotes/MemoryModel/zxspectrummemorymodels';
 import {Z80RegistersClass} from '../remotes/z80registers';
 import {ListConfigBase} from '../settings/settings';
 import {Issue, LabelParserBase} from './labelparserbase';

@@ -1,7 +1,7 @@
 
 import {Serializable, MemBuffer} from "../../misc/membuffer";
 import {MemoryModel} from "../MemoryModel/memorymodel";
-import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from "../MemoryModel/predefinedmemorymodels";
+import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from "../MemoryModel/zxnextmemorymodels";
 import {Z80Ports} from "./z80ports";
 
 

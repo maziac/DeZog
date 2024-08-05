@@ -8,7 +8,7 @@ import {Z80Registers, Z80_REG} from '../z80registers';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';
 import {BREAK_REASON_NUMBER} from '../remotebase';
-import {MemoryModelUnknown} from '../MemoryModel/predefinedmemorymodels';
+import {MemoryModelUnknown} from '../MemoryModel/genericmemorymodels';
 import {SnaFile} from '../dzrp/snafile';
 import {MemBank16k} from '../dzrp/membank16k';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';

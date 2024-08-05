@@ -1,9 +1,11 @@
 
 import * as assert from 'assert';
 import {BankType, MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
-import {MemoryModelColecoVision, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
+import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import {Z80Registers, Z80RegistersClass} from '../src/remotes/z80registers';
 import {Settings} from '../src/settings/settings';
+import {MemoryModelColecoVision} from '../src/remotes/MemoryModel/colecovisionmemorymodels';
 
 suite('MemoryModel', () => {
 

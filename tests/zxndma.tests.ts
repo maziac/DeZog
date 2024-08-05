@@ -3,7 +3,7 @@ import {ZxnDma} from '../src/remotes/zsimulator/zxndma';
 import * as sinon from 'sinon';
 import {SimulatedMemory} from '../src/remotes/zsimulator/simulatedmemory';
 import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
-import {MemoryModelAllRam} from '../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {MemBuffer} from '../src/misc/membuffer';
 
 

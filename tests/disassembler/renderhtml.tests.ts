@@ -4,7 +4,7 @@ import {Utility} from '../../src/misc/utility';
 import {Format} from '../../src/disassembler/core/format';
 import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
 import {RenderHtml} from '../../src/disassembler/renderhtml';
-import {MemoryModelAllRam} from '../../src/remotes/MemoryModel/predefinedmemorymodels';
+import {MemoryModelAllRam} from '../../src/remotes/MemoryModel/genericmemorymodels';
 import {Z80RegistersStandardDecoder} from '../../src/remotes/z80registersstandarddecoder';
 import {Settings} from '../../src/settings/settings';
 import {Z80Registers, Z80RegistersClass} from '../../src/remotes/z80registers';
