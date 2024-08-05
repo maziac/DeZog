@@ -18,6 +18,7 @@ import {BeeperBuffer, ZxBeeper} from './zxbeeper';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {MemoryModelAllRam, MemoryModelColecoVision, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../MemoryModel/predefinedmemorymodels';
+import {MemoryModelZX81_1k, MemoryModelZX81_2k, MemoryModelZX81_16k, MemoryModelZX81_32k, MemoryModelZX81_48k, MemoryModelZX81_56k} from '../MemoryModel/zx81predefinedmemorymodels';
 import {ZxUlaScreen} from './zxulascreen';
 import {ZxnDma} from './zxndma';
 
@@ -96,6 +97,9 @@ export class ZSimRemote extends DzrpRemote {
 
 	// The zxnDMA object. Or undefined if not used.
 	public zxnDMA: ZxnDma;
+
+	// Which king of simulator (ZX Spectrum or ZX81)
+	public kind: 'zxspectrum' | 'zx81'
 
 
 	/// Constructor.
@@ -315,6 +319,9 @@ export class ZSimRemote extends DzrpRemote {
 			this.tbblueRegisterReadHandler.set(0x07, this.tbblueCpuSpeedRead.bind(this));
 		}
 
+		// ZX Spectrum by default
+		this.kind = 'zxspectrum';
+
 		// Configure different memory models
 		switch (zsim.memoryModel) {
 			case "RAM":
@@ -356,6 +363,38 @@ export class ZSimRemote extends DzrpRemote {
 				// Custom Memory Model
 				this.memoryModel = new MemoryModel(zsim.customMemory);
 				break;
+				
+			case "ZX81-1K":
+				// Original ZX81 with 1K of RAM
+				this.memoryModel = new MemoryModelZX81_1k();
+				this.kind = 'zx81';
+				break;			
+			case "ZX81-2K":
+				// Original Timex Spectrum with 2K of RAM
+				this.memoryModel = new MemoryModelZX81_2k();
+				this.kind = 'zx81';
+				break;			
+			case "ZX81-16K":
+				// ZX81 with a 16K RAM pack
+				this.memoryModel = new MemoryModelZX81_16k();
+				this.kind = 'zx81';
+				break;			
+			case "ZX81-32K":
+				// ZX81 with a 32K RAM pack
+				this.memoryModel = new MemoryModelZX81_32k();
+				this.kind = 'zx81';
+				break;			
+			case "ZX81-48K":
+				// ZX81 with a 48K RAM pack
+				this.memoryModel = new MemoryModelZX81_48k();
+				this.kind = 'zx81';
+				break;			
+			case "ZX81-56K":
+				// ZX81 with a 56K RAM pack
+				this.memoryModel = new MemoryModelZX81_56k();
+				this.kind = 'zx81';
+				break;	
+				
 			default:
 				throw Error("Unknown memory model: '" + zsim.memoryModel + "'.");
 		}
@@ -456,7 +495,11 @@ export class ZSimRemote extends DzrpRemote {
 		await this.load();
 
 		// Ready
-		this.emit('initialized')
+		this.emit('initialized');
+
+		// ZX81 does not save SP in .P files so adjust it here based on topOfStack. @zx81
+		if(this.kind == 'zx81')
+			this.z80Cpu.sp = this.topOfStack;
 	}
 
 	/**
@@ -1018,6 +1061,27 @@ export class ZSimRemote extends DzrpRemote {
 	// Same as sync function.
 	public getCpuFrequencySync(): number {
 		return this.z80Cpu.cpuFreq;
+	}
+	
+	/**
+	 * Returns the ROM charachers. @zx81
+	 * @returns The charachers as a UInt8Array.
+	 */
+	public async getZX81RomCharacters(): Promise<Uint8Array> {
+		return await this.readMemoryDump(0x1e00, 0x200);
+	}
+	
+	/**
+	 * Returns the DFILE (display file). @zx81
+	 * @returns The DFILE as a UInt8Array.
+	 */
+	public async getZX81DFile(): Promise<Uint8Array> {
+		// Get the content of the D_FILE system variable (2 bytes).
+		const dfile_ptr = await this.readMemoryDump(0x400c, 2);
+		// Conversion from little endian.
+		const dfile = dfile_ptr[0] + 256 * dfile_ptr[1];
+		// 24 lines of 33 bytes (could be less).
+		return await this.readMemoryDump(dfile, 33 * 24);
 	}
 
 

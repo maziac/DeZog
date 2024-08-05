@@ -1398,6 +1398,9 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	protected async loadBin(filePath: string): Promise<void> {
 		// Check file extension
 		const ext = path.extname(filePath);
+		if (ext === '.P' || ext === '.p')
+			await this.loadBinP(filePath);
+		else
 		if (ext === '.sna')
 			await this.loadBinSna(filePath);
 		else if (ext === '.nex')
@@ -1507,6 +1510,16 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		// Set the SP and PC registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.SP, nexFile.sp);
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, nexFile.pc);
+	}
+
+	/** Load a ZX81 P file. @zx81
+	 * See https://k1.spdns.de/Develop/Projects/zasm/Info/O80%20and%20P81%20Format.txt
+	 */
+	protected async loadBinP(filePath: string): Promise<void> {
+		// Load the content of the file
+		const objBuffer = fs.readFileSync(filePath);
+		// Write as memory dump. The loading address is always 0x4009.
+		await this.sendDzrpCmdWriteMem(0x4009, objBuffer);
 	}
 
 

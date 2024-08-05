@@ -9,6 +9,7 @@ import {Z80RegistersClass, Z80Registers} from '../z80registers';
 import {DecodeZesaruxRegisters, DecodeZesaruxRegistersColecovision, DecodeZesaruxRegistersZx128k, DecodeZesaruxRegistersZx16k, DecodeZesaruxRegistersZx48k, DecodeZesaruxRegistersZxNext} from './decodezesaruxdata';
 import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
 import {PromiseCallbacks} from '../../misc/promisecallbacks';import {MemoryModelColecoVision, MemoryModelUnknown, MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k, MemoryModelZxNextTwoRom} from '../MemoryModel/predefinedmemorymodels';
+import {MemoryModelZX81_16k} from '../MemoryModel/zx81predefinedmemorymodels'; // @zx81
 import * as semver from 'semver';
 
 
@@ -258,6 +259,11 @@ export class ZesaruxRemote extends RemoteBase {
 						// 4 Banks
 						Z80Registers.decoder = new DecodeZesaruxRegistersColecovision();
 						this.memoryModel = new MemoryModelColecoVision();
+					}
+					else if (machineType.includes("zx81")) { // @zx81
+						// 1 Bank (i.e. no banks, just memory)
+						Z80Registers.decoder = new DecodeZesaruxRegisters(1);
+						this.memoryModel = new MemoryModelZX81_16k();
 					}
 					else {
 						// For all others:
