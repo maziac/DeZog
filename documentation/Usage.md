@@ -1430,7 +1430,7 @@ Display of changed registers is enabled by default. You can turn it off by setti
 }
 ~~~
 
-Here is an animated gif to illustrate the history spot behavior while stepping (with register display turned off):
+Here is an animated gif to illustrate the history spot behavior while stepping (with register display turned on):
 ![](images/spot_count_animated.gif)
 
 

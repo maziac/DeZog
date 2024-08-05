@@ -121,6 +121,7 @@ export class Z80Cpu implements Serializable {
 
 		// Handle instruction
 		const tStates = z80.run_instruction() + this.extraTstatesPerInstruction;
+		this.passedTstates += tStates;
 
 		// For CPU load calculation
 		if (z80.halted) {
@@ -306,7 +307,7 @@ export class Z80Cpu implements Serializable {
 		this.cpuLoadRangeCounter++;
 		if (this.cpuLoadRangeCounter >= this.cpuLoadRange) {
 			const intTstatesDiff = this.passedTstates - this.prevTstatesOnInterrupt;
-			this.cpuLoad = (intTstatesDiff === 0) ? 0 : this.haltTstates / intTstatesDiff;
+			this.cpuLoad = (intTstatesDiff === 0) ? 0 : (1 - this.haltTstates / intTstatesDiff);
 			// Next
 			this.haltTstates = 0;
 			this.prevTstatesOnInterrupt = this.passedTstates;

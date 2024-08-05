@@ -31,6 +31,9 @@ export class ZxUlaScreen implements Serializable {
 	// A function that is called when the vertical interrupt is generated.
 	protected vertInterruptFunc: () => void;
 
+	// For debug measuring the time between two vertical interrupts.
+	protected lastIntTime: number = 0;
+
 
 	/** Constructor.
 	 * @param memory The Z80 memory.
@@ -100,6 +103,14 @@ export class ZxUlaScreen implements Serializable {
 			// Check if within the time window
 			if(this.time <= ZxUlaScreen.VSYNC_TIME_WINDOW)
 				this.vertInterruptFunc();
+			// Measure time
+			const timeInMs = Date.now();
+			const timeDiff = timeInMs - this.lastIntTime;
+	//		if (timeDiff > ZxUlaScreen.VSYNC_TIME * 1.5 * 1000)
+			// {
+			 	console.log("VSYNC: " + timeDiff + "ms");
+			// }
+			this.lastIntTime = timeInMs;
 		}
 	}
 

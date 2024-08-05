@@ -11,3 +11,4 @@ notes.md
 /coverage/
 **/.tmp/
 comments.json
+*.cpuprofile
