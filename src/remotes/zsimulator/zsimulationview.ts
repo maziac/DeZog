@@ -556,7 +556,7 @@ export class ZSimulationView extends BaseView {
 		this.restartStopTimer();
 
 		try {
-			let cpuFreq, cpuLoad, slots, slotNames, visualMem, screenImg, audio, borderColor, zxnDMA;
+			let cpuFreq, cpuLoad, slots, slotNames, visualMem, zx81UlaData, spectrumUlaData, audio, borderColor, zxnDMA;
 
 			// Update frequency
 			if (this.prevCpuFreq !== this.simulator.z80Cpu.cpuFreq) {
@@ -576,14 +576,18 @@ export class ZSimulationView extends BaseView {
 				visualMem = this.simulator.memory.getVisualMemory();
 			}
 
-			if (Settings.launch.zsim.ulaScreen) {
-				// A time in ms which is used for the flashing of the color attributes. The flash frequency is 1/640ms (~1.56Hz).
+			if (Settings.launch.zsim.ulaScreen === 'spectrum') {
+				// For ZX81 and ZX Spectrum.
+				// The time is supplied only for the flashing of the attributes for the Spectrum. (The flash frequency is 1/640ms (~1.56Hz)).
 				const time = this.simulator.getTstatesSync() / this.simulator.getCpuFrequencySync() * 1000;
-				const ulaData = this.simulator.getUlaScreen();
-				screenImg = {
+				const ulaData = this.simulator.zxUlaScreen.getUlaScreen();
+				spectrumUlaData = {
 					time,
 					ulaData
 				};
+			}
+			else if (Settings.launch.zsim.ulaScreen === 'zx81') {
+				zx81UlaData = this.simulator.zxUlaScreen.getUlaScreen();
 			}
 
 			if (Settings.launch.zsim.zxBorderWidth > 0) {
@@ -608,7 +612,8 @@ export class ZSimulationView extends BaseView {
 				cpuLoad,
 				slotNames,
 				visualMem,
-				screenImg,
+				zx81UlaData,
+				spectrumUlaData,
 				borderColor,
 				audio,
 				zxnDMA
@@ -669,7 +674,7 @@ export class ZSimulationView extends BaseView {
 
 		// Setup the body
 		const zsim = Settings.launch.zsim;
-		const visualMemoryZxScreen = zsim.memoryModel.includes("ZX");
+		const visualMemoryZxScreen = zsim.memoryModel.includes('ZX') && (!zsim.memoryModel.includes('81'));
 		let initialBeeperValue = 0;
 		if (this.simulator.zxBeeper)
 			this.simulator.zxBeeper.getCurrentBeeperValue();
@@ -815,7 +820,7 @@ export class ZSimulationView extends BaseView {
 		}
 
 
-		// Add code for the screen
+		// Add code for the screen (Spectrum or ZX81)
 		if (zsim.ulaScreen) {
 			html += `
 			<!-- Display the screen gif -->

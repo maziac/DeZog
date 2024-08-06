@@ -4,6 +4,7 @@ import {Settings} from '../src/settings/settings';
 import {Utility} from '../src/misc/utility';
 import {Z80RegistersClass} from '../src/remotes/z80registers';
 import {MemoryModelColecoVision} from '../src/remotes/MemoryModel/colecovisionmemorymodels';
+import {SpectrumUlaScreen} from '../src/remotes/zsimulator/spectrumulascreen';
 
 
 
@@ -55,11 +56,11 @@ suite('ZSimRemote', () => {
 
 
 		test('ula bank', () => {
-			let ulaBank = zsim.zxUlaScreen.currentUlaBank;
+			let ulaBank = (zsim.zxUlaScreen as SpectrumUlaScreen).currentUlaBank;
 			assert.equal(1, ulaBank);
 			// Should not switch
 			zsim.ports.write(0x7FFD, 0b01000);
-			ulaBank = zsim.zxUlaScreen.currentUlaBank;
+			ulaBank = (zsim.zxUlaScreen as SpectrumUlaScreen).currentUlaBank;
 			assert.equal(1, ulaBank);
 		});
 	});
@@ -169,17 +170,17 @@ suite('ZSimRemote', () => {
 
 
 		test('ula switching', () => {
-			let ulaBank = zsim.zxUlaScreen.currentUlaBank;
+			let ulaBank = (zsim.zxUlaScreen as SpectrumUlaScreen).currentUlaBank;
 			assert.equal(5, ulaBank);
 
 			// Shadow ULA, Bank 7
 			zsim.ports.write(0x7FFD, 0b01000);
-			ulaBank = zsim.zxUlaScreen.currentUlaBank;
+			ulaBank = (zsim.zxUlaScreen as SpectrumUlaScreen).currentUlaBank;
 			assert.equal(7, ulaBank);
 
 			// Normal ULA, Bank 5
 			zsim.ports.write(0x7FFD, 0);
-			ulaBank = zsim.zxUlaScreen.currentUlaBank;
+			ulaBank = (zsim.zxUlaScreen as SpectrumUlaScreen).currentUlaBank;
 			assert.equal(5, ulaBank);
 		});
 

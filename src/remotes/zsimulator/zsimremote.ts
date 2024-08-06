@@ -22,8 +22,9 @@ import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../MemoryMo
 import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../MemoryModel/zxnextmemorymodels';
 import {MemoryModelColecoVision} from '../MemoryModel/colecovisionmemorymodels';
 import {MemoryModelZX81_1k, MemoryModelZX81_2k, MemoryModelZX81_16k, MemoryModelZX81_32k, MemoryModelZX81_48k, MemoryModelZX81_56k} from '../MemoryModel/zx81memorymodels';
-import {ZxUlaScreen} from './zxulascreen';
+import {SpectrumUlaScreen} from './spectrumulascreen';
 import {ZxnDma} from './zxndma';
+import {Zx81UlaScreen} from './zx81ulascreen';
 
 /**
  * The representation of a Z80 remote.
@@ -37,7 +38,7 @@ export class ZSimRemote extends DzrpRemote {
 	public ports: Z80Ports;
 
 	// The ULA screen simulation.
-	public zxUlaScreen: ZxUlaScreen;
+	public zxUlaScreen: Zx81UlaScreen | SpectrumUlaScreen;
 
 	// Stores the code coverage.
 	protected codeCoverage: CodeCoverageArray;
@@ -391,14 +392,24 @@ export class ZSimRemote extends DzrpRemote {
 		this.memoryModel.init();
 
 		// Check if ULA screen is enabled
-		const zxUlaScreenEnabled = zsim.ulaScreen;
-		if (zxUlaScreenEnabled) {
-			this.zxUlaScreen = new ZxUlaScreen(this.memoryModel, this.ports, () => {
+		const zxUlaScreen = zsim.ulaScreen;
+		if (zxUlaScreen === 'spectrum') {
+			this.zxUlaScreen = new SpectrumUlaScreen(this.memory, this.ports, () => {
 				// Notify
 				this.emit('vertSync');
 				// And generate interrupt
 				this.z80Cpu.generateInterrupt(false, 0);
 			});
+		}
+		else if (zxUlaScreen === 'zx81') {
+			this.zxUlaScreen = new Zx81UlaScreen(this.memory, this.ports, () => {
+				// Notify
+				this.emit('vertSync');
+				// For the ZX81 ULA screen there is no interrupt generated.
+				// I.e. the display is really only simulated.
+			});
+		}
+		if(this.zxUlaScreen) {
 			this.serializeObjects.push(this.zxUlaScreen);
 		}
 
@@ -653,11 +664,10 @@ export class ZSimRemote extends DzrpRemote {
 		// If DMA does not occupy the bus, run CPU
 		if (tStates === 0)
 			tStates = this.z80Cpu.execute();
-		// Check for interrupt
+		// Execute ULA
 		if (this.zxUlaScreen) {
-			//	this.zxUlaScreen.checkInterrupt(this.passedTstates);
-			const passedTime = tStates / cpuFreq;
-			this.zxUlaScreen.passedTime(passedTime);
+			const ulaTstates = this.zxUlaScreen.execute(cpuFreq, tStates);
+			tStates += ulaTstates;
 		}
 		return tStates;
 	}
@@ -1045,40 +1055,6 @@ export class ZSimRemote extends DzrpRemote {
 	// Same as sync function.
 	public getCpuFrequencySync(): number {
 		return this.z80Cpu.cpuFreq;
-	}
-
-	/**
-	 * Returns the ROM charachers. @zx81
-	 * @returns The charachers as a UInt8Array.
-	 */
-	public async getZX81RomCharacters(): Promise<Uint8Array> {
-		return await this.readMemoryDump(0x1e00, 0x200);
-	}
-
-	/**
-	 * Returns the DFILE (display file). @zx81
-	 * @returns The DFILE as a UInt8Array.
-	 */
-	public async getZX81DFile(): Promise<Uint8Array> {
-		// Get the content of the D_FILE system variable (2 bytes).
-		const dfile_ptr = await this.readMemoryDump(0x400c, 2);
-		// Conversion from little endian.
-		const dfile = dfile_ptr[0] + 256 * dfile_ptr[1];
-		// 24 lines of 33 bytes (could be less).
-		return await this.readMemoryDump(dfile, 33 * 24);
-	}
-
-
-	/**
-	 * Returns the ULA screen with color attributes.
-	 * @returns The screen as a UInt8Array.
-	 */
-	public getUlaScreen(): Uint8Array {
-		Utility.assert(this.zxUlaScreen);
-
-		const ulaBank = this.zxUlaScreen.currentUlaBank;
-		const bank = this.memory.getBankMemory(ulaBank);
-		return bank.slice(0, 0x1B00);
 	}
 
 

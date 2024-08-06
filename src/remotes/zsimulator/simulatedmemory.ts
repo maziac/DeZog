@@ -521,11 +521,18 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
+	/** Returns the number of banks.
+	 */
+	public getNumberOfBanks(): number {
+		return this.memoryBanks.length;
+	}
+
+
 	/**
 	 * @param bankNr The bank number.
 	 * @returns the Uint8Array of a bank.
 	 */
-	public getBankMemory(bankNr: number) {
+	public getBankMemory(bankNr: number): Uint8Array {
 		return this.memoryBanks[bankNr];
 	}
 

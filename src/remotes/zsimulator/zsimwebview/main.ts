@@ -1,6 +1,7 @@
 import {vscode} from "./vscode-import";
 import {ZxAudioBeeper, zxAudioBeeper} from "./zxaudiobeeper";
-import {UlaScreen} from "./ulascreen";
+import {Zx81UlaDraw} from "./zx81uladraw";
+import {SpectrumUlaDraw} from "./spectrumuladraw";
 import {VisualMem} from "./visualmem";
 import {joystickObjs, initJoystickPolling} from "./joysticks";
 import {UIAPI, UiBit, UiByte} from "./helper";
@@ -110,15 +111,20 @@ window.addEventListener('message', event => {// NOSONAR
 				VisualMem.drawVisualMemory(message.visualMem);
 			}
 
-			if (message.screenImg) {
-				const data = message.screenImg.ulaData;
-				const time = message.screenImg.time;
-				UlaScreen.drawUlaScreen(screenImgContext, screenImgImgData, data, time);
+			if (message.zx81UlaData) {
+				const data = message.zx81UlaData;
+				Zx81UlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, data);
+			}
+
+			if (message.spectrumUlaData) {
+				const data = message.spectrumUlaData.ulaData;
+				const time = message.spectrumUlaData.time;
+				SpectrumUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, data, time);
 			}
 
 			if (message.borderColor != undefined) {
 				// Convert ZX color to html color
-				const htmlColor = UlaScreen.getHtmlColor(message.borderColor);
+				const htmlColor = SpectrumUlaDraw.getHtmlColor(message.borderColor);
 				// Set color
 				screenImg.style.borderColor = htmlColor;
 			}
@@ -181,7 +187,7 @@ function initSimulation(audioSampleRate: number, volume: number) {
 	screenImg = document.getElementById("screen_img_id") as HTMLCanvasElement;
 	if (screenImg) {
 		screenImgContext = screenImg.getContext("2d")!;
-		screenImgImgData = screenImgContext.createImageData(UlaScreen.SCREEN_WIDTH, UlaScreen.SCREEN_HEIGHT);
+		screenImgImgData = screenImgContext.createImageData(SpectrumUlaDraw.SCREEN_WIDTH, SpectrumUlaDraw.SCREEN_HEIGHT);
 	}
 
 	// Get Beeper output object

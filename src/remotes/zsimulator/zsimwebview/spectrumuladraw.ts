@@ -1,8 +1,7 @@
-/**
- * Represents the ZX 48K ULA screen. (0x4000-0x5AFF)
+/** Represents the ZX 48K ULA screen. (0x4000-0x5AFF)
  * I.e. it takes a bank and converts it to a gif image.
  */
-export class UlaScreen {
+export class SpectrumUlaDraw {
 	// Screen height
 	public static SCREEN_HEIGHT = 192;
 
@@ -35,8 +34,7 @@ export class UlaScreen {
 	];
 
 
-	/**
-	 * Draws a ZX Spectrum ULA screen into the given canvas.
+	/** Draws a ZX Spectrum ULA screen into the given canvas.
 	 * @param ctx The canvas 2d context to draw to.
 	 * @param imgData A reusable array to create the pixel data in.
 	 * @param ulaScreen The ULA screen data. Pixels + color attributes.
@@ -50,7 +48,7 @@ export class UlaScreen {
 		const flash = (remainder >= interval / 2) ? 0x80 : 0; // 0x80 if colors should be exchanged
 
 		// Find memory to display
-		const colorStart = UlaScreen.SCREEN_HEIGHT * UlaScreen.SCREEN_WIDTH / 8;
+		const colorStart = SpectrumUlaDraw.SCREEN_HEIGHT * SpectrumUlaDraw.SCREEN_WIDTH / 8;
 
 		// Get pixels memory
 		const pixels = imgData.data;
@@ -60,8 +58,8 @@ export class UlaScreen {
 
 
 		// Whole screen is converted by evaluating blocks that are equal to the color attributes.
-		const width8 = UlaScreen.SCREEN_WIDTH / 8;
-		const height = UlaScreen.SCREEN_HEIGHT;
+		const width8 = SpectrumUlaDraw.SCREEN_WIDTH / 8;
+		const height = SpectrumUlaDraw.SCREEN_HEIGHT;
 		colorIndex = colorStart;
 		for (let y = 0; y < height; y += 8) {
 			// Calculate offset in ZX Spectrum screen
@@ -117,8 +115,7 @@ export class UlaScreen {
 	}
 
 
-	/**
-	 * Returns the html color for a ZX color.
+	/** Returns the html color for a ZX color.
 	 * @param zxColor [0;15]. 0-7 = black-white, 8-15 = bright: black - white
 	 * @returns E.g. "#D70000" for RED
 	 */

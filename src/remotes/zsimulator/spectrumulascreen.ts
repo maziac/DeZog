@@ -1,17 +1,13 @@
 
-import {Serializable, MemBuffer} from "../../misc/membuffer";
-import {MemoryModel} from "../MemoryModel/memorymodel";
-import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from "../MemoryModel/zxnextmemorymodels";
+import {MemBuffer} from "../../misc/membuffer";
+import {SimulatedMemory} from "./simulatedmemory";
 import {Z80Ports} from "./z80ports";
+import {Zx81UlaScreen} from "./zx81ulascreen";
 
 
-/**
- * Holds the bank used for the ULA screen and does the bank switching.
+/** Holds the bank used for the ZX Spectrum ULA screen and does the bank switching.
  */
-export class ZxUlaScreen implements Serializable {
-	// The vsync time of the ULA.
-	protected static VSYNC_TIME = 0.020;	// 20ms
-
+export class SpectrumUlaScreen extends Zx81UlaScreen {
 	// The vsync time window of the ULA. If missed, the interrupt
 	// function will not be called.
 	protected static VSYNC_TIME_WINDOW = 30 / 3500000;	// 20ms
@@ -25,33 +21,26 @@ export class ZxUlaScreen implements Serializable {
 	// The "shadow" ula bank (e.g. bank 7)
 	protected shadowUlaBank: number;
 
-	// The time since the last vertical interrupt.
-	protected time: number;
-
-	// A function that is called when the vertical interrupt is generated.
-	protected vertInterruptFunc: () => void;
-
 	// For debug measuring the time between two vertical interrupts.
 	//protected lastIntTime: number = 0;
 
 
 	/** Constructor.
-	 * @param memory The Z80 memory.
+	 * @param memoryModel The used memory model.
 	 * @param ports The Z80 ports.
-	 * @param vertInterruptFunc An optional function that is called on a vertical interrupt.
+	 * @param vertInterruptFunc A function that is called on a vertical interrupt.
 	 * Can be used by the caller to sync the display.
 	 */
-	constructor(memoryModel: MemoryModel, ports: Z80Ports, vertInterruptFunc = () => {}) {
-		this.time = 0;
-		this.vertInterruptFunc = vertInterruptFunc;
+	constructor(memory: SimulatedMemory, ports: Z80Ports, vertInterruptFunc = () => {}) {
+		super(memory, ports, vertInterruptFunc);
 		// Set ULA bank(s) depending on available banks
-		const bankCount = memoryModel.banks.length;
+		const bankCount = memory.getNumberOfBanks();
 		if (bankCount > 7) {
 			// ZX128K, i.e. bank 5 and 7 are used
 			this.normalUlaBank = 5;
 			this.shadowUlaBank = 7;
 			// Check for ZXNext
-			if (memoryModel instanceof MemoryModelZxNextOneROM || memoryModel instanceof MemoryModelZxNextTwoRom) {
+			if (bankCount > 8) {
 				this.normalUlaBank *= 2;
 				this.shadowUlaBank *= 2;
 			}
@@ -61,12 +50,12 @@ export class ZxUlaScreen implements Serializable {
 			ports.registerGenericOutPortFunction(this.zx128UlaScreenSwitch.bind(this));
 		}
 		else if (bankCount > 1) {
-			// ZX16/48: use bank 1
+			// Otherwise assume ZX16/48K with bank 1
 			this.currentUlaBank = 1;
 		}
 		else {
 			// Only one bank
-			throw Error("ulaScreen is not available with memory model '" + memoryModel.name + "'.");
+			throw Error("ulaScreen is not available with the memory model.");
 		}
 	}
 
@@ -91,41 +80,53 @@ export class ZxUlaScreen implements Serializable {
 	}
 
 
-	/** The ULA screen calls the vertInterruptFunc whenever
-	 * 20ms have passed.
-	 * @param addTime The passed time in ms since last call.
+	/** Executes the ULA. The ZX Spectrum ULA simulation does
+	 * not do much. It is only generating the vertical interrupt
+	 * when needed.
+	 * @param cpuFreq The CPU frequency in Hz.
+	 * @param currentTstates The t-states that were just used by
+	 * DMA or CPU.
+	 * @returns 0 (Occupies 0 t-states)
 	 */
-	public passedTime(addTime: number) {
-		this.time += addTime;
+	public execute(cpuFreq: number, currentTstates: number): number {
 		// Check for vertical interrupt
-		if (this.time >= ZxUlaScreen.VSYNC_TIME) {
-			this.time %= ZxUlaScreen.VSYNC_TIME;
-			// Check if within the time window
-			if(this.time <= ZxUlaScreen.VSYNC_TIME_WINDOW)
-				this.vertInterruptFunc();
+		this.time += currentTstates / cpuFreq;
+		if (this.time >= Zx81UlaScreen.VSYNC_TIME) {
+			this.vertInterruptFunc();
+			this.time %= Zx81UlaScreen.VSYNC_TIME;
 			// Measure time
 			// const timeInMs = Date.now();
 			// const timeDiff = timeInMs - this.lastIntTime;
 			// console.log("VSYNC: " + timeDiff + "ms");
 			// this.lastIntTime = timeInMs;
 		}
+		return 0;
 	}
 
 
-	/**
-	 * Serializes the object.
-	 * Basically the last beeper value.
+
+	/** Returns the ULA screen with color attributes.
+	 * @returns The screen as a UInt8Array.
+	 */
+	public getUlaScreen(): Uint8Array {
+		const bank = this.memory.getBankMemory(this.currentUlaBank);
+		return bank.slice(0, 0x1B00);
+	}
+
+
+	/** Serializes the object.
 	 */
 	public serialize(memBuffer: MemBuffer) {
+		super.serialize(memBuffer);
 		// Write slot/bank mapping
 		memBuffer.writeNumber(this.currentUlaBank);
 	}
 
 
-	/**
-	 * Deserializes the object.
+	/** Deserializes the object.
 	 */
 	public deserialize(memBuffer: MemBuffer) {
+		super.deserialize(memBuffer);
 		// Write last t-states
 		this.currentUlaBank = memBuffer.readNumber();
 	}

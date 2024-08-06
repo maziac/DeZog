@@ -187,7 +187,7 @@ export interface TBBlueType {
 
 /// Definitions for the 'zsim' remote type.
 export interface ZSimType {
-	// If enabled the simulator shows a keyboard to simulate keypresses.
+	// If enabled the simulator shows a ZX Spectrum/ZX81 keyboard to simulate keypresses.
 	zxKeyboard: boolean,
 
 	// If enabled the simulator shows a pad to simulate the joysticks for interface 2.
@@ -199,8 +199,11 @@ export interface ZSimType {
 	// If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.
 	visualMemory: boolean,
 
-	// If enabled it shows the contents of the ZX Spectrum screen.
-	ulaScreen: boolean,
+	// If enabled it shows the contents of the ZX Spectrum or ZX 81 screen.
+	ulaScreen: string,	// "spectrum" or "zx81"
+
+	// If enabled it shows the contents of the ZX 81 screen.
+	zx81UlaScreen: boolean,
 
 	// The displayed border width in pixels. No border if 0. Works only in conjunction with ulaScreen.
 	zxBorderWidth: number,
@@ -513,8 +516,10 @@ export class Settings {
 		if (launchCfg.zsim.kempstonJoy == undefined)
 			launchCfg.zsim.kempstonJoy = false;
 		if (launchCfg.zsim.ulaScreen == undefined)
-			launchCfg.zsim.ulaScreen = false;
-		if (launchCfg.zsim.zxBorderWidth == undefined || !launchCfg.zsim.ulaScreen)
+			launchCfg.zsim.ulaScreen = '';
+		else if (launchCfg.zsim.ulaScreen !== 'spectrum' && launchCfg.zsim.ulaScreen !== 'zx81')
+			launchCfg.zsim.ulaScreen = 'spectrum';
+		if (launchCfg.zsim.zxBorderWidth == undefined || launchCfg.zsim.ulaScreen === '')
 			launchCfg.zsim.zxBorderWidth = 0;
 		if (launchCfg.zsim.zxBeeper == undefined)
 			launchCfg.zsim.zxBeeper = false;
