@@ -237,9 +237,6 @@ export interface ZSimType {
 	// The number of interrupts to calculate the average from. 0 to disable.
 	cpuLoadInterruptRange: number,
 
-	// If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
-	vsyncInterrupt: boolean,
-
 	// The CPU frequency is only used for output. I.e. when the t-states are printed
 	// there is also a printout of the correspondent time. This is calculated via the CPU frequency here.
 	cpuFrequency: number,
@@ -532,8 +529,6 @@ export class Settings {
 		if (launchCfg.zsim.memoryModel == undefined)
 			launchCfg.zsim.memoryModel = "RAM";
 		launchCfg.zsim.memoryModel = launchCfg.zsim.memoryModel.toUpperCase();
-		if (launchCfg.zsim.vsyncInterrupt == undefined)
-			launchCfg.zsim.vsyncInterrupt = false;
 		if (launchCfg.zsim.cpuFrequency == undefined)
 			launchCfg.zsim.cpuFrequency = 3500000.0;	// 3500000.0 for 3.5MHz.
 		if (launchCfg.zsim.limitSpeed == undefined)

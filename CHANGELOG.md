@@ -1,4 +1,11 @@
 # Changelog
+# 3.5.0
+- zsim:
+  - Simulation of ZX81
+  - Removed "vsyncInterrupt". A VSYNC interrupt is now generated if the Spectrum ULA is enabled.
+  - "ulaScreen":
+    - Type changed from boolean to 'spectrum' | 'zx81'.
+
 # 3.4.1
 - zsim: Removed annoying logging.
 
