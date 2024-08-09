@@ -5,6 +5,7 @@
   - Removed "vsyncInterrupt". A VSYNC interrupt is now generated if the Spectrum ULA is enabled.
   - "ulaScreen":
     - Type changed from boolean to 'spectrum' | 'zx81'.
+  - Z80 CPU simulation fix: HALT instruction: r is now incremented on each instruction.
 
 # 3.4.1
 - zsim: Removed annoying logging.

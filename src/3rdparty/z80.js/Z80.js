@@ -230,6 +230,14 @@ let reset = function()
 ///////////////////////////////////////////////////////////////////////////////
 let run_instruction = function()
 {
+
+   // R is incremented at the start of every instruction cycle,
+   // before the instruction actually runs.
+   // The high bit of R is not affected by this increment,
+   // it can only be changed using the LD R, A instruction.
+   // Note: also a HALT does increment the R register.
+   r = (r & 0x80) | (((r & 0x7f) + 1) & 0x7f);
+
    if (!halted)
    {
       // If the previous instruction was a DI or an EI,
@@ -246,12 +254,6 @@ let run_instruction = function()
          do_delayed_ei = false;
          doing_delayed_ei = true;
       }
-
-      // R is incremented at the start of every instruction cycle,
-      //  before the instruction actually runs.
-      // The high bit of R is not affected by this increment,
-      //  it can only be changed using the LD R, A instruction.
-      r = (r & 0x80) | (((r & 0x7f) + 1) & 0x7f);
 
       // Read the byte at the PC and run the instruction it encodes.
       var opcode = core.mem_read(pc);
@@ -324,7 +326,7 @@ let interrupt = function(non_maskable, data)
       }
 
       // The high bit of R is not affected by this increment,
-      //  it can only be changed using the LD R, A instruction.
+      //  it can only be changed using the LD R,A instruction.
       r = (r & 0x80) | (((r & 0x7f) + 1) & 0x7f);
 
       halted = false;
