@@ -5,6 +5,9 @@ import {Z80Ports} from "./z80ports";
 
 
 /** Handles the ZX81 ULA screen.
+ * Interrupts:
+ * 0x0038: Mode 1 interrupt. Called 192+ times for the lines.
+ * 0x0066: NMI interrupt.
  */
 export class Zx81UlaScreen implements Serializable {
 	// The vsync time of the ULA.
@@ -18,6 +21,15 @@ export class Zx81UlaScreen implements Serializable {
 
 	// A function that is called when the vertical interrupt is generated.
 	protected vertInterruptFunc: () => void;
+
+	// The state of the NMI generator
+	protected stateNmiGeneratorOn: boolean = false;
+
+	// The state of the HSYNC generator
+	protected stateHsyncGeneratorOn: boolean = false;
+
+	// The original memory read function.
+	public memoryRead8: (addr64k: number) => number;
 
 	// For debug measuring the time between two vertical interrupts.
 	//protected lastIntTime: number = 0;
@@ -33,6 +45,84 @@ export class Zx81UlaScreen implements Serializable {
 		this.memory = memory;
 		this.vertInterruptFunc = vertInterruptFunc;
 		this.time = 0;
+
+		// Register ULA ports
+		ports.registerGenericOutPortFunction(this.outPorts.bind(this));
+		ports.registerGenericInPortFunction(this.inPort.bind(this));
+
+		// Remap memory, to intercept the read function
+		this.memoryRead8 = memory.read8.bind(memory);
+		memory.read8 = this.ulaRead8.bind(this);
+	}
+
+
+	/** Handles the ULA out ports.
+	 * 1. out (0xfd),a - turns NMI generator off
+	 * 2. out (0xfe),a - turns NMI generator on
+	 * (3. in a,(0xfe) - turns HSYNC generator off (if NMI is off))
+	 * 4. out (0xff),a - turns HSYNC generator on
+	 * Note: the value of a is not ignored.
+	 */
+	protected outPorts(port: number, _data: number): void {
+		// Check for address line A0 = LOW
+		if ((port & 0x01) === 0) {
+			//
+		}
+		// NMI generator off?
+		if (port === 0xfd) {
+			// Yes
+			this.stateNmiGeneratorOn = false;
+		}
+		// NMI generator on?
+		else if (port === 0xfe) {
+			// Yes
+			this.stateNmiGeneratorOn = true;
+		}
+		// HSYNC on?
+		else if (port === 0xff) {
+			// Yes
+			this.stateHsyncGeneratorOn = true;
+		}
+	}
+
+
+	/** Intercepts reading from the memory.
+	 * For everything where A15 is set and data bit 6 is low, NOPs are returned.
+	 * When databit 6 is set it is expected to be the HALT instruction.
+	 */
+	public ulaRead8(addr64k: number): number {
+		// Read data from memory
+		const data = this.memoryRead8(addr64k);
+		// Check if above 32k, and data bit 6 is low.
+		// Then return NOPs.
+		// TODO: Do I need to check also for opcode fetch?
+		if (addr64k & 0x8000) {
+			// Bit 15 is set
+			// Check if bit 6 is low
+			if ((data & 0b01000000) === 0) {
+				// Return a NOP
+				return 0x00;
+			}
+		}
+		// Otherwise return the normal value
+		return data;
+	}
+
+
+	/** Handles the ULA in port.
+	 * 1. ...
+	 * 2. ...
+	 * 3. in a,(0xfe) - turns HSYNC generator off (if NMI is off)
+	 *    and starts the vertical sync (VSYNC) signal.
+	 * 4. ...
+	 */
+	protected inPort(port: number): number | undefined {
+		// HSYNC off?
+		if (port === 0xfe) {
+			// Yes
+			this.stateHsyncGeneratorOn = false;
+		}
+		return undefined;
 	}
 
 
