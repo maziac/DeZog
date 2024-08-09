@@ -3148,7 +3148,7 @@
         DEFB    $01             ;;exchange
         DEFB    $34             ;;end-calc
 
-        CALL    L0BF5           ; routine STK-TO-BC
+0AF2    CALL    L0BF5           ; routine STK-TO-BC
         CALL    L08F5           ; routine PRINT-AT
         JR      L0B37           ; to PRINT-ON
 
@@ -3913,7 +3913,7 @@
         DEFB    $A0             ;;stk-zero
         DEFB    $34             ;;end-calc
 
-        RET                     ; return.
+0DA5    RET                     ; return.
 
 ; -------------------------
 ; THE 'SYNTAX-Z' SUBROUTINE
@@ -3944,7 +3944,7 @@
 
 ; register DE points to exponent of floating point value.
 
-        LD      A,(DE)          ; fetch exponent.
+0DB3    LD      A,(DE)          ; fetch exponent.
         AND     A               ; test for zero - FALSE.
         RET     Z               ; return if so.
 
@@ -3987,7 +3987,7 @@
         DEFB    $01             ;;exchange      l, s, v.
         DEFB    $34             ;;end-calc      l, s, v.
 
-        CALL    L1321           ; routine LET
+0DD3    CALL    L1321           ; routine LET
 
         LD      ($401F),HL      ; set MEM to address variable.
         DEC     HL              ; point to letter.
@@ -4010,7 +4010,7 @@
         DEFB    $02             ;;delete
         DEFB    $34             ;;end-calc
 
-        POP     HL              ;
+0DEF    POP     HL              ;
         EX      DE,HL           ;
 
         LD      C,$0A           ; ten bytes to be moved.
@@ -4093,7 +4093,7 @@
         DEFB    $02             ;;delete
         DEFB    $34             ;;end-calc
 
-        CALL    L0E5A           ; routine NEXT-LOOP
+0E47    CALL    L0E5A           ; routine NEXT-LOOP
         RET     C               ;
 
         LD      HL,($401F)      ; sv MEM_lo
@@ -4138,7 +4138,7 @@
 
         DEFB    $34             ;;end-calc
 
-        AND     A               ; clear carry flag
+0E67    AND     A               ; clear carry flag
         RET                     ; return.
 
 ; ---
@@ -4147,7 +4147,7 @@
 ;; IMPOSS
 0E69    DEFB    $34             ;;end-calc
 
-        SCF                     ; set carry flag
+0E6A    SCF                     ; set carry flag
         RET                     ; return.
 
 ; --------------------------
@@ -4478,7 +4478,7 @@
         DEFB    $2D             ;;duplicate
         DEFB    $34             ;;end-calc
 
-        CALL    L158A           ; routine FP-TO-BC
+0F7C    CALL    L158A           ; routine FP-TO-BC
         LD      ($4032),BC      ; update the SEED system variable.
         LD      A,(HL)          ; HL addresses the exponent of the last value.
         AND     A               ; test for zero
@@ -4508,7 +4508,7 @@
         DEFB    $A3             ;;stk-pi/2
         DEFB    $34             ;;end-calc
 
-        INC     (HL)            ; double the exponent giving PI on the stack.
+0F98    INC     (HL)            ; double the exponent giving PI on the stack.
 
 ;; S-PI-END
 0F99    RST     20H             ; NEXT-CHAR advances character pointer.
@@ -4851,7 +4851,7 @@
         DEFB    $37             ;;fp-calc-2
         DEFB    $34             ;;end-calc
 
-        JR      L10DE           ; forward to S-RUNTEST
+10D3    JR      L10DE           ; forward to S-RUNTEST
 
 ; ---
 
@@ -5565,7 +5565,7 @@
         DEFB    $02             ;;delete
         DEFB    $34             ;;end-calc
 
-        POP     HL              ;
+1365    POP     HL              ;
         LD      BC,$0005        ;
         AND     A               ;
         SBC     HL,BC           ;
@@ -6005,7 +6005,7 @@
         DEFB    $0F             ;;addition
         DEFB    $34             ;;end-calc
 
-        JR      L14E5           ; loop back till exhausted to NXT-DGT-1
+14F3    JR      L14E5           ; loop back till exhausted to NXT-DGT-1
 
 ; ---
 
@@ -6040,7 +6040,7 @@
 1511    DEFB    $38             ;;e-to-fp               x.
         DEFB    $34             ;;end-calc              x.
 
-        RET                     ; return.
+1513    RET                     ; return.
 
 
 ; --------------------------
@@ -6084,7 +6084,7 @@
         DEFB    $A0             ;;stk-zero                      0.
         DEFB    $34             ;;end-calc
 
-        POP     BC              ; restore integer value.
+1528    POP     BC              ; restore integer value.
 
         LD      (HL),$91        ; place $91 in exponent         65536.
                                 ; this is the maximum possible value
@@ -6134,7 +6134,7 @@
         DEFB    $A0             ;;stk-zero
         DEFB    $34             ;;end-calc
 
-        POP     AF              ;
+154C    POP     AF              ;
 
 ;; NXT-DGT-2
 154D    CALL    L1514           ; routine STK-DIGIT
@@ -6149,7 +6149,7 @@
         DEFB    $34             ;;end-calc
 
 
-        RST     20H             ; NEXT-CHAR
+1557    RST     20H             ; NEXT-CHAR
         JR      L154D           ; to NXT-DGT-2
 
 
@@ -6248,7 +6248,7 @@
 1587    DEFB    $02             ;;delete                x. (-1)
         DEFB    $34             ;;end-calc              x.
 
-        RET                     ; return.
+1589    RET                     ; return.
 
 ; -------------------------------------
 ; THE 'FLOATING-POINT TO BC' SUBROUTINE
@@ -6340,7 +6340,7 @@
         DEFB    $34             ;;end-calc
 
 
-        POP     BC              ; restore BC value
+15C9    POP     BC              ; restore BC value
         POP     AF              ; restore flags
         LD      A,C             ; copy low byte to A also.
         RET                     ; return
@@ -6400,7 +6400,7 @@
         DEFB    $02             ;;delete                .
         DEFB    $34             ;;end-calc              .
 
-        LD      A,$1C           ; load accumulator with character '0'
+15E6    LD      A,$1C           ; load accumulator with character '0'
 
         RST     10H             ; PRINT-A
         RET                     ; return.                               >>
@@ -6411,7 +6411,7 @@
 15EA    DEFB    $27             ; abs                   +x.
         DEFB    $34             ;;end-calc              x.
 
-        LD      A,$16           ; load accumulator with '-'
+15EC    LD      A,$16           ; load accumulator with '-'
 
         RST     10H             ; PRINT-A
 
@@ -6423,7 +6423,7 @@
 ; register HL addresses the exponent of the floating-point value.
 ; if positive, and point floats to left, then bit 7 is set.
 
-        LD      A,(HL)          ; pick up the exponent byte
+15F1    LD      A,(HL)          ; pick up the exponent byte
         CALL    L151D           ; routine STACK-A places on calculator stack.
 
 ; now calculate roughly the number of digits, n, before the decimal point by
@@ -6466,7 +6466,7 @@
 ; no further rounding occurs. If the result is a 9 digit integer then
 ; rounding takes place within the buffer.
 
-        LD      HL,$406B        ; address system variable MEM-2-5th
+160E    LD      HL,$406B        ; address system variable MEM-2-5th
                                 ; which could be the 'ninth' digit.
         LD      (HL),$90        ; insert the value $90  10010000
 
@@ -6488,7 +6488,7 @@
         DEFB    $01             ;;exchange              i/10, remainder.
         DEFB    $34             ;;end-calc
 
-        CALL    L15CD           ; routine FP-TO-A  $00-$09
+161D    CALL    L15CD           ; routine FP-TO-A  $00-$09
 
         OR      $90             ; make left hand nibble 9
 
@@ -6572,7 +6572,7 @@
         DEFB    $E1             ;;get-mem-1             n.
         DEFB    $34             ;;end-calc              n.
 
-        CALL    L15CD           ; routine FP-TO-A
+1654    CALL    L15CD           ; routine FP-TO-A
         JR      Z,L165B         ; skip forward if positive to PF-POS
 
         NEG                     ; negate makes positive
@@ -8203,7 +8203,7 @@
 ; the previous pointer is fetched from the machine stack to H'L' where it
 ; addresses one of the numbers of the series following the series literal.
 
-        CALL    L19FC           ; routine STK-DATA is called directly to
+1A90    CALL    L19FC           ; routine STK-DATA is called directly to
                                 ; push a value and advance H'L'.
         CALL    L19A4           ; routine GEN-ENT-2 recursively re-enters
                                 ; the calculator without disturbing
@@ -8226,7 +8226,7 @@
         DEFB    $03             ;;subtract
         DEFB    $34             ;;end-calc
 
-        RET                     ; return with H'L' pointing to location
+1A9F    RET                     ; return with H'L' pointing to location
                                 ; after last number in series.
 
 ; -----------------------
@@ -9034,7 +9034,7 @@
         DEFB    $E0             ;;get-mem-0         2, 5.
         DEFB    $34             ;;end-calc          2, 5.
 
-        RET                     ; return.
+1C45    RET                     ; return.
 
 
 ; ----------------------
@@ -9057,7 +9057,7 @@
         DEFB    $36             ;;truncate              trunc 3.4 = 3.
         DEFB    $34             ;;end-calc              3.
 
-        RET                     ; return with + int x on stack.
+1C4D    RET                     ; return with + int x on stack.
 
 
 ;; X-NEG
@@ -9077,7 +9077,7 @@
 ;; EXIT
 1C59    DEFB    $34             ;;end-calc              -4.
 
-        RET                     ; return.
+1C5A    RET                     ; return.
 
 
 ; ----------------
@@ -9121,7 +9121,7 @@
         DEFB    $E3             ;;get-mem-3
         DEFB    $34             ;;end-calc
 
-        CALL    L15CD           ; routine FP-TO-A
+1C8F    CALL    L15CD           ; routine FP-TO-A
         JR      NZ,L1C9B        ; to N-NEGTV
 
         JR      C,L1C99         ; to REPORT-6b
@@ -9153,7 +9153,7 @@
         DEFB    $A0             ;;stk-zero
         DEFB    $34             ;;end-calc
 
-        RET                     ; return.
+1CA8    RET                     ; return.
 
 
 ; --------------------------------
@@ -9220,7 +9220,7 @@
 1CB1    DEFB    $A0             ;;stk-zero              Note. not
         DEFB    $02             ;;delete                necessary.
         DEFB    $34             ;;end-calc
-        LD      A,(HL)          ;
+1CB4    LD      A,(HL)          ;
 
         LD      (HL),$80        ;
         CALL    L151D           ; routine STACK-A
@@ -9246,7 +9246,7 @@
         DEFB    $01             ;;exchange
         DEFB    $34             ;;end-calc
 
-        INC     (HL)            ;
+1CD0    INC     (HL)            ;
 
         RST     28H             ;; FP-CALC
 
@@ -9297,7 +9297,7 @@
         DEFB    $0F             ;;addition
         DEFB    $34             ;;end-calc
 
-        RET                     ; return.
+1D17    RET                     ; return.
 
 ; -----------------------------
 ; THE 'TRIGONOMETRIC' FUNCTIONS
@@ -9397,7 +9397,7 @@
         DEFB    $02             ;;delete          Y    delete test value.
         DEFB    $34             ;;end-calc        Y.
 
-        RET                     ; return.         with Q1 and Q4 >>>
+1D34    RET                     ; return.         with Q1 and Q4 >>>
 
 ;   The branch was here with quadrants II (0 to 1) and III (1 to 0).
 ;   Y will hold -2 to -1 if this is quadrant III.
@@ -9419,7 +9419,7 @@
 ;; YNEG
 1D3C    DEFB    $34             ;;end-calc        quadrants II and III correct.
 
-        RET                     ; return.
+1D3D    RET                     ; return.
 
 
 ; ---------------------
@@ -9517,7 +9517,7 @@
         DEFB    $04             ;;multiply
         DEFB    $34             ;;end-calc
 
-        RET                     ; return.
+1D6D    RET                     ; return.
 
 
 ; ----------------------
@@ -9553,7 +9553,7 @@
         DEFB    $05             ;;division          sin x/cos x (= tan x).
         DEFB    $34             ;;end-calc          tan x.
 
-        RET                     ; return.
+1D75    RET                     ; return.
 
 ; ---------------------
 ; THE 'ARCTAN' FUNCTION
@@ -9631,7 +9631,7 @@
         DEFB    $0F             ;;addition
         DEFB    $34             ;;end-calc
 
-        RET                     ; return.
+1DC3    RET                     ; return.
 
 
 ; ---------------------
@@ -9699,7 +9699,7 @@
         DEFB    $0F             ;;addition      a.
         DEFB    $34             ;;end-calc      a.
 
-        RET                     ; return.
+1DD3    RET                     ; return.
 
 
 ; ------------------------
@@ -9737,7 +9737,7 @@
         DEFB    $18             ;;negate        pi/2 - asn(x) = acs(x).
         DEFB    $34             ;;end-calc      acs(x)
 
-        RET                     ; return.
+1DDA    RET                     ; return.
 
 
 ; --------------------------
@@ -9788,7 +9788,7 @@
         DEFB    $04             ;;multiply              Y * LN X
         DEFB    $34             ;;end-calc
 
-        JP      L1C5B           ; jump back to EXP routine.  ->
+1DED    JP      L1C5B           ; jump back to EXP routine.  ->
 
 ; ---
 
@@ -9828,7 +9828,7 @@
 ;; LAST
 1DFD    DEFB    $34             ;;end-calc              last value 1 or 0.
 
-        RET                     ; return.
+1DFE    RET                     ; return.
 
 ; ---------------------
 ; THE 'SPARE LOCATIONS'
