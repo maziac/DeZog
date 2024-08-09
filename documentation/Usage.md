@@ -500,7 +500,7 @@ The following table lists the differences of the different assemblers in respect
 
 | Feature                                       | Savannah/z80asm | z88dk/z80asm | sjasmplus                               |
 | :-------------------------------------------- | :-------------- | :----------- | :-------------------------------------- |
-| Local lables                                  | no              | no           | yes                                     |
+| Local labels                                  | no              | no           | yes                                     |
 | Needs a ':'                                   | yes             | yes          | no                                      |
 | Dots (.) are allowed (also at start of label) | no              | no           | yes                                     |
 | Misc                                          |                 |              | @ for global labels, numbers for labels |

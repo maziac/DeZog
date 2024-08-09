@@ -560,9 +560,8 @@
 										}
 									},
 									"ulaScreen": {
-										"type": "boolean",
-										"description": "If enabled it shows the contents of the ZX Spectrum screen. It supports also the ZX128K screen switching.",
-										"default": true
+										"type": "string",							"description": "If defined it shows the contents of the ZX Spectrum (\"spectrum\") or ZX81 (\"zx81\") screen. It supports also the ZX128K screen switching.",
+										"default": null
 									},
 									"zxBorderWidth": {
 										"type": "number",
@@ -583,11 +582,6 @@
 										"type": "number",
 										"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
 										"default": 1
-									},
-									"vsyncInterrupt": {
-										"type": "boolean",
-										"description": "Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).",
-										"default": false
 									},
 									"cpuFrequency": {
 										"type": "number",

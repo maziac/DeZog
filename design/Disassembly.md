@@ -119,14 +119,14 @@ There are a few special problems to solve in the disassembly and sometimes no re
 
 #### RST
 
-The RST instruction is often used such that it is followed by one or more bytes that re ready by the RST sub routine.
-The disassembler cannot analyze this. For one it would require a dynamic analysis and furthermore it can also be unclear which RST sub routine is used in case several ROMs can be page in.
+The RST instruction is often used such that it is followed by one or more bytes that are read by the RST sub routine.
+The disassembler cannot analyze this. For one it would require a dynamic analysis and furthermore it can also be unclear which RST sub routine is used in case several ROMs can be pageg in.
 
 For now the disassembly simply goes on after the RST instruction. This could lead into a wrong disassembly, e.g. a (1 byte) instruction is decoded that is not existing or, even more problematic), e.g. a non-existing 3 byte instruction is decoded so that also the following instruction is wrongly decoded.
 
 Therefore it is possible to use some pseudo commands in the rev-eng.list file:
 'SKIP' or 'SKIPWORD'.
-It makes the disassembler skip a certain byte during disassembly and not interprete it as new opcode.
+It makes the disassembler skip a certain byte during disassembly and not interpret it as new opcode.
 See ['SKIP' or 'SKIPWORD'](../documentation/ReverseEngineeringUsage.md#skip-or-skipword).
 
 
