@@ -1,6 +1,7 @@
 
 import {Serializable, MemBuffer} from "../../misc/membuffer";
 import {SimulatedMemory} from "./simulatedmemory";
+import {Z80Cpu} from "./z80cpu";
 import {Z80Ports} from "./z80ports";
 
 
@@ -13,11 +14,20 @@ export class Zx81UlaScreen implements Serializable {
 	// The vsync time of the ULA.
 	protected static VSYNC_TIME = 0.020;	// 20ms
 
+	// The NMI intervall of the ULA.
+	protected static NMI_TIME = 0.000064;	// 64us
+
 	// The memory model. Used to obtain the address of the dfile.
 	protected memory: SimulatedMemory;
 
-	// The time since the last vertical interrupt.
-	protected time: number;
+	// The time counter for the vertical sync.
+	protected vsyncTime: number;
+
+	// The time counter for the NMI signal.
+	protected nmiTime: number;
+
+	// The previous state of the R-register.
+	protected prevRregister: number = 0;
 
 	// A function that is called when the vertical sync is generated.
 	protected vsyncSignalFunc: () => void;
@@ -34,8 +44,8 @@ export class Zx81UlaScreen implements Serializable {
 	// The original memory read function.
 	protected memoryRead8: (addr64k: number) => number;
 
-	// Used to time the Hsync/NMI interrupt.
-	protected prevNmiTime: number;
+	// Required for the R-register.
+	protected z80Cpu: Z80Cpu;
 
 	// For debug measuring the time between two vertical interrupts.
 	//protected lastIntTime: number = 0;
@@ -47,11 +57,13 @@ export class Zx81UlaScreen implements Serializable {
 	 * @param vertInterruptFunc A function that is called on a vertical interrupt.
 	 * Can be used by the caller to sync the display.
 	 */
+	// TODO: Do interrupts differently.
 	constructor(memory: SimulatedMemory, ports: Z80Ports, vertInterruptFunc = () => {}, nmiInterruptFunc = () => {}) {
 		this.memory = memory;
 		this.vsyncSignalFunc = vertInterruptFunc;
 		this.nmiSignalFunc = nmiInterruptFunc;
-		this.time = 0;
+		this.vsyncTime = 0;
+		this.nmiTime = 0;
 
 		// Register ULA ports
 		ports.registerGenericOutPortFunction(this.outPorts.bind(this));
@@ -63,6 +75,13 @@ export class Zx81UlaScreen implements Serializable {
 	}
 
 
+	/** Required for the R-register.
+	 */
+	public setZ80Cpu(z80Cpu: Z80Cpu) {
+		this.z80Cpu = z80Cpu;
+	}
+
+
 	/** Handles the ULA out ports.
 	 * 1. out (0xfd),a - turns NMI generator off
 	 * 2. out (0xfe),a - turns NMI generator on
@@ -71,6 +90,8 @@ export class Zx81UlaScreen implements Serializable {
 	 * Note: the value of a is not ignored.
 	 */
 	protected outPorts(port: number, _data: number): void {
+		// Partial decoding
+		port &= 0xff;
 		// Check for address line A0 = LOW
 		if ((port & 0x01) === 0) {
 			// Would start VSYNC signal
@@ -85,7 +106,7 @@ export class Zx81UlaScreen implements Serializable {
 		else if (port === 0xfe) {
 			// Yes
 			this.stateNmiGeneratorOn = true;
-			this.prevNmiTime = this.time;
+			this.nmiTime = 0;
 			console.log("zx81 ULA: NMI generator on");
 		}
 		// HSYNC on?
@@ -100,6 +121,8 @@ export class Zx81UlaScreen implements Serializable {
 	/** Intercepts reading from the memory.
 	 * For everything where A15 is set and data bit 6 is low, NOPs are returned.
 	 * When databit 6 is set it is expected to be the HALT instruction.
+	 * Additionally it can generate an 0x38h (Mode 1 interrupt) when the
+	 * R-register's bit 6 is going low.
 	 */
 	public ulaM1Read8(addr64k: number): number {
 		// Read data from memory
@@ -150,22 +173,25 @@ export class Zx81UlaScreen implements Serializable {
 	 */
 	public execute(cpuFreq: number, currentTstates: number): number {
 		let tstates = 0;
-		this.time += currentTstates / cpuFreq;
+		const timeAdd = currentTstates / cpuFreq;
+		this.nmiTime += timeAdd;
+		this.vsyncTime += timeAdd;
 
 		// Check for NMI interrupt generation
 		if (this.stateNmiGeneratorOn) {
-			const NmiTime = 0.000064;	// 64us
-			if (this.time >= this.prevNmiTime + NmiTime) {
+			if (this.nmiTime >= Zx81UlaScreen.NMI_TIME) {
 				// NMI interrupt
+				console.log("zx81 ULA: NMI interrupt");
 				this.nmiSignalFunc();
 				// Next
-				this.prevNmiTime = this.time;
+				this.nmiTime %= Zx81UlaScreen.NMI_TIME;
 			}
 		}
 
 		// Check for vertical interrupt
-		if (this.time >= Zx81UlaScreen.VSYNC_TIME) {
+		if (this.vsyncTime >= Zx81UlaScreen.VSYNC_TIME) {
 			this.vsyncSignalFunc();
+			this.vsyncTime %= Zx81UlaScreen.VSYNC_TIME;
 			// Measure time
 			// const timeInMs = Date.now();27
 			// const timeDiff = timeInMs - this.lastIntTime;
@@ -173,16 +199,18 @@ export class Zx81UlaScreen implements Serializable {
 			// this.lastIntTime = timeInMs;
 		}
 
-		// // Calculate time inside vertical sync
-		// this.time %= Zx81UlaScreen.VSYNC_TIME;
-		// // Check if inside "drawing" area: ca. 3.8ms - 16.1ms (for 20ms)
-		// const upper = 0.0161;	// 16.1 ms
-		// const lower = 0.0038;	// 3.8 ms
-		// if (this.time > lower && this.time < upper) {
-		// 	// Use up the remaining tstates
-		// 	tstates = Math.ceil((upper - this.time) * cpuFreq);
-		// 	this.time = upper;
-		// }
+		// Check for the R-register
+		const r = this.z80Cpu.r;
+		if ((r & 0b0100_0000) === 0) {
+			// Bit 6 is low
+			if ((this.prevRregister & 0b0100_0000) !== 0) {
+				// Bit 6 changed from high to low -> interrupt
+				console.log("zx81 ULA: 0x0038 interrupt");
+				this.z80Cpu.interrupt(false, 0);
+			}
+		}
+		this.prevRregister = r;
+
 		return tstates;
 	}
 
@@ -201,15 +229,19 @@ export class Zx81UlaScreen implements Serializable {
 	/** Serializes the object.
 	 */
 	public serialize(memBuffer: MemBuffer) {
-		// Write passed time
-		memBuffer.writeNumber(this.time);
+		// Write data
+		memBuffer.writeNumber(this.vsyncTime);
+		memBuffer.writeNumber(this.nmiTime);
+		memBuffer.write8(this.prevRregister);
 	}
 
 
 	/** Deserializes the object.
 	 */
 	public deserialize(memBuffer: MemBuffer) {
-		// Read passed time
-		this.time = memBuffer.readNumber();
+		// Read data
+		this.vsyncTime = memBuffer.readNumber();
+		this.nmiTime = memBuffer.readNumber();
+		this.prevRregister = memBuffer.read8();
 	}
 }

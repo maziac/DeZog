@@ -391,6 +391,10 @@ export class ZSimRemote extends DzrpRemote {
 		// Set slot and bank function.
 		this.memoryModel.init();
 
+		// Create a Z80 CPU to emulate Z80 behavior
+		this.z80Cpu = new Z80Cpu(this.memory, this.ports);
+		this.serializeObjects.push(this.z80Cpu);
+
 		// Check if ULA screen is enabled
 		const zxUlaScreen = zsim.ulaScreen;
 		if (zxUlaScreen === 'spectrum') {
@@ -416,14 +420,11 @@ export class ZSimRemote extends DzrpRemote {
 					this.z80Cpu.interrupt(true, 0);
 				}
 			);
+			this.zxUlaScreen.setZ80Cpu(this.z80Cpu);
 		}
-		if(this.zxUlaScreen) {
+		if (this.zxUlaScreen) {
 			this.serializeObjects.push(this.zxUlaScreen);
 		}
-
-		// Create a Z80 CPU to emulate Z80 behavior
-		this.z80Cpu = new Z80Cpu(this.memory, this.ports);
-		this.serializeObjects.push(this.z80Cpu);
 
 		// If tbblue write or read handler are used, then
 		// install them.
@@ -477,7 +478,7 @@ export class ZSimRemote extends DzrpRemote {
 			});
 			// Register on interrupt event
 			this.customCode.on('interrupt', (non_maskable: boolean, data: number) => {
-				this.z80Cpu.calculateLoad(non_maskable, data);
+				this.z80Cpu.calculateLoad();
 			});
 			this.serializeObjects.push(this.customCode);
 		}

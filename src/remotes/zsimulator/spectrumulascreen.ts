@@ -90,10 +90,10 @@ export class SpectrumUlaScreen extends Zx81UlaScreen {
 	 */
 	public execute(cpuFreq: number, currentTstates: number): number {
 		// Check for vertical interrupt
-		this.time += currentTstates / cpuFreq;
-		if (this.time >= Zx81UlaScreen.VSYNC_TIME) {
+		this.vsyncTime += currentTstates / cpuFreq;
+		if (this.vsyncTime >= Zx81UlaScreen.VSYNC_TIME) {
 			this.vsyncSignalFunc();
-			this.time %= Zx81UlaScreen.VSYNC_TIME;
+			this.vsyncTime %= Zx81UlaScreen.VSYNC_TIME;
 			// Measure time
 			// const timeInMs = Date.now();
 			// const timeDiff = timeInMs - this.lastIntTime;

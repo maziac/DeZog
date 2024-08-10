@@ -225,6 +225,11 @@ export class Z80Cpu implements Serializable {
 		r.r = value;
 		this.z80.setState(r);
 	}
+	//get r() {return this.z80.getState().r;}
+	get r() {
+		return this.z80.r;
+	}
+
 	set i(value) {
 		const r = this.z80.getState();
 		r.i = value;
