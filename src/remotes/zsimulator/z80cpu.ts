@@ -80,6 +80,7 @@ export class Z80Cpu implements Serializable {
 		// Initialize Z80, call constructor
 		const z80n_enabled = Settings.launch.zsim.Z80N;
 		this.z80 = new (Z80.Z80 as any)({
+			m1_mem_read: (address) => {return memory.m1Read8(address);},
 			mem_read: (address) => {return memory.read8(address);},
 			mem_write: (address, val) => {
 				memory.write8(address, val);

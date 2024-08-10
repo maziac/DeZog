@@ -129,6 +129,10 @@ export class SimulatedMemory implements Serializable {
 		//this.slotRangesSize = memModel.slotRanges.map(slotRange => slotRange.end + 1 - slotRange.start);
 		this.slotRanges = memModel.slotRanges;
 
+		// m1read8 (opcode fetch) is normally the same as a normal read.
+		// The zx81 ula will manipulate this.
+		this.m1Read8 = this.read8.bind(this);
+
 		// Create visual memory
 		this.visualMemory = new Array<number>(1 << (16 - this.VISUAL_MEM_SIZE_SHIFT));	// E.g. 256
 		this.clearVisualMemory();
@@ -459,6 +463,14 @@ export class SimulatedMemory implements Serializable {
 		this.hitAddress = -1;
 		this.hitAccess = '';
 	}
+
+
+	// Read 1 byte during M1 cycle, i.e. opcode fetch.
+	// This is used by the Z80 CPU.
+	// It was necessary to emulate the ZX81 ULA (display).
+	// In other cases this is the same as read8.
+	// Is set in the constructor and manipulated by the zx81 ULA.
+	public m1Read8: (addr64k: number) => number;
 
 
 	// Read 1 byte.

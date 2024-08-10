@@ -57,9 +57,9 @@ export class Zx81UlaScreen implements Serializable {
 		ports.registerGenericOutPortFunction(this.outPorts.bind(this));
 		ports.registerGenericInPortFunction(this.inPort.bind(this));
 
-		// Remap memory, to intercept the read function
+		// m1read8 (opcode fetch) is modified to emulate the ZX81 ULA.
 		this.memoryRead8 = memory.read8.bind(memory);
-		memory.read8 = this.ulaRead8.bind(this);
+		memory.m1Read8 = this.ulaM1Read8.bind(this);
 	}
 
 
@@ -101,12 +101,11 @@ export class Zx81UlaScreen implements Serializable {
 	 * For everything where A15 is set and data bit 6 is low, NOPs are returned.
 	 * When databit 6 is set it is expected to be the HALT instruction.
 	 */
-	public ulaRead8(addr64k: number): number {
+	public ulaM1Read8(addr64k: number): number {
 		// Read data from memory
 		const data = this.memoryRead8(addr64k & 0x7FFF);
 		// Check if above 32k, and data bit 6 is low.
 		// Then return NOPs.
-		// TODO: Do I need to check also for opcode fetch?
 		if (addr64k & 0x8000) {
 			// Bit 15 is set
 			// Check if bit 6 is low

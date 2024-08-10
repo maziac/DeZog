@@ -32,13 +32,18 @@ export function Z80(coreParameter)
    let core = coreParameter;
 
    // The argument to this constructor should be an object containing 4 functions:
+   // m1_mem_read(address) used for opcode fetches, should return the byte at the given memory address,
    // mem_read(address) should return the byte at the given memory address,
    // mem_write(address, value) should write the given value to the given memory address,
    // io_read(port) should read a return a byte read from the given I/O port,
    // io_write(port, value) should write the given byte to the given I/O port.
    // If any of those functions is missing, this module cannot run.
-   if (!core || (typeof core.mem_read !== "function") || (typeof core.mem_write !== "function") ||
-                (typeof core.io_read !== "function")  || (typeof core.io_write !== "function"))
+   if (!core
+      || (typeof core.m1_mem_read !== "function")
+      || (typeof core.mem_read !== "function")
+      || (typeof core.mem_write !== "function")
+      || (typeof core.io_read !== "function")
+      || (typeof core.io_write !== "function"))
       throw Error("Z80: Core object is missing required functions.");
 
    // All right, let's initialize the registers.
@@ -256,7 +261,7 @@ let run_instruction = function()
       }
 
       // Read the byte at the PC and run the instruction it encodes.
-      var opcode = core.mem_read(pc);
+      var opcode = core.m1_mem_read(pc);
       decode_instruction(opcode);
 
       // T.Busse, Dec-2020: Fix: A HALT does not increase the PC
@@ -1706,7 +1711,7 @@ instructions[0xcb] = function()
    // We don't have a table for this prefix,
    //  the instructions are all so uniform that we can directly decode them.
    pc = (pc + 1) & 0xffff;
-   var opcode = core.mem_read(pc),
+   var opcode = core.m1_mem_read(pc),
        bit_number = (opcode & 0x38) >>> 3,
        reg_code = opcode & 0x07;
 
@@ -1933,7 +1938,7 @@ instructions[0xdd] = function()
    r = (r & 0x80) | (((r & 0x7f) + 1) & 0x7f);
 
    pc = (pc + 1) & 0xffff;
-   var opcode = core.mem_read(pc),
+   var opcode = core.m1_mem_read(pc),
        func = dd_instructions[opcode];
 
    if (func)
@@ -2054,7 +2059,7 @@ instructions[0xed] = function()
    r = (r & 0x80) | (((r & 0x7f) + 1) & 0x7f);
 
    pc = (pc + 1) & 0xffff;
-   var opcode = core.mem_read(pc),
+   var opcode = core.m1_mem_read(pc),
        func = ed_instructions[opcode];
 
    if (func)
@@ -2160,7 +2165,7 @@ instructions[0xfd] = function()
    r = (r & 0x80) | (((r & 0x7f) + 1) & 0x7f);
 
    pc = (pc + 1) & 0xffff;
-   var opcode = core.mem_read(pc),
+   var opcode = core.m1_mem_read(pc),
        func = dd_instructions[opcode];
 
    if (func)
@@ -3212,7 +3217,7 @@ dd_instructions[0xcb] = function()
    pc = (pc + 1) & 0xffff;
    var offset = get_signed_offset_byte(core.mem_read(pc));
    pc = (pc + 1) & 0xffff;
-   var opcode = core.mem_read(pc), value;
+   var opcode = core.m1_mem_read(pc), value;
 
    // As with the "normal" CB prefix, we implement the DDCB prefix
    //  by decoding the opcode directly, rather than using a table.
