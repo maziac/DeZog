@@ -46,7 +46,7 @@ export class UlaScreen extends EventEmitter implements Serializable{
 	/** Override if you need additional behavior on a vsync.
 	 */
 	protected vsyncSignal() {
-		this.emit("VSYNC");
+	//	this.emit("VSYNC");
 	}
 
 

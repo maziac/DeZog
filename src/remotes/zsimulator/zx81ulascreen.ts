@@ -5,12 +5,17 @@ import {Z80Cpu} from "./z80cpu";
 
 
 /** Handles the ZX81 ULA screen.
- * Interrupts:
- * 0x0038: Mode 1 interrupt. Called 192+ times for the lines.
- * 0x0066: NMI interrupt.
+ * Listen to ports and creates the nmi and the 0x0038 interrupts.
+ * The display itself is simulated (i.e. the display contents would be
+ * created by the CPU, but is not used).
+ * For details of the zx81 ULA display see:
+ * https://k1.spdns.de/Vintage/Sinclair/80/Sinclair%20ZX80/Tech%20specs/Wilf%20Rigter%27s%20ZX81%20Video%20Display%20Info.htm
+ * or
+ * https://8bit-museum.de/heimcomputer-2/sinclair/sinclair-scans/scans-zx81-video-display-system/
+ * Note: HSYNC is not generated.
  */
 export class Zx81UlaScreen extends UlaScreen {
-	// The NMI intervall of the ULA.
+	// The NMI interval of the ULA.
 	protected static NMI_TIME = 0.000064;	// 64us
 
 	// The time counter for the NMI signal.
@@ -23,7 +28,7 @@ export class Zx81UlaScreen extends UlaScreen {
 	protected stateNmiGeneratorOn: boolean = false;
 
 	// The state of the HSYNC generator
-	protected stateHsyncGeneratorOn: boolean = false;
+	//protected stateHsyncGeneratorOn: boolean = false;
 
 	// The original memory read function.
 	protected memoryRead8: (addr64k: number) => number;
@@ -44,7 +49,7 @@ export class Zx81UlaScreen extends UlaScreen {
 
 		// Register ULA ports
 		z80Cpu.ports.registerGenericOutPortFunction(this.outPorts.bind(this));
-		z80Cpu.ports.registerGenericInPortFunction(this.inPort.bind(this));
+		//z80Cpu.ports.registerGenericInPortFunction(this.inPort.bind(this));
 
 		// m1read8 (opcode fetch) is modified to emulate the ZX81 ULA.
 		this.memoryRead8 = z80Cpu.memory.read8.bind(z80Cpu.memory);
@@ -64,7 +69,8 @@ export class Zx81UlaScreen extends UlaScreen {
 		port &= 0xff;
 		// Check for address line A0 = LOW
 		if ((port & 0x01) === 0) {
-			// Would start VSYNC signal
+			// Start VSYNC signal
+			this.emit('VSYNC');
 		}
 		// NMI generator off?
 		if (port === 0xfd) {
@@ -79,12 +85,12 @@ export class Zx81UlaScreen extends UlaScreen {
 			this.nmiTimeCounter = 0;
 			//console.log("zx81 ULA: NMI generator on");
 		}
-		// HSYNC on?
-		else if (port === 0xff) {
-			// Yes
-			this.stateHsyncGeneratorOn = true;
-			// Would also stop the VSYNC signal
-		}
+		// // HSYNC on?
+		// else if (port === 0xff) {
+		// 	// Yes
+		// 	this.stateHsyncGeneratorOn = true;
+		// 	// Would also stop the VSYNC signal
+		// }
 	}
 
 
@@ -95,7 +101,7 @@ export class Zx81UlaScreen extends UlaScreen {
 	 *    and starts the vertical sync (VSYNC) signal.
 	 * 4. ...
 	 */
-	// TODO: REMOVE
+	/* inPort is not required, as HSYNC is not used.
 	protected inPort(port: number): number | undefined {
 		// HSYNC off?
 		if (port === 0xfe) {
@@ -104,6 +110,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		}
 		return undefined;
 	}
+	*/
 
 
 	/** Intercepts reading from the memory.
