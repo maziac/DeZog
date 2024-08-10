@@ -398,7 +398,7 @@ export class ZSimRemote extends DzrpRemote {
 		// Check if ULA screen is enabled
 		const zxUlaScreen = zsim.ulaScreen;
 		if (zxUlaScreen === 'spectrum') {
-			this.zxUlaScreen = new SpectrumUlaScreen(this.memory, this.ports, () => {
+			this.zxUlaScreen = new SpectrumUlaScreen(this.z80Cpu, () => {
 				// Notify
 				this.emit('VSYNC');
 				// And generate interrupt
@@ -407,7 +407,7 @@ export class ZSimRemote extends DzrpRemote {
 			});
 		}
 		else if (zxUlaScreen === 'zx81') {
-			this.zxUlaScreen = new Zx81UlaScreen(this.memory, this.ports,
+			this.zxUlaScreen = new Zx81UlaScreen(this.z80Cpu,
 				// VSYNC
 				() => {
 					// Notify
@@ -420,7 +420,6 @@ export class ZSimRemote extends DzrpRemote {
 					this.z80Cpu.interrupt(true, 0);
 				}
 			);
-			this.zxUlaScreen.setZ80Cpu(this.z80Cpu);
 		}
 		if (this.zxUlaScreen) {
 			this.serializeObjects.push(this.zxUlaScreen);

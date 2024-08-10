@@ -35,9 +35,6 @@ export class Z80Cpu implements Serializable {
 	// The number of extra t-states per instruction.
 	public extraTstatesPerInstruction: number;
 
-	// Set to true if a ZX Spectrum like interrupt should be generated.
-	protected vsyncInterrupt: boolean;
-
 	// At the moment just a constant. CPU frequency.
 	public cpuFreq: number;
 

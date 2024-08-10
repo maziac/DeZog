@@ -1,8 +1,6 @@
 
 import {Serializable, MemBuffer} from "../../misc/membuffer";
-import {SimulatedMemory} from "./simulatedmemory";
 import {Z80Cpu} from "./z80cpu";
-import {Z80Ports} from "./z80ports";
 
 
 /** Handles the ZX81 ULA screen.
@@ -16,9 +14,6 @@ export class Zx81UlaScreen implements Serializable {
 
 	// The NMI intervall of the ULA.
 	protected static NMI_TIME = 0.000064;	// 64us
-
-	// The memory model. Used to obtain the address of the dfile.
-	protected memory: SimulatedMemory;
 
 	// The time counter for the vertical sync.
 	protected vsyncTime: number;
@@ -52,33 +47,25 @@ export class Zx81UlaScreen implements Serializable {
 
 
 	/** Constructor.
-	 * @param memoryModel The used memory model.
-	 * @param ports The Z80 ports.
+	 * @param z80Cpu Mainly for the memoryModel and the ports.
 	 * @param vertInterruptFunc A function that is called on a vertical interrupt.
 	 * Can be used by the caller to sync the display.
 	 */
 	// TODO: Do interrupts differently.
-	constructor(memory: SimulatedMemory, ports: Z80Ports, vertInterruptFunc = () => {}, nmiInterruptFunc = () => {}) {
-		this.memory = memory;
+	constructor(z80Cpu: Z80Cpu, vertInterruptFunc = () => {}, nmiInterruptFunc = () => {}) {
+		this.z80Cpu = z80Cpu;
 		this.vsyncSignalFunc = vertInterruptFunc;
 		this.nmiSignalFunc = nmiInterruptFunc;
 		this.vsyncTime = 0;
 		this.nmiTime = 0;
 
 		// Register ULA ports
-		ports.registerGenericOutPortFunction(this.outPorts.bind(this));
-		ports.registerGenericInPortFunction(this.inPort.bind(this));
+		z80Cpu.ports.registerGenericOutPortFunction(this.outPorts.bind(this));
+		z80Cpu.ports.registerGenericInPortFunction(this.inPort.bind(this));
 
 		// m1read8 (opcode fetch) is modified to emulate the ZX81 ULA.
-		this.memoryRead8 = memory.read8.bind(memory);
-		memory.m1Read8 = this.ulaM1Read8.bind(this);
-	}
-
-
-	/** Required for the R-register.
-	 */
-	public setZ80Cpu(z80Cpu: Z80Cpu) {
-		this.z80Cpu = z80Cpu;
+		this.memoryRead8 = z80Cpu.memory.read8.bind(z80Cpu.memory);
+		z80Cpu.memory.m1Read8 = this.ulaM1Read8.bind(this);
 	}
 
 
@@ -220,9 +207,9 @@ export class Zx81UlaScreen implements Serializable {
 	 */
 	public getUlaScreen(): Uint8Array {
 		// Get the content of the D_FILE system variable (2 bytes).
-		const dfile_ptr = this.memory.getMemory16(0x400c);
+		const dfile_ptr = this.z80Cpu.memory.getMemory16(0x400c);
 		// 24 lines of 33 bytes (could be less).
-		return this.memory.readBlock(dfile_ptr, 33 * 24);
+		return this.z80Cpu.memory.readBlock(dfile_ptr, 33 * 24);
 	}
 
 

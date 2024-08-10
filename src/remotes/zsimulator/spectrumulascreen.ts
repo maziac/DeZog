@@ -1,7 +1,6 @@
 
 import {MemBuffer} from "../../misc/membuffer";
-import {SimulatedMemory} from "./simulatedmemory";
-import {Z80Ports} from "./z80ports";
+import {Z80Cpu} from "./z80cpu";
 import {Zx81UlaScreen} from "./zx81ulascreen";
 
 
@@ -31,10 +30,10 @@ export class SpectrumUlaScreen extends Zx81UlaScreen {
 	 * @param vertInterruptFunc A function that is called on a vertical interrupt.
 	 * Can be used by the caller to sync the display.
 	 */
-	constructor(memory: SimulatedMemory, ports: Z80Ports, vertInterruptFunc = () => {}) {
-		super(memory, ports, vertInterruptFunc);
+	constructor(z80Cpu: Z80Cpu, vertInterruptFunc = () => {}) {
+		super(z80Cpu);
 		// Set ULA bank(s) depending on available banks
-		const bankCount = memory.getNumberOfBanks();
+		const bankCount = z80Cpu.memory.getNumberOfBanks();
 		if (bankCount > 7) {
 			// ZX128K, i.e. bank 5 and 7 are used
 			this.normalUlaBank = 5;
@@ -47,7 +46,7 @@ export class SpectrumUlaScreen extends Zx81UlaScreen {
 
 			// Use ZX128K ULA Bank switching.
 			this.currentUlaBank = this.normalUlaBank;
-			ports.registerGenericOutPortFunction(this.zx128UlaScreenSwitch.bind(this));
+			z80Cpu.ports.registerGenericOutPortFunction(this.zx128UlaScreenSwitch.bind(this));
 		}
 		else if (bankCount > 1) {
 			// Otherwise assume ZX16/48K with bank 1
@@ -109,7 +108,7 @@ export class SpectrumUlaScreen extends Zx81UlaScreen {
 	 * @returns The screen as a UInt8Array.
 	 */
 	public getUlaScreen(): Uint8Array {
-		const bank = this.memory.getBankMemory(this.currentUlaBank);
+		const bank = this.z80Cpu.memory.getBankMemory(this.currentUlaBank);
 		return bank.slice(0, 0x1B00);
 	}
 
