@@ -398,30 +398,18 @@ export class ZSimRemote extends DzrpRemote {
 		// Check if ULA screen is enabled
 		const zxUlaScreen = zsim.ulaScreen;
 		if (zxUlaScreen === 'spectrum') {
-			this.zxUlaScreen = new SpectrumUlaScreen(this.z80Cpu, () => {
-				// Notify
-				this.emit('VSYNC');
-				// And generate interrupt
-				this.z80Cpu.interrupt(false, 0);
-				this.z80Cpu.calculateLoad();
-			});
+			this.zxUlaScreen = new SpectrumUlaScreen(this.z80Cpu);
 		}
 		else if (zxUlaScreen === 'zx81') {
-			this.zxUlaScreen = new Zx81UlaScreen(this.z80Cpu,
-				// VSYNC
-				() => {
-					// Notify
-					this.emit('VSYNC');
-					this.z80Cpu.calculateLoad();
-				},
-				// NMI
-				() => {
-					// Generate NMI interrupt
-					this.z80Cpu.interrupt(true, 0);
-				}
-			);
+			this.zxUlaScreen = new Zx81UlaScreen(this.z80Cpu);
 		}
 		if (this.zxUlaScreen) {
+			this.zxUlaScreen.on('VSYNC', () => {
+				// Calculate load
+				this.z80Cpu.calculateLoad();
+				// Notify
+				this.emit('VSYNC');
+			});
 			this.serializeObjects.push(this.zxUlaScreen);
 		}
 
@@ -674,8 +662,7 @@ export class ZSimRemote extends DzrpRemote {
 			tStates = this.z80Cpu.execute();
 		// Execute ULA
 		if (this.zxUlaScreen) {
-			const ulaTstates = this.zxUlaScreen.execute(cpuFreq, tStates);
-			tStates += ulaTstates;
+			this.zxUlaScreen.execute(cpuFreq, tStates);
 		}
 		return tStates;
 	}

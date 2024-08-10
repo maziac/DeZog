@@ -1,15 +1,14 @@
-
 import {MemBuffer} from "../../misc/membuffer";
+import {UlaScreen} from "./ulascreen";
 import {Z80Cpu} from "./z80cpu";
-import {Zx81UlaScreen} from "./zx81ulascreen";
 
 
 /** Holds the bank used for the ZX Spectrum ULA screen and does the bank switching.
  */
-export class SpectrumUlaScreen extends Zx81UlaScreen {
+export class SpectrumUlaScreen extends UlaScreen {
 	// The vsync time window of the ULA. If missed, the interrupt
 	// function will not be called.
-	protected static VSYNC_TIME_WINDOW = 30 / 3500000;	// 20ms
+	protected static VSYNC_TIME_WINDOW = 30 / 3500000;	// ~ 30 cycles
 
 	// The bank used to show. ZX16K/48K bank 1. Others: (i.e. ZX128K) bank 5 or 7.
 	public currentUlaBank: number;
@@ -20,9 +19,6 @@ export class SpectrumUlaScreen extends Zx81UlaScreen {
 	// The "shadow" ula bank (e.g. bank 7)
 	protected shadowUlaBank: number;
 
-	// For debug measuring the time between two vertical interrupts.
-	//protected lastIntTime: number = 0;
-
 
 	/** Constructor.
 	 * @param memoryModel The used memory model.
@@ -30,7 +26,7 @@ export class SpectrumUlaScreen extends Zx81UlaScreen {
 	 * @param vertInterruptFunc A function that is called on a vertical interrupt.
 	 * Can be used by the caller to sync the display.
 	 */
-	constructor(z80Cpu: Z80Cpu, vertInterruptFunc = () => {}) {
+	constructor(z80Cpu: Z80Cpu) {
 		super(z80Cpu);
 		// Set ULA bank(s) depending on available banks
 		const bankCount = z80Cpu.memory.getNumberOfBanks();
@@ -39,11 +35,10 @@ export class SpectrumUlaScreen extends Zx81UlaScreen {
 			this.normalUlaBank = 5;
 			this.shadowUlaBank = 7;
 			// Check for ZXNext
-			if (bankCount > 8) {
+			if (z80Cpu.memory.getSlots().length === 8) {
 				this.normalUlaBank *= 2;
 				this.shadowUlaBank *= 2;
 			}
-
 			// Use ZX128K ULA Bank switching.
 			this.currentUlaBank = this.normalUlaBank;
 			z80Cpu.ports.registerGenericOutPortFunction(this.zx128UlaScreenSwitch.bind(this));
@@ -79,29 +74,12 @@ export class SpectrumUlaScreen extends Zx81UlaScreen {
 	}
 
 
-	/** Executes the ULA. The ZX Spectrum ULA simulation does
-	 * not do much. It is only generating the vertical interrupt
-	 * when needed.
-	 * @param cpuFreq The CPU frequency in Hz.
-	 * @param currentTstates The t-states that were just used by
-	 * DMA or CPU.
-	 * @returns 0 (Occupies 0 t-states)
+	/** Generate an interrupt on the VSYNC signal.
 	 */
-	public execute(cpuFreq: number, currentTstates: number): number {
-		// Check for vertical interrupt
-		this.vsyncTime += currentTstates / cpuFreq;
-		if (this.vsyncTime >= Zx81UlaScreen.VSYNC_TIME) {
-			this.vsyncSignalFunc();
-			this.vsyncTime %= Zx81UlaScreen.VSYNC_TIME;
-			// Measure time
-			// const timeInMs = Date.now();
-			// const timeDiff = timeInMs - this.lastIntTime;
-			// console.log("VSYNC: " + timeDiff + "ms");
-			// this.lastIntTime = timeInMs;
-		}
-		return 0;
+	protected vsyncSignal() {
+		this.z80Cpu.interrupt(false, 0);
+		super.vsyncSignal();	// emit("VSYNC")
 	}
-
 
 
 	/** Returns the ULA screen with color attributes.
