@@ -118,6 +118,23 @@ export class Zx81UlaScreen implements Serializable {
 	}
 
 
+	/** Handles the ULA in port.
+	 * 1. ...
+	 * 2. ...
+	 * 3. in a,(0xfe) - turns HSYNC generator off (if NMI is off)
+	 *    and starts the vertical sync (VSYNC) signal.
+	 * 4. ...
+	 */
+	protected inPort(port: number): number | undefined {
+		// HSYNC off?
+		if (port === 0xfe) {
+			// Yes
+			this.stateHsyncGeneratorOn = false;
+		}
+		return undefined;
+	}
+
+
 	/** Intercepts reading from the memory.
 	 * For everything where A15 is set and data bit 6 is low, NOPs are returned.
 	 * When databit 6 is set it is expected to be the HALT instruction.
@@ -142,23 +159,6 @@ export class Zx81UlaScreen implements Serializable {
 		}
 		// Otherwise return the normal value
 		return data;
-	}
-
-
-	/** Handles the ULA in port.
-	 * 1. ...
-	 * 2. ...
-	 * 3. in a,(0xfe) - turns HSYNC generator off (if NMI is off)
-	 *    and starts the vertical sync (VSYNC) signal.
-	 * 4. ...
-	 */
-	protected inPort(port: number): number | undefined {
-		// HSYNC off?
-		if (port === 0xfe) {
-			// Yes
-			this.stateHsyncGeneratorOn = false;
-		}
-		return undefined;
 	}
 
 
