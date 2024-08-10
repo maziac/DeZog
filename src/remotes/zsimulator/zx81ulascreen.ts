@@ -100,14 +100,14 @@ export class Zx81UlaScreen implements Serializable {
 		if (port === 0xfd) {
 			// Yes
 			this.stateNmiGeneratorOn = false;
-			console.log("zx81 ULA: NMI generator off");
+			//console.log("zx81 ULA: NMI generator off");
 		}
 		// NMI generator on?
 		else if (port === 0xfe) {
 			// Yes
 			this.stateNmiGeneratorOn = true;
 			this.nmiTime = 0;
-			console.log("zx81 ULA: NMI generator on");
+			//console.log("zx81 ULA: NMI generator on");
 		}
 		// HSYNC on?
 		else if (port === 0xff) {
@@ -181,7 +181,7 @@ export class Zx81UlaScreen implements Serializable {
 		if (this.stateNmiGeneratorOn) {
 			if (this.nmiTime >= Zx81UlaScreen.NMI_TIME) {
 				// NMI interrupt
-				console.log("zx81 ULA: NMI interrupt");
+				//console.log("zx81 ULA: NMI interrupt");
 				this.nmiSignalFunc();
 				// Next
 				this.nmiTime %= Zx81UlaScreen.NMI_TIME;
@@ -205,7 +205,7 @@ export class Zx81UlaScreen implements Serializable {
 			// Bit 6 is low
 			if ((this.prevRregister & 0b0100_0000) !== 0) {
 				// Bit 6 changed from high to low -> interrupt
-				console.log("zx81 ULA: 0x0038 interrupt");
+				//console.log("zx81 ULA: 0x0038 interrupt");
 				this.z80Cpu.interrupt(false, 0);
 			}
 		}

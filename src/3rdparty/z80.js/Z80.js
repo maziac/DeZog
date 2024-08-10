@@ -214,7 +214,7 @@ let reset = function()
    // Start up with interrupts disabled.
    imode = 0;
    iff1 = 0;
-   console.log("z80: reset: iff1=0");
+   //console.log("z80: reset: iff1=0");
    iff2 = 0;
    // Don't start halted or in a delayed DI or EI.
    halted = false;
@@ -272,7 +272,7 @@ let run_instruction = function()
       // Actually do the delayed interrupt disable/enable if we have one.
       if (doing_delayed_di)
       {
-         console.log("z80: di: iff1=0, pc=" + pc.toString(16));
+         //console.log("z80: di: iff1=0, pc=" + pc.toString(16));
          iff1 = 0;
          iff2 = 0;
       }
@@ -322,7 +322,7 @@ let interrupt = function(non_maskable, data)
       halted = false;
       iff2 = iff1;
       iff1 = 0;
-      console.log("z80: nmi: iff1=0, pc=" + pc.toString(16));
+      //console.log("z80: nmi: iff1=0, pc=" + pc.toString(16));
       push_word(pc);
       pc = 0x66;
       cycle_counter += 11;
@@ -339,7 +339,7 @@ let interrupt = function(non_maskable, data)
       r = (r & 0x80) | (((r & 0x7f) + 1) & 0x7f);
 
       halted = false;
-      console.log("z80: int (maskeable): iff1=0, pc=" + pc.toString(16));
+      //console.log("z80: int (maskeable): iff1=0, pc=" + pc.toString(16));
       iff1 = 0;
       iff2 = 0;
 
@@ -360,7 +360,7 @@ let interrupt = function(non_maskable, data)
          push_word(pc);
          pc = 0x38;
          cycle_counter += 13;
-         console.log("z80: int (maskeable): imode=1: iff1=0, pc=" + pc.toString(16));
+         //console.log("z80: int (maskeable): imode=1: iff1=0, pc=" + pc.toString(16));
       }
       else if (imode === 2)
       {
@@ -408,7 +408,7 @@ let decode_instruction = function(opcode)
    //  by falling where LD (HL), (HL) ought to be.
    if (opcode === 0x76)
    {
-      console.log("z80: HALT, pc=" + pc.toString(16));
+      //console.log("z80: HALT, pc=" + pc.toString(16));
       halted = true;
    }
    else if ((opcode >= 0x40) && (opcode < 0x80))
@@ -2156,7 +2156,7 @@ instructions[0xfb] = function()
 {
    // EI doesn't actually take effect until after the next instruction.
    do_delayed_ei = true;
-   console.log("z80: EI");
+   //console.log("z80: EI");
 };
 // 0xfc : CALL M, nn
 instructions[0xfc] = function()
