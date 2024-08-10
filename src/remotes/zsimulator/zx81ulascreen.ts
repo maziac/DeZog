@@ -1,5 +1,5 @@
 
-import {MemBuffer} from "../../misc/membuffer";
+import {MemBuffer, Serializable} from "../../misc/membuffer";
 import {UlaScreen} from "./ulascreen";
 import {Z80Cpu} from "./z80cpu";
 
@@ -12,9 +12,9 @@ import {Z80Cpu} from "./z80cpu";
  * https://k1.spdns.de/Vintage/Sinclair/80/Sinclair%20ZX80/Tech%20specs/Wilf%20Rigter%27s%20ZX81%20Video%20Display%20Info.htm
  * or
  * https://8bit-museum.de/heimcomputer-2/sinclair/sinclair-scans/scans-zx81-video-display-system/
- * Note: HSYNC is not generated.
+ * Note: HSYNC is not required and not generated.
  */
-export class Zx81UlaScreen extends UlaScreen {
+export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	// The NMI interval of the ULA.
 	protected static NMI_TIME = 0.000064;	// 64us
 
@@ -169,9 +169,6 @@ export class Zx81UlaScreen extends UlaScreen {
 				this.nmiTimeCounter %= Zx81UlaScreen.NMI_TIME;
 			}
 		}
-
-		// At the end the normal vsync behavior
-		super.execute(cpuFreq, currentTstates);
 	}
 
 
@@ -189,7 +186,6 @@ export class Zx81UlaScreen extends UlaScreen {
 	/** Serializes the object.
 	 */
 	public serialize(memBuffer: MemBuffer) {
-		super.serialize(memBuffer);
 		// Write data
 		memBuffer.writeNumber(this.nmiTimeCounter);
 		memBuffer.write8(this.prevRregister);
@@ -199,7 +195,6 @@ export class Zx81UlaScreen extends UlaScreen {
 	/** Deserializes the object.
 	 */
 	public deserialize(memBuffer: MemBuffer) {
-		super.deserialize(memBuffer);
 		// Read data
 		this.nmiTimeCounter = memBuffer.readNumber();
 		this.prevRregister = memBuffer.read8();

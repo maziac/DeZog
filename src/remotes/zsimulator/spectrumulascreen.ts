@@ -1,14 +1,20 @@
-import {MemBuffer} from "../../misc/membuffer";
+import {MemBuffer, Serializable} from "../../misc/membuffer";
 import {UlaScreen} from "./ulascreen";
 import {Z80Cpu} from "./z80cpu";
 
 
 /** Holds the bank used for the ZX Spectrum ULA screen and does the bank switching.
  */
-export class SpectrumUlaScreen extends UlaScreen {
+export class SpectrumUlaScreen extends UlaScreen implements Serializable {
+	// The vsync time of the ULA.
+	protected static VSYNC_TIME = 0.020;	// 20ms
+
 	// The vsync time window of the ULA. If missed, the interrupt
 	// function will not be called.
 	protected static VSYNC_TIME_WINDOW = 30 / 3500000;	// ~ 30 cycles
+
+	// The time counter for the vertical sync.
+	protected vsyncTimeCounter: number;
 
 	// The bank used to show. ZX16K/48K bank 1. Others: (i.e. ZX128K) bank 5 or 7.
 	public currentUlaBank: number;
@@ -28,6 +34,7 @@ export class SpectrumUlaScreen extends UlaScreen {
 	 */
 	constructor(z80Cpu: Z80Cpu) {
 		super(z80Cpu);
+		this.vsyncTimeCounter = 0;
 		// Set ULA bank(s) depending on available banks
 		const bankCount = z80Cpu.memory.getNumberOfBanks();
 		if (bankCount > 7) {
@@ -73,12 +80,22 @@ export class SpectrumUlaScreen extends UlaScreen {
 		}
 	}
 
-
-	/** Generate an interrupt on the VSYNC signal.
-	 */
-	protected vsyncSignal() {
-		this.z80Cpu.interrupt(false, 0);
-		super.vsyncSignal();	// emit("VSYNC")
+	/** Executes the ULA. The ZX81 ULA may grab tstates from
+		 * the CPU to simulate the NMI interrupt.
+		 * @param cpuFreq The CPU frequency in Hz.
+		 * @param currentTstates The t-states that were just used by
+		 * DMA or CPU.
+		 */
+	public execute(cpuFreq: number, currentTstates: number) {
+		// Check for vertical interrupt
+		const timeAdd = currentTstates / cpuFreq;
+		this.vsyncTimeCounter += timeAdd;
+		if (this.vsyncTimeCounter >= SpectrumUlaScreen.VSYNC_TIME) {
+			this.vsyncTimeCounter %= SpectrumUlaScreen.VSYNC_TIME;
+			// Generate interrupt
+			this.z80Cpu.interrupt(false, 0);
+			this.emit("VSYNC");
+		}
 	}
 
 
@@ -94,8 +111,8 @@ export class SpectrumUlaScreen extends UlaScreen {
 	/** Serializes the object.
 	 */
 	public serialize(memBuffer: MemBuffer) {
-		super.serialize(memBuffer);
 		// Write slot/bank mapping
+		memBuffer.writeNumber(this.vsyncTimeCounter);
 		memBuffer.writeNumber(this.currentUlaBank);
 	}
 
@@ -103,8 +120,8 @@ export class SpectrumUlaScreen extends UlaScreen {
 	/** Deserializes the object.
 	 */
 	public deserialize(memBuffer: MemBuffer) {
-		super.deserialize(memBuffer);
 		// Write last t-states
+		this.vsyncTimeCounter = memBuffer.readNumber();
 		this.currentUlaBank = memBuffer.readNumber();
 	}
 }
