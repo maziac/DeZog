@@ -159,7 +159,7 @@ export class ZSimulationView extends BaseView {
 		});
 
 		// Handle vertical sync
-		this.simulator.on('vertSync', () => {
+		this.simulator.on('VSYNC', () => {
 			this.vertSync();
 		});
 

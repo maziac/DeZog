@@ -296,13 +296,19 @@ export class Z80Cpu implements Serializable {
 	get interruptOccurred() {return this.z80.interruptOccurred;}
 
 
-	/** Simulates pulsing the processor's INT (or NMI) pin.
-	 * Is called for the ULA vertical sync and also from custom code.
-	 * @param non_maskable - true if this is a non-maskable interrupt.
+	/** Forward interrupt generation.
+	 * @param non_maskable - true if this is a non - maskable interrupt.
 	 * @param data - the value to be placed on the data bus, if needed.
 	 */
-	public generateInterrupt(non_maskable: boolean, data: number) {
+	public interrupt(non_maskable: boolean, data: number) {
 		this.z80.interrupt(non_maskable, data);
+	}
+
+
+	/** Simulates pulsing the processor's INT (or NMI) pin.
+	 * Is called for the ULA vertical sync and also from custom code.
+	 */
+	public calculateLoad() {
 		// Measure CPU load
 		this.cpuLoadRangeCounter++;
 		if (this.cpuLoadRangeCounter >= this.cpuLoadRange) {

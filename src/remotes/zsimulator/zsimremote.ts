@@ -396,18 +396,26 @@ export class ZSimRemote extends DzrpRemote {
 		if (zxUlaScreen === 'spectrum') {
 			this.zxUlaScreen = new SpectrumUlaScreen(this.memory, this.ports, () => {
 				// Notify
-				this.emit('vertSync');
+				this.emit('VSYNC');
 				// And generate interrupt
-				this.z80Cpu.generateInterrupt(false, 0);
+				this.z80Cpu.interrupt(false, 0);
+				this.z80Cpu.calculateLoad();
 			});
 		}
 		else if (zxUlaScreen === 'zx81') {
-			this.zxUlaScreen = new Zx81UlaScreen(this.memory, this.ports, () => {
-				// Notify
-				this.emit('vertSync');
-				// For the ZX81 ULA screen there is no interrupt generated.
-				// I.e. the display is really only simulated.
-			});
+			this.zxUlaScreen = new Zx81UlaScreen(this.memory, this.ports,
+				// VSYNC
+				() => {
+					// Notify
+					this.emit('VSYNC');
+					this.z80Cpu.calculateLoad();
+				},
+				// NMI
+				() => {
+					// Generate NMI interrupt
+					this.z80Cpu.interrupt(true, 0);
+				}
+			);
 		}
 		if(this.zxUlaScreen) {
 			this.serializeObjects.push(this.zxUlaScreen);
@@ -469,7 +477,7 @@ export class ZSimRemote extends DzrpRemote {
 			});
 			// Register on interrupt event
 			this.customCode.on('interrupt', (non_maskable: boolean, data: number) => {
-				this.z80Cpu.generateInterrupt(non_maskable, data);
+				this.z80Cpu.calculateLoad(non_maskable, data);
 			});
 			this.serializeObjects.push(this.customCode);
 		}

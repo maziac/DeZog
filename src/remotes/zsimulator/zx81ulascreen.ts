@@ -19,8 +19,11 @@ export class Zx81UlaScreen implements Serializable {
 	// The time since the last vertical interrupt.
 	protected time: number;
 
-	// A function that is called when the vertical interrupt is generated.
-	protected vertInterruptFunc: () => void;
+	// A function that is called when the vertical sync is generated.
+	protected vsyncSignalFunc: () => void;
+
+	// A function that is called when the NMI signal is generated.
+	protected nmiSignalFunc: () => void;
 
 	// The state of the NMI generator
 	protected stateNmiGeneratorOn: boolean = false;
@@ -29,7 +32,10 @@ export class Zx81UlaScreen implements Serializable {
 	protected stateHsyncGeneratorOn: boolean = false;
 
 	// The original memory read function.
-	public memoryRead8: (addr64k: number) => number;
+	protected memoryRead8: (addr64k: number) => number;
+
+	// Used to time the Hsync/NMI interrupt.
+	protected prevNmiTime: number;
 
 	// For debug measuring the time between two vertical interrupts.
 	//protected lastIntTime: number = 0;
@@ -41,9 +47,10 @@ export class Zx81UlaScreen implements Serializable {
 	 * @param vertInterruptFunc A function that is called on a vertical interrupt.
 	 * Can be used by the caller to sync the display.
 	 */
-	constructor(memory: SimulatedMemory, ports: Z80Ports, vertInterruptFunc = () => {}) {
+	constructor(memory: SimulatedMemory, ports: Z80Ports, vertInterruptFunc = () => {}, nmiInterruptFunc = () => {}) {
 		this.memory = memory;
-		this.vertInterruptFunc = vertInterruptFunc;
+		this.vsyncSignalFunc = vertInterruptFunc;
+		this.nmiSignalFunc = nmiInterruptFunc;
 		this.time = 0;
 
 		// Register ULA ports
@@ -66,22 +73,26 @@ export class Zx81UlaScreen implements Serializable {
 	protected outPorts(port: number, _data: number): void {
 		// Check for address line A0 = LOW
 		if ((port & 0x01) === 0) {
-			//
+			// Would start VSYNC signal
 		}
 		// NMI generator off?
 		if (port === 0xfd) {
 			// Yes
 			this.stateNmiGeneratorOn = false;
+			console.log("zx81 ULA: NMI generator off");
 		}
 		// NMI generator on?
 		else if (port === 0xfe) {
 			// Yes
 			this.stateNmiGeneratorOn = true;
+			this.prevNmiTime = this.time;
+			console.log("zx81 ULA: NMI generator on");
 		}
 		// HSYNC on?
 		else if (port === 0xff) {
 			// Yes
 			this.stateHsyncGeneratorOn = true;
+			// Would also stop the VSYNC signal
 		}
 	}
 
@@ -92,7 +103,7 @@ export class Zx81UlaScreen implements Serializable {
 	 */
 	public ulaRead8(addr64k: number): number {
 		// Read data from memory
-		const data = this.memoryRead8(addr64k);
+		const data = this.memoryRead8(addr64k & 0x7FFF);
 		// Check if above 32k, and data bit 6 is low.
 		// Then return NOPs.
 		// TODO: Do I need to check also for opcode fetch?
@@ -102,6 +113,9 @@ export class Zx81UlaScreen implements Serializable {
 			if ((data & 0b01000000) === 0) {
 				// Return a NOP
 				return 0x00;
+			}
+			else {
+				//console.log("HALT instruction at " + addr64k.toString(16));
 			}
 		}
 		// Otherwise return the normal value
@@ -137,26 +151,39 @@ export class Zx81UlaScreen implements Serializable {
 	 */
 	public execute(cpuFreq: number, currentTstates: number): number {
 		let tstates = 0;
-		// Check for vertical interrupt
 		this.time += currentTstates / cpuFreq;
+
+		// Check for NMI interrupt generation
+		if (this.stateNmiGeneratorOn) {
+			const NmiTime = 0.000064;	// 64us
+			if (this.time >= this.prevNmiTime + NmiTime) {
+				// NMI interrupt
+				this.nmiSignalFunc();
+				// Next
+				this.prevNmiTime = this.time;
+			}
+		}
+
+		// Check for vertical interrupt
 		if (this.time >= Zx81UlaScreen.VSYNC_TIME) {
-			this.vertInterruptFunc();
+			this.vsyncSignalFunc();
 			// Measure time
 			// const timeInMs = Date.now();27
 			// const timeDiff = timeInMs - this.lastIntTime;
 			// console.log("VSYNC: " + timeDiff + "ms");
 			// this.lastIntTime = timeInMs;
 		}
-		// Calculate time inside vertical sync
-		this.time %= Zx81UlaScreen.VSYNC_TIME;
-		// Check if inside "drawing" area: ca. 3.8ms - 16.1ms (for 20ms)
-		const upper = 0.0161;	// 16.1 ms
-		const lower = 0.0038;	// 3.8 ms
-		if (this.time > lower && this.time < upper) {
-			// Use up the remaining tstates
-			tstates = Math.ceil((upper - this.time) * cpuFreq);
-			this.time = upper;
-		}
+
+		// // Calculate time inside vertical sync
+		// this.time %= Zx81UlaScreen.VSYNC_TIME;
+		// // Check if inside "drawing" area: ca. 3.8ms - 16.1ms (for 20ms)
+		// const upper = 0.0161;	// 16.1 ms
+		// const lower = 0.0038;	// 3.8 ms
+		// if (this.time > lower && this.time < upper) {
+		// 	// Use up the remaining tstates
+		// 	tstates = Math.ceil((upper - this.time) * cpuFreq);
+		// 	this.time = upper;
+		// }
 		return tstates;
 	}
 
