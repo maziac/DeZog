@@ -974,13 +974,9 @@ export class Settings {
 			// Check that file exists
 			if (!fs.existsSync(Settings.launch.load))
 				throw Error("'load': File '" + Settings.launch.load + "' does not exist.");
-			// ZX81 programs are always loaded at 16509
-			if(Settings.launch.load.endsWith(".p") || Settings.launch.load.endsWith(".P")) {
-				if(Settings.launch.execAddress == undefined) Settings.launch.execAddress = "16514"; // TODO: check
-			}
-			// If sna or tap is given it is not allowed to use an execAddress
+			// If a file is given for "load" no need to set an exec address
 			else if (Settings.launch.execAddress)
-				throw Error("'execAddress': You load a .sna or .tap file. In that case the execution address is already known from the file and you cannot set it explicitly via 'execAddress'.");
+				throw Error("'execAddress': You load a file via \"load\" you mast not specify an \"execAddress\".");
 		}
 
 		// Object files

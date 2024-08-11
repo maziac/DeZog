@@ -323,9 +323,6 @@ export class ZSimRemote extends DzrpRemote {
 			this.tbblueRegisterReadHandler.set(0x07, this.tbblueCpuSpeedRead.bind(this));
 		}
 
-		// ZX Spectrum by default
-		this.kind = 'zxspectrum';
-
 		// Configure different memory models
 		switch (zsim.memoryModel) {
 			case "RAM":	// 64K RAM, no ZX
@@ -358,27 +355,21 @@ export class ZSimRemote extends DzrpRemote {
 			// ZX81:
 			case "ZX81-1K":	// Original ZX81 with 1K of RAM
 				this.memoryModel = new MemoryModelZX81_1k();
-				this.kind = 'zx81';
 				break;
 			case "ZX81-2K":	// Original Timex Spectrum with 2K of RAM
 				this.memoryModel = new MemoryModelZX81_2k();
-				this.kind = 'zx81';
 				break;
 			case "ZX81-16K":	// ZX81 with a 16K RAM pack
 				this.memoryModel = new MemoryModelZX81_16k();
-				this.kind = 'zx81';
 				break;
 			case "ZX81-32K":	// ZX81 with a 32K RAM pack
 				this.memoryModel = new MemoryModelZX81_32k();
-				this.kind = 'zx81';
 				break;
 			case "ZX81-48K":	// ZX81 with a 48K RAM pack
 				this.memoryModel = new MemoryModelZX81_48k();
-				this.kind = 'zx81';
 				break;
 			case "ZX81-56K":	// ZX81 with a 56K RAM pack
 				this.memoryModel = new MemoryModelZX81_56k();
-				this.kind = 'zx81';
 				break;
 
 			default:
@@ -488,10 +479,6 @@ export class ZSimRemote extends DzrpRemote {
 
 		// Ready
 		this.emit('initialized');
-
-		// ZX81 does not save SP in .P files so adjust it here based on topOfStack. @zx81
-		if (this.kind == 'zx81')	// TODO: Remove 'kind', maybe topofstack can be set when loading the .p file
-			this.z80Cpu.sp = this.topOfStack;
 	}
 
 	/**
@@ -1095,12 +1082,22 @@ export class ZSimRemote extends DzrpRemote {
 		// Write to memory
 		await this.sendDzrpCmdWriteMem(0x4009, fileBuffer);
 		// Set PC, AF'
-		await this.sendDzrpCmdSetRegister(Z80_REG.AF2, 0x0207)
+		await this.sendDzrpCmdSetRegister(Z80_REG.SP, 0x7FFC)
+		//await this.sendDzrpCmdSetRegister(Z80_REG.IX, 0x0281)
+		await this.sendDzrpCmdSetRegister(Z80_REG.IY, 0x4000)
+		//await this.sendDzrpCmdSetRegister(Z80_REG.I, 0x1E)
+		//await this.sendDzrpCmdSetRegister(Z80_REG.R, 154)
+		await this.sendDzrpCmdSetRegister(Z80_REG.IM, 1)
+		//await this.sendDzrpCmdSetRegister(Z80_REG.A2, 0xF8)
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, 0x0207);	// Just after the SAVE routine
 		// Set System VARS (0x4000-0x4008) to:
 		// 	FF	80	FC	7F	00	80	00	FE	FF
 		const systemVars = new Uint8Array([0xFF, 0x80, 0xFC, 0x7F, 0x00, 0x80, 0x00, 0xFE, 0xFF]);
 		await this.sendDzrpCmdWriteMem(0x4000, systemVars);
+		// Restore stack:	76	06	00	3E
+		// TODO: Not if in .p file
+		const stack = new Uint8Array([0x76, 0x06, 0x00, 0x3E]);
+		await this.sendDzrpCmdWriteMem(0x7FFC, stack);
 	}
 
 

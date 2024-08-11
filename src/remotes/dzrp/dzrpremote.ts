@@ -632,7 +632,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 */
 	public async setRegisterValue(register: string, value: number) {
 		const index = Z80RegistersClass.getEnumFromName(register) as number;
-		Utility.assert(index != undefined);
+		Utility.assert(index !== undefined);
 		// Send command to set register
 		await this.sendDzrpCmdSetRegister(index, value);
 		// Send command to get registers
@@ -1394,22 +1394,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/** Loads .nex or .sna files.
-	 */
-	protected async loadBin(filePath: string): Promise<void> {
-		// Check file extension
-		const ext = path.extname(filePath);
-		if (ext === '.sna')
-			await this.loadBinSna(filePath);
-		else if (ext === '.nex')
-			await this.loadBinNex(filePath);
-		else {
-			// Error: neither sna nor nex file
-			throw Error("File extension not supported in '" + filePath + "' with remoteType:'" + Settings.launch.remoteType + "'. Can only load .sna and .nex files.");
-		}
-	}
-
-
 	/** Loads object file (binary without any meta data).
 	 * @param filePath The absolute path to the file.
 	 * @param startAddress The address where the data should be loaded.
@@ -1424,6 +1408,37 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		// Make sure that the registers are reloaded
 		//await this.getRegistersFromEmulator();
 		//await this.getCallStackFromEmulator();
+	}
+
+
+	/** Loads .nex, .sna or .p files.
+	 */
+	protected async loadBin(filePath: string): Promise<void> {
+		try {
+			// Check file extension
+			const ext = path.extname(filePath).toLowerCase();
+			if (ext === '.sna')
+				await this.loadBinSna(filePath);
+			else if (ext === '.nex')
+				await this.loadBinNex(filePath);
+			else if (ext === '.p' || ext === '.81' || ext === '.p81')
+				await this.loadBinZx81(filePath);
+			else {
+				// Error: unsupported file
+				throw Error("File extension in '" + filePath + "' not supported with remoteType:'" + Settings.launch.remoteType + "'.");
+			}
+		} catch (e) {
+			throw e;	// Rethrow
+		}
+	}
+
+
+	/** Loads a .p, .81 or .p81 file for the zx81.
+	 * This is only supported in the zsim (Note: zesarux uses an own load routine).
+	 * Therefore it is disabled by default.
+	 */
+	protected async loadBinZx81(filePath: string): Promise<void> {
+		throw Error("File extension in '" + filePath + "' not supported with remoteType:'" + Settings.launch.remoteType + "'.");
 	}
 
 
