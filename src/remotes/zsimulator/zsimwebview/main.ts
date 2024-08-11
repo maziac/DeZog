@@ -274,6 +274,8 @@ function initSimulation(audioSampleRate: number, volume: number) {
 
 // Set cell to selected or unselected.
 function cellSelect(cell, on) {
+	if (!cell)
+		return;
 	cell.tag = on;
 	if (on) {
 		cell.className = "td_on";
@@ -483,18 +485,60 @@ globalThis.volumeChanged = function (volumeStr: string) {
 // Handle key down presses.
 document.addEventListener('keydown', keydown);
 function keydown(e) {
-	// Find correspondent cell
-	const cell = findCell(e.code);
-	cellSelect(cell, true);
+	// Check for cursor keys
+	let cursorKey;
+	switch (e.code) {
+		case "ArrowLeft": cursorKey = "Digit5"; break;
+		case "ArrowRight": cursorKey = "Digit8"; break;
+		case "ArrowUp": cursorKey = "Digit7"; break;
+		case "ArrowDown": cursorKey = "Digit6"; break;
+		case "Backspace": cursorKey = "Digit0"; break;
+	}
+	if (cursorKey) {
+		// Simulate cursor with shift + cursorKey
+		const cell1 = findCell("ShiftLeft");
+		cellSelect(cell1, true);
+		const cell2 = findCell(cursorKey);
+		cellSelect(cell2, true);
+		// Prevent scrolling
+		//e.preventDefault();
+	}
+	else {
+		// Normal key press:
+		// Find correspondent cell
+		const cell = findCell(e.code);
+		cellSelect(cell, true);
+	}
 }
 
 
 // Handle key up presses.
 document.addEventListener('keyup', keyup);
 function keyup(e) {
-	// Find correspondent cell
-	const cell = findCell(e.code);
-	cellSelect(cell, false);
+	// Check for cursor keys + delete
+	let cursorKey;
+	switch (e.code) {
+		case "ArrowLeft": cursorKey = "Digit5"; break;
+		case "ArrowRight": cursorKey = "Digit8"; break;
+		case "ArrowUp": cursorKey = "Digit7"; break;
+		case "ArrowDown": cursorKey = "Digit6"; break;
+		case "Backspace": cursorKey = "Digit0"; break;
+	}
+	if (cursorKey) {
+		// Simulate cursor with shift + cursorKey
+		const cell2 = findCell(cursorKey);
+		cellSelect(cell2, false);
+		const cell1 = findCell("ShiftLeft");
+		cellSelect(cell1, false);
+		// Prevent scrolling
+		//e.preventDefault();
+	}
+	else {
+		// Normal key press:
+		// Find correspondent cell
+		const cell = findCell(e.code);
+		cellSelect(cell, false);
+	}
 }
 
 

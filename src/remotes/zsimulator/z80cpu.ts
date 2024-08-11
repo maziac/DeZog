@@ -308,8 +308,10 @@ export class Z80Cpu implements Serializable {
 	}
 
 
-	/** Simulates pulsing the processor's INT (or NMI) pin.
-	 * Is called for the ULA vertical sync and also from custom code.
+	/** Calculates the CPU load from the processed HALT instructions compared
+	 * to all instructions.
+	 * Called on a "VSYNC" signal.
+	 * TODO: If not called on VSYNC, should I call it e.g. every 100ms?
 	 */
 	public calculateLoad() {
 		// Measure CPU load
