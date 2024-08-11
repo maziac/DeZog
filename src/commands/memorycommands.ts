@@ -341,16 +341,57 @@ export class MemoryCommands {
 	}
 
 
-	/**
-	 * Saves a memory dump to a file.
+	/** Loads memory from a file.
+	 * @param tokens The arguments. I.e. the address.
+	 * @returns A Promise with a text to print.
+	 */
+	public static async evalMemLoad(tokens: Array<string>): Promise<string> {
+		// Check count of arguments
+		if (tokens.length < 2) {
+			// Error Handling: No arguments
+			throw Error("Address and filename expected.");
+		}
+
+		// Address
+		const addressString = tokens[0];
+		const address = Utility.evalExpression(addressString);
+		if (address < 0 || address > 0xFFFF)
+			throw Error("Address (" + address + ") out of range.");
+
+		// Get filename
+		const filename = tokens[1];
+		if (!filename)
+			throw Error("No filename given.");
+
+		// Read data from file
+		const relPath = Utility.getRelTmpFilePath(filename);
+		const absPath = Utility.getAbsFilePath(relPath);
+		try {
+			const data = fs.readFileSync(absPath);
+			// Write data to memory
+			await Remote.writeMemoryDump(address, data);
+			// Update possibly memory views
+			await BaseView.staticCallUpdateFunctionsAsync();
+		}
+		catch (e) {
+			return "Error: " + e.message;
+		}
+
+		// Send response
+		return 'OK';
+	}
+
+
+
+	/** Saves a memory dump to a file.
 	 * @param tokens The arguments. I.e. the address and size.
 	 * @returns A Promise with a text to print.
 	 */
 	public static async evalMemSave(tokens: Array<string>): Promise<string> {
 		// Check count of arguments
-		if (tokens.length < 2) {
+		if (tokens.length < 3) {
 			// Error Handling: No arguments
-			throw Error("Address and size expected.");
+			throw Error("Address, size and filename expected.");
 		}
 
 		// Address

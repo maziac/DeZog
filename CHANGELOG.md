@@ -6,6 +6,7 @@
   - "ulaScreen":
     - Type changed from boolean to 'spectrum' | 'zx81'.
   - Z80 CPU simulation fix: HALT instruction: r is now incremented on each instruction.
+  - New debug command, "-ml address filepath", to load binary data into the memory.
 
 # 3.4.1
 - zsim: Removed annoying logging.

@@ -1976,6 +1976,9 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd === '-msetw') {
 			output = await MemoryCommands.evalMemSetWord(tokens);
 		}
+		else if (cmd === '-ml') {
+			output = await MemoryCommands.evalMemLoad(tokens);
+		}
 		else if (cmd === '-ms') {
 			output = await MemoryCommands.evalMemSave(tokens);
 		}
@@ -2383,6 +2386,8 @@ the value correspondents to a label.
   The idea is to find strings also if they are not coded as ASCII sequence but with some other, unknown coding
   scheme.
 "-memmodel": Prints slot and bank info of the currently used memory model.
+"-ml address filepath": Loads a binary file into memory. The filepath is relative to the TMP directory.
+"-ms address size filename": Saves a memory dump to a file. The file is saved to the temp directory.
 "-msetb address value [repeat]":
 	- address: The address to fill. Can also be a label or expression.
 	- value: The byte value to set.
@@ -2400,7 +2405,6 @@ the value correspondents to a label.
 	"-msetw 8000h AF34h" : Puts 34h into location 0x8000 and AFh into location 0x8001.
 	"-msetw 8000h AF34h 1 big" : Puts AFh into location 0x8000 and 34h into location 0x8001.
 	"-msetw 8000h 1234h 100h" : fills memory locations 0x8000 to 0x81FF with the word value 1234h.
-"-ms address size filename": Saves a memory dump to a file. The file is saved to the temp directory.
 "-mv address size [address_n size_n]*": Memory view at 'address' with 'size' bytes. Will open a new view to display the memory contents.
 "-mvd address size [address_n size_n]*": Opens a memory view that can be used for comparison. I.e. you start at some time than later you update the view and then you can make a diff and search e.g. for all values that have been decremented by 1.
 "-mvw address size [address_n size_n]* [big]": Memory view at 'address' with 'size' words. Like -mv but display unit is word instead of byte. Normally the display is little endian. This can be changed by adding "big" as last argument.
