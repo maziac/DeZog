@@ -500,11 +500,22 @@ function keydown(e) {
 		cellSelect(cell1, true);
 		const cell2 = findCell(cursorKey);
 		cellSelect(cell2, true);
-		// Prevent scrolling
-		//e.preventDefault();
 	}
+	// Check for . (zx81)
+	else if (e.code == "Period") {
+		const cell = findCell("ShiftRight");
+		cellSelect(cell, true);
+	}
+	// ESC for CAPS SHIFT + SYMBOL SHIFT (Spectrum)
+	else if (e.code == "Escape") {
+		// Simulate both keypresses
+		const cell1 = findCell("ShiftLeft");
+		cellSelect(cell1, true);
+		const cell2 = findCell("ShiftRight");
+		cellSelect(cell2, true);
+	}
+	// Normal key press:
 	else {
-		// Normal key press:
 		// Find correspondent cell
 		const cell = findCell(e.code);
 		cellSelect(cell, true);
@@ -530,11 +541,22 @@ function keyup(e) {
 		cellSelect(cell2, false);
 		const cell1 = findCell("ShiftLeft");
 		cellSelect(cell1, false);
-		// Prevent scrolling
-		//e.preventDefault();
 	}
+	// Check for . (zx81)
+	else if (e.code == "Period") {
+		const cell = findCell("ShiftRight");
+		cellSelect(cell, false);
+	}
+	// ESC for CAPS SHIFT + SYMBOL SHIFT (Spectrum)
+	else if (e.code == "Escape") {
+		// Simulate both keypresses
+		const cell2 = findCell("ShiftRight");
+		cellSelect(cell2, false);
+		const cell1 = findCell("ShiftLeft");
+		cellSelect(cell1, false);
+	}
+	// Normal key press:
 	else {
-		// Normal key press:
 		// Find correspondent cell
 		const cell = findCell(e.code);
 		cellSelect(cell, false);
