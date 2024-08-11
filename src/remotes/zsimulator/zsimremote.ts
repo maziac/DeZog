@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80_REG, Z80Registers} from '../z80registers';
 import {Z80Ports} from './z80ports';
@@ -593,28 +594,28 @@ export class ZSimRemote extends DzrpRemote {
 				break;
 
 			case Z80_REG.F2:
-				this.z80Cpu.f = value;
+				this.z80Cpu.f2 = value;
 				break;
 			case Z80_REG.A2:
-				this.z80Cpu.a = value;
+				this.z80Cpu.a2 = value;
 				break;
 			case Z80_REG.C2:
-				this.z80Cpu.c = value;
+				this.z80Cpu.c2 = value;
 				break;
 			case Z80_REG.B2:
-				this.z80Cpu.b = value;
+				this.z80Cpu.b2 = value;
 				break;
 			case Z80_REG.E2:
-				this.z80Cpu.e = value;
+				this.z80Cpu.e2 = value;
 				break;
 			case Z80_REG.D2:
-				this.z80Cpu.d = value;
+				this.z80Cpu.d2 = value;
 				break;
 			case Z80_REG.L2:
-				this.z80Cpu.l = value;
+				this.z80Cpu.l2 = value;
 				break;
 			case Z80_REG.H2:
-				this.z80Cpu.h = value;
+				this.z80Cpu.h2 = value;
 				break;
 			case Z80_REG.R:
 				this.z80Cpu.r = value;
@@ -1071,6 +1072,35 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	public getZxBorderColor(): number {
 		return this.zxBorderColor;
+	}
+
+
+	/** Loads a .p, .81 or .p81 file.
+	 * .p and .81 files are the same.
+	 * .p81 files are like .p and .81 files prepended with the program's name.
+	 * The binary content is copied to address starting at 0x4009.
+	 * The PC is set to 0x0207 (right after the SAVE routine).
+	 * The System VARS 0x4000-0x4008 are set to TODO:...
+	 *
+	 * The .p file are max 16k in size, this is not checked here in
+	 * order to load OSMO.P
+	 *
+	 * See https://k1.spdns.de/Develop/Projects/zasm/Info/O80%20and%20P81%20Format.txt
+	 */
+	protected async loadBinZx81(filePath: string): Promise<void> {
+		// The .81 file is just a data blob, no parsing required.
+//TODO: Check other file extensions
+		// Read file
+		const fileBuffer = fs.readFileSync(filePath);
+		// Write to memory
+		await this.sendDzrpCmdWriteMem(0x4009, fileBuffer);
+		// Set PC, AF'
+		await this.sendDzrpCmdSetRegister(Z80_REG.AF2, 0x0207)
+		await this.sendDzrpCmdSetRegister(Z80_REG.PC, 0x0207);	// Just after the SAVE routine
+		// Set System VARS (0x4000-0x4008) to:
+		// 	FF	80	FC	7F	00	80	00	FE	FF
+		const systemVars = new Uint8Array([0xFF, 0x80, 0xFC, 0x7F, 0x00, 0x80, 0x00, 0xFE, 0xFF]);
+		await this.sendDzrpCmdWriteMem(0x4000, systemVars);
 	}
 
 

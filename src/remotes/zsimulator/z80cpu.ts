@@ -294,6 +294,47 @@ export class Z80Cpu implements Serializable {
 		this.z80.setState(r);
 	}
 
+	set a2(value) {
+		const r = this.z80.getState();
+		r.a_prime = value;
+		this.z80.setState(r);
+	}
+	set f2(value) {
+		const r = this.z80.getState();
+		r.f_prime = this.revConvertFlags(value);
+		this.z80.setState(r);
+	}
+	set b2(value) {
+		const r = this.z80.getState();
+		r.b_prime = value;
+		this.z80.setState(r);
+	}
+	set c2(value) {
+		const r = this.z80.getState();
+		r.c_prime = value;
+		this.z80.setState(r);
+	}
+	set d2(value) {
+		const r = this.z80.getState();
+		r.d = value;
+		this.z80.setState(r);
+	}
+	set e2(value) {
+		const r = this.z80.getState();
+		r.e_prime = value;
+		this.z80.setState(r);
+	}
+	set h2(value) {
+		const r = this.z80.getState();
+		r.h_prime = value;
+		this.z80.setState(r);
+	}
+	set l2(value) {
+		const r = this.z80.getState();
+		r.l_prime = value;
+		this.z80.setState(r);
+	}
+
 	// T. Busse, Sep-2022: Added to break on an interrupt.
 	set interruptOccurred(value) {this.z80.interruptOccurred = value;}
 	get interruptOccurred() {return this.z80.interruptOccurred;}
