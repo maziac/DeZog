@@ -8,7 +8,7 @@ import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelUnknown} from '../remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZx128k, MemoryModelZx48k} from '../remotes/MemoryModel/zxspectrummemorymodels';
 import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../remotes/MemoryModel/zxnextmemorymodels';
-import {MemoryModelZX81_16k} from '../remotes/MemoryModel/zx81memorymodels';
+import {MemoryModelZX81_16k, MemoryModelZX81_1k, MemoryModelZX81_48k} from '../remotes/MemoryModel/zx81memorymodels';
 
 
 
@@ -726,6 +726,16 @@ export class LabelParserBase {
 		// TODO: Other ZX81 (also Colecovision).
 		// Maybe move to memory model.
 
+		// Check for ZX81 1K
+		if (this.memoryModel instanceof MemoryModelZX81_1k) {
+			this.funcConvertBank = (address: number, bank: number) => {
+				if (address < 0x2000)
+					return 0; // ROM
+				return 1;	// RAM, TODO: There are gaps in the ZX81 memory map
+			};
+			return;
+		}
+
 		// Check for ZX81 16K
 		if (this.memoryModel instanceof MemoryModelZX81_16k) {
 			this.funcConvertBank = (address: number, bank: number) => {
@@ -735,6 +745,17 @@ export class LabelParserBase {
 			};
 			return;
 		}
+
+		// Check for ZX81 48K
+		if (this.memoryModel instanceof MemoryModelZX81_48k) {
+			this.funcConvertBank = (address: number, bank: number) => {
+				if (address < 0x2000)
+					return 0; // ROM
+				return 1;	// RAM, TODO: There are gaps in the ZX81 memory map
+			};
+			return;
+		}
+
 
 		// Check for ZX48K
 		if (this.memoryModel instanceof MemoryModelZx48k) {
