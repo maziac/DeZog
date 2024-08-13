@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80_REG, Z80Registers} from '../z80registers';
 import {Z80Ports} from './z80ports';
@@ -26,7 +25,6 @@ import {MemoryModelZX81_1k, MemoryModelZX81_2k, MemoryModelZX81_16k, MemoryModel
 import {SpectrumUlaScreen} from './spectrumulascreen';
 import {ZxnDma} from './zxndma';
 import {Zx81UlaScreen} from './zx81ulascreen';
-import path = require('path');
 
 /**
  * The representation of a Z80 remote.
@@ -1060,101 +1058,6 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	public getZxBorderColor(): number {
 		return this.zxBorderColor;
-	}
-
-
-	/** Loads a .p, .81 or .p81 file.
-	 * .p and .81 files are the same.
-	 * .p81 files are like .p and .81 files prepended with the program's name.
-	 * The binary content is copied to address starting at 0x4009.
-	 * The PC is set to 0x0207 (right after the SAVE routine).
-	 * The System VARS 0x4000-0x4008 are set to TODO:...
-	 *
-	 * The .p file are max 16k in size, this is not checked here in
-	 * order to load OSMO.P
-	 *
-	 * See https://k1.spdns.de/Develop/Projects/zasm/Info/O80%20and%20P81%20Format.txt
-	 */
-	protected async loadBinZx81(filePath: string): Promise<void> {
-		// The .81 file is just a data blob, no parsing required.
-		//TODO: Check other file extensions
-
-		const ramSize = 0x4000;	// TODO: get from memory model
-		const topStack = 0x3FFC + ramSize;
-		const unusedMemory = (0x4000 + ramSize) & 0xFFFF;
-
-		// Read file
-		let fileBuffer = fs.readFileSync(filePath);
-		const len = fileBuffer.length;
-		const ext = path.extname(filePath).toLowerCase();
-		if (ext == '.p81') {
-			// Skip name at the start of the file
-			let nameMax = 128;
-			if (nameMax > len)
-				nameMax = len;
-			let nameLen = 0;
-			for (let i = 0; i < nameMax; i++) {
-				const c = fileBuffer[i];
-				nameLen++;
-				if (c >= 0x80)
-					break;
-			}
-			// Remove the name at the beginning
-			fileBuffer = fileBuffer.subarray(nameLen);
-		}
-
-		// Set registers
-		await this.sendDzrpCmdSetRegister(Z80_REG.PC, 0x0207);	// Just after the SAVE routine
-		await this.sendDzrpCmdSetRegister(Z80_REG.SP, topStack);
-		await this.sendDzrpCmdSetRegister(Z80_REG.BC, 0x0080);
-		await this.sendDzrpCmdSetRegister(Z80_REG.DE, 0xffff);
-		await this.sendDzrpCmdSetRegister(Z80_REG.IX, 0x0281);	// Required?
-		await this.sendDzrpCmdSetRegister(Z80_REG.IY, 0x4000);
-		await this.sendDzrpCmdSetRegister(Z80_REG.DE, 0x002b);	// Required?
-		await this.sendDzrpCmdSetRegister(Z80_REG.IM, 1);
-		await this.sendDzrpCmdSetRegister(Z80_REG.I, 0x1E);
-		await this.sendDzrpCmdSetRegister(Z80_REG.R, 154);
-		await this.sendDzrpCmdSetRegister(Z80_REG.A2, 0xF8);	// Required?
-
-		// Set System VARS (0x4000-0x4008)
-		//const systemVars = new Uint8Array([0xFF, 0x80, 0xFC, 0x7F, 0x00, 0x80, 0x00, 0xFE, 0xFF]);
-		const systemVars = new Uint8Array([
-			0xFF,	// 0x4000: ERR_NR, Errorcoe -1
-			0x80,	// 0x4001: BASIC control flags
-			topStack & 0xFF, topStack >> 8,	 // 0x4002: ERR_SP, Pointer to top of Machine Stack / Bottom of GOSUB Stack
-			unusedMemory & 0xFF, unusedMemory >> 8, // 0x4004: RAMTOP  Pointer to unused/free memory(Changes realized at next NEW or CLS)
-			0,	 // 0x4006: Selects [K], [L], [F], or [G] Cursor
-			0xFE, 0xFF]	// 0x4007: PPC     Line Number of most recently executed BASIC line  (($FFFE=cmd line))
-		);
-		await this.sendDzrpCmdWriteMem(0x4000, systemVars);
-
-		// Restore stack:	76	06	00	3E
-		// TODO: Not if in .p file
-		const stack = new Uint8Array([
-			0x76, 0x06,	// E.g. 0x7FFC
-			0x00, 0x3E	// E.g. 0x7FFE
-		]);
-		await this.sendDzrpCmdWriteMem(topStack, stack);
-
-		// Write file to memory
-		await this.sendDzrpCmdWriteMem(0x4009, fileBuffer);
-
-		// Check possible issues
-		if (len < 0x3c) {
-			await this.sendDzrpCmdSetRegister(Z80_REG.PC, 0x03A6);	// BREAK_CONT_REPEATS;
-			this.emit('warning', `Loading ${path.basename(filePath)}: Data corrupted: file is too short: length < sysvars`);
-		}
-		else {
-			const elineMem = await this.sendDzrpCmdReadMem(0x4014, 2);	// E_LINE
-			const eline = elineMem[0] | (elineMem[1] << 8);
-			if (0x4009 + len < eline) {
-				await this.sendDzrpCmdSetRegister(Z80_REG.PC, 0x03A6);	// BREAK_CONT_REPEATS;
-				this.emit('warning', `Loading ${path.basename(filePath)}: Data corrupted: file is too short: length < ($4014)-$4009`);
-			}
-			else if (0x4009 + len > topStack) {
-				this.emit('warning', `Loading ${path.basename(filePath)}: Note: The machine stack was overwritten by the data`);
-			}
-		}
 	}
 
 

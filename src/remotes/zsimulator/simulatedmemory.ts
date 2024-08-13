@@ -524,7 +524,7 @@ export class SimulatedMemory implements Serializable {
 		const bankNr = this.slots[slotIndex];
 
 		// Don't write if non-writable, e.g. ROM or UNUSED
-		if (this.bankTypes[bankNr] == BankType.RAM) {
+		if (this.bankTypes[bankNr] === BankType.RAM) {
 			const rangeStart = this.slotRanges[slotIndex].start;
 			const offs = addr64k - rangeStart;
 			// Write
@@ -700,14 +700,17 @@ export class SimulatedMemory implements Serializable {
 			const rangeStart = this.slotRanges[slotIndex].start;
 			const offs = startAddr64k - rangeStart;
 			const bank = this.memoryBanks[bankNr];
-			if (!bank)
-				break;	// A switch to a non existing bank happened.
+			Utility.assert(bank, "writeBlock: Bank " + bankNr + " not found.");
+			// if (!bank)
+			// 	break;	// A switch to a non existing bank happened.
 			const rangeSize = this.slotRanges[slotIndex].end + 1 - rangeStart;
 			// Copy
 			let sizeOffs = rangeSize - offs;
 			if (sizeOffs > size)
 				sizeOffs = size;
-			bank.set(data.slice(dataOffset, dataOffset + sizeOffs), offs);
+			if (this.bankTypes[bankNr] !== BankType.UNUSED) {
+				bank.set(data.slice(dataOffset, dataOffset + sizeOffs), offs);
+			}
 			// Next
 			dataOffset += sizeOffs;
 			size -= sizeOffs;

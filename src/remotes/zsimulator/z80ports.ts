@@ -104,8 +104,10 @@ export class Z80Ports {
 		}
 
 		// Otherwise return default
-		if (value == undefined)
+		if (value == undefined) {
+			// console.log('Reading port ' + port.toString(16));
 			value = this.defaultPortIn;
+		}
 		return value;
 	}
 

@@ -188,6 +188,13 @@ export class CSpectRemote extends DzrpBufferRemote {
 	}
 
 
+	/** ZX81 is not supported.
+	 */
+	protected async loadBinZx81(filePath: string): Promise<void> {
+		throw Error("File extension in '" + filePath + "' not supported with remoteType:'" + Settings.launch.remoteType + "'.");
+	}
+
+
 	/**
 	 * Not used/supported.
 	 */
