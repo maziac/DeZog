@@ -86,21 +86,6 @@ export class ZSimulationView extends BaseView {
 
 		// For port handing
 		this.simulatedPorts = new Map<number, number>();
-		// If keyboard id not defined, check for ZX Interface 2
-		if (!simulator.zxKeyboard && Settings.launch.zsim.zxInterface2Joy) {
-			// TODO: Implement ZX Interface 2
-			// Prepare all used ports
-			this.simulatedPorts.set(0xF7FE, 0xFF);	// Joystick 2 (left): Bits: xxxLRDUF, low active, keys 1-5
-			this.simulatedPorts.set(0xEFFE, 0xFF);	// Joystick 1 (right): Bits: xxxFUDRL, low active, keys 6-0
-
-			// Set call backs
-			for (const [simPort,] of this.simulatedPorts) {
-				this.simulator.ports.registerSpecificInPortFunction(simPort, (port: number) => {
-					const value = this.simulatedPorts.get(port)!;
-					return value;
-				});
-			}
-		}
 
 		// Check for Kempston Joystick
 		if (Settings.launch.zsim.kempstonJoy) {
@@ -292,11 +277,15 @@ export class ZSimulationView extends BaseView {
 			case 'keyChanged':
 				this.keyChanged(message.key, message.value);
 				break;
-			case 'volumeChanged':
-				GlobalStorage.Set('audio.volume', message.value);
+			case 'keyBit':
+				this.simulator.zxKeyboard.setKey(message.value.row, message.value.bitByte, message.value.on);
+				console.log("keyBit: " + message.value.row + ", " + message.value.bitByte + ", " + message.value.on);
 				break;
 			case 'portBit':
 				this.setPortBit(message.value.port, message.value.on, message.value.bitByte);
+				break;
+			case 'volumeChanged':
+				GlobalStorage.Set('audio.volume', message.value);
 				break;
 			case 'sendToCustomLogic': {
 				// Unwrap message
@@ -1016,25 +1005,25 @@ export class ZSimulationView extends BaseView {
 				<table style="color:black;" oncolor="red" offcolor="white">
 					<tr>
 						<td>
-							<ui-bit id="if2.joy1.fire" style="border-radius:1em;" onchange="togglePortBitNeg(this, 0xEFFE, 0x01)">F</ui-bit>
+							<ui-bit id="if2.joy1.fire" style="border-radius:1em;" onchange="sendKeyBit(this, 4, 0x01)">F</ui-bit>
 						</td>
 						<td align="center">
-							<ui-bit id="if2.joy1.up" onchange="togglePortBitNeg(this, 0xEFFE, 0x02)">U</ui-bit>
+							<ui-bit id="if2.joy1.up" onchange="sendKeyBit(this, 4, 0x02)">U</ui-bit>
 						</td>
 					</tr>
 					<tr>
 						<td>
-							<ui-bit id="if2.joy1.left" onchange="togglePortBitNeg(this, 0xEFFE, 0x10)">L</ui-bit>
+							<ui-bit id="if2.joy1.left" onchange="sendKeyBit(this, 4, 0x10)">L</ui-bit>
 						</td>
 						<td style="color:var(--vscode-editor-foreground)">Joy1</td>
 						<td>
-							<ui-bit id="if2.joy1.right" onchange="togglePortBitNeg(this, 0xEFFE, 0x08)">R</ui-bit>
+							<ui-bit id="if2.joy1.right" onchange="sendKeyBit(this, 4, 0x08)">R</ui-bit>
 						</td>
 					</tr>
 					<tr>
 						<td></td>
 						<td align="center">
-							<ui-bit id="if2.joy1.down" onchange="togglePortBitNeg(this, 0xEFFE, 0x04)">D</ui-bit>
+							<ui-bit id="if2.joy1.down" onchange="sendKeyBit(this, 4, 0x04)">D</ui-bit>
 						</td>
 					</tr>
 				</table>
@@ -1047,25 +1036,25 @@ export class ZSimulationView extends BaseView {
 				<table style="color:black;">
 					<tr>
 						<td>
-							<ui-bit id="if2.joy2.fire" style="border-radius:1em;" onchange="togglePortBitNeg(this, 0xF7FE, 0x10)">F</ui-bit>
+							<ui-bit id="if2.joy2.fire" style="border-radius:1em;" onchange="sendKeyBit(this, 3, 0x10)">F</ui-bit>
 						</td>
 						<td align="center">
-							<ui-bit id="if2.joy2.up" onchange="togglePortBitNeg(this, 0xF7FE, 0x08)">U</ui-bit>
+							<ui-bit id="if2.joy2.up" onchange="sendKeyBit(this, 3, 0x08)">U</ui-bit>
 						</td>
 					</tr>
 					<tr>
 						<td>
-							<ui-bit id="if2.joy2.left" onchange="togglePortBitNeg(this, 0xF7FE, 0x01)">L</ui-bit>
+							<ui-bit id="if2.joy2.left" onchange="sendKeyBit(this, 3, 0x01)">L</ui-bit>
 						</td>
 						<td style="color:var(--vscode-editor-foreground)">Joy2</td>
 						<td>
-							<ui-bit id="if2.joy2.right" onchange="togglePortBitNeg(this, 0xF7FE, 0x02)">R</ui-bit>
+							<ui-bit id="if2.joy2.right" onchange="sendKeyBit(this, 3, 0x02)">R</ui-bit>
 						</td>
 					</tr>
 					<tr>
 						<td></td>
 						<td align="center">
-							<ui-bit id="if2.joy2.down" onchange="togglePortBitNeg(this, 0xF7FE, 0x04)">D</ui-bit>
+							<ui-bit id="if2.joy2.down" onchange="sendKeyBit(this, 3, 0x04)">D</ui-bit>
 						</td>
 					</tr>
 				</table>

@@ -316,7 +316,7 @@ export class ZSimRemote extends DzrpRemote {
 		}
 
 		// Check for keyboard
-		const zxKeyboard = zsim.zxKeyboard;
+		const zxKeyboard = zsim.zxKeyboard || zsim.zxInterface2Joy;
 		if (zxKeyboard) {
 			this.zxKeyboard = new ZxKeyboard(this.ports);
 		}

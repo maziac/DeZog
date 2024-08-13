@@ -429,14 +429,16 @@ globalThis.togglePortBit = function (cell, port, bitByte) {
 	});
 }
 
+
 // Toggle the cell and the corresponding bit.
+// Used for Interface 2 joystick.
 // Inverts the bit before sending.
 // I.e. Active=LOW
-globalThis.togglePortBitNeg = function (cell, port, bitByte) {
+globalThis.sendKeyBit = function (cell, row, bitByte) {
 	// Send request to vscode
 	vscode.postMessage({
-		command: 'portBit',
-		value: {port: port, on: !cell.bitvalue, bitByte: bitByte}
+		command: 'keyBit',
+		value: {row: row, on: cell.bitvalue, bitByte: bitByte}
 	});
 }
 
