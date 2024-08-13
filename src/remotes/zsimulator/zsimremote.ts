@@ -25,7 +25,7 @@ import {MemoryModelZX81_1k, MemoryModelZX81_2k, MemoryModelZX81_16k, MemoryModel
 import {SpectrumUlaScreen} from './spectrumulascreen';
 import {ZxnDma} from './zxndma';
 import {Zx81UlaScreen} from './zx81ulascreen';
-import {Zx81Keyboard} from './zx81keyboard';
+import {ZxKeyboard} from './zxkeyboard';
 
 /**
  * The representation of a Z80 remote.
@@ -103,7 +103,7 @@ export class ZSimRemote extends DzrpRemote {
 	public zxnDMA: ZxnDma;
 
 	// The zx81 or spectrum keyboard.
-	public zxKeyboard: Zx81Keyboard;
+	public zxKeyboard: ZxKeyboard;
 
 
 	/// Constructor.
@@ -318,7 +318,7 @@ export class ZSimRemote extends DzrpRemote {
 		// Check for keyboard
 		const zxKeyboard = zsim.zxKeyboard;
 		if (zxKeyboard) {
-			this.zxKeyboard = new Zx81Keyboard(this.ports);
+			this.zxKeyboard = new ZxKeyboard(this.ports);
 		}
 
 		// Check for tbblue port

@@ -4,7 +4,7 @@ import {Z80Ports} from "./z80ports";
 
 /** ZX81 keyboard simulation.
  */
-export class Zx81Keyboard implements Serializable {
+export class ZxKeyboard implements Serializable {
 
 	// The keyboard values, each low bit is an activated key.
 	protected keyboardMatrix = new Uint8Array([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);

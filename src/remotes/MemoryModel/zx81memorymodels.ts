@@ -33,7 +33,6 @@ export class MemoryModelZX81_1k extends MemoryModel {	// NOSONAR
 			]
 		});
 		this.name = 'ZX81-1K';
-		this.defaultTopOfStack = 0x43FF;
 	}
 }
 
@@ -63,7 +62,6 @@ export class MemoryModelZX81_2k extends MemoryModel {	// NOSONAR
 			]
 		});
 		this.name = 'ZX81-2K';
-		this.defaultTopOfStack = 0x47FF;
 	}
 }
 
@@ -93,7 +91,6 @@ export class MemoryModelZX81_16k extends MemoryModel {	// NOSONAR
 			]
 		});
 		this.name = 'ZX81-16K';
-		this.defaultTopOfStack = 0x7FFF;
 	}
 }
 
@@ -123,7 +120,6 @@ export class MemoryModelZX81_32k extends MemoryModel {	// NOSONAR
 			]
 		});
 		this.name = 'ZX81-32K';
-		this.defaultTopOfStack = 0x7FFF; // Like for 16K
 	}
 }
 
@@ -153,7 +149,6 @@ export class MemoryModelZX81_48k extends MemoryModel {	// NOSONAR
 			]
 		});
 		this.name = 'ZX81-48K';
-		this.defaultTopOfStack = 0x7FFF; // Like for 16K
 	}
 }
 
@@ -183,6 +178,5 @@ export class MemoryModelZX81_56k extends MemoryModel {	// NOSONAR
 			]
 		});
 		this.name = 'ZX81-56K';
-		this.defaultTopOfStack = 0x7FFF; // Like for 16K
 	}
 }

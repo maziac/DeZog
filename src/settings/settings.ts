@@ -202,9 +202,6 @@ export interface ZSimType {
 	// If enabled it shows the contents of the ZX Spectrum or ZX 81 screen.
 	ulaScreen: string,	// "spectrum" or "zx81"
 
-	// If enabled it shows the contents of the ZX 81 screen.
-	zx81UlaScreen: boolean,
-
 	// The displayed border width in pixels. No border if 0. Works only in conjunction with ulaScreen.
 	zxBorderWidth: number,
 
@@ -460,25 +457,25 @@ export class Settings {
 		launchCfg.rootFolder = rootFolder;
 
 		// Check for default values (for some reasons the default values from the package.json are not used)
-		if (launchCfg.unitTests == undefined)
+		if (launchCfg.unitTests === undefined)
 			launchCfg.unitTests = false;
 		const unitTests = launchCfg.unitTests;
 
 		// zrcp
 		if (!launchCfg.zrcp)
 			launchCfg.zrcp = {} as ZrcpType;
-		if (launchCfg.zrcp.hostname == undefined)
+		if (launchCfg.zrcp.hostname === undefined)
 			launchCfg.zrcp.hostname = 'localhost';
-		if (launchCfg.zrcp.port == undefined)
+		if (launchCfg.zrcp.port === undefined)
 			launchCfg.zrcp.port = 10000;
-		if (launchCfg.zrcp.loadDelay == undefined) {
+		if (launchCfg.zrcp.loadDelay === undefined) {
 			const platform = process.platform;
 			let delay = 0;
-			if (platform == 'win32')
+			if (platform === 'win32')
 				delay = 100;
 			launchCfg.zrcp.loadDelay = delay;	// ms
 		}
-		if (launchCfg.zrcp.resetOnLaunch == undefined)
+		if (launchCfg.zrcp.resetOnLaunch === undefined)
 			launchCfg.zrcp.resetOnLaunch = true;
 		if (!launchCfg.zrcp.socketTimeout)
 			launchCfg.zrcp.socketTimeout = 5;	// 5 secs
@@ -486,9 +483,9 @@ export class Settings {
 		// cspect
 		if (!launchCfg.cspect)
 			launchCfg.cspect = {} as CSpectType;
-		if (launchCfg.cspect.hostname == undefined)
+		if (launchCfg.cspect.hostname === undefined)
 			launchCfg.cspect.hostname = 'localhost';
-		if (launchCfg.cspect.port == undefined)
+		if (launchCfg.cspect.port === undefined)
 			launchCfg.cspect.port = 11000;
 		if (!launchCfg.cspect.socketTimeout)
 			launchCfg.cspect.socketTimeout = 5;	// 5 secs
@@ -496,9 +493,9 @@ export class Settings {
 		// mame
 		if (!launchCfg.mame)
 			launchCfg.mame = {} as MameType;
-		if (launchCfg.mame.hostname == undefined)
+		if (launchCfg.mame.hostname === undefined)
 			launchCfg.mame.hostname = 'localhost';
-		if (launchCfg.mame.port == undefined)
+		if (launchCfg.mame.port === undefined)
 			launchCfg.mame.port = 12000;
 		if (!launchCfg.mame.socketTimeout)
 			launchCfg.mame.socketTimeout = 5;	// 5 secs
@@ -506,44 +503,44 @@ export class Settings {
 		// zsim
 		if (!launchCfg.zsim)
 			launchCfg.zsim = {} as ZSimType;
-		if (launchCfg.zsim.zxKeyboard == undefined)
+		if (launchCfg.zsim.zxKeyboard === undefined)
 			launchCfg.zsim.zxKeyboard = false;
-		if (launchCfg.zsim.zxInterface2Joy == undefined)
+		if (launchCfg.zsim.zxInterface2Joy === undefined)
 			launchCfg.zsim.zxInterface2Joy = false;
-		if (launchCfg.zsim.kempstonJoy == undefined)
+		if (launchCfg.zsim.kempstonJoy === undefined)
 			launchCfg.zsim.kempstonJoy = false;
-		if (launchCfg.zsim.ulaScreen == undefined)
+		if (launchCfg.zsim.ulaScreen === undefined || launchCfg.zsim.ulaScreen as any === false)
 			launchCfg.zsim.ulaScreen = '';
 		else if (launchCfg.zsim.ulaScreen !== 'spectrum' && launchCfg.zsim.ulaScreen !== 'zx81')
 			launchCfg.zsim.ulaScreen = 'spectrum';
-		if (launchCfg.zsim.zxBorderWidth == undefined || launchCfg.zsim.ulaScreen === '')
+		if (launchCfg.zsim.zxBorderWidth === undefined || launchCfg.zsim.ulaScreen === '')
 			launchCfg.zsim.zxBorderWidth = 0;
-		if (launchCfg.zsim.zxBeeper == undefined)
+		if (launchCfg.zsim.zxBeeper === undefined)
 			launchCfg.zsim.zxBeeper = false;
-		if (launchCfg.zsim.audioSampleRate == undefined)
+		if (launchCfg.zsim.audioSampleRate === undefined)
 			launchCfg.zsim.audioSampleRate = 22050;
-		if (launchCfg.zsim.cpuLoadInterruptRange == undefined)
+		if (launchCfg.zsim.cpuLoadInterruptRange === undefined)
 			launchCfg.zsim.cpuLoadInterruptRange = 1;
-		if (launchCfg.zsim.visualMemory == undefined)
+		if (launchCfg.zsim.visualMemory === undefined)
 			launchCfg.zsim.visualMemory = true;
-		if (launchCfg.zsim.memoryModel == undefined)
+		if (launchCfg.zsim.memoryModel === undefined)
 			launchCfg.zsim.memoryModel = "RAM";
 		launchCfg.zsim.memoryModel = launchCfg.zsim.memoryModel.toUpperCase();
-		if (launchCfg.zsim.cpuFrequency == undefined)
+		if (launchCfg.zsim.cpuFrequency === undefined)
 			launchCfg.zsim.cpuFrequency = 3500000.0;	// 3500000.0 for 3.5MHz.
-		if (launchCfg.zsim.limitSpeed == undefined)
+		if (launchCfg.zsim.limitSpeed === undefined)
 			launchCfg.zsim.limitSpeed = true;
-		if (launchCfg.zsim.updateFrequency == undefined)
+		if (launchCfg.zsim.updateFrequency === undefined)
 			launchCfg.zsim.updateFrequency = 10.0;
-		if (launchCfg.zsim.defaultPortIn == undefined)
+		if (launchCfg.zsim.defaultPortIn === undefined)
 			launchCfg.zsim.defaultPortIn = 0xFF;
-		if (launchCfg.zsim.Z80N == undefined)
+		if (launchCfg.zsim.Z80N === undefined)
 			launchCfg.zsim.Z80N = false;
-		if (launchCfg.zsim.tbblue == undefined)
+		if (launchCfg.zsim.tbblue === undefined)
 			launchCfg.zsim.tbblue = {REG_TURBO_MODE: false} as TBBlueType;
 
 		// Check for DMA
-		if (launchCfg.zsim.zxnDMA == undefined)
+		if (launchCfg.zsim.zxnDMA === undefined)
 			launchCfg.zsim.zxnDMA = false;
 
 		// Check update frequency ranges
@@ -554,30 +551,30 @@ export class Settings {
 
 
 		// zsim custom code
-		if (launchCfg.zsim.customCode == undefined) {
+		if (launchCfg.zsim.customCode === undefined) {
 			launchCfg.zsim.customCode = {} as any;
 		}
-		if (launchCfg.zsim.customCode.debug == undefined)
+		if (launchCfg.zsim.customCode.debug === undefined)
 			launchCfg.zsim.customCode.debug = false;
-		if (launchCfg.zsim.customCode.jsPath != undefined) {
+		if (launchCfg.zsim.customCode.jsPath !== undefined) {
 			const path = UnifiedPath.getUnifiedPath(launchCfg.zsim.customCode.jsPath);
 			launchCfg.zsim.customCode.jsPath = Utility.getAbsFilePath(path, rootFolder);
 		}
-		if (launchCfg.zsim.customCode.uiPath != undefined) {
+		if (launchCfg.zsim.customCode.uiPath !== undefined) {
 			const path = UnifiedPath.getUnifiedPath(launchCfg.zsim.customCode.uiPath);
 			launchCfg.zsim.customCode.uiPath = Utility.getAbsFilePath(path, rootFolder);
 		}
-		if (launchCfg.zsim.customCode.timeStep == undefined) {
+		if (launchCfg.zsim.customCode.timeStep === undefined) {
 			// In fact: never call tick()
 			launchCfg.zsim.customCode.timeStep = Number.MAX_SAFE_INTEGER;
 		}
 
 		// zsim custom memory
 		const custMem = launchCfg.zsim.customMemory;
-		if (custMem != undefined) {
+		if (custMem !== undefined) {
 			// io MMU concatenate
-			if (custMem.ioMmu != undefined) {
-				if (typeof custMem.ioMmu != "string")
+			if (custMem.ioMmu !== undefined) {
+				if (typeof custMem.ioMmu !== "string")
 					custMem.ioMmu = custMem.ioMmu.join("\n");
 			}
 			// Slots
@@ -591,8 +588,8 @@ export class Settings {
 				// Banks
 				for (const bank of slotRange.banks) {
 					// Create abs paths
-					if (bank.rom != undefined) {
-						if (typeof bank.rom == 'string') {
+					if (bank.rom !== undefined) {
+						if (typeof bank.rom === 'string') {
 							const path = UnifiedPath.getUnifiedPath(bank.rom);
 							bank.rom = Utility.getAbsFilePath(path, rootFolder);
 						}
@@ -703,7 +700,7 @@ export class Settings {
 					path: undefined as any,
 					reloadOnSave: fp.reloadOnSave
 				};
-				if (file.reloadOnSave == undefined)
+				if (file.reloadOnSave === undefined)
 					file.reloadOnSave = false;
 				if (fpPath)
 					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
@@ -735,14 +732,14 @@ export class Settings {
 				loadObj.path = '';
 		}
 
-		if (launchCfg.tmpDir == undefined)
+		if (launchCfg.tmpDir === undefined)
 			launchCfg.tmpDir = '.tmp';
 		launchCfg.tmpDir = UnifiedPath.getUnifiedPath(launchCfg.tmpDir);
 		launchCfg.tmpDir = Utility.getAbsFilePath
 			(launchCfg.tmpDir, rootFolder);
 		if (isNaN(launchCfg.smallValuesMaximum))
 			launchCfg.smallValuesMaximum = 255;
-		if (launchCfg.disassemblerArgs == undefined) {
+		if (launchCfg.disassemblerArgs === undefined) {
 			launchCfg.disassemblerArgs = {
 				numberOfLines: 10
 			};
@@ -753,30 +750,30 @@ export class Settings {
 			launchCfg.disassemblerArgs.numberOfLines = 100;
 		if (launchCfg.disassemblerArgs.numberOfLines < 1)
 			launchCfg.disassemblerArgs.numberOfLines = 1;
-		if (launchCfg.startAutomatically == undefined)
+		if (launchCfg.startAutomatically === undefined)
 			launchCfg.startAutomatically = false;
-		if (launchCfg.commandsAfterLaunch == undefined)
+		if (launchCfg.commandsAfterLaunch === undefined)
 			launchCfg.commandsAfterLaunch = [];
-		if (launchCfg.zrcp.skipInterrupt == undefined)
+		if (launchCfg.zrcp.skipInterrupt === undefined)
 			launchCfg.zrcp.skipInterrupt = false;
 
 		// Smart disassembly
-		if (launchCfg.smartDisassemblerArgs == undefined) {
+		if (launchCfg.smartDisassemblerArgs === undefined) {
 			launchCfg.smartDisassemblerArgs = {
 				lowerCase: true
 			}
 		}
-		if (launchCfg.smartDisassemblerArgs.lowerCase == undefined)
+		if (launchCfg.smartDisassemblerArgs.lowerCase === undefined)
 			launchCfg.smartDisassemblerArgs.lowerCase = false;
 
 		// Reverse debugging
-		if (launchCfg.history == undefined)
+		if (launchCfg.history === undefined)
 			launchCfg.history = {} as any;
-		if (launchCfg.history.reverseDebugInstructionCount == undefined)
+		if (launchCfg.history.reverseDebugInstructionCount === undefined)
 			launchCfg.history.reverseDebugInstructionCount = 10000;
 
 		// Short history
-		if (launchCfg.history.spotCount == undefined)
+		if (launchCfg.history.spotCount === undefined)
 			launchCfg.history.spotCount = 10;
 		if (launchCfg.history.spotCount > Settings.MAX_HISTORY_SPOT_COUNT)
 			launchCfg.history.spotCount = Settings.MAX_HISTORY_SPOT_COUNT;
@@ -784,12 +781,12 @@ export class Settings {
 			launchCfg.history.spotCount = launchCfg.history.reverseDebugInstructionCount;
 		if (launchCfg.history.spotCount < 0)
 			launchCfg.history.spotCount = 0;
-		if (launchCfg.history.spotShowRegisters == undefined)
+		if (launchCfg.history.spotShowRegisters === undefined)
 			launchCfg.history.spotShowRegisters = true;
 
 		// Code coverage
-		if (launchCfg.history.codeCoverageEnabled == undefined) {
-			if (launchCfg.remoteType == 'cspect' || launchCfg.remoteType == 'mame') {
+		if (launchCfg.history.codeCoverageEnabled === undefined) {
+			if (launchCfg.remoteType === 'cspect' || launchCfg.remoteType === 'mame') {
 				// not supported by cspect and mame
 				launchCfg.history.codeCoverageEnabled = false;
 			}
@@ -923,13 +920,13 @@ export class Settings {
 		}
 
 		// Check 'serial' if 'zxnext' was selected
-		if (rType == 'zxnext') {
-			if (Settings.launch.zxnext.serial == undefined) {
+		if (rType === 'zxnext') {
+			if (Settings.launch.zxnext.serial === undefined) {
 				throw Error("For remoteType 'zxnext' you need to set the 'zxnext.serial' property for the serial interface.");
 			}
 			// Check that the old properties are not used
 			const oldZxnext = Settings.launch.zxnext as any;
-			if (oldZxnext.port != undefined || oldZxnext.hostname != undefined || oldZxnext.socketTimeout != undefined) {
+			if (oldZxnext.port !== undefined || oldZxnext.hostname !== undefined || oldZxnext.socketTimeout !== undefined) {
 				throw Error("For 'zxnext' the properties 'port', 'hostname' and 'socketTimeout' are not used anymore. Use 'serial' instead.");
 			}
 		}
@@ -938,7 +935,7 @@ export class Settings {
 		const listFiles = this.GetAllAssemblerListFiles(Settings.launch);
 		for (let listFile of listFiles) {
 			const path = listFile.path;
-			if (path == undefined)
+			if (path === undefined)
 				throw Error("'path': You need to define a path to your file.");
 			// Check that file exists
 			if (!fs.existsSync(path))
@@ -949,9 +946,9 @@ export class Settings {
 		// I.e. they are done when the SimulatedMemory is constructed.
 
 		// Check if customMemory is defined if it was chosen.
-		if (Settings.launch.zsim.memoryModel == 'CUSTOM') {
+		if (Settings.launch.zsim.memoryModel === 'CUSTOM') {
 			const customMemory = Settings.launch.zsim.customMemory;
-			if (customMemory == undefined)
+			if (customMemory === undefined)
 				throw Error("If 'memoryModel' is set to 'CUSTOM', you need to define 'customMemory'.");
 		}
 
@@ -961,7 +958,7 @@ export class Settings {
 			const listFiles = Settings.launch.z88dk;
 			for (const listFile of listFiles) {
 				const mapFile = listFile.mapFile;
-				if (mapFile == undefined)
+				if (mapFile === undefined)
 					throw Error("'z88dk.mapFile': For z88dk you have to define a map file.");
 				// Check that file exists
 				if (!fs.existsSync(mapFile))
@@ -986,7 +983,7 @@ export class Settings {
 			if (!fs.existsSync(path))
 				throw Error("'loadObj.path': File '" + path + "' does not exist.");
 			// Check that start address is given
-			if (loadObj.start == undefined)
+			if (loadObj.start === undefined)
 				throw Error("'loadObj.start': You must specify a 'start' address for '" + path + "'.");
 		}
 
@@ -996,7 +993,7 @@ export class Settings {
 			// Check that file exists
 			for (const config of Settings.launch.revEng) {
 				const paths = fglob.sync([config.path]);
-				if (paths.length == 0)
+				if (paths.length === 0)
 					throw Error("'revEng.path': '" + config.path + "' does not match any file.");
 			}
 		}

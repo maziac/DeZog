@@ -114,12 +114,7 @@ export class MemoryModel {
 	// Also only required for the zsim memory.
 	public ioMmu: string;
 
-	// Default value of the top of the stack. Used to limit the call stack.
-	/// 64k address.
-	// TODO: handle differently
-	public defaultTopOfStack = 0x10000; // @zx81 0x8000 for ZX81
-
-
+	
 	/**
 	 * Constructor.
 	 * @param cfg The custom memory model configuration. From the settings.
