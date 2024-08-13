@@ -84,21 +84,11 @@ export class ZSimulationView extends BaseView {
 		this.stopTimer = undefined as any;
 		this.previousTstates = -1;
 
-		// ZX Keyboard?
+		// For port handing
 		this.simulatedPorts = new Map<number, number>();
-		if (Settings.launch.zsim.zxKeyboard) {
-			// Prepare all used ports
-			this.simulatedPorts.set(0xFEFE, 0xFF);
-			this.simulatedPorts.set(0xFDFE, 0xFF);
-			this.simulatedPorts.set(0xFBFE, 0xFF);
-			this.simulatedPorts.set(0xF7FE, 0xFF);
-			this.simulatedPorts.set(0xEFFE, 0xFF);
-			this.simulatedPorts.set(0xDFFE, 0xFF);
-			this.simulatedPorts.set(0xBFFE, 0xFF);
-			this.simulatedPorts.set(0x7FFE, 0xFF);
-		}
 		// If keyboard id not defined, check for ZX Interface 2
-		else if (Settings.launch.zsim.zxInterface2Joy) {
+		if (!simulator.zxKeyboard && Settings.launch.zsim.zxInterface2Joy) {
+			// TODO: Implement ZX Interface 2
 			// Prepare all used ports
 			this.simulatedPorts.set(0xF7FE, 0xFF);	// Joystick 2 (left): Bits: xxxLRDUF, low active, keys 1-5
 			this.simulatedPorts.set(0xEFFE, 0xFF);	// Joystick 1 (right): Bits: xxxFUDRL, low active, keys 6-0
@@ -114,6 +104,7 @@ export class ZSimulationView extends BaseView {
 
 		// Check for Kempston Joystick
 		if (Settings.launch.zsim.kempstonJoy) {
+			// TODO: Implement Kempston Joystick
 			// Prepare port:  Port 0x001f, 000FUDLR, Active = 1
 			this.simulatedPorts.set(0x001F, 0x00);
 		}
@@ -281,8 +272,7 @@ export class ZSimulationView extends BaseView {
 	}
 
 
-	/**
-	 * The web view posted a message to this view.
+	/** The web view posted a message to this view.
 	 * @param message The message. message.command contains the command as a string. E.g. 'keyChanged'
 	 */
 	protected async webViewMessageReceived(message: any) {
@@ -390,68 +380,67 @@ export class ZSimulationView extends BaseView {
 	 */
 	protected keyChanged(key: string, on: boolean) {
 		// Determine port
-		let port;
+		let portHighBit;
 		switch (key) {
 			case 'key_Digit1':
 			case 'key_Digit2':
 			case 'key_Digit3':
 			case 'key_Digit4':
 			case 'key_Digit5':
-				port = 0xF7FE;
+				portHighBit = 3;
 				break;
 			case 'key_Digit6':
 			case 'key_Digit7':
 			case 'key_Digit8':
 			case 'key_Digit9':
 			case 'key_Digit0':
-				port = 0xEFFE;
+				portHighBit = 4;
 				break;
 			case 'key_KeyQ':
 			case 'key_KeyW':
 			case 'key_KeyE':
 			case 'key_KeyR':
 			case 'key_KeyT':
-				port = 0xFBFE;
+				portHighBit = 2;
 				break;
 			case 'key_KeyY':
 			case 'key_KeyU':
 			case 'key_KeyI':
 			case 'key_KeyO':
 			case 'key_KeyP':
-				port = 0xDFFE;
+				portHighBit = 5;
 				break;
 			case 'key_KeyA':
 			case 'key_KeyS':
 			case 'key_KeyD':
 			case 'key_KeyF':
 			case 'key_KeyG':
-				port = 0xFDFE;
+				portHighBit = 1;
 				break;
 			case 'key_KeyH':
 			case 'key_KeyJ':
 			case 'key_KeyK':
 			case 'key_KeyL':
 			case 'key_Enter':
-				port = 0xBFFE;
+				portHighBit = 6;
 				break;
 			case 'key_ShiftLeft':	// CAPS
 			case 'key_KeyZ':
 			case 'key_KeyX':
 			case 'key_KeyC':
 			case 'key_KeyV':
-				port = 0xFEFE;
+				portHighBit = 0;
 				break;
 			case 'key_KeyB':
 			case 'key_KeyN':
 			case 'key_KeyM':
 			case 'key_ShiftRight':	// SYMBOL
 			case 'key_Space':
-				port = 0x7FFE;
+				portHighBit = 7;
 				break;
 			default:
-				Utility.assert(false);
+				return;
 		}
-		Utility.assert(port);
 
 		// Determine bit
 		let bit;
@@ -507,20 +496,11 @@ export class ZSimulationView extends BaseView {
 				bit = 0b10000;
 				break;
 			default:
-				Utility.assert(false);
+				return;
 		}
-		Utility.assert(bit);
 
-		// Get port value
-		Utility.assert(this.simulatedPorts);
-		let value = this.simulatedPorts.get(port)!;
-		Utility.assert(value != undefined);
-		if (on)
-			value &= ~bit;
-		else
-			value |= bit;
-		// And set
-		this.simulatedPorts.set(port, value);
+		// Send bits to keyboard
+		this.simulator.zxKeyboard.setKey(portHighBit, bit, on);
 	}
 
 

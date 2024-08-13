@@ -25,6 +25,7 @@ import {MemoryModelZX81_1k, MemoryModelZX81_2k, MemoryModelZX81_16k, MemoryModel
 import {SpectrumUlaScreen} from './spectrumulascreen';
 import {ZxnDma} from './zxndma';
 import {Zx81UlaScreen} from './zx81ulascreen';
+import {Zx81Keyboard} from './zx81keyboard';
 
 /**
  * The representation of a Z80 remote.
@@ -101,8 +102,8 @@ export class ZSimRemote extends DzrpRemote {
 	// The zxnDMA object. Or undefined if not used.
 	public zxnDMA: ZxnDma;
 
-	// Which kind of simulator (ZX Spectrum or ZX81)
-	public kind: 'zxspectrum' | 'zx81'
+	// The zx81 or spectrum keyboard.
+	public zxKeyboard: Zx81Keyboard;
 
 
 	/// Constructor.
@@ -297,7 +298,7 @@ export class ZSimRemote extends DzrpRemote {
 			this.ports.registerGenericOutPortFunction((port: number, value: number) => {
 				// The port 0xFE. Every even port address will do.
 				if (port & 0x01)
-					return undefined;
+					return;
 				// Yes, it's an even address.
 
 				// Border
@@ -312,6 +313,12 @@ export class ZSimRemote extends DzrpRemote {
 					this.zxBeeper.writeBeeper(this.passedTstates, (value & 0b10000) != 0);
 				}
 			});
+		}
+
+		// Check for keyboard
+		const zxKeyboard = zsim.zxKeyboard;
+		if (zxKeyboard) {
+			this.zxKeyboard = new Zx81Keyboard(this.ports);
 		}
 
 		// Check for tbblue port
