@@ -22,8 +22,9 @@ export class ZSimulationView extends BaseView {
 	// The previous value for the cpu frequency, used to check on a change.
 	protected prevCpuFreq: number;
 
-	// A map to hold the values of the simulated ports.
-	protected simulatedPorts: Map<number, number>;	// Port <-> value
+	// A map to hold the values of the simulated ports. Only the
+	// low address of the port is decoded.
+	protected lowAddressSimulatedPorts: Map<number, number>;	// Port <-> value
 
 	// A pointer to the simulator.
 	protected simulator: ZSimRemote;
@@ -85,22 +86,23 @@ export class ZSimulationView extends BaseView {
 		this.previousTstates = -1;
 
 		// For port handing
-		this.simulatedPorts = new Map<number, number>();
+		this.lowAddressSimulatedPorts = new Map<number, number>();
 
 		// Check for Kempston Joystick
 		if (Settings.launch.zsim.kempstonJoy) {
 			// TODO: Implement Kempston Joystick
-			// Prepare port:  Port 0x001f, 000FUDLR, Active = 1
-			this.simulatedPorts.set(0x001F, 0x00);
+			// Prepare port:  Port 0x1f, 000FUDLR, Active = 1
+			this.lowAddressSimulatedPorts.set(0x1F, 0x00);
 		}
 
 		// Set callbacks for all simulated ports.
-		for (const [simPort,] of this.simulatedPorts) {
-			this.simulator.ports.registerSpecificInPortFunction(simPort, (port: number) => {
-				const value = this.simulatedPorts.get(port)!;
-				return value;
-			});
-		}
+		this.simulator.ports.registerGenericInPortFunction((port: number) => {
+			for (const [simPort,] of this.lowAddressSimulatedPorts) {
+				if ((port & 0xFF) === simPort)
+					return this.lowAddressSimulatedPorts.get(simPort);
+			}
+			return undefined;
+		});
 
 		// Add title
 		Utility.assert(this.vscodePanel);
@@ -500,15 +502,15 @@ export class ZSimulationView extends BaseView {
 	 * @param bitByte A byte with the right bit set.
 	 */
 	protected setPortBit(port: number, on: boolean, bitByte: number) {		// Get port value
-		Utility.assert(this.simulatedPorts);
-		let value = this.simulatedPorts.get(port)!;
+		Utility.assert(this.lowAddressSimulatedPorts);
+		let value = this.lowAddressSimulatedPorts.get(port)!;
 		Utility.assert(value != undefined);
 		if (on)
 			value |= bitByte;
 		else
 			value &= ~bitByte;
 		// And set
-		this.simulatedPorts.set(port, value);
+		this.lowAddressSimulatedPorts.set(port, value);
 	}
 
 
