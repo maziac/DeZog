@@ -267,6 +267,20 @@ function initSimulation(audioSampleRate: number, volume: number) {
 		});
 	}
 
+	// Joystick (Custom)
+	const customJoy1Fire = document.getElementById("customJoy.joy1.fire") as UiBit;
+	if (customJoy1Fire) {
+		joystickObjs.push({
+			fire: customJoy1Fire,
+			fire2: document.getElementById("customJoy.joy1.fire2") as UiBit,
+			fire3: document.getElementById("customJoy.joy1.fire3") as UiBit,
+			up: document.getElementById("customJoy.joy1.up") as UiBit,
+			left: document.getElementById("customJoy.joy1.left") as UiBit,
+			right: document.getElementById("customJoy.joy1.right") as UiBit,
+			down: document.getElementById("customJoy.joy1.down") as UiBit,
+		});
+	}
+
 	// Start joystick polling (if joystick is setup)
 	initJoystickPolling();
 }
@@ -429,7 +443,6 @@ globalThis.togglePortBit = function (cell, port, bitByte) {
 	});
 }
 
-
 // Toggle the cell and the corresponding bit.
 // Used for Interface 2 joystick.
 // Inverts the bit before sending.
@@ -439,6 +452,15 @@ globalThis.sendKeyBit = function (cell, row, bitByte) {
 	vscode.postMessage({
 		command: 'keyBit',
 		value: {row: row, on: cell.bitvalue, bitByte: bitByte}
+	});
+}
+
+// Is sent by the custom joystick if a button is pressed/released.
+globalThis.sendJoyButton = function (cell) {
+	// Send request to vscode
+	vscode.postMessage({
+		command: 'joyButton',
+		value: {id: cell.id, on: cell.bitvalue}
 	});
 }
 

@@ -185,6 +185,35 @@ export interface TBBlueType {
 }
 
 
+// Custom joystick type to map one joystick to any port
+// and any bit.
+export interface JoyBitPort {
+	// The bits of the port to ignore are 0.
+	portMask: number;
+
+	// The port address.
+	port: number;
+
+	// The bit to set (or reset) if the corresponding joystick button is pressed.
+	bit: number;	// e.g. 0x10 for the 4th bit
+
+	// True, if the bit should be low active.
+	lowActive: boolean;	// Default=true
+}
+
+
+// Associates the bit to set (or reset) when the correspondin joystick button is pressed.
+export interface CustomJoyType {
+	fire: JoyBitPort;	// The bit to set (reset)
+	fire2: JoyBitPort;	// The bit to set (reset)
+	fire3: JoyBitPort;	// The bit to set (reset)
+	up: JoyBitPort;		// The bit to set (reset)
+	left: JoyBitPort;	// The bit to set (reset)
+	right: JoyBitPort;	// The bit to set (reset)
+	down: JoyBitPort;	// The bit to set (reset)
+}
+
+
 /// Definitions for the 'zsim' remote type.
 export interface ZSimType {
 	// If enabled the simulator shows a ZX Spectrum/ZX81 keyboard to simulate keypresses.
@@ -195,6 +224,11 @@ export interface ZSimType {
 
 	// If enabled the simulator shows a pad to simulate the Kempston joystick at port 0x1F.
 	kempstonJoy: boolean;
+
+	// If enabled the simulator shows a pad to simulate a custom programmable joystick.
+	// This way it is possible to map the joystick to any port
+	// and any bit.
+	customJoy: CustomJoyType;
 
 	// If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.
 	visualMemory: boolean,
@@ -246,8 +280,9 @@ export interface ZSimType {
 	updateFrequency: number,
 
 	// Default value that is returned for the ports (if no "HW" is configured).
-	// Usually 0xFF.
-	defaultPortIn: number;
+	// Usually 0xFF = Open Collector. Aöö in ports are ANDed.
+	// 0x00 = All in ports are ORed.
+	defaultPortIn: 0xFF | 0x00;
 
 	// Settings to execute custom javascript code inside the zsim simulator.
 	customCode: CustomCodeType;
@@ -509,6 +544,20 @@ export class Settings {
 			launchCfg.zsim.zxInterface2Joy = false;
 		if (launchCfg.zsim.kempstonJoy === undefined)
 			launchCfg.zsim.kempstonJoy = false;
+		if (launchCfg.zsim.customJoy !== undefined) {
+			const customJoy = launchCfg.zsim.customJoy;
+			// Loop over all defined properties
+			for(const prop in customJoy) {
+				const button = customJoy[prop];
+				button.portMask = (button.portMask === undefined) ? 0xFFFF : parseInt(button.portMask);
+				if (button.port !== undefined)
+					button.port = parseInt(button.port);
+				if (button.bit !== undefined)
+					button.bit = parseInt(button.bit);
+				if (button.lowActive === undefined)
+					button.lowActive = true;
+			}
+		}
 		if (launchCfg.zsim.ulaScreen === undefined || launchCfg.zsim.ulaScreen as any === false)
 			launchCfg.zsim.ulaScreen = '';
 		else if (launchCfg.zsim.ulaScreen !== 'spectrum' && launchCfg.zsim.ulaScreen !== 'zx81')
@@ -987,7 +1036,6 @@ export class Settings {
 				throw Error("'loadObj.start': You must specify a 'start' address for '" + path + "'.");
 		}
 
-
 		// Rev-Eng: Check that glob pattern at least finds one file.
 		if(Settings.launch.revEng) {
 			// Check that file exists
@@ -996,6 +1044,25 @@ export class Settings {
 				if (paths.length === 0)
 					throw Error("'revEng.path': '" + config.path + "' does not match any file.");
 			}
+		}
+
+		// Check mandatory settings for the custom joystick
+		const customJoy = Settings.launch.zsim?.customJoy;
+		if (customJoy) {
+			// Loop over all defined properties
+			for (const prop in customJoy) {
+				const button = customJoy[prop];
+				if (button.port === undefined)
+					throw Error("'customJoy." + prop + "': 'port' is not defined.");
+				if (button.bit === undefined)
+					throw Error("'customJoy." + prop + "': 'bit' is not defined.");
+			}
+		}
+
+		// Check defaultPortIn
+		if (Settings.launch.zsim.defaultPortIn !== 0xFF
+			&& Settings.launch.zsim.defaultPortIn !== 0x00) {
+			throw Error("'defaultPortIn': Allowed values are only 255 or 0.");
 		}
 	}
 }

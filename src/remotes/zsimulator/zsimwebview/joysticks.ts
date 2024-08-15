@@ -4,6 +4,8 @@ import {UiBit} from "./helper";
 // Type for the joystick data.
 export type JoystickData = {
 	fire: UiBit,
+	fire2?: UiBit,
+	fire3?: UiBit,
 	up: UiBit,
 	left: UiBit,
 	right: UiBit,
@@ -27,9 +29,17 @@ export function initJoystickPolling() {
 			for (const gp of gps) {
 				if (gp) {
 					const obj = joystickObjs[j];
-					// Fire button
+					// Fire button(s)
 					const pressed = (gp.buttons[0].pressed) ? 1 : 0;
 					obj.fire.setBitValue(pressed);
+					if (obj.fire2) {
+						const pressed = (gp.buttons[1].pressed) ? 1 : 0;
+						obj.fire2.setBitValue(pressed);
+					}
+					if (obj.fire3) {
+						const pressed = (gp.buttons[2].pressed) ? 1 : 0;
+						obj.fire3.setBitValue(pressed);
+					}
 					// Check all axis
 					const axes = gp.axes;
 					const axesLen = axes.length;

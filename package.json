@@ -600,7 +600,7 @@
 									},
 									"defaultPortIn": {
 										"type": "number",
-										"description": "The default value that is read if the read port is unused.",
+										"description": "The default value that is read if the read port is unused. Allowed is 255 or 0. 255 also sets the port as 'Open Collector'. If there is more than 1 port then all ports are ANDed. If 0 all ports are ORed.",
 										"default": 255
 									},
 									"Z80N": {

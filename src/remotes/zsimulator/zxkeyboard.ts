@@ -1,10 +1,9 @@
-import {Serializable, MemBuffer} from "../../misc/membuffer";
 import {Z80Ports} from "./z80ports";
 
 
 /** ZX81 keyboard simulation.
  */
-export class ZxKeyboard implements Serializable {
+export class ZxKeyboard {
 
 	// The keyboard values, each low bit is an activated key.
 	protected keyboardMatrix = new Uint8Array([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
@@ -62,19 +61,5 @@ export class ZxKeyboard implements Serializable {
 	public setKey(row: number, bit: number, pressed: boolean) {
 		const oldValue = this.keyboardMatrix[row];
 		this.keyboardMatrix[row] = pressed ? (oldValue & ~bit) : (oldValue | bit);
-	}
-
-
-	/** Serializes the object.
-	 * Basically the last beeper value.
-	 */
-	public serialize(memBuffer: MemBuffer) {
-		// Note: keyboardMAtrix is not saved, as the keys are probably not pressed anymore on restore.
-	}
-
-
-	/** Deserializes the object.
-	 */
-	public deserialize(memBuffer: MemBuffer) {
 	}
 }

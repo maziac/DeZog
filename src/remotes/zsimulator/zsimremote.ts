@@ -26,6 +26,9 @@ import {SpectrumUlaScreen} from './spectrumulascreen';
 import {ZxnDma} from './zxndma';
 import {Zx81UlaScreen} from './zx81ulascreen';
 import {ZxKeyboard} from './zxkeyboard';
+import {CustomJoystick} from './customjoystick';
+
+
 
 /**
  * The representation of a Z80 remote.
@@ -104,6 +107,9 @@ export class ZSimRemote extends DzrpRemote {
 
 	// The zx81 or spectrum keyboard.
 	public zxKeyboard: ZxKeyboard;
+
+	// The custom joystick.
+	public customJoystick: CustomJoystick;
 
 
 	/// Constructor.
@@ -284,7 +290,7 @@ export class ZSimRemote extends DzrpRemote {
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();	// Required for the memory model.
 
 		// Create ports for paging
-		this.ports = new Z80Ports(zsim.defaultPortIn);
+		this.ports = new Z80Ports(zsim.defaultPortIn === 0xFF);
 
 		// Check for beeper and border (both use the same port)
 		const zxBeeperEnabled = zsim.zxBeeper;
@@ -319,6 +325,12 @@ export class ZSimRemote extends DzrpRemote {
 		const zxKeyboard = zsim.zxKeyboard || zsim.zxInterface2Joy;
 		if (zxKeyboard) {
 			this.zxKeyboard = new ZxKeyboard(this.ports);
+		}
+
+		// Check for custom joystick
+		const customJoy = zsim.customJoy;
+		if (customJoy) {
+			this.customJoystick = new CustomJoystick(this.ports, customJoy);
 		}
 
 		// Check for tbblue port

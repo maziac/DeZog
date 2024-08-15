@@ -6,7 +6,7 @@ suite('Z80Ports', () => {
 	let z80Ports: Z80Ports;
 
 	setup(() => {
-		z80Ports = new Z80Ports(0xFF);
+		z80Ports = new Z80Ports(true);
 	});
 
 	suite('registerGenericOutPortFunction', () => {

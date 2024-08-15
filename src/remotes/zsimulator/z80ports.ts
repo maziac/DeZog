@@ -5,8 +5,11 @@
  */
 export class Z80Ports {
 
+	// If the port is openCollector, every 0 on a port pulls it to zero. Correspondents to defaultPortIn = 0xFF.
+	protected openCollector: boolean;
+
 	// The default value returned if no peripheral is attached.
-	protected defaultPortIn;
+	public defaultPortIn: 0xFF | 0x00;
 
 	protected genericOutPortFuncs: Array<(port: number, value: number) => void>;
 	protected genericInPortFuncs: Array<(port: number) => (number|undefined)>;
@@ -24,9 +27,12 @@ export class Z80Ports {
 	/**
 	 *  Constructor.
 	 * @param defaultPortIn The default value that is read if the read port is unused.
+	 * 0xFF = Open Collector. Every 0 on a port pulls it to zero.
+	 * Effectively all ports that get active will be ANDed.
 	 */
-	constructor(defaultPortIn: number) {
-		this.defaultPortIn = defaultPortIn;
+	constructor(openCollector: boolean) {
+		this.openCollector = openCollector;
+		this.defaultPortIn = openCollector ? 0xFF : 0x00;
 		this.genericOutPortFuncs = [];
 		this.genericInPortFuncs = [];
 		this.outPortMap = new Map<number, (port: number, value: number) => void>();
@@ -86,29 +92,33 @@ export class Z80Ports {
 	 *  Read 1 byte. Used by the CPU when doing a 'in a,(c)'.
 	 */
 	public read(port: number): number {
-		let value;
+		let allValue: number = this.defaultPortIn;
 
 		// Check for general read function.
 		// Is done at first, so it can "override" other functions
 		for (const func of this.genericInPortFuncs) {
-			value = func(port);
-			if (value != undefined)
-				break;
+			const value = func(port);
+			if (value !== undefined) {
+				if(this.openCollector)
+					allValue &= value;
+				else
+					allValue |= value;
+			}
 		}
 
 		// Check for specific read function
-		if (value == undefined) {
-			const func = this.inPortMap.get(port);
-			if (func)
-				value = func(port);
+		const func = this.inPortMap.get(port);
+		if (func) {
+			const value = func(port);
+			if (value !== undefined) {
+				if (this.openCollector)
+					allValue &= value;
+				else
+					allValue |= value;
+			}
 		}
 
-		// Otherwise return default
-		if (value == undefined) {
-			// console.log('Reading port ' + port.toString(16));
-			value = this.defaultPortIn;
-		}
-		return value;
+		return allValue;
 	}
 
 

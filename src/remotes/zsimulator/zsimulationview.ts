@@ -281,7 +281,10 @@ export class ZSimulationView extends BaseView {
 				break;
 			case 'keyBit':
 				this.simulator.zxKeyboard.setKey(message.value.row, message.value.bitByte, message.value.on);
-				console.log("keyBit: " + message.value.row + ", " + message.value.bitByte + ", " + message.value.on);
+				//console.log("keyBit: " + message.value.row + ", " + message.value.bitByte + ", " + message.value.on);
+				break;
+			case 'joyButton':
+				this.simulator.customJoystick.setButton(message.value.id, message.value.on);
 				break;
 			case 'portBit':
 				this.setPortBit(message.value.port, message.value.on, message.value.bitByte);
@@ -1114,6 +1117,60 @@ export class ZSimulationView extends BaseView {
 			</details>
 			`;
 		}
+
+
+		// Adding code for custom joystick
+		if (zsim.customJoy) {
+			html += `
+			<!-- Csutom Joystick -->
+			<details open="true">
+			<summary>Custom Joystick</summary>
+
+			<table>
+				<tr>
+				<td>
+				<table style="color:black;" oncolor="red" offcolor="white">
+					<tr>
+						<td>
+							<ui-bit id="customJoy.joy1.fire" style="border-radius:1em;" onchange="sendJoyButton(this)">F</ui-bit>
+						</td>
+						<td align="center">
+							<ui-bit id="customJoy.joy1.up" onchange="sendJoyButton(this)">U</ui-bit>
+						</td>
+						<td>
+							<ui-bit id="customJoy.joy1.fire2" style="border-radius:1em;" onchange="sendJoyButton(this)">2</ui-bit>
+						</td>
+						<td>
+							<ui-bit id="customJoy.joy1.fire3" style="border-radius:1em;" onchange="sendJoyButton(this)">3</ui-bit>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<ui-bit id="customJoy.joy1.left" onchange="sendJoyButton(this)">L</ui-bit>
+						</td>
+						<td></td>
+						<td>
+							<ui-bit id="customJoy.joy1.right" onchange="sendJoyButton(this)">R</ui-bit>
+						</td>
+					</tr>
+					<tr>
+						<td></td>
+						<td align="center">
+							<ui-bit id="customJoy.joy1.down" onchange="sendJoyButton(this)">D</ui-bit>
+						</td>
+					</tr>
+				</table>
+				</td>
+
+				</table>
+				</td>
+				</tr>
+			</table>
+
+			</details>
+			`;
+		}
+
 
 		// Space for logging
 		html += `

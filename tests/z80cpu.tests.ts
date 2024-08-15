@@ -48,7 +48,7 @@ suite('Z80Cpu', () => {
 			let writeSize;
 			{
 				const memModel = new MemoryModelAllRam();
-				const ports = new Z80Ports(0xFF);
+				const ports = new Z80Ports(true);
 				cpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
 
 				cpu.pc = 0x1020;
@@ -82,7 +82,7 @@ suite('Z80Cpu', () => {
 
 			// Create a new object
 			const memModel = new MemoryModelAllRam();
-			const ports = new Z80Ports(0xFF);
+			const ports = new Z80Ports(true);
 			const rCpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
 			rCpu.deserialize(memBuffer);
 
@@ -125,7 +125,7 @@ suite('Z80Cpu', () => {
 			setup(() => {
 				Settings.launch = Settings.Init({} as any);
 				const memModel = new MemoryModelAllRam();
-				const ports = new Z80Ports(0xFF);
+				const ports = new Z80Ports(true);
 				cpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
 				z80 = cpu.z80;
 				mem = cpu.memory;
@@ -288,7 +288,7 @@ suite('Z80Cpu', () => {
 				};
 				Settings.launch = Settings.Init(cfg);
 				const memModel = new MemoryModelAllRam();
-				const ports = new Z80Ports(0xFF);
+				const ports = new Z80Ports(true);
 				cpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
 				z80 = cpu.z80;
 				mem = cpu.memory;

@@ -8,6 +8,9 @@
   - Z80 CPU simulation fix: HALT instruction: r is now incremented on each instruction.
   - New debug command, "-ml address filepath", to load binary data into the memory.
   - Fixed setting of A' from the UI.
+  - The "zxKeyboard" now support reading several rows at the same time.
+  - The "kempstonJoy" now decodes only the lower 8 bits of the address.
+  - A new "costumJoy" type: You can assign the bits and ports yourself.
 
 # 3.4.1
 - zsim: Removed annoying logging.
