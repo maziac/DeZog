@@ -90,7 +90,6 @@ export class ZSimulationView extends BaseView {
 
 		// Check for Kempston Joystick
 		if (Settings.launch.zsim.kempstonJoy) {
-			// TODO: Implement Kempston Joystick
 			// Prepare port:  Port 0x1f, 000FUDLR, Active = 1
 			this.lowAddressSimulatedPorts.set(0x1F, 0x00);
 		}
@@ -635,9 +634,16 @@ export class ZSimulationView extends BaseView {
 			border-color:black;
 			width:70px;
 			}
+
 			span {
 			display: table-cell;
 			vertical-align: middle;
+			}
+
+			.disabled {
+				pointer-events: none; /* Disable mouse events */
+				opacity: 0.5; /* Make the element look grayed out */
+				cursor: not-allowed; /* Change the cursor to indicate the element is disabled */
 			}
 			</style>
 
@@ -1120,9 +1126,10 @@ export class ZSimulationView extends BaseView {
 
 
 		// Adding code for custom joystick
-		if (zsim.customJoy) {
+		const cJoy = zsim.customJoy;
+		if (cJoy) {
 			html += `
-			<!-- Csutom Joystick -->
+			<!-- Custom Joystick -->
 			<details open="true">
 			<summary>Custom Joystick</summary>
 
@@ -1132,31 +1139,40 @@ export class ZSimulationView extends BaseView {
 				<table style="color:black;" oncolor="red" offcolor="white">
 					<tr>
 						<td>
-							<ui-bit id="customJoy.joy1.fire" style="border-radius:1em;" onchange="sendJoyButton(this)">F</ui-bit>
+							<ui-bit id="customJoy.joy1.fire"
+							${cJoy.fire ? '' : 'class="disabled"'}
+							style="border-radius:1em;" onchange="sendJoyButton(this)">F</ui-bit>
 						</td>
 						<td align="center">
-							<ui-bit id="customJoy.joy1.up" onchange="sendJoyButton(this)">U</ui-bit>
+							<ui-bit id="customJoy.joy1.up"
+							${cJoy.up ? '' : 'class="disabled"'}
+							 onchange="sendJoyButton(this)">U</ui-bit>
 						</td>
 						<td>
-							<ui-bit id="customJoy.joy1.fire2" style="border-radius:1em;" onchange="sendJoyButton(this)">2</ui-bit>
+							<ui-bit id="customJoy.joy1.fire2"
+							${cJoy.fire2 ? '' : 'class="disabled"'}style="border-radius:1em;" onchange="sendJoyButton(this)">2</ui-bit>
 						</td>
 						<td>
-							<ui-bit id="customJoy.joy1.fire3" style="border-radius:1em;" onchange="sendJoyButton(this)">3</ui-bit>
+							<ui-bit id="customJoy.joy1.fire3"
+							${cJoy.fire3 ? '' : 'class="disabled"'}style="border-radius:1em;" onchange="sendJoyButton(this)">3</ui-bit>
 						</td>
 					</tr>
 					<tr>
 						<td>
-							<ui-bit id="customJoy.joy1.left" onchange="sendJoyButton(this)">L</ui-bit>
+							<ui-bit id="customJoy.joy1.left"
+							${cJoy.left ? '' : 'class="disabled"'}onchange="sendJoyButton(this)">L</ui-bit>
 						</td>
 						<td></td>
 						<td>
-							<ui-bit id="customJoy.joy1.right" onchange="sendJoyButton(this)">R</ui-bit>
+							<ui-bit id="customJoy.joy1.right"
+							${cJoy.right ? '' : 'class="disabled"'}onchange="sendJoyButton(this)">R</ui-bit>
 						</td>
 					</tr>
 					<tr>
 						<td></td>
 						<td align="center">
-							<ui-bit id="customJoy.joy1.down" onchange="sendJoyButton(this)">D</ui-bit>
+							<ui-bit id="customJoy.joy1.down"
+							${cJoy.down ? '' : 'class="disabled"'}onchange="sendJoyButton(this)">D</ui-bit>
 						</td>
 					</tr>
 				</table>

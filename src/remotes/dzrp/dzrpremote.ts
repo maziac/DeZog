@@ -1446,10 +1446,11 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * See https://k1.spdns.de/Develop/Projects/zasm/Info/O80%20and%20P81%20Format.txt
 	 */
 	protected async loadBinZx81(filePath: string): Promise<void> {
-		// Find RAMTOP: Fill memory, read it back and check until which adress it is correct.
+		// TODO: Maybe I set correct values in the Memory Model.
+		// Find RAMTOP: Fill memory, read it back and check until which address it is correct.
 		// This would work with Remotes even if the memory model is not known.
 		// This does, more or less, the same as the ZX81.
-		const lenCheck = 0xC000;	// Note: Probably 0x4000 would be more correct, but 0xC000 required to load OSMO.P
+		const lenCheck = 0xC000;	// Note: Probably 0x4000 would be more correct, but 0xC000 is required to load OSMO.P
 		const initBuffer = new Uint8Array(lenCheck);
 		initBuffer.fill(0x02);
 		await this.sendDzrpCmdWriteMem(0x4000, initBuffer);
@@ -1459,7 +1460,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			if (cmpBuffer[i] !== 0x02)
 				break;
 		}
-		const ramSize = 0xC000;// i;
+		const ramSize = i;
 		const ramTop = (0x4000 + ramSize) & 0xFFFF;
 		const topStack = (ramTop - 4) & 0xFFFF;;
 
@@ -1500,7 +1501,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		// Set System VARS (0x4000-0x4008)
 		//const systemVars = new Uint8Array([0xFF, 0x80, 0xFC, 0x7F, 0x00, 0x80, 0x00, 0xFE, 0xFF]);
 		const systemVars = new Uint8Array([
-			0xFF,	// 0x4000: ERR_NR, Errorcoe -1
+			0xFF,	// 0x4000: ERR_NR, Errorcode -1
 			0x80,	// 0x4001: BASIC control flags
 			topStack & 0xFF, topStack >> 8,	 // 0x4002: ERR_SP, Pointer to top of Machine Stack / Bottom of GOSUB Stack
 			ramTop & 0xFF, ramTop >> 8, // 0x4004: RAMTOP  Pointer to unused/free memory(Changes realized at next NEW or CLS)
@@ -1536,8 +1537,8 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		}
 
 		// Too big?
-		if (0x4009 + len > ramTop) {
-			this.emit('warning', `Loading ${path.basename(filePath)}: The file is too big for the available RAM (${len} > ${ramSize}).`);
+		if (0x4009 + len > 0x4000 + ramSize) {
+			this.emit('warning', `Loading ${path.basename(filePath)}: The file is too big for the available RAM (${ramSize}).`);
 			return;
 		}
 
