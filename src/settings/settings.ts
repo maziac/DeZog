@@ -204,13 +204,13 @@ export interface JoyBitPort {
 
 // Associates the bit to set (or reset) when the correspondin joystick button is pressed.
 export interface CustomJoyType {
-	fire: JoyBitPort;	// The bit to set (reset)
-	fire2: JoyBitPort;	// The bit to set (reset)
-	fire3: JoyBitPort;	// The bit to set (reset)
-	up: JoyBitPort;		// The bit to set (reset)
-	left: JoyBitPort;	// The bit to set (reset)
-	right: JoyBitPort;	// The bit to set (reset)
-	down: JoyBitPort;	// The bit to set (reset)
+	fire: JoyBitPort;
+	fire2: JoyBitPort;
+	fire3: JoyBitPort;
+	up: JoyBitPort;
+	left: JoyBitPort;
+	right: JoyBitPort;
+	down: JoyBitPort;
 }
 
 

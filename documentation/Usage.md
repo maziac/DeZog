@@ -728,6 +728,110 @@ Here is the explanations of all the options:
 You can either click on the buttons to simulate the joysticks or attach a gamepad. The gamepad support is very limited. If e.g. xbox controllers do not work try simple USB controllers.
 - "kempstonJoy": true/false. Defaults to false. If enabled the simulator shows a pad to simulate the Kempston joystick at port 0x1F.
 ![](images/zsim_kempstonjoy.jpg)
+- "customJoy": Is an object in which you can customize the ports and bits to use for each direction or button press of the joystick.
+    ~~~json
+    "customJoy": {
+        "fire": {
+            "portMask": string, // E.g. "0x00FF", optional, defaults to 0xFFFF
+            "port": string,     // E.g. "0xDF", required
+            "bit": string,      // E.g. "0x10", required
+            "lowActive": boolean    // defaults to true
+        },
+        "fire2": { .... },
+        "fire3": { .... },
+        "up": { .... },
+        "left": { .... },
+        "right": { .... },
+        "down": { .... }
+    }
+    ~~~
+  all buttons /directions are optional. If defined you can set
+    - the "portMask" and "port": The address is ANDed with "portMask" and afterwards checked for equality with "port". If equal the "bit is set.
+    - "bit": The bit to return if the right port address is read. Is a bitmask. E.g. "0x10" would be the 4th bit (i.e. 0b0001_0000).
+    - "lowActive": true for a low active bit. I.e. if the button is pressed the "bit" would become low, if not pressed it is high. Vice versa if "lowActive" is false.
+  Here are a few examples:
+  ~~~json
+    "customJoy": {
+        // Cursor joystick with 0 (fire)
+        "left": {   // 5
+            "port": "0xF7FE",
+            "bit": "0x10"
+        },
+        "down": {   // 6
+            "port": "0xEFFE",
+            "bit": "0x10"
+        },
+        "up": {    // 7
+            "port": "0xEFFE",
+            "bit": "0x08"
+        },
+        "right": {  // 8
+            "port": "0xEFFE",
+            "bit": "0x04"
+        },
+        "fire": { // 0
+            "port": "0xEFFE",
+            "bit": "0x01"
+        }
+    }
+    ~~~
+
+    ~~~json
+    "customJoy": {
+        // ZX81: Battlestar Galactica
+        "down": { // 6
+            "portMask": "0x0801",
+            "port": "0x00",
+            "bit": "0x10"
+        },
+        "up": { // 7
+            "portMask": "0x0801",
+            "port": "0x00",
+            "bit": "0x08"
+        },
+        "fire": { // 0
+            "portMask": "0x0801",
+            "port": "0x00",
+            "bit": "0x01"
+        },
+        "fire2": { // 9
+            "portMask": "0x0801",
+            "port": "0x00",
+            "bit": "0x02"
+        }
+    }
+    ~~~
+
+    ~~~json
+    "customJoy": {
+        // ZX81: Zebra Joystick
+        "left": {
+            "portMask": "0x00FF",
+            "port": "0x1D",
+            "bit": "0x04"
+        },
+        "down": {
+            "portMask": "0x00FF",
+            "port": "0x1D",
+            "bit": "0x02"
+        },
+        "up": {
+            "portMask": "0x00FF",
+            "port": "0x1D",
+            "bit": "0x01"
+        },
+        "right": {
+            "portMask": "0x00FF",
+            "port": "0x1D",
+            "bit": "0x08"
+        },
+        "fire": {
+            "portMask": "0x00FF",
+            "port": "0x1D",
+            "bit": "0x10"
+        }
+    }
+    ~~~
 - "visualMemory": If true the simulator shows the access to the memory (0-0xFFFF) visually while the program is running. Default is true.
 ![](images/zsim_visual_memory.jpg)
 - "memoryModel": The used memory model (defaults to "RAM"), i.e.
@@ -745,7 +849,7 @@ Note: The simulated ULA screen supports flashing of color attributes (bit 7 of c
 - "cpuLoadInterruptRange": Default is 1. The number of interrupts to calculate the CPU-load average from. 0 to disable. The CPU load is calculated by the number of executed t-states of all instructions without the HALT instruction divided by the number of all executed t-states. I.e. the time the CPU executes just HALT instructions is not considered as CPU load. Naturally, if you have turned off interrupts the CPU load is always 100%. Normally the average is calculated from interrupt to interrupt but you can extend the range to 2 or more interrupts. To disable the display choose 0.
 ![](images/zsim_cpu_load.jpg)
 - "vsyncInterrupt": Default is false. Enable it if you use zsim to emulate a ZX Spectrum. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
-- "defaultPortIn": The default value that is read if the read port is unused. Formerly this was always 0xFF which is still the default.
+- "defaultPortIn": The default value that is read if the read port is unused. Allowed is 255 or 0. 255 also sets the port as 'Open Collector', all triggered ports would be ANDed. Default to 0xFF.
 - "zxBeeper": true/false. Defaults to false. If enabled the ZX Beeper audio output is simulated. The generated audio has a noticeable delay. The output is visualized with a "0" or "1":
 ![](images/zxbeeper_on.jpg)
 If the output keeps changing you'll see this:

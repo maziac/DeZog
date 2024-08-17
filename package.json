@@ -455,6 +455,61 @@
 										"description": "If enabled the simulator shows a pad to simulate the Kempston joystick at port 0x1F.",
 										"default": true
 									},
+									"customJoy": {
+										"type": "object",
+										"description": "Used to define a custom joystick.",
+										"properties": {
+											"fire": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											},
+											"fire2": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											},
+											"fire3": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											},
+											"left": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											},
+											"down": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											},
+											"up": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											},
+											"right": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											}
+										}
+									},
 									"visualMemory": {
 										"type": "boolean",
 										"description": "If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.",
@@ -600,7 +655,7 @@
 									},
 									"defaultPortIn": {
 										"type": "number",
-										"description": "The default value that is read if the read port is unused. Allowed is 255 or 0. 255 also sets the port as 'Open Collector'. If there is more than 1 port then all ports are ANDed. If 0 all ports are ORed.",
+										"description": "The default value that is read if the read port is unused. Allowed is 255 or 0. 255 also sets the port as 'Open Collector', all triggered ports would be ANDed. Default to 0xFF.",
 										"default": 255
 									},
 									"Z80N": {
