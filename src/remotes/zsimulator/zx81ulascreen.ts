@@ -8,6 +8,10 @@ import {Z80Cpu} from "./z80cpu";
  * Listen to ports and creates the nmi and the 0x0038 interrupts.
  * The display itself is simulated (i.e. the display contents would be
  * created by the CPU, but is not used).
+ * In FAST mode there is display only if waiting for a key press.
+ * Then the display is generated but without the NMI.
+ * If no display is generated the getUlaScreen() returns an empty array.
+ *
  * For details of the zx81 ULA display see:
  * https://k1.spdns.de/Vintage/Sinclair/80/Sinclair%20ZX80/Tech%20specs/Wilf%20Rigter%27s%20ZX81%20Video%20Display%20Info.htm
  * or
@@ -22,7 +26,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	protected static NMI_TIME = 0.000064;	// 64us
 
 	// The time counter for the NMI signal.
-	protected nmiTimeCounter: number;
+	protected timeCounter: number;
 
 	// The previous state of the R-register.
 	protected prevRregister: number = 0;
@@ -33,7 +37,11 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	// The vsync signal
 	protected vsync: boolean = false;
 
+	// No display.
+	protected noDisplay: boolean = false;
+
 	// If in FAST mode or SLOW mode.
+	// Note: is detected but not used anywhere.
 	public fastMode: boolean = false;
 
 	// Used to check if in FAST mode or SLOW mode.
@@ -45,7 +53,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	// Required for the R-register.
 	protected z80Cpu: Z80Cpu;
 
-	protected logTimeCounter: number = 0;
+	//protected logTimeCounter: number = 0;
 
 
 	/** Constructor.
@@ -54,7 +62,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	constructor(z80Cpu: Z80Cpu) {
 		super(z80Cpu);
 		this.z80Cpu = z80Cpu;
-		this.nmiTimeCounter = 0;
+		this.timeCounter = 0;
 
 		// Register ULA ports
 		z80Cpu.ports.registerGenericOutPortFunction(this.outPorts.bind(this));
@@ -86,7 +94,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 			// Just A0 needs to be 0, usually 0xFE
 			this.stateNmiGeneratorOn = true;
 			this.nmiGeneratorAccessed = true;	// Used for FAST/SLOW mode detection
-			this.nmiTimeCounter = 0;
+			this.timeCounter = 0;
 			//console.log(this.logTimeCounter, "zx81 ULA: NMI generator on");
 		}
 
@@ -104,6 +112,11 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 				this.fastMode = fastMode;
 				console.log("zx81 ULA: mode: ", this.fastMode ? "FAST" : "SLOW");
 			}
+			// No display detection
+			this.timeCounter = 0;
+			// if (this.noDisplay)
+			// 	console.log(this.logTimeCounter, "zx81 ULA: No VSYNC -> No display = false");
+			this.noDisplay = false;
 			//console.log();
 			//console.log(this.logTimeCounter, "zx81 ULA: OUT VSYNC Off ********");
 		}
@@ -161,8 +174,17 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	 */
 	public execute(cpuFreq: number, currentTstates: number) {
 		const timeAdd = currentTstates / cpuFreq;
-		this.nmiTimeCounter += timeAdd;
-		this.logTimeCounter += timeAdd * 1000;
+		this.timeCounter += timeAdd;
+		//this.logTimeCounter += timeAdd * 1000;
+
+		// Check for "no display", i.e. no vsync
+		if (this.timeCounter >= UlaScreen.VSYNC_TIME) {
+			// No VSYNC -> No display
+			// if (!this.noDisplay)
+			// 	console.log(this.logTimeCounter, "zx81 ULA: No VSYNC -> No display = true");
+			this.noDisplay = true;
+			this.timeCounter = 0;
+		}
 
 		// Check for the R-register
 		const r = this.z80Cpu.r;
@@ -178,12 +200,12 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 
 		// Check for NMI interrupt generation
 		if (this.stateNmiGeneratorOn) {
-			if (this.nmiTimeCounter >= Zx81UlaScreen.NMI_TIME) {
+			if (this.timeCounter >= Zx81UlaScreen.NMI_TIME) {
 				// NMI interrupt
 				//console.log("zx81 ULA: NMI interrupt");
 				this.z80Cpu.interrupt(true, 0);
 				// Next
-				this.nmiTimeCounter %= Zx81UlaScreen.NMI_TIME;
+				this.timeCounter %= Zx81UlaScreen.NMI_TIME;
 			}
 		}
 	}
@@ -191,8 +213,13 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 
 	/** Returns the dfile.
 	 * @returns The dfile as a UInt8Array.
+	 * If in FAST mode no display might be available.
+	 * Then, an array with the length 0 is returned.
 	 */
 	public getUlaScreen(): Uint8Array {
+		// Check for available VSYNC
+		if (this.noDisplay)
+			return Uint8Array.from([]);
 		// Get the content of the D_FILE system variable (2 bytes).
 		const dfile_ptr = this.z80Cpu.memory.getMemory16(0x400c);
 		// 24 lines of 33 bytes (could be less).
@@ -204,7 +231,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	 */
 	public serialize(memBuffer: MemBuffer) {
 		// Write data
-		memBuffer.writeNumber(this.nmiTimeCounter);
+		memBuffer.writeNumber(this.timeCounter);
 		memBuffer.write8(this.prevRregister);
 	}
 
@@ -213,7 +240,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	 */
 	public deserialize(memBuffer: MemBuffer) {
 		// Read data
-		this.nmiTimeCounter = memBuffer.readNumber();
+		this.timeCounter = memBuffer.readNumber();
 		this.prevRregister = memBuffer.read8();
 	}
 }

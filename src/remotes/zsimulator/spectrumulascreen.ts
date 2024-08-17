@@ -6,9 +6,6 @@ import {Z80Cpu} from "./z80cpu";
 /** Holds the bank used for the ZX Spectrum ULA screen and does the bank switching.
  */
 export class SpectrumUlaScreen extends UlaScreen implements Serializable {
-	// The vsync time of the ULA.
-	protected static VSYNC_TIME = 0.020;	// 20ms
-
 	// The vsync time window of the ULA. If missed, the interrupt
 	// function will not be called.
 	protected static VSYNC_TIME_WINDOW = 30 / 3500000;	// ~ 30 cycles

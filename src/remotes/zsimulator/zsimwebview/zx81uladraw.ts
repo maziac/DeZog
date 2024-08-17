@@ -79,7 +79,7 @@ export class Zx81UlaDraw {
 	/** Draws a ZX Spectrum ULA screen into the given canvas.
 	 * @param ctx The canvas 2d context to draw to.
 	 * @param imgData A reusable array to create the pixel data in.
-	 * @param dfile The DFILE data.
+	 * @param dfile The DFILE data. If length is 0, FAST mode is active.
 	 */
 	public static drawUlaScreen(ctx: CanvasRenderingContext2D, imgData: ImageData, dfile: Uint8Array) {
 		const pixels = imgData.data;

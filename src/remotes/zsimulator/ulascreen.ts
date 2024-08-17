@@ -6,6 +6,9 @@ import {Z80Cpu} from "./z80cpu";
 /** The base class for the ULA implementation for ZX81 and ZX Spectrum.
  */
 export class UlaScreen extends EventEmitter {
+	// The vsync time of the ULA.
+	protected static VSYNC_TIME = 0.020;	// 20ms
+
 	// Required for memory and ports.
 	protected z80Cpu: Z80Cpu;
 
