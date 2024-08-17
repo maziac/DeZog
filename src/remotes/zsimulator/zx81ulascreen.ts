@@ -33,8 +33,11 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	// The vsync signal
 	protected vsync: boolean = false;
 
-	// The state of the HSYNC generator
-	//protected stateHsyncGeneratorOn: boolean = false;
+	// If in FAST mode or SLOW mode.
+	public fastMode: boolean = false;
+
+	// Used to check if in FAST mode or SLOW mode.
+	protected nmiGeneratorAccessed: boolean = false;
 
 	// The original memory read function.
 	protected memoryRead8: (addr64k: number) => number;
@@ -42,13 +45,11 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	// Required for the R-register.
 	protected z80Cpu: Z80Cpu;
 
-	//protected logTimeCounter: number = 0;
+	protected logTimeCounter: number = 0;
 
 
 	/** Constructor.
 	 * @param z80Cpu Mainly for the memoryModel and the ports.
-	 * @param vertInterruptFunc A function that is called on a vertical interrupt.
-	 * Can be used by the caller to sync the display.
 	 */
 	constructor(z80Cpu: Z80Cpu) {
 		super(z80Cpu);
@@ -77,18 +78,33 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 		if ((port & 0x0002) === 0) {
 			// Just A1 needs to be 0, usually 0xFD
 			this.stateNmiGeneratorOn = false;
+			this.nmiGeneratorAccessed = true;	// Used for FAST/SLOW mode detection
 			//console.log(this.logTimeCounter, "zx81 ULA: NMI generator off");
 		}
 		// NMI generator on?
 		else if ((port & 0x0001) === 0) {
 			// Just A0 needs to be 0, usually 0xFE
 			this.stateNmiGeneratorOn = true;
+			this.nmiGeneratorAccessed = true;	// Used for FAST/SLOW mode detection
 			this.nmiTimeCounter = 0;
 			//console.log(this.logTimeCounter, "zx81 ULA: NMI generator on");
 		}
 
 		// Writing to any port also resets the vsync
 		if (this.vsync) {
+			// FAST/SLOW mode detection:
+			// If NMI generator was turned on since last VSYNC,
+			// we are in SLOW mode.
+			let fastMode = true;
+			if (this.nmiGeneratorAccessed) {
+				fastMode = false;
+				this.nmiGeneratorAccessed = false;
+			}
+			if (fastMode !== this.fastMode) {
+				this.fastMode = fastMode;
+				console.log("zx81 ULA: mode: ", this.fastMode ? "FAST" : "SLOW");
+			}
+			//console.log();
 			//console.log(this.logTimeCounter, "zx81 ULA: OUT VSYNC Off ********");
 		}
 		this.vsync = false;
@@ -146,7 +162,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	public execute(cpuFreq: number, currentTstates: number) {
 		const timeAdd = currentTstates / cpuFreq;
 		this.nmiTimeCounter += timeAdd;
-		//this.logTimeCounter += timeAdd*1000;
+		this.logTimeCounter += timeAdd * 1000;
 
 		// Check for the R-register
 		const r = this.z80Cpu.r;
