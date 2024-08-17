@@ -12,6 +12,9 @@ import {Z80Cpu} from "./z80cpu";
  * https://k1.spdns.de/Vintage/Sinclair/80/Sinclair%20ZX80/Tech%20specs/Wilf%20Rigter%27s%20ZX81%20Video%20Display%20Info.htm
  * or
  * https://8bit-museum.de/heimcomputer-2/sinclair/sinclair-scans/scans-zx81-video-display-system/
+ * For details of the ULA HW and signals see:
+ * https://oldcomputer.info/8bit/zx81/ULA/ula.htm
+ *
  * Note: HSYNC is not required and not generated.
  */
 export class Zx81UlaScreen extends UlaScreen implements Serializable {
@@ -27,6 +30,9 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	// The state of the NMI generator
 	protected stateNmiGeneratorOn: boolean = false;
 
+	// The vsync signal
+	protected vsync: boolean = false;
+
 	// The state of the HSYNC generator
 	//protected stateHsyncGeneratorOn: boolean = false;
 
@@ -35,6 +41,8 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 
 	// Required for the R-register.
 	protected z80Cpu: Z80Cpu;
+
+	//protected logTimeCounter: number = 0;
 
 
 	/** Constructor.
@@ -49,7 +57,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 
 		// Register ULA ports
 		z80Cpu.ports.registerGenericOutPortFunction(this.outPorts.bind(this));
-		//z80Cpu.ports.registerGenericInPortFunction(this.inPort.bind(this));
+		z80Cpu.ports.registerGenericInPortFunction(this.inPort.bind(this));
 
 		// m1read8 (opcode fetch) is modified to emulate the ZX81 ULA.
 		this.memoryRead8 = z80Cpu.memory.read8.bind(z80Cpu.memory);
@@ -61,56 +69,48 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	 * 1. out (0xfd),a - turns NMI generator off
 	 * 2. out (0xfe),a - turns NMI generator on
 	 * (3. in a,(0xfe) - turns HSYNC generator off (if NMI is off))
-	 * 4. out (0xff),a - turns HSYNC generator on
+	 * (4. out (0xff),a - turns VSYNC off)
 	 * Note: the value of a is not ignored.
 	 */
 	protected outPorts(port: number, _data: number): void {
-		// Partial decoding
-		port &= 0xff;
-		// Check for address line A0 = LOW
-		if ((port & 0x01) === 0) {
-			// Start VSYNC signal
-			this.emit('VSYNC');
-		}
 		// NMI generator off?
-		if (port === 0xfd) {
-			// Yes
+		if ((port & 0x0002) === 0) {
+			// Just A1 needs to be 0, usually 0xFD
 			this.stateNmiGeneratorOn = false;
-			//console.log("zx81 ULA: NMI generator off");
+			//console.log(this.logTimeCounter, "zx81 ULA: NMI generator off");
 		}
 		// NMI generator on?
-		else if (port === 0xfe) {
-			// Yes
+		else if ((port & 0x0001) === 0) {
+			// Just A0 needs to be 0, usually 0xFE
 			this.stateNmiGeneratorOn = true;
 			this.nmiTimeCounter = 0;
-			//console.log("zx81 ULA: NMI generator on");
+			//console.log(this.logTimeCounter, "zx81 ULA: NMI generator on");
 		}
-		// // HSYNC on?
-		// else if (port === 0xff) {
-		// 	// Yes
-		// 	this.stateHsyncGeneratorOn = true;
-		// 	// Would also stop the VSYNC signal
-		// }
+
+		// Writing to any port also resets the vsync
+		if (this.vsync) {
+			//console.log(this.logTimeCounter, "zx81 ULA: OUT VSYNC Off ********");
+		}
+		this.vsync = false;
 	}
 
 
 	/** Handles the ULA in port.
 	 * 1. ...
 	 * 2. ...
-	 * 3. in a,(0xfe) - turns HSYNC generator off (if NMI is off)
-	 *    and starts the vertical sync (VSYNC) signal.
+	 * 3. in a,(0xfe) - turns VSYNC on (if NMI is off)
 	 * 4. ...
 	 */
-	/* inPort is not required, as HSYNC is not used.
 	protected inPort(port: number): number | undefined {
-		// HSYNC off?
-		if (port === 0xfe) {
-			// Yes
-			this.stateHsyncGeneratorOn = false;
+		// Check for address line A0 = LOW, and nmi generator off
+		if ((port & 0x01) === 0 && !this.stateNmiGeneratorOn) {
+			// Start VSYNC signal
+			this.vsync = true;
+			this.emit('VSYNC');
+			//console.log(this.logTimeCounter, "zx81 ULA: IN VSYNC On ********");
 		}
 		return undefined;
 	}
-	*/
 
 
 	/** Intercepts reading from the memory.
@@ -146,6 +146,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	public execute(cpuFreq: number, currentTstates: number) {
 		const timeAdd = currentTstates / cpuFreq;
 		this.nmiTimeCounter += timeAdd;
+		//this.logTimeCounter += timeAdd*1000;
 
 		// Check for the R-register
 		const r = this.z80Cpu.r;
