@@ -6,7 +6,7 @@ import {SourceFileEntry, ListFileLine} from './labels';
 import minimatch from 'minimatch';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelUnknown} from '../remotes/MemoryModel/genericmemorymodels';
-import {MemoryModelZx128k, MemoryModelZx48k} from '../remotes/MemoryModel/zxspectrummemorymodels';
+import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../remotes/MemoryModel/zxspectrummemorymodels';
 import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../remotes/MemoryModel/zxnextmemorymodels';
 import {MemoryModelZX81_16k, MemoryModelZX81_1k, MemoryModelZX81_48k} from '../remotes/MemoryModel/zx81memorymodels';
 
@@ -722,7 +722,6 @@ export class LabelParserBase {
 		}
 
 		// TODO: Other ZX81 (also Colecovision).
-		// Maybe move to memory model.
 
 		// Check for ZX81 1K
 		if (this.memoryModel instanceof MemoryModelZX81_1k) {

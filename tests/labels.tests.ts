@@ -1,6 +1,7 @@
 import * as assert from 'assert';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {MemoryModelAllRam, MemoryModelUnknown} from '../src/remotes/MemoryModel/genericmemorymodels';
+import {MemoryModelZX81_1k, MemoryModelZX81_16k, MemoryModelZX81_48k} from '../remotes/MemoryModel/zx81memorymodels';
 import {MemoryModelZx128k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
 import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import * as fs from 'fs';
@@ -448,7 +449,7 @@ suite('Labels', () => {
 			assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 		});
 
-		test('Target: MemoryModelAll', () => {
+		test('Target: MemoryModelAllRam', () => {
 			const mm = new MemoryModelAllRam();
 			createParser(mm);
 
@@ -461,6 +462,22 @@ suite('Labels', () => {
 			assert.equal(parser.createLongAddress(0xC000, 0), 0x1C000);
 			assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 		});
+
+/*
+		test('Target: MemoryModelZX81_1k', () => {
+			const mm = new MemoryModelZX81_1k();
+			createParser(mm);
+
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
+			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x26000);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x28000);
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x2A000);
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x2C000);
+			assert.equal(parser.createLongAddress(0xE000, 0), 0x2E000);
+		});
+*/
 
 		test('Target: MemoryModelZx48k', () => {
 			const mm = new MemoryModelZx48k();
@@ -475,7 +492,6 @@ suite('Labels', () => {
 			assert.equal(parser.createLongAddress(0xC000, 0), 0x2C000);
 			assert.equal(parser.createLongAddress(0xE000, 0), 0x2E000);
 		});
-
 
 		test('Target: MemoryModelZx128k', () => {
 			const mm = new MemoryModelZx128k();
