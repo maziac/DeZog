@@ -444,83 +444,27 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		if (srcMemModel == SjasmplusMemoryModel.NONE)
 			this.throwError("Unsupported sjasmplus memory model (DEVICE).");
 
-		// Check for unknown e.g. used by MAME. Also used by the unit tests to just find the labels.
+		// Check as much as possible in a generic way:
+		// For sjasmplus NOSLOT64K source there is no banking.
+		// For ZX48k there are banks, but no ambiguous ones.
+		// Also for simple destinations like MemoryModelUnknown and
+		// MemoryModelAllRam, all that only have banks within the 64k.
 		const destMemModel = this.memoryModel;
-		if (destMemModel instanceof MemoryModelUnknown) {
-			// Just pass through
-			this.funcConvertBank = (address: number, bank: number) => {
-				//return bank;	// Note: does not work for MAME
-				return 0;	// Same as MemoryModelAllRam
-			};
-			return;
-		}
-
-		// Check for AllRam
-		if (destMemModel instanceof MemoryModelAllRam) {
-			// Just 1 bank
-			this.funcConvertBank = (address: number, bank: number) => {
-				return 0;
-			};
-			return;
-		}
-
-		// Check for unbanked modes: sjasmplus NOSLOT64K and ZX48K
-		if (srcMemModel == SjasmplusMemoryModel.NOSLOT64K
-			|| srcMemModel == SjasmplusMemoryModel.ZX48K) {
-			if (destMemModel instanceof MemoryModelZx128k) {
-				const permut128k = [9, 5, 2, 0];
-				this.funcConvertBank = (address: number, bank: number) => {
-					const slot = address >>> 14;
-					return permut128k[slot];
-				};
-				return;
-			}
-			if (destMemModel instanceof MemoryModelZxNextBase) {
-				const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];
-				this.funcConvertBank = (address: number, bank: number) => {
-					const index = (address >>> 13);
-					return permutNext[index];	// No conversion
-				};
-				return;
-			}
-		}
-
-		// Check for ZX48K, ZX16K, Coleco Vision
-		if (destMemModel instanceof MemoryModelZx48k
+		if (srcMemModel === SjasmplusMemoryModel.NOSLOT64K
+			|| srcMemModel === SjasmplusMemoryModel.ZX48K
+			|| destMemModel instanceof MemoryModelUnknown
+			|| destMemModel instanceof MemoryModelAllRam
 			|| destMemModel instanceof MemoryModelZx16k
+			|| destMemModel instanceof MemoryModelZx48k
 			|| destMemModel instanceof MemoryModelColecoVision) {
-			this.funcConvertBank = (address: number /*, bank: number*/) => {
-				// Get slot
-				const slot = destMemModel.slotAddress64kAssociation[address];
-				const bank = destMemModel.initialSlots[slot];
-				return bank;
-			};
+			// Use generic conversion
+			super.checkMappingToTargetMemoryModel();
 			return;
 		}
 
-		// Check for sjasmplus ZX48K
-		if (srcMemModel == SjasmplusMemoryModel.ZX48K) {
-			// sjasmplus was compiled for ZX48K
-			if (destMemModel instanceof MemoryModelZxNextBase) {
-				const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];
-				this.funcConvertBank = (address: number, bank: number) => {
-					let index = 2 * bank;
-					index += (address >>> 13) & 0x01;
-					return permutNext[index];	// No conversion
-				};
-				return;
-			}
-			if (destMemModel instanceof MemoryModelZx128k) {
-				const permut128k = [9, 5, 2, 0];
-				this.funcConvertBank = (address: number, bank: number) => {
-					return permut128k[bank];	// No conversion
-				};
-				return;
-			}
-		}
 
 		// Check for sjasmplus ZX128K
-		else if (srcMemModel == SjasmplusMemoryModel.ZX128K) {
+		if (srcMemModel === SjasmplusMemoryModel.ZX128K) {
 			// sjasmplus was compiled for ZX128K
 			if (destMemModel instanceof MemoryModelZxNextBase) {
 				this.funcConvertBank = (address: number, bank: number) => {
@@ -541,7 +485,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		}
 
 		// Check for sjasmplus ZXNEXT
-		else if (srcMemModel == SjasmplusMemoryModel.ZXNEXT) {
+		if (srcMemModel === SjasmplusMemoryModel.ZXNEXT) {
 			// sjasmplus was compiled for ZXNEXT
 			if (destMemModel instanceof MemoryModelZxNextBase) {
 				this.funcConvertBank = (address: number, bank: number) => {

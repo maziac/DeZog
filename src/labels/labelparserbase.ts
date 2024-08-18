@@ -5,11 +5,6 @@ import {UnifiedPath} from '../misc/unifiedpath';
 import {SourceFileEntry, ListFileLine} from './labels';
 import minimatch from 'minimatch';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
-import {MemoryModelAllRam, MemoryModelUnknown} from '../remotes/MemoryModel/genericmemorymodels';
-import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../remotes/MemoryModel/zxspectrummemorymodels';
-import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../remotes/MemoryModel/zxnextmemorymodels';
-import {MemoryModelZX81_16k, MemoryModelZX81_1k, MemoryModelZX81_48k} from '../remotes/MemoryModel/zx81memorymodels';
-
 
 
 /**
@@ -703,23 +698,17 @@ export class LabelParserBase {
 	 * Overwrite for parsers (assemblers) that support banking.
 	 */
 	protected checkMappingToTargetMemoryModel() {
-		const slotRanges = this.memoryModel.slotRanges;
-		const intialSlots = this.memoryModel.initialSlots;
+		const slotAddress64kAssociation = this.memoryModel.slotAddress64kAssociation;
+		const initialSlots = this.memoryModel.initialSlots;
 
 		// Note: this can be done for any memory model, as 64k are naturally supported by all of them.
 		// If some other than a 64k source model is required this function needs to be overwritten.
 		this.funcConvertBank = (address: number, _bank: number) => {
-			// _bank is not used for a 64k model this is always the same.
-			const len = slotRanges.length;
-			for (let i = 0; i < len; i++) {
-				const slotRange = slotRanges[i];	// Slot ranges are ascending and without any gap
-				if (address <= slotRange.end) {
-					// Get initial bank
-					const initialBank = intialSlots[i];
-					return initialBank;
-				}
-			}
-			throw Error("Address " + Utility.getHexString(address, 4) + " not in any slot range.");
+			// _bank is not used, for a 64k model this is always the same.// Get slot
+			const slot = slotAddress64kAssociation[address];
+			// and bank
+			const bank = initialSlots[slot];
+			return bank;
 		};
 	}
 
