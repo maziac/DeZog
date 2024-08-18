@@ -618,26 +618,26 @@ export class ZSimulationView extends BaseView {
 			<html>
 
 			<style>
-			.td_on {border: 3px solid;
-			margin:0em;
-			padding:0em;
-			text-align:center;
-			border-color:black;
-			background:red;
-			width:70px;
+			.td_on {border: 3px solid; /* TODO: REMOVE */
+				margin:0em;
+				padding:0em;
+				text-align:center;
+				border-color:black;
+				background:red;
+				width:70px;
 			}
 
 			.td_off {border: 3px solid;
-			margin:0em;
-			padding:0em;
-			text-align:center;
-			border-color:black;
-			width:70px;
+				margin:0em;
+				padding:0em;
+				text-align:center;
+				border-color:black;
+				width:70px;
 			}
 
 			span {
-			display: table-cell;
-			vertical-align: middle;
+				display: table-cell;
+				vertical-align: middle;
 			}
 
 			.disabled {
@@ -650,6 +650,37 @@ export class ZSimulationView extends BaseView {
 				position: absolute;
 				top: 2em;
 			}
+
+			.keyboard {
+				position: relative;
+				width: 100%;
+				aspect-ratio: 540/200;
+				font-size: 0; /* Removes space between 2 spans */
+				background-image: url('html/images/zx81_kbd.png');
+				background-size: cover;
+			}
+
+			.hor-space {
+				display: inline-block;
+				margin: 0;
+				padding: 0;
+			}
+
+			.key {
+				display: inline-block;
+				box-sizing: border-box;
+				border: 2px solid red;
+				width: 8.1%;
+				height: 15.9%;
+				margin-right: 0.78%;
+				padding: 0;
+			}
+
+			.key-pressed {
+				background-color: red;
+				border: 2px solid yellow;
+			}
+
 			</style>
 
 			<script src="out/remotes/zsimulator/zsimwebview/main.js"></script>
@@ -949,6 +980,55 @@ export class ZSimulationView extends BaseView {
 			<details open="true">
 			<summary>ZX Keyboard</summary>
 
+			<div class="keyboard">
+				<div style="height: 10%"></div>
+					<span class="hor-space" style="width: 2.8%"></span>
+					<span id="key_Digit1" class="key" onClick="cellClicked(this)"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+				<div style="height: 7%"></div>
+					<span class="key" style="margin-left: 7.4%"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+				<div style="height: 7%"></div>
+					<span class="key" style="margin-left: 9.3%"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+				<div style="height: 7%"></div>
+					<span class="key" style="margin-left: 5%"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+					<span class="key"></span>
+			</div>
+
+			<div>
 			<table style="width:100%">
 
 				<tr>
@@ -1004,6 +1084,7 @@ export class ZSimulationView extends BaseView {
 				</tr>
 
 			</table>
+			</div>
 		</details>
 		`;
 		}

@@ -293,10 +293,10 @@ function cellSelect(cell, on) {
 		return;
 	cell.tag = on;
 	if (on) {
-		cell.className = "td_on";
+		cell.classList.add('key-pressed');
 	}
 	else {
-		cell.className = "td_off";
+		cell.classList.remove('key-pressed');
 	}
 
 	// Send request to vscode
