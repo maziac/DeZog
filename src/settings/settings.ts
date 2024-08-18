@@ -234,7 +234,7 @@ export interface ZSimType {
 	visualMemory: boolean,
 
 	// If enabled it shows the contents of the ZX Spectrum or ZX 81 screen.
-	ulaScreen: string,	// "spectrum" or "zx81"
+	ulaScreen: 'spectrum' | 'zx81' | '',	// "spectrum" or "zx81"
 
 	// The displayed border width in pixels. No border if 0. Works only in conjunction with ulaScreen.
 	zxBorderWidth: number,

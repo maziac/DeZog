@@ -35,8 +35,7 @@ suite('Z80Cpu', () => {
 			// Initialize Settings
 			const cfg: any = {
 				"zsim": {
-					"cpuLoadInterruptRange": 1,
-					"vsyncInterrupt": true
+					"cpuLoadInterruptRange": 1
 				}
 			};
 			Settings.launch = Settings.Init(cfg);

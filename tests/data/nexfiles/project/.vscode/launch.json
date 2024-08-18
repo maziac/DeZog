@@ -35,9 +35,8 @@
 				"Z80N": true,
 				"visualMemory": true,
 				"memoryModel": "ZXNEXT",
-				"ulaScreen": true,
+				"ulaScreen": "spectrum",
 				"zxBorderWidth": 20,
-				"vsyncInterrupt": true,
 				"zxKeyboard": true,
 				"zxBeeper": true
 			},

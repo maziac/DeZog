@@ -636,10 +636,11 @@ It's the easiest setup. You just need DeZog (and vscode):
 It allows to test programs that does not make use of special HW features like the [z80-sample-program].
 
 
-'zsim' is basically just a Z80 simulator. But you can add a few ZX Spectrum related features so that it is possible to use for debugging ZX48 and ZX128 programs.
+'zsim' is basically just a Z80 simulator. But you can add a few ZX Spectrum, ZX81 or ZXNext related features so that it is possible to use for debugging ZX81 and ZX Spectrum 48/128 programs, as well as a few ZXNext features.
 
 'zsim' supports:
 - Display of the ZX Spectrum ULA screen
+- Display of the ZX81 ULA screen
 - The ports of the keyboard
 - The ZX128 memory banks
 - Loading of (48 and 128) .sna and .nex files
@@ -667,11 +668,10 @@ Example launch.json configuration:
     "zsim": {
         "Z80N": true,
         "zxKeyboard": true,
-	    "ulaScreen": true,
+	    "ulaScreen": "spectrum",
         "zxBorderWidth": 20,
 	    "visualMemory": true,
         "cpuLoadInterruptRange": 1,
-        "vsyncInterrupt": true,
         "cpuFrequency": 3500000.0,
         "memoryModel": "RAM",
         "customCode": {
@@ -685,24 +685,32 @@ Example launch.json configuration:
 
 With all options disabled zsim behaves just as a Z80 CPU with 64k RAM without any ZX Spectrum features.
 
-If you need to define a ZX48K machine you could use
+If you need to define a ZX Spectrum 48K machine you could use
 ~~~json
     "zsim": {
         "zxKeyboard": true,
 	    "ulaScreen": true,
 	    "visualMemory": true,
-        "vsyncInterrupt": true,
         "memoryModel": "ZX48K"
     }
 ~~~
 
-For a ZX128K:
+For a ZX Spectrum 128K:
 ~~~json
     "zsim": {
         "zxKeyboard": true,
 	    "ulaScreen": true,
 	    "visualMemory": true,
-        "vsyncInterrupt": true,
+        "memoryModel": "ZX128K"
+    }
+~~~
+
+For a ZX81 (16K):
+~~~json
+    "zsim": {
+        "zxKeyboard": true,
+	    "ulaScreen": "zx81",
+	    "visualMemory": true,
         "memoryModel": "ZX128K"
     }
 ~~~
@@ -714,7 +722,6 @@ For a ZX Next like system (note: this simulates only the Next's memory paging):
         "zxKeyboard": true,
 	    "ulaScreen": true,
 	    "visualMemory": true,
-        "vsyncInterrupt": true,
         "memoryModel": "ZXNEXT"
     }
 ~~~
@@ -842,13 +849,11 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
 	- "ZXNEXT": Paged memory as of the ZX Next (8k slots/banks). Banks R0a, R0b, R1a, R1b, 0-223. R0a/b and R1a/b is R0 or R1 but sliced in 8k chunks.
     - "COLECOVISION": Memory map for the Coleco Vision (8k slots, no banking).
     - "CUSTOM": For a custom memory layout. See [customMemory](#custommemory).
-- "ulaScreen": true/false. Defaults to false. If enabled it shows the contents of the ZX Spectrum screen.
+- "ulaScreen": "spectrum" | "zx81". Defaults to "spectrum". If enabled it shows the contents of the ZX Spectrum screen or that of a ZX81.
 ![](images/zsim_ula_screen.jpg)
-Note: The simulated ULA screen supports flashing of color attributes (bit 7 of color attribute). But this is stopped as long as you pause execution.
-- "zxBorderWidth": The displayed border width in pixels. If set to 0 then no border is displayed. Works only if ulaScreen is set to true.
+- "zxBorderWidth": The displayed border width in pixels. If set to 0 then no border is displayed. Works only if ulaScreen is enabled.
 - "cpuLoadInterruptRange": Default is 1. The number of interrupts to calculate the CPU-load average from. 0 to disable. The CPU load is calculated by the number of executed t-states of all instructions without the HALT instruction divided by the number of all executed t-states. I.e. the time the CPU executes just HALT instructions is not considered as CPU load. Naturally, if you have turned off interrupts the CPU load is always 100%. Normally the average is calculated from interrupt to interrupt but you can extend the range to 2 or more interrupts. To disable the display choose 0.
 ![](images/zsim_cpu_load.jpg)
-- "vsyncInterrupt": Default is false. Enable it if you use zsim to emulate a ZX Spectrum. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
 - "defaultPortIn": The default value that is read if the read port is unused. Allowed is 255 or 0. 255 also sets the port as 'Open Collector', all triggered ports would be ANDed. Default to 0xFF.
 - "zxBeeper": true/false. Defaults to false. If enabled the ZX Beeper audio output is simulated. The generated audio has a noticeable delay. The output is visualized with a "0" or "1":
 ![](images/zxbeeper_on.jpg)

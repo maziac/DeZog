@@ -3,6 +3,7 @@ This guide will provide some info what to do to update your projects from an ear
 # Migrate from DeZog 3.4 to DeZog 3.5
 zsim:
 - The "vsyncInterrupt" has been removed. It is automatically enabled if the spectrum ULA (ulaScreen = 'spectrum') is enabled.
+- "ulaScreen": The type was changed from boolean to 'spectrum' | 'zx81'.
 
 # Migrate from DeZog 3.3 to DeZog 3.4
 Logging:

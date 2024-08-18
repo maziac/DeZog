@@ -21,10 +21,9 @@ suite('ZSimRemote', () => {
 				zsim: {
 					zxKeyboard: true,
 					visualMemory: true,
-					ulaScreen: true,
+					ulaScreen: "spectrum",
 					cpuLoadInterruptRange: 1,
 					Z80N: false,
-					vsyncInterrupt: false,
 					memoryModel: "ZX48K"
 				},
 				history: {
@@ -74,10 +73,9 @@ suite('ZSimRemote', () => {
 				zsim: {
 					zxKeyboard: true,
 					visualMemory: true,
-					ulaScreen: true,
+					ulaScreen: "spectrum",
 					cpuLoadInterruptRange: 1,
 					Z80N: false,
-					vsyncInterrupt: false,
 					memoryModel: "ZX128K"
 				},
 				history: {
@@ -339,10 +337,9 @@ suite('ZSimRemote', () => {
 				zsim: {
 					zxKeyboard: true,
 					visualMemory: true,
-					ulaScreen: true,
+					ulaScreen: "spectrum",
 					cpuLoadInterruptRange: 1,
 					Z80N: false,
-					vsyncInterrupt: false,
 					memoryModel: "ZXNEXT"
 				},
 				history: {
@@ -448,7 +445,6 @@ suite('ZSimRemote', () => {
 			const cfg: any = {
 				remoteType: 'zsim',
 				zsim: {
-					vsyncInterrupt: false,
 					memoryModel: "COLECOVISION"
 				},
 				history: {

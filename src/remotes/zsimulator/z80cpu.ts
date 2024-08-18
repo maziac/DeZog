@@ -109,7 +109,6 @@ export class Z80Cpu implements Serializable {
 	 * Sets also the 'update' variable:
 	 * true if a (vertical) interrupt happened or would have happened.
 	 * Also if interrupts are disabled at the Z80.
-	 * And also if 'vsyncInterrupt' is false.
 	 * The return value is used for regularly updating the ZSimulationView.
 	 * And this is required even if interrupts are off. Or even if
 	 * there is only Z80 simulation without ZX Spectrum.

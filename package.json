@@ -383,6 +383,13 @@
 						"properties": {
 							"remoteType": {
 								"type": "string",
+								"enum": [
+									"zrcp",
+									"cspect",
+									"zsim",
+									"zxnext",
+									"mame"
+								],
 								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'zxnext' or 'zsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
 								"default": "zsim"
 							},
@@ -615,12 +622,17 @@
 										}
 									},
 									"ulaScreen": {
-										"type": "string",							"description": "If defined it shows the contents of the ZX Spectrum (\"spectrum\") or ZX81 (\"zx81\") screen. It supports also the ZX128K screen switching.",
+										"type": "string",
+										"enum": [
+											"spectrum",
+											"zx81"
+										],
+										"description": "If defined it shows the contents of the ZX Spectrum (\"spectrum\") or ZX81 (\"zx81\") screen. It supports also the ZX128K screen switching.",
 										"default": null
 									},
 									"zxBorderWidth": {
 										"type": "number",
-										"description": "The displayed border width in pixels. If set to 0 then no border is displayed. Works only if ulaScreen is set to true.",
+										"description": "The displayed border width in pixels. If set to 0 then no border is displayed. Works only if 'ulaScreen' is set.",
 										"default": true
 									},
 									"zxBeeper": {
@@ -1100,9 +1112,8 @@
 						"zsim": {
 							"visualMemory": true,
 							"memoryModel": "ZX48K",
-							"ulaScreen": true,
+							"ulaScreen": "spectrum",
 							"zxBorderWidth": 20,
-							"vsyncInterrupt": true,
 							"zxKeyboard": true,
 							"zxBeeper": true
 						},
@@ -1135,9 +1146,8 @@
 							"zsim": {
 								"visualMemory": true,
 								"memoryModel": "ZX48K",
-								"ulaScreen": true,
+								"ulaScreen": "spectrum",
 								"zxBorderWidth": 20,
-								"vsyncInterrupt": true,
 								"zxKeyboard": true,
 								"zxBeeper": true
 							},

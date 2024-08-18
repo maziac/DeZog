@@ -19,10 +19,9 @@ suite('MameRemote', () => {
 				zsim: {
 					zxKeyboard: true,
 					visualMemory: true,
-					ulaScreen: true,
+					ulaScreen: "spectrum",
 					cpuLoadInterruptRange: 1,
 					Z80N: false,
-					vsyncInterrupt: false,
 					memoryModel: "ZX48K"
 				},
 				history: {
