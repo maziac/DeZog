@@ -32,6 +32,22 @@ suite('Z80Ports', () => {
 			z80Ports.registerGenericInPortFunction(mockFunc);
 			assert.equal(z80Ports.read(0x1234), 0xA5);
 		});
+		test('AND several ports (default 0x00, open collector)', () => {
+			const mockFunc1 = (port: number) => 0xA5;
+			z80Ports.registerGenericInPortFunction(mockFunc1);
+			const mockFunc2 = (port: number) => 0xF0;
+			z80Ports.registerGenericInPortFunction(mockFunc2);
+			assert.equal(z80Ports.read(0x1234), 0xF0 & 0xA5);
+		});
+		test('OR several ports (default 0x00, no open collector)', () => {
+			z80Ports = new Z80Ports(false);
+			assert.equal(z80Ports.read(0x1234), 0x00);
+			const mockFunc1 = (port: number) => 0xA5;
+			z80Ports.registerGenericInPortFunction(mockFunc1);
+			const mockFunc2 = (port: number) => 0xF0;
+			z80Ports.registerGenericInPortFunction(mockFunc2);
+			assert.equal(z80Ports.read(0x1234), 0xF0 | 0xA5);
+		});
 	});
 
 	suite('registerSpecificOutPortFunction', () => {
@@ -89,16 +105,16 @@ suite('Z80Ports', () => {
 			z80Ports.registerSpecificInPortFunction(0xFE12, mockFunc);
 			assert.equal(z80Ports.read(0xFE12), 0x7B);
 		});
-		test('hidden by generic port', () => {
+		test('specific plus generic port', () => {
 			const specificFunc = (port: number) => 0x7B;
 			z80Ports.registerSpecificInPortFunction(0xFE12, specificFunc);
 			assert.equal(z80Ports.read(0x0000), 0xFF);
 			assert.equal(z80Ports.read(0xFE12), 0x7B);
-			// Hide
+			// Add generic
 			const genericFunc = (port: number) => 0xA5;
 			z80Ports.registerGenericInPortFunction(genericFunc);
-			assert.equal(z80Ports.read(0x0000), 0xA5);
-			assert.equal(z80Ports.read(0xFE12), 0xA5);
+			assert.equal(z80Ports.read(0x0000), 0xFF & 0xA5);
+			assert.equal(z80Ports.read(0xFE12), 0x7B & 0xA5);
 
 			// Return undefined
 			(z80Ports as any).genericInPortFuncs = [];
