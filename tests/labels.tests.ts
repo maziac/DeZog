@@ -1,8 +1,8 @@
 import * as assert from 'assert';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {MemoryModelAllRam, MemoryModelUnknown} from '../src/remotes/MemoryModel/genericmemorymodels';
-import {MemoryModelZX81_1k, MemoryModelZX81_16k, MemoryModelZX81_48k} from '../remotes/MemoryModel/zx81memorymodels';
-import {MemoryModelZx128k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
+import {MemoryModelZX81_1k, MemoryModelZX81_2k, MemoryModelZX81_16k, MemoryModelZX81_32k, MemoryModelZX81_48k, MemoryModelZX81_56k} from '../src/remotes/MemoryModel/zx81memorymodels';
+import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
 import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -387,7 +387,11 @@ suite('Labels', () => {
 	});
 
 
-	suite('checkMappingToTargetMemoryModel', () => {
+	suite('LabelParserBase: checkMappingToTargetMemoryModel', () => {
+		// There are a few tests in here for different memory models.
+		// However, probably one test would be sufficent as now there is only
+		// a generic implementation for all memory models in LabelParserBase.
+
 		class MockLabelParserBase extends LabelParserBase {
 			protected parseLabelAndAddress(line: string) {
 				//
@@ -463,21 +467,128 @@ suite('Labels', () => {
 			assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 		});
 
-/*
+
 		test('Target: MemoryModelZX81_1k', () => {
 			const mm = new MemoryModelZX81_1k();
 			createParser(mm);
 
 			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
-			assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x32000);	// Not existing
+			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x32FFF);	// Not existing
+			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
+			assert.equal(parser.createLongAddress(0x43FF, 0), 0x243FF);
+			// Not existing:
+			assert.equal(parser.createLongAddress(0x4400, 0), 0x44400);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x46000);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x48000);
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x4A000);
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x4C000);
+			assert.equal(parser.createLongAddress(0xE000, 0), 0x4E000);
+			assert.equal(parser.createLongAddress(0xFFFF, 0), 0x4FFFF);
+		});
+
+		test('Target: MemoryModelZX81_2k', () => {
+			const mm = new MemoryModelZX81_2k();
+			createParser(mm);
+
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x32000);	// Not existing
+			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x32FFF);	// Not existing
+			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
+			assert.equal(parser.createLongAddress(0x47FF, 0), 0x247FF);
+			// Not existing:
+			assert.equal(parser.createLongAddress(0x4800, 0), 0x44800);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x46000);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x48000);
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x4A000);
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x4C000);
+			assert.equal(parser.createLongAddress(0xE000, 0), 0x4E000);
+			assert.equal(parser.createLongAddress(0xFFFF, 0), 0x4FFFF);
+		});
+
+		test('Target: MemoryModelZX81_16k', () => {
+			const mm = new MemoryModelZX81_16k();
+			createParser(mm);
+
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x32000);	// Not existing
+			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x32FFF);	// Not existing
+			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x26000);
+			assert.equal(parser.createLongAddress(0x7FFF, 0), 0x27FFF);
+			// Not existing:
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x48000);
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x4A000);
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x4C000);
+			assert.equal(parser.createLongAddress(0xE000, 0), 0x4E000);
+			assert.equal(parser.createLongAddress(0xFFFF, 0), 0x4FFFF);
+		});
+
+		test('Target: MemoryModelZX81_32k', () => {
+			const mm = new MemoryModelZX81_32k();
+			createParser(mm);
+
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x32000);	// Not existing
+			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x32FFF);	// Not existing
+			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x26000);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x28000);
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x2A000);
+			assert.equal(parser.createLongAddress(0xBFFF, 0), 0x2BFFF);
+			// Not existing:
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x4C000);			assert.equal(parser.createLongAddress(0xE000, 0), 0x4E000);
+			assert.equal(parser.createLongAddress(0xFFFF, 0), 0x4FFFF);
+		});
+
+		test('Target: MemoryModelZX81_48k', () => {
+			const mm = new MemoryModelZX81_48k();
+			createParser(mm);
+
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x32000);	// Not existing
+			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x32FFF);	// Not existing
 			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
 			assert.equal(parser.createLongAddress(0x6000, 0), 0x26000);
 			assert.equal(parser.createLongAddress(0x8000, 0), 0x28000);
 			assert.equal(parser.createLongAddress(0xA000, 0), 0x2A000);
 			assert.equal(parser.createLongAddress(0xC000, 0), 0x2C000);
 			assert.equal(parser.createLongAddress(0xE000, 0), 0x2E000);
+			assert.equal(parser.createLongAddress(0xFFFF, 0), 0x2FFFF);
 		});
-*/
+
+		test('Target: MemoryModelZX81_56k', () => {
+			const mm = new MemoryModelZX81_56k();
+			createParser(mm);
+
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x22000);
+			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x22FFF);
+			assert.equal(parser.createLongAddress(0x3FFF, 0), 0x23FFF);
+			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x26000);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x28000);
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x2A000);
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x2C000);
+			assert.equal(parser.createLongAddress(0xE000, 0), 0x2E000);
+			assert.equal(parser.createLongAddress(0xFFFF, 0), 0x2FFFF);
+		});
+
+
+		test('Target: MemoryModelZx16k', () => {
+			const mm = new MemoryModelZx16k();
+			createParser(mm);
+
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
+			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x26000);
+			// Not existing bank 2 (0x30000):
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x38000);
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x3A000);
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x3C000);
+			assert.equal(parser.createLongAddress(0xE000, 0), 0x3E000);
+		});
 
 		test('Target: MemoryModelZx48k', () => {
 			const mm = new MemoryModelZx48k();
@@ -497,8 +608,11 @@ suite('Labels', () => {
 			const mm = new MemoryModelZx128k();
 			createParser(mm);
 
-			assert.equal(parser.createLongAddress(0x0000, 0), 0xA0000);
-			assert.equal(parser.createLongAddress(0x2000, 0), 0xA2000);
+			// 0x90000 correspondents to ROM 0 (the 128k ROM) in bank 8.
+			// 0xA0000 for ROM 1 (48k Spectrum ROM) in bank 9 would be a better choice for a 64k model,
+			// anyhow bank 8 is the initial bank.
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x90000);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x92000);
 			assert.equal(parser.createLongAddress(0x4000, 0), 0x64000);
 			assert.equal(parser.createLongAddress(0x6000, 0), 0x66000);
 			assert.equal(parser.createLongAddress(0x8000, 0), 0x38000);

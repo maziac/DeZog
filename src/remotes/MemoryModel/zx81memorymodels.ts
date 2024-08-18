@@ -153,6 +153,7 @@ export class MemoryModelZX81_48k extends MemoryModel {	// NOSONAR
 }
 
 export class MemoryModelZX81_56k extends MemoryModel {	// NOSONAR
+	// Also enables the area 0x2000-0x3FFF with RAM
 	constructor() {
 		super({
 			slots: [
@@ -167,7 +168,7 @@ export class MemoryModelZX81_56k extends MemoryModel {	// NOSONAR
 					]
 				},
 				{
-					range: [0x1FFF, 0xFFFF],
+					range: [0x2000, 0xFFFF],
 					banks: [
 						{
 							index: 1,

@@ -35,7 +35,7 @@ export interface SlotRange {
 	// Z80 start address of slot.
 	start: number;
 
-	// Z80 end address of page.
+	// Z80 end address of page. Inclusive. E.g. 0x3FFF.
 	end: number;
 
 	// The name of the slot. Required for slots that allow bank switching.
@@ -114,7 +114,7 @@ export class MemoryModel {
 	// Also only required for the zsim memory.
 	public ioMmu: string;
 
-	
+
 	/**
 	 * Constructor.
 	 * @param cfg The custom memory model configuration. From the settings.

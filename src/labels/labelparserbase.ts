@@ -703,89 +703,24 @@ export class LabelParserBase {
 	 * Overwrite for parsers (assemblers) that support banking.
 	 */
 	protected checkMappingToTargetMemoryModel() {
-		// Check for unknown, also used by the unit tests to just find the labels.
-		if (this.memoryModel instanceof MemoryModelUnknown) {
-			// Just pass through
-			this.funcConvertBank = (address: number, bank: number) => {
-				return bank;
-			};
-			return;
-		}
+		const slotRanges = this.memoryModel.slotRanges;
+		const intialSlots = this.memoryModel.initialSlots;
 
-		// Check for AllRam
-		if (this.memoryModel instanceof MemoryModelAllRam) {
-			// Just 1 bank
-			this.funcConvertBank = (address: number, bank: number) => {
-				return 0;
-			};
-			return;
-		}
-
-		// TODO: Other ZX81 (also Colecovision).
-
-		// Check for ZX81 1K
-		if (this.memoryModel instanceof MemoryModelZX81_1k) {
-			this.funcConvertBank = (address: number, bank: number) => {
-				if (address < 0x2000)
-					return 0; // ROM
-				return 1;	// RAM, TODO: There are gaps in the ZX81 memory map
-			};
-			return;
-		}
-
-		// Check for ZX81 16K
-		if (this.memoryModel instanceof MemoryModelZX81_16k) {
-			this.funcConvertBank = (address: number, bank: number) => {
-				if (address < 0x2000)
-					return 0; // ROM
-				return 1;	// RAM, TODO: There are gaps in the ZX81 memory map
-			};
-			return;
-		}
-
-		// Check for ZX81 48K
-		if (this.memoryModel instanceof MemoryModelZX81_48k) {
-			this.funcConvertBank = (address: number, bank: number) => {
-				if (address < 0x2000)
-					return 0; // ROM
-				return 1;	// RAM, TODO: There are gaps in the ZX81 memory map
-			};
-			return;
-		}
-
-
-		// Check for ZX48K
-		if (this.memoryModel instanceof MemoryModelZx48k) {
-			this.funcConvertBank = (address: number, bank: number) => {
-				if (address < 0x4000)
-					return 0; // ROM
-				return 1;	// RAM
-			};
-			return;
-		}
-
-		// Check for ZX128K
-		if (this.memoryModel instanceof MemoryModelZx128k) {
-			const permut128k = [9, 5, 2, 0];
-			this.funcConvertBank = (address: number, bank: number) => {
-				const index = address >>> 14;
-				return permut128k[index];	// No conversion
-			};
-			return;
-		}
-
-		// Check for ZXNext
-		if (this.memoryModel instanceof MemoryModelZxNextOneROM || this.memoryModel instanceof MemoryModelZxNextTwoRom) {
-			const permutNext = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];
-			this.funcConvertBank = (address: number, bank: number) => {
-				const index = address >>> 13;
-				return permutNext[index];	// No conversion
-			};
-			return;
-		}
-
-		// Unsupported target memory model
-		throw Error("Unsupported target memory model: " + this.memoryModel.name + ".");
+		// Note: this can be done for any memory model, as 64k are naturally supported by all of them.
+		// If some other than a 64k source model is required this function needs to be overwritten.
+		this.funcConvertBank = (address: number, _bank: number) => {
+			// _bank is not used for a 64k model this is always the same.
+			const len = slotRanges.length;
+			for (let i = 0; i < len; i++) {
+				const slotRange = slotRanges[i];	// Slot ranges are ascending and without any gap
+				if (address <= slotRange.end) {
+					// Get initial bank
+					const initialBank = intialSlots[i];
+					return initialBank;
+				}
+			}
+			throw Error("Address " + Utility.getHexString(address, 4) + " not in any slot range.");
+		};
 	}
 
 
