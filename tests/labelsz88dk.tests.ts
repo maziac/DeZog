@@ -358,6 +358,8 @@ suite('Labels (z88dk)', () => {
 
 
 	suite('checkMappingToTargetMemoryModel', () => {
+		// z88dk uses the base LabelParserBase checkMappingToTargetMemoryModel function. 
+		// So strictly speaking this test would not be necessary.
 		let tmpFile;
 		let tmpMapFile;
 		let parser: any;

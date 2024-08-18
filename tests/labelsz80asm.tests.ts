@@ -277,6 +277,8 @@ suite('Labels (z80asm)', () => {
 
 
 	suite('checkMappingToTargetMemoryModel', () => {
+		// z80asm uses the base LabelParserBase checkMappingToTargetMemoryModel function.
+		// So strictly speaking this test would not be necessary.
 		let tmpFile;
 		let parser: any;
 

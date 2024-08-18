@@ -365,7 +365,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 		// All others, e.g. ZX128K, ZXNext, Custom
 		this.funcConvertBank = (address: number, bank: number) => {
 			// Check bank
-			if (this.memoryModel.banks[bank] == undefined)
+			if (this.memoryModel.banks[bank] === undefined)
 				this.throwError("Bank " + bank + " not available in '" + this.memoryModel.name + "'.");
 			return bank;	// No conversion
 		};
