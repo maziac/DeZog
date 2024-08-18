@@ -431,8 +431,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	}
 
 
-	/**
-	 * Checks conversion to target memory model.
+	/** Checks conversion to target memory model.
 	 * ZXNEXT: pages.size:8192,pages.count:224,slots.count:8,slots.adr:0,8192,16384,24576,32768,40960,49152,57344
 	 * ZX128K: pages.size:16384,pages.count:8,slots.count:4,slots.adr:0,16384,32768,49152
 	 * ZX48K:  pages.size:16384,pages.count:4,slots.count:4,slots.adr:0,16384,32768,49152

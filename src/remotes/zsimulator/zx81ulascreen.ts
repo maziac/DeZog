@@ -233,6 +233,11 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 		// Write data
 		memBuffer.writeNumber(this.timeCounter);
 		memBuffer.write8(this.prevRregister);
+		memBuffer.writeBoolean(this.stateNmiGeneratorOn);
+		memBuffer.writeBoolean(this.vsync);
+		memBuffer.writeBoolean(this.noDisplay);
+		memBuffer.writeBoolean(this.fastMode);
+		memBuffer.writeBoolean(this.nmiGeneratorAccessed);
 	}
 
 
@@ -242,5 +247,10 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 		// Read data
 		this.timeCounter = memBuffer.readNumber();
 		this.prevRregister = memBuffer.read8();
+		this.stateNmiGeneratorOn = memBuffer.readBoolean();
+		this.vsync = memBuffer.readBoolean();
+		this.noDisplay = memBuffer.readBoolean();
+		this.fastMode = memBuffer.readBoolean();
+		this.nmiGeneratorAccessed = memBuffer.readBoolean();
 	}
 }

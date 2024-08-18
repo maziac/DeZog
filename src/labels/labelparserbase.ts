@@ -697,9 +697,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Checks conversion to target memory model.
-	 * This implements a conversion from a 64k model with no banking into
+	/** This implements a conversion from a 64k model with no banking into
 	 * one of the defined memory models.
 	 * E.g. ZX48, ZX128, ZXNext or Custom.
 	 * Overwrite for parsers (assemblers) that support banking.

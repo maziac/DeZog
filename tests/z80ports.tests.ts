@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-//import sinon from 'sinon';
 import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
 
 suite('Z80Ports', () => {
