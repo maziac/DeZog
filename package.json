@@ -447,6 +447,14 @@
 								"description": "'The configuration of the internal Z80 simulator.",
 								"type": "object",
 								"properties": {
+									"preset": {
+										"type": "string",
+										"enum": [
+											"spectrum",
+											"zx81"
+										],
+										"description": "The preset of the simulator. It will set the default values for a 48k Spectrum or a 16k ZX81. You can override these settings e.g. by explicitly setting the 'memoryModel'."
+									},
 									"zxKeyboard": {
 										"type": "boolean",
 										"description": "If enabled the simulator shows a keyboard to simulate keypresses.",

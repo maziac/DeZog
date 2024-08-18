@@ -216,6 +216,12 @@ export interface CustomJoyType {
 
 /// Definitions for the 'zsim' remote type.
 export interface ZSimType {
+	// Defines a preset of settings to simulate a ZX Spectrum or ZX81.
+	// I.e. for a Spectrum it defines zxKeyboard, zxInterface2Joy, visualMemory, 48K, ulaScreen, zxBorderWidth, zxBeeper, cpuFrequency, defaultPortIn.
+	// For a ZX81 it defines zxKeyboard, visualMemory, 16K, ulaScreen, cpuFrequency, defaultPortIn.
+	// All settings can be overwritten if explicitly set.
+	preset: 'spectrum' | 'zx81' | 'none';
+
 	// If enabled the simulator shows a ZX Spectrum/ZX81 keyboard to simulate keypresses.
 	zxKeyboard: boolean,
 
@@ -538,6 +544,50 @@ export class Settings {
 		// zsim
 		if (!launchCfg.zsim)
 			launchCfg.zsim = {} as ZSimType;
+		const preset = launchCfg.zsim.preset;
+		if (preset === undefined) {
+			launchCfg.zsim.preset = 'none';
+		}
+		else {
+			// Spectrum
+			if (preset === 'spectrum') {
+				if (launchCfg.zsim.zxKeyboard === undefined)
+					launchCfg.zsim.zxKeyboard = true;
+				if (launchCfg.zsim.zxInterface2Joy === undefined)
+					launchCfg.zsim.zxInterface2Joy = true;
+				if (launchCfg.zsim.memoryModel === undefined)
+					launchCfg.zsim.memoryModel = "ZX48K";
+				if(launchCfg.zsim.visualMemory === undefined)
+					launchCfg.zsim.visualMemory = true;
+				if(launchCfg.zsim.ulaScreen === undefined)
+					launchCfg.zsim.ulaScreen = 'spectrum';
+				if(launchCfg.zsim.zxBorderWidth === undefined)
+					launchCfg.zsim.zxBorderWidth = 15;
+				if (launchCfg.zsim.zxBeeper === undefined)
+					launchCfg.zsim.zxBeeper = true;
+				if(launchCfg.zsim.cpuFrequency === undefined)
+					launchCfg.zsim.cpuFrequency = 3500000.0;	// 3.5Mhz
+				if(launchCfg.zsim.defaultPortIn === undefined)
+					launchCfg.zsim.defaultPortIn = 0xFF;
+			}
+			// ZX81
+			else if (preset === 'zx81') {
+				if (launchCfg.zsim.zxKeyboard === undefined)
+					launchCfg.zsim.zxKeyboard = true;
+				if (launchCfg.zsim.memoryModel === undefined)
+					launchCfg.zsim.memoryModel = "ZX81-16K";
+				if (launchCfg.zsim.visualMemory === undefined)
+					launchCfg.zsim.visualMemory = true;
+				if (launchCfg.zsim.ulaScreen === undefined)
+					launchCfg.zsim.ulaScreen = 'zx81';
+				if (launchCfg.zsim.zxBorderWidth === undefined)
+					launchCfg.zsim.zxBorderWidth = 0;
+				if (launchCfg.zsim.cpuFrequency === undefined)
+					launchCfg.zsim.cpuFrequency = 3500000.0;	// 3.5Mhz
+				if (launchCfg.zsim.defaultPortIn === undefined)
+					launchCfg.zsim.defaultPortIn = 0xFF;
+			}
+		}
 		if (launchCfg.zsim.zxKeyboard === undefined)
 			launchCfg.zsim.zxKeyboard = false;
 		if (launchCfg.zsim.zxInterface2Joy === undefined)
@@ -1063,6 +1113,12 @@ export class Settings {
 		if (Settings.launch.zsim.defaultPortIn !== 0xFF
 			&& Settings.launch.zsim.defaultPortIn !== 0x00) {
 			throw Error("'defaultPortIn': Allowed values are only 255 or 0.");
+		}
+
+		// Check preset
+		const preset = Settings.launch.zsim.preset;
+		if (preset !== 'spectrum' && preset !== 'zx81' && preset !== 'none') {
+			throw Error("'preset': Allowed values are 'spectrum', 'zx81' or 'none'.");
 		}
 	}
 }

@@ -1,7 +1,7 @@
 # Changelog
 # 3.5.0
 - zsim:
-  - Simulation of ZX81
+  - Simulation of ZX81.
   - Removed "vsyncInterrupt". A VSYNC interrupt is now generated if the Spectrum ULA is enabled.
   - "ulaScreen":
     - Type changed from boolean to 'spectrum' | 'zx81'.
@@ -11,6 +11,7 @@
   - The "zxKeyboard" now support reading several rows at the same time.
   - The "kempstonJoy" now decodes only the lower 8 bits of the address.
   - A new "costumJoy" type: You can assign the bits and ports yourself.
+  - Added "preset" to easily configure a spectrum or zx81 device.
 
 # 3.4.1
 - zsim: Removed annoying logging.
