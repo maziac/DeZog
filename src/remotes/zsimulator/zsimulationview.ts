@@ -645,6 +645,11 @@ export class ZSimulationView extends BaseView {
 				opacity: 0.5; /* Make the element look grayed out */
 				cursor: not-allowed; /* Change the cursor to indicate the element is disabled */
 			}
+
+			.label-absolute-top {
+				position: absolute;
+				top: 2em;
+			}
 			</style>
 
 			<script src="out/remotes/zsimulator/zsimwebview/main.js"></script>
@@ -724,25 +729,25 @@ export class ZSimulationView extends BaseView {
 				</span>
 
 				<!-- Address labels -->
-				<label style="position:absolute; top:2em; left:0%">0x0000</label>
+				<label class="label-absolute-top" style="left:0%">0x0000</label>
 				<label style="position:absolute; top:2em; left:12.5%">0x2000</label>`;
 			// ZX screen memory marker
 			if (visualMemoryZxScreen) {
 				html += `
-				<label style="position:absolute; top:1.1em; left:25%">0x4000</label>
-				<label style="position:absolute; top:1.1em; left:35.5%">0x5B00</label>`;
+				<label class="label-absolute-top" style="left:25%">0x4000</label>
+				<label class="label-absolute-top" style="left:35.5%">0x5B00</label>`;
 			}
 			else {
 				html += `
-				<label style="position:absolute; top:2em; left:25%">0x4000</label>`;
+				<label class="label-absolute-top" style="left:25%">0x4000</label>`;
 			}
 
 			html += `
-			<label style="position:absolute; top:2em; left:37.5%">0x6000</label>
-			<label style="position:absolute; top:2em; left:50%">0x8000</label>
-			<label style="position:absolute; top:2em; left:62.5%">0xA000</label>
-			<label style="position:absolute; top:2em; left:75%">0xC000</label>
-			<label style="position:absolute; top:2em; left:87.5%">0xE000</label>
+			<label class="label-absolute-top" style="left:37.5%">0x6000</label>
+			<label class="label-absolute-top" style="left:50%">0x8000</label>
+			<label class="label-absolute-top" style="left:62.5%">0xA000</label>
+			<label class="label-absolute-top" style="left:75%">0xC000</label>
+			<label class="label-absolute-top" style="left:87.5%">0xE000</label>
 
 			<!-- Marker ticks -->
 			<span class="border" style="top: 3em; left:0%; height: 1.7em"></span>
