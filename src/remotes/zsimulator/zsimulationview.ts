@@ -678,7 +678,9 @@ export class ZSimulationView extends BaseView {
 
 			.key-pressed {
 				/*background-color: red;*/
-				border: 2px solid red;
+				/*border: 2px solid red;*/
+    			box-shadow: 0px 0px 20px 4px rgba(255, 255, 0, 1);
+				background-color: rgba(255, 255, 0, 0.5);
 			}
 
 			</style>
@@ -994,7 +996,7 @@ export class ZSimulationView extends BaseView {
 					<span id="key_Digit9" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_Digit0" class="key" onClick="cellClicked(this)"></span>
 				<div style="height: 7%"></div>
-					<span class="hor-space" style="width: 7.4%"></span>
+					<span class="hor-space" style="width: 7.25%"></span>
 					<span id="key_KeyQ" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyW" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyE" class="key" onClick="cellClicked(this)"></span>
@@ -1006,7 +1008,7 @@ export class ZSimulationView extends BaseView {
 					<span id="key_KeyO" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyP" class="key" onClick="cellClicked(this)"></span>
 				<div style="height: 7%"></div>
-					<span class="hor-space" style="width: 9.3%"></span>
+					<span class="hor-space" style="width: 9.5%"></span>
 					<span id="key_KeyA" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyS" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyD" class="key" onClick="cellClicked(this)"></span>
