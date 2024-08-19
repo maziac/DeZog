@@ -669,7 +669,7 @@ export class ZSimulationView extends BaseView {
 			.key {
 				display: inline-block;
 				box-sizing: border-box;
-				border: 2px solid red;
+				/*border: 2px solid red;*/
 				width: 8.1%;
 				height: 15.9%;
 				margin-right: 0.78%;
@@ -677,8 +677,8 @@ export class ZSimulationView extends BaseView {
 			}
 
 			.key-pressed {
-				background-color: red;
-				border: 2px solid yellow;
+				/*background-color: red;*/
+				border: 2px solid red;
 			}
 
 			</style>
@@ -984,106 +984,51 @@ export class ZSimulationView extends BaseView {
 				<div style="height: 10%"></div>
 					<span class="hor-space" style="width: 2.8%"></span>
 					<span id="key_Digit1" class="key" onClick="cellClicked(this)"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
+					<span id="key_Digit2" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_Digit3" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_Digit4" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_Digit5" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_Digit6" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_Digit7" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_Digit8" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_Digit9" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_Digit0" class="key" onClick="cellClicked(this)"></span>
 				<div style="height: 7%"></div>
-					<span class="key" style="margin-left: 7.4%"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
+					<span class="hor-space" style="width: 7.4%"></span>
+					<span id="key_KeyQ" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyW" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyE" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyR" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyT" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyY" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyU" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyI" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyO" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyP" class="key" onClick="cellClicked(this)"></span>
 				<div style="height: 7%"></div>
-					<span class="key" style="margin-left: 9.3%"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
+					<span class="hor-space" style="width: 9.3%"></span>
+					<span id="key_KeyA" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyS" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyD" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyF" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyG" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyH" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyJ" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyK" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyL" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_Enter" class="key" onClick="cellClicked(this)"></span>
 				<div style="height: 7%"></div>
-					<span class="key" style="margin-left: 5%"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-					<span class="key"></span>
-			</div>
-
-			<div>
-			<table style="width:100%">
-
-				<tr>
-					<td id="key_Digit1" class="td_off" onClick="cellClicked(this)">1</td>
-					<td id="key_Digit2" class="td_off" onClick="cellClicked(this)">2</td>
-					<td id="key_Digit3" class="td_off" onClick="cellClicked(this)">3</td>
-					<td id="key_Digit4" class="td_off" onClick="cellClicked(this)">4</td>
-					<td id="key_Digit5" class="td_off" onClick="cellClicked(this)">5</td>
-					<td id="key_Digit6" class="td_off" onClick="cellClicked(this)">6</td>
-					<td id="key_Digit7" class="td_off" onClick="cellClicked(this)">7</td>
-					<td id="key_Digit8" class="td_off" onClick="cellClicked(this)">8</td>
-					<td id="key_Digit9" class="td_off" onClick="cellClicked(this)">9</td>
-					<td id="key_Digit0" class="td_off" onClick="cellClicked(this)">0</td>
-				</tr>
-
-				<tr>
-					<td id="key_KeyQ" class="td_off" onClick="cellClicked(this)">Q</td>
-					<td id="key_KeyW" class="td_off" onClick="cellClicked(this)">W</td>
-					<td id="key_KeyE" class="td_off" onClick="cellClicked(this)">E</td>
-					<td id="key_KeyR" class="td_off" onClick="cellClicked(this)">R</td>
-					<td id="key_KeyT" class="td_off" onClick="cellClicked(this)">T</td>
-					<td id="key_KeyY" class="td_off" onClick="cellClicked(this)">Y</td>
-					<td id="key_KeyU" class="td_off" onClick="cellClicked(this)">U</td>
-					<td id="key_KeyI" class="td_off" onClick="cellClicked(this)">I</td>
-					<td id="key_KeyO" class="td_off" onClick="cellClicked(this)">O</td>
-					<td id="key_KeyP" class="td_off" onClick="cellClicked(this)">P</td>
-				</tr>
-
-				<tr>
-					<td id="key_KeyA" class="td_off" onClick="cellClicked(this)">A</td>
-					<td id="key_KeyS" class="td_off" onClick="cellClicked(this)">S</td>
-					<td id="key_KeyD" class="td_off" onClick="cellClicked(this)">D</td>
-					<td id="key_KeyF" class="td_off" onClick="cellClicked(this)">F</td>
-					<td id="key_KeyG" class="td_off" onClick="cellClicked(this)">G</td>
-					<td id="key_KeyH" class="td_off" onClick="cellClicked(this)">H</td>
-					<td id="key_KeyJ" class="td_off" onClick="cellClicked(this)">J</td>
-					<td id="key_KeyK" class="td_off" onClick="cellClicked(this)">K</td>
-					<td id="key_KeyL" class="td_off" onClick="cellClicked(this)">L</td>
-					<td id="key_Enter" class="td_off" onClick="cellClicked(this)">ENTER</td>
-				</tr>
-
-				<tr>
-					<td id="key_ShiftLeft" class="td_off" onClick="cellClicked(this)">CAPS S.</td>
-					<td id="key_KeyZ" class="td_off" onClick="cellClicked(this)">Z</td>
-					<td id="key_KeyX" class="td_off" onClick="cellClicked(this)">X</td>
-					<td id="key_KeyC" class="td_off" onClick="cellClicked(this)">C</td>
-					<td id="key_KeyV" class="td_off" onClick="cellClicked(this)">V</td>
-					<td id="key_KeyB" class="td_off" onClick="cellClicked(this)">B</td>
-					<td id="key_KeyN" class="td_off" onClick="cellClicked(this)">N</td>
-					<td id="key_KeyM" class="td_off" onClick="cellClicked(this)">M</td>
-					<td id="key_ShiftRight" class="td_off" onClick="cellClicked(this)">SYMB. S.</td>
-					<td id="key_Space" class="td_off" onClick="cellClicked(this)">SPACE</td>
-				</tr>
-
-			</table>
+					<span class="hor-space" style="width: 5%"></span>
+					<span id="key_ShiftLeft" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyZ" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyX" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyC" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyV" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyB" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyN" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_KeyM" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_ShiftRight" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_Space" class="key" onClick="cellClicked(this)"></span>
 			</div>
 		</details>
 		`;
