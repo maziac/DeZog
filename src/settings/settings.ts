@@ -223,7 +223,7 @@ export interface ZSimType {
 	preset: 'spectrum' | 'zx81' | 'none';
 
 	// If enabled the simulator shows a ZX Spectrum/ZX81 keyboard to simulate keypresses.
-	zxKeyboard: boolean,
+	zxKeyboard: 'spectrum' | 'zx81' | 'none';
 
 	// If enabled the simulator shows a pad to simulate the joysticks for interface 2.
 	zxInterface2Joy: boolean,
@@ -552,7 +552,7 @@ export class Settings {
 			// Spectrum
 			if (preset === 'spectrum') {
 				if (launchCfg.zsim.zxKeyboard === undefined)
-					launchCfg.zsim.zxKeyboard = true;
+					launchCfg.zsim.zxKeyboard = 'spectrum';
 				if (launchCfg.zsim.zxInterface2Joy === undefined)
 					launchCfg.zsim.zxInterface2Joy = true;
 				if (launchCfg.zsim.memoryModel === undefined)
@@ -573,7 +573,7 @@ export class Settings {
 			// ZX81
 			else if (preset === 'zx81') {
 				if (launchCfg.zsim.zxKeyboard === undefined)
-					launchCfg.zsim.zxKeyboard = true;
+					launchCfg.zsim.zxKeyboard = 'zx81';
 				if (launchCfg.zsim.memoryModel === undefined)
 					launchCfg.zsim.memoryModel = "ZX81-16K";
 				if (launchCfg.zsim.visualMemory === undefined)
@@ -589,7 +589,7 @@ export class Settings {
 			}
 		}
 		if (launchCfg.zsim.zxKeyboard === undefined)
-			launchCfg.zsim.zxKeyboard = false;
+			launchCfg.zsim.zxKeyboard = 'spectrum';
 		if (launchCfg.zsim.zxInterface2Joy === undefined)
 			launchCfg.zsim.zxInterface2Joy = false;
 		if (launchCfg.zsim.kempstonJoy === undefined)

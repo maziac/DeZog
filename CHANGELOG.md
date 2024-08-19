@@ -8,7 +8,10 @@
   - Z80 CPU simulation fix: HALT instruction: r is now incremented on each instruction.
   - New debug command, "-ml address filepath", to load binary data into the memory.
   - Fixed setting of A' from the UI.
-  - The "zxKeyboard" now support reading several rows at the same time.
+  - The "zxKeyboard"
+    - now supports reading several rows at the same time.
+    - type changed to string. "zx81" and "spectrum" style keyboard supported.
+    - keyboard visualization improved.
   - The "kempstonJoy" now decodes only the lower 8 bits of the address.
   - A new "costumJoy" type: You can assign the bits and ports yourself.
   - Added "preset" to easily configure a spectrum or zx81 device.

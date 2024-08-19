@@ -608,7 +608,34 @@ export class ZSimulationView extends BaseView {
 		const extPath = Utility.getExtensionPath();
 		const resourcePath = vscode.Uri.file(extPath);
 		const vscodeResPath = this.vscodePanel.webview.asWebviewUri(resourcePath).toString();
-
+		// Set keyboard values
+		const zsim = Settings.launch.zsim;
+		// Predefine with spectrum keyboard
+		let zxKeybImg = "48k_kbd.png";
+		let zxKeybKeyWidth = 7.4;
+		let zxKeybKeyMarginRight = 1.85;
+		let zxKeybOffY = 7.5;
+		let zxKeybRowVertMargin = 8.4;
+		let zxKeybRow1OffsX = 1.1;
+		let zxKeybRow2OffsX = 5.9;
+		let zxKeybRow3OffsX = 7.9;
+		let zxKeybRow4OffsX = 1.2;
+		let zxKeybShiftStyle = 'style="width: 9.6%"';
+		let zxKeybSpaceStyle = 'style="width: 12%;margin-right: 0"';
+		// Redefine for ZX81
+		if (zsim.zxKeyboard === "zx81") {
+			zxKeybImg = "zx81_kbd.png";
+			zxKeybKeyWidth = 8.1;
+			zxKeybKeyMarginRight = 0.78;
+			zxKeybOffY = 10;
+			zxKeybRowVertMargin = 7;
+			zxKeybRow1OffsX = 2.8;
+			zxKeybRow2OffsX = 7.25;
+			zxKeybRow3OffsX = 9.5;
+			zxKeybRow4OffsX = 5;
+			zxKeybShiftStyle = '';
+			zxKeybSpaceStyle = '';
+		}
 		let html = `
 			<head>
 				<meta charset="utf-8">
@@ -637,9 +664,9 @@ export class ZSimulationView extends BaseView {
 			.keyboard {
 				position: relative;
 				width: 100%;
-				aspect-ratio: 540/200;
+				aspect-ratio: 541/201;
 				font-size: 0; /* Removes space between 2 spans */
-				background-image: url('html/images/zx81_kbd.png');
+				background-image: url('html/images/${zxKeybImg}');
 				background-size: cover;
 			}
 
@@ -653,9 +680,9 @@ export class ZSimulationView extends BaseView {
 				display: inline-block;
 				box-sizing: border-box;
 				/*border: 2px solid red;*/
-				width: 8.1%;
+				width: ${zxKeybKeyWidth}%;
 				height: 15.9%;
-				margin-right: 0.78%;
+				margin-right: ${zxKeybKeyMarginRight}%;
 				padding: 0;
 			}
 
@@ -674,7 +701,6 @@ export class ZSimulationView extends BaseView {
 			`;
 
 		// Setup the body
-		const zsim = Settings.launch.zsim;
 		const visualMemoryZxScreen = zsim.memoryModel.includes('ZX') && (!zsim.memoryModel.includes('81'));
 		let initialBeeperValue = 0;
 		if (this.simulator.zxBeeper)
@@ -959,15 +985,15 @@ export class ZSimulationView extends BaseView {
 
 
 		// Add code for the keyboard
-		if (zsim.zxKeyboard) {
+		if (zsim.zxKeyboard !== 'none') {
 			html += `
 			<!-- Keyboard -->
 			<details open="true">
 			<summary>ZX Keyboard</summary>
 
 			<div class="keyboard">
-				<div style="height: 10%"></div>
-					<span class="hor-space" style="width: 2.8%"></span>
+				<div style="height: ${zxKeybOffY}%"></div>
+					<span class="hor-space" style="width: ${zxKeybRow1OffsX}%"></span>
 					<span id="key_Digit1" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_Digit2" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_Digit3" class="key" onClick="cellClicked(this)"></span>
@@ -978,8 +1004,8 @@ export class ZSimulationView extends BaseView {
 					<span id="key_Digit8" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_Digit9" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_Digit0" class="key" onClick="cellClicked(this)"></span>
-				<div style="height: 7%"></div>
-					<span class="hor-space" style="width: 7.25%"></span>
+				<div style="height: ${zxKeybRowVertMargin}%"></div>
+					<span class="hor-space" style="width: ${zxKeybRow2OffsX}%"></span>
 					<span id="key_KeyQ" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyW" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyE" class="key" onClick="cellClicked(this)"></span>
@@ -990,8 +1016,8 @@ export class ZSimulationView extends BaseView {
 					<span id="key_KeyI" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyO" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyP" class="key" onClick="cellClicked(this)"></span>
-				<div style="height: 7%"></div>
-					<span class="hor-space" style="width: 9.5%"></span>
+				<div style="height: ${zxKeybRowVertMargin}%"></div>
+					<span class="hor-space" style="width: ${zxKeybRow3OffsX}%"></span>
 					<span id="key_KeyA" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyS" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyD" class="key" onClick="cellClicked(this)"></span>
@@ -1001,10 +1027,10 @@ export class ZSimulationView extends BaseView {
 					<span id="key_KeyJ" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyK" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyL" class="key" onClick="cellClicked(this)"></span>
-					<span id="key_Enter" class="key" onClick="cellClicked(this)"></span>
-				<div style="height: 7%"></div>
-					<span class="hor-space" style="width: 5%"></span>
-					<span id="key_ShiftLeft" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_Enter" class="key" onClick="cellClicked(this)" style="margin-right: 0"></span>
+				<div style="height: ${zxKeybRowVertMargin}%"></div>
+					<span class="hor-space" style="width: ${zxKeybRow4OffsX}%"></span>
+					<span id="key_ShiftLeft" class="key" onClick="cellClicked(this)" ${zxKeybShiftStyle}"></span>
 					<span id="key_KeyZ" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyX" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyC" class="key" onClick="cellClicked(this)"></span>
@@ -1013,7 +1039,7 @@ export class ZSimulationView extends BaseView {
 					<span id="key_KeyN" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyM" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_ShiftRight" class="key" onClick="cellClicked(this)"></span>
-					<span id="key_Space" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_Space" class="key" onClick="cellClicked(this)" ${zxKeybSpaceStyle}></span>
 			</div>
 		</details>
 		`;

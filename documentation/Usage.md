@@ -688,8 +688,8 @@ With all options disabled zsim behaves just as a Z80 CPU with 64k RAM without an
 If you need to define a ZX Spectrum 48K machine you could use
 ~~~json
     "zsim": {
-        "zxKeyboard": true,
-	    "ulaScreen": true,
+        "zxKeyboard": "spectrum",
+	    "ulaScreen": "spectrum",
 	    "visualMemory": true,
         "memoryModel": "ZX48K"
     }
@@ -698,8 +698,8 @@ If you need to define a ZX Spectrum 48K machine you could use
 For a ZX Spectrum 128K:
 ~~~json
     "zsim": {
-        "zxKeyboard": true,
-	    "ulaScreen": true,
+        "zxKeyboard": "spectrum",
+	    "ulaScreen": "spectrum",
 	    "visualMemory": true,
         "memoryModel": "ZX128K"
     }
@@ -708,10 +708,10 @@ For a ZX Spectrum 128K:
 For a ZX81 (16K):
 ~~~json
     "zsim": {
-        "zxKeyboard": true,
+        "zxKeyboard": "zx81",
 	    "ulaScreen": "zx81",
 	    "visualMemory": true,
-        "memoryModel": "ZX128K"
+        "memoryModel": "ZX81-1K"
     }
 ~~~
 
@@ -719,7 +719,7 @@ For a ZX Next like system (note: this simulates only the Next's memory paging):
 ~~~json
     "zsim": {
         "Z80N": true,
-        "zxKeyboard": true,
+        "zxKeyboard": "spectrum",
 	    "ulaScreen": true,
 	    "visualMemory": true,
         "memoryModel": "ZXNEXT"
@@ -729,7 +729,7 @@ For a ZX Next like system (note: this simulates only the Next's memory paging):
 Here is the explanations of all the options:
 - "preset": Either "spectrum", "zx81" or "none" (default). It will set the default values for a 48k Spectrum or a 16k ZX81. You can override these settings. If you e.g. set the 'memoryModel' explicitly.
 - "Z80N": true/false. Defaults to false. Enables the Z80N (ZX Next) instruction set. See https://wiki.specnext.dev/Extended_Z80_instruction_set .
-- "zxKeyboard": true/false. Defaults to false. If enabled the simulator shows a keyboard to simulate keypresses.
+- "zxKeyboard": Either "spectrum", "zx81" or "none" (default). If enabled the simulator shows a keyboard to simulate keypresses.
 ![](images/zsim_keyboard.jpg)
 - "zxInterface2Joy": true/false. Defaults to false. If enabled the simulator shows 2 joystick controls to simulate ZX Interface 2 joysticks.
 ![](images/zsim_interface2joy.jpg)

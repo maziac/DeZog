@@ -453,12 +453,17 @@
 											"spectrum",
 											"zx81"
 										],
-										"description": "The preset of the simulator. It will set the default values for a 48k Spectrum or a 16k ZX81. You can override these settings. If you e.g. set the 'memoryModel' explicitly."
+										"description": "The preset of the simulator. It will set the default values for a 48k Spectrum or a 16k ZX81. You can override these settings. If you e.g. set the 'memoryModel' explicitly.",
+										"default": "spectrum"
 									},
 									"zxKeyboard": {
-										"type": "boolean",
-										"description": "If enabled the simulator shows a keyboard to simulate keypresses.",
-										"default": true
+										"type": "string",
+										"enum": [
+											"spectrum",
+											"zx81"
+										],
+										"description": "Select a keyboard. ZX81 or ZX Spectrum.",
+										"default": "spectrum"
 									},
 									"zxInterface2Joy": {
 										"type": "boolean",
