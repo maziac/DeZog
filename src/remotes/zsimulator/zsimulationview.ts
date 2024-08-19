@@ -618,23 +618,6 @@ export class ZSimulationView extends BaseView {
 			<html>
 
 			<style>
-			.td_on {border: 3px solid; /* TODO: REMOVE */
-				margin:0em;
-				padding:0em;
-				text-align:center;
-				border-color:black;
-				background:red;
-				width:70px;
-			}
-
-			.td_off {border: 3px solid;
-				margin:0em;
-				padding:0em;
-				text-align:center;
-				border-color:black;
-				width:70px;
-			}
-
 			span {
 				display: table-cell;
 				vertical-align: middle;
