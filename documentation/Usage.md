@@ -402,7 +402,7 @@ Same as sjasmplus but use: ```z80asm```, e.g.:
 
 - path: The path to the list file.
 - srcDirs (default=[""]):
-    - [] = Empty array. Use .list file directly for stepping and setting of breakpoints.
+    - [] = Empty array or undefined. Use .list file directly for stepping and setting of breakpoints.
     - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried. If you don't arrange your files in sub-folders just use '[""]' here or omit the parameter to use the default.
     - If you build your .list files from .asm files then use 'srcDirs' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
 - excludeFiles (default=[]): an array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here. In the example above all files from "some_folder" are excluded.
@@ -671,7 +671,7 @@ Example launch.json configuration:
 	    "ulaScreen": "spectrum",
         "zxBorderWidth": 20,
 	    "visualMemory": true,
-        "cpuLoadInterruptRange": 1,
+        "cpuLoad": 10,
         "cpuFrequency": 3500000.0,
         "memoryModel": "RAM",
         "customCode": {
@@ -853,7 +853,7 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
 - "ulaScreen": "spectrum" | "zx81". Defaults to "spectrum". If enabled it shows the contents of the ZX Spectrum screen or that of a ZX81.
 ![](images/zsim_ula_screen.jpg)
 - "zxBorderWidth": The displayed border width in pixels. If set to 0 then no border is displayed. Works only if ulaScreen is enabled.
-- "cpuLoadInterruptRange": Default is 1. The number of interrupts to calculate the CPU-load average from. 0 to disable. The CPU load is calculated by the number of executed t-states of all instructions without the HALT instruction divided by the number of all executed t-states. I.e. the time the CPU executes just HALT instructions is not considered as CPU load. Naturally, if you have turned off interrupts the CPU load is always 100%. Normally the average is calculated from interrupt to interrupt but you can extend the range to 2 or more interrupts. To disable the display choose 0.
+- "cpuLoad": The CPU load is calculated by the number of executed HALT tStates vs all tStates. You can disable the display with a 0. 1 will exactly count till the next occurrence of a HALT. Higher numbers will average over more HALT instructions and lead to a more stable display. Practical values are around 10 (the default).
 ![](images/zsim_cpu_load.jpg)
 - "defaultPortIn": The default value that is read if the read port is unused. Allowed is 255 or 0. 255 also sets the port as 'Open Collector', all triggered ports would be ANDed. Default to 0xFF.
 - "zxBeeper": true/false. Defaults to false. If enabled the ZX Beeper audio output is simulated. The generated audio has a noticeable delay. The output is visualized with a "0" or "1":

@@ -673,10 +673,10 @@
 										"description": "The sample rate used for audio. Defaults to 22050 Hz.",
 										"default": 22050
 									},
-									"cpuLoadInterruptRange": {
+									"cpuLoad": {
 										"type": "number",
-										"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
-										"default": 1
+										"description": "The CPU load is calculated by the number of executed HALT tStates vs all tStates. You can disable the display with a 0. 1 will exactly count till the next occurrence of a HALT. Higher numbers will average over more HALT instructions and lead to a more stable display. Practical values are around 10 (the default).",
+										"default": 10
 									},
 									"cpuFrequency": {
 										"type": "number",
@@ -684,8 +684,8 @@
 										"default": 3500000
 									},
 									"limitSpeed": {
-										"type": "number",
-										"description": "If enabled the simulated CPU performance is throttled to fit the given PU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.",
+										"type": "boolean",
+										"description": "If enabled the simulated CPU performance is throttled to fit the given CPU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.",
 										"default": false
 									},
 									"updateFrequency": {

@@ -272,7 +272,7 @@ export interface ZSimType {
 	customMemory: CustomMemoryType,
 
 	// The number of interrupts to calculate the average from. 0 to disable.
-	cpuLoadInterruptRange: number,
+	cpuLoad: number,
 
 	// The CPU frequency is only used for output. I.e. when the t-states are printed
 	// there is also a printout of the correspondent time. This is calculated via the CPU frequency here.
@@ -618,8 +618,8 @@ export class Settings {
 			launchCfg.zsim.zxBeeper = false;
 		if (launchCfg.zsim.audioSampleRate === undefined)
 			launchCfg.zsim.audioSampleRate = 22050;
-		if (launchCfg.zsim.cpuLoadInterruptRange === undefined)
-			launchCfg.zsim.cpuLoadInterruptRange = 1;
+		if (launchCfg.zsim.cpuLoad === undefined)
+			launchCfg.zsim.cpuLoad = 10;
 		if (launchCfg.zsim.visualMemory === undefined)
 			launchCfg.zsim.visualMemory = true;
 		if (launchCfg.zsim.memoryModel === undefined)

@@ -538,7 +538,7 @@ export class ZSimulationView extends BaseView {
 			}
 
 			// Update cpuload
-			if (Settings.launch.zsim.cpuLoadInterruptRange > 0)
+			if (Settings.launch.zsim.cpuLoad > 0)
 				cpuLoad = (this.simulator.z80Cpu.cpuLoad * 100).toFixed(0).toString();
 
 			// Visual Memory
@@ -724,7 +724,7 @@ export class ZSimulationView extends BaseView {
 			`;
 
 		// CPU Load
-		if (zsim.cpuLoadInterruptRange > 0) {
+		if (zsim.cpuLoad > 0) {
 			html += `
 			<!-- Z80 CPU load -->
 				<label> - CPU load:</label>

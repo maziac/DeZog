@@ -15,6 +15,7 @@
   - The "kempstonJoy" now decodes only the lower 8 bits of the address.
   - A new "customJoy" type: You can assign the bits and ports yourself.
   - Added "preset" to easily configure a spectrum or zx81 device.
+  - "cpuLoadInterruptRange": renamed to "cpuLoad". The CPU load is not anymore calculated when the VSYNC occurs. Now it is calculated from HALT to next HALT instruction.
 
 # 3.4.1
 - zsim: Removed annoying logging.

@@ -22,7 +22,7 @@ suite('ZSimRemote', () => {
 					zxKeyboard: true,
 					visualMemory: true,
 					ulaScreen: "spectrum",
-					cpuLoadInterruptRange: 1,
+					cpuLoad: 1,
 					Z80N: false,
 					memoryModel: "ZX48K"
 				},
@@ -74,7 +74,7 @@ suite('ZSimRemote', () => {
 					zxKeyboard: true,
 					visualMemory: true,
 					ulaScreen: "spectrum",
-					cpuLoadInterruptRange: 1,
+					cpuLoad: 1,
 					Z80N: false,
 					memoryModel: "ZX128K"
 				},
@@ -338,7 +338,7 @@ suite('ZSimRemote', () => {
 					zxKeyboard: true,
 					visualMemory: true,
 					ulaScreen: "spectrum",
-					cpuLoadInterruptRange: 1,
+					cpuLoad: 1,
 					Z80N: false,
 					memoryModel: "ZXNEXT"
 				},

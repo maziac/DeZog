@@ -415,8 +415,6 @@ export class ZSimRemote extends DzrpRemote {
 		}
 		if (this.zxUlaScreen) {
 			this.zxUlaScreen.on('VSYNC', () => {
-				// Calculate load
-				this.z80Cpu.calculateLoad();
 				// Notify
 				this.emit('VSYNC');
 			});
@@ -472,10 +470,6 @@ export class ZSimRemote extends DzrpRemote {
 			this.ports.registerGenericOutPortFunction((port, value) => {
 				this.customCode.setTstates(this.passedTstates);
 				this.customCode.writePort(port, value);
-			});
-			// Register on interrupt event
-			this.customCode.on('interrupt', (non_maskable: boolean, data: number) => {
-				this.z80Cpu.calculateLoad();
 			});
 			this.serializeObjects.push(this.customCode);
 		}
@@ -683,6 +677,7 @@ export class ZSimRemote extends DzrpRemote {
 		const limitSpeed = Settings.launch.zsim.limitSpeed;
 		let limitSpeedPrevTime = Date.now();
 		let limitSpeedPrevTstates = this.passedTstates;
+		let cpuLoadPrevTstates = this.passedTstates;
 
 		while (true) {
 			//		Utility.timeDiff();

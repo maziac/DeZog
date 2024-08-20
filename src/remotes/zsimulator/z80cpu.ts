@@ -44,10 +44,14 @@ export class Z80Cpu implements Serializable {
 	// Ports
 	public ports: Z80Ports;
 
+	// The previous HALT state.
+	protected prevHalted: boolean;
+
 	// Used to indicate an error in peripherals, i.e. an error in the custom javascript code.
 	// Will make the program break.
 	// undefined = no error
 	public error: string | undefined;
+
 
 
 	/** Constructor.
@@ -72,17 +76,16 @@ export class Z80Cpu implements Serializable {
 		this.prevTstatesOnInterrupt = 0;
 		this.cpuLoad = 1.0;	// Start with full load
 		this.cpuLoadRangeCounter = 0;
-		this.cpuLoadRange = Settings.launch.zsim.cpuLoadInterruptRange;
+		this.cpuLoadRange = Settings.launch.zsim.cpuLoad;
+		this.prevHalted = false;
 
 		// Initialize Z80, call constructor
 		const z80n_enabled = Settings.launch.zsim.Z80N;
 		this.z80 = new (Z80.Z80 as any)({
-			m1_mem_read: (address) => {return memory.m1Read8(address);},
-			mem_read: (address) => {return memory.read8(address);},
-			mem_write: (address, val) => {
-				memory.write8(address, val);
-			},
-			io_read: (address) => {
+			m1_mem_read: address => memory.m1Read8(address),
+			mem_read: address => memory.read8(address),
+			mem_write: (address, val) => memory.write8(address, val),
+			io_read: address => {
 				try {
 					return ports.read(address);
 				}
@@ -106,12 +109,6 @@ export class Z80Cpu implements Serializable {
 
 	/** Executes one instruction.
 	 * @returns The number of t-states used for execution.
-	 * Sets also the 'update' variable:
-	 * true if a (vertical) interrupt happened or would have happened.
-	 * Also if interrupts are disabled at the Z80.
-	 * The return value is used for regularly updating the ZSimulationView.
-	 * And this is required even if interrupts are off. Or even if
-	 * there is only Z80 simulation without ZX Spectrum.
 	 */
 	public execute(): number {
 		const z80 = this.z80;
@@ -122,9 +119,14 @@ export class Z80Cpu implements Serializable {
 
 		// For CPU load calculation
 		if (z80.halted) {
+			if (this.prevHalted !== z80.halted) {
+				// Calc cpu-load
+				this.calculateLoad();
+			}
 			// Count HALT instructions
 			this.haltTstates += tStates;
 		}
+		this.prevHalted = z80.halted;
 
 		return tStates;
 	}
@@ -350,19 +352,20 @@ export class Z80Cpu implements Serializable {
 
 	/** Calculates the CPU load from the processed HALT instructions compared
 	 * to all instructions.
-	 * Called on a "VSYNC" signal.
-	 * TODO: If not called on VSYNC, should I call it e.g. every 100ms?
+	 * Called on a HALT.
 	 */
 	public calculateLoad() {
 		// Measure CPU load
-		this.cpuLoadRangeCounter++;
-		if (this.cpuLoadRangeCounter >= this.cpuLoadRange) {
-			const intTstatesDiff = this.passedTstates - this.prevTstatesOnInterrupt;
-			this.cpuLoad = (intTstatesDiff === 0) ? 0 : (1 - this.haltTstates / intTstatesDiff);
-			// Next
-			this.haltTstates = 0;
-			this.prevTstatesOnInterrupt = this.passedTstates;
-			this.cpuLoadRangeCounter = 0;
+		if (this.cpuLoadRange > 0) {
+			this.cpuLoadRangeCounter++;
+			if (this.cpuLoadRangeCounter >= this.cpuLoadRange) {
+				const intTstatesDiff = this.passedTstates - this.prevTstatesOnInterrupt;
+				this.cpuLoad = (intTstatesDiff === 0) ? 0 : (1 - this.haltTstates / intTstatesDiff);
+				// Next
+				this.haltTstates = 0;
+				this.prevTstatesOnInterrupt = this.passedTstates;
+				this.cpuLoadRangeCounter = 0;
+			}
 		}
 	}
 
