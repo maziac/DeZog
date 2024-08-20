@@ -61,6 +61,9 @@ let prevZxnDmaState: any = {};
 // Holds the list of elements that were printed in bold (i.e. had changed).
 let prevZxnDmaHighlightedElements: Array<HTMLLabelElement> = [];
 
+// The type of ZX keyboard.
+let zxKeyboardType: 'spectrum'|'zx81'|'none' = 'none';
+
 
 //---- Handle Messages from vscode extension --------
 window.addEventListener('message', event => {// NOSONAR
@@ -81,7 +84,7 @@ window.addEventListener('message', event => {// NOSONAR
 		case 'init':
 			// Configuration received. Is received once after 'configRequest' was sent.
 			// Is only done once after loading.
-			initSimulation(message.audioSampleRate, message.volume);
+			initSimulation(message.audioSampleRate, message.volume, message.zxKeyboard);
 			break;
 
 		case 'cpuStopped':
@@ -159,8 +162,11 @@ window.addEventListener('message', event => {// NOSONAR
 /** Init: Initializes parts of the simulation.
  * @param audioSampleRate In Hz.
  * @param volume Number in range [0;1.0]
+ * @param zxKeyboard The type of keyboard.
  */
-function initSimulation(audioSampleRate: number, volume: number) {
+function initSimulation(audioSampleRate: number, volume: number, zxKeyboard: 'spectrum'|'zx81'|'none') {
+	// Store keyboard type
+	zxKeyboardType = zxKeyboard;
 
 	// Store the cpu_freq_id
 	cpuFreq = document.getElementById("cpu_freq_id") as HTMLLabelElement;
@@ -507,50 +513,10 @@ globalThis.volumeChanged = function (volumeStr: string) {
 }
 
 
-// Handle key down presses.
-document.addEventListener('keydown', keydown);
-function keydown(e) {
-	// Check for cursor keys
-	let cursorKey;
-	switch (e.code) {
-		case "ArrowLeft": cursorKey = "Digit5"; break;
-		case "ArrowRight": cursorKey = "Digit8"; break;
-		case "ArrowUp": cursorKey = "Digit7"; break;
-		case "ArrowDown": cursorKey = "Digit6"; break;
-		case "Backspace": cursorKey = "Digit0"; break;
-	}
-	if (cursorKey) {
-		// Simulate cursor with shift + cursorKey
-		const cell1 = findCell("ShiftLeft");
-		cellSelect(cell1, true);
-		const cell2 = findCell(cursorKey);
-		cellSelect(cell2, true);
-	}
-	// Check for . (zx81)
-	else if (e.code == "Period") {
-		const cell = findCell("ShiftRight");
-		cellSelect(cell, true);
-	}
-	// ESC for CAPS SHIFT + SYMBOL SHIFT (Spectrum)
-	else if (e.code == "Escape") {
-		// Simulate both keypresses
-		const cell1 = findCell("ShiftLeft");
-		cellSelect(cell1, true);
-		const cell2 = findCell("ShiftRight");
-		cellSelect(cell2, true);
-	}
-	// Normal key press:
-	else {
-		// Find correspondent cell
-		const cell = findCell(e.code);
-		cellSelect(cell, true);
-	}
-}
-
-
-// Handle key up presses.
-document.addEventListener('keyup', keyup);
-function keyup(e) {
+// Handles key up/down events.
+// e: the keyboard event
+// on: true if key is pressed, false if released
+function keySelect(e, on) {
 	// Check for cursor keys + delete
 	let cursorKey;
 	switch (e.code) {
@@ -563,31 +529,99 @@ function keyup(e) {
 	if (cursorKey) {
 		// Simulate cursor with shift + cursorKey
 		const cell2 = findCell(cursorKey);
-		cellSelect(cell2, false);
-		const cell1 = findCell("ShiftLeft");
-		cellSelect(cell1, false);
-	}
-	// Check for . (zx81)
-	else if (e.code == "Period") {
-		const cell = findCell("ShiftRight");
-		cellSelect(cell, false);
+		cellSelect(cell2, on);
+		const cell1 = findCell("Shift_Caps");
+		cellSelect(cell1, on);
+		return;
 	}
 	// ESC for CAPS SHIFT + SYMBOL SHIFT (Spectrum)
-	else if (e.code == "Escape") {
+	if (e.code == "Escape") {
 		// Simulate both keypresses
-		const cell2 = findCell("ShiftRight");
-		cellSelect(cell2, false);
-		const cell1 = findCell("ShiftLeft");
-		cellSelect(cell1, false);
+		const cell2 = findCell("Period_Symbol");
+		cellSelect(cell2, on);
+		const cell1 = findCell("Shift_Caps");
+		cellSelect(cell1, on);
+		return;
 	}
+
+	// Map real keyboard keys to ZX81/ZX Spectrum keys
+	let mappedKeys;
+	if (zxKeyboardType === 'spectrum') {
+		switch (e.key) {
+			case '$': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case '(': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case ')': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case '"': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case '-': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case '+': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case '=': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case ':': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case ';': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case '?': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case '/': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case '*': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case '<': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case '>': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case ',': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+		}
+	}
+	else if (zxKeyboardType === 'zx81') {
+		switch (e.key) {
+			case '$': mappedKeys = ['Shift_Caps', 'KeyU']; break;
+			case '(': mappedKeys = ['Shift_Caps', 'KeyI']; break;
+			case ')': mappedKeys = ['Shift_Caps', 'KeyO']; break;
+			case '"': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case '-': mappedKeys = ['Shift_Caps', 'KeyJ']; break;
+			case '+': mappedKeys = ['Shift_Caps', 'KeyK']; break;
+			case '=': mappedKeys = ['Shift_Caps', 'KeyL']; break;
+			case ':': mappedKeys = ['Shift_Caps', 'KeyZ']; break;
+			case ';': mappedKeys = ['Shift_Caps', 'KeyX']; break;
+			case '?': mappedKeys = ['Shift_Caps', 'KeyC']; break;
+			case '/': mappedKeys = ['Shift_Caps', 'KeyV']; break;
+			case '*': mappedKeys = ['Shift_Caps', 'KeyB']; break;
+			case '<': mappedKeys = ['Shift_Caps', 'KeyN']; break;
+			case '>': mappedKeys = ['Shift_Caps', 'KeyM']; break;
+			case ',': mappedKeys = ['Shift_Caps', 'Period_Symbol']; break;
+			case '.': mappedKeys = ['Period_Symbol']; break;
+		}
+	}
+	if (!mappedKeys) {
+		// Convert Left ALT to Shift/CapsShift and
+		// Right ALT to Period/SymbolShift
+		switch (e.code) {
+			case 'AltLeft': mappedKeys = ['Shift_Caps']; break;
+			case 'AltRight': mappedKeys = ['Period_Symbol']; break;
+		}
+	}
+	if (mappedKeys) {
+		for (const key of mappedKeys) {
+			const cell = findCell(key);
+			cellSelect(cell, on);
+		}
+		return;
+	}
+
 	// Normal key press:
-	else {
-		// Find correspondent cell
-		const cell = findCell(e.code);
-		cellSelect(cell, false);
-	}
+	// Find correspondent cell
+	const cell = findCell(e.code);
+	cellSelect(cell, on);
+
+	console.log("Key:", on, e);
 }
 
+
+// Handle key down presses.
+document.addEventListener('keydown', keydown);
+function keydown(e) {
+	keySelect(e, true);
+}
+
+
+// Handle key up presses.
+document.addEventListener('keyup', keyup);
+function keyup(e) {
+	keySelect(e, false);
+}
 
 // Handle initial load.
 window.addEventListener('load', () => {

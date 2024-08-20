@@ -7,6 +7,7 @@ import {LogZsimCustomCode} from '../../log';
 import {GlobalStorage} from '../../globalstorage';
 import {readFileSync} from 'fs';
 import {DiagnosticsHandler} from '../../diagnosticshandler';
+import {ZxKeyboard} from './zxkeyboard';
 
 
 /**
@@ -368,7 +369,7 @@ export class ZSimulationView extends BaseView {
 	/**
 	 * Called on key press or key release.
 	 * Sets/clears the corresponding port bits.
-	 * @param key E.g. "key_Digit2", "key_KeyQ", "key_Enter", "key_Space", "key_ShiftLeft" (CAPS) or "key_ShiftRight" (SYMBOL).
+	 * @param key E.g. "key_Digit2", "key_KeyQ", "key_Enter", "key_Space", "key_Shift_Caps" (CAPS) or "key_Period_Symbol" (SYMBOL).
 	 * @param on true=pressed, false=released
 	 */
 	protected keyChanged(key: string, on: boolean) {
@@ -417,7 +418,7 @@ export class ZSimulationView extends BaseView {
 			case 'key_Enter':
 				portHighBit = 6;
 				break;
-			case 'key_ShiftLeft':	// CAPS
+			case 'key_Shift_Caps':	// CAPS
 			case 'key_KeyZ':
 			case 'key_KeyX':
 			case 'key_KeyC':
@@ -427,7 +428,7 @@ export class ZSimulationView extends BaseView {
 			case 'key_KeyB':
 			case 'key_KeyN':
 			case 'key_KeyM':
-			case 'key_ShiftRight':	// SYMBOL
+			case 'key_Period_Symbol':	// SYMBOL
 			case 'key_Space':
 				portHighBit = 7;
 				break;
@@ -438,7 +439,7 @@ export class ZSimulationView extends BaseView {
 		// Determine bit
 		let bit;
 		switch (key) {
-			case 'key_ShiftLeft':	// CAPS
+			case 'key_Shift_Caps':	// CAPS
 			case 'key_KeyA':
 			case 'key_KeyQ':
 			case 'key_Digit1':
@@ -455,7 +456,7 @@ export class ZSimulationView extends BaseView {
 			case 'key_Digit9':
 			case 'key_KeyO':
 			case 'key_KeyL':
-			case 'key_ShiftRight':	// SYMBOL
+			case 'key_Period_Symbol':	// SYMBOL
 				bit = 0b00010;
 				break;
 			case 'key_KeyX':
@@ -1030,7 +1031,7 @@ export class ZSimulationView extends BaseView {
 					<span id="key_Enter" class="key" onClick="cellClicked(this)" style="margin-right: 0"></span>
 				<div style="height: ${zxKeybRowVertMargin}%"></div>
 					<span class="hor-space" style="width: ${zxKeybRow4OffsX}%"></span>
-					<span id="key_ShiftLeft" class="key" onClick="cellClicked(this)" ${zxKeybShiftStyle}"></span>
+					<span id="key_Shift_Caps" class="key" onClick="cellClicked(this)" ${zxKeybShiftStyle}"></span>
 					<span id="key_KeyZ" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyX" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyC" class="key" onClick="cellClicked(this)"></span>
@@ -1038,7 +1039,7 @@ export class ZSimulationView extends BaseView {
 					<span id="key_KeyB" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyN" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_KeyM" class="key" onClick="cellClicked(this)"></span>
-					<span id="key_ShiftRight" class="key" onClick="cellClicked(this)"></span>
+					<span id="key_Period_Symbol" class="key" onClick="cellClicked(this)"></span>
 					<span id="key_Space" class="key" onClick="cellClicked(this)" ${zxKeybSpaceStyle}></span>
 			</div>
 		</details>
@@ -1283,6 +1284,7 @@ export class ZSimulationView extends BaseView {
 		const sendMsg = {
 			command: 'init',
 			audioSampleRate: zsim.audioSampleRate,
+			zxKeyboard: zsim.zxKeyboard,
 			volume
 		};
 		this.sendMessageToWebView(sendMsg);

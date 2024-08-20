@@ -13,7 +13,7 @@
     - type changed to string. "zx81" and "spectrum" style keyboard supported.
     - keyboard visualization improved.
   - The "kempstonJoy" now decodes only the lower 8 bits of the address.
-  - A new "costumJoy" type: You can assign the bits and ports yourself.
+  - A new "customJoy" type: You can assign the bits and ports yourself.
   - Added "preset" to easily configure a spectrum or zx81 device.
 
 # 3.4.1
