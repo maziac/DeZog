@@ -517,52 +517,53 @@ globalThis.volumeChanged = function (volumeStr: string) {
 // e: the keyboard event
 // on: true if key is pressed, false if released
 function keySelect(e, on) {
+	console.log("Key:", on, e);
+	let mappedKeys;
+
 	// Check for cursor keys + delete
-	let cursorKey;
 	switch (e.code) {
-		case "ArrowLeft": cursorKey = "Digit5"; break;
-		case "ArrowRight": cursorKey = "Digit8"; break;
-		case "ArrowUp": cursorKey = "Digit7"; break;
-		case "ArrowDown": cursorKey = "Digit6"; break;
-		case "Backspace": cursorKey = "Digit0"; break;
-	}
-	if (cursorKey) {
-		// Simulate cursor with shift + cursorKey
-		const cell2 = findCell(cursorKey);
-		cellSelect(cell2, on);
-		const cell1 = findCell("Shift_Caps");
-		cellSelect(cell1, on);
-		return;
-	}
-	// ESC for CAPS SHIFT + SYMBOL SHIFT (Spectrum)
-	if (e.code == "Escape") {
-		// Simulate both keypresses
-		const cell2 = findCell("Period_Symbol");
-		cellSelect(cell2, on);
-		const cell1 = findCell("Shift_Caps");
-		cellSelect(cell1, on);
-		return;
+		case "ArrowLeft": mappedKeys = ['Shift_Caps', 'Digit5']; break;
+		case "ArrowRight": mappedKeys = ['Shift_Caps', 'Digit8']; break;
+		case "ArrowUp": mappedKeys = ['Shift_Caps', 'Digit7']; break;
+		case "ArrowDown": mappedKeys = ['Shift_Caps', 'Digit6']; break;
+		case "Backspace": mappedKeys = ['Shift_Caps', 'Digit0']; break;
 	}
 
 	// Map real keyboard keys to ZX81/ZX Spectrum keys
-	let mappedKeys;
 	if (zxKeyboardType === 'spectrum') {
 		switch (e.key) {
-			case '$': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case '(': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case ')': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case '"': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case '-': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case '+': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case '=': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case ':': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case ';': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case '?': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case '/': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case '*': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case '<': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case '>': mappedKeys = ['Shift_Caps', 'KeyP']; break;
-			case ',': mappedKeys = ['Shift_Caps', 'KeyP']; break;
+			case 'Escape': mappedKeys = ['Period_Symbol', 'Shift_Caps']; break;
+			case '!': mappedKeys = ['Period_Symbol', 'Digit1']; break;
+			/*case '@': mappedKeys = ['Period_Symbol', 'Digit2']; break; Interferes with SymbShift/L */
+			case '#': mappedKeys = ['Period_Symbol', 'Digit3']; break;
+			case '$': mappedKeys = ['Period_Symbol', 'Digit4']; break;
+			case '%': mappedKeys = ['Period_Symbol', 'Digit5']; break;
+			case '&': mappedKeys = ['Period_Symbol', 'Digit6']; break;
+			case "´":
+			case "'": mappedKeys = ['Period_Symbol', 'Digit7']; break;
+			case '(': mappedKeys = ['Period_Symbol', 'Digit8']; break;
+			case ')': mappedKeys = ['Period_Symbol', 'Digit9']; break;
+			case '_': mappedKeys = ['Period_Symbol', 'Digit0']; break;
+			case '<': mappedKeys = ['Period_Symbol', 'KeyR']; break;
+			case '>': mappedKeys = ['Period_Symbol', 'KeyT']; break;
+			case ';': mappedKeys = ['Period_Symbol', 'KeyO']; break;
+			case '"': mappedKeys = ['Period_Symbol', 'KeyP']; break;
+			case '-': mappedKeys = ['Period_Symbol', 'KeyJ']; break;
+			case '+': mappedKeys = ['Period_Symbol', 'KeyK']; break;
+			case '=': mappedKeys = ['Period_Symbol', 'KeyL']; break;
+			case ':': mappedKeys = ['Period_Symbol', 'KeyZ']; break;
+			case '?': mappedKeys = ['Period_Symbol', 'KeyC']; break;
+			case '/': mappedKeys = ['Period_Symbol', 'KeyV']; break;
+			case '*': mappedKeys = ['Period_Symbol', 'KeyB']; break;
+			case ',': mappedKeys = ['Period_Symbol', 'KeyN']; break;
+			case '.': mappedKeys = ['Period_Symbol', 'KeyM']; break;
+			default: // Otherwise check key code
+				switch (e.code) {
+					// Convert Left ALT to CapsShift
+					case 'AltLeft': mappedKeys = ['Shift_Caps']; break;
+					// Convert Right Alt to SymbolShift
+					case 'AltRight': mappedKeys = ['Period_Symbol']; break;
+				}
 		}
 	}
 	else if (zxKeyboardType === 'zx81') {
@@ -582,31 +583,25 @@ function keySelect(e, on) {
 			case '<': mappedKeys = ['Shift_Caps', 'KeyN']; break;
 			case '>': mappedKeys = ['Shift_Caps', 'KeyM']; break;
 			case ',': mappedKeys = ['Shift_Caps', 'Period_Symbol']; break;
-			case '.': mappedKeys = ['Period_Symbol']; break;
+			default: // Otherwise check key code
+				switch (e.code) {
+					// Convert Left ALT to Shift
+					case 'AltLeft': mappedKeys = ['Shift_Caps']; break;
+					// Convert '.' to Period
+					case 'Period': mappedKeys = ['Period_Symbol']; break;
+				}
 		}
 	}
+
+	// Default key press:
 	if (!mappedKeys) {
-		// Convert Left ALT to Shift/CapsShift and
-		// Right ALT to Period/SymbolShift
-		switch (e.code) {
-			case 'AltLeft': mappedKeys = ['Shift_Caps']; break;
-			case 'AltRight': mappedKeys = ['Period_Symbol']; break;
-		}
+		mappedKeys = [e.code];
 	}
-	if (mappedKeys) {
-		for (const key of mappedKeys) {
-			const cell = findCell(key);
-			cellSelect(cell, on);
-		}
-		return;
+	// Execute key press
+	for (const key of mappedKeys) {
+		const cell = findCell(key);
+		cellSelect(cell, on);
 	}
-
-	// Normal key press:
-	// Find correspondent cell
-	const cell = findCell(e.code);
-	cellSelect(cell, on);
-
-	console.log("Key:", on, e);
 }
 
 

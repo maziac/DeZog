@@ -7,7 +7,6 @@ import {LogZsimCustomCode} from '../../log';
 import {GlobalStorage} from '../../globalstorage';
 import {readFileSync} from 'fs';
 import {DiagnosticsHandler} from '../../diagnosticshandler';
-import {ZxKeyboard} from './zxkeyboard';
 
 
 /**
