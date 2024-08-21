@@ -237,6 +237,11 @@
 ;                                      code byte was overlooked.
 
 
+    DEVICE ZXSPECTRUM128
+    MMU 0, 0  ; Fake bank number (0), will be adjusted to ROM0
+
+    MODULE ROM0
+
 ; ================
 ; System Variables
 ; ================
@@ -17457,7 +17462,8 @@ L3FEF:  DEFB $00
 
 L3FFF:  DEFB $01         ;
 
-    END
+
+    ENDMODULE
 
 
 

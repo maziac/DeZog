@@ -22,6 +22,11 @@
 ; Paul Farrow     (www.fruitcake.plus.com)
 
 
+        DEVICE ZXSPECTRUM128
+        MMU 0, 1  ; Fake bank number (1), will be adjusted to ROM1
+
+        MODULE ROM1
+
 ; =================
 ; ASSEMBLER DEFINES
 ; =================
@@ -40,7 +45,10 @@
 ; routines in this ROM. Non-standard entry points have a label beginning
 ; with X.
 
+
         ORG     $0000
+      ;  SLOT    2
+      ;  PAGE    1
 
 ;*****************************************
 ;** Part 1. RESTART ROUTINES AND TABLES **
@@ -20449,7 +20457,4 @@ L3D00:  DEFB    %00000000
         DEFB    %01000010
         DEFB    %00111100
 
-    END
-
-
-
+        ENDMODULE
