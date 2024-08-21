@@ -688,6 +688,13 @@ export class DebugSessionClass extends DebugSession {
 							this.debugConsoleAppendLine(text);
 						}
 
+						// Set default topOfStack (Could have been set by user or by loading a .p file)
+						if (Settings.launch.topOfStack === undefined) {
+							// If undefined, get it from the memory model
+							const topOfStack = Remote.memoryModel.getTopOfRam();
+							Settings.launch.topOfStack = "0x" + topOfStack.toString(16);
+						}
+
 						// Load files
 						try {
 							// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.

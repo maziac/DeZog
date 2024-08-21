@@ -677,7 +677,6 @@ export class ZSimRemote extends DzrpRemote {
 		const limitSpeed = Settings.launch.zsim.limitSpeed;
 		let limitSpeedPrevTime = Date.now();
 		let limitSpeedPrevTstates = this.passedTstates;
-		let cpuLoadPrevTstates = this.passedTstates;
 
 		while (true) {
 			//		Utility.timeDiff();

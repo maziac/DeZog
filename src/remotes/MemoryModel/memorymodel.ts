@@ -4,8 +4,7 @@ import {Z80Registers} from "../z80registers";
 
 
 
-/**
- * The memory in the banks can be ROM, RAM or completely unused.
+/** The memory in the banks can be ROM, RAM or completely unused.
  */
 export enum BankType {
 	UNKNOWN = 0,	// Returned from MAME for the banks. Could be ROM or RAM.
@@ -28,8 +27,7 @@ export interface MemoryBank {
 }
 
 
-/**
- * For storing the slot ranges.
+/** For storing the slot ranges.
  */
 export interface SlotRange {
 	// Z80 start address of slot.
@@ -46,8 +44,7 @@ export interface SlotRange {
 }
 
 
-/**
- * For storing the banks.
+/** For storing the banks.
  */
 export interface BankInfo {
 	// The name of the bank, can include the index variable.
@@ -65,22 +62,19 @@ export interface BankInfo {
 	// The type: ROM, RAM, ...
 	bankType: BankType;
 
-	/**
-	 * Optional. If specified, set the slot as ROM.
+	/** Optional. If specified, set the slot as ROM.
 	 * The path of the ROM content.
 	 * File content should be in raw format (e.g. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).
 	 */
 	rom?: boolean | string;
 
-	/**
-	 * Optional offset of the ROM file/content
+	/** Optional offset of the ROM file/content
 	 */
 	romOffset?: number;
 }
 
 
-/**
- * Class that takes care of the memory model.
+/** Class that takes care of the memory model.
  * I.e. it holds the definition of the memory ranges and the associated
  * banks (if any).
  * It is highly configurable. All ranges, sizes ad banks are configured through the
@@ -115,8 +109,7 @@ export class MemoryModel {
 	public ioMmu: string;
 
 
-	/**
-	 * Constructor.
+	/** Constructor.
 	 * @param cfg The custom memory model configuration. From the settings.
 	 */
 	constructor(cfg: CustomMemoryType) {
@@ -233,8 +226,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Assigns the unused slot ranges to new banks.
+	/** Assigns the unused slot ranges to new banks.
 	 * This is just an implementation detail to make the slot/bank handling easier.
 	 */
 	protected createUnusedBanks() {
@@ -264,8 +256,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Sets the bank info for one bank.
+	/** Sets the bank info for one bank.
 	 * Since the same bank could be defined in different slots it could be set
 	 * several times. In this case the biggest size is used.
 	 * And the names are checked for equality (if not undefined).
@@ -298,8 +289,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Check if the shortName already exists.
+	/** Check if the shortName already exists.
 	 * @param index The index to check.
 	 * @throws In case name has been used already.
 	 */
@@ -316,8 +306,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Creates the BankInfo of one bank or several banks in a row if
+	/** Creates the BankInfo of one bank or several banks in a row if
 	 * a range is given.
 	 * If a bank with the index already exists then the max. size is selected and
 	 * an error is thrown if the names do not match.
@@ -380,8 +369,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Returns the bank name.
+	/** Returns the bank name.
 	 * @param name The name, might contain a variable.
 	 * @param index The bank index. Might be used to construct the returned name.
 	 */
@@ -394,8 +382,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Returns the bank short name.
+	/** Returns the bank short name.
 	 * @param name The name, might contain a variable.
 	 * @param index The bank index. Might be used to construct the returned name.
 	 */
@@ -408,8 +395,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Returns a description for the slots used in the variables section.
+	/** Returns a description for the slots used in the variables section.
 	 * @param slots The slots to use for display.
 	 * @returns An array with the available memory pages. Contains start and end address
 	 * and a name.
@@ -451,8 +437,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Initialize.
+	/** Initialize.
 	 * Set decoder.
 	 */
 	public init() {
@@ -474,8 +459,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Returns the bank for a given address.
+	/** Returns the bank for a given address.
 	 * @param longAddress The long address.
 	 * @returns The bank. Undefined if longAddress is < 0x10000 or if there is only 1
 	 * bank for the slot.
@@ -495,8 +479,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Returns the short name of a bank.
+	/** Returns the short name of a bank.
 	 * @param longAddress The long address.
 	 * @returns The bank number as string (e.g. "R0") or an empty string: if longAddress is < 0x10000 or if there are no switched banks at the given address.
 	 */
@@ -511,8 +494,7 @@ export class MemoryModel {
 
 
 
-	/**
-	 * Returns the full name of a bank.
+	/** Returns the full name of a bank.
 	 * @param longAddress The long address.
 	 * @returns The bank number as string (e.g. "ROM0") or an empty string: if longAddress is < 0x10000 or if there are no switched banks at the given address.
 	 */
@@ -526,8 +508,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Parses the short bank name from the given string.
+	/** Parses the short bank name from the given string.
 	 * E.g. for a passed "R0" the correspondent bank number is returned.
 	 * In case the slot is not banked the bank number is derived from the address.
 	 * Also if the address does not fit to the bank an exception is thrown.
@@ -560,8 +541,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Parses an address with bank in the form "800A.4" or "0010.R0"
+	/** Parses an address with bank in the form "800A.4" or "0010.R0"
 	 * and returns the long address.
 	 * @param longAddrString E.g "800A.4" or "0010.R0" or "A000" (if no banking for that slot)
 	 * @returns A long address, e.g. 0x05800A for "800A.4"
@@ -583,8 +563,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Returns all banks (numbers) that are mapped to a given address.
+	/** Returns all banks (numbers) that are mapped to a given address.
 	 * @param addr64k The address.
 	 * @returns A set of bank numbers or an empty set for unassigned addresses.
 	 */
@@ -597,8 +576,7 @@ export class MemoryModel {
 	}
 
 
-	/**
-	 * Parses the 'shortName' and returns the corresponding bank number for it.
+	/** Parses the 'shortName' and returns the corresponding bank number for it.
 	 * If none exists an exception is thrown.
 	 * @param shortName E.g. "R1"
 	 * @returns The associated bank number, e.g. 9.
@@ -610,8 +588,7 @@ export class MemoryModel {
 		return bankNr;
 	}
 
-	/**
-	 * Returns a string with the complete slot and bank info.
+	/** Returns a string with the complete slot and bank info.
 	 * Used mainly for debugging and for the "-memmodel" command.
 	 * @returns The info as a string (with newlines).
 	 */
@@ -644,5 +621,26 @@ export class MemoryModel {
 
 		// Return
 		return txt;
+	}
+
+
+	/** Returns one more than the last address of the available RAM.
+	 * @returns E.g. 0xC000 if 0x0000-0xBFFF RAM is available.
+	 * 0x10000 if last RAM address if 0xFFFF.
+	 * If no RAM bank is found (in the initial slots) then 0x10000 is returned.
+	 */
+	public getTopOfRam(): number {
+		// Find last RAM slot
+		let top;
+		for (let i = this.slotRanges.length - 1; i >= 0; i--) {
+			const slotRange = this.slotRanges[i];
+			const bankNr = this.initialSlots[i];
+			if (this.banks[bankNr].bankType == BankType.RAM) {
+				top = slotRange.end + 1;
+				return top;
+			}
+		}
+		// No RAM found in initial slots. Return some value.
+		return 0x10000;
 	}
 }

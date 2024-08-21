@@ -1441,12 +1441,17 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * The System VARS 0x4000-0x4008 are set to TODO:...
 	 *
 	 * The .p file are max 16k in size, this is not checked here in
-	 * order to load OSMO.P
+	 * order to load OSMO.P.
 	 *
 	 * See https://k1.spdns.de/Develop/Projects/zasm/Info/O80%20and%20P81%20Format.txt
 	 */
 	protected async loadBinZx81(filePath: string): Promise<void> {
-		// TODO: Maybe I set correct values in the Memory Model.
+		// Check if topOfStack is set
+		if (Settings.launch.topOfStack) {
+			// For p-files topOfStack is set automatically, send a warning
+			this.emit('warning', "'topOfStack' is set in the launch.json but ignored because for .p files 'topOfStack' is set automatically.");
+		}
+
 		// Find RAMTOP: Fill memory, read it back and check until which address it is correct.
 		// This would work with Remotes even if the memory model is not known.
 		// This does, more or less, the same as the ZX81.
@@ -1512,13 +1517,16 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 		// Restore stack:	76	06	00	3E
 		const stack = new Uint8Array([
-			0x76, 0x06,	// E.g. 0x7FFC
-			0x00, 0x3E	// E.g. 0x7FFE
+			0x76, 0x06,	// E.g. at 0x7FFC
+			0x00, 0x3E	// E.g. at 0x7FFE
 		]);
 		await this.sendDzrpCmdWriteMem(topStack, stack);
 
 		// Write file
 		await this.sendDzrpCmdWriteMem(0x4009, fileBuffer);
+
+		// Set topOfStack
+		Settings.launch.topOfStack = (topStack === 0) ? "0x0000" : "0x" + topStack.toString(16);
 
 		// Check possible issues
 		if (len < 0x3c) {

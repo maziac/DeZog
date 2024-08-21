@@ -807,11 +807,10 @@ export class Settings {
 			});
 		}
 
-
-		if (!launchCfg.topOfStack)
-			launchCfg.topOfStack = '0x10000';
-		if (unitTests)
+		if (unitTests) {
+			// Note: If topOfStack is undefined it will be set on 'initialized'
 			launchCfg.topOfStack = 'UNITTEST_STACK';
+		}
 
 		if (launchCfg.load) {
 			const uload = UnifiedPath.getUnifiedPath(launchCfg.load)
@@ -1065,14 +1064,14 @@ export class Settings {
 			}
 		}
 
-		// sna/tap or .P files (ZX81)
+		// sna or .P files (ZX81)
 		if (Settings.launch.load) {
 			// Check that file exists
 			if (!fs.existsSync(Settings.launch.load))
 				throw Error("'load': File '" + Settings.launch.load + "' does not exist.");
 			// If a file is given for "load" no need to set an exec address
-			else if (Settings.launch.execAddress)
-				throw Error("'execAddress': You load a file via \"load\" you mast not specify an \"execAddress\".");
+			if (Settings.launch.execAddress)
+				throw Error("'execAddress': You load a file via \"load\" you must not specify an \"execAddress\".");
 		}
 
 		// Object files
