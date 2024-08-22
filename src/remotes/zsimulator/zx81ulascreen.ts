@@ -217,6 +217,11 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	 * Then, an array with the length 0 is returned.
 	 */
 	public getUlaScreen(): Uint8Array {
+		// Read the charset 0x1E00-0x1FFF (512 bytes)
+		// TODO: Either sent charset + dfile or create the image from the dfile directly here.
+		// This has to be done for hires graphics anyway. So we could do the same here.
+		// First test hires graphics !!!!
+
 		// Check for available VSYNC
 		if (this.noDisplay)
 			return Uint8Array.from([]);
