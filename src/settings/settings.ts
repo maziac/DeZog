@@ -240,9 +240,9 @@ export interface ZSimType {
 	visualMemory: boolean,
 
 	// If enabled it shows the contents of the ZX Spectrum or ZX 81 screen.
-	ulaScreen: 'spectrum' | 'zx81' | '',	// "spectrum" or "zx81"
+	ulaScreen: 'spectrum' | 'zx81' | 'zx81-hires' | '',	// "spectrum" or "zx81"
 
-	// The displayed border width in pixels. No border if 0. Works only in conjunction with ulaScreen.
+	// The displayed border width in pixels. No border if 0. Works only in conjunction with ulaScreen == 'spectrum'.
 	zxBorderWidth: number,
 
 	// Enables ZX Spectrum sound through it's beeper.
@@ -610,7 +610,7 @@ export class Settings {
 		}
 		if (launchCfg.zsim.ulaScreen === undefined || launchCfg.zsim.ulaScreen as any === false)
 			launchCfg.zsim.ulaScreen = '';
-		else if (launchCfg.zsim.ulaScreen !== 'spectrum' && launchCfg.zsim.ulaScreen !== 'zx81')
+		else if (launchCfg.zsim.ulaScreen as any === true) // Old config
 			launchCfg.zsim.ulaScreen = 'spectrum';
 		if (launchCfg.zsim.zxBorderWidth === undefined || launchCfg.zsim.ulaScreen === '')
 			launchCfg.zsim.zxBorderWidth = 0;
@@ -1118,6 +1118,12 @@ export class Settings {
 		const preset = Settings.launch.zsim.preset;
 		if (preset !== 'spectrum' && preset !== 'zx81' && preset !== 'none') {
 			throw Error("'preset': Allowed values are 'spectrum', 'zx81' or 'none'.");
+		}
+
+		// Check ula screen
+		const ulaScreen = Settings.launch.zsim.ulaScreen;
+		if (ulaScreen !== 'spectrum' && ulaScreen !== 'zx81' && ulaScreen !== 'zx81-hires' && ulaScreen !== '') {
+			throw Error("'ulaScreen': Allowed values are 'spectrum', 'zx81' or 'zx81-hires'.");
 		}
 	}
 }

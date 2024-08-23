@@ -27,6 +27,7 @@ import {ZxnDma} from './zxndma';
 import {Zx81UlaScreen} from './zx81ulascreen';
 import {ZxKeyboard} from './zxkeyboard';
 import {CustomJoystick} from './customjoystick';
+import {Zx81UlaScreenHiRes} from './zx81ulascreenhires';
 
 
 
@@ -407,11 +408,10 @@ export class ZSimRemote extends DzrpRemote {
 
 		// Check if ULA screen is enabled
 		const zxUlaScreen = zsim.ulaScreen;
-		if (zxUlaScreen === 'spectrum') {
-			this.zxUlaScreen = new SpectrumUlaScreen(this.z80Cpu);
-		}
-		else if (zxUlaScreen === 'zx81') {
-			this.zxUlaScreen = new Zx81UlaScreen(this.z80Cpu);
+		switch(zxUlaScreen) {
+			case 'spectrum': this.zxUlaScreen = new SpectrumUlaScreen(this.z80Cpu); break;
+			case 'zx81': this.zxUlaScreen = new Zx81UlaScreen(this.z80Cpu); break;
+			case 'zx81-hires': this.zxUlaScreen = new Zx81UlaScreenHiRes(this.z80Cpu); break;
 		}
 		if (this.zxUlaScreen) {
 			this.zxUlaScreen.on('VSYNC', () => {

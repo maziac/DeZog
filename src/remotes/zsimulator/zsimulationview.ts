@@ -529,7 +529,7 @@ export class ZSimulationView extends BaseView {
 		this.restartStopTimer();
 
 		try {
-			let cpuFreq, cpuLoad, slots, slotNames, visualMem, zx81UlaData, spectrumUlaData, audio, borderColor, zxnDMA;
+			let cpuFreq, cpuLoad, slots, slotNames, visualMem, ulaData, audio, borderColor, zxnDMA;
 
 			// Update frequency
 			if (this.prevCpuFreq !== this.simulator.z80Cpu.cpuFreq) {
@@ -549,18 +549,19 @@ export class ZSimulationView extends BaseView {
 				visualMem = this.simulator.memory.getVisualMemory();
 			}
 
-			if (Settings.launch.zsim.ulaScreen === 'spectrum') {
+			const ulaScreen = Settings.launch.zsim.ulaScreen;
+			if (ulaScreen === 'spectrum') {
 				// For ZX81 and ZX Spectrum.
 				// The time is supplied only for the flashing of the attributes for the Spectrum. (The flash frequency is 1/640ms (~1.56Hz)).
 				const time = this.simulator.getTstatesSync() / this.simulator.getCpuFrequencySync() * 1000;
-				const ulaData = this.simulator.zxUlaScreen.getUlaScreen();
-				spectrumUlaData = {
+				const ulaDirectData = this.simulator.zxUlaScreen.getUlaScreen();
+				ulaData = {
 					time,
-					ulaData
+					ulaDirectData
 				};
 			}
-			else if (Settings.launch.zsim.ulaScreen === 'zx81') {
-				zx81UlaData = this.simulator.zxUlaScreen.getUlaScreen();
+			else if (ulaScreen === 'zx81' || ulaScreen === 'zx81-hires') {
+				ulaData = this.simulator.zxUlaScreen.getUlaScreen();
 			}
 
 			if (Settings.launch.zsim.zxBorderWidth > 0) {
@@ -585,8 +586,8 @@ export class ZSimulationView extends BaseView {
 				cpuLoad,
 				slotNames,
 				visualMem,
-				zx81UlaData,
-				spectrumUlaData,
+				ulaScreen,	// 'spectrum', 'zx81', 'zx81-hires'
+				ulaData,
 				borderColor,
 				audio,
 				zxnDMA

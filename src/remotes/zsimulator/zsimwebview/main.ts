@@ -1,6 +1,7 @@
 import {vscode} from "./vscode-import";
 import {ZxAudioBeeper, zxAudioBeeper} from "./zxaudiobeeper";
 import {Zx81UlaDraw} from "./zx81uladraw";
+import {Zx81HiResUlaDraw} from "./zx81hiresuladraw";
 import {SpectrumUlaDraw} from "./spectrumuladraw";
 import {VisualMem} from "./visualmem";
 import {joystickObjs, initJoystickPolling} from "./joysticks";
@@ -114,15 +115,20 @@ window.addEventListener('message', event => {// NOSONAR
 				VisualMem.drawVisualMemory(message.visualMem);
 			}
 
-			if (message.zx81UlaData) {
-				const data = message.zx81UlaData;
-				Zx81UlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, data);
-			}
-
-			if (message.spectrumUlaData) {
-				const data = message.spectrumUlaData.ulaData;
-				const time = message.spectrumUlaData.time;
-				SpectrumUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, data, time);
+			if (message.ulaData) {
+				const data = message.ulaData;
+				const ulaScreen = message.ulaScreen;
+				if (ulaScreen === 'spectrum') {
+					const ulaDirectData = data.ulaDirectData;
+					const time = data.time;
+					SpectrumUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaDirectData, time);
+				}
+				else if (ulaScreen === 'zx81') {
+					Zx81UlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, data);
+				}
+				else if (ulaScreen === 'zx81-hires') {
+					Zx81HiResUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, data);
+				}
 			}
 
 			if (message.borderColor != undefined) {
@@ -193,6 +199,7 @@ function initSimulation(audioSampleRate: number, volume: number, zxKeyboard: 'sp
 	screenImg = document.getElementById("screen_img_id") as HTMLCanvasElement;
 	if (screenImg) {
 		screenImgContext = screenImg.getContext("2d")!;
+		// Note: Normally I would have to distinguish between ZX81 and Spectrum here. But they have the same width and height.
 		screenImgImgData = screenImgContext.createImageData(SpectrumUlaDraw.SCREEN_WIDTH, SpectrumUlaDraw.SCREEN_HEIGHT);
 	}
 
