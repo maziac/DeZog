@@ -42,10 +42,13 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// Holds the data for the screen, i.e. the generated screen.
 	// The format is simple: upto 192 lines. Each line begins with a length byte.
 	// Followed byte the pixel data (bits of the byte) for the line.
-	protected screenData: Uint8Array;
+	protected screenWriteData: Uint8Array;
 
 	// The write index into the screen
 	protected screenDataIndex: number;
+
+	// After VSYNC the write buffer is switched to read buffer and available through getUlaScreen().
+	protected screenReadData: Uint8Array;
 
 	// The write index pointing to tje line length
 	protected screenLineLengthIndex: number;
@@ -61,7 +64,16 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		this.fullLineCounter = 0;
 		this.screenDataIndex = 0;
 		this.screenLineLengthIndex = 0;
-		this.screenData = new Uint8Array(256 * (1+Zx81UlaScreenHiRes.SCREEN_WIDTH/8));	// 256: in case more scan lines would be used
+		this.switchBuffer();	// Allocate first memory.
+	}
+
+
+	/** Allocates new memory for the  */
+	protected switchBuffer() {
+		this.screenReadData = this.screenWriteData?.slice(0, this.screenDataIndex);
+		this.screenWriteData = new Uint8Array(256 * (1 + Zx81UlaScreenHiRes.SCREEN_WIDTH / 8));	// 256: in case more scan lines would be used
+		this.screenLineLengthIndex = 0;
+		this.screenDataIndex = 0;
 	}
 
 
@@ -125,14 +137,13 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	protected inPort(port: number): number | undefined {
 		// Check for address line A0 = LOW, and nmi generator off
 		if ((port & 0x01) === 0 && !this.stateNmiGeneratorOn) {
+			this.lineCounter = 2;	// TODO: 2?
+			this.fullLineCounter = 0;
+			// Switch buffers
+			this.switchBuffer();
 			// Start VSYNC signal
 			this.vsync = true;
 			this.emit('VSYNC');
-			// Clear the dfile
-			this.screenLineLengthIndex = 0;
-			this.screenDataIndex = 0;
-			this.lineCounter = 0;
-			this.fullLineCounter = 0;
 			//console.log(this.logTimeCounter, "zx81 ULA: IN VSYNC On ********");
 		}
 		return undefined;
@@ -149,34 +160,36 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 		// Check if it is character data
 		if (addr64k & 0x8000) {
-			// Interpret data
-			const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
-			const i = this.z80Cpu.i;
-			let ulaAddr = (i << 8) + (ulaAddrLatch << 3) + this.lineCounter;
-			// Load byte from character (ROM)
-			let videoShiftRegister = this.memoryRead8(ulaAddr);
-			// Check to invert the byte
-			if(data & 0b1000_0000) {
-				videoShiftRegister ^= 0xFF;
-			}
-			// Add byte to dfile
-			this.screenData[this.screenDataIndex++] = videoShiftRegister;
-			// Increase length
-			this.screenData[this.screenLineLengthIndex]++;
-	//		const bin = videoShiftRegister.toString(2);
-	//		console.log("zx81-hires ULA: nmi on=" + this.stateNmiGeneratorOn + ", lineCounter=" + this.fullLineCounter + ", lineCounter%8=" + this.lineCounter + ", 0x" + ulaAddr.toString(16) + " -> 0x" + videoShiftRegister.toString(16) + ",\t" + bin);
-		}
-
-		// Check if above 32k, and data bit 6 is low.
-		// Then return NOPs.
-		if (addr64k & 0x8000) {
-			// Bit 15 is set
 			// Check if bit 6 is low
 			if ((data & 0b01000000) === 0) {
-				// Return a NOP
+				// Interpret data
+				const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
+				const i = this.z80Cpu.i;
+				let ulaAddr = (i << 8) + (ulaAddrLatch << 3) + this.lineCounter;
+				// Load byte from character (ROM)
+				let videoShiftRegister = this.memoryRead8(ulaAddr);
+				// Check to invert the byte
+				if (data & 0b1000_0000) {
+					videoShiftRegister ^= 0xFF;
+				}
+				// Add byte to screen
+				this.screenWriteData[this.screenDataIndex++] = videoShiftRegister;
+				if (videoShiftRegister === 33) {
+					console.error("zx81-hires ULA: written 33");
+				}
+				// Increase length
+				this.screenWriteData[this.screenLineLengthIndex]++;
+				if (this.screenWriteData[this.screenLineLengthIndex] > 32) {
+					console.error("zx81-hires ULA: line too long");
+				}
+				//const bin = videoShiftRegister.toString(2).padStart(8, '0');
+				//console.log("zx81-hires ULA: nmi on=" + this.stateNmiGeneratorOn + ", lineCounter=" + this.fullLineCounter + ", lineCounter%8=" + this.lineCounter + ", 0x" + ulaAddr.toString(16) + " -> 0x" + videoShiftRegister.toString(16) + ",\t" + bin);
+
+				// Return a NOP for the graphics data
 				return 0x00;
 			}
 		}
+
 		// Otherwise return the normal value
 		return data;
 	}
@@ -203,17 +216,17 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			this.vsyncTimeCounter = 0;
 		}
 
-		// Check for HSYNC
-		if (this.hsyncTimeCounter >= Zx81UlaScreenHiRes.HOR_LINE_TIME) {
-			// HSYNC -> Next line
-			this.hsyncTimeCounter %= Zx81UlaScreenHiRes.HOR_LINE_TIME;
-			this.lineCounter = (this.lineCounter + 1) & 0b111;
-			this.fullLineCounter++;
-			this.screenLineLengthIndex = this.screenDataIndex;
-			this.screenData[this.screenLineLengthIndex] = 0;
-			this.screenDataIndex++;
-//			console.log("zx81-hires ULA: HSYNC, lineCounter=" + this.fullLineCounter);
-		}
+		// Check for HSYNC // TODO: REMOVE?
+		// if (this.hsyncTimeCounter >= Zx81UlaScreenHiRes.HOR_LINE_TIME) {
+		// 	// HSYNC -> Next line
+		// 	this.hsyncTimeCounter %= Zx81UlaScreenHiRes.HOR_LINE_TIME;
+		// 	this.lineCounter = (this.lineCounter + 1) & 0b111;
+		// 	this.fullLineCounter++;
+		// 	this.screenLineLengthIndex = this.screenDataIndex;
+		// 	this.screenData[this.screenLineLengthIndex] = 0;
+		// 	this.screenDataIndex++;
+		// 	//console.log("zx81-hires ULA: HSYNC, lineCounter=" + this.fullLineCounter);
+		// }
 
 		// Check for the R-register
 		const r = this.z80Cpu.r;
@@ -223,6 +236,12 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				// Bit 6 changed from high to low -> interrupt
 				//console.log("zx81 ULA: 0x0038 interrupt");
 				this.z80Cpu.interrupt(false, 0);
+				this.lineCounter = (this.lineCounter + 1) & 0b111;
+				this.fullLineCounter++;
+				this.screenLineLengthIndex = this.screenDataIndex;
+				this.screenWriteData[this.screenLineLengthIndex] = 0;
+				this.screenDataIndex++;
+				//console.log("  lineCounter=" + this.fullLineCounter);
 			}
 		}
 		this.prevRregister = r;
@@ -240,12 +259,13 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	}
 
 
-	/** Returns the dfile.
-	 * @returns The dfile as a UInt8Array.
+	/** Returns the screen data.
+	 * @returns The screen as a UInt8Array.
 	 * Returns only the portion that is written.
+	 * At the start this could be undefined.
 	 */
 	public getUlaScreen(): Uint8Array {
-		return this.screenData.slice(0, this.screenDataIndex);
+		return this.screenReadData;
 	}
 
 

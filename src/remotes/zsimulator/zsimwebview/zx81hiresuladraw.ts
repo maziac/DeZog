@@ -16,18 +16,14 @@ export class Zx81HiResUlaDraw {
 		// Get pixels memory
 		const pixels = imgData.data;
 		let pixelIndex = 0;
+		pixels.fill(128);	// gray
 
 		// Whole screen is converted by evaluating blocks that are equal to the color attributes.
 		const width8 = Zx81HiResUlaDraw.SCREEN_WIDTH / 8;
-		const height = Zx81HiResUlaDraw.SCREEN_HEIGHT;
 		const white = 255;
 		const black = 0;
 		let index = 0;
-		let y = height
-		for (; y > 0; y--) {
-			// Safety check
-			if (index >= ulaScreen.length)
-				break;
+		while (index < ulaScreen.length) {
 			// Get length of line
 			const len = ulaScreen[index++];
 			// Loop over line
@@ -46,6 +42,7 @@ export class Zx81HiResUlaDraw {
 				}
 			}
 			// Skip rest of line (make white)
+			// TODO: use fill instead
 			const remainingLen = (width8 - len) * 8;
 			for (let i = remainingLen; i > 0; i--) {
 				pixels[pixelIndex++] = white;	// red
