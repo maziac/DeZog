@@ -116,7 +116,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 			}
 			if (fastMode !== this.fastMode) {
 				this.fastMode = fastMode;
-				console.log("zx81 ULA: mode: ", this.fastMode ? "FAST" : "SLOW");
+				//console.log("zx81 ULA: mode: ", this.fastMode ? "FAST" : "SLOW");
 			}
 			// No display detection
 			this.vsyncTimeCounter = 0;
@@ -138,7 +138,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	 */
 	protected inPort(port: number): number | undefined {
 		// Check for address line A0 = LOW, and nmi generator off
-		if ((port & 0x01) === 0 && !this.stateNmiGeneratorOn) {
+		if (!this.vsync && (port & 0x01) === 0 && !this.stateNmiGeneratorOn) {
 			// Start VSYNC signal
 			this.vsync = true;
 			this.emit('VSYNC');

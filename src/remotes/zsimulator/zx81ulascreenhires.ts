@@ -113,7 +113,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			}
 			if (fastMode !== this.fastMode) {
 				this.fastMode = fastMode;
-				console.log("zx81 ULA: mode: ", this.fastMode ? "FAST" : "SLOW");
+				//console.log("zx81 ULA: mode: ", this.fastMode ? "FAST" : "SLOW");
 			}
 
 			// No display detection
@@ -136,8 +136,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 */
 	protected inPort(port: number): number | undefined {
 		// Check for address line A0 = LOW, and nmi generator off
-		if ((port & 0x01) === 0 && !this.stateNmiGeneratorOn) {
-			this.lineCounter = 2;	// TODO: 2?
+		if (!this.vsync && (port & 0x01) === 0 && !this.stateNmiGeneratorOn) {
+			this.lineCounter = 1;	// TODO: 1?
 			this.fullLineCounter = 0;
 			// Switch buffers
 			this.switchBuffer();
@@ -174,14 +174,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				}
 				// Add byte to screen
 				this.screenWriteData[this.screenDataIndex++] = videoShiftRegister;
-				if (videoShiftRegister === 33) {
-					console.error("zx81-hires ULA: written 33");
-				}
 				// Increase length
 				this.screenWriteData[this.screenLineLengthIndex]++;
-				if (this.screenWriteData[this.screenLineLengthIndex] > 32) {
-					console.error("zx81-hires ULA: line too long");
-				}
 				//const bin = videoShiftRegister.toString(2).padStart(8, '0');
 				//console.log("zx81-hires ULA: nmi on=" + this.stateNmiGeneratorOn + ", lineCounter=" + this.fullLineCounter + ", lineCounter%8=" + this.lineCounter + ", 0x" + ulaAddr.toString(16) + " -> 0x" + videoShiftRegister.toString(16) + ",\t" + bin);
 
@@ -216,20 +210,9 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			this.vsyncTimeCounter = 0;
 		}
 
-		// Check for HSYNC // TODO: REMOVE?
-		// if (this.hsyncTimeCounter >= Zx81UlaScreenHiRes.HOR_LINE_TIME) {
-		// 	// HSYNC -> Next line
-		// 	this.hsyncTimeCounter %= Zx81UlaScreenHiRes.HOR_LINE_TIME;
-		// 	this.lineCounter = (this.lineCounter + 1) & 0b111;
-		// 	this.fullLineCounter++;
-		// 	this.screenLineLengthIndex = this.screenDataIndex;
-		// 	this.screenData[this.screenLineLengthIndex] = 0;
-		// 	this.screenDataIndex++;
-		// 	//console.log("zx81-hires ULA: HSYNC, lineCounter=" + this.fullLineCounter);
-		// }
-
 		// Check for the R-register
 		const r = this.z80Cpu.r;
+		//console.log("zx81 ULA: R-register=" + r.toString());
 		if ((r & 0b0100_0000) === 0) {
 			// Bit 6 is low
 			if ((this.prevRregister & 0b0100_0000) !== 0) {
