@@ -121,6 +121,14 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			// if (this.noDisplay)
 			// 	console.log(this.logTimeCounter, "zx81 ULA: No VSYNC -> No display = false");
 			this.noDisplay = false;
+
+			// VSYNC
+			this.emit('VSYNC');
+			// Switch buffers
+			this.lineCounter = 0;	// TODO: not 0?
+			this.fullLineCounter = 0;
+			this.switchBuffer();
+
 			//console.log();
 			//console.log(this.logTimeCounter, "zx81 ULA: OUT VSYNC Off ********");
 		}
@@ -136,14 +144,9 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 */
 	protected inPort(port: number): number | undefined {
 		// Check for address line A0 = LOW, and nmi generator off
-		if (!this.vsync && (port & 0x01) === 0 && !this.stateNmiGeneratorOn) {
-			this.lineCounter = 1;	// TODO: 1?
-			this.fullLineCounter = 0;
-			// Switch buffers
-			this.switchBuffer();
+		if ((port & 0x01) === 0 && !this.stateNmiGeneratorOn) {
 			// Start VSYNC signal
 			this.vsync = true;
-			this.emit('VSYNC');
 			//console.log(this.logTimeCounter, "zx81 ULA: IN VSYNC On ********");
 		}
 		return undefined;
@@ -181,6 +184,11 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 				// Return a NOP for the graphics data
 				return 0x00;
+			}
+			else {
+				// TODO: REMOVE
+				// E.g. halt
+				return data;
 			}
 		}
 
@@ -248,7 +256,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * At the start this could be undefined.
 	 */
 	public getUlaScreen(): Uint8Array {
-		return this.screenReadData;
+		return this.screenWriteData;
+		//return this.screenReadData;
 	}
 
 

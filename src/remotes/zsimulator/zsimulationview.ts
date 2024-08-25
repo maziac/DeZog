@@ -851,8 +851,8 @@ export class ZSimulationView extends BaseView {
 		// Add code for the screen (Spectrum or ZX81)
 		if (zsim.ulaScreen) {
 			html += `
-			<!-- Display the screen gif -->
-			<canvas id="screen_img_id" width="256" height="192" style="image-rendering:pixelated; border:${zsim.zxBorderWidth}px solid white; outline: 1px solid var(--vscode-foreground); width:95%; height:95%">
+			<!-- Display the screen gif  TODO: Change height -->
+			<canvas id="screen_img_id" width="256" height="400" style="image-rendering:pixelated; border:${zsim.zxBorderWidth}px solid white; outline: 1px solid var(--vscode-foreground); width:95%; height:95%">
 			</canvas>
 			`;
 		}

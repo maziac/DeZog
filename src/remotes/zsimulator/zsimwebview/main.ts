@@ -200,7 +200,9 @@ function initSimulation(audioSampleRate: number, volume: number, zxKeyboard: 'sp
 	if (screenImg) {
 		screenImgContext = screenImg.getContext("2d")!;
 		// Note: Normally I would have to distinguish between ZX81 and Spectrum here. But they have the same width and height.
-		screenImgImgData = screenImgContext.createImageData(SpectrumUlaDraw.SCREEN_WIDTH, SpectrumUlaDraw.SCREEN_HEIGHT);
+		//screenImgImgData = screenImgContext.createImageData(SpectrumUlaDraw.SCREEN_WIDTH, SpectrumUlaDraw.SCREEN_HEIGHT);
+		// TODO: Change height
+		screenImgImgData = screenImgContext.createImageData(SpectrumUlaDraw.SCREEN_WIDTH, 400);
 	}
 
 	// Get Beeper output object
@@ -524,7 +526,7 @@ globalThis.volumeChanged = function (volumeStr: string) {
 // e: the keyboard event
 // on: true if key is pressed, false if released
 function keySelect(e, on) {
-	console.log("Key:", on, e);
+	//console.log("Key:", on, e);
 	let mappedKeys;
 
 	// Check for cursor keys + delete
