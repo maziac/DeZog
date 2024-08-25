@@ -583,7 +583,7 @@ export class Settings {
 				if (launchCfg.zsim.zxBorderWidth === undefined)
 					launchCfg.zsim.zxBorderWidth = 0;
 				if (launchCfg.zsim.cpuFrequency === undefined)
-					launchCfg.zsim.cpuFrequency = 3500000.0;	// 3.5Mhz
+					launchCfg.zsim.cpuFrequency = 3250000.0;	// 3.25Mhz
 				if (launchCfg.zsim.defaultPortIn === undefined)
 					launchCfg.zsim.defaultPortIn = 0xFF;
 			}
