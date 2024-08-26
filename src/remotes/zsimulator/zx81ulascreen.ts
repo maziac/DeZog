@@ -31,8 +31,11 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	// The NMI interval of the ULA.
 	protected static NMI_TIME = 0.000064;	// 64us
 
-	// The time counter for the NMI signal.
+	// The time counter for the vsync signal.
 	protected vsyncTimeCounter: number;
+
+	// The time counter for the nmi signal.
+	protected nmiTimeCounter: number;
 
 	// The previous state of the R-register.
 	protected prevRregister: number = 0;
@@ -69,6 +72,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 		super(z80Cpu);
 		this.z80Cpu = z80Cpu;
 		this.vsyncTimeCounter = 0;
+		this.nmiTimeCounter = 0;
 
 		// Register ULA ports
 		z80Cpu.ports.registerGenericOutPortFunction(this.outPorts.bind(this));
@@ -106,6 +110,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 
 		// Writing to any port also resets the vsync
 		if (this.vsync) {
+			this.vsync = false;
 			// FAST/SLOW mode detection:
 			// If NMI generator was turned on since last VSYNC,
 			// we are in SLOW mode.
@@ -123,10 +128,13 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 			// if (this.noDisplay)
 			// 	console.log(this.logTimeCounter, "zx81 ULA: No VSYNC -> No display = false");
 			this.noDisplay = false;
+			// Reset hsync timer
+			this.nmiTimeCounter = 0;
+			// VSYNC
+			this.emit('VSYNC');
 			//console.log();
 			//console.log(this.logTimeCounter, "zx81 ULA: OUT VSYNC Off ********");
 		}
-		this.vsync = false;
 	}
 
 
@@ -179,6 +187,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	public execute(cpuFreq: number, currentTstates: number) {
 		const timeAdd = currentTstates / cpuFreq;
 		this.vsyncTimeCounter += timeAdd;
+		this.nmiTimeCounter += timeAdd;
 		//this.logTimeCounter += timeAdd * 1000;
 
 		// Check for "no display", i.e. no vsync
@@ -204,12 +213,12 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 
 		// Check for NMI interrupt generation
 		if (this.stateNmiGeneratorOn) {
-			if (this.vsyncTimeCounter >= Zx81UlaScreen.NMI_TIME) {
+			if (this.nmiTimeCounter >= Zx81UlaScreen.NMI_TIME) {
 				// NMI interrupt
 				//console.log("zx81 ULA: NMI interrupt");
 				this.z80Cpu.interrupt(true, 0);
 				// Next
-				this.vsyncTimeCounter %= Zx81UlaScreen.NMI_TIME;
+				this.nmiTimeCounter %= Zx81UlaScreen.NMI_TIME;
 			}
 		}
 	}
@@ -241,6 +250,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	public serialize(memBuffer: MemBuffer) {
 		// Write data
 		memBuffer.writeNumber(this.vsyncTimeCounter);
+		memBuffer.writeNumber(this.nmiTimeCounter);
 		memBuffer.write8(this.prevRregister);
 		memBuffer.writeBoolean(this.stateNmiGeneratorOn);
 		memBuffer.writeBoolean(this.vsync);
@@ -255,6 +265,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	public deserialize(memBuffer: MemBuffer) {
 		// Read data
 		this.vsyncTimeCounter = memBuffer.readNumber();
+		this.nmiTimeCounter = memBuffer.readNumber();
 		this.prevRregister = memBuffer.read8();
 		this.stateNmiGeneratorOn = memBuffer.readBoolean();
 		this.vsync = memBuffer.readBoolean();

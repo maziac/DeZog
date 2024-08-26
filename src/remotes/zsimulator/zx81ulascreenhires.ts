@@ -1,6 +1,5 @@
 
 import {MemBuffer} from "../../misc/membuffer";
-import {UlaScreen} from "./ulascreen";
 import {Z80Cpu} from "./z80cpu";
 import {Zx81UlaScreen} from "./zx81ulascreen";
 
@@ -31,11 +30,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// Time for a horizontal line (PAL) . Used for lineCounter increments
 	protected static HOR_LINE_TIME = 0.000064;	// 64us
 
-	// The counter for "generating" HSYNC/incrementing the line counter
-	protected hsyncTimeCounter: number;
-
 	// The line 3-bit counter (0-7) to address the 8 lines of a character.
-	protected lineCounter: number;
+	protected ulaLCNTR: number;
 
 	protected fullLineCounter: number;
 
@@ -59,8 +55,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 */
 	constructor(z80Cpu: Z80Cpu) {
 		super(z80Cpu);
-		this.hsyncTimeCounter = 0;
-		this.lineCounter = 0;
+		this.ulaLCNTR = 0;
 		this.fullLineCounter = 0;
 		this.screenDataIndex = 0;
 		this.screenLineLengthIndex = 0;
@@ -85,6 +80,13 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * Note: the value of a is not ignored.
 	 */
 	protected outPorts(port: number, _data: number): void {
+		// Check for A0 = low
+		if ((port & 0x0001) === 0) {
+			// Reset line counter
+			// if (this.vsync)	// TODO: Unclear if the LCNTR reset is required here
+			// 	this.ulaLCNTR = 0;
+		}
+
 		// NMI generator off?
 		if ((port & 0x0002) === 0) {
 			// Just A1 needs to be 0, usually 0xFD
@@ -97,42 +99,24 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			// Just A0 needs to be 0, usually 0xFE
 			this.stateNmiGeneratorOn = true;
 			this.nmiGeneratorAccessed = true;	// Used for FAST/SLOW mode detection
-			this.vsyncTimeCounter = 0;
 			//console.log(this.logTimeCounter, "zx81 ULA: NMI generator on");
 		}
 
 		// Writing to any port also resets the vsync
 		if (this.vsync) {
-			// FAST/SLOW mode detection:
-			// If NMI generator was turned on since last VSYNC,
-			// we are in SLOW mode.
-			let fastMode = true;
-			if (this.nmiGeneratorAccessed) {
-				fastMode = false;
-				this.nmiGeneratorAccessed = false;
-			}
-			if (fastMode !== this.fastMode) {
-				this.fastMode = fastMode;
-				//console.log("zx81 ULA: mode: ", this.fastMode ? "FAST" : "SLOW");
-			}
-
-			// No display detection
-			this.vsyncTimeCounter = 0;
-			// if (this.noDisplay)
-			// 	console.log(this.logTimeCounter, "zx81 ULA: No VSYNC -> No display = false");
-			this.noDisplay = false;
-
+			this.vsync = false;
 			// VSYNC
 			this.emit('VSYNC');
+			// Reset hsync timer
+			this.nmiTimeCounter = 0;
 			// Switch buffers
-			this.lineCounter = 0;	// TODO: not 0?
+		//	this.ulaLCNTR = 0;	// TODO: not 0?
 			this.fullLineCounter = 0;
 			this.switchBuffer();
 
 			//console.log();
 			//console.log(this.logTimeCounter, "zx81 ULA: OUT VSYNC Off ********");
 		}
-		this.vsync = false;
 	}
 
 
@@ -143,11 +127,18 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * 4. ...
 	 */
 	protected inPort(port: number): number | undefined {
-		// Check for address line A0 = LOW, and nmi generator off
-		if ((port & 0x01) === 0 && !this.stateNmiGeneratorOn) {
-			// Start VSYNC signal
-			this.vsync = true;
-			//console.log(this.logTimeCounter, "zx81 ULA: IN VSYNC On ********");
+		// Check for address line A0 = LOW
+		if ((port & 0x0001) === 0) {
+			// Reset line counter
+			if (this.vsync) {
+				this.ulaLCNTR = 0;
+			}
+			// Turn nmi generator off?
+			if (!this.stateNmiGeneratorOn) {
+				// Start VSYNC signal
+				this.vsync = true;
+				//console.log(this.logTimeCounter, "zx81 ULA: IN VSYNC On ********");
+			}
 		}
 		return undefined;
 	}
@@ -168,7 +159,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				// Interpret data
 				const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
 				const i = this.z80Cpu.i;
-				let ulaAddr = (i << 8) + (ulaAddrLatch << 3) + this.lineCounter;
+				let ulaAddr = (i << 8) + (ulaAddrLatch << 3) + this.ulaLCNTR;
 				// Load byte from character (ROM)
 				let videoShiftRegister = this.memoryRead8(ulaAddr);
 				// Check to invert the byte
@@ -205,18 +196,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 */
 	public execute(cpuFreq: number, currentTstates: number) {
 		const timeAdd = currentTstates / cpuFreq;
-		this.vsyncTimeCounter += timeAdd;
-		this.hsyncTimeCounter += timeAdd;
+		this.nmiTimeCounter += timeAdd;
 		//this.logTimeCounter += timeAdd * 1000;
-
-		// Check for "no display", i.e. no vsync
-		if (this.vsyncTimeCounter >= UlaScreen.VSYNC_TIME) {
-			// No VSYNC -> No display
-			// if (!this.noDisplay)
-			// 	console.log(this.logTimeCounter, "zx81 ULA: No VSYNC -> No display = true");
-			this.noDisplay = true;
-			this.vsyncTimeCounter = 0;
-		}
 
 		// Check for the R-register
 		const r = this.z80Cpu.r;
@@ -227,7 +208,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				// Bit 6 changed from high to low -> interrupt
 				//console.log("zx81 ULA: 0x0038 interrupt");
 				this.z80Cpu.interrupt(false, 0);
-				this.lineCounter = (this.lineCounter + 1) & 0b111;
+				this.ulaLCNTR = (this.ulaLCNTR + 1) & 0b111;
 				this.fullLineCounter++;
 				this.screenLineLengthIndex = this.screenDataIndex;
 				this.screenWriteData[this.screenLineLengthIndex] = 0;
@@ -239,12 +220,12 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 		// Check for NMI interrupt generation
 		if (this.stateNmiGeneratorOn) {
-			if (this.vsyncTimeCounter >= Zx81UlaScreen.NMI_TIME) {
+			if (this.nmiTimeCounter >= Zx81UlaScreen.NMI_TIME) {
 				// NMI interrupt
 				//console.log("zx81 ULA: NMI interrupt");
 				this.z80Cpu.interrupt(true, 0);
 				// Next
-				this.vsyncTimeCounter %= Zx81UlaScreen.NMI_TIME;
+				this.nmiTimeCounter %= Zx81UlaScreen.NMI_TIME;
 			}
 		}
 	}
