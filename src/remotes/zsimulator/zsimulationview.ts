@@ -612,7 +612,7 @@ export class ZSimulationView extends BaseView {
 		// Set keyboard values
 		const zsim = Settings.launch.zsim;
 		// Predefine with spectrum keyboard
-		let zxKeybImg = "48k_kbd.png";
+		let zxKeybImg = "48k_kbd.svg";
 		let zxKeybKeyWidth = 7.4;
 		let zxKeybKeyMarginRight = 1.85;
 		let zxKeybOffY = 7.5;
@@ -625,7 +625,7 @@ export class ZSimulationView extends BaseView {
 		let zxKeybSpaceStyle = 'style="width: 12%;margin-right: 0"';
 		// Redefine for ZX81
 		if (zsim.zxKeyboard === "zx81") {
-			zxKeybImg = "zx81_kbd.png";
+			zxKeybImg = "zx81_kbd.svg";
 			zxKeybKeyWidth = 8.1;
 			zxKeybKeyMarginRight = 0.78;
 			zxKeybOffY = 10;
