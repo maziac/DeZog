@@ -627,13 +627,13 @@ export class ZSimulationView extends BaseView {
 		if (zsim.zxKeyboard === "zx81") {
 			zxKeybImg = "zx81_kbd.svg";
 			zxKeybKeyWidth = 8.1;
-			zxKeybKeyMarginRight = 0.78;
-			zxKeybOffY = 10;
-			zxKeybRowVertMargin = 7;
-			zxKeybRow1OffsX = 2.8;
-			zxKeybRow2OffsX = 7.25;
-			zxKeybRow3OffsX = 9.5;
-			zxKeybRow4OffsX = 5;
+			zxKeybKeyMarginRight = 1.175;
+			zxKeybOffY = 2;
+			zxKeybRowVertMargin = 7.75;
+			zxKeybRow1OffsX = 0.75;
+			zxKeybRow2OffsX = 5.7;
+			zxKeybRow3OffsX = 8.25;
+			zxKeybRow4OffsX = 3.5;
 			zxKeybShiftStyle = '';
 			zxKeybSpaceStyle = '';
 		}
@@ -665,10 +665,11 @@ export class ZSimulationView extends BaseView {
 			.keyboard {
 				position: relative;
 				width: 100%;
-				aspect-ratio: 541/201;
+				aspect-ratio: 760/280;
 				font-size: 0; /* Removes space between 2 spans */
 				background-image: url('html/images/${zxKeybImg}');
 				background-size: cover;
+				border: 2px solid red;
 			}
 
 			.hor-space {
@@ -680,9 +681,9 @@ export class ZSimulationView extends BaseView {
 			.key {
 				display: inline-block;
 				box-sizing: border-box;
-				/*border: 2px solid red;*/
+				border: 2px solid red;
 				width: ${zxKeybKeyWidth}%;
-				height: 15.9%;
+				height: 17%;
 				margin-right: ${zxKeybKeyMarginRight}%;
 				padding: 0;
 			}
