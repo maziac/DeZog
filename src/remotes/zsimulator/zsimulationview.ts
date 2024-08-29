@@ -614,26 +614,28 @@ export class ZSimulationView extends BaseView {
 		// Predefine with spectrum keyboard
 		let zxKeybImg = "48k_kbd.svg";
 		let zxKeybKeyWidth = 7.4;
-		let zxKeybKeyMarginRight = 1.85;
-		let zxKeybOffY = 7.5;
-		let zxKeybRowVertMargin = 8.4;
-		let zxKeybRow1OffsX = 1.1;
-		let zxKeybRow2OffsX = 5.9;
-		let zxKeybRow3OffsX = 7.9;
-		let zxKeybRow4OffsX = 1.2;
+		let zxKeybKeyHeight = 15;
+		let zxKeybKeyMarginRight = 1.8;
+		let zxKeybOffY = 9.5;
+		let zxKeybRowVertMargin = 10.5;
+		let zxKeybRow1OffsX = 1.3;
+		let zxKeybRow2OffsX = 6;
+		let zxKeybRow3OffsX = 8.7;
+		let zxKeybRow4OffsX = 2;
 		let zxKeybShiftStyle = 'style="width: 9.6%"';
-		let zxKeybSpaceStyle = 'style="width: 12%;margin-right: 0"';
+		let zxKeybSpaceStyle = 'style="width: 11.8%;margin-right: 0"';
 		// Redefine for ZX81
 		if (zsim.zxKeyboard === "zx81") {
 			zxKeybImg = "zx81_kbd.svg";
 			zxKeybKeyWidth = 8.1;
-			zxKeybKeyMarginRight = 1.175;
-			zxKeybOffY = 2;
-			zxKeybRowVertMargin = 7.75;
-			zxKeybRow1OffsX = 0.75;
-			zxKeybRow2OffsX = 5.7;
-			zxKeybRow3OffsX = 8.25;
-			zxKeybRow4OffsX = 3.5;
+			zxKeybKeyHeight = 17;
+			zxKeybKeyMarginRight = 1.125;
+			zxKeybOffY = 1.6;
+			zxKeybRowVertMargin = 7.85;
+			zxKeybRow1OffsX = 0.775;
+			zxKeybRow2OffsX = 5.75;
+			zxKeybRow3OffsX = 8.4;
+			zxKeybRow4OffsX = 3.6;
 			zxKeybShiftStyle = '';
 			zxKeybSpaceStyle = '';
 		}
@@ -669,7 +671,7 @@ export class ZSimulationView extends BaseView {
 				font-size: 0; /* Removes space between 2 spans */
 				background-image: url('html/images/${zxKeybImg}');
 				background-size: cover;
-				border: 2px solid red;
+				/* border: 2px solid red; */
 			}
 
 			.hor-space {
@@ -681,9 +683,9 @@ export class ZSimulationView extends BaseView {
 			.key {
 				display: inline-block;
 				box-sizing: border-box;
-				border: 2px solid red;
+				/* border: 2px solid red; */
 				width: ${zxKeybKeyWidth}%;
-				height: 17%;
+				height:  ${zxKeybKeyHeight}%;
 				margin-right: ${zxKeybKeyMarginRight}%;
 				padding: 0;
 			}
