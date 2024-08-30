@@ -32,29 +32,29 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	protected static NMI_TIME = 0.000064;	// 64us
 
 	// The time counter for the vsync signal.
-	protected vsyncTimeCounter: number;
+	protected vsyncTimeCounter = 0;
 
 	// The time counter for the nmi signal.
-	protected nmiTimeCounter: number;
+	protected nmiTimeCounter = 0;
 
 	// The previous state of the R-register.
-	protected prevRregister: number = 0;
+	protected prevRregister = 0;
 
 	// The state of the NMI generator
-	protected stateNmiGeneratorOn: boolean = false;
+	protected stateNmiGeneratorOn = false;
 
 	// The vsync signal
 	protected vsync: boolean = false;
 
 	// No display.
-	protected noDisplay: boolean = false;
+	protected noDisplay = false;
 
 	// If in FAST mode or SLOW mode.
 	// Note: is detected but not used anywhere.
-	public fastMode: boolean = false;
+	public fastMode = false;
 
 	// Used to check if in FAST mode or SLOW mode.
-	protected nmiGeneratorAccessed: boolean = false;
+	protected nmiGeneratorAccessed = false;
 
 	// The original memory read function.
 	protected memoryRead8: (addr64k: number) => number;
@@ -71,8 +71,6 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	constructor(z80Cpu: Z80Cpu) {
 		super(z80Cpu);
 		this.z80Cpu = z80Cpu;
-		this.vsyncTimeCounter = 0;
-		this.nmiTimeCounter = 0;
 
 		// Register ULA ports
 		z80Cpu.ports.registerGenericOutPortFunction(this.outPorts.bind(this));

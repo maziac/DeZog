@@ -31,23 +31,57 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	protected static HOR_LINE_TIME = 0.000064;	// 64us
 
 	// The line 3-bit counter (0-7) to address the 8 lines of a character.
-	protected ulaLCNTR: number;
-
-	protected fullLineCounter: number;
+	protected lineCounter = 0;
 
 	// Holds the data for the screen, i.e. the generated screen.
 	// The format is simple: upto 192 lines. Each line begins with a length byte.
 	// Followed byte the pixel data (bits of the byte) for the line.
-	protected screenWriteData: Uint8Array;
+	protected screenData: Uint8Array;
 
 	// The write index into the screen
 	protected screenDataIndex: number;
 
-	// After VSYNC the write buffer is switched to read buffer and available through getUlaScreen().
-	protected screenReadData: Uint8Array;
-
 	// The write index pointing to tje line length
 	protected screenLineLengthIndex: number;
+
+	// Turn increments on/off
+	protected lineCounterEnabled = false;
+
+	// Incremented with every HSYNC, reset on VSYNC
+	protected tstatesScanlineDraw = 0;
+
+	// Used to force generate a VSYNC if no HSYNC is generated for a long time.
+	protected tstatesScanlineDrawTimeout = 0;
+
+	// The tstates counter TODO: can be changed to the global one, when -= is resolved
+	protected tstates = 0;
+
+	// The number of tstates required for a horizontal scanline.
+	protected TSTATES_PER_SCANLINE = 207;
+
+	// The total number of tstates for a full screen.
+	protected TSTATES_PER_SCREEN = 65000;
+
+	// The minimal number of tstates for a VSYNC
+	protected VSYNC_MINIMAL_TSTATES = 280;
+
+	// Mininum duration for a VSYNC
+	protected VSYNC_TSTATES_MIN_DURATION = 518;
+
+	// If scanline draw timeout is reached (400), a VSYNC is generated.
+	protected VSYNC_LINE_TIMEOUT = 400;
+
+	// The tstates at which the VSYNC starts
+	protected vsyncStartTstates = 0;
+
+	// The state of the HSYNC generator
+	protected stateHsyncGeneratorOn = false;
+
+	// The current scanline.
+	protected scanlineCounter = 0;
+
+	// Is set when an interrupt should be generated in the next cycle.
+	protected int38InNextCycle = false;
 
 
 	/** Constructor.
@@ -55,18 +89,16 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 */
 	constructor(z80Cpu: Z80Cpu) {
 		super(z80Cpu);
-		this.ulaLCNTR = 0;
-		this.fullLineCounter = 0;
+		this.lineCounter = 0;
 		this.screenDataIndex = 0;
 		this.screenLineLengthIndex = 0;
-		this.switchBuffer();	// Allocate first memory.
+		this.stateHsyncGeneratorOn = false;
+		this.screenData = new Uint8Array(256 * (1 + Zx81UlaScreenHiRes.SCREEN_WIDTH / 8));	// 256: in case more scan lines would be used. TODO: recalculate and limit while writing
 	}
 
 
-	/** Allocates new memory for the  */
-	protected switchBuffer() {
-		this.screenReadData = this.screenWriteData?.slice(0, this.screenDataIndex);
-		this.screenWriteData = new Uint8Array(256 * (1 + Zx81UlaScreenHiRes.SCREEN_WIDTH / 8));	// 256: in case more scan lines would be used
+	/** Resets the buffer indices */
+	protected resetBuffer() {
 		this.screenLineLengthIndex = 0;
 		this.screenDataIndex = 0;
 	}
@@ -80,6 +112,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * Note: the value of a is not ignored.
 	 */
 	protected outPorts(port: number, _data: number): void {
+		this.stateHsyncGeneratorOn = true;
+
 		// Check for A0 = low
 		if ((port & 0x0001) === 0) {
 			// Reset line counter
@@ -89,31 +123,26 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 		// NMI generator off?
 		if ((port & 0x0003) === 1) {
-			// Just A1 needs to be 0, usually 0xFD
+			// Usually 0xFD
 			this.stateNmiGeneratorOn = false;
 		}
 		// NMI generator on?
 		else if ((port & 0x0003) === 2) {
-			// Just A0 needs to be 0, usually 0xFE
-			this.stateNmiGeneratorOn = true;
-			this.nmiTimeCounter = 0;
-			//console.log(this.logTimeCounter, "zx81 ULA: NMI generator on");
-		}
+			// Usually 0xFE
+			this.stateNmiGeneratorOn = true;		}
 
-		// Writing to any port also resets the vsync
-		if (this.vsync) {
-			this.vsync = false;
-			// VSYNC
-			this.emit('VSYNC');
-			// Reset hsync timer
-//			this.nmiTimeCounter = 0;
-			// Switch buffers
-			this.ulaLCNTR = 0;	// TODO: not 0?
-//			this.fullLineCounter = 0;
-			this.switchBuffer();
+		// Vsync?
+		let lengthOfVsync = this.tstates - this.vsyncStartTstates;
+		if(lengthOfVsync <= 0)
+			lengthOfVsync += this.TSTATES_PER_SCREEN;
 
-			console.log();
-			console.log("zx81 ULA: OUT VSYNC Off ********");
+		if (!this.lineCounterEnabled) {
+			if (lengthOfVsync >= this.VSYNC_TSTATES_MIN_DURATION) {
+				if (this.tstatesScanlineDrawTimeout > this.VSYNC_MINIMAL_TSTATES) {
+					this.generateVsync();
+				}
+			}
+			this.lineCounterEnabled = true;
 		}
 	}
 
@@ -126,18 +155,18 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 */
 	protected inPort(port: number): number | undefined {
 		// Check for address line A0 = LOW
-	//	if ((port & 0x0001) === 0) {
-			// Reset line counter
-			if (this.vsync) {
-				this.ulaLCNTR = 0;
-			}
-			// Turn nmi generator off?
+		if ((port & 0x0001) === 0) {
 			if (!this.stateNmiGeneratorOn) {
-				// Start VSYNC signal
-				this.vsync = true;
-				//console.log(this.logTimeCounter, "zx81 ULA: IN VSYNC On ********");
+				if (this.lineCounterEnabled) {
+					if (this.tstatesScanlineDrawTimeout > this.VSYNC_MINIMAL_TSTATES) {
+						this.vsyncStartTstates = this.tstates;
+					}
+				}
+				this.lineCounter = 0;
+				this.lineCounterEnabled = false;
+				this.stateHsyncGeneratorOn = false;
 			}
-	//	}
+		}
 		return undefined;
 	}
 
@@ -153,32 +182,28 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		// Check if it is character data
 		if (addr64k & 0x8000) {
 			// Check if bit 6 is low
-			if ((data & 0b01000000) === 0) {
-				// Interpret data
-				const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
-				const i = this.z80Cpu.i;
-				let ulaAddr = (i << 8) + (ulaAddrLatch << 3) + this.ulaLCNTR;
-				// Load byte from character (ROM)
-				let videoShiftRegister = this.memoryRead8(ulaAddr);
-				// Check to invert the byte
-				if (data & 0b1000_0000) {
-					videoShiftRegister ^= 0xFF;
-				}
-				// Add byte to screen
-				this.screenWriteData[this.screenDataIndex++] = videoShiftRegister;
-				// Increase length
-				this.screenWriteData[this.screenLineLengthIndex]++;
-				//const bin = videoShiftRegister.toString(2).padStart(8, '0');
-				//console.log("zx81-hires ULA: nmi on=" + this.stateNmiGeneratorOn + ", lineCounter=" + this.fullLineCounter + ", lineCounter%8=" + this.lineCounter + ", 0x" + ulaAddr.toString(16) + " -> 0x" + videoShiftRegister.toString(16) + ",\t" + bin);
+			if ((data & 0b01000000) !== 0)
+				return data;	// E.g. HALT
 
-				// Return a NOP for the graphics data
-				return 0x00;
+			// Interpret data
+			const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
+			const i = this.z80Cpu.i;
+			let ulaAddr = (i & 0xFE) * 256 + ulaAddrLatch * 8;
+			// Is a hack, but seems to work:
+			if (i == 0x1E)	// not = 0x1E =>hires 0 > linecounter = 0
+				ulaAddr += (this.lineCounter & 0x07);
+			// Load byte from character (ROM)
+			let videoShiftRegister = this.memoryRead8(ulaAddr);
+			// Check to invert the byte
+			if (data & 0b1000_0000) {
+				videoShiftRegister ^= 0xFF;
 			}
-			else {
-				// TODO: REMOVE
-				// E.g. halt
-				return data;
-			}
+			// Add byte to screen
+			this.screenData[this.screenDataIndex++] = videoShiftRegister;
+			// Increase length
+			this.screenData[this.screenLineLengthIndex]++;
+			// Return a NOP for the graphics data
+			return 0x00;
 		}
 
 		// Otherwise return the normal value
@@ -193,39 +218,33 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * DMA or CPU.
 	 */
 	public execute(cpuFreq: number, currentTstates: number) {
+		this.tstates += currentTstates;
 		const timeAdd = currentTstates / cpuFreq;
 		this.nmiTimeCounter += timeAdd;
 
-		//this.logTimeCounter += timeAdd * 1000;
+		// Execute int38 interrupt?
+		if (this.int38InNextCycle) {
+			this.int38InNextCycle = false;
+			this.z80Cpu.interrupt(false, 0);
+			this.screenLineLengthIndex = this.screenDataIndex;
+			this.screenData[this.screenLineLengthIndex] = 0;
+			this.screenDataIndex++;
+		}
 
 		// Check for the R-register
 		const r = this.z80Cpu.r;
-		//console.log("zx81 ULA: R-register=" + r.toString());
 		if ((r & 0b0100_0000) === 0) {
 			// Bit 6 is low
 			if ((this.prevRregister & 0b0100_0000) !== 0) {
-				// Bit 6 changed from high to low -> interrupt
-				console.log("zx81 ULA: 0x0038 interrupt");
-				this.z80Cpu.interrupt(false, 0);
-				this.ulaLCNTR = (this.ulaLCNTR + 1) & 0b111;
-				this.fullLineCounter++;
-				this.screenLineLengthIndex = this.screenDataIndex;
-				this.screenWriteData[this.screenLineLengthIndex] = 0;
-				this.screenDataIndex++;
-				console.log("  lineCounter=" + this.fullLineCounter);
+				// Bit 6 changed from high to low -> interrupt in next cycle
+				this.int38InNextCycle = true;
 			}
 		}
 		this.prevRregister = r;
 
-		// Check for NMI interrupt generation (upper and lower blank display)
-		if (this.stateNmiGeneratorOn) {
-			if (this.nmiTimeCounter >= Zx81UlaScreen.NMI_TIME) {
-				// NMI interrupt
-				console.log("zx81 ULA: NMI interrupt");
-				this.z80Cpu.interrupt(true, 0);
-				// Next
-				this.nmiTimeCounter %= Zx81UlaScreen.NMI_TIME;
-			}
+		if ((this.tstates / this.TSTATES_PER_SCANLINE) >= this.scanlineCounter) {
+			this.scanlineCounter++;
+			this.generateHsync();
 		}
 	}
 
@@ -236,8 +255,43 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * At the start this could be undefined.
 	 */
 	public getUlaScreen(): Uint8Array {
-		return this.screenWriteData;
-		//return this.screenReadData;
+		return this.screenData?.slice(0, this.screenDataIndex);
+	}
+
+
+	/** Generate a VSYNC. Updates the display (emit).
+	 */
+	protected generateVsync() {
+		this.tstatesScanlineDraw = 0;
+		this.tstatesScanlineDrawTimeout = 0;
+		const tstatesInScanline = this.tstates % this.TSTATES_PER_SCANLINE;
+		this.tstates -= tstatesInScanline;
+
+		// VSYNC
+		this.emit('VSYNC');
+		this.resetBuffer();
+	}
+
+
+	/** Generate a HSYNC.
+	 */
+	protected generateHsync() {
+		if (this.lineCounterEnabled)
+			this.lineCounter++;
+
+		this.tstatesScanlineDraw++;
+		this.tstatesScanlineDrawTimeout++;
+
+		// Force a vsync if scan line too long
+		if (this.tstatesScanlineDrawTimeout >= this.VSYNC_LINE_TIMEOUT) {
+			this.generateVsync();	// Happens only sometimes if the VSYNC is not generated by SW
+			this.lineCounterEnabled = true;
+		}
+
+		// Generate NMI on every HSYNC (if NMI generator is on)
+		if (this.stateNmiGeneratorOn) {
+			this.z80Cpu.interrupt(true, 0);	// NMI
+		}
 	}
 
 
