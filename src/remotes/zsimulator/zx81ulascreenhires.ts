@@ -41,10 +41,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// The write index pointing to tje line length
 	protected screenLineLengthIndex: number;
 
-	// Turn increments on/off
-	protected lineCounterEnabled = false;
-
-	// The tstates counter TODO: can be changed to the global one, when -= is resolved
+	// The tstates counter
 	protected tstates = 0;
 
 	// The number of tstates required for a horizontal scanline.
@@ -229,39 +226,32 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		logOn && console.log(this.tstates, "generateVsync: " + (on ? "on (low)" : "off (high)"));
 
 		// Vsync has changed
-		this.vsync = on;
 		if (on) {
 			// VSYNC on (low)
 			if (!this.stateNmiGeneratorOn) {
 				logOn && console.log("  inPort A0=0: VSYNC?");
-				if (this.lineCounterEnabled) {
-					logOn && console.log("  -> VSYNC on (low)");
-					this.vsyncStartTstates = this.tstates;
-				}
-				this.lineCounterEnabled = false;
-				logOn && console.log(this.hsyncTstatesCounter, "generateVsync(on): lineCounterEnabled=" + this.lineCounterEnabled);
+				logOn && console.log("  -> VSYNC on (low)");
+				this.vsyncStartTstates = this.tstates;
 				logOn && console.log(this.tstates, "  reset hsyncCounter");
+				this.vsync = on;
 			}
 			return;
 		}
 
 		// VSYNC off (high)
-		this.hsyncTstatesCounter = 0;  // Normal display would be one off if this was done in the VSYNC on (low) part.
-		if (!this.lineCounterEnabled)
-		{
-			logOn && console.log(this.tstates, "vsync off:  !this.lineCounterEnabled == true");
-			const lengthOfVsync = this.tstates - this.vsyncStartTstates;
-			if (lengthOfVsync >= this.VSYNC_MINIMAL_TSTATES) {
-				logOn && console.log(this.tstates, "  lengthOfVsync >= VSYNC_MINIMAL_TSTATES, lengthOfVsync=" + lengthOfVsync);
+		logOn && console.log(this.tstates, "vsync off:  !this.lineCounterEnabled == true");
+		const lengthOfVsync = this.tstates - this.vsyncStartTstates;
+		if (lengthOfVsync >= this.VSYNC_MINIMAL_TSTATES) {
+			logOn && console.log(this.tstates, "  lengthOfVsync >= VSYNC_MINIMAL_TSTATES, lengthOfVsync=" + lengthOfVsync);
 
-				// VSYNC
-				//console.log("VSYNC", Date.now());
-				this.emit('VSYNC');
-				this.resetBuffer();
-			}
-			this.lineCounter = 0;
-			this.lineCounterEnabled = true;
+			// VSYNC
+			//console.log("VSYNC", Date.now());
+			this.emit('VSYNC');
+			this.resetBuffer();
 		}
+		this.vsync = on;
+		this.lineCounter = 0;
+		this.hsyncTstatesCounter = 0;  // Normal display would be one off if this was done in the VSYNC on (low) part.
 	}
 
 
