@@ -27,11 +27,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// Screen width
 	public static SCREEN_WIDTH = 256;
 
-	// The NMI interval of the ULA.
-	// TODO : REMOVE: protected static NMI_TIME = 0.000064;	// 64us
-	// Time for a horizontal line (PAL) . Used for lineCounter increments
-	protected static HOR_LINE_TIME = 0.000064;	// 64us
-
 	// The line 3-bit counter (0-7) to address the 8 lines of a character.
 	protected lineCounter = 0;
 
@@ -69,6 +64,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 	// The minimal number of tstates for a VSYNC
 	protected VSYNC_MINIMAL_TSTATES = 280;
+	// The minimal number of tstates for a VSYNC (0.5ms)
+	//protected VSYNC_MINIMAL_TSTATES = 1625;
 
 	// Mininum duration for a VSYNC
 	protected VSYNC_TSTATES_MIN_DURATION = 518;
