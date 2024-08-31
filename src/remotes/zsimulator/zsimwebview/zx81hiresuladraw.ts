@@ -23,9 +23,14 @@ export class Zx81HiResUlaDraw {
 		const white = 255;
 		const black = 0;
 		let index = 0;
+		let len = width8;
 		while (index < ulaScreen.length) {
+			// Skip rest of line (make white), len from previous line
+			const remainingLen = (width8 - len) * 8;
+			pixels.fill(white, pixelIndex, pixelIndex + remainingLen * 4);	// white and alpha are the same values (255), so I can use fill
+			pixelIndex += remainingLen * 4;
 			// Get length of line
-			const len = ulaScreen[index++];
+			len = ulaScreen[index++];
 			// Loop over line
 			for (let x = len; x > 0; x--) {
 				const byteValue = ulaScreen[index++];
@@ -41,16 +46,6 @@ export class Zx81HiResUlaDraw {
 					mask /= 2;
 				}
 			}
-			// Skip rest of line (make white)
-			// TODO: use fill instead
-			const remainingLen = (width8 - len) * 8;
-			// for (let i = remainingLen; i > 0; i--) { // TODO: REMOVE
-			// 	pixels[pixelIndex++] = white;	// red
-			// 	pixels[pixelIndex++] = white;	// green
-			// 	pixels[pixelIndex++] = white;	// blue
-			// 	pixels[pixelIndex++] = 255;	// alpha
-			// }
-			pixelIndex += remainingLen * 4;
 		}
 
 		// Write image
