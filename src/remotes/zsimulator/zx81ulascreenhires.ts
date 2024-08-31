@@ -80,8 +80,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// Used to generate the hsync
 	protected hsyncTstatesCounter = 0;
 
-	// The current scanline.
-	protected scanlineCounter = 0;
 
 	// Is set when an interrupt should be generated in the next cycle.
 	protected int38InNextCycle = false;
@@ -246,8 +244,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		this.hsyncTstatesCounter += currentTstates;
 		if (this.hsyncTstatesCounter >= this.TSTATES_PER_SCANLINE) {
 			this.generateHsync();
-			this.scanlineCounter++;
-			this.hsyncTstatesCounter = this.hsyncTstatesCounter % this.TSTATES_PER_SCANLINE;
+			this.hsyncTstatesCounter %= this.TSTATES_PER_SCANLINE;
 		}
 	}
 
@@ -279,7 +276,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 */
 	protected generateHsync() {
 		if (this.lineCounterEnabled)
-			this.lineCounter++;	// TODO: is it the same as scanlineCounter ?
+			this.lineCounter++;
 
 		this.tstatesScanlineDraw++;
 		this.tstatesScanlineDrawTimeout++;
