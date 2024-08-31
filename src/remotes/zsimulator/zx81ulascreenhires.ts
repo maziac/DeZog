@@ -80,9 +80,11 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// Used to generate the hsync
 	protected hsyncTstatesCounter = 0;
 
-
 	// Is set when an interrupt should be generated in the next cycle.
 	protected int38InNextCycle = false;
+
+	// The state of the HSYNC signal: on (low) or off (high).
+	protected hsync = false;
 
 
 	/** Constructor.
@@ -211,11 +213,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		}
 		this.prevRregister = r;
 
-		this.hsyncTstatesCounter += currentTstates;
-		if (this.hsyncTstatesCounter >= this.TSTATES_PER_SCANLINE - this.TSTATES_OF_HSYNC_LOW) {
-			this.generateHsync();
-			this.hsyncTstatesCounter -= this.TSTATES_PER_SCANLINE;
-		}
+		this.checkHsync(currentTstates);
 	}
 
 
@@ -230,6 +228,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 
 	/** Generate a VSYNC. Updates the display (emit).
+	 * Is called by software: in-port -> vsync active, out-port -> vsync off
 	 * @param on true to turn VSYNC on, false to turn it off.
 	 * Note: The VSYNC is emitted only if the vsync active tiem (low)
 	 * is long enough.
@@ -280,13 +279,34 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 
 	/** Generate a HSYNC.
+	 * Is called every instruction. Depending on tstates it generates the HSYNC.
 	 * This is the High/Low switch ^^^^^^\_/^^^
+	 * After ~191 tstates the HSYNC is low for 16 tstates. In total this is
+	 * 207 tstates (=64us).
 	 * On this switch the line counter is incremented.
 	 * During the HSYNC being low a small (undetected) VSYNC may happen
 	 * that resets the line counter for hires.
+	 * @param addTstates The number of tstates to add to the HSYNC tstates counter.
 	 */
-	protected generateHsync() {
-		console.log("generateHsync");
+	protected checkHsync(addTstates: number) {
+		this.hsyncTstatesCounter += addTstates;
+
+		// Check for HSYNC on or off
+		if (this.hsync) {
+			// HSYNC is on, check for off
+			if (this.hsyncTstatesCounter < this.TSTATES_PER_SCANLINE)
+				return;	// No HSYNC on yet
+			// HSYNC off
+			this.hsyncTstatesCounter -= this.TSTATES_PER_SCANLINE;
+			this.hsync = false;
+			return;
+		}
+
+		// HSYNC is off, check for on
+		if (this.hsyncTstatesCounter < this.TSTATES_PER_SCANLINE - this.TSTATES_OF_HSYNC_LOW)
+			return;	// No HSYNC on yet
+
+		// HSYNC
 		if (this.lineCounterEnabled)
 			this.lineCounter++;
 
@@ -303,6 +323,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		if (this.stateNmiGeneratorOn) {
 			this.z80Cpu.interrupt(true, 0);	// NMI
 		}
+
+		this.hsync = true;
 	}
 
 
