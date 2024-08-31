@@ -44,12 +44,13 @@ export class Zx81HiResUlaDraw {
 			// Skip rest of line (make white)
 			// TODO: use fill instead
 			const remainingLen = (width8 - len) * 8;
-			for (let i = remainingLen; i > 0; i--) {
-				pixels[pixelIndex++] = white;	// red
-				pixels[pixelIndex++] = white;	// green
-				pixels[pixelIndex++] = white;	// blue
-				pixels[pixelIndex++] = 255;	// alpha
-			}
+			// for (let i = remainingLen; i > 0; i--) { // TODO: REMOVE
+			// 	pixels[pixelIndex++] = white;	// red
+			// 	pixels[pixelIndex++] = white;	// green
+			// 	pixels[pixelIndex++] = white;	// blue
+			// 	pixels[pixelIndex++] = 255;	// alpha
+			// }
+			pixelIndex += remainingLen * 4;
 		}
 
 		// Write image

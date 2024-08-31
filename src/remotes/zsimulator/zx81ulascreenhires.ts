@@ -197,9 +197,9 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		if (this.int38InNextCycle) {
 			this.int38InNextCycle = false;
 			this.z80Cpu.interrupt(false, 0);
-			this.screenLineLengthIndex = this.screenDataIndex;
-			this.screenData[this.screenLineLengthIndex] = 0;
-			this.screenDataIndex++;
+			// this.screenLineLengthIndex = this.screenDataIndex;
+			// this.screenData[this.screenLineLengthIndex] = 0;
+			// this.screenDataIndex++;
 		}
 
 		// Check for the R-register
@@ -268,6 +268,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 					this.vsync = false;
 
 					// VSYNC
+					//console.log("VSYNC", Date.now());
 					this.emit('VSYNC');
 					this.resetBuffer();
 				}
@@ -312,6 +313,11 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 		this.tstatesScanlineDraw++;
 		this.tstatesScanlineDrawTimeout++;
+
+		// Next line (graphics output)
+		this.screenLineLengthIndex = this.screenDataIndex;
+		this.screenData[this.screenLineLengthIndex] = 0;
+		this.screenDataIndex++;
 
 		// Force a vsync if scan line too long
 		// if (this.tstatesScanlineDrawTimeout >= this.VSYNC_LINE_TIMEOUT) {
