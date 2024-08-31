@@ -4,6 +4,8 @@ import {Z80Cpu} from "./z80cpu";
 import {Zx81UlaScreen} from "./zx81ulascreen";
 
 
+const logOn = false;
+
 /** Handles the ZX81 ULA screen.
  * Is derived from the Zx81UlaScreen which simulates the dfile.
  * The Zx81UlaScreenHiRes simulates/emulates the ZX81 ULA more correctly.
@@ -122,7 +124,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		// NMI generator on?
 		else if ((port & 0x0003) === 2) {
 			// Usually 0xFE
-			this.stateNmiGeneratorOn = true;		}
+			this.stateNmiGeneratorOn = true;
+		}
 
 		// Vsync?
 		this.generateVsync(false);
@@ -161,10 +164,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			// Interpret data
 			const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
 			const i = this.z80Cpu.i;
-			let ulaAddr = (i & 0xFE) * 256 + ulaAddrLatch * 8;
-			// Is a hack, but seems to work:
-			if (i == 0x1E)	// not = 0x1E =>hires 0 > linecounter = 0
-				ulaAddr += (this.lineCounter & 0x07);
+			let ulaAddr = (i & 0xFE) * 256 + ulaAddrLatch * 8+ (this.lineCounter & 0x07);
 			// Load byte from character (ROM)
 			let videoShiftRegister = this.memoryRead8(ulaAddr);
 			// Check to invert the byte
@@ -235,45 +235,44 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * Otherwise only the line counter is reset.
 	 */
 	protected generateVsync(on: boolean) {
-		// Ignore if unchanged
-		if (this.vsync == on)
-			return;
-
+		logOn && console.log(this.hsyncTstatesCounter, "generateVsync: " + (on ? "on (low)" : "off (high)"));
 		// Vsync has changed
-		this.vsync = on;
-
 		if (on) {
 			// VSYNC on (low)
 			if (!this.stateNmiGeneratorOn) {
-				console.log("inPort A0=0: VSYNC?");
+				logOn && console.log("inPort A0=0: VSYNC?");
 				if (this.lineCounterEnabled) {
-					if (this.tstatesScanlineDrawTimeout > this.VSYNC_MINIMAL_TSTATES) {
-						console.log("  -> VSYNC");
+					if (this.tstatesScanlineDrawTimeout > this.VSYNC_MINIMAL_TSTATES) { //  TODO: Really required?
+						logOn && console.log("  -> VSYNC on (low)");
 						this.vsyncStartTstates = this.tstates;
+						this.vsync = true;
 					}
 				}
-				this.lineCounter = 0;	// TODO: according zxdocs.htm this happens on the out port 0x00FF, reset LINECTR
+				//this.lineCounter = 0;	// TODO: according zxdocs.htm this happens on the out port 0x00FF, reset LINECTR
 				this.lineCounterEnabled = false;
+				logOn && console.log(this.hsyncTstatesCounter, "  reset hsyncCounter");
+				this.lineCounter = 0;	// Happens here already and not when VSYNC goes high. Otherwise the lineCounter is one off in normal display.
 			}
+			return;
 		}
-		else {
-			// VSYNC off (high)
-			if (!this.lineCounterEnabled) {
-				const lengthOfVsync = this.tstates - this.vsyncStartTstates;
-				if (lengthOfVsync >= this.VSYNC_TSTATES_MIN_DURATION) {
-					if (this.tstatesScanlineDrawTimeout > this.VSYNC_MINIMAL_TSTATES) {
-						// End of VSYNC signal
-						this.tstatesScanlineDraw = 0;
-						this.tstatesScanlineDrawTimeout = 0;
-						this.hsyncTstatesCounter = 0;
 
-						// VSYNC
-						this.emit('VSYNC');
-						this.resetBuffer();
-					}
+		// VSYNC off (high)
+		this.hsyncTstatesCounter = 0;  // Normal display would be one off if this was done in the VSYNC on (low) part.
+		if (!this.lineCounterEnabled) {
+			const lengthOfVsync = this.tstates - this.vsyncStartTstates;
+			if (lengthOfVsync >= this.VSYNC_TSTATES_MIN_DURATION) {
+				if (this.tstatesScanlineDrawTimeout > this.VSYNC_MINIMAL_TSTATES) {
+					// End of VSYNC signal
+					this.tstatesScanlineDraw = 0;
+					this.tstatesScanlineDrawTimeout = 0;
+					this.vsync = false;
+
+					// VSYNC
+					this.emit('VSYNC');
+					this.resetBuffer();
 				}
-				this.lineCounterEnabled = true;
 			}
+			this.lineCounterEnabled = true;
 		}
 	}
 
@@ -299,6 +298,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			// HSYNC off
 			this.hsyncTstatesCounter -= this.TSTATES_PER_SCANLINE;
 			this.hsync = false;
+			logOn && console.log(this.hsyncTstatesCounter, "HSYNC off (high)");
 			return;
 		}
 
@@ -325,6 +325,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		}
 
 		this.hsync = true;
+		logOn && console.log(this.hsyncTstatesCounter, "HSYNC on (low)");
 	}
 
 
