@@ -77,6 +77,9 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// The state of the HSYNC generator
 	protected stateHsyncGeneratorOn = false;
 
+	// Used to generate the hsync
+	protected hsyncTstatesCounter = 0;
+
 	// The current scanline.
 	protected scanlineCounter = 0;
 
@@ -219,8 +222,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 */
 	public execute(cpuFreq: number, currentTstates: number) {
 		this.tstates += currentTstates;
-		const timeAdd = currentTstates / cpuFreq;
-		this.nmiTimeCounter += timeAdd;
 
 		// Execute int38 interrupt?
 		if (this.int38InNextCycle) {
@@ -242,9 +243,11 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		}
 		this.prevRregister = r;
 
-		if ((this.tstates / this.TSTATES_PER_SCANLINE) >= this.scanlineCounter) {
-			this.scanlineCounter++;
+		this.hsyncTstatesCounter += currentTstates;
+		if (this.hsyncTstatesCounter >= this.TSTATES_PER_SCANLINE) {
 			this.generateHsync();
+			this.scanlineCounter++;
+			this.hsyncTstatesCounter = this.hsyncTstatesCounter % this.TSTATES_PER_SCANLINE;
 		}
 	}
 
@@ -264,8 +267,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	protected generateVsync() {
 		this.tstatesScanlineDraw = 0;
 		this.tstatesScanlineDrawTimeout = 0;
-		const tstatesInScanline = this.tstates % this.TSTATES_PER_SCANLINE;
-		this.tstates -= tstatesInScanline;
+		this.hsyncTstatesCounter = 0;
 
 		// VSYNC
 		this.emit('VSYNC');
@@ -277,7 +279,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 */
 	protected generateHsync() {
 		if (this.lineCounterEnabled)
-			this.lineCounter++;
+			this.lineCounter++;	// TODO: is it the same as scanlineCounter ?
 
 		this.tstatesScanlineDraw++;
 		this.tstatesScanlineDrawTimeout++;

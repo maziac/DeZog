@@ -185,7 +185,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	public execute(cpuFreq: number, currentTstates: number) {
 		const timeAdd = currentTstates / cpuFreq;
 		this.vsyncTimeCounter += timeAdd;
-		this.nmiTimeCounter += timeAdd;
+		this.nmiTimeCounter += timeAdd;	// TODO: Better use tstates instead
 		//this.logTimeCounter += timeAdd * 1000;
 
 		// Check for "no display", i.e. no vsync

@@ -200,7 +200,7 @@ export class ZSimulationView extends BaseView {
 		// Start timer
 		this.displayTimer = setInterval(() => {
 			// Update
-// TODO			this.updateDisplay();
+			this.updateDisplay();
 			// Get current time
 			const currentTime = Date.now();
 			this.lastVertSyncTime = currentTime;
