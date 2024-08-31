@@ -232,8 +232,13 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * Otherwise only the line counter is reset.
 	 */
 	protected generateVsync(on: boolean) {
+		if (this.vsync == on)
+			return;
+
 		logOn && console.log(this.hsyncTstatesCounter, "generateVsync: " + (on ? "on (low)" : "off (high)"));
+
 		// Vsync has changed
+		this.vsync = on;
 		if (on) {
 			// VSYNC on (low)
 			if (!this.stateNmiGeneratorOn) {
@@ -242,7 +247,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 					if (this.tstatesScanlineDrawTimeout > this.VSYNC_MINIMAL_TSTATES) { //  TODO: Really required?
 						logOn && console.log("  -> VSYNC on (low)");
 						this.vsyncStartTstates = this.tstates;
-						this.vsync = true;
 					}
 				}
 				//this.lineCounter = 0;	// TODO: according zxdocs.htm this happens on the out port 0x00FF, reset LINECTR
@@ -262,7 +266,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 					// End of VSYNC signal
 					this.tstatesScanlineDraw = 0;
 					this.tstatesScanlineDrawTimeout = 0;
-					this.vsync = false;
 
 					// VSYNC
 					//console.log("VSYNC", Date.now());
