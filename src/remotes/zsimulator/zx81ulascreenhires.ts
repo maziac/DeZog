@@ -44,9 +44,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// Turn increments on/off
 	protected lineCounterEnabled = false;
 
-	// Incremented with every HSYNC, reset on VSYNC
-	protected tstatesScanlineDraw = 0;
-
 	// The tstates counter TODO: can be changed to the global one, when -= is resolved
 	protected tstates = 0;
 
@@ -256,8 +253,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			const lengthOfVsync = this.tstates - this.vsyncStartTstates;
 			if (lengthOfVsync >= this.VSYNC_MINIMAL_TSTATES) {
 				logOn && console.log(this.tstates, "  lengthOfVsync >= VSYNC_MINIMAL_TSTATES, lengthOfVsync=" + lengthOfVsync);
-				// End of VSYNC signal
-				this.tstatesScanlineDraw = 0;
 
 				// VSYNC
 				//console.log("VSYNC", Date.now());
@@ -301,7 +296,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 		// HSYNC
 		this.lineCounter++;
-		this.tstatesScanlineDraw++;
 
 		// Next line (graphics output)
 		this.screenLineLengthIndex = this.screenDataIndex;
