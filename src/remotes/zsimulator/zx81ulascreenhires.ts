@@ -59,6 +59,9 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// The number of tstates required for a horizontal scanline.
 	protected TSTATES_PER_SCANLINE = 207;
 
+	// The HSYNC signal stay low for 16 tstates.
+	protected TSTATES_OF_HSYNC_LOW = 16;
+
 	// The total number of tstates for a full screen.
 	protected TSTATES_PER_SCREEN = 65000;
 
@@ -73,9 +76,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 	// The tstates at which the VSYNC starts
 	protected vsyncStartTstates = 0;
-
-	// The state of the HSYNC generator
-	protected stateHsyncGeneratorOn = false;
 
 	// Used to generate the hsync
 	protected hsyncTstatesCounter = 0;
@@ -93,7 +93,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		this.lineCounter = 0;
 		this.screenDataIndex = 0;
 		this.screenLineLengthIndex = 0;
-		this.stateHsyncGeneratorOn = false;
 		this.screenData = new Uint8Array(256 * (1 + Zx81UlaScreenHiRes.SCREEN_WIDTH / 8));	// 256: in case more scan lines would be used. TODO: recalculate and limit while writing
 	}
 
@@ -113,15 +112,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * Note: the value of a is not ignored.
 	 */
 	protected outPorts(port: number, _data: number): void {
-		this.stateHsyncGeneratorOn = true;
-
-		// Check for A0 = low
-		if ((port & 0x0001) === 0) {
-			// Reset line counter
-			// if (this.vsync)	// TODO: Unclear if the LCNTR reset is required here
-			// 	this.ulaLCNTR = 0;
-		}
-
 		// NMI generator off?
 		if ((port & 0x0003) === 1) {
 			// Usually 0xFD
@@ -133,18 +123,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			this.stateNmiGeneratorOn = true;		}
 
 		// Vsync?
-		let lengthOfVsync = this.tstates - this.vsyncStartTstates;
-		if(lengthOfVsync <= 0)
-			lengthOfVsync += this.TSTATES_PER_SCREEN;
-
-		if (!this.lineCounterEnabled) {
-			if (lengthOfVsync >= this.VSYNC_TSTATES_MIN_DURATION) {
-				if (this.tstatesScanlineDrawTimeout > this.VSYNC_MINIMAL_TSTATES) {
-					this.generateVsync();
-				}
-			}
-			this.lineCounterEnabled = true;
-		}
+		this.generateVsync(false);
 	}
 
 
@@ -157,16 +136,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	protected inPort(port: number): number | undefined {
 		// Check for address line A0 = LOW
 		if ((port & 0x0001) === 0) {
-			if (!this.stateNmiGeneratorOn) {
-				if (this.lineCounterEnabled) {
-					if (this.tstatesScanlineDrawTimeout > this.VSYNC_MINIMAL_TSTATES) {
-						this.vsyncStartTstates = this.tstates;
-					}
-				}
-				this.lineCounter = 0;
-				this.lineCounterEnabled = false;
-				this.stateHsyncGeneratorOn = false;
-			}
+			this.generateVsync(true);
 		}
 		return undefined;
 	}
@@ -242,9 +212,9 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		this.prevRregister = r;
 
 		this.hsyncTstatesCounter += currentTstates;
-		if (this.hsyncTstatesCounter >= this.TSTATES_PER_SCANLINE) {
+		if (this.hsyncTstatesCounter >= this.TSTATES_PER_SCANLINE - this.TSTATES_OF_HSYNC_LOW) {
 			this.generateHsync();
-			this.hsyncTstatesCounter %= this.TSTATES_PER_SCANLINE;
+			this.hsyncTstatesCounter -= this.TSTATES_PER_SCANLINE;
 		}
 	}
 
@@ -260,21 +230,63 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 
 	/** Generate a VSYNC. Updates the display (emit).
+	 * @param on true to turn VSYNC on, false to turn it off.
+	 * Note: The VSYNC is emitted only if the vsync active tiem (low)
+	 * is long enough.
+	 * Otherwise only the line counter is reset.
 	 */
-	protected generateVsync() {
-		this.tstatesScanlineDraw = 0;
-		this.tstatesScanlineDrawTimeout = 0;
-		this.hsyncTstatesCounter = 0;
+	protected generateVsync(on: boolean) {
+		// Ignore if unchanged
+		if (this.vsync == on)
+			return;
 
-		// VSYNC
-		this.emit('VSYNC');
-		this.resetBuffer();
+		// Vsync has changed
+		this.vsync = on;
+
+		if (on) {
+			// VSYNC on (low)
+			if (!this.stateNmiGeneratorOn) {
+				console.log("inPort A0=0: VSYNC?");
+				if (this.lineCounterEnabled) {
+					if (this.tstatesScanlineDrawTimeout > this.VSYNC_MINIMAL_TSTATES) {
+						console.log("  -> VSYNC");
+						this.vsyncStartTstates = this.tstates;
+					}
+				}
+				this.lineCounter = 0;	// TODO: according zxdocs.htm this happens on the out port 0x00FF, reset LINECTR
+				this.lineCounterEnabled = false;
+			}
+		}
+		else {
+			// VSYNC off (high)
+			if (!this.lineCounterEnabled) {
+				const lengthOfVsync = this.tstates - this.vsyncStartTstates;
+				if (lengthOfVsync >= this.VSYNC_TSTATES_MIN_DURATION) {
+					if (this.tstatesScanlineDrawTimeout > this.VSYNC_MINIMAL_TSTATES) {
+						// End of VSYNC signal
+						this.tstatesScanlineDraw = 0;
+						this.tstatesScanlineDrawTimeout = 0;
+						this.hsyncTstatesCounter = 0;
+
+						// VSYNC
+						this.emit('VSYNC');
+						this.resetBuffer();
+					}
+				}
+				this.lineCounterEnabled = true;
+			}
+		}
 	}
 
 
 	/** Generate a HSYNC.
+	 * This is the High/Low switch ^^^^^^\_/^^^
+	 * On this switch the line counter is incremented.
+	 * During the HSYNC being low a small (undetected) VSYNC may happen
+	 * that resets the line counter for hires.
 	 */
 	protected generateHsync() {
+		console.log("generateHsync");
 		if (this.lineCounterEnabled)
 			this.lineCounter++;
 
@@ -282,10 +294,10 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		this.tstatesScanlineDrawTimeout++;
 
 		// Force a vsync if scan line too long
-		if (this.tstatesScanlineDrawTimeout >= this.VSYNC_LINE_TIMEOUT) {
-			this.generateVsync();	// Happens only sometimes if the VSYNC is not generated by SW
-			this.lineCounterEnabled = true;
-		}
+		// if (this.tstatesScanlineDrawTimeout >= this.VSYNC_LINE_TIMEOUT) {
+		// 	this.generateVsync();	// Happens only sometimes if the VSYNC is not generated by SW
+		// 	this.lineCounterEnabled = true;
+		// }
 
 		// Generate NMI on every HSYNC (if NMI generator is on)
 		if (this.stateNmiGeneratorOn) {
