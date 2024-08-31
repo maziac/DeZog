@@ -60,7 +60,7 @@ export class ZSimulationView extends BaseView {
 	protected resolveLoaded: () => void;
 
 	// To create human readable numbers.
-	protected numberFormatter = new Intl.NumberFormat('en', {notation: 'compact', compactDisplay: 'short'});
+	protected numberFormatter = new Intl.NumberFormat('en', {notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 2});
 
 
 	/**
@@ -500,7 +500,7 @@ export class ZSimulationView extends BaseView {
 
 			// Update cpuload
 			if (Settings.launch.zsim.cpuLoad > 0)
-				cpuLoad = (this.simulator.z80Cpu.cpuLoad * 100).toFixed(0).toString();
+				cpuLoad = (this.simulator.z80Cpu.cpuLoad * 100).toFixed(0);
 
 			// Visual Memory
 			if (Settings.launch.zsim.visualMemory) {
