@@ -51,9 +51,6 @@ export class ZSimulationView extends BaseView {
 	// Set by the display timer: the next time an update will happen.
 	protected nextUpdateTime: number;
 
-	// Set by the vertSync event: The last sync time.
-	protected lastVertSyncTime: number;
-
 
 	// Stores the last T-states value.
 	// Used to check for changes.
@@ -75,8 +72,6 @@ export class ZSimulationView extends BaseView {
 		// Init
 		this.simulator = simulator;
 		this.countOfOutstandingMessages = 0;
-		this.displayTime = 1000 / Settings.launch.zsim.updateFrequency;
-		this.displayTimer = undefined as any;
 		this.displayTime = 1000 / Settings.launch.zsim.updateFrequency;
 		this.displayTimer = undefined as any;
 		this.stopTime = 2 * this.displayTime;
@@ -127,7 +122,8 @@ export class ZSimulationView extends BaseView {
 		// Check if simulator restored
 		this.simulator.on('restored', () => {
 			// Change previous t-states to force an update.
-			this.previousTstates = -1;
+			this.updateScreen();
+			this.updateDisplay();
 		});
 
 		// Close
@@ -137,7 +133,7 @@ export class ZSimulationView extends BaseView {
 
 		// Handle vertical sync
 		this.simulator.on('VSYNC', () => {
-			this.vertSync();
+			this.updateScreen();
 		});
 
 		// Handle custom code messages
@@ -182,6 +178,8 @@ export class ZSimulationView extends BaseView {
 		this.stopTimer = setTimeout(() => {
 			// Send stop to audio in webview
 			this.sendMessageToWebView({command: 'cpuStopped'});
+			// Update the screen
+			this.updateScreen();
 			this.stopTimer = undefined as any;
 		}, this.stopTime);	// in ms
 	}
@@ -195,7 +193,6 @@ export class ZSimulationView extends BaseView {
 		clearInterval(this.displayTimer);
 		// Get current time
 		const nowTime = Date.now();
-		this.lastVertSyncTime = nowTime;
 		this.nextUpdateTime = nowTime + this.displayTime;
 		// Start timer
 		this.displayTimer = setInterval(() => {
@@ -203,50 +200,19 @@ export class ZSimulationView extends BaseView {
 			this.updateDisplay();
 			// Get current time
 			const currentTime = Date.now();
-			this.lastVertSyncTime = currentTime;
 			this.nextUpdateTime = currentTime + this.displayTime;
 		}, this.displayTime);	// in ms
 	}
 
 
-	/**
-	 * A vertical sync was received from the Z80 simulation.
-	 * Is used to sync the display as best as possible:
-	 * On update the next time is stored (nextUpdateTime).
-	 * The lastVertSyncTime is stored with the current time.
-	 * On next vert sync the diff to lastVertSyncTime is calculated and extrapolated.
-	 * If the next time would be later as the next regular update, then the update is
-	 * done earlier and the timer restarted.
-	 * I.e. the last vert sync before the regular update is used for synched display.
-	 */
-	protected vertSync() {
-		//Log.log("vertSync");
-		// Get current time
-		const currentTime = Date.now();
-		// Diff to last vertical sync
-		const diff = currentTime - this.lastVertSyncTime;
-		this.lastVertSyncTime = currentTime;
-		// Extrapolate
-		if (currentTime + diff > this.nextUpdateTime) {
-			//Log.log("vertSync: do update");
-			// Do the update earlier, now at the vert sync
-			this.updateDisplay();
-			// Restart timer
-			this.startDisplayTimer();
-		}
-	}
-
-
-	/**
-	 * Closes the view.
+	/** Closes the view.
 	 */
 	public close() {
 		this.vscodePanel?.dispose();
 	}
 
 
-	/**
-	 * Dispose the view (called e.g. on close).
+	/** Dispose the view (called e.g. on close).
 	 * Use this to clean up additional stuff.
 	 * Normally not required.
 	 */
@@ -340,8 +306,7 @@ export class ZSimulationView extends BaseView {
 	}
 
 
-	/**
-	 * A message is posted to the web view.
+	/** A message is posted to the web view.
 	 * Overwritten to count the number of messages for balancing.
 	 * @param message The message. message.command should contain the command as a string.
 	 * This needs to be evaluated inside the web view.
@@ -357,16 +322,14 @@ export class ZSimulationView extends BaseView {
 	}
 
 
-	/**
-	 * Called if the custom UI code wants to send something to the custom logic/the javascript code.
+	/** Called if the custom UI code wants to send something to the custom logic/the javascript code.
 	 */
 	protected sendToCustomLogic(msg: any) {
 		this.simulator.customCode?.receivedFromCustomUi(msg);
 	}
 
 
-	/**
-	 * Called on key press or key release.
+	/** Called on key press or key release.
 	 * Sets/clears the corresponding port bits.
 	 * @param key E.g. "key_Digit2", "key_KeyQ", "key_Enter", "key_Space", "key_Shift_Caps" (CAPS) or "key_Period_Symbol" (SYMBOL).
 	 * @param on true=pressed, false=released
@@ -497,8 +460,7 @@ export class ZSimulationView extends BaseView {
 	}
 
 
-	/**
-	 * Called if a bit for a port should change.
+	/** Called if a bit for a port should change.
 	 * @param port The port number.
 	 * @param on true = bit should be set, false = bit should be cleared
 	 * @param bitByte A byte with the right bit set.
@@ -516,8 +478,7 @@ export class ZSimulationView extends BaseView {
 	}
 
 
-	/**
-	 * Retrieves the screen memory content and displays it.
+	/** Retrieves the screen memory content and displays it.
 	 * @param reason Not used.
 	 */
 	public updateDisplay() {
@@ -529,7 +490,7 @@ export class ZSimulationView extends BaseView {
 		this.restartStopTimer();
 
 		try {
-			let cpuFreq, cpuLoad, slots, slotNames, visualMem, ulaData, audio, borderColor, zxnDMA;
+			let cpuFreq, cpuLoad, slots, slotNames, visualMem, audio, zxnDMA;
 
 			// Update frequency
 			if (this.prevCpuFreq !== this.simulator.z80Cpu.cpuFreq) {
@@ -549,26 +510,6 @@ export class ZSimulationView extends BaseView {
 				visualMem = this.simulator.memory.getVisualMemory();
 			}
 
-			const ulaScreen = Settings.launch.zsim.ulaScreen;
-			if (ulaScreen === 'spectrum') {
-				// For ZX81 and ZX Spectrum.
-				// The time is supplied only for the flashing of the attributes for the Spectrum. (The flash frequency is 1/640ms (~1.56Hz)).
-				const time = this.simulator.getTstatesSync() / this.simulator.getCpuFrequencySync() * 1000;
-				const ulaDirectData = this.simulator.zxUlaScreen.getUlaScreen();
-				ulaData = {
-					time,
-					ulaDirectData
-				};
-			}
-			else if (ulaScreen === 'zx81' || ulaScreen === 'zx81-hires') {
-				ulaData = this.simulator.zxUlaScreen.getUlaScreen();
-			}
-
-			if (Settings.launch.zsim.zxBorderWidth > 0) {
-				// Get the border and set it.
-				borderColor = this.simulator.getZxBorderColor();
-			}
-
 			if (Settings.launch.zsim.zxBeeper) {
 				// Audio
 				audio = this.simulator.getZxBeeperBuffer();
@@ -586,11 +527,58 @@ export class ZSimulationView extends BaseView {
 				cpuLoad,
 				slotNames,
 				visualMem,
+				audio,
+				zxnDMA
+			};
+			this.sendMessageToWebView(message);
+			// Clear
+			this.simulator.memory.clearVisualMemory();
+		}
+		catch {}
+	}
+
+
+	/** A vertical sync was received from the Z80 simulation.
+	 * Is used to sync the display as best as possible:
+	 * On update the next time is stored (nextUpdateTime).
+	 * The lastVertSyncTime is stored with the current time.
+	 * On next vert sync the diff to lastVertSyncTime is calculated and extrapolated.
+	 * If the next time would be later as the next regular update, then the update is
+	 * done earlier and the timer restarted.
+	 * I.e. the last vert sync before the regular update is used for synched display.
+	 */
+	protected updateScreen() {
+		try {
+			let ulaData, borderColor;
+
+			// The screen data
+			const ulaScreen = Settings.launch.zsim.ulaScreen;
+			if (ulaScreen === 'spectrum') {
+				// For ZX81 and ZX Spectrum.
+				// The time is supplied only for the flashing of the attributes for the Spectrum. (The flash frequency is 1/640ms (~1.56Hz)).
+				const time = this.simulator.getTstatesSync() / this.simulator.getCpuFrequencySync() * 1000;
+				const ulaDirectData = this.simulator.zxUlaScreen.getUlaScreen();
+				ulaData = {
+					time,
+					ulaDirectData
+				};
+			}
+			else if (ulaScreen === 'zx81' || ulaScreen === 'zx81-hires') {
+				ulaData = this.simulator.zxUlaScreen.getUlaScreen();
+			}
+
+			// Border color
+			if (Settings.launch.zsim.zxBorderWidth > 0) {
+				// Get the border and set it.
+				borderColor = this.simulator.getZxBorderColor();
+			}
+
+			// Create message to update the webview
+			const message = {
+				command: 'updateScreen',
 				ulaScreen,	// 'spectrum', 'zx81', 'zx81-hires'
 				ulaData,
 				borderColor,
-				audio,
-				zxnDMA
 			};
 			this.sendMessageToWebView(message);
 			// Clear

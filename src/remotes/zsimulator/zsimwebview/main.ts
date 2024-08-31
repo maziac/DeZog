@@ -90,8 +90,34 @@ window.addEventListener('message', event => {// NOSONAR
 
 		case 'cpuStopped':
 			// Z80 CPU was stopped, t-states do not advance.
-			if(zxAudioBeeper)
+			if (zxAudioBeeper)
 				zxAudioBeeper.stop();
+			break;
+
+		case 'updateScreen':
+			// Update the screen
+			if (message.ulaData) {
+				const data = message.ulaData;
+				const ulaScreen = message.ulaScreen;
+				if (ulaScreen === 'spectrum') {
+					const ulaDirectData = data.ulaDirectData;
+					const time = data.time;
+					SpectrumUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaDirectData, time);
+				}
+				else if (ulaScreen === 'zx81') {
+					Zx81UlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, data);
+				}
+				else if (ulaScreen === 'zx81-hires') {
+					Zx81HiResUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, data);
+				}
+			}
+			// Update the border
+			if (message.borderColor != undefined) {
+				// Convert ZX color to html color
+				const htmlColor = SpectrumUlaDraw.getHtmlColor(message.borderColor);
+				// Set color
+				screenImg.style.borderColor = htmlColor;
+			}
 			break;
 
 		case 'update':
@@ -113,29 +139,6 @@ window.addEventListener('message', event => {// NOSONAR
 
 			if (message.visualMem) {
 				VisualMem.drawVisualMemory(message.visualMem);
-			}
-
-			if (message.ulaData) {
-				const data = message.ulaData;
-				const ulaScreen = message.ulaScreen;
-				if (ulaScreen === 'spectrum') {
-					const ulaDirectData = data.ulaDirectData;
-					const time = data.time;
-					SpectrumUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaDirectData, time);
-				}
-				else if (ulaScreen === 'zx81') {
-					Zx81UlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, data);
-				}
-				else if (ulaScreen === 'zx81-hires') {
-					Zx81HiResUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, data);
-				}
-			}
-
-			if (message.borderColor != undefined) {
-				// Convert ZX color to html color
-				const htmlColor = SpectrumUlaDraw.getHtmlColor(message.borderColor);
-				// Set color
-				screenImg.style.borderColor = htmlColor;
 			}
 
 			if (zxAudioBeeper) {
