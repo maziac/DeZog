@@ -50,16 +50,10 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// The HSYNC signal stay low for 16 tstates.
 	protected TSTATES_OF_HSYNC_LOW = 16;
 
-	// The total number of tstates for a full screen.
-	protected TSTATES_PER_SCREEN = 65000;
-
 	// The minimal number of tstates for a VSYNC should be ~1ms => 3250 tstates.
 	// But the generated vsync by the zx81 seems to be much smaller: 1233 tstates -> ~0.38ms
 	// So the about the half is used for vsync recognition.
 	protected VSYNC_MINIMAL_TSTATES = 500;
-
-	// If scanline draw timeout is reached (400), a VSYNC is generated.
-	protected VSYNC_LINE_TIMEOUT = 400;
 
 	// The tstates at which the VSYNC starts
 	protected vsyncStartTstates = 0;
@@ -149,7 +143,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			// Interpret data
 			const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
 			const i = this.z80Cpu.i;
-			let ulaAddr = (i & 0xFE) * 256 + ulaAddrLatch * 8+ (this.lineCounter & 0x07);
+			const ulaAddr = (i & 0xFE) * 256 + ulaAddrLatch * 8 + (this.lineCounter & 0x07);
 			// Load byte from character (ROM)
 			let videoShiftRegister = this.memoryRead8(ulaAddr);
 			// Check to invert the byte
