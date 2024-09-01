@@ -1,41 +1,31 @@
 
-import {MemBuffer, Serializable} from "../../misc/membuffer";
+import {MemBuffer} from "../../misc/membuffer";
 import {UlaScreen} from "./ulascreen";
 import {Z80Cpu} from "./z80cpu";
 
 
+const logOn = false;	// TODO: REMOVE
+
 /** Handles the ZX81 ULA screen.
- * Listen to ports and creates the nmi and the 0x0038 interrupts.
- * The display itself is simulated (i.e. the display contents would be
- * created by the CPU, but is not used).
- * In FAST mode there is display only if waiting for a key press.
- * Then the display is generated but without the NMI.
- * If no display is generated the getUlaScreen() returns an empty array.
+ * Is derived from the Zx81UlaScreen which simulates the dfile.
+ * The Zx81UlaScreenHiRes simulates/emulates the ZX81 ULA more correctly.
+ * I.e. it generates the graphics from the data on the CPU bus.
+ * Therefore it is capable of High Resolution graphics.
+ * Drawback is that for development/debugging changes to the display/dfile
+ * are not immediately visible, i.e. not before the vsync.
  *
  * There are 4 basic steps in generation of a screen display:
  * 1.  VSYNC, frame count and keyboard - NMI off
  * 2.  Blank lines/application code    - NMI on
  * 3.  VIDEO DISPLAY routine           - NMI off
  * 4.  Blank lines/application code    - NMI on
- *
- * For details of the zx81 ULA display see:
- * https://k1.spdns.de/Vintage/Sinclair/80/Sinclair%20ZX80/Tech%20specs/Wilf%20Rigter%27s%20ZX81%20Video%20Display%20Info.htm
- * or
- * https://8bit-museum.de/heimcomputer-2/sinclair/sinclair-scans/scans-zx81-video-display-system/
- * For details of the ULA HW and signals see:
- * https://oldcomputer.info/8bit/zx81/ULA/ula.htm
- *
- * Note: HSYNC is not required and not generated.
  */
-export class Zx81UlaScreen extends UlaScreen implements Serializable {
-	// The NMI interval of the ULA.
-	protected static NMI_TIME = 0.000064;	// 64us
+export class Zx81UlaScreen extends UlaScreen {
+	// Screen height
+	public static SCREEN_HEIGHT = 192;
 
-	// The time counter for the vsync signal.
-	protected vsyncTimeCounter = 0;
-
-	// The time counter for the nmi signal.
-	protected nmiTimeCounter = 0;
+	// Screen width
+	public static SCREEN_WIDTH = 256;
 
 	// The previous state of the R-register.
 	protected prevRregister = 0;
@@ -43,26 +33,47 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	// The state of the NMI generator
 	protected stateNmiGeneratorOn = false;
 
+	// The line 3-bit counter (0-7) to address the 8 lines of a character.
+	protected lineCounter = 0;
+
+	// The tstates counter
+	protected tstates = 0;
+
+	// The number of tstates required for a horizontal scanline.
+	protected TSTATES_PER_SCANLINE = 207;
+
+	// The number of tstates for one full screen.
+	protected TSTATES_PER_SCREEN = 65000;	// ~20ms
+
+	// The HSYNC signal stay low for 16 tstates.
+	protected TSTATES_OF_HSYNC_LOW = 16;
+
+	// The minimal number of tstates for a VSYNC should be ~1ms => 3250 tstates.
+	// But the generated vsync by the zx81 seems to be much smaller: 1233 tstates -> ~0.38ms
+	// So the about the half is used for vsync recognition.
+	protected VSYNC_MINIMAL_TSTATES = 500;
+
+	// The tstates at which the VSYNC starts
+	protected vsyncStartTstates = 0;
+
+	// Used to generate the hsync
+	protected hsyncTstatesCounter = 0;
+
+	// Is set when an interrupt should be generated in the next cycle.
+	protected int38InNextCycle = false;
+
+	// The state of the HSYNC signal: on (low) or off (high).
+	protected hsync = false;
+
 	// The vsync signal
 	protected vsync: boolean = false;
+
 
 	// No display.
 	protected noDisplay = false;
 
-	// If in FAST mode or SLOW mode.
-	// Note: is detected but not used anywhere.
-	public fastMode = false;
-
-	// Used to check if in FAST mode or SLOW mode.
-	protected nmiGeneratorAccessed = false;
-
 	// The original memory read function.
 	protected memoryRead8: (addr64k: number) => number;
-
-	// Required for the R-register.
-	protected z80Cpu: Z80Cpu;
-
-	//protected logTimeCounter: number = 0;
 
 
 	/** Constructor.
@@ -70,7 +81,6 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	 */
 	constructor(z80Cpu: Z80Cpu) {
 		super(z80Cpu);
-		this.z80Cpu = z80Cpu;
 
 		// Register ULA ports
 		z80Cpu.ports.registerGenericOutPortFunction(this.outPorts.bind(this));
@@ -79,6 +89,12 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 		// m1read8 (opcode fetch) is modified to emulate the ZX81 ULA.
 		this.memoryRead8 = z80Cpu.memory.read8.bind(z80Cpu.memory);
 		z80Cpu.memory.m1Read8 = this.ulaM1Read8.bind(this);
+	}
+
+
+	/** Resets the video buffer. */
+	protected resetVideoBuffer() {
+		// Override if needed
 	}
 
 
@@ -91,48 +107,18 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	 */
 	protected outPorts(port: number, _data: number): void {
 		// NMI generator off?
-		if ((port & 0x0002) === 0) {
-			// Just A1 needs to be 0, usually 0xFD
+		if ((port & 0x0003) === 1) {
+			// Usually 0xFD
 			this.stateNmiGeneratorOn = false;
-			this.nmiGeneratorAccessed = true;	// Used for FAST/SLOW mode detection
-			//console.log(this.logTimeCounter, "zx81 ULA: NMI generator off");
 		}
 		// NMI generator on?
-		else if ((port & 0x0001) === 0) {
-			// Just A0 needs to be 0, usually 0xFE
+		else if ((port & 0x0003) === 2) {
+			// Usually 0xFE
 			this.stateNmiGeneratorOn = true;
-			this.nmiGeneratorAccessed = true;	// Used for FAST/SLOW mode detection
-			this.vsyncTimeCounter = 0;
-			//console.log(this.logTimeCounter, "zx81 ULA: NMI generator on");
 		}
 
-		// Writing to any port also resets the vsync
-		if (this.vsync) {
-			this.vsync = false;
-			// FAST/SLOW mode detection:
-			// If NMI generator was turned on since last VSYNC,
-			// we are in SLOW mode.
-			let fastMode = true;
-			if (this.nmiGeneratorAccessed) {
-				fastMode = false;
-				this.nmiGeneratorAccessed = false;
-			}
-			if (fastMode !== this.fastMode) {
-				this.fastMode = fastMode;
-				//console.log("zx81 ULA: mode: ", this.fastMode ? "FAST" : "SLOW");
-			}
-			// No display detection
-			this.vsyncTimeCounter = 0;
-			// if (this.noDisplay)
-			// 	console.log(this.logTimeCounter, "zx81 ULA: No VSYNC -> No display = false");
-			this.noDisplay = false;
-			// Reset hsync timer
-			this.nmiTimeCounter = 0;
-			// VSYNC
-			this.emit('updateScreen');
-			//console.log();
-			//console.log(this.logTimeCounter, "zx81 ULA: OUT VSYNC Off ********");
-		}
+		// Vsync?
+		this.generateVsync(false);
 	}
 
 
@@ -143,12 +129,9 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	 * 4. ...
 	 */
 	protected inPort(port: number): number | undefined {
-		// Check for address line A0 = LOW, and nmi generator off
-		if (!this.vsync && (port & 0x01) === 0 && !this.stateNmiGeneratorOn) {
-			// Start VSYNC signal
-			this.vsync = true;
-			this.emit('updateScreen');
-			//console.log(this.logTimeCounter, "zx81 ULA: IN VSYNC On ********");
+		// Check for address line A0 = LOW
+		if ((port & 0x0001) === 0) {
+			this.generateVsync(true);
 		}
 		return undefined;
 	}
@@ -158,19 +141,14 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	 * For everything where A15 is set and data bit 6 is low, NOPs are returned.
 	 * When data bit 6 is set it is expected to be the HALT instruction.
 	 */
-	public ulaM1Read8(addr64k: number): number {
+	protected ulaM1Read8(addr64k: number): number {
 		// Read data from memory
 		const data = this.memoryRead8(addr64k & 0x7FFF);
-		// Check if above 32k, and data bit 6 is low.
-		// Then return NOPs.
-		if (addr64k & 0x8000) {
-			// Bit 15 is set
-			// Check if bit 6 is low
-			if ((data & 0b01000000) === 0) {
-				// Return a NOP
-				return 0x00;
-			}
-		}
+
+		// Check if it is character data and if bit 6 is low
+		if ((addr64k & 0x8000) && (data & 0b01000000) === 0)
+			return 0x00;	// NOP
+
 		// Otherwise return the normal value
 		return data;
 	}
@@ -183,40 +161,31 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	 * DMA or CPU.
 	 */
 	public execute(cpuFreq: number, currentTstates: number) {
-		const timeAdd = currentTstates / cpuFreq;
-		this.vsyncTimeCounter += timeAdd;
-		this.nmiTimeCounter += timeAdd;	// TODO: Better use tstates instead
-		//this.logTimeCounter += timeAdd * 1000;
+		this.tstates += currentTstates;
 
-		// Check for "no display", i.e. no vsync
-		if (this.vsyncTimeCounter >= UlaScreen.VSYNC_TIME) {
-			// No VSYNC -> No display
-			// if (!this.noDisplay)
-			// 	console.log(this.logTimeCounter, "zx81 ULA: No VSYNC -> No display = true");
-			this.noDisplay = true;
-			this.vsyncTimeCounter = 0;
+		// Execute int38 interrupt?
+		if (this.int38InNextCycle) {
+			this.int38InNextCycle = false;
+			this.z80Cpu.interrupt(false, 0);
 		}
 
 		// Check for the R-register
 		const r = this.z80Cpu.r;
-		if ((r & 0b0100_0000) === 0) {
-			// Bit 6 is low
-			if ((this.prevRregister & 0b0100_0000) !== 0) {
-				// Bit 6 changed from high to low -> interrupt
-				//console.log("zx81 ULA: 0x0038 interrupt");
-				this.z80Cpu.interrupt(false, 0);
-			}
+		// Bit 6 changed from high to low
+		if ((r & 0b0100_0000) === 0 && (this.prevRregister & 0b0100_0000) !== 0) {
+			// -> interrupt in next cycle
+			this.int38InNextCycle = true;
 		}
 		this.prevRregister = r;
 
-		// Check for NMI interrupt generation
-		if (this.stateNmiGeneratorOn) {
-			if (this.nmiTimeCounter >= Zx81UlaScreen.NMI_TIME) {
-				// NMI interrupt
-				//console.log("zx81 ULA: NMI interrupt");
-				this.z80Cpu.interrupt(true, 0);
-				// Next
-				this.nmiTimeCounter %= Zx81UlaScreen.NMI_TIME;
+		this.checkHsync(currentTstates);
+
+		// No vsync/no display detection: no display if for 2*20 ms no Vsync was found
+		if (this.tstates > this.vsyncStartTstates + 2 * this.TSTATES_PER_SCREEN) {
+			if (!this.noDisplay) {
+				// Change to no display
+				this.noDisplay = true;
+				this.emit('updateScreen');
 			}
 		}
 	}
@@ -243,18 +212,103 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	}
 
 
+	/** Generate a VSYNC. Updates the display (emit).
+	 * Is called by software: in-port -> vsync active, out-port -> vsync off
+	 * @param on true to turn VSYNC on, false to turn it off.
+	 * Note: The VSYNC is emitted only if the vsync active tiem (low)
+	 * is long enough.
+	 * Otherwise only the line counter is reset.
+	 */
+	protected generateVsync(on: boolean) {
+		if (this.vsync == on)
+			return;
+
+		logOn && console.log(this.tstates, "generateVsync: " + (on ? "on (low)" : "off (high)"));
+
+		// Vsync has changed
+		if (on) {
+			// VSYNC on (low)
+			if (!this.stateNmiGeneratorOn) {
+				logOn && console.log("  inPort A0=0: VSYNC?");
+				logOn && console.log("  -> VSYNC on (low)");
+				this.vsyncStartTstates = this.tstates;
+				logOn && console.log(this.tstates, "  reset hsyncCounter");
+				this.vsync = on;
+			}
+			return;
+		}
+
+		// VSYNC off (high)
+		logOn && console.log(this.tstates, "vsync off:  !this.lineCounterEnabled == true");
+		const lengthOfVsync = this.tstates - this.vsyncStartTstates;
+		if (lengthOfVsync >= this.VSYNC_MINIMAL_TSTATES) {
+			logOn && console.log(this.tstates, "  lengthOfVsync >= VSYNC_MINIMAL_TSTATES, lengthOfVsync=" + lengthOfVsync);
+
+			// VSYNC
+			//console.log('updateScreen', Date.now());
+			this.noDisplay = false;
+			this.emit('updateScreen');
+			this.resetVideoBuffer();
+		}
+		this.vsync = on;
+		this.lineCounter = 0;
+		this.hsyncTstatesCounter = 0;  // Normal display would be one off if this was done in the VSYNC on (low) part.
+	}
+
+
+	/** Generate a HSYNC.
+	 * Is called every instruction. Depending on tstates it generates the HSYNC.
+	 * This is the High/Low switch ^^^^^^\_/^^^
+	 * After ~191 tstates the HSYNC is low for 16 tstates. In total this is
+	 * 207 tstates (=64us).
+	 * On this switch the line counter is incremented.
+	 * During the HSYNC being low a small (undetected) VSYNC may happen
+	 * that resets the line counter for hires.
+	 * @param addTstates The number of tstates to add to the HSYNC tstates counter.
+	 * @returns true if line counter was incremented.
+	 */
+	protected checkHsync(addTstates: number): boolean {
+		this.hsyncTstatesCounter += addTstates;
+
+		// Check for HSYNC on or off
+		if (this.hsync) {
+			// HSYNC is on, check for off
+			if (this.hsyncTstatesCounter < this.TSTATES_PER_SCANLINE)
+				return false;	// No HSYNC on yet
+			// HSYNC off
+			this.hsyncTstatesCounter -= this.TSTATES_PER_SCANLINE;
+			this.hsync = false;
+			logOn && console.log(this.hsyncTstatesCounter, "HSYNC off (high)");
+			return false;
+		}
+
+		// HSYNC is off, check for on
+		if (this.hsyncTstatesCounter < this.TSTATES_PER_SCANLINE - this.TSTATES_OF_HSYNC_LOW)
+			return false;	// No HSYNC on yet
+
+		// HSYNC
+		this.lineCounter++;
+
+		// Generate NMI on every HSYNC (if NMI generator is on)
+		if (this.stateNmiGeneratorOn) {
+			this.z80Cpu.interrupt(true, 0);	// NMI
+		}
+
+		this.hsync = true;
+		logOn && console.log(this.hsyncTstatesCounter, "HSYNC on (low)");
+		return true;
+	}
+
+
 	/** Serializes the object.
 	 */
 	public serialize(memBuffer: MemBuffer) {
 		// Write data
-		memBuffer.writeNumber(this.vsyncTimeCounter);
-		memBuffer.writeNumber(this.nmiTimeCounter);
+		// TODO: check if more needs to be serialized
 		memBuffer.write8(this.prevRregister);
 		memBuffer.writeBoolean(this.stateNmiGeneratorOn);
 		memBuffer.writeBoolean(this.vsync);
 		memBuffer.writeBoolean(this.noDisplay);
-		memBuffer.writeBoolean(this.fastMode);
-		memBuffer.writeBoolean(this.nmiGeneratorAccessed);
 	}
 
 
@@ -262,13 +316,9 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 	 */
 	public deserialize(memBuffer: MemBuffer) {
 		// Read data
-		this.vsyncTimeCounter = memBuffer.readNumber();
-		this.nmiTimeCounter = memBuffer.readNumber();
 		this.prevRregister = memBuffer.read8();
 		this.stateNmiGeneratorOn = memBuffer.readBoolean();
 		this.vsync = memBuffer.readBoolean();
 		this.noDisplay = memBuffer.readBoolean();
-		this.fastMode = memBuffer.readBoolean();
-		this.nmiGeneratorAccessed = memBuffer.readBoolean();
 	}
 }

@@ -1,11 +1,12 @@
 
 import {EventEmitter} from "stream";
 import {Z80Cpu} from "./z80cpu";
+import {MemBuffer, Serializable} from "../../misc/membuffer";
 
 
 /** The base class for the ULA implementation for ZX81 and ZX Spectrum.
  */
-export class UlaScreen extends EventEmitter {
+export class UlaScreen extends EventEmitter implements Serializable {
 	// The vsync time of the ULA.
 	protected static VSYNC_TIME = 0.020;	// 20ms
 
@@ -38,5 +39,17 @@ export class UlaScreen extends EventEmitter {
 	 */
 	public getUlaScreen(): Uint8Array {
 		throw Error("UlaScreen: getUlaScreen not implemented");
+	}
+
+
+	/** Serializes the object.
+	 */
+	public serialize(memBuffer: MemBuffer) {
+	}
+
+
+	/** Deserializes the object.
+	 */
+	public deserialize(memBuffer: MemBuffer) {
 	}
 }
