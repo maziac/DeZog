@@ -91,7 +91,7 @@ export class SpectrumUlaScreen extends UlaScreen implements Serializable {
 			this.vsyncTimeCounter %= SpectrumUlaScreen.VSYNC_TIME;
 			// Generate interrupt
 			this.z80Cpu.interrupt(false, 0);
-			this.emit("VSYNC");
+			this.emit('updateScreen');
 		}
 	}
 

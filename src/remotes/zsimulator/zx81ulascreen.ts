@@ -129,7 +129,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 			// Reset hsync timer
 			this.nmiTimeCounter = 0;
 			// VSYNC
-			this.emit('VSYNC');
+			this.emit('updateScreen');
 			//console.log();
 			//console.log(this.logTimeCounter, "zx81 ULA: OUT VSYNC Off ********");
 		}
@@ -147,7 +147,7 @@ export class Zx81UlaScreen extends UlaScreen implements Serializable {
 		if (!this.vsync && (port & 0x01) === 0 && !this.stateNmiGeneratorOn) {
 			// Start VSYNC signal
 			this.vsync = true;
-			this.emit('VSYNC');
+			this.emit('updateScreen');
 			//console.log(this.logTimeCounter, "zx81 ULA: IN VSYNC On ********");
 		}
 		return undefined;

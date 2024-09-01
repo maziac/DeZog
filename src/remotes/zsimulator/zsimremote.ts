@@ -414,9 +414,9 @@ export class ZSimRemote extends DzrpRemote {
 			case 'zx81-hires': this.zxUlaScreen = new Zx81UlaScreenHiRes(this.z80Cpu); break;
 		}
 		if (this.zxUlaScreen) {
-			this.zxUlaScreen.on('VSYNC', () => {
+			this.zxUlaScreen.on('updateScreen', () => {
 				// Notify
-				this.emit('VSYNC');
+				this.emit('updateScreen');
 			});
 			this.serializeObjects.push(this.zxUlaScreen);
 		}

@@ -47,6 +47,9 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// The number of tstates required for a horizontal scanline.
 	protected TSTATES_PER_SCANLINE = 207;
 
+	// The number of tstates for one full screen.
+	protected TSTATES_PER_SCREEN = 65000;	// ~20ms
+
 	// The HSYNC signal stay low for 16 tstates.
 	protected TSTATES_OF_HSYNC_LOW = 16;
 
@@ -81,7 +84,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 
 	/** Resets the buffer indices */
-	protected resetBuffer() {
+	protected resetVideoBuffer() {
 		this.screenLineLengthIndex = 0;
 		this.screenDataIndex = 0;
 	}
@@ -176,9 +179,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		if (this.int38InNextCycle) {
 			this.int38InNextCycle = false;
 			this.z80Cpu.interrupt(false, 0);
-			// this.screenLineLengthIndex = this.screenDataIndex;
-			// this.screenData[this.screenLineLengthIndex] = 0;
-			// this.screenDataIndex++;
 		}
 
 		// Check for the R-register
@@ -193,6 +193,15 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		this.prevRregister = r;
 
 		this.checkHsync(currentTstates);
+
+		// No vsync/no display detection: no display if for 2*20 ms no Vsync was found
+		if (this.tstates > this.vsyncStartTstates + 2 * this.TSTATES_PER_SCREEN) {
+			if (!this.noDisplay) {
+				// Change to no display
+				this.noDisplay = true;
+				this.emit('updateScreen');
+			}
+		}
 	}
 
 
@@ -202,6 +211,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * At the start this could be undefined.
 	 */
 	public getUlaScreen(): Uint8Array {
+		if (this.noDisplay)
+			return Uint8Array.from([]);
 		return this.screenData?.slice(0, this.screenDataIndex);
 	}
 
@@ -239,9 +250,10 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			logOn && console.log(this.tstates, "  lengthOfVsync >= VSYNC_MINIMAL_TSTATES, lengthOfVsync=" + lengthOfVsync);
 
 			// VSYNC
-			//console.log("VSYNC", Date.now());
-			this.emit('VSYNC');
-			this.resetBuffer();
+			//console.log('updateScreen', Date.now());
+			this.noDisplay = false;
+			this.emit('updateScreen');
+			this.resetVideoBuffer();
 		}
 		this.vsync = on;
 		this.lineCounter = 0;
