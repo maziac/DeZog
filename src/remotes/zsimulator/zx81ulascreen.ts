@@ -76,7 +76,6 @@ export class Zx81UlaScreen extends UlaScreen {
 	// The vsync signal
 	protected vsync: boolean = false;
 
-
 	// No display.
 	protected noDisplay = false;
 
@@ -312,9 +311,14 @@ export class Zx81UlaScreen extends UlaScreen {
 	 */
 	public serialize(memBuffer: MemBuffer) {
 		// Write data
-		// TODO: check if more needs to be serialized
 		memBuffer.write8(this.prevRregister);
 		memBuffer.writeBoolean(this.stateNmiGeneratorOn);
+		memBuffer.writeNumber(this.lineCounter);
+		memBuffer.writeNumber(this.tstates);
+		memBuffer.writeNumber(this.vsyncStartTstates);
+		memBuffer.writeNumber(this.hsyncTstatesCounter);
+		memBuffer.writeBoolean(this.int38InNextCycle);
+		memBuffer.writeBoolean(this.hsync);
 		memBuffer.writeBoolean(this.vsync);
 		memBuffer.writeBoolean(this.noDisplay);
 	}
@@ -326,6 +330,12 @@ export class Zx81UlaScreen extends UlaScreen {
 		// Read data
 		this.prevRregister = memBuffer.read8();
 		this.stateNmiGeneratorOn = memBuffer.readBoolean();
+		this.lineCounter = memBuffer.readNumber();
+		this.tstates = memBuffer.readNumber();
+		this.vsyncStartTstates = memBuffer.readNumber();
+		this.hsyncTstatesCounter = memBuffer.readNumber();
+		this.int38InNextCycle = memBuffer.readBoolean();
+		this.hsync = memBuffer.readBoolean();
 		this.vsync = memBuffer.readBoolean();
 		this.noDisplay = memBuffer.readBoolean();
 	}

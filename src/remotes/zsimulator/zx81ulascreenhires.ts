@@ -117,7 +117,10 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 */
 	public serialize(memBuffer: MemBuffer) {
 		super.serialize(memBuffer);
-		// TODO: Do I need the serialize() functions?
+		// Write additional data
+		memBuffer.writeNumber(this.screenDataIndex);
+		memBuffer.writeNumber(this.screenLineLengthIndex);
+		memBuffer.writeArrayBuffer(this.screenData);
 	}
 
 
@@ -125,5 +128,9 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 */
 	public deserialize(memBuffer: MemBuffer) {
 		super.deserialize(memBuffer);
+		// Read additional data
+		this.screenDataIndex = memBuffer.readNumber();
+		this.screenLineLengthIndex = memBuffer.readNumber();
+		this.screenData = memBuffer.readArrayBuffer();
 	}
 }
