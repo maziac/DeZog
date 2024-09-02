@@ -1455,7 +1455,11 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		// Find RAMTOP: Fill memory, read it back and check until which address it is correct.
 		// This would work with Remotes even if the memory model is not known.
 		// This does, more or less, the same as the ZX81.
-		const lenCheck = 0xC000;	// Note: Probably 0x4000 would be more correct, but 0xC000 is required to load OSMO.P
+		let lenCheck = 0x4000;
+		// Hack: For OSMO.P the length is 0xC000. The zx81 program is wrong but too difficult to change:
+		if (path.basename(filePath).toLowerCase() === 'osmo.p') {
+			lenCheck = 0xC000;
+		}
 		const initBuffer = new Uint8Array(lenCheck);
 		initBuffer.fill(0x02);
 		await this.sendDzrpCmdWriteMem(0x4000, initBuffer);
@@ -1504,7 +1508,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		await this.sendDzrpCmdSetRegister(Z80_REG.A2, 0xF8);	// Required?
 
 		// Set System VARS (0x4000-0x4008)
-		//const systemVars = new Uint8Array([0xFF, 0x80, 0xFC, 0x7F, 0x00, 0x80, 0x00, 0xFE, 0xFF]);
 		const systemVars = new Uint8Array([
 			0xFF,	// 0x4000: ERR_NR, Errorcode -1
 			0x80,	// 0x4001: BASIC control flags

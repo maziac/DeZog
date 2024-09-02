@@ -19,6 +19,14 @@ const logOn = false;	// TODO: REMOVE
  * 2.  Blank lines/application code    - NMI on
  * 3.  VIDEO DISPLAY routine           - NMI off
  * 4.  Blank lines/application code    - NMI on
+ *
+ * For details of the zx81 ULA display see:
+ * https://k1.spdns.de/Vintage/Sinclair/80/Sinclair%20ZX80/Tech%20specs/Wilf%20Rigter%27s%20ZX81%20Video%20Display%20Info.htm
+ * or
+ * https://8bit-museum.de/heimcomputer-2/sinclair/sinclair-scans/scans-zx81-video-display-system/
+ * For details of the ULA HW and signals see:
+ * https://oldcomputer.info/8bit/zx81/ULA/ula.htm
+ *
  */
 export class Zx81UlaScreen extends UlaScreen {
 	// Screen height

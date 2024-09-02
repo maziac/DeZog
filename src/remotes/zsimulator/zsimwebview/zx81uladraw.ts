@@ -85,7 +85,9 @@ export class Zx81UlaDraw {
 		const pixels = imgData.data;
 		let dfileIndex = dfile[0] === 0x76 ? 1 : 0;
 
-		imgData.data.fill(0xFF);
+		pixels.fill(128);	// gray
+
+		//pixels.fill(0xFF);	// TODO: which one to use: gray or white
 
 		const width = Zx81UlaDraw.SCREEN_WIDTH / 8;
 		const height = Zx81UlaDraw.SCREEN_HEIGHT / 8;
@@ -96,7 +98,7 @@ export class Zx81UlaDraw {
 			const char = dfile[dfileIndex++];
 			if(x >= width || char === 0x76) {
 				x = 0;
-				++y;
+				y++;
 				continue;
 			};
 
@@ -104,7 +106,7 @@ export class Zx81UlaDraw {
 			let charIndex = (char & 0x7f) * 8;
 			let pixelIndex = (y * Zx81UlaDraw.SCREEN_WIDTH + x) * 8 * 4;
 
-			// 8 lines par character
+			// 8 lines per character
 			for(let charY = 0; charY < 8; ++charY) {
 				let byte = this.romChars[charIndex++];
 				if (inverted) byte = byte ^ 0xFF;
@@ -121,7 +123,7 @@ export class Zx81UlaDraw {
 				pixelIndex += (Zx81UlaDraw.SCREEN_WIDTH - 8) * 4;
 			}
 
-			++x;
+			x++;
 		}
 
 		ctx.putImageData(imgData, 0, 0);
