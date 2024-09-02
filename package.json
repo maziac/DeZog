@@ -653,9 +653,10 @@
 										"type": "string",
 										"enum": [
 											"spectrum",
-											"zx81"
+											"zx81",
+											"zx81-hires"
 										],
-										"description": "If defined it shows the contents of the ZX Spectrum (\"spectrum\") or ZX81 (\"zx81\") screen. It supports also the ZX128K screen switching.",
+										"description": "If defined it shows the contents of the ZX Spectrum (\"spectrum\") or ZX81 (\"zx81\" or \"zx81-hires\") screen. It supports also the ZX128K screen switching.",
 										"default": null
 									},
 									"zxBorderWidth": {

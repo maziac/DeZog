@@ -640,10 +640,10 @@ It allows to test programs that does not make use of special HW features like th
 
 'zsim' supports:
 - Display of the ZX Spectrum ULA screen
-- Display of the ZX81 ULA screen
+- Display of the ZX81 ULA screen (standard or hires)
 - The ports of the keyboard
 - The ZX128 memory banks
-- Loading of (48 and 128) .sna and .nex files
+- Loading of .p (.o, .p81), .sna and .nex files
 - Custom memory models
 
 It specifically does not support:
@@ -652,15 +652,14 @@ It specifically does not support:
 
 
 Performance:
-- Don't expect accurate timings.
-The interrupt (IM1 and IM2) is executed after about 20ms * 3.5 MHz T-states.
 - Simulation speed: On a decent system the simulation will achieve the speed of a ZX 48K or even higher.
 
 One thing to mention that can be an advantage during development:
 
 Emulators (like ZEsarUX) normally try to accurately emulate the exact behavior.
-The included simulator does not. This means: if you step through your assembly code and e.g. write to the screen an emulator would normally show the result after the ray-beam has passed the position on the screen. I.e. you normally don't see directly what's happening on the screen.
-The simulator on the other hand immediately displays any change to the screen while stepping. This can also be an advantage during debugging.
+This means: if you step through your assembly code and e.g. write to the screen an emulator would normally show the result after the ray-beam has passed the position on the screen. I.e. you normally don't see directly what's happening on the screen.
+The zsim simulator on the other hand immediately displays any change to the screen while stepping. This can be a big advantage during debugging.
+(Note: this is true for "ulaScreen" equal to "spectrum" or "zx81", but not for "zx81-hires" which is accurate in the timing of the display.)
 
 Example launch.json configuration:
 ~~~json
@@ -850,9 +849,9 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
 	- "ZXNEXT": Paged memory as of the ZX Next (8k slots/banks). Banks R0a, R0b, R1a, R1b, 0-223. R0a/b and R1a/b is R0 or R1 but sliced in 8k chunks.
     - "COLECOVISION": Memory map for the Coleco Vision (8k slots, no banking).
     - "CUSTOM": For a custom memory layout. See [customMemory](#custommemory).
-- "ulaScreen": "spectrum" | "zx81". Defaults to "spectrum". If enabled it shows the contents of the ZX Spectrum screen or that of a ZX81.
+- "ulaScreen": "spectrum" | "zx81" | "zx81-hires". If enabled it shows the contents of the ZX Spectrum screen or that of a ZX81.
 ![](images/zsim_ula_screen.jpg)
-- "zxBorderWidth": The displayed border width in pixels. If set to 0 then no border is displayed. Works only if ulaScreen is enabled.
+- "zxBorderWidth": The displayed border width in pixels. If set to 0 then no border is displayed. Works only for ulaScreen equal to "spectrum".
 - "cpuLoad": The CPU load is calculated by the number of executed HALT tStates vs all tStates. You can disable the display with a 0. 1 will exactly count till the next occurrence of a HALT. Higher numbers will average over more HALT instructions and lead to a more stable display. Practical values are around 10 (the default).
 ![](images/zsim_cpu_load.jpg)
 - "defaultPortIn": The default value that is read if the read port is unused. Allowed is 255 or 0. 255 also sets the port as 'Open Collector', all triggered ports would be ANDed. Default to 0xFF.
