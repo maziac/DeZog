@@ -13,14 +13,17 @@ export class Zx81UlaDraw {
 	 * @param imgData A reusable array to create the pixel data in.
 	 * @param dfile The DFILE data. If undefined, FAST mode is active.
 	 * @param charset The charset data.
+	 * @param debug true if debug mode is on. Shows grey background if
+	 * dfile is not elapsed.
 	 */
-	public static drawUlaScreen(ctx: CanvasRenderingContext2D, imgData: ImageData, dfile: Uint8Array, charset: Uint8Array) {
+	public static drawUlaScreen(ctx: CanvasRenderingContext2D, imgData: ImageData, dfile: Uint8Array, charset: Uint8Array, debug: boolean) {
 		const pixels = imgData.data;
 		let dfileIndex = dfile[0] === 0x76 ? 1 : 0;
 
-		pixels.fill(128);	// gray
-
-		//pixels.fill(0xFF);	// TODO: which one to use: gray or white
+		if(debug)
+			pixels.fill(128);	// gray background
+		else
+			pixels.fill(0xFF);	// white background
 
 		const width = Zx81UlaDraw.SCREEN_WIDTH / 8;
 		const height = Zx81UlaDraw.SCREEN_HEIGHT / 8;

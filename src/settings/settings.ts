@@ -242,6 +242,9 @@ export interface ZSimType {
 	// If enabled it shows the contents of the ZX Spectrum or ZX 81 screen.
 	ulaScreen: 'spectrum' | 'zx81' | 'zx81-hires' | '',	// "spectrum" or "zx81"
 
+	// Debug mode for the zx81 and zx81-hires screen.
+	zx81UlaScreenDebug: boolean;
+
 	// The displayed border width in pixels. No border if 0. Works only in conjunction with ulaScreen == 'spectrum'.
 	zxBorderWidth: number,
 
@@ -579,7 +582,7 @@ export class Settings {
 				if (launchCfg.zsim.visualMemory === undefined)
 					launchCfg.zsim.visualMemory = true;
 				if (launchCfg.zsim.ulaScreen === undefined)
-					launchCfg.zsim.ulaScreen = 'zx81';
+					launchCfg.zsim.ulaScreen = 'zx81-hires';
 				if (launchCfg.zsim.zxBorderWidth === undefined)
 					launchCfg.zsim.zxBorderWidth = 0;
 				if (launchCfg.zsim.cpuFrequency === undefined)
@@ -612,8 +615,10 @@ export class Settings {
 			launchCfg.zsim.ulaScreen = '';
 		else if (launchCfg.zsim.ulaScreen as any === true) // Old config
 			launchCfg.zsim.ulaScreen = 'spectrum';
+		launchCfg.zsim.zx81UlaScreenDebug = (launchCfg.zsim.zx81UlaScreenDebug === undefined) ? false : launchCfg.zsim.zx81UlaScreenDebug;
 		if (launchCfg.zsim.zxBorderWidth === undefined || launchCfg.zsim.ulaScreen === '')
 			launchCfg.zsim.zxBorderWidth = 0;
+
 		if (launchCfg.zsim.zxBeeper === undefined)
 			launchCfg.zsim.zxBeeper = false;
 		if (launchCfg.zsim.audioSampleRate === undefined)

@@ -554,6 +554,8 @@ export class ZSimulationView extends BaseView {
 			// The screen data
 			const ulaData = this.simulator.zxUlaScreen.getUlaScreen();
 
+			// Check for zx81 debug mode
+			const zx81UlaScreenDebug = Settings.launch.zsim.zx81UlaScreenDebug;
 			// Border color
 			if (Settings.launch.zsim.zxBorderWidth > 0) {
 				// Get the border and set it.
@@ -565,6 +567,7 @@ export class ZSimulationView extends BaseView {
 				command: 'updateScreen',
 				ulaData,
 				borderColor,
+				zx81UlaScreenDebug
 			};
 			this.sendMessageToWebView(message);
 			// Clear

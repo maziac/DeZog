@@ -11,12 +11,18 @@ export class Zx81HiResUlaDraw {
 	 * @param ctx The canvas 2d context to draw to.
 	 * @param imgData A reusable array to create the pixel data in.
 	 * @param ulaScreen The ULA screen data. B/W pixels.
+	 * @param debug true if debug mode is on. Shows grey background if
+	 * dfile is not elapsed.
 	 */
-	public static drawUlaScreen(ctx: CanvasRenderingContext2D, imgData: ImageData, ulaScreen: Uint8Array) {
+	public static drawUlaScreen(ctx: CanvasRenderingContext2D, imgData: ImageData, ulaScreen: Uint8Array, debug: boolean) {
 		// Get pixels memory
 		const pixels = imgData.data;
 		let pixelIndex = 0;
-		pixels.fill(128);	// gray
+
+		if (debug)
+			pixels.fill(128);	// gray background
+		else
+			pixels.fill(0xFF);	// white background
 
 		// Whole screen is converted by evaluating blocks that are equal to the color attributes.
 		const width8 = Zx81HiResUlaDraw.SCREEN_WIDTH / 8;
@@ -27,7 +33,8 @@ export class Zx81HiResUlaDraw {
 		while (index < ulaScreen.length) {
 			// Skip rest of line (make white), len from previous line
 			const remainingLen = (width8 - len) * 8;
-			pixels.fill(white, pixelIndex, pixelIndex + remainingLen * 4);	// white and alpha are the same values (255), so I can use fill
+			if(!debug)
+				pixels.fill(white, pixelIndex, pixelIndex + remainingLen * 4);	// white and alpha are the same values (255), so I can use fill
 			pixelIndex += remainingLen * 4;
 			// Get length of line
 			len = ulaScreen[index++];
