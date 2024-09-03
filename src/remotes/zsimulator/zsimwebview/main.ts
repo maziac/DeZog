@@ -97,18 +97,16 @@ window.addEventListener('message', event => {// NOSONAR
 		case 'updateScreen':
 			// Update the screen
 			if (message.ulaData) {
-				const data = message.ulaData;
-				const ulaScreen = message.ulaScreen;
-				if (ulaScreen === 'spectrum') {
-					const ulaDirectData = data.ulaDirectData;
-					const time = data.time;
-					SpectrumUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaDirectData, time);
+				const ulaData = message.ulaData;
+				const name = ulaData.name;
+				if (name === 'spectrum') {
+					SpectrumUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.data, ulaData.time);
 				}
-				else if (ulaScreen === 'zx81') {
-					Zx81UlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, data);
+				else if (name === 'zx81') {
+					Zx81UlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.dfile, ulaData.charset);
 				}
-				else if (ulaScreen === 'zx81-hires') {
-					Zx81HiResUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, data);
+				else if (name === 'zx81-hires') {
+					Zx81HiResUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.data);
 				}
 			}
 			// Update the border

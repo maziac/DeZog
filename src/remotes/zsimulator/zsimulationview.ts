@@ -549,34 +549,20 @@ export class ZSimulationView extends BaseView {
 	 */
 	protected updateScreen() {
 		try {
-			let ulaData, borderColor;
+			let borderColor;
 
 			// The screen data
-			const ulaScreen = Settings.launch.zsim.ulaScreen;
-			if (ulaScreen === 'spectrum') {
-				// For ZX81 and ZX Spectrum.
-				// The time is supplied only for the flashing of the attributes for the Spectrum. (The flash frequency is 1/640ms (~1.56Hz)).
-				const time = this.simulator.getTstatesSync() / this.simulator.getCpuFrequencySync() * 1000;
-				const ulaDirectData = this.simulator.zxUlaScreen.getUlaScreen();
-				ulaData = {
-					time,
-					ulaDirectData
-				};
-			}
-			else if (ulaScreen === 'zx81' || ulaScreen === 'zx81-hires') {
-				ulaData = this.simulator.zxUlaScreen.getUlaScreen();
-			}
+			const ulaData = this.simulator.zxUlaScreen.getUlaScreen();
 
 			// Border color
 			if (Settings.launch.zsim.zxBorderWidth > 0) {
 				// Get the border and set it.
-				borderColor = this.simulator.getZxBorderColor();
+				borderColor = this.simulator.getZxBorderColor(); // TODO: integrate in ulaSpectrum
 			}
 
 			// Create message to update the webview
 			const message = {
 				command: 'updateScreen',
-				ulaScreen,	// 'spectrum', 'zx81', 'zx81-hires'
 				ulaData,
 				borderColor,
 			};

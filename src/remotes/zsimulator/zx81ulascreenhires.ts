@@ -90,11 +90,17 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * @returns The screen as a UInt8Array.
 	 * Returns only the portion that is written.
 	 * At the start this could be undefined.
+	 * {data: Uint8Array}
 	 */
-	public getUlaScreen(): Uint8Array {
+	public getUlaScreen(): any {
 		if (this.noDisplay)
-			return Uint8Array.from([]);
-		return this.screenData?.slice(0, this.screenDataIndex);
+			return {
+				name: 'zx81-hires'
+			};
+		return {
+			name: 'zx81-hires',
+			data: this.screenData?.slice(0, this.screenDataIndex)
+		};
 	}
 
 

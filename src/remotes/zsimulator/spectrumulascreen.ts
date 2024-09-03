@@ -6,12 +6,14 @@ import {Z80Cpu} from "./z80cpu";
 /** Holds the bank used for the ZX Spectrum ULA screen and does the bank switching.
  */
 export class SpectrumUlaScreen extends UlaScreen implements Serializable {
-	// The vsync time window of the ULA. If missed, the interrupt
-	// function will not be called.
-	protected static VSYNC_TIME_WINDOW = 30 / 3500000;	// ~ 30 cycles
+	// The vsync time of the ULA.
+	protected static VSYNC_TIME = 0.020;	// 20ms
 
 	// The time counter for the vertical sync.
 	protected vsyncTimeCounter: number;
+
+	// Time used for flashing.
+	protected flashTimeCounter: number;
 
 	// The bank used to show. ZX16K/48K bank 1. Others: (i.e. ZX128K) bank 5 or 7.
 	public currentUlaBank: number;
@@ -32,6 +34,7 @@ export class SpectrumUlaScreen extends UlaScreen implements Serializable {
 	constructor(z80Cpu: Z80Cpu) {
 		super(z80Cpu);
 		this.vsyncTimeCounter = 0;
+		this.flashTimeCounter = 0;
 		// Set ULA bank(s) depending on available banks
 		const bankCount = z80Cpu.memory.getNumberOfBanks();
 		if (bankCount > 7) {
@@ -79,13 +82,13 @@ export class SpectrumUlaScreen extends UlaScreen implements Serializable {
 
 	/** Executes the ULA. The ZX81 ULA may grab tstates from
 		 * the CPU to simulate the NMI interrupt.
-		 * @param cpuFreq The CPU frequency in Hz.
 		 * @param currentTstates The t-states that were just used by
 		 * DMA or CPU.
 		 */
-	public execute(cpuFreq: number, currentTstates: number) {
+	public execute(currentTstates: number) {
 		// Check for vertical interrupt
-		const timeAdd = currentTstates / cpuFreq;
+		const timeAdd = currentTstates / this.z80Cpu.cpuFreq;
+		this.flashTimeCounter += timeAdd;
 		this.vsyncTimeCounter += timeAdd;
 		if (this.vsyncTimeCounter >= SpectrumUlaScreen.VSYNC_TIME) {
 			this.vsyncTimeCounter %= SpectrumUlaScreen.VSYNC_TIME;
@@ -97,11 +100,16 @@ export class SpectrumUlaScreen extends UlaScreen implements Serializable {
 
 
 	/** Returns the ULA screen with color attributes.
-	 * @returns The screen as a UInt8Array.
+	 * @returns The screen as a UInt8Array plus the time for the flashing.
 	 */
-	public getUlaScreen(): Uint8Array {
+	public getUlaScreen(): any {
 		const bank = this.z80Cpu.memory.getBankMemory(this.currentUlaBank);
-		return bank.slice(0, 0x1B00);
+		const screenData = {
+			name: 'spectrum',
+			time: this.flashTimeCounter,
+			data: bank.slice(0, 0x1B00)
+		};
+		return screenData;
 	}
 
 

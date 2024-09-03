@@ -1420,7 +1420,7 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Returns the number of T-States (since last reset).
+	 * Returns the number of T-States (since last break).
 	 * @returns The number of T-States or 0 if not supported.
 	 */
 	public async getTstates(): Promise<number> {

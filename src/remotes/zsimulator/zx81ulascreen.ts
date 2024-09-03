@@ -163,11 +163,10 @@ export class Zx81UlaScreen extends UlaScreen {
 
 	/** Executes the ULA. The ZX81 ULA may grab tstates from
 	 * the CPU to simulate the NMI interrupt.
-	 * @param cpuFreq The CPU frequency in Hz.
 	 * @param currentTstates The t-states that were just used by
 	 * DMA or CPU.
 	 */
-	public execute(cpuFreq: number, currentTstates: number) {
+	public execute(currentTstates: number) {
 		this.tstates += currentTstates;
 
 		// Execute int38 interrupt?
@@ -199,23 +198,28 @@ export class Zx81UlaScreen extends UlaScreen {
 
 
 	/** Returns the dfile.
-	 * @returns The dfile as a UInt8Array.
-	 * If in FAST mode no display might be available.
-	 * Then, an array with the length 0 is returned.
+	 * @returns The screen as dfile (UInt8Array) plus the charset.
+	 * If in FAST mode no display might be available. In this case only the charset is returned.
+	 * { charset: Uint8Array, dfile: Uint8Array }
 	 */
-	public getUlaScreen(): Uint8Array {
+	public getUlaScreen(): any {
 		// Read the charset 0x1E00-0x1FFF (512 bytes)
-		// TODO: Either sent charset + dfile or create the image from the dfile directly here.
-		// This has to be done for hires graphics anyway. So we could do the same here.
-		// First test hires graphics !!!!
-
+		const charset = this.z80Cpu.memory.readBlock(0x1E00, 512);
 		// Check for available VSYNC
 		if (this.noDisplay)
-			return Uint8Array.from([]);
+			return {
+				name: 'zx81',
+				charset
+			};
 		// Get the content of the D_FILE system variable (2 bytes).
 		const dfile_ptr = this.z80Cpu.memory.getMemory16(0x400c);
 		// 24 lines of 33 bytes (could be less).
-		return this.z80Cpu.memory.readBlock(dfile_ptr, 33 * 24);
+		const dfile = this.z80Cpu.memory.readBlock(dfile_ptr, 33 * 24);
+		return {
+			name: 'zx81',
+			charset,
+			dfile
+		};
 	}
 
 

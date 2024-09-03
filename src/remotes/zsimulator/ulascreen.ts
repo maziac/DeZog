@@ -7,9 +7,6 @@ import {MemBuffer, Serializable} from "../../misc/membuffer";
 /** The base class for the ULA implementation for ZX81 and ZX Spectrum.
  */
 export class UlaScreen extends EventEmitter implements Serializable {
-	// The vsync time of the ULA.
-	protected static VSYNC_TIME = 0.020;	// 20ms
-
 	// Required for memory and ports.
 	protected z80Cpu: Z80Cpu;
 
@@ -24,20 +21,19 @@ export class UlaScreen extends EventEmitter implements Serializable {
 
 	/** Executes the ULA. The ZX81 ULA may grab tstates from
 	 * the CPU to simulate the NMI interrupt.
-	 * @param cpuFreq The CPU frequency in Hz.
 	 * @param currentTstates The t-states that were just used by
 	 * DMA or CPU.
 	 */
-	public execute(cpuFreq: number, currentTstates: number) {
+	public execute(currentTstates: number) {
 		throw Error("UlaScreen: execute not implemented");
 	}
 
 
 	/** Returns the ULA screen.
 	 * Override this.
-	 * @returns The ULA screen as a UInt8Array.
+	 * @returns The ULA screen in different formats.
 	 */
-	public getUlaScreen(): Uint8Array {
+	public getUlaScreen(): any {
 		throw Error("UlaScreen: getUlaScreen not implemented");
 	}
 

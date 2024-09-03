@@ -662,7 +662,7 @@ export class ZSimRemote extends DzrpRemote {
 			tStates = this.z80Cpu.execute();
 		// Execute ULA
 		if (this.zxUlaScreen) {
-			this.zxUlaScreen.execute(cpuFreq, tStates);
+			this.zxUlaScreen.execute(tStates);
 		}
 		return tStates;
 	}
@@ -1018,18 +1018,18 @@ export class ZSimRemote extends DzrpRemote {
 
 
 	/**
-	 * Returns the number of T-States (since last reset).
+	 * Returns the number of T-States (since last break).
 	 * @returns The number of T-States or 0 if not supported.
 	 */
 	public async getTstates(): Promise<number> {
 		//return this.z80Cpu.cpuTstatesCounter;
 		return this.passedTstates - this.prevPassedTstates;
 	}
-	// Same as sync function.
-	public getTstatesSync(): number {
-		//return this.z80Cpu.cpuTstatesCounter;
-		return this.passedTstates - this.prevPassedTstates;
-	}
+	// // Same as sync function.
+	// public getTstatesSync(): number {
+	// 	//return this.z80Cpu.cpuTstatesCounter;
+	// 	return this.passedTstates - this.prevPassedTstates;
+	// }
 
 
 	/**
