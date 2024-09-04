@@ -30,15 +30,28 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// The write index pointing to tje line length
 	protected screenLineLengthIndex: number;
 
+	// The first line to display.
+	protected firstLine: number;
+
+	// The last line to display (inclusive).
+	protected lastLine: number;
+
 
 	/** Constructor.
 	 * @param z80Cpu Mainly for the memoryModel and the ports.
+	 * @param firstLine The first line to display.
+	 * @param lastLine The last line to display (inclusive).
 	 */
-	constructor(z80Cpu: Z80Cpu) {
+	constructor(z80Cpu: Z80Cpu, firstLine: number, lastLine: number) {
 		super(z80Cpu);
+		this.firstLine = firstLine;
+		this.lastLine = lastLine;
+		let totalLines = lastLine - firstLine + 1;
+		if (totalLines < 0)
+			totalLines = 0;
 		this.screenDataIndex = 0;
 		this.screenLineLengthIndex = 0;
-		this.screenData = new Uint8Array(256 * (1 + Zx81UlaScreenHiRes.SCREEN_WIDTH / 8));	// 256: in case more scan lines would be used. TODO: recalculate and limit while writing
+		this.screenData = new Uint8Array(totalLines * (1 + Zx81UlaScreenHiRes.SCREEN_WIDTH / 8));
 	}
 
 
@@ -46,6 +59,14 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	protected resetVideoBuffer() {
 		this.screenLineLengthIndex = 0;
 		this.screenDataIndex = 0;
+	}
+
+
+	/** Checks if the line is visible.
+	 */
+	protected isLineVisible(): boolean {
+		const visible = (this.lineCounter >= this.firstLine && this.lineCounter <= this.lastLine);
+		return visible;
 	}
 
 
@@ -63,20 +84,24 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			if ((data & 0b01000000) !== 0)
 				return data;	// E.g. HALT
 
-			// Interpret data
-			const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
-			const i = this.z80Cpu.i;
-			const ulaAddr = (i & 0xFE) * 256 + ulaAddrLatch * 8 + (this.lineCounter & 0x07);
-			// Load byte from character (ROM)
-			let videoShiftRegister = this.memoryRead8(ulaAddr);
-			// Check to invert the byte
-			if (data & 0b1000_0000) {
-				videoShiftRegister ^= 0xFF;
+			// Check if line should be displayed
+			if (this.isLineVisible()) {
+				// Interpret data
+				const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
+				const i = this.z80Cpu.i;
+				const ulaAddr = (i & 0xFE) * 256 + ulaAddrLatch * 8 + (this.lineCounter & 0x07);
+				// Load byte from character (ROM)
+				let videoShiftRegister = this.memoryRead8(ulaAddr);
+				// Check to invert the byte
+				if (data & 0b1000_0000) {
+					videoShiftRegister ^= 0xFF;
+				}
+				// Add byte to screen
+				this.screenData[this.screenDataIndex++] = videoShiftRegister;
+				// Increase length
+				this.screenData[this.screenLineLengthIndex]++;
 			}
-			// Add byte to screen
-			this.screenData[this.screenDataIndex++] = videoShiftRegister;
-			// Increase length
-			this.screenData[this.screenLineLengthIndex]++;
+
 			// Return a NOP for the graphics data
 			return 0x00;
 		}
@@ -108,14 +133,16 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * Switch to next line in the screen buffer.
 	 */
 	protected checkHsync(addTstates: number): boolean {
-		const lineCounterIncemented = super.checkHsync(addTstates);
-		if (lineCounterIncemented) {
-			// Next line (graphics output)
-			this.screenLineLengthIndex = this.screenDataIndex;
-			this.screenData[this.screenLineLengthIndex] = 0;
-			this.screenDataIndex++;
+		const lineCounterIncremented = super.checkHsync(addTstates);
+		if (lineCounterIncremented) {
+			if (this.isLineVisible()) {
+				// Next line (graphics output)
+				this.screenLineLengthIndex = this.screenDataIndex;
+				this.screenData[this.screenLineLengthIndex] = 0;
+				this.screenDataIndex++;
+			}
 		}
-		return lineCounterIncemented;
+		return lineCounterIncremented;
 	}
 
 
@@ -124,6 +151,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	public serialize(memBuffer: MemBuffer) {
 		super.serialize(memBuffer);
 		// Write additional data
+		memBuffer.writeNumber(this.firstLine);
+		memBuffer.writeNumber(this.lastLine);
 		memBuffer.writeNumber(this.screenDataIndex);
 		memBuffer.writeNumber(this.screenLineLengthIndex);
 		memBuffer.writeArrayBuffer(this.screenData);
@@ -135,6 +164,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	public deserialize(memBuffer: MemBuffer) {
 		super.deserialize(memBuffer);
 		// Read additional data
+		this.firstLine = memBuffer.readNumber();
+		this.lastLine = memBuffer.readNumber();
 		this.screenDataIndex = memBuffer.readNumber();
 		this.screenLineLengthIndex = memBuffer.readNumber();
 		this.screenData = memBuffer.readArrayBuffer();

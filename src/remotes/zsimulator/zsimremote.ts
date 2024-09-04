@@ -410,8 +410,18 @@ export class ZSimRemote extends DzrpRemote {
 		const zxUlaScreen = zsim.ulaScreen;
 		switch(zxUlaScreen) {
 			case 'spectrum': this.zxUlaScreen = new SpectrumUlaScreen(this.z80Cpu); break;
-			case 'zx81': this.zxUlaScreen = new Zx81UlaScreen(this.z80Cpu); break;
-			case 'zx81-hires': this.zxUlaScreen = new Zx81UlaScreenHiRes(this.z80Cpu); break;
+			case 'zx81':
+				{
+					const options = zsim.zx81UlaOptions;
+					if (options.hires) {
+						// Hires
+						this.zxUlaScreen = new Zx81UlaScreenHiRes(this.z80Cpu, options.firstLine, options.lastLine);
+					}
+					else {
+						// Normal
+						this.zxUlaScreen = new Zx81UlaScreen(this.z80Cpu);
+					}break;
+				}
 		}
 		if (this.zxUlaScreen) {
 			this.zxUlaScreen.on('updateScreen', () => {

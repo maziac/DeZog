@@ -214,6 +214,15 @@ export interface CustomJoyType {
 }
 
 
+// Options for the ZX81 ULA screen.
+export interface zx81UlaOptions {
+	hires: boolean;		// Use hires mode
+	firstLine: number;	// The first line to display (hires mode)
+	lastLine: number;	// The last line to display (hires mode)
+	debug: boolean;		// Debug mode: show gray in collapsed dfile
+}
+
+
 /// Definitions for the 'zsim' remote type.
 export interface ZSimType {
 	// Defines a preset of settings to simulate a ZX Spectrum or ZX81.
@@ -240,10 +249,10 @@ export interface ZSimType {
 	visualMemory: boolean,
 
 	// If enabled it shows the contents of the ZX Spectrum or ZX 81 screen.
-	ulaScreen: 'spectrum' | 'zx81' | 'zx81-hires' | '',	// "spectrum" or "zx81"
+	ulaScreen: 'spectrum' | 'zx81' | 'none',	// "spectrum" or "zx81"
 
-	// Debug mode for the zx81 and zx81-hires screen.
-	zx81UlaScreenDebug: boolean;
+	// Options for the zx81 screen.
+	zx81UlaOptions: zx81UlaOptions;
 
 	// The displayed border width in pixels. No border if 0. Works only in conjunction with ulaScreen == 'spectrum'.
 	zxBorderWidth: number,
@@ -582,7 +591,7 @@ export class Settings {
 				if (launchCfg.zsim.visualMemory === undefined)
 					launchCfg.zsim.visualMemory = true;
 				if (launchCfg.zsim.ulaScreen === undefined)
-					launchCfg.zsim.ulaScreen = 'zx81-hires';
+					launchCfg.zsim.ulaScreen = 'zx81';
 				if (launchCfg.zsim.zxBorderWidth === undefined)
 					launchCfg.zsim.zxBorderWidth = 0;
 				if (launchCfg.zsim.cpuFrequency === undefined)
@@ -612,11 +621,24 @@ export class Settings {
 			}
 		}
 		if (launchCfg.zsim.ulaScreen === undefined || launchCfg.zsim.ulaScreen as any === false)
-			launchCfg.zsim.ulaScreen = '';
+			launchCfg.zsim.ulaScreen = 'none';
 		else if (launchCfg.zsim.ulaScreen as any === true) // Old config
 			launchCfg.zsim.ulaScreen = 'spectrum';
-		launchCfg.zsim.zx81UlaScreenDebug = (launchCfg.zsim.zx81UlaScreenDebug === undefined) ? false : launchCfg.zsim.zx81UlaScreenDebug;
-		if (launchCfg.zsim.zxBorderWidth === undefined || launchCfg.zsim.ulaScreen === '')
+		if (launchCfg.zsim.zx81UlaOptions === undefined) {
+			launchCfg.zsim.zx81UlaOptions = {
+			} as zx81UlaOptions;
+		}
+		const ulaScreenOptions = launchCfg.zsim.zx81UlaOptions;
+		if (ulaScreenOptions.hires === undefined)
+			ulaScreenOptions.hires = true;
+		if (ulaScreenOptions.firstLine === undefined)
+			ulaScreenOptions.firstLine = 56;
+		if (ulaScreenOptions.lastLine === undefined)
+			ulaScreenOptions.lastLine = 247;
+		if (ulaScreenOptions.debug === undefined)
+			ulaScreenOptions.debug = false;
+
+		if (launchCfg.zsim.zxBorderWidth === undefined )
 			launchCfg.zsim.zxBorderWidth = 0;
 
 		if (launchCfg.zsim.zxBeeper === undefined)
@@ -1127,8 +1149,12 @@ export class Settings {
 
 		// Check ula screen
 		const ulaScreen = Settings.launch.zsim.ulaScreen;
-		if (ulaScreen !== 'spectrum' && ulaScreen !== 'zx81' && ulaScreen !== 'zx81-hires' && ulaScreen !== '') {
-			throw Error("'ulaScreen': Allowed values are 'spectrum', 'zx81' or 'zx81-hires'.");
+		if (ulaScreen !== 'spectrum' && ulaScreen !== 'zx81' && ulaScreen !== 'none') {
+			throw Error("'ulaScreen': Allowed values are 'spectrum' or 'zx81'.");
+		}
+		const zx81UlaOptions = Settings.launch.zsim.zx81UlaOptions;
+		if (zx81UlaOptions.lastLine < zx81UlaOptions.firstLine) {
+			throw Error("'zx81UlaOptions': lastLine < firstLine.");
 		}
 	}
 }
