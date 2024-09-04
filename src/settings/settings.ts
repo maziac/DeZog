@@ -207,6 +207,7 @@ export interface CustomJoyType {
 	fire: JoyBitPort;
 	fire2: JoyBitPort;
 	fire3: JoyBitPort;
+	fire4: JoyBitPort;
 	up: JoyBitPort;
 	left: JoyBitPort;
 	right: JoyBitPort;

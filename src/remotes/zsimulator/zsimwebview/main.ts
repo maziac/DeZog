@@ -290,6 +290,7 @@ function initSimulation(audioSampleRate: number, volume: number, zxKeyboard: 'sp
 			fire: customJoy1Fire,
 			fire2: document.getElementById("customJoy.joy1.fire2") as UiBit,
 			fire3: document.getElementById("customJoy.joy1.fire3") as UiBit,
+			fire4: document.getElementById("customJoy.joy1.fire4") as UiBit,
 			up: document.getElementById("customJoy.joy1.up") as UiBit,
 			left: document.getElementById("customJoy.joy1.left") as UiBit,
 			right: document.getElementById("customJoy.joy1.right") as UiBit,

@@ -6,6 +6,7 @@ export type JoystickData = {
 	fire: UiBit,
 	fire2?: UiBit,
 	fire3?: UiBit,
+	fire4?: UiBit,
 	up: UiBit,
 	left: UiBit,
 	right: UiBit,
@@ -39,6 +40,10 @@ export function initJoystickPolling() {
 					if (obj.fire3) {
 						const pressed = (gp.buttons[2].pressed) ? 1 : 0;
 						obj.fire3.setBitValue(pressed);
+					}
+					if (obj.fire4) {
+						const pressed = (gp.buttons[3].pressed) ? 1 : 0;
+						obj.fire4.setBitValue(pressed);
 					}
 					// Check all axis
 					const axes = gp.axes;

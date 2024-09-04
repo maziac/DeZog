@@ -1186,6 +1186,10 @@ export class ZSimulationView extends BaseView {
 							<ui-bit id="customJoy.joy1.fire3"
 							${cJoy.fire3 ? '' : 'class="disabled"'}style="border-radius:1em;" onchange="sendJoyButton(this)">3</ui-bit>
 						</td>
+						<td>
+							<ui-bit id="customJoy.joy1.fire4"
+							${cJoy.fire4 ? '' : 'class="disabled"'}style="border-radius:1em;" onchange="sendJoyButton(this)">4</ui-bit>
+						</td>
 					</tr>
 					<tr>
 						<td>

@@ -16,10 +16,11 @@ const enum JoyButton {
 	FIRE = 0,
 	FIRE2 = 1,
 	FIRE3 = 2,
-	UP = 3,
-	LEFT = 4,
-	RIGHT = 5,
-	DOWN = 6
+	FIRE4 = 3,
+	UP = 4,
+	LEFT = 5,
+	RIGHT = 6,
+	DOWN = 7
 };
 
 
@@ -43,8 +44,9 @@ export class CustomJoystick {
 		// Copy the configuration
 		this.config = [
 			customJoy.fire ?	{...customJoy.fire, pressed: false} : undefined,
-			customJoy.fire2 ? 	{...customJoy.fire2, pressed: false} : undefined,
-			customJoy.fire3 ? 	{...customJoy.fire3, pressed: false} : undefined,
+			customJoy.fire2 ? {...customJoy.fire2, pressed: false} : undefined,
+			customJoy.fire3 ? {...customJoy.fire3, pressed: false} : undefined,
+			customJoy.fire4 ? {...customJoy.fire4, pressed: false} : undefined,
 			customJoy.up ? 		{...customJoy.up, pressed: false} : undefined,
 			customJoy.left ? 	{...customJoy.left, pressed: false} : undefined,
 			customJoy.right ? 	{...customJoy.right, pressed: false} : undefined,
@@ -90,6 +92,7 @@ export class CustomJoystick {
 			case 'customJoy.joy1.fire':	button = this.config![JoyButton.FIRE]; break;
 			case 'customJoy.joy1.fire2': button = this.config![JoyButton.FIRE2]; break;
 			case 'customJoy.joy1.fire3': button = this.config![JoyButton.FIRE3]; break;
+			case 'customJoy.joy1.fire4': button = this.config![JoyButton.FIRE4]; break;
 			case 'customJoy.joy1.up': button = this.config![JoyButton.UP]; break;
 			case 'customJoy.joy1.left': button = this.config![JoyButton.LEFT]; break;
 			case 'customJoy.joy1.right': button = this.config![JoyButton.RIGHT]; break;
