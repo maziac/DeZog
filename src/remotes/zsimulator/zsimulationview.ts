@@ -758,8 +758,8 @@ export class ZSimulationView extends BaseView {
 			// ZX screen memory marker
 			if (visualMemoryZxScreen) {
 				html += `
-				<label class="label-absolute-top" style="left:25%">0x4000</label>
-				<label class="label-absolute-top" style="left:35.5%">0x5B00</label>`;
+				<label style="position:absolute; top:1.1em; left:25%">0x4000</label>
+				<label style="position:absolute; top:1.1em; left:35.5%">0x5B00</label>`;
 			}
 			else {
 				html += `
