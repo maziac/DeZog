@@ -838,8 +838,8 @@ export class ZSimulationView extends BaseView {
 				height = zx81UlaOptions.lastLine - zx81UlaOptions.firstLine + 1;
 			}
 			html += `
-			<!-- Display the screen gif  TODO: Change height -->
-			<canvas id="screen_img_id" width="256" height="${height}" style="image-rendering:pixelated; border:${zsim.zxBorderWidth}px solid white; outline: 1px solid var(--vscode-foreground); width:100%; height:100%">
+			<!-- Display the screen gif -->
+			<canvas id="screen_img_id" width="256" height="${height}" style="image-rendering:pixelated; border:${zsim.zxBorderWidth}px solid white; outline: 1px solid var(--vscode-foreground); width:100%; height:100%; box-sizing: border-box;">
 			</canvas>
 			`;
 		}
