@@ -112,11 +112,16 @@ export class ZSimRemote extends DzrpRemote {
 	// The custom joystick.
 	public customJoystick: CustomJoystick;
 
+	// false as long as simulation is faster than cpu frequency.
+	// Only updated if Settings.launch.zsim.limitSpeed or Settings.launch.zsim.cpuLoad is set.
+	public simulationTooSlow: boolean;
+
 
 	/// Constructor.
 	constructor() {
 		super();
 		// Init
+		this.simulationTooSlow = false;
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = true;
 		this.supportsLOGPOINT = true;
@@ -299,7 +304,7 @@ export class ZSimRemote extends DzrpRemote {
 		// Check if beeper enabled
 		if (zxBeeperEnabled || zxBorderWidth > 0) {
 			// Create the beeper simulation object
-			this.zxBeeper = new ZxBeeper(zsim.cpuFrequency, zsim.audioSampleRate, Settings.launch.zsim.updateFrequency);
+			this.zxBeeper = new ZxBeeper(zsim.cpuFrequency, zsim.audioSampleRate, zsim.updateFrequency);
 			this.serializeObjects.push(this.zxBeeper);
 			// Add the port only if enabled
 			this.ports.registerGenericOutPortFunction((port: number, value: number) => {
@@ -467,7 +472,7 @@ export class ZSimRemote extends DzrpRemote {
 
 		// Initialize custom code e.g. for ports.
 		// But the customCode is not yet executed. (Because of unit tests).
-		const jsPath = Settings.launch.zsim.customCode.jsPath;
+		const jsPath = zsim.customCode.jsPath;
 		if (jsPath) {
 			//jsCode="<b>Error: reading file '"+jsPath+"':"+e.message+"</b>";
 			this.customCode = new CustomCode(jsPath);
@@ -684,6 +689,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * @param bp2 Breakpoint 2 address or -1 if not used.
 	 */
 	protected async z80CpuContinue(bp1: number, bp2: number): Promise<void> {
+		const zsimCpuLoad = Settings.launch.zsim.cpuLoad;
 		const limitSpeed = Settings.launch.zsim.limitSpeed;
 		let limitSpeedPrevTime = Date.now();
 		let limitSpeedPrevTstates = this.passedTstates;
@@ -848,7 +854,7 @@ export class ZSimRemote extends DzrpRemote {
 			}
 
 			// Check if the CPU frequency should be simulated as well
-			if (limitSpeed) {
+			if (limitSpeed || zsimCpuLoad > 0) {
 				const currentTime = Date.now();
 				const usedTime = currentTime - limitSpeedPrevTime;
 				// Check for too small values to get a better accuracy
@@ -856,7 +862,9 @@ export class ZSimRemote extends DzrpRemote {
 					const usedTstates = this.passedTstates - limitSpeedPrevTstates;
 					const targetTime = 1000 * usedTstates / this.z80Cpu.cpuFreq;
 					let remainingTime = targetTime - usedTime;
-					if (remainingTime >= 1) {
+					const fastEnough = remainingTime >= 1;
+					this.simulationTooSlow = !fastEnough;
+					if (limitSpeed && fastEnough) {
 						// Safety check: no longer than 500ms
 						if (remainingTime > 500)
 							remainingTime = 500;

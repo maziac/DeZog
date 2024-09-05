@@ -131,7 +131,7 @@ export class ZSimulationView extends BaseView {
 			this.close();
 		});
 
-		// Handle vertical sync
+		// Handle update of the screen (vertical sync)
 		this.simulator.on('updateScreen', () => {
 			this.updateScreen();
 		});
@@ -490,7 +490,7 @@ export class ZSimulationView extends BaseView {
 		this.restartStopTimer();
 
 		try {
-			let cpuFreq, cpuLoad, slots, slotNames, visualMem, audio, zxnDMA;
+			let cpuFreq, cpuLoad, simulationTooSlow, slots, slotNames, visualMem, audio, zxnDMA;
 
 			// Update frequency
 			if (this.prevCpuFreq !== this.simulator.z80Cpu.cpuFreq) {
@@ -499,8 +499,10 @@ export class ZSimulationView extends BaseView {
 			}
 
 			// Update cpuload
-			if (Settings.launch.zsim.cpuLoad > 0)
+			if (Settings.launch.zsim.cpuLoad > 0) {
 				cpuLoad = (this.simulator.z80Cpu.cpuLoad * 100).toFixed(0);
+				simulationTooSlow = this.simulator.simulationTooSlow;
+			}
 
 			// Visual Memory
 			if (Settings.launch.zsim.visualMemory) {
@@ -525,6 +527,7 @@ export class ZSimulationView extends BaseView {
 				command: 'update',
 				cpuFreq,
 				cpuLoad,
+				simulationTooSlow,
 				slotNames,
 				visualMem,
 				audio,

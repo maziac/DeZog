@@ -852,7 +852,8 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
 - "ulaScreen": "spectrum" | "zx81" | "zx81-hires". If enabled it shows the contents of the ZX Spectrum screen or that of a ZX81.
 ![](images/zsim_ula_screen.jpg)
 - "zxBorderWidth": The displayed border width in pixels. If set to 0 then no border is displayed. Works only for ulaScreen equal to "spectrum".
-- "cpuLoad": The CPU load is calculated by the number of executed HALT tStates vs all tStates. You can disable the display with a 0. 1 will exactly count till the next occurrence of a HALT. Higher numbers will average over more HALT instructions and lead to a more stable display. Practical values are around 10 (the default).
+- "cpuLoad": The Z80 CPU load is calculated by the number of executed HALT tStates vs all tStates. You can disable the display with a 0. 1 will exactly count till the next occurrence of a HALT. Higher numbers will average over more HALT instructions and lead to a more stable display. Practical values are around 10 (the default).
+  Additionally the simulation speed is indicated by the color. If the display turns to yellow the simulation speed is not fast enough to cope with the set cpuFrequency. (If you e.g. set a ZX81 or ZX Spectrum to 35Mhz the display will probably turn to yellow.)
 ![](images/zsim_cpu_load.jpg)
 - "defaultPortIn": The default value that is read if the read port is unused. Allowed is 255 or 0. 255 also sets the port as 'Open Collector', all triggered ports would be ANDed. Default to 0xFF.
 - "zxBeeper": true/false. Defaults to false. If enabled the ZX Beeper audio output is simulated. The generated audio has a noticeable delay. The output is visualized with a "0" or "1":

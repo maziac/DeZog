@@ -123,8 +123,11 @@ window.addEventListener('message', event => {// NOSONAR
 				cpuFreq.innerHTML = message.cpuFreq
 			}
 
-			if (cpuLoad && message.cpuLoad)
-				cpuLoad.innerHTML = message.cpuLoad;
+			if (cpuLoad) {
+				if (message.cpuLoad !== undefined)
+					cpuLoad.innerHTML = message.cpuLoad;
+				cpuLoad.style.color = message.simulationTooSlow ? 'yellow' : '';
+			}
 
 			if (message.slotNames) {
 				let i = 0;

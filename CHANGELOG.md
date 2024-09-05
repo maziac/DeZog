@@ -16,6 +16,7 @@
   - A new "customJoy" type: You can assign the bits and ports yourself.
   - Added "preset" to easily configure a spectrum or zx81 device.
   - "cpuLoadInterruptRange": renamed to "cpuLoad". The CPU load is not anymore calculated when the VSYNC occurs. Now it is calculated from HALT to next HALT instruction.
+  - "cpuLoad": The simulation speed is indicated by a color. If too slow the cpuLoad is shown in yellow.
   - Loading a .p file sets 'topOfStack' automatically. A warning is send if 'topOfStack' is set manually.
 - "topOfStack": default is now taken from the memory model.
 
