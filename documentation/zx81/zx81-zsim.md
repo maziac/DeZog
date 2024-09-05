@@ -173,6 +173,13 @@ If "debug" is true, everything that is not output to the screen is gray.
 Here is the display of a ZX81 with only 1k RAM:
 ![](images/collapsed-dfile.jpg)
 
+## firstLine, lastLine
+These 2 properties are only used if "hires" is true.
+With the values you can adjust the shown screen height.
+Normally the default values (46, 247) should work fine.
+However, depending on the hires algorithm the Z80 program uses it might be that a different area has been chosen.
+- firstLine is the first horizontal line that will be displayed
+- lastLine is the last horizontal line that will be displayed (inclusive)
 
 # CPU frequency
 The original ZX81 runs at 3.25 Mhz.
@@ -196,19 +203,56 @@ This is true by default and limits the execution speed to the Z80 cpu frequency.
 If "limitSpeed" is set to false, the simulation will always run at maximum speed.
 
 Note: If the simulation speed is not able to cope anymore with the cpu frequency the CPU Load indication will turn to yellow.
+![](images/cpuload-yellow.jpg)
 
-AUSPROBIEREN: HIER WEITER
+# The Keyboard
+Set
+~~~json
+	"zxKeyboard": "zx81"
+~~~
+to show the keyboard:
+![](../../html/images/zx81_kbd.svg)
 
-# To describe:
+The keys on the keyboard can be turned on/off by clicking with the mouse.
+You can also just use you real keyboard to simulate keypresses (note: the simulator view nees to have focus to receive keypresses, i.e. click once inside the simulator view so that it has focus).
 
-    - Chars austauschen Galactica.
-    - Hires, first/last/line, debug
-    - keyboard
-    - Custom Joystick
-	- Change cpu freq
-    - pictures: Galactica,/Galactica charset, Galactica hires/beam/debug, Against all elements=hires
+The Shift key is mapped to the left Alt key.
+But many real key combinations do work as well, e.g. a Shift-2 will generate the ZX81 key sequence Shift-P to create the quote character ".
+
+# Joysticks
+To simulate any joystick you can use the "customJoystick".
+It will map the keys of a joystick attached to your computer to ports/bits in the ZX81.
+Please refer to the description in [Usage.md](../Usage.md).
+For "Battlestar Galactica" you could use:
+~~~json
+    "customJoy": {
+        // ZX81: Battlestar Galactica
+        "down": { // 6
+            "portMask": "0x0801",
+            "port": "0x00",
+            "bit": "0x10"
+        },
+        "up": { // 7
+            "portMask": "0x0801",
+            "port": "0x00",
+            "bit": "0x08"
+        },
+        "fire": { // 0
+            "portMask": "0x0801",
+            "port": "0x00",
+            "bit": "0x01"
+        },
+        "fire2": { // 9
+            "portMask": "0x0801",
+            "port": "0x00",
+            "bit": "0x02"
+        }
+	}
+~~~
+Please note that "Battlestar Galactica" only uses a partial address decoding.
+
 
 # Attribution
+Many thanks to the authors of the mentioned games:
 - "Battlestar Galactica", Ch. Zwerschke
 - ["Against The Elements"](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm]), Paul Farrow
--
