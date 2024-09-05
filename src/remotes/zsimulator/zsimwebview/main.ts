@@ -126,7 +126,7 @@ window.addEventListener('message', event => {// NOSONAR
 			if (cpuLoad) {
 				if (message.cpuLoad !== undefined)
 					cpuLoad.innerHTML = message.cpuLoad;
-				cpuLoad.style.color = message.simulationTooSlow ? 'yellow' : '';
+				cpuLoad.style.backgroundColor = message.simulationTooSlow ? 'yellow' : '';
 			}
 
 			if (message.slotNames) {
