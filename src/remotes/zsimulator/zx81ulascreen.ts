@@ -42,6 +42,9 @@ export class Zx81UlaScreen extends UlaScreen {
 	protected stateNmiGeneratorOn = false;
 
 	// The line 3-bit counter (0-7) to address the 8 lines of a character.
+	protected ulaLineCounter = 0;
+
+	// Counts lines independent of the ulaLineCounter. Is reset on a vsync.
 	protected lineCounter = 0;
 
 	// The tstates counter
@@ -258,11 +261,12 @@ export class Zx81UlaScreen extends UlaScreen {
 			// VSYNC
 			//console.log('updateScreen', Date.now());
 			this.noDisplay = false;
+			this.lineCounter = 0;
 			this.emit('updateScreen');
 			this.resetVideoBuffer();
 		}
 		this.vsync = on;
-		this.lineCounter = 0;
+		this.ulaLineCounter = 0;
 		this.hsyncTstatesCounter = 0;  // Normal display would be one off if this was done in the VSYNC on (low) part.
 	}
 
@@ -298,6 +302,7 @@ export class Zx81UlaScreen extends UlaScreen {
 			return false;	// No HSYNC on yet
 
 		// HSYNC
+		this.ulaLineCounter = (this.ulaLineCounter + 1) & 0x07;
 		this.lineCounter++;
 
 		// Generate NMI on every HSYNC (if NMI generator is on)
@@ -317,7 +322,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		// Write data
 		memBuffer.write8(this.prevRregister);
 		memBuffer.writeBoolean(this.stateNmiGeneratorOn);
-		memBuffer.writeNumber(this.lineCounter);
+		memBuffer.writeNumber(this.ulaLineCounter);
 		memBuffer.writeNumber(this.tstates);
 		memBuffer.writeNumber(this.vsyncStartTstates);
 		memBuffer.writeNumber(this.hsyncTstatesCounter);
@@ -334,7 +339,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		// Read data
 		this.prevRregister = memBuffer.read8();
 		this.stateNmiGeneratorOn = memBuffer.readBoolean();
-		this.lineCounter = memBuffer.readNumber();
+		this.ulaLineCounter = memBuffer.readNumber();
 		this.tstates = memBuffer.readNumber();
 		this.vsyncStartTstates = memBuffer.readNumber();
 		this.hsyncTstatesCounter = memBuffer.readNumber();

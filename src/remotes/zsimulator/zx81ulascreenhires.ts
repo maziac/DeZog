@@ -89,7 +89,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				// Interpret data
 				const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
 				const i = this.z80Cpu.i;
-				const ulaAddr = (i & 0xFE) * 256 + ulaAddrLatch * 8 + (this.lineCounter & 0x07);
+				const ulaAddr = (i & 0xFE) * 256 + ulaAddrLatch * 8 + this.ulaLineCounter;
 				// Load byte from character (ROM)
 				let videoShiftRegister = this.memoryRead8(ulaAddr);
 				// Check to invert the byte
