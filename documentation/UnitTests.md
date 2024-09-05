@@ -250,7 +250,7 @@ Here is an example setup:
 }
 ~~~
 
-Note: if you are not compiling for a ZX Spectrum you can use "loadObj" instead of "load".
+Note: if you are not compiling for a ZX Spectrum you can use "loadObjs" instead of "load".
 
 
 

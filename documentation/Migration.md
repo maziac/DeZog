@@ -6,6 +6,7 @@ zsim:
 - "ulaScreen": The type was changed from boolean to 'spectrum' | 'zx81'.
 - "zxKeyboard": The type was changed from boolean to 'spectrum' | 'zx81'.
 - "cpuLoadInterruptRange": renamed to "cpuLoad".
+- "zx81UlaOptions" has been added.
 
 # Migrate from DeZog 3.3 to DeZog 3.4
 Logging:

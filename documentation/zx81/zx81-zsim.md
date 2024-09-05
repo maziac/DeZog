@@ -1,0 +1,167 @@
+# ZX81
+This document describes how the ZX81 "zsim" configuration can be used.
+
+# zsim
+The internal simulator "zsim" can be used for the ZX81.
+The easiest thing to do so is by using a "preset", e.g.
+~~~json
+"zsim": {
+	"preset": "zx81"
+	...
+}
+~~~
+
+This will configure an 48k ZX81.
+What it does is to set the following zsim properties:
+~~~json
+	"memoryModel": "ZX81-48K",
+	"cpuFrequency": 3250000,
+	"defaultPortIn" = 0xFF,
+	"zxKeyboard" = "zx81",
+	"ulaScreen": "zx81",
+	"zx81UlaOptions": {
+		"hires": true,
+		"firstLine": 56,
+		"lastLine": 247,
+		"debug": false
+  	}
+~~~
+
+If you use the preset you can easily override the defaults, e.g. to define a 16k ZX81 use:
+~~~json
+	"preset": "zx81",
+	"memoryModel": "ZX81-16K",
+~~~
+
+# Boot the ROM
+If you want to start the ZX81 without any program, i.e. just turn it on, don't use any "load..." properties. Instead set the "execAddress" to 0.
+~~~json
+"execAddress": "0"
+~~~
+
+![](images/zx81-zsim/boot.jpg)
+
+Note:
+- The "execAddress" property is a general property, so it is outside "zsim".
+- In fact you could even skip the "execAddress" property, as it's default is 0 anyway.
+
+# Load a program
+DeZog can load .p, .p81 and .81 files, which are more or less the same anyway with the "load" property.
+Additionally you can also load raw data with the "loadObjs" property.
+
+## Loading a .p file
+Outside the "zsim" property use e.g:
+~~~json
+"load": "Galactica.p"
+~~~
+
+This will correctly load the .p file to memory and set the system variables 0x4000-0x4008.
+Afterwards the program counter (PC) is set to start at 0x0207 (just after the ROM's load/save routine).
+The program either starts automatically or you will get the ZX Basic prompt.
+
+## Modding
+Although this is not directly related to debugging you can use DeZog very easily to mod the graphics of ZX81 games.
+Here as an example "Battlestar Galactica":
+
+The game with normal graphics, using the standard ZX81 charset:
+![](images/galactica-standard-charset.jpg)
+
+And here with a modded, custom charset:
+![](images/galactica-custom-charset.jpg)
+
+Of course, the changes you can do with this are limited as characters are re-used for other purposes (e.g. the "O" in "SCORE" which is also a meteor in the game).
+But on the other hand it is a very easy change.
+
+The only thing you need to do is to overwrite the ROM charset with your custom one.
+You do it with a "loadObjs" like this:
+~~~json
+"loadObjs": [
+	{	// Overwrite the charset
+		"path": "galactica_chars.bin",
+		"start": "0x1E00"
+	}
+]
+~~~
+
+As the ROM can be easily overwritten by DeZog it replaces all original bytes (characters) with that from galactica_chars.bin.
+
+To create galactica_chars.bin you can use a e.g. a hex editor, it's size should not exceed 512 bytes.
+
+More comfortable you could also use an assembler like sjasmplus to generate the bin file.
+
+### Generate a custom charset with sjasmplus
+[galactica_chars.asm](extra/galactica_chars.asm) holds the assembled code for a modified charset.
+Use
+~~~
+sjasmplus --raw=galactica_chars.bin galactica_chars.asm
+~~~
+to convert it into a a binary galactica_chars.bin.
+
+You can use it (as shown above) in "loadObjs".
+
+The assembler code for the original charset can be found here: [zx81-standard-chars.asm](extra/zx81-standard-chars.asm).
+
+Here is the example for the modified "I" which is turned into a rocket:
+~~~asm
+; 0x2E: 'I', modified: Rocket
+        DEFB    00001000b
+        DEFB    00011100b
+        DEFB    00011100b
+        DEFB    00011100b
+        DEFB    00011100b
+        DEFB    00111110b
+        DEFB    00101010b
+        DEFB    00101010b
+~~~
+Original:
+~~~asm
+; 0x2E: 'I'
+        DEFB    00000000b
+        DEFB    00111110b
+        DEFB    00001000b
+        DEFB    00001000b
+        DEFB    00001000b
+        DEFB    00001000b
+        DEFB    00111110b
+        DEFB    00000000b
+~~~
+
+# ULA (The screen display)
+The ULA was the HW chip mainly responsible for the video generation.
+It worked closely together with the Z80 CPU to generate the video signal.
+For details here are some references:
+- https://k1.spdns.de/Vintage/Sinclair/80/Sinclair%20ZX80/Tech%20specs/Wilf%20Rigter%27s%20ZX81%20Video%20Display%20Info.htm
+- https://8bit-museum.de/heimcomputer-2/sinclair/sinclair-scans/scans-zx81-video-display-system/
+- https://oldcomputer.info/8bit/zx81/ULA/ula.htm
+
+The simulator is capable of 2 different systems to display video.
+Both simulate the timing as much as possible enabling the simulator to display hires graphics.
+You can choose between mode by setting "hires" to true or false (default is true).
+~~~json
+"zx81UlaOptions": {
+	"hires": true/false
+}
+~~~
+You can simulate hires and non-hires games/programs with "hires" set to "true".
+Setting "hires" to false can be an advantage when debugging/developing non-hires games.
+If "hires" is false the dfile (the video screen) is decoded by "zsim" directly.
+The advantage is that any change in the screen is immediately visible as soon as the byte is added to the dfile.
+I.e. you can see the changes while your code is writing to the dfile and you are stepping through it.
+If "hires" is true, any changes would become visible only when the Z80 software takes care of the video generation.
+
+To visualize this a little bit, here is a screenshot of ["Against The Elements"](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm]):
+
+
+# To describe:
+
+    - Chars austauschen Galactica.
+    - Hires, first/last/line, debug
+    - keyboard
+    - Custom Joystick
+	- Change cpu freq
+    - pictures: Galactica,/Galactica charset, Galactica hires/beam/debug, Against all elements=hires
+
+# Attribution
+- "Battlestar Galactica", Ch. Zwerschke
+- ["Against The Elements"](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm]), Paul Farrow
+-
