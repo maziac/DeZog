@@ -149,8 +149,55 @@ The advantage is that any change in the screen is immediately visible as soon as
 I.e. you can see the changes while your code is writing to the dfile and you are stepping through it.
 If "hires" is true, any changes would become visible only when the Z80 software takes care of the video generation.
 
-To visualize this a little bit, here is a screenshot of ["Against The Elements"](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm]):
+To visualize this a little bit, here is a screenshot of the hires game ["Against The Elements"](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm]):
+![](images/against-write-total.jpg)
+The current write position is where the bottom black line ends.
+When single stepping this changes as more bytes are written one by one:
+![](images/against-write-1.jpg)
+![](images/against-write-2.jpg)
+![](images/against-write-3.jpg)
+![](images/against-write-4.jpg)
+![](images/against-write-5.jpg)
 
+If "hires" is set to false you will always see a complete screen independent of the exact vertical and horizontal timing.
+
+So it depends:
+If you are developing a standard graphics game then `"hires": false` is the recommended choice.
+If you are developing a hires game you have to use `"hires": true`, of course.
+
+## Collapsed dfile
+In a ZX81 with 1-2k RAM the dfile is collapsed, i.e. it uses only the full width of a line if necessary. If the line does not contain anything no RAM is used for it.
+In zsim this can be visualized (in standard and hires mode) with the "debug" option.
+If "debug" is true, everything that is not output to the screen is gray.
+
+Here is the display of a ZX81 with only 1k RAM:
+![](images/collapsed-dfile.jpg)
+
+
+# CPU frequency
+The original ZX81 runs at 3.25 Mhz.
+This is also the default in zsim if `"preset": "zx81"` is chosen.
+However, if you have a fast computer then you can adjust the frequency and get a faster simulation.
+E.g.
+~~~json
+	"cpuFrequency": 30000000,
+~~~
+will set the frequency to 30 Mhz.
+Of course, if the simulator is able to reach the speed depends on the capabilities of your computer.
+With a mac mini M2 you can expect to achieve around 7 Mhz at least.
+I.e. you can double the speed of the ZX81.
+Sometimes this can be handy, if computation in the ZX81 takes a long time.
+All the ULA timing depends on the t-states only, i.e. it works independent of the cpu frequency.
+Thus also the video output simply happens faster.
+
+Another way to let the simulator run faster is to use the general "limitSpeed" property.
+This is true by default and limits the execution speed to the Z80 cpu frequency.
+
+If "limitSpeed" is set to false, the simulation will always run at maximum speed.
+
+Note: If the simulation speed is not able to cope anymore with the cpu frequency the CPU Load indication will turn to yellow.
+
+AUSPROBIEREN: HIER WEITER
 
 # To describe:
 
