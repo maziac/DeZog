@@ -660,11 +660,37 @@
 										"type": "string",
 										"enum": [
 											"spectrum",
-											"zx81",
-											"zx81-hires"
+											"zx81"
 										],
-										"description": "If defined it shows the contents of the ZX Spectrum (\"spectrum\") or ZX81 (\"zx81\" or \"zx81-hires\") screen. It supports also the ZX128K screen switching.",
+										"description": "If defined it shows the contents of the ZX Spectrum (\"spectrum\") or ZX81 (\"zx81\") screen. It supports also the ZX128K screen switching.",
 										"default": null
+									},
+									"zx81UlaOptions": {
+										"type": "object",
+										"properties": {
+											"hires": {
+												"type": "boolean",
+												"description": "If true the generation of the screen output by the cpu is simulated. This allows to display hires programs. If false the ZX81 dfile is converted directly into screen graphics. This can be an advantage when debugging a non-hires game. Defaults to true.",
+												"default": true
+											},
+											"firstLine": {
+												"type": "number",
+												"description": "Used only if \"hires\" is true. The first line that should be displayed. Defaults to 56.","default": 56
+											},
+											"lastLine": {
+												"type": "number",
+												"description": "Used only if \"hires\" is true. The last line (inclusive) that should be displayed. Defaults to 247.",
+												"default": 247
+											},
+											"debug": {
+												"type": "boolean",
+												"description": "If true a gray background is shown for the screen areas without output. Only makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. Defaults to false.",
+												"default": false
+											}
+										},
+										"description": "Several options for the ZX81 ULA screen.",
+										"default": {
+										}
 									},
 									"zxBorderWidth": {
 										"type": "number",

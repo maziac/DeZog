@@ -658,8 +658,8 @@ One thing to mention that can be an advantage during development:
 
 Emulators (like ZEsarUX) normally try to accurately emulate the exact behavior.
 This means: if you step through your assembly code and e.g. write to the screen an emulator would normally show the result after the ray-beam has passed the position on the screen. I.e. you normally don't see directly what's happening on the screen.
-The zsim simulator on the other hand immediately displays any change to the screen while stepping. This can be a big advantage during debugging.
-(Note: this is true for "ulaScreen" equal to "spectrum" or "zx81", but not for "zx81-hires" which is accurate in the timing of the display.)
+The zsim simulator on the other hand can immediately display any change to the screen while stepping. This can be a big advantage during debugging.
+(Note: this is true for "ulaScreen" equal to "spectrum" or "zx81" if the hires option is set to false.)
 
 Example launch.json configuration:
 ~~~json
@@ -849,8 +849,22 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
 	- "ZXNEXT": Paged memory as of the ZX Next (8k slots/banks). Banks R0a, R0b, R1a, R1b, 0-223. R0a/b and R1a/b is R0 or R1 but sliced in 8k chunks.
     - "COLECOVISION": Memory map for the Coleco Vision (8k slots, no banking).
     - "CUSTOM": For a custom memory layout. See [customMemory](#custommemory).
-- "ulaScreen": "spectrum" | "zx81" | "zx81-hires". If enabled it shows the contents of the ZX Spectrum screen or that of a ZX81.
-![](images/zsim_ula_screen.jpg)
+- "ulaScreen": "spectrum" | "zx81". If enabled it shows the contents of the ZX Spectrum screen or that of a ZX81.
+![](images/zsim_ula_screen_spectrum.jpg)
+![](images/zsim_ula_screen_zx81.jpg)
+- "zx81UlaOptions":
+  ~~~
+  {
+    "hires": true,
+    "firstLine": 56,
+    "lastLine": 247,
+    "debug": false
+  }
+  ~~~
+  The above shows the default values.
+    - "hires": If true the generation of the screen output by the cpu is simulated. This allows to display hires programs. If false the ZX81 dfile is converted directly into screen graphics. This can be an advantage when debugging a non-hires game.
+    - "firstLine"/"lastLine": Used only if "hires" is true. The first and last line (inclusive) that should be displayed.
+    - "debug": If true a gray background is shown for the screen areas without output. Only makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory.
 - "zxBorderWidth": The displayed border width in pixels. If set to 0 then no border is displayed. Works only for ulaScreen equal to "spectrum".
 - "cpuLoad": The Z80 CPU load is calculated by the number of executed HALT tStates vs all tStates. You can disable the display with a 0. 1 will exactly count till the next occurrence of a HALT. Higher numbers will average over more HALT instructions and lead to a more stable display. Practical values are around 10 (the default).
   Additionally the simulation speed is indicated by the color. If the display turns to yellow the simulation speed is not fast enough to cope with the set cpuFrequency. (If you e.g. set a ZX81 or ZX Spectrum to 35Mhz the display will probably turn to yellow.)
