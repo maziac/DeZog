@@ -25,6 +25,10 @@ export class Zx81UlaDraw {
 		else
 			pixels.fill(0xFF);	// white background
 
+		// Safety check
+		if (!dfile)
+			return;
+
 		const width = Zx81UlaDraw.SCREEN_WIDTH / 8;
 		const height = Zx81UlaDraw.SCREEN_HEIGHT / 8;
 		let x = 0;

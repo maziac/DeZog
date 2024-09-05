@@ -24,6 +24,10 @@ export class Zx81HiResUlaDraw {
 		else
 			pixels.fill(0xFF);	// white background
 
+		// Safety check
+		if (!ulaScreen)
+			return;
+
 		// Whole screen is converted by evaluating blocks that are equal to the color attributes.
 		const width8 = Zx81HiResUlaDraw.SCREEN_WIDTH / 8;
 		const white = 255;

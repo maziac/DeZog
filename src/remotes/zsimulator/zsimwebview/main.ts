@@ -96,8 +96,8 @@ window.addEventListener('message', event => {// NOSONAR
 
 		case 'updateScreen':
 			// Update the screen
-			if (message.ulaData) {
-				const ulaData = message.ulaData;
+			const ulaData = message.ulaData;
+			if (ulaData) {
 				const name = ulaData.name;
 				if (name === 'spectrum') {
 					SpectrumUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.data, ulaData.time);
