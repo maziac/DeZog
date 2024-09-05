@@ -16,8 +16,8 @@ What it does is to set the following zsim properties:
 ~~~json
 	"memoryModel": "ZX81-48K",
 	"cpuFrequency": 3250000,
-	"defaultPortIn" = 0xFF,
-	"zxKeyboard" = "zx81",
+	"defaultPortIn": 0xFF,
+	"zxKeyboard": "zx81",
 	"ulaScreen": "zx81",
 	"zx81UlaOptions": {
 		"hires": true,
