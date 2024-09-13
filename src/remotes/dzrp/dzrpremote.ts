@@ -1469,6 +1469,10 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			if (cmpBuffer[i] !== 0x02)
 				break;
 		}
+		// Clear memory
+		const clearBuffer = new Uint8Array(i);
+		await this.sendDzrpCmdWriteMem(0x4000, clearBuffer);
+
 		const ramSize = i;
 		const ramTop = (0x4000 + ramSize) & 0xFFFF;
 		const topStack = (ramTop - 4) & 0xFFFF;;

@@ -77,37 +77,44 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	protected ulaM1Read8(addr64k: number): number {
 		// Read data from memory
 		const data = this.memoryRead8(addr64k & 0x7FFF);
+		if (addr64k < 0x8000)
+			return data;	// Return the normal value
 
-		// Check if it is character data
-		if (addr64k & 0x8000) {
-			// Check if bit 6 is low
-			if ((data & 0b01000000) !== 0)
-				return data;	// E.g. HALT
+		// Check if bit 6 is low
+		if ((data & 0b01000000) !== 0)
+			return data;	// E.g. HALT
 
-			// Check if line should be displayed
-			if (this.isLineVisible()) {
+		// Check if line should be displayed
+		if (this.isLineVisible()) {
+			const i = this.z80Cpu.i;
+			let addr;
+			// Check for WRX (true hires)
+			if (i >= 0x40) {
+				// i (high byte of address) is outside the ROM area -> WRX
+				const r = this.z80Cpu.r;
+				// Use previous r value
+				addr = i * 256 + (r & 0x80) + ((r - 1) & 0x7F);
+			}
+			else {
+				// i (high byte of address) is inside the ROM area -> normal display or pseudo hires
 				// Interpret data
 				const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
-				const i = this.z80Cpu.i;
-				const ulaAddr = (i & 0xFE) * 256 + ulaAddrLatch * 8 + this.ulaLineCounter;
-				// Load byte from character (ROM)
-				let videoShiftRegister = this.memoryRead8(ulaAddr);
-				// Check to invert the byte
-				if (data & 0b1000_0000) {
-					videoShiftRegister ^= 0xFF;
-				}
-				// Add byte to screen
-				this.screenData[this.screenDataIndex++] = videoShiftRegister;
-				// Increase length
-				this.screenData[this.screenLineLengthIndex]++;
+				addr = (i & 0xFE) * 256 + ulaAddrLatch * 8 + this.ulaLineCounter;
 			}
-
-			// Return a NOP for the graphics data
-			return 0x00;
+			// Load byte from character (ROM)
+			let videoShiftRegister = this.memoryRead8(addr);
+			// Check to invert the byte
+			if (data & 0b1000_0000) {
+				videoShiftRegister ^= 0xFF;
+			}
+			// Add byte to screen
+			this.screenData[this.screenDataIndex++] = videoShiftRegister;
+			// Increase length
+			this.screenData[this.screenLineLengthIndex]++;
 		}
 
-		// Otherwise return the normal value
-		return data;
+		// Return a NOP for the graphics data
+		return 0x00;
 	}
 
 
