@@ -98,7 +98,7 @@ export class Zx81UlaDraw {
 				// Color: Chroma mode 0?
 				if (chromaMode === 0) {
 					// Chroma mode 0: Character code
-					const color = chroma.data[charIndex * 8 + charY];
+					const color = chroma.data[charIndex];
 					// fg color
 					let colorIndex = (color & 0x0F) * 3;
 					fgRed = Zx81UlaDraw.chroma81Palette[colorIndex];

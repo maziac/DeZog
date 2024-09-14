@@ -112,6 +112,10 @@ export class Zx81UlaScreen extends UlaScreen {
 			// Register the Chroma81 ports
 			z80Cpu.ports.registerSpecificOutPortFunction(0x7FEF, this.chroma81OutPort.bind(this));
 			z80Cpu.ports.registerSpecificInPortFunction(0x7FEF, this.chroma81InPort.bind(this));
+			// Init the color memory, otherwise it would be black on black.
+			const attribColors = new Uint8Array(0x4000);	// Init all possible area
+			attribColors.fill(0x26);	// yellow on red
+			z80Cpu.memory.writeBlock(0xC000, attribColors);
 		}
 	}
 
