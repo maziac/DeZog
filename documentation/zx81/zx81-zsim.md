@@ -136,13 +136,13 @@ For details here are some references:
 
 The simulator is capable of 2 different systems to display video.
 Both simulate the timing as much as possible enabling the simulator to display hires graphics.
-You can choose between mode by setting "hires" to true or false (default is true).
+You can choose between modes by setting "hires" to true or false (default is true).
 ~~~json
 "zx81UlaOptions": {
 	"hires": true/false
 }
 ~~~
-You can simulate hires and non-hires games/programs with "hires" set to "true".
+You can simulate pseudo-hires, hires (wrx) and non-hires games/programs with "hires" set to "true".
 Setting "hires" to false can be an advantage when debugging/developing non-hires games.
 If "hires" is false the dfile (the video screen) is decoded by "zsim" directly.
 The advantage is that any change in the screen is immediately visible as soon as the byte is added to the dfile.

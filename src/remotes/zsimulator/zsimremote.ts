@@ -93,7 +93,7 @@ export class ZSimRemote extends DzrpRemote {
 	// ZX Beeper simulation
 	public zxBeeper: ZxBeeper;
 
-	// The current ZX border color.
+	// The current ZX Spectrum border color.
 	protected zxBorderColor: number;
 
 	// Can be enabled through commands to break when an interrupt occurs.

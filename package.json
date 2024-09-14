@@ -694,7 +694,7 @@
 									},
 									"zxBorderWidth": {
 										"type": "number",
-										"description": "The displayed border width in pixels. If set to 0 then no border is displayed. Works only if 'ulaScreen' is set.",
+										"description": "The displayed ZX Spectrum border width in pixels. If set to 0 then no border is displayed. Works only if 'ulaScreen' is set.",
 										"default": true
 									},
 									"zxBeeper": {

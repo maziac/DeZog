@@ -571,7 +571,7 @@ export class ZSimulationView extends BaseView {
 				command: 'updateScreen',
 				ulaData,
 				borderColor,
-				zx81UlaScreenDebug: zx81UlaScreenOptions.debug,
+				zx81UlaScreenDebug: zx81UlaScreenOptions.debug
 			};
 			this.sendMessageToWebView(message);
 			// Clear

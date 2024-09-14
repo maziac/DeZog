@@ -214,12 +214,22 @@ export interface CustomJoyType {
 	down: JoyBitPort;
 }
 
+// Chroma 81 interface
+export interface Chroma81Type {
+	available: boolean;	// Turn chroma81 support on/off (port in/out)
+	enabled: boolean;	// Enable color mode
+	mode: number;		// 0=Character code, 1=Attribute file
+	borderColor: number;	// Bit 3: Brightness, Bit 2-0: GRB color
+}
+
 
 // Options for the ZX81 ULA screen.
 export interface zx81UlaOptions {
 	hires: boolean;		// Use hires mode
 	firstLine: number;	// The first line to display (hires mode)
 	lastLine: number;	// The last line to display (hires mode)
+	borderSize: number;	// The size of the border in pixels
+	chroma81: Chroma81Type;	// Chroma 81 interface
 	debug: boolean;		// Debug mode: show gray in collapsed dfile
 }
 
@@ -638,6 +648,19 @@ export class Settings {
 			ulaScreenOptions.lastLine = 247;
 		if (ulaScreenOptions.debug === undefined)
 			ulaScreenOptions.debug = false;
+		if (ulaScreenOptions.borderSize === undefined)
+			ulaScreenOptions.borderSize = 0;
+		if (ulaScreenOptions.chroma81 === undefined)
+			ulaScreenOptions.chroma81 = {} as Chroma81Type;
+		const chroma81 = ulaScreenOptions.chroma81;
+		if (chroma81.available === undefined)
+			chroma81.available = false;
+		if (chroma81.enabled === undefined)
+			chroma81.enabled = false;
+		if (chroma81.mode === undefined)
+			chroma81.mode = 0;
+		if (chroma81.borderColor === undefined)
+			chroma81.borderColor = 0x0F;	// White
 
 		if (launchCfg.zsim.zxBorderWidth === undefined )
 			launchCfg.zsim.zxBorderWidth = 0;
@@ -1156,6 +1179,11 @@ export class Settings {
 		const zx81UlaOptions = Settings.launch.zsim.zx81UlaOptions;
 		if (zx81UlaOptions.lastLine < zx81UlaOptions.firstLine) {
 			throw Error("'zx81UlaOptions': lastLine < firstLine.");
+		}
+
+		// Check border (Spectrum vs. ZX81)
+		if (Settings.launch.zsim.zxBorderWidth > 0 && (ulaScreen !== 'spectrum' && ulaScreen !== 'none')) {
+			throw Error("'zxBorderWidth' used for 'ulaScreen' = '" + ulaScreen + "'. Should be used only for 'spectrum'.");
 		}
 	}
 }
