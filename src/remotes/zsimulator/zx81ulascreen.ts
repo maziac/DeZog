@@ -221,7 +221,8 @@ export class Zx81UlaScreen extends UlaScreen {
 	 */
 	public getUlaScreen(): any {
 		// Read the charset 0x1E00-0x1FFF (512 bytes)
-		const charset = this.z80Cpu.memory.readBlock(0x1E00, 512);
+		const memory = this.z80Cpu.memory;
+		const charset = memory.readBlock(0x1E00, 512);
 		// Check for available VSYNC
 		if (this.noDisplay)
 			return {
@@ -229,13 +230,36 @@ export class Zx81UlaScreen extends UlaScreen {
 				charset
 			};
 		// Get the content of the D_FILE system variable (2 bytes).
-		const dfile_ptr = this.z80Cpu.memory.getMemory16(0x400c);
+		const dfile_ptr = memory.getMemory16(0x400c);
 		// 24 lines of 33 bytes (could be less).
-		const dfile = this.z80Cpu.memory.readBlock(dfile_ptr, 33 * 24);
+		const dfile_maxlen = 33 * 24;
+		const dfile = memory.readBlock(dfile_ptr, dfile_maxlen);
+
+		// Color / Chroma 81
+		let chroma;
+		if (this.chroma81Enabled) {
+			const mode = this.chroma81Mode;
+			let data;
+			if (mode === 0) {
+				// Character code mode, mapping table at $C000-$C3FF
+				data = memory.readBlock(0xC000, 0x0400);
+			}
+			else {
+				// Attribute file mode, colors at DFILE+$8000
+				const addr = (dfile_ptr + 0x8000) & 0xFFFF;
+				data = memory.readBlock(addr, dfile_maxlen);
+			}
+			chroma = {
+				mode,
+				data
+			};
+		}
+
 		return {
 			name: 'zx81',
+			dfile,
 			charset,
-			dfile
+			chroma
 		};
 	}
 
@@ -378,6 +402,9 @@ export class Zx81UlaScreen extends UlaScreen {
 		memBuffer.writeBoolean(this.hsync);
 		memBuffer.writeBoolean(this.vsync);
 		memBuffer.writeBoolean(this.noDisplay);
+		memBuffer.write8(this.borderColor);
+		memBuffer.write8(this.chroma81Mode);
+		memBuffer.writeBoolean(this.chroma81Enabled);
 	}
 
 
@@ -395,5 +422,8 @@ export class Zx81UlaScreen extends UlaScreen {
 		this.hsync = memBuffer.readBoolean();
 		this.vsync = memBuffer.readBoolean();
 		this.noDisplay = memBuffer.readBoolean();
+		this.borderColor = memBuffer.read8();
+		this.chroma81Mode = memBuffer.read8();
+		this.chroma81Enabled = memBuffer.readBoolean();
 	}
 }

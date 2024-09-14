@@ -651,12 +651,15 @@ export class Settings {
 		if (ulaScreenOptions.borderSize === undefined)
 			ulaScreenOptions.borderSize = 0;
 		if (ulaScreenOptions.chroma81 === undefined)
-			ulaScreenOptions.chroma81 = {} as Chroma81Type;
+			ulaScreenOptions.chroma81 = {
+				available: false
+			} as Chroma81Type;
+
 		const chroma81 = ulaScreenOptions.chroma81;
 		if (chroma81.available === undefined)
-			chroma81.available = false;
+			chroma81.available = true;
 		if (chroma81.enabled === undefined)
-			chroma81.enabled = false;
+			chroma81.enabled = true;
 		if (chroma81.mode === undefined)
 			chroma81.mode = 0;
 		if (chroma81.borderColor === undefined)

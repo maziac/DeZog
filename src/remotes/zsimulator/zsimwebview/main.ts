@@ -103,7 +103,7 @@ window.addEventListener('message', event => {// NOSONAR
 					SpectrumUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.data, ulaData.time);
 				}
 				else if (name === 'zx81') {
-					Zx81UlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.dfile, ulaData.charset, message.zx81UlaScreenDebug);
+					Zx81UlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.dfile, ulaData.charset, ulaData.chroma, message.zx81UlaScreenDebug);
 				}
 				else if (name === 'zx81-hires') {
 					Zx81HiResUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.data, message.zx81UlaScreenDebug);
