@@ -93,9 +93,6 @@ export class ZSimRemote extends DzrpRemote {
 	// ZX Beeper simulation
 	public zxBeeper: ZxBeeper;
 
-	// The current ZX Spectrum border color.
-	protected zxBorderColor: number;
-
 	// Can be enabled through commands to break when an interrupt occurs.
 	protected breakOnInterrupt: boolean;
 
@@ -138,7 +135,6 @@ export class ZSimRemote extends DzrpRemote {
 		this.nextStepTstates = 0;
 		this.stopCpu = true;
 		this.lastBpId = 0;
-		this.zxBorderColor = 7;	// White initially
 		this.breakOnInterrupt = false;
 		this.tbblueCpuSpeed = 0;
 		// Set decoder
@@ -300,27 +296,15 @@ export class ZSimRemote extends DzrpRemote {
 
 		// Check for beeper and border (both use the same port)
 		const zxBeeperEnabled = zsim.zxBeeper;
-		const zxBorderWidth = zsim.zxBorderWidth;	// 0 = no border
 		// Check if beeper enabled
-		if (zxBeeperEnabled || zxBorderWidth > 0) {
+		if (zxBeeperEnabled) {
 			// Create the beeper simulation object
 			this.zxBeeper = new ZxBeeper(zsim.cpuFrequency, zsim.audioSampleRate, zsim.updateFrequency);
 			this.serializeObjects.push(this.zxBeeper);
 			// Add the port only if enabled
 			this.ports.registerGenericOutPortFunction((port: number, value: number) => {
 				// The port 0xFE. Every even port address will do.
-				if (port & 0x01)
-					return;
-				// Yes, it's an even address.
-
-				// Border
-				if (zxBorderWidth > 0) {
-					// Only 3 bits color without brightness
-					this.zxBorderColor = value & 0x07;
-				}
-
-				// Beeper
-				if (zxBeeperEnabled) {
+				if ((port & 0x01) === 0) {
 					// Write beeper (bit 4, EAR)
 					this.zxBeeper.writeBeeper(this.passedTstates, (value & 0b10000) != 0);
 				}
@@ -417,15 +401,24 @@ export class ZSimRemote extends DzrpRemote {
 			case 'spectrum': this.zxUlaScreen = new SpectrumUlaScreen(this.z80Cpu); break;
 			case 'zx81':
 				{
+					const chroma81 = zsim.zx81UlaOptions.chroma81;
 					const options = zsim.zx81UlaOptions;
 					if (options.hires) {
 						// Hires
-						this.zxUlaScreen = new Zx81UlaScreenHiRes(this.z80Cpu, options.firstLine, options.lastLine);
+						this.zxUlaScreen = new Zx81UlaScreenHiRes(this.z80Cpu, chroma81.available, options.firstLine, options.lastLine);
 					}
 					else {
 						// Normal
-						this.zxUlaScreen = new Zx81UlaScreen(this.z80Cpu);
-					}break;
+						this.zxUlaScreen = new Zx81UlaScreen(this.z80Cpu, chroma81.available);
+					}
+					// Initialize chroma
+					if (chroma81.available) {
+						const value = ((chroma81.enabled) ? 0b0010_0000 : 0)
+							+ ((chroma81.mode << 4) & 0b0001_0000)
+							+ (chroma81.borderColor & 0x0F);
+							this.ports.write(0x7FEF, value);
+					}
+					break;
 				}
 		}
 		if (this.zxUlaScreen) {
@@ -1004,7 +997,6 @@ export class ZSimRemote extends DzrpRemote {
 	public serialize(memBuffer: MemBuffer) {
 		// Serialize own properties
 		memBuffer.writeNumber(this.passedTstates);
-		memBuffer.write8(this.zxBorderColor);
 
 		// Serialize objects
 		for (const obj of this.serializeObjects)
@@ -1017,7 +1009,6 @@ export class ZSimRemote extends DzrpRemote {
 	public deserialize(memBuffer: MemBuffer) {
 		// Deserialize own properties
 		this.passedTstates = memBuffer.readNumber();
-		this.zxBorderColor = memBuffer.read8();
 
 		// Deserialize objects
 		for (const obj of this.serializeObjects)
@@ -1081,14 +1072,6 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	public getZxBeeperBuffer(): BeeperBuffer {
 		return this.zxBeeper.getBeeperBuffer(this.passedTstates);
-	}
-
-
-	/**
-	 * Returns the ZX border color.
-	 */
-	public getZxBorderColor(): number {
-		return this.zxBorderColor;
 	}
 
 

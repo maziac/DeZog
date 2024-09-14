@@ -48,7 +48,10 @@ export class SpectrumUlaScreen extends UlaScreen implements Serializable {
 			}
 			// Use ZX128K ULA Bank switching.
 			this.currentUlaBank = this.normalUlaBank;
-			z80Cpu.ports.registerGenericOutPortFunction(this.zx128UlaScreenSwitch.bind(this));
+			z80Cpu.ports.registerGenericOutPortFunction((port, value) => {
+				this.outPortBorderColor(port, value);
+				this.outPortZx128UlaScreenSwitch(port, value);
+			});
 		}
 		else if (bankCount > 1) {
 			// Otherwise assume ZX16/48K with bank 1
@@ -71,14 +74,25 @@ export class SpectrumUlaScreen extends UlaScreen implements Serializable {
 	 *   bit 4: ROM select. ROM 0 is the 128k editor and menu system; ROM 1 contains 48K BASIC.
 	 *   bit 5: If set, memory paging will be disabled and further output to this port will be ignored until the computer is reset.
 	 */
-	public zx128UlaScreenSwitch(port: number, value: number) {
+	public outPortZx128UlaScreenSwitch(port: number, value: number) {
 		// Check bit 1 and bit 15 being 0 (partially decoding)
-		if ((port & 0b1000_0000_0000_0010) == 0) {
+		if ((port & 0b1000_0000_0000_0010) === 0) {
 			// bit 3: Select normal(0) or shadow(1) screen to be displayed.
 			const useShadowBank = ((value & 0b01000) != 0);
 			this.currentUlaBank = (useShadowBank) ? this.shadowUlaBank : this.normalUlaBank;
 		}
 	}
+
+
+	/** Port function to set the border color.
+	 */
+	public outPortBorderColor(port: number, value: number) {
+		// Check bit 1 and bit 15 being 0 (partially decoding)
+		if ((port & 0x01) === 0) {
+			this.borderColor = value & 0x07;
+		}
+	}
+
 
 	/** Executes the ULA. The ZX81 ULA may grab tstates from
 		 * the CPU to simulate the NMI interrupt.

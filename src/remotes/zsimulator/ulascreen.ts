@@ -10,6 +10,8 @@ export class UlaScreen extends EventEmitter implements Serializable {
 	// Required for memory and ports.
 	protected z80Cpu: Z80Cpu;
 
+	// The border color:
+	protected borderColor = 0x07; // White without brightness
 
 	/** Constructor.
 	 * @param z80Cpu Mainly for the memoryModel and the ports.
@@ -38,14 +40,23 @@ export class UlaScreen extends EventEmitter implements Serializable {
 	}
 
 
+	/** Returns the border color.
+	 */
+	public getBorderColor() {
+		return this.borderColor;
+	}
+
+
 	/** Serializes the object.
 	 */
 	public serialize(memBuffer: MemBuffer) {
+		memBuffer.write8(this.borderColor);
 	}
 
 
 	/** Deserializes the object.
 	 */
 	public deserialize(memBuffer: MemBuffer) {
+		this.borderColor = memBuffer.read8();
 	}
 }

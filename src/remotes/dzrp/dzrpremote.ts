@@ -1481,7 +1481,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		let fileBuffer = fs.readFileSync(filePath);
 		let len = fileBuffer.length;
 		const ext = path.extname(filePath).toLowerCase();
-		if (ext == '.p81') {
+		if (ext === '.p81') {
 			// Skip name at the start of the file
 			let nameMax = 128;
 			if (nameMax > len)

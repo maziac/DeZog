@@ -39,11 +39,12 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 	/** Constructor.
 	 * @param z80Cpu Mainly for the memoryModel and the ports.
+	 * @param chroma81 True if the ZX81 Chroma81 support should be enabled.
 	 * @param firstLine The first line to display.
 	 * @param lastLine The last line to display (inclusive).
 	 */
-	constructor(z80Cpu: Z80Cpu, firstLine: number, lastLine: number) {
-		super(z80Cpu);
+	constructor(z80Cpu: Z80Cpu, chroma81: boolean, firstLine: number, lastLine: number) {
+		super(z80Cpu, chroma81);
 		this.firstLine = firstLine;
 		this.lastLine = lastLine;
 		let totalLines = lastLine - firstLine + 1;

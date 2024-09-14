@@ -552,19 +552,14 @@ export class ZSimulationView extends BaseView {
 	 */
 	protected updateScreen() {
 		try {
-			let borderColor;
-
 			// The screen data
-			const ulaData = this.simulator.zxUlaScreen.getUlaScreen();
+			const ulaScreen = this.simulator.zxUlaScreen;
+			const ulaData = ulaScreen.getUlaScreen();
+			// Get color
+			const borderColor = ulaScreen.getBorderColor();
 
 			// Check for zx81 debug mode
 			const zx81UlaScreenOptions = Settings.launch.zsim.zx81UlaOptions;
-
-			// Border color
-			if (Settings.launch.zsim.zxBorderWidth > 0) {
-				// Get the border and set it.
-				borderColor = this.simulator.getZxBorderColor();
-			}
 
 			// Create message to update the webview
 			const message = {
@@ -840,9 +835,14 @@ export class ZSimulationView extends BaseView {
 				// Set configured height
 				height = zx81UlaOptions.lastLine - zx81UlaOptions.firstLine + 1;
 			}
+			// Border width
+			let borderWidth = zsim.zxBorderWidth;
+			if (borderWidth === 0)
+				borderWidth = zsim.zx81UlaOptions.borderSize;
+			// HTML code:
 			html += `
 			<!-- Display the screen gif -->
-			<canvas id="screen_img_id" width="256" height="${height}" style="image-rendering:pixelated; border:${zsim.zxBorderWidth}px solid white; outline: 1px solid var(--vscode-foreground); width:100%; height:100%; box-sizing: border-box;">
+			<canvas id="screen_img_id" width="256" height="${height}" style="image-rendering:pixelated; border:${borderWidth}px solid white; outline: 1px solid var(--vscode-foreground); width:100%; height:100%; box-sizing: border-box;">
 			</canvas>
 			`;
 		}

@@ -85,11 +85,18 @@ export class Zx81UlaScreen extends UlaScreen {
 	// The original memory read function.
 	protected memoryRead8: (addr64k: number) => number;
 
+	// Chroma81-------------
+	// The chroma mode: 0=Character code, 1=Attribute file:
+	protected chroma81Mode = 0
+	// Chroma81 enabled programattically:
+	protected chroma81Enabled = false;
+
 
 	/** Constructor.
 	 * @param z80Cpu Mainly for the memoryModel and the ports.
+	 * @param chroma81 True if the ZX81 Chroma81 support should be enabled.
 	 */
-	constructor(z80Cpu: Z80Cpu) {
+	constructor(z80Cpu: Z80Cpu, chroma81: boolean) {
 		super(z80Cpu);
 
 		// Register ULA ports
@@ -99,6 +106,13 @@ export class Zx81UlaScreen extends UlaScreen {
 		// m1read8 (opcode fetch) is modified to emulate the ZX81 ULA.
 		this.memoryRead8 = z80Cpu.memory.read8.bind(z80Cpu.memory);
 		z80Cpu.memory.m1Read8 = this.ulaM1Read8.bind(this);
+
+		// Chroma81 (Color support)
+		if (chroma81) {
+			// Register the Chroma81 ports
+			z80Cpu.ports.registerSpecificOutPortFunction(0x7FEF, this.chroma81OutPort.bind(this));
+			z80Cpu.ports.registerSpecificInPortFunction(0x7FEF, this.chroma81InPort.bind(this));
+		}
 	}
 
 
@@ -313,6 +327,40 @@ export class Zx81UlaScreen extends UlaScreen {
 		this.hsync = true;
 		logOn && console.log(this.hsyncTstatesCounter, "HSYNC on (low)");
 		return true;
+	}
+
+
+	/** Chroma 81 out port function.
+	 * Port $7FEF (01111111 11101111) - OUT:
+	 * +---+---+---+---+---+---+---+---+
+	 * | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+	 * +---+---+---+---+---+---+---+---+
+	 *   |   |   |   |   |   |   |   |
+	 *   |   |   |   |   |   +---+---+-------- Border color (format: GRB).
+	 *   |   |   |   |   +-------------------- Border color bright bit.
+	 *   |   |   |   +------------------------ Mode (0=Character code, 1=Attribute file).
+	 *   |   |   +---------------------------- 1=Enable color mode.
+	 *   +---+-------------------------------- Reserved for future use (always set to 0)
+	 */
+	protected chroma81OutPort(port: number, value: number): void {
+		this.borderColor = value & 0x0F;
+		this.chroma81Mode = (value & 0b0001_0000) >>> 4;	// 0 or 1
+		this.chroma81Enabled = (value & 0b0010_0000) !== 0;
+	}
+
+
+	/** Chroma 81 in port function.
+	 * Port $7FEF (01111111 11101111) - IN:
+	 * +---+---+---+---+---+---+---+---+
+	 * | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+	 * +---+---+---+---+---+---+---+---+
+	 *   |   |   |   |   |   |   |   |
+	 *   |   |   |   +---+---+---+---+-------- X=Not used (reserved for future use).
+	 *   |   |   +---------------------------- 0=Color modes available, i.e. configuration switch 6 is set to ON.
+	 *   +---+-------------------------------- X=Not used (reserved for future use).
+	 */
+	protected chroma81InPort(port: number): number {
+		return 0b1101_1111;	// Color modes available (otherwise this function is never called)
 	}
 
 
