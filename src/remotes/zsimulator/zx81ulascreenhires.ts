@@ -43,8 +43,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * @param firstLine The first line to display.
 	 * @param lastLine The last line to display (inclusive).
 	 */
-	constructor(z80Cpu: Z80Cpu, chroma81: boolean, firstLine: number, lastLine: number) {
-		super(z80Cpu, chroma81);
+	constructor(z80Cpu: Z80Cpu, chroma81: boolean, chroma81Init: boolean, firstLine: number, lastLine: number) {
+		super(z80Cpu, chroma81, chroma81Init);
 		this.firstLine = firstLine;
 		this.lastLine = lastLine;
 		let totalLines = lastLine - firstLine + 1;

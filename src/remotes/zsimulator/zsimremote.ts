@@ -401,15 +401,15 @@ export class ZSimRemote extends DzrpRemote {
 			case 'spectrum': this.zxUlaScreen = new SpectrumUlaScreen(this.z80Cpu); break;
 			case 'zx81':
 				{
-					const chroma81 = zsim.zx81UlaOptions.chroma81;
 					const options = zsim.zx81UlaOptions;
+					const chroma81 = options.chroma81;
 					if (options.hires) {
 						// Hires
-						this.zxUlaScreen = new Zx81UlaScreenHiRes(this.z80Cpu, chroma81.available, options.firstLine, options.lastLine);
+						this.zxUlaScreen = new Zx81UlaScreenHiRes(this.z80Cpu, chroma81.available, options.debug, options.firstLine, options.lastLine);
 					}
 					else {
 						// Normal
-						this.zxUlaScreen = new Zx81UlaScreen(this.z80Cpu, chroma81.available);
+						this.zxUlaScreen = new Zx81UlaScreen(this.z80Cpu, chroma81.available, options.debug,);
 					}
 					// Initialize chroma
 					if (chroma81.available) {

@@ -95,8 +95,9 @@ export class Zx81UlaScreen extends UlaScreen {
 	/** Constructor.
 	 * @param z80Cpu Mainly for the memoryModel and the ports.
 	 * @param chroma81 True if the ZX81 Chroma81 support should be enabled.
+	 * @param chroma81Init True if the Chroma81 memory should be initialized with a color.
 	 */
-	constructor(z80Cpu: Z80Cpu, chroma81: boolean) {
+	constructor(z80Cpu: Z80Cpu, chroma81: boolean, chroma81Init: boolean) {
 		super(z80Cpu);
 
 		// Register ULA ports
@@ -113,9 +114,13 @@ export class Zx81UlaScreen extends UlaScreen {
 			z80Cpu.ports.registerSpecificOutPortFunction(0x7FEF, this.chroma81OutPort.bind(this));
 			z80Cpu.ports.registerSpecificInPortFunction(0x7FEF, this.chroma81InPort.bind(this));
 			// Init the color memory, otherwise it would be black on black.
-			const attribColors = new Uint8Array(0x4000);	// Init all possible area
-			attribColors.fill(0x26);	// yellow on red
-			z80Cpu.memory.writeBlock(0xC000, attribColors);
+			if (chroma81Init) {
+				const attribColors = new Uint8Array(0x4000);	// Init all possible area
+				attribColors.fill(0x26);	// yellow on red
+				// for (let i = 0; i < 0x4000; i++)
+				// 	attribColors[i] = i & 0xFF;
+				z80Cpu.memory.writeBlock(0xC000, attribColors);
+			}
 		}
 	}
 

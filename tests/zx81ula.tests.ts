@@ -21,7 +21,7 @@ suite('Zx81UlaScreen', () => {
 		const ports = new Z80Ports(true);
 		const memory = new SimulatedMemory(new MemoryModelAllRam, ports);
 		z80Cpu = new Z80Cpu(memory, ports);
-		zx81UlaScreen = new Zx81UlaScreen(z80Cpu, false);
+		zx81UlaScreen = new Zx81UlaScreen(z80Cpu, false, false);
 	});
 
 	test('constructor', () => {
@@ -176,7 +176,7 @@ suite('Zx81UlaScreen', () => {
 			const memModel = new MemoryModelAllRam();
 			const ports = new Z80Ports(true);
 			const rCpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
-			const rZx81UlaScreen = new Zx81UlaScreen(rCpu, false) as any;
+			const rZx81UlaScreen = new Zx81UlaScreen(rCpu, false, false) as any;
 
 			// Set different values (to see that they are overwrittem)
 			zx81UlaScreen.timeCounter = 7;
