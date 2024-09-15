@@ -445,6 +445,12 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	/// The timeout for any unit test in seconds.
 	unitTestTimeout: number;
+
+	// For hidden (not public) options.
+	hidden: {
+		// If true the stack is allowed to move above 0x8000 when loading a p-file. Required for "osmo.p".
+		loadPStack: string;	// "" by default (not used)
+	}
 }
 
 
@@ -1026,6 +1032,13 @@ export class Settings {
 		// Unit test timeout
 		if (!launchCfg.unitTestTimeout)
 			launchCfg.unitTestTimeout = 1;	///< 1000 ms
+
+
+		// Hidden options
+		if (launchCfg.hidden === undefined)
+			launchCfg.hidden = {} as any;
+		if (launchCfg.hidden.loadPStack === undefined)
+			launchCfg.hidden.loadPStack = "";
 
 		return launchCfg;
 	}

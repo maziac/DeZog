@@ -1456,10 +1456,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		// This would work with Remotes even if the memory model is not known.
 		// This does, more or less, the same as the ZX81.
 		let lenCheck = 0x4000;
-		// Hack: For OSMO.P the length is 0xC000. The zx81 program is wrong but too difficult to change:
-		if (path.basename(filePath).toLowerCase() === 'osmo.p') {
-			lenCheck = 0xC000;
-		}
 		const initBuffer = new Uint8Array(lenCheck);
 		initBuffer.fill(0x02);
 		await this.sendDzrpCmdWriteMem(0x4000, initBuffer);
@@ -1475,7 +1471,17 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 		const ramSize = i;
 		const ramTop = (0x4000 + ramSize) & 0xFFFF;
-		const topStack = (ramTop - 4) & 0xFFFF;;
+		const topStack = (ramTop - 4) & 0xFFFF;
+		let topSpStack = topStack;
+
+		// Override with hidden option
+		if (Settings.launch.hidden.loadPStack !== "") {
+			topSpStack = Utility.parseValue(Settings.launch.hidden.loadPStack);
+		}
+		// Hack: For OSMO.P the length is 0xC000. The zx81 program is wrong but too difficult to change: TODO: REMOVE
+		if (path.basename(filePath).toLowerCase() === 'osmo.p') {
+			topSpStack = 0xB000;
+		}
 
 		// Read file
 		let fileBuffer = fs.readFileSync(filePath);
@@ -1500,7 +1506,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 		// Set registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, 0x0207);	// Just after the SAVE routine
-		await this.sendDzrpCmdSetRegister(Z80_REG.SP, topStack);
+		await this.sendDzrpCmdSetRegister(Z80_REG.SP, topSpStack);
 		await this.sendDzrpCmdSetRegister(Z80_REG.BC, 0x0080);
 		await this.sendDzrpCmdSetRegister(Z80_REG.DE, 0xffff);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IX, 0x0281);	// Required?
@@ -1527,13 +1533,13 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			0x76, 0x06,	// E.g. at 0x7FFC
 			0x00, 0x3E	// E.g. at 0x7FFE
 		]);
-		await this.sendDzrpCmdWriteMem(topStack, stack);
+		await this.sendDzrpCmdWriteMem(topSpStack, stack);
 
 		// Write file
 		await this.sendDzrpCmdWriteMem(0x4009, fileBuffer);
 
 		// Set topOfStack
-		Settings.launch.topOfStack = (topStack === 0) ? "0x0000" : "0x" + topStack.toString(16);
+		Settings.launch.topOfStack = "0x" + topSpStack.toString(16);
 
 		// Check possible issues
 		if (len < 0x3c) {
