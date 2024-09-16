@@ -88,7 +88,7 @@ export class Zx81UlaScreen extends UlaScreen {
 	// Chroma81-------------
 	// The chroma mode: 0=Character code, 1=Attribute file:
 	protected chroma81Mode = 0
-	// Chroma81 enabled programattically:
+	// Chroma81 enabled programmatically:
 	protected chroma81Enabled = false;
 
 
@@ -363,6 +363,14 @@ export class Zx81UlaScreen extends UlaScreen {
 	}
 
 
+	// Sets the Chroma81 state.
+	public setChroma81(enabled: boolean, mode: number, borderColor: number) {
+		this.chroma81Enabled = enabled;
+		this.chroma81Mode = mode;
+		this.borderColor = borderColor;
+	}
+
+
 	/** Chroma 81 out port function.
 	 * Port $7FEF (01111111 11101111) - OUT:
 	 * +---+---+---+---+---+---+---+---+
@@ -375,10 +383,11 @@ export class Zx81UlaScreen extends UlaScreen {
 	 *   |   |   +---------------------------- 1=Enable color mode.
 	 *   +---+-------------------------------- Reserved for future use (always set to 0)
 	 */
-	protected chroma81OutPort(port: number, value: number): void {
-		this.borderColor = value & 0x0F;
-		this.chroma81Mode = (value & 0b0001_0000) >>> 4;	// 0 or 1
-		this.chroma81Enabled = (value & 0b0010_0000) !== 0;
+	protected chroma81OutPort(port: number, value: number) {
+		const borderColor = value & 0x0F;
+		const chroma81Mode = (value & 0b0001_0000) >>> 4;	// 0 or 1
+		const chroma81Enabled = (value & 0b0010_0000) !== 0;
+		this.setChroma81(chroma81Enabled, chroma81Mode, borderColor);
 	}
 
 

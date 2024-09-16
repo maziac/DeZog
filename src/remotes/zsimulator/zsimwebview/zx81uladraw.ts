@@ -8,7 +8,7 @@ export class Zx81UlaDraw {
 	public static SCREEN_WIDTH = 256;
 
 	// The chroma81 palette. (Same as Spectrum)
-	protected static chroma81Palette = [
+	public static chroma81Palette = [
 		// Bright 0: r,g,b
 		0x00, 0x00, 0x00,	// Black:	0
 		0x00, 0x00, 0xD7,	// Blue:	1
@@ -117,14 +117,14 @@ export class Zx81UlaDraw {
 						pixels[pixelIndex++] = fgRed;
 						pixels[pixelIndex++] = fgGreen;
 						pixels[pixelIndex++] = fgBlue;
-						pixels[pixelIndex++] = 0xFF;
+						pixels[pixelIndex++] = 0xFF;	// alpha
 					}
 					else {
 						// Background color
 						pixels[pixelIndex++] = bgRed;
 						pixels[pixelIndex++] = bgGreen;
 						pixels[pixelIndex++] = bgBlue;
-						pixels[pixelIndex++] = 0xFF;
+						pixels[pixelIndex++] = 0xFF;	// alpha
 					}
 					byte = (byte & 0x7F) << 1;
 				}

@@ -413,10 +413,7 @@ export class ZSimRemote extends DzrpRemote {
 					}
 					// Initialize chroma
 					if (chroma81.available) {
-						const value = ((chroma81.enabled) ? 0b0010_0000 : 0)
-							+ ((chroma81.mode << 4) & 0b0001_0000)
-							+ (chroma81.borderColor & 0x0F);
-							this.ports.write(0x7FEF, value);
+						this.zxUlaScreen.setChroma81(chroma81.enabled, chroma81.mode & 1, chroma81.borderColor & 0x0F);
 					}
 					break;
 				}

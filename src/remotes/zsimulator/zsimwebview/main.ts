@@ -106,7 +106,7 @@ window.addEventListener('message', event => {// NOSONAR
 					Zx81UlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.dfile, ulaData.charset, ulaData.chroma, message.zx81UlaScreenDebug);
 				}
 				else if (name === 'zx81-hires') {
-					Zx81HiResUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.data, message.zx81UlaScreenDebug);
+					Zx81HiResUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.data, ulaData.colorData, message.zx81UlaScreenDebug);
 				}
 			}
 			// Update the border

@@ -36,6 +36,12 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// The last line to display (inclusive).
 	protected lastLine: number;
 
+	// Color (chroma81) data
+	protected colorData: Uint8Array;
+
+	// The write index into the color data
+	protected colorDataIndex: number;	// TODO: REMOVE
+
 
 	/** Constructor.
 	 * @param z80Cpu Mainly for the memoryModel and the ports.
@@ -53,6 +59,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		this.screenDataIndex = 0;
 		this.screenLineLengthIndex = 0;
 		this.screenData = new Uint8Array(totalLines * (1 + Zx81UlaScreenHiRes.SCREEN_WIDTH / 8));
+		this.colorDataIndex = 0;
+		this.colorData = new Uint8Array(this.screenData.length);
 	}
 
 
@@ -60,6 +68,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	protected resetVideoBuffer() {
 		this.screenLineLengthIndex = 0;
 		this.screenDataIndex = 0;
+		this.colorDataIndex = 0;
 	}
 
 
@@ -101,6 +110,18 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				// Interpret data
 				const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
 				addr = (i & 0xFE) * 256 + ulaAddrLatch * 8 + this.ulaLineCounter;
+				// Write chroma81 (color) data
+				if (this.chroma81Enabled) {
+					let colorAddr = addr64k;	// Would be already OK for color mode 1
+					if (this.chroma81Mode === 0) {
+						// Character code mode.
+						// Get the index into the character color data:
+						const charIndex = this.lineCounter % 8;
+						colorAddr = (colorAddr + charIndex) & 0xFFFF;
+					}
+					const color = this.memoryRead8(colorAddr);
+					this.colorData[this.screenDataIndex] = color;
+				}
 			}
 			// Load byte from character (ROM)
 			let videoShiftRegister = this.memoryRead8(addr);
@@ -132,7 +153,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			};
 		return {
 			name: 'zx81-hires',
-			data: this.screenData?.slice(0, this.screenDataIndex)
+			data: this.screenData.slice(0, this.screenDataIndex),
+			colorData: this.chroma81Enabled ? this.colorData.slice(0, this.screenDataIndex) : undefined
 		};
 	}
 

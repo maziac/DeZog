@@ -509,6 +509,7 @@ export class Settings {
 				memoryViewer: <any>undefined,
 				tabSize: <any>undefined,
 				unitTestTimeout: <any>undefined,
+				hidden: <any>undefined
 			}
 		}
 
