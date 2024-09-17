@@ -132,6 +132,9 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 						// Character code mode.
 						// Get the index into the character color data:
 						colorAddr = 0xC000 + charcode_plus_linecounter;
+						if (data & 0b1000_0000) {	// Inverted bit
+							colorAddr += 64 * 8;	// Used to add 64 more characters for colors
+						}
 					}
 					const color = this.memoryRead8(colorAddr);
 					this.colorData[this.screenDataIndex] = color;
