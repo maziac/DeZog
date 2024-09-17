@@ -17,6 +17,20 @@ import {Zx81UlaScreen} from "./zx81ulascreen";
  * 2.  Blank lines/application code    - NMI on
  * 3.  VIDEO DISPLAY routine           - NMI off
  * 4.  Blank lines/application code    - NMI on
+ *
+ * Chroma81:
+ * video_addr: Executed address.
+ * character_code = [video_addr & 0x7FFF] & 0x3F
+ * standard graphic:
+ * - mode 0: [$C000 + character_code * 8 + ULA_line_counter]
+ * - mode 1: [video_addr] (The dfile size and the color attributes size is: 24 * 32)
+ * pseudo hires:
+ * - mode 0: [$C000 + character_code * 8]
+ * - mode 1: [video_addr] (The dfile size and the color attributes size is: 192 * 32)
+ * wrx:
+ * displayed_addr = i * 256 + r, not used by chroma81
+ * - mode 0: [$C000 + character_code * 8]
+ * - mode 1:  [video_addr] (The dfile size and the color attributes size is usually just 32)
  */
 export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// Holds the data for the screen, i.e. the generated screen.
@@ -109,15 +123,15 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				// i (high byte of address) is inside the ROM area -> normal display or pseudo hires
 				// Interpret data
 				const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
-				addr = (i & 0xFE) * 256 + ulaAddrLatch * 8 + this.ulaLineCounter;
+				const charcode_plus_linecounter = ulaAddrLatch * 8 + this.ulaLineCounter;
+				addr = (i & 0xFE) * 256 + charcode_plus_linecounter;
 				// Write chroma81 (color) data
 				if (this.chroma81Enabled) {
 					let colorAddr = addr64k;	// Would be already OK for color mode 1
 					if (this.chroma81Mode === 0) {
 						// Character code mode.
 						// Get the index into the character color data:
-						const charIndex = this.lineCounter % 8;
-						colorAddr = (colorAddr + charIndex) & 0xFFFF;
+						colorAddr = 0xC000 + charcode_plus_linecounter;
 					}
 					const color = this.memoryRead8(colorAddr);
 					this.colorData[this.screenDataIndex] = color;

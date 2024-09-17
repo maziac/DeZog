@@ -858,13 +858,24 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
     "hires": true,
     "firstLine": 56,
     "lastLine": 247,
+    "chroma81": {
+        "available": true,
+        "enabled": false,
+        "mode": 0,
+        "borderColor": 0
+    },
     "debug": false
   }
   ~~~
   The above shows the default values.
     - "hires": If true the generation of the screen output by the cpu is simulated. This allows to display hires programs. If false the ZX81 dfile is converted directly into screen graphics. This can be an advantage when debugging a non-hires game.
     - "firstLine"/"lastLine": Used only if "hires" is true. The first and last line (inclusive) that should be displayed.
-    - "debug": If true a gray background is shown for the screen areas without output. Only makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory.
+    - "debug": If true a gray background is shown for the screen areas without output. Makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. If "chroma81" is selected it also initialized the chroma81 RAM (0xC000-0xFFFF) to 2 colors. Otherwise you might not see anything if ink and paper color are equal.
+    - "chroma81": Supports the chroma81 (see [Chroma 81 Interface](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm)).
+      - "available": Attach the chroma81. Now it can be enabled/disabled via port 0x7FEF.
+      - "enabled": The initial state of the chroma81.
+      - "mode": The initial color mode (0/1) of the chroma81.
+      - "borderColor": The border color: 0-15 (like spectrum colors).
 - "zxBorderWidth": The displayed border width in pixels. If set to 0 then no border is displayed. Works only for ulaScreen equal to "spectrum".
 - "cpuLoad": The Z80 CPU load is calculated by the number of executed HALT tStates vs all tStates. You can disable the display with a 0. 1 will exactly count till the next occurrence of a HALT. Higher numbers will average over more HALT instructions and lead to a more stable display. Practical values are around 10 (the default).
   Additionally the simulation speed is indicated by the color. If the display turns to yellow the simulation speed is not fast enough to cope with the set cpuFrequency. (If you e.g. set a ZX81 or ZX Spectrum to 35Mhz the display will probably turn to yellow.)

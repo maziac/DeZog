@@ -616,6 +616,11 @@ export class Settings {
 					launchCfg.zsim.cpuFrequency = 3250000.0;	// 3.25Mhz
 				if (launchCfg.zsim.defaultPortIn === undefined)
 					launchCfg.zsim.defaultPortIn = 0xFF;
+				if (launchCfg.zsim.zx81UlaOptions?.chroma81 === undefined) {
+					launchCfg.zsim.zx81UlaOptions = {
+						chroma81: {}
+					} as zx81UlaOptions;
+				}
 			}
 		}
 		if (launchCfg.zsim.zxKeyboard === undefined)
@@ -666,11 +671,11 @@ export class Settings {
 		if (chroma81.available === undefined)
 			chroma81.available = true;
 		if (chroma81.enabled === undefined)
-			chroma81.enabled = true;
+			chroma81.enabled = false;
 		if (chroma81.mode === undefined)
 			chroma81.mode = 0;
 		if (chroma81.borderColor === undefined)
-			chroma81.borderColor = 0x0F;	// White
+			chroma81.borderColor = 0x00;	// Black
 
 		if (launchCfg.zsim.zxBorderWidth === undefined )
 			launchCfg.zsim.zxBorderWidth = 0;

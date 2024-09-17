@@ -682,6 +682,31 @@
 												"description": "Used only if \"hires\" is true. The last line (inclusive) that should be displayed. Defaults to 247.",
 												"default": 247
 											},
+											"chroma81": {
+												"type": "object",
+												"properties": {
+													"available": {
+														"type": "boolean",
+														"description": "If true the chroma81 is 'attached' and can be accessed through in/out port 0x7FEF.",
+														"default": true
+													},
+													"enabled": {
+														"type": "boolean",
+														"description": "Initial enable state. I.e. you can enable the chroma81 here right from the start without the need to write to a port.",
+														"default": false
+													},
+													"mode": {
+														"type": "0 | 1",
+														"description": "The initial mode (if 'enabled' is true).",
+														"default": 0
+													},
+													"borderColor": {
+														"type": "number",
+														"description": "The initial border color (if 'enabled' is true). Colors 0-15 like Spectrum colors.",
+														"default": 0
+													}
+												}
+											},
 											"debug": {
 												"type": "boolean",
 												"description": "If true a gray background is shown for the screen areas without output. Only makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. Defaults to false.",

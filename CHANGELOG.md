@@ -18,6 +18,8 @@
   - "cpuLoadInterruptRange": renamed to "cpuLoad". The CPU load is not anymore calculated when the VSYNC occurs. Now it is calculated from HALT to next HALT instruction.
   - "cpuLoad": The simulation speed is indicated by a color. If too slow the cpuLoad is shown in yellow.
   - Loading a .p file sets 'topOfStack' automatically. A warning is send if 'topOfStack' is set manually.
+  - "zx81UlaOptions" added.
+  - "chroma81" support
 - "topOfStack": default is now taken from the memory model.
 
 # 3.4.1

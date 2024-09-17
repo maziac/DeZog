@@ -23,7 +23,13 @@ What it does is to set the following zsim properties:
 		"hires": true,
 		"firstLine": 56,
 		"lastLine": 247,
-		"debug": false
+        "chroma81": {
+            "available": true,
+            "enabled": false,
+            "mode": 0,
+            "borderColor": 0
+        },
+        "debug": false
   	}
 ~~~
 
@@ -44,6 +50,33 @@ If you want to start the ZX81 without any program, i.e. just turn it on, don't u
 Note:
 - The "execAddress" property is a general property, so it is outside "zsim".
 - In fact you could even skip the "execAddress" property, as it's default is 0 anyway.
+
+# Chroma 81 support
+ "zx81UlaOptions":
+  ~~~
+  {
+    "hires": true,
+    "firstLine": 56,
+    "lastLine": 247,
+    "chroma81": {
+        "available": true,
+        "enabled": false,
+        "mode": 0,
+        "borderColor": 15
+    },
+    "debug": false
+  }
+  ~~~
+  The above shows the default values.
+    - "hires": If true the generation of the screen output by the cpu is simulated. This allows to display hires programs. If false the ZX81 dfile is converted directly into screen graphics. This can be an advantage when debugging a non-hires game.
+    - "firstLine"/"lastLine": Used only if "hires" is true. The first and last line (inclusive) that should be displayed.
+    - "debug": If true a gray background is shown for the screen areas without output. Makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. If "chroma81" is selected it also initialized the chroma81 RAM (0xC000-0xFFFF) to 2 colors. Otherwise you might not see anything if ink and paper color are equal.
+    - "chroma81": Supports the chroma81 (see [Chroma 81 Interface](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm)).
+      - "available": Attach the chroma81. Now it can be enabled/disabled via port 0x7FEF.
+      - "enabled": The initial state of the chroma81.
+      - "mode": The initial color mode (0/1) of the chroma81.
+      - "borderColor": The border color: 0-15 (like spectrum colors).
+      -
 
 # Load a program
 DeZog can load .p, .p81 and .81 files, which are more or less the same anyway with the "load" property.
