@@ -27,8 +27,6 @@ const logOn = false;	// TODO: REMOVE
  * https://8bit-museum.de/heimcomputer-2/sinclair/sinclair-scans/scans-zx81-video-display-system/
  * For details of the ULA HW and signals see:
  * https://oldcomputer.info/8bit/zx81/ULA/ula.htm
- * https://oldcomputer.info/8bit/zx81/ULA/ula.htm
- *
  */
 export class Zx81UlaScreen extends UlaScreen {
 	// Screen height
@@ -361,6 +359,9 @@ export class Zx81UlaScreen extends UlaScreen {
 			this.hsyncTstatesCounter -= this.TSTATES_PER_SCANLINE;
 			this.hsync = false;
 			logOn && console.log(this.hsyncTstatesCounter, "HSYNC off (high)");
+			// Increase line counter
+			this.ulaLineCounter = (this.ulaLineCounter + 1) & 0x07;
+			this.lineCounter++;
 			return false;
 		}
 
@@ -368,10 +369,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		if (this.hsyncTstatesCounter < this.TSTATES_PER_SCANLINE - this.TSTATES_OF_HSYNC_LOW)
 			return false;	// No HSYNC on yet
 
-		// HSYNC
-		this.ulaLineCounter = (this.ulaLineCounter + 1) & 0x07;
-		this.lineCounter++;
-
+		// HSYNC on
 		// Generate NMI on every HSYNC (if NMI generator is on)
 		if (this.stateNmiGeneratorOn) {
 			this.z80Cpu.interrupt(true, 0);	// NMI

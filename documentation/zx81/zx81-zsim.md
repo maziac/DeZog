@@ -77,7 +77,7 @@ Note:
       - "enabled": The initial state of the chroma81.
       - "mode": The initial color mode (0/1) of the chroma81.
       - "borderColor": The border color: 0-15 (like spectrum colors).
-      - "colourizationFile": You can enter here the file path of your colourization file (e.g. "ZX80_Kong.col"). You can get a lot of colourization files [here](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_ColourisationDefinitions.htm).
+      - "colourizationFile": You can enter here the file path of your colourization file. You can get a lot of colourization files [here](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_ColourisationDefinitions.htm).
 
 # Load a program
 DeZog can load .p, .p81 and .81 files, which are more or less the same anyway with the "load" property.
