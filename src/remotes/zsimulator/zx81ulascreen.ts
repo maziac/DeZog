@@ -1,7 +1,9 @@
 
 import {MemBuffer} from "../../misc/membuffer";
+import {Chroma81Type} from "../../settings/settings";
 import {UlaScreen} from "./ulascreen";
 import {Z80Cpu} from "./z80cpu";
+import {Zx81LoadColorization} from "./zx81loadcolorization";
 
 
 const logOn = false;	// TODO: REMOVE
@@ -94,10 +96,8 @@ export class Zx81UlaScreen extends UlaScreen {
 
 	/** Constructor.
 	 * @param z80Cpu Mainly for the memoryModel and the ports.
-	 * @param chroma81 True if the ZX81 Chroma81 support should be enabled.
-	 * @param chroma81Init True if the Chroma81 memory should be initialized with a color.
 	 */
-	constructor(z80Cpu: Z80Cpu, chroma81: boolean, chroma81Init: boolean) {
+	constructor(z80Cpu: Z80Cpu) {
 		super(z80Cpu);
 
 		// Register ULA ports
@@ -107,20 +107,40 @@ export class Zx81UlaScreen extends UlaScreen {
 		// m1read8 (opcode fetch) is modified to emulate the ZX81 ULA.
 		this.memoryRead8 = z80Cpu.memory.read8.bind(z80Cpu.memory);
 		z80Cpu.memory.m1Read8 = this.ulaM1Read8.bind(this);
+	}
 
-		// Chroma81 (Color support)
-		if (chroma81) {
-			// Register the Chroma81 ports
-			z80Cpu.ports.registerSpecificOutPortFunction(0x7FEF, this.chroma81OutPort.bind(this));
-			z80Cpu.ports.registerSpecificInPortFunction(0x7FEF, this.chroma81InPort.bind(this));
-			// Init the color memory, otherwise it would be black on black.
-			if (chroma81Init) {
-				const attribColors = new Uint8Array(0x4000);	// Init all possible area
-				attribColors.fill(0x26);	// yellow on red
-				// for (let i = 0; i < 0x4000; i++)
-				// 	attribColors[i] = i & 0xFF;
-				z80Cpu.memory.writeBlock(0xC000, attribColors);
-			}
+
+	/** Sets the Chroma81 state.
+	 * @param chroma81 The chroma81 state.
+	 * @param debug If true, initialize the color RAM.
+	 */
+	public setChroma81(chroma81: Chroma81Type, debug: boolean) {
+		if (!chroma81.available)
+			return;
+
+		// Store initial values
+		this.chroma81Enabled = chroma81.enabled;
+		this.chroma81Mode = chroma81.mode;
+		this.borderColor = chroma81.borderColor;
+
+		// Register the Chroma81 ports
+		this.z80Cpu.ports.registerSpecificOutPortFunction(0x7FEF, this.chroma81OutPort.bind(this));
+		this.z80Cpu.ports.registerSpecificInPortFunction(0x7FEF, this.chroma81InPort.bind(this));
+		// Init the color memory, otherwise it would be black on black.
+		if (debug) {
+			const attribColors = new Uint8Array(0x4000);	// Init all possible area
+			attribColors.fill(0x26);	// yellow on red
+			// for (let i = 0; i < 0x4000; i++)
+			// 	attribColors[i] = i & 0xFF;
+			this.z80Cpu.memory.writeBlock(0xC000, attribColors);
+		}
+
+		// Read an optional colourization file
+		if(chroma81.colourizationFile) {
+			// Load the colorization file
+			const colourization = Zx81LoadColorization.fromFile(chroma81.colourizationFile);
+			this.z80Cpu.memory.writeBlock(0xC000, colourization.colorMap);
+			this.borderColor = colourization.borderColor;
 		}
 	}
 
@@ -363,14 +383,6 @@ export class Zx81UlaScreen extends UlaScreen {
 	}
 
 
-	// Sets the Chroma81 state.
-	public setChroma81(enabled: boolean, mode: number, borderColor: number) {
-		this.chroma81Enabled = enabled;
-		this.chroma81Mode = mode;
-		this.borderColor = borderColor;
-	}
-
-
 	/** Chroma 81 out port function.
 	 * Port $7FEF (01111111 11101111) - OUT:
 	 * +---+---+---+---+---+---+---+---+
@@ -384,10 +396,9 @@ export class Zx81UlaScreen extends UlaScreen {
 	 *   +---+-------------------------------- Reserved for future use (always set to 0)
 	 */
 	protected chroma81OutPort(port: number, value: number) {
-		const borderColor = value & 0x0F;
-		const chroma81Mode = (value & 0b0001_0000) >>> 4;	// 0 or 1
-		const chroma81Enabled = (value & 0b0010_0000) !== 0;
-		this.setChroma81(chroma81Enabled, chroma81Mode, borderColor);
+		this.borderColor = value & 0x0F;
+		this.chroma81Mode = (value & 0b0001_0000) >>> 4;	// 0 or 1
+		this.chroma81Enabled = (value & 0b0010_0000) !== 0;
 	}
 
 

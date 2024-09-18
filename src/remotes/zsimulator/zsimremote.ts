@@ -405,16 +405,14 @@ export class ZSimRemote extends DzrpRemote {
 					const chroma81 = options.chroma81;
 					if (options.hires) {
 						// Hires
-						this.zxUlaScreen = new Zx81UlaScreenHiRes(this.z80Cpu, chroma81.available, options.debug, options.firstLine, options.lastLine);
+						this.zxUlaScreen = new Zx81UlaScreenHiRes(this.z80Cpu, options.firstLine, options.lastLine);
 					}
 					else {
 						// Normal
-						this.zxUlaScreen = new Zx81UlaScreen(this.z80Cpu, chroma81.available, options.debug,);
+						this.zxUlaScreen = new Zx81UlaScreen(this.z80Cpu);
 					}
 					// Initialize chroma
-					if (chroma81.available) {
-						this.zxUlaScreen.setChroma81(chroma81.enabled, chroma81.mode & 1, chroma81.borderColor & 0x0F);
-					}
+					this.zxUlaScreen.setChroma81(chroma81, options.debug);
 					break;
 				}
 		}

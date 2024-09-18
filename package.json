@@ -61,7 +61,8 @@
 		"rng": "^0.2.2",
 		"semver": "^7.5.4",
 		"serialport": "^10.4.0",
-		"showdown": "^2.1.0"
+		"showdown": "^2.1.0",
+		"xml2js": "^0.6.2"
 	},
 	"devDependencies": {
 		"@types/mocha": "10.0.0",
@@ -675,7 +676,8 @@
 											},
 											"firstLine": {
 												"type": "number",
-												"description": "Used only if \"hires\" is true. The first line that should be displayed. Defaults to 56.","default": 56
+												"description": "Used only if \"hires\" is true. The first line that should be displayed. Defaults to 56.",
+												"default": 56
 											},
 											"lastLine": {
 												"type": "number",
@@ -696,7 +698,11 @@
 														"default": false
 													},
 													"mode": {
-														"type": "0 | 1",
+														"type": "number",
+														"enum": [
+															0,
+															1
+														],
 														"description": "The initial mode (if 'enabled' is true).",
 														"default": 0
 													},
@@ -714,8 +720,7 @@
 											}
 										},
 										"description": "Several options for the ZX81 ULA screen.",
-										"default": {
-										}
+										"default": {}
 									},
 									"zxBorderWidth": {
 										"type": "number",

@@ -53,18 +53,14 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// Color (chroma81) data
 	protected colorData: Uint8Array;
 
-	// The write index into the color data
-	protected colorDataIndex: number;	// TODO: REMOVE
-
 
 	/** Constructor.
 	 * @param z80Cpu Mainly for the memoryModel and the ports.
-	 * @param chroma81 True if the ZX81 Chroma81 support should be enabled.
 	 * @param firstLine The first line to display.
 	 * @param lastLine The last line to display (inclusive).
 	 */
-	constructor(z80Cpu: Z80Cpu, chroma81: boolean, chroma81Init: boolean, firstLine: number, lastLine: number) {
-		super(z80Cpu, chroma81, chroma81Init);
+	constructor(z80Cpu: Z80Cpu, firstLine: number, lastLine: number) {
+		super(z80Cpu);
 		this.firstLine = firstLine;
 		this.lastLine = lastLine;
 		let totalLines = lastLine - firstLine + 1;
@@ -73,7 +69,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		this.screenDataIndex = 0;
 		this.screenLineLengthIndex = 0;
 		this.screenData = new Uint8Array(totalLines * (1 + Zx81UlaScreenHiRes.SCREEN_WIDTH / 8));
-		this.colorDataIndex = 0;
 		this.colorData = new Uint8Array(this.screenData.length);
 	}
 
@@ -82,7 +77,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	protected resetVideoBuffer() {
 		this.screenLineLengthIndex = 0;
 		this.screenDataIndex = 0;
-		this.colorDataIndex = 0;
 	}
 
 

@@ -220,6 +220,7 @@ export interface Chroma81Type {
 	enabled: boolean;	// Enable color mode
 	mode: number;		// 0=Character code, 1=Attribute file
 	borderColor: number;	// Bit 3: Brightness, Bit 2-0: GRB color
+	colourizationFile: string;	// Path to the colourization file
 }
 
 
@@ -676,6 +677,8 @@ export class Settings {
 			chroma81.mode = 0;
 		if (chroma81.borderColor === undefined)
 			chroma81.borderColor = 0x00;	// Black
+		if (chroma81.colourizationFile === undefined)
+			chroma81.colourizationFile = '';
 
 		if (launchCfg.zsim.zxBorderWidth === undefined )
 			launchCfg.zsim.zxBorderWidth = 0;

@@ -62,7 +62,8 @@ Note:
         "available": true,
         "enabled": false,
         "mode": 0,
-        "borderColor": 15
+        "borderColor": 0,
+        "colourizationFile": ""
     },
     "debug": false
   }
@@ -76,7 +77,7 @@ Note:
       - "enabled": The initial state of the chroma81.
       - "mode": The initial color mode (0/1) of the chroma81.
       - "borderColor": The border color: 0-15 (like spectrum colors).
-      -
+      - "colourizationFile": You can enter here the file path of your colourization file (e.g. "ZX80_Kong.col"). You can get a lot of colourization files [here](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_ColourisationDefinitions.htm).
 
 # Load a program
 DeZog can load .p, .p81 and .81 files, which are more or less the same anyway with the "load" property.
@@ -158,6 +159,10 @@ Original:
         DEFB    00111110b
         DEFB    00000000b
 ~~~
+
+## The Colourization Files
+
+TODO
 
 # ULA (The screen display)
 The ULA was the HW chip mainly responsible for the video generation.

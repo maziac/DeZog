@@ -1,0 +1,325 @@
+<?xml version="1.0"?>
+<colourisation>
+
+  <version>1</version>
+
+  <description>Colourisation file (c)2015 Paul Farrow for Ant Attack (c)2013 Bob Smith</description>
+
+  <border><colour>0</colour><bright>0</bright></border>
+
+  <entry code="0" quantity="128" description="Default colours for all characters">
+    <line index="0">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="1">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="2">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="3">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="4">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="5">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="6">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="7">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+  </entry>
+
+  <entry code="11" quantity="53" description="Quote_to_Z">
+    <line index="0">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>1</colour><bright>1</bright></ink>
+    </line>
+    <line index="1">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>1</colour><bright>1</bright></ink>
+    </line>
+    <line index="2">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>1</colour><bright>1</bright></ink>
+    </line>
+    <line index="3">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>1</colour><bright>1</bright></ink>
+    </line>
+    <line index="4">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>1</colour><bright>0</bright></ink>
+    </line>
+    <line index="5">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>1</colour><bright>0</bright></ink>
+    </line>
+    <line index="6">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>1</colour><bright>0</bright></ink>
+    </line>
+    <line index="7">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>1</colour><bright>0</bright></ink>
+    </line>
+  </entry>
+
+  <entry code="75" quantity="53" description="InverseQuote_to_InverseZ">
+    <line index="0">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="1">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="2">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="3">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="4">
+      <paper><colour>6</colour><bright>0</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="5">
+      <paper><colour>6</colour><bright>0</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="6">
+      <paper><colour>6</colour><bright>0</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="7">
+      <paper><colour>6</colour><bright>0</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+  </entry>
+
+  <entry code="72" quantity="1" description="Inverse_Chequer">
+    <line index="0">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="1">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="2">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="3">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="4">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="5">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="6">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="7">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+  </entry>
+
+  <entry code="73" quantity="1" description="TopBlackBottomChequer">
+    <line index="0">
+      <paper><colour>0</colour><bright>0</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="1">
+      <paper><colour>0</colour><bright>0</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="2">
+      <paper><colour>0</colour><bright>0</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="3">
+      <paper><colour>0</colour><bright>0</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="4">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="5">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="6">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="7">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+  </entry>
+
+  <entry code="74" quantity="1" description="TopChequerBottomBlack">
+    <line index="0">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="1">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="2">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="3">
+      <paper><colour>2</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="4">
+      <paper><colour>0</colour><bright>0</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="5">
+      <paper><colour>0</colour><bright>0</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="6">
+      <paper><colour>0</colour><bright>0</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="7">
+      <paper><colour>0</colour><bright>0</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+  </entry>
+
+  <entry code="8" quantity="1" description="Chequer">
+    <line index="0">
+      <paper><colour>7</colour><bright>0</bright></paper>
+      <ink><colour>2</colour><bright>1</bright></ink>
+    </line>
+    <line index="1">
+      <paper><colour>7</colour><bright>0</bright></paper>
+      <ink><colour>2</colour><bright>1</bright></ink>
+    </line>
+    <line index="2">
+      <paper><colour>7</colour><bright>0</bright></paper>
+      <ink><colour>2</colour><bright>1</bright></ink>
+    </line>
+    <line index="3">
+      <paper><colour>7</colour><bright>0</bright></paper>
+      <ink><colour>2</colour><bright>1</bright></ink>
+    </line>
+    <line index="4">
+      <paper><colour>7</colour><bright>0</bright></paper>
+      <ink><colour>2</colour><bright>1</bright></ink>
+    </line>
+    <line index="5">
+      <paper><colour>7</colour><bright>0</bright></paper>
+      <ink><colour>2</colour><bright>1</bright></ink>
+    </line>
+    <line index="6">
+      <paper><colour>7</colour><bright>0</bright></paper>
+      <ink><colour>2</colour><bright>1</bright></ink>
+    </line>
+    <line index="7">
+      <paper><colour>7</colour><bright>0</bright></paper>
+      <ink><colour>2</colour><bright>1</bright></ink>
+    </line>
+  </entry>
+
+  <entry code="9" quantity="1" description="TopWhiteBottomChequer">
+    <line index="0">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="1">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="2">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="3">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="4">
+      <paper><colour>1</colour><bright>1</bright></paper>
+      <ink><colour>1</colour><bright>1</bright></ink>
+    </line>
+    <line index="5">
+      <paper><colour>5</colour><bright>0</bright></paper>
+      <ink><colour>5</colour><bright>0</bright></ink>
+    </line>
+    <line index="6">
+      <paper><colour>7</colour><bright>0</bright></paper>
+      <ink><colour>7</colour><bright>0</bright></ink>
+    </line>
+    <line index="7">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>7</colour><bright>1</bright></ink>
+    </line>
+  </entry>
+
+  <entry code="10" quantity="1" description="TopChequerBottomWhite">
+    <line index="0">
+      <paper><colour>7</colour><bright>0</bright></paper>
+      <ink><colour>2</colour><bright>1</bright></ink>
+    </line>
+    <line index="1">
+      <paper><colour>7</colour><bright>0</bright></paper>
+      <ink><colour>2</colour><bright>1</bright></ink>
+    </line>
+    <line index="2">
+      <paper><colour>7</colour><bright>0</bright></paper>
+      <ink><colour>2</colour><bright>1</bright></ink>
+    </line>
+    <line index="3">
+      <paper><colour>7</colour><bright>0</bright></paper>
+      <ink><colour>2</colour><bright>1</bright></ink>
+    </line>
+    <line index="4">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="5">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="6">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+    <line index="7">
+      <paper><colour>7</colour><bright>1</bright></paper>
+      <ink><colour>0</colour><bright>0</bright></ink>
+    </line>
+  </entry>
+
+</colourisation>
