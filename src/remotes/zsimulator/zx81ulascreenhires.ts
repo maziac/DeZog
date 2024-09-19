@@ -108,13 +108,13 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			let addr;
 			// Check for WRX (true hires)
 			if (i >= 0x40) {
-				// i (high byte of address) is outside the ROM area -> WRX
+				// i (high byte of address) is outside the ROM (0-1FFF) and RAM (2000-3FFF) area -> WRX
 				const r = this.z80Cpu.r;
 				// Use previous r value
 				addr = i * 256 + (r & 0x80) + ((r - 1) & 0x7F);
 			}
 			else {
-				// i (high byte of address) is inside the ROM area -> normal display or pseudo hires
+				// i (high byte of address) is inside the ROM area or RAM (2000-3FFF) area -> normal display or pseudo hires, or ARX (2000-3FFF).
 				// Interpret data
 				const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
 				const charcode_plus_linecounter = ulaAddrLatch * 8 + this.ulaLineCounter;

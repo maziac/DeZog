@@ -165,7 +165,7 @@ Original:
 TODO
 
 # ULA (The screen display)
-The ULA was the HW chip mainly responsible for the video generation.
+The ULA was the HW chip that, together with the CPU, was responsible for the video generation.
 It worked closely together with the Z80 CPU to generate the video signal.
 For details here are some references:
 - https://k1.spdns.de/Vintage/Sinclair/80/Sinclair%20ZX80/Tech%20specs/Wilf%20Rigter%27s%20ZX81%20Video%20Display%20Info.htm
@@ -180,7 +180,7 @@ You can choose between modes by setting "hires" to true or false (default is tru
 	"hires": true/false
 }
 ~~~
-You can simulate pseudo-hires, hires (wrx) and non-hires games/programs with "hires" set to "true".
+You can simulate pseudo-hires, hires (wrx, arx) and non-hires games/programs with "hires" set to "true".
 Setting "hires" to false can be an advantage when debugging/developing non-hires games.
 If "hires" is false the dfile (the video screen) is decoded by "zsim" directly.
 The advantage is that any change in the screen is immediately visible as soon as the byte is added to the dfile.
@@ -202,6 +202,8 @@ If "hires" is set to false you will always see a complete screen independent of 
 So it depends:
 If you are developing a standard graphics game then `"hires": false` is the recommended choice.
 If you are developing a hires game you have to use `"hires": true`, of course.
+
+Note: To simulate ARX hires graphics you need to use a memory model that enables RAM in the area 0x2000-0x3FFF, i.e. "ZX81-56K".
 
 ## Collapsed dfile
 In a ZX81 with 1-2k RAM the dfile is collapsed, i.e. it uses only the full width of a line if necessary. If the line does not contain anything no RAM is used for it.
