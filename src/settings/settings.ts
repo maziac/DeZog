@@ -606,7 +606,7 @@ export class Settings {
 				if (launchCfg.zsim.zxKeyboard === undefined)
 					launchCfg.zsim.zxKeyboard = 'zx81';
 				if (launchCfg.zsim.memoryModel === undefined)
-					launchCfg.zsim.memoryModel = "ZX81-48K";
+					launchCfg.zsim.memoryModel = "ZX81-56K";
 				if (launchCfg.zsim.visualMemory === undefined)
 					launchCfg.zsim.visualMemory = true;
 				if (launchCfg.zsim.ulaScreen === undefined)

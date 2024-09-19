@@ -11,10 +11,10 @@ The easiest thing to do so is by using a "preset", e.g.
 }
 ~~~
 
-This will configure an 48k ZX81.
+This will configure an 56k ZX81, i.e. a ZX81 with all available RAM, so that it can also show ARX graphics.
 What it does is to set the following zsim properties:
 ~~~json
-	"memoryModel": "ZX81-48K",
+	"memoryModel": "ZX81-56K",
 	"cpuFrequency": 3250000,
 	"defaultPortIn": 0xFF,
 	"zxKeyboard": "zx81",
