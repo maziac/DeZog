@@ -1191,7 +1191,7 @@ let do_ix_add = function(operand)
    flags.H = (((ix & 0xfff) + (operand & 0xfff)) & 0x1000) ? 1 : 0;
    update_xy_flags((result & 0xff00) >>> 8);
 
-   ix = result;
+   ix = result & 0xffff;   // T. Busse, 2024-09-19: Fixed bug, was: ix = result;
 };
 
 
