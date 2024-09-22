@@ -13,7 +13,7 @@ suite('CustomJoystick', () => {
 		customJoy = {
 			fire: {port: 0x01, portMask: 0xFF, bit: 0x01, lowActive: true},
 			fire2: {port: 0x02, portMask: 0xFF, bit: 0x02, lowActive: false},
-			// fire3 not defined
+			// fire3, fire 4 not defined
 			up: {port: 0x04, portMask: 0xFF, bit: 0x08, lowActive: false},
 			left: {port: 0x05, portMask: 0xFF, bit: 0x10, lowActive: false},
 			right: {port: 0x06, portMask: 0xFF, bit: 0x20, lowActive: false},
@@ -26,10 +26,11 @@ suite('CustomJoystick', () => {
 		assert.deepEqual(customJoystick.config[0], {...customJoy.fire, pressed: false});
 		assert.deepEqual(customJoystick.config[1], {...customJoy.fire2, pressed: false});
 		assert.equal(customJoystick.config[2], undefined);
-		assert.deepEqual(customJoystick.config[3], {...customJoy.up, pressed: false});
-		assert.deepEqual(customJoystick.config[4], {...customJoy.left, pressed: false});
-		assert.deepEqual(customJoystick.config[5], {...customJoy.right, pressed: false});
-		assert.deepEqual(customJoystick.config[6], {...customJoy.down, pressed: false});
+		assert.equal(customJoystick.config[3], undefined);
+		assert.deepEqual(customJoystick.config[4], {...customJoy.up, pressed: false});
+		assert.deepEqual(customJoystick.config[5], {...customJoy.left, pressed: false});
+		assert.deepEqual(customJoystick.config[6], {...customJoy.right, pressed: false});
+		assert.deepEqual(customJoystick.config[7], {...customJoy.down, pressed: false});
 	});
 
 	test('readPort returns default value if no button is pressed', () => {

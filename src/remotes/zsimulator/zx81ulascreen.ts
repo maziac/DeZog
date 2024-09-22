@@ -51,18 +51,18 @@ export class Zx81UlaScreen extends UlaScreen {
 	protected tstates = 0;
 
 	// The number of tstates required for a horizontal scanline.
-	protected TSTATES_PER_SCANLINE = 207;
+	protected static TSTATES_PER_SCANLINE = 207;
 
 	// The number of tstates for one full screen.
-	protected TSTATES_PER_SCREEN = 65000;	// ~20ms
+	protected static TSTATES_PER_SCREEN = 65000;	// ~20ms
 
 	// The HSYNC signal stay low for 16 tstates.
-	protected TSTATES_OF_HSYNC_LOW = 16;
+	protected static TSTATES_OF_HSYNC_LOW = 16;
 
 	// The minimal number of tstates for a VSYNC should be ~1ms => 3250 tstates.
 	// But the generated vsync by the zx81 seems to be much smaller: 1233 tstates -> ~0.38ms
 	// So the about the half is used for vsync recognition.
-	protected VSYNC_MINIMAL_TSTATES = 500;
+	protected static VSYNC_MINIMAL_TSTATES = 500;
 
 	// The tstates at which the VSYNC starts
 	protected vsyncStartTstates = 0;
@@ -77,7 +77,7 @@ export class Zx81UlaScreen extends UlaScreen {
 	protected hsync = false;
 
 	// The vsync signal
-	protected vsync: boolean = false;
+	protected vsync = false;
 
 	// No display.
 	protected noDisplay = false;
@@ -99,7 +99,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		super(z80Cpu);
 
 		// Register ULA ports
-		z80Cpu.ports.registerGenericOutPortFunction(this.outPorts.bind(this));
+		z80Cpu.ports.registerGenericOutPortFunction(this.outPort.bind(this));
 		z80Cpu.ports.registerGenericInPortFunction(this.inPort.bind(this));
 
 		// m1read8 (opcode fetch) is modified to emulate the ZX81 ULA.
@@ -156,7 +156,7 @@ export class Zx81UlaScreen extends UlaScreen {
 	 * (4. out (0xff),a - turns VSYNC off)
 	 * Note: the value of a is not ignored.
 	 */
-	protected outPorts(port: number, _data: number): void {
+	protected outPort(port: number, _data: number): void {
 		// NMI generator off?
 		if ((port & 0x0003) === 1) {
 			// Usually 0xFD
@@ -231,7 +231,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		this.checkHsync(currentTstates);
 
 		// No vsync/no display detection: no display if for 2*20 ms no Vsync was found
-		if (this.tstates > this.vsyncStartTstates + 2 * this.TSTATES_PER_SCREEN) {
+		if (this.tstates > this.vsyncStartTstates + 2 * Zx81UlaScreen.TSTATES_PER_SCREEN) {
 			if (!this.noDisplay) {
 				// Change to no display
 				this.noDisplay = true;
@@ -320,7 +320,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		// VSYNC off (high)
 		logOn && console.log(this.tstates, "vsync off:  !this.lineCounterEnabled == true");
 		const lengthOfVsync = this.tstates - this.vsyncStartTstates;
-		if (lengthOfVsync >= this.VSYNC_MINIMAL_TSTATES) {
+		if (lengthOfVsync >= Zx81UlaScreen.VSYNC_MINIMAL_TSTATES) {
 			logOn && console.log(this.tstates, "  lengthOfVsync >= VSYNC_MINIMAL_TSTATES, lengthOfVsync=" + lengthOfVsync);
 
 			// VSYNC
@@ -353,10 +353,10 @@ export class Zx81UlaScreen extends UlaScreen {
 		// Check for HSYNC on or off
 		if (this.hsync) {
 			// HSYNC is on, check for off
-			if (this.hsyncTstatesCounter < this.TSTATES_PER_SCANLINE)
+			if (this.hsyncTstatesCounter < Zx81UlaScreen.TSTATES_PER_SCANLINE)
 				return false;	// No HSYNC on yet
 			// HSYNC off
-			this.hsyncTstatesCounter -= this.TSTATES_PER_SCANLINE;
+			this.hsyncTstatesCounter -= Zx81UlaScreen.TSTATES_PER_SCANLINE;
 			this.hsync = false;
 			logOn && console.log(this.hsyncTstatesCounter, "HSYNC off (high)");
 			// Increase line counter
@@ -366,7 +366,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		}
 
 		// HSYNC is off, check for on
-		if (this.hsyncTstatesCounter < this.TSTATES_PER_SCANLINE - this.TSTATES_OF_HSYNC_LOW)
+		if (this.hsyncTstatesCounter < Zx81UlaScreen.TSTATES_PER_SCANLINE - Zx81UlaScreen.TSTATES_OF_HSYNC_LOW)
 			return false;	// No HSYNC on yet
 
 		// HSYNC on
