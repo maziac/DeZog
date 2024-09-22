@@ -196,13 +196,15 @@ export class Zx81UlaScreen extends UlaScreen {
 	protected ulaM1Read8(addr64k: number): number {
 		// Read data from memory
 		const data = this.memoryRead8(addr64k & 0x7FFF);
+		if (addr64k < 0x8000)
+			return data;	// Return the normal value
 
-		// Check if it is character data and if bit 6 is low
-		if ((addr64k & 0x8000) && (data & 0b01000000) === 0)
-			return 0x00;	// NOP
+		// Check if bit 6 is low
+		if ((data & 0b0100_0000) !== 0)
+			return data;	// E.g. HALT
 
-		// Otherwise return the normal value
-		return data;
+		// Otherwise return a NOP to be executed
+		return 0x00;
 	}
 
 

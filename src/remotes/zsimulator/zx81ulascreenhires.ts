@@ -99,7 +99,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			return data;	// Return the normal value
 
 		// Check if bit 6 is low
-		if ((data & 0b01000000) !== 0)
+		if ((data & 0b0100_0000) !== 0)
 			return data;	// E.g. HALT
 
 		// Check if line should be displayed
@@ -146,7 +146,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			this.screenData[this.screenLineLengthIndex]++;
 		}
 
-		// Return a NOP for the graphics data
+		// Return a NOP to be executed
 		return 0x00;
 	}
 
@@ -197,6 +197,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		memBuffer.writeNumber(this.screenDataIndex);
 		memBuffer.writeNumber(this.screenLineLengthIndex);
 		memBuffer.writeArrayBuffer(this.screenData);
+		memBuffer.writeArrayBuffer(this.colorData);
 	}
 
 
@@ -210,5 +211,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		this.screenDataIndex = memBuffer.readNumber();
 		this.screenLineLengthIndex = memBuffer.readNumber();
 		this.screenData = memBuffer.readArrayBuffer();
+		this.colorData = memBuffer.readArrayBuffer();
 	}
 }
