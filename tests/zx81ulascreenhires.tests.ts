@@ -135,6 +135,44 @@ suite('Zx81UlaScreenHiRes', () => {
 			assert.equal(zx81UlaScreen.screenData[3], 0b1010_0110);
 		});
 
+		test('arx', () => {
+			zx81UlaScreen.lineCounter = 100;
+			zx81UlaScreen.ulaLineCounter = 0;
+			zx81UlaScreen.screenLineLengthIndex = 0;
+			zx81UlaScreen.screenDataIndex = 1;
+			zx81UlaScreen.memoryRead8 = (addr64k: number) => {
+				switch (addr64k) {
+					case 0x0000: return 0x0F;
+					case 0x0001: return 0x8F;
+					case 0x2000 + 0x0F * 8 + 0: return 0b1010_0101;	// ULA line counter = 0
+					case 0x2000 + 0x0F * 8 + 1: return 0b1010_0110;	// ULA line counter = 1
+					default: return 0xAA;
+				}
+			};
+			const cpu = zx81UlaScreen.z80Cpu;
+			cpu.i = 0x20;
+			zx81UlaScreen.ulaM1Read8(0x8000);
+			assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
+			assert.equal(zx81UlaScreen.screenData[0], 1);
+			assert.equal(zx81UlaScreen.screenDataIndex, 2);
+			assert.equal(zx81UlaScreen.screenData[1], 0b1010_0101);
+
+			// Inverted
+			zx81UlaScreen.ulaM1Read8(0x8001);
+			assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
+			assert.equal(zx81UlaScreen.screenData[0], 2);
+			assert.equal(zx81UlaScreen.screenDataIndex, 3);
+			assert.equal(zx81UlaScreen.screenData[2], 0b0101_1010);	// Inverted
+
+			// ULA line counter <> 0
+			zx81UlaScreen.ulaLineCounter = 1;
+			zx81UlaScreen.ulaM1Read8(0x8000);
+			assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
+			assert.equal(zx81UlaScreen.screenData[0], 3);
+			assert.equal(zx81UlaScreen.screenDataIndex, 4);
+			assert.equal(zx81UlaScreen.screenData[3], 0b1010_0110);
+		});
+
 		test('wrx', () => {
 			zx81UlaScreen.lineCounter = 100;
 			zx81UlaScreen.ulaLineCounter = 0;
@@ -164,6 +202,7 @@ suite('Zx81UlaScreenHiRes', () => {
 			assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
 			assert.equal(zx81UlaScreen.screenData[0], 2);
 			assert.equal(zx81UlaScreen.screenDataIndex, 3);
+
 			assert.equal(zx81UlaScreen.screenData[2], 0b0101_1001);	// Inverted
 		});
 	});
