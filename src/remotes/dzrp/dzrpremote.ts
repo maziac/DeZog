@@ -1438,10 +1438,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * .p81 files are like .p and .81 files prepended with the program's name.
 	 * The binary content is copied to address starting at 0x4009.
 	 * The PC is set to 0x0207 (right after the SAVE routine).
-	 * The System VARS 0x4000-0x4008 are set to TODO:...
-	 *
-	 * The .p file are max 16k in size, this is not checked here in
-	 * order to load OSMO.P.
+	 * The System VARS 0x4000-0x4008 are set according to the available RAM size.
 	 *
 	 * See https://k1.spdns.de/Develop/Projects/zasm/Info/O80%20and%20P81%20Format.txt
 	 */
