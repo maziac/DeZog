@@ -9,8 +9,7 @@ import {Utility} from '../../misc/utility';
 
 
 
-/**
- * Watchpoint class used by 'watchPointMemory'.
+/** Watchpoint class used by 'watchPointMemory'.
  */
 interface SimWatchpoint {
 	// read/write are counters. They are reference counts and count how many
@@ -20,8 +19,7 @@ interface SimWatchpoint {
 }
 
 
-/**
- * Holds the slot name and the corresponding index.
+/** Holds the slot name and the corresponding index.
  */
 interface SlotName {
 	// The index of the slot.
@@ -32,8 +30,7 @@ interface SlotName {
 }
 
 
-/**
- * Represents the simulated memory.
+/** Represents the simulated memory.
  * It is a base class to allow memory paging etc.
  * The simulated memory always works with slots although they might not be visible
  * to the outside.
@@ -115,8 +112,7 @@ export class SimulatedMemory implements Serializable {
 	protected slotNames: SlotName[];
 
 
-	/**
-	 * Constructor.
+	/** Constructor.
 	 * Configures the slot and bank count.
 	 * @param memModel The memory model to use. Includes all slots definition and banks.
 	 * @param ports The port instance for registering the IO MMU handlers.
@@ -186,8 +182,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Registers the IO MMU handlers for switching the banks through writing
+	/** Registers the IO MMU handlers for switching the banks through writing
 	 * to an IO port.
 	 * @param ports The instance to register the functions.
 	 */
@@ -214,8 +209,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Sets the named slots into the 'bankSwitchingContext'.
+	/** Sets the named slots into the 'bankSwitchingContext'.
 	 */
 	protected setSlotsInContext() {
 		for (const slotName of this.slotNames) {
@@ -224,8 +218,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Retrieves the named slots from the 'bankSwitchingContext'.
+	/** Retrieves the named slots from the 'bankSwitchingContext'.
 	 */
 	protected getSlotsFromContext() {
 		for (const slotName of this.slotNames) {
@@ -234,8 +227,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Checks that all slots are pointing to valid banks.
+	/** Checks that all slots are pointing to valid banks.
 	 */
 	protected checkSlots() {
 		const len = this.slots.length;
@@ -254,8 +246,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Calculates the bank number from the 'portValue'.
+	/** Calculates the bank number from the 'portValue'.
 	 * @param ioMmu A string that is evaluated with 'eval'.
 	 * It should evaluate 'portValue' and calculate the bank number from it.
 	 * E.g. this could involve masking some bits of 'portValue' and maybe adding
@@ -282,8 +273,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Check if ioMmu is a valid js script.
+	/** Check if ioMmu is a valid js script.
 	 * throws if ioMmu is wrong.
 	 * @param ioMmu The java script in a string.
 	 */
@@ -360,18 +350,16 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Clears the whole memory (all banks) with 0s.
+	/** Clears the whole memory (all banks) with 0s.
 	 * So far only used by unit tests.
 	 */
 	public clear() {
-		for(const bank of this.memoryBanks)
+		for (const bank of this.memoryBanks)
 			bank.fill(0);
 	}
 
 
-	/**
-	 * Serializes the object.
+	/** Serializes the object.
 	 */
 	public serialize(memBuffer: MemBuffer) {
 		// Get slot/bank mapping
@@ -380,7 +368,7 @@ export class SimulatedMemory implements Serializable {
 			memBuffer.write8(bank);
 
 		// Store banks
-		for(const bank of this.memoryBanks)
+		for (const bank of this.memoryBanks)
 			memBuffer.writeArrayBuffer(bank);
 
 		// Write the bank switching context
@@ -389,8 +377,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Deserializes the object.
+	/** Deserializes the object.
 	 */
 	public deserialize(memBuffer: MemBuffer) {
 		// Store slot/bank association
@@ -416,8 +403,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Adds a watchpoint address range.
+	/** Adds a watchpoint address range.
 	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 * @param access 'r', 'w' or 'rw'.
@@ -435,8 +421,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Removes a watchpoint address range.
+	/** Removes a watchpoint address range.
 	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 * @param access 'r', 'w' or 'rw'.
@@ -456,8 +441,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Clears the hit flag and the arrays.
+	/** Clears the hit flag and the arrays.
 	 */
 	public clearHit() {
 		this.hitAddress = -1;
@@ -540,8 +524,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * @param bankNr The bank number.
+	/** @param bankNr The bank number.
 	 * @returns the Uint8Array of a bank.
 	 */
 	public getBankMemory(bankNr: number): Uint8Array {
@@ -592,8 +575,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Write to memoryData directly into a bank.
+	/** Write to memoryData directly into a bank.
 	 * Is e.g. used during SNA / NEX file loading.
 	 * @param bankNr The bank to write.
 	 * @param bankOffset Offset into the bank buffer.
@@ -608,8 +590,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Returns the bank and offset into the bank for a given address and slots configuration.
+	/** Returns the bank and offset into the bank for a given address and slots configuration.
 	 * @param addr64k The 64k address.
 	 * @param slots The (current) slot configuration.
 	 * @returns {bank, offset}
@@ -630,24 +611,31 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Associates a slot with a bank number.
+	/** Associates a slot with a bank number.
 	 */
 	public setSlot(slot: number, bank: number) {
 		this.slots[slot] = bank;
 	}
 
 
-	/**
-	 * Returns the slots array.
+	/** Returns the slots array.
 	 */
 	public getSlots(): number[] {
 		return this.slots;
 	}
 
 
-	/**
-	 * Reads a block of bytes.
+	/** Returns the bank for a 64k address.
+	 * @param addr64k The 64k address.
+	 * @returns The bank number.
+	 */
+	// public getBankForAddr64k(addr64k: number): number {
+	// 	const slot = this.memoryModel.slotAddress64kAssociation[addr64k];
+	// 	return this.slots[slot];
+	// }
+
+
+	/** Reads a block of bytes.
 	 * @param startAddr64k The 64k start address
 	 * @param size The length of the data in bytes.
 	 * @returns The data as Uint8Array (a new array is returned.)
@@ -681,8 +669,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Writes a block of bytes.
+	/** Writes a block of bytes.
 	 * @param startAddress The 64k start address.
 	 * @param data The block to write.
 	 */
@@ -719,8 +706,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Writes a complete memory bank.
+	/** Writes a complete memory bank.
 	 * @param bankNr The bank number.
 	 * @param block The block to write.
 	 */
@@ -732,24 +718,21 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Clears the visual buffer.
+	/** Clears the visual buffer.
 	 */
 	public clearVisualMemory() {
 		this.visualMemory.fill(0);
 	}
 
 
-	/**
-	 * @returns The visual memory as a buffer.
+	/** @returns The visual memory as a buffer.
 	 */
 	public getVisualMemory(): number[] {
 		return this.visualMemory;
 	}
 
 
-	/**
-	 * Reads a file in Intel hex file format.
+	/** Reads a file in Intel hex file format.
 	 * @param filePath Absolute path to the *.hex file.
 	 * @returns An Uint8Array with the data.
 	 */
@@ -759,8 +742,7 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/**
-	 * Reads a ROM file.
+	/** Reads a ROM file.
 	 * @param filePath Absolute path to the *.hex file or a raw data file.
 	 * @returns An Uint8Array with the data.
 	 */
@@ -775,4 +757,3 @@ export class SimulatedMemory implements Serializable {
 		}
 	}
 }
-

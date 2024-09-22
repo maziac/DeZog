@@ -25,6 +25,7 @@ const logOn = false;	// TODO: REMOVE
  * For details of the zx81 ULA display see:
  * https://k1.spdns.de/Vintage/Sinclair/80/Sinclair%20ZX80/Tech%20specs/Wilf%20Rigter%27s%20ZX81%20Video%20Display%20Info.htm
  * https://8bit-museum.de/heimcomputer-2/sinclair/sinclair-scans/scans-zx81-video-display-system/
+ * https://problemkaputt.de/zxdocs.htm
  * For details of the ULA HW and signals see:
  * https://oldcomputer.info/8bit/zx81/ULA/ula.htm
  */
