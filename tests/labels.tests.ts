@@ -473,16 +473,22 @@ suite('Labels', () => {
 			createParser(mm);
 
 			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
-			assert.equal(parser.createLongAddress(0x2000, 0), 0x32000);	// Not existing
-			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x32FFF);	// Not existing
+			assert.equal(parser.createLongAddress(0x1FFF, 0), 0x11FFF);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x12FFF);	// Mirrored ROM
 			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
 			assert.equal(parser.createLongAddress(0x43FF, 0), 0x243FF);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x18000);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0x9FFF, 0), 0x19FFF);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x1A000);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0xBFFF, 0), 0x1BFFF);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x2C000);	// Mirrored RAM
+			assert.equal(parser.createLongAddress(0xC3FF, 0), 0x2C3FF);	// Mirrored RAM
+
 			// Not existing:
-			assert.equal(parser.createLongAddress(0x4400, 0), 0x44400);
-			assert.equal(parser.createLongAddress(0x6000, 0), 0x46000);
-			assert.equal(parser.createLongAddress(0x8000, 0), 0x48000);
-			assert.equal(parser.createLongAddress(0xA000, 0), 0x4A000);
-			assert.equal(parser.createLongAddress(0xC000, 0), 0x4C000);
+			assert.equal(parser.createLongAddress(0x4400, 0), 0x34400);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x36000);
+			assert.equal(parser.createLongAddress(0xC400, 0), 0x4C400);
 			assert.equal(parser.createLongAddress(0xE000, 0), 0x4E000);
 			assert.equal(parser.createLongAddress(0xFFFF, 0), 0x4FFFF);
 		});
@@ -492,16 +498,22 @@ suite('Labels', () => {
 			createParser(mm);
 
 			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
-			assert.equal(parser.createLongAddress(0x2000, 0), 0x32000);	// Not existing
-			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x32FFF);	// Not existing
+			assert.equal(parser.createLongAddress(0x1FFF, 0), 0x11FFF);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x12FFF);	// Mirrored ROM
 			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
 			assert.equal(parser.createLongAddress(0x47FF, 0), 0x247FF);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x18000);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0x9FFF, 0), 0x19FFF);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x1A000);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0xBFFF, 0), 0x1BFFF);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x2C000);	// Mirrored RAM
+			assert.equal(parser.createLongAddress(0xC7FF, 0), 0x2C7FF);	// Mirrored RAM
+
 			// Not existing:
-			assert.equal(parser.createLongAddress(0x4800, 0), 0x44800);
-			assert.equal(parser.createLongAddress(0x6000, 0), 0x46000);
-			assert.equal(parser.createLongAddress(0x8000, 0), 0x48000);
-			assert.equal(parser.createLongAddress(0xA000, 0), 0x4A000);
-			assert.equal(parser.createLongAddress(0xC000, 0), 0x4C000);
+			assert.equal(parser.createLongAddress(0x4800, 0), 0x34800);
+			assert.equal(parser.createLongAddress(0x6000, 0), 0x36000);
+			assert.equal(parser.createLongAddress(0xC800, 0), 0x4C800);
 			assert.equal(parser.createLongAddress(0xE000, 0), 0x4E000);
 			assert.equal(parser.createLongAddress(0xFFFF, 0), 0x4FFFF);
 		});
@@ -511,17 +523,17 @@ suite('Labels', () => {
 			createParser(mm);
 
 			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
-			assert.equal(parser.createLongAddress(0x2000, 0), 0x32000);	// Not existing
-			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x32FFF);	// Not existing
+			assert.equal(parser.createLongAddress(0x1FFF, 0), 0x11FFF);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x12FFF);	// Mirrored ROM
 			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
-			assert.equal(parser.createLongAddress(0x6000, 0), 0x26000);
 			assert.equal(parser.createLongAddress(0x7FFF, 0), 0x27FFF);
-			// Not existing:
-			assert.equal(parser.createLongAddress(0x8000, 0), 0x48000);
-			assert.equal(parser.createLongAddress(0xA000, 0), 0x4A000);
-			assert.equal(parser.createLongAddress(0xC000, 0), 0x4C000);
-			assert.equal(parser.createLongAddress(0xE000, 0), 0x4E000);
-			assert.equal(parser.createLongAddress(0xFFFF, 0), 0x4FFFF);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x18000);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0x9FFF, 0), 0x19FFF);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0xA000, 0), 0x1A000);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0xBFFF, 0), 0x1BFFF);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x2C000);	// Mirrored RAM
+			assert.equal(parser.createLongAddress(0xFFFF, 0), 0x2FFFF);	// Mirrored RAM
 		});
 
 		test('Target: MemoryModelZX81_32k', () => {
@@ -529,16 +541,15 @@ suite('Labels', () => {
 			createParser(mm);
 
 			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
-			assert.equal(parser.createLongAddress(0x2000, 0), 0x32000);	// Not existing
-			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x32FFF);	// Not existing
+			assert.equal(parser.createLongAddress(0x1FFF, 0), 0x11FFF);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x12FFF);	// Mirrored ROM
 			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
-			assert.equal(parser.createLongAddress(0x6000, 0), 0x26000);
-			assert.equal(parser.createLongAddress(0x8000, 0), 0x28000);
-			assert.equal(parser.createLongAddress(0xA000, 0), 0x2A000);
-			assert.equal(parser.createLongAddress(0xBFFF, 0), 0x2BFFF);
-			// Not existing:
-			assert.equal(parser.createLongAddress(0xC000, 0), 0x4C000);			assert.equal(parser.createLongAddress(0xE000, 0), 0x4E000);
-			assert.equal(parser.createLongAddress(0xFFFF, 0), 0x4FFFF);
+			assert.equal(parser.createLongAddress(0x7FFF, 0), 0x27FFF);
+			assert.equal(parser.createLongAddress(0x8000, 0), 0x38000);
+			assert.equal(parser.createLongAddress(0xBFFF, 0), 0x3BFFF);
+			assert.equal(parser.createLongAddress(0xC000, 0), 0x2C000);	// Mirrored RAM
+			assert.equal(parser.createLongAddress(0xFFFF, 0), 0x2FFFF);	// Mirrored RAM
 		});
 
 		test('Target: MemoryModelZX81_48k', () => {
@@ -546,8 +557,9 @@ suite('Labels', () => {
 			createParser(mm);
 
 			assert.equal(parser.createLongAddress(0x0000, 0), 0x10000);
-			assert.equal(parser.createLongAddress(0x2000, 0), 0x32000);	// Not existing
-			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x32FFF);	// Not existing
+			assert.equal(parser.createLongAddress(0x1FFF, 0), 0x11FFF);
+			assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);	// Mirrored ROM
+			assert.equal(parser.createLongAddress(0x2FFF, 0), 0x12FFF);	// Mirrored ROM
 			assert.equal(parser.createLongAddress(0x4000, 0), 0x24000);
 			assert.equal(parser.createLongAddress(0x6000, 0), 0x26000);
 			assert.equal(parser.createLongAddress(0x8000, 0), 0x28000);

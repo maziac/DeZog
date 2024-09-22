@@ -53,7 +53,7 @@ export class MemoryModelZX81_1k extends MemoryModel {	// NOSONAR
 					range: [0x2000, 0x3FFF],
 					banks: [
 						{
-							index: 0,	// Mirrored 0x0000-0x1FFF
+							index: 0,	// Mirrored ROM 0x0000-0x1FFF
 						}
 					]
 				},
@@ -63,6 +63,22 @@ export class MemoryModelZX81_1k extends MemoryModel {	// NOSONAR
 						{
 							index: 1,
 							name: 'RAM 0x4000-0x43FF'
+						}
+					]
+				},
+				{
+					range: [0x8000, 0x9FFF],
+					banks: [
+						{
+							index: 0,	// Mirrored ROM 0x0000-0x1FFF
+						}
+					]
+				},
+				{
+					range: [0xA000, 0xBFFF],
+					banks: [
+						{
+							index: 0,	// Mirrored ROM 0x0000-0x1FFF
 						}
 					]
 				},
@@ -98,7 +114,7 @@ export class MemoryModelZX81_2k extends MemoryModel {	// NOSONAR
 					range: [0x2000, 0x3FFF],
 					banks: [
 						{
-							index: 0,	// Mirrored 0x0000-0x1FFF
+							index: 0,	// Mirrored ROM 0x0000-0x1FFF
 						}
 					]
 				},
@@ -108,6 +124,22 @@ export class MemoryModelZX81_2k extends MemoryModel {	// NOSONAR
 						{
 							index: 1,
 							name: 'RAM 0x4000-0x47FF'
+						}
+					]
+				},
+				{
+					range: [0x8000, 0x9FFF],
+					banks: [
+						{
+							index: 0,	// Mirrored ROM 0x0000-0x1FFF
+						}
+					]
+				},
+				{
+					range: [0xA000, 0xBFFF],
+					banks: [
+						{
+							index: 0,	// Mirrored ROM 0x0000-0x1FFF
 						}
 					]
 				},
@@ -143,7 +175,7 @@ export class MemoryModelZX81_16k extends MemoryModel {	// NOSONAR
 					range: [0x2000, 0x3FFF],
 					banks: [
 						{
-							index: 0,	// Mirrored 0x0000-0x1FFF
+							index: 0,	// Mirrored ROM 0x0000-0x1FFF
 						}
 					]
 				},
@@ -153,6 +185,22 @@ export class MemoryModelZX81_16k extends MemoryModel {	// NOSONAR
 						{
 							index: 1,
 							name: 'RAM 0x4000-0x7FFF'
+						}
+					]
+				},
+				{
+					range: [0x8000, 0x9FFF],
+					banks: [
+						{
+							index: 0,	// Mirrored ROM 0x0000-0x1FFF
+						}
+					]
+				},
+				{
+					range: [0xA000, 0xBFFF],
+					banks: [
+						{
+							index: 0,	// Mirrored ROM 0x0000-0x1FFF
 						}
 					]
 				},
