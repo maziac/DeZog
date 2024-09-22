@@ -819,12 +819,12 @@ export class ZSimRemote extends DzrpRemote {
 						break;
 					}
 				}
-
 			}
 			catch (errorText) {
 				breakReasonString = "Z80CPU Error: " + errorText;
 				//console.log(breakReasonString);
 				breakNumber = BREAK_REASON_NUMBER.UNKNOWN;
+				break_happened = true;
 			}
 
 			// Check to leave

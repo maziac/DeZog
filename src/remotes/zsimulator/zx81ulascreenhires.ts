@@ -18,6 +18,22 @@ import {Zx81UlaScreen} from "./zx81ulascreen";
  * 3.  VIDEO DISPLAY routine           - NMI off
  * 4.  Blank lines/application code    - NMI on
  *
+ * Graphics modes:
+ * - standard graphics: The standard graphics mode. I=0x1E. A character is taken from the ROM.
+ *   Each char is defined by 8 bytes from the ROM.
+ * - pseudo hires: The pseudo hires mode. I is switched to point to somewhere in the ROM (high 7 bits).
+ *   Otherwise the  same as 'standard'.
+ * - arx: I points to RAM in area 0x2000-0x3FFF. Requires 56k RAM pack. Otherwise like 'standard'.
+ *   Was used be defining a different charset every 2 lines (every 64 bytes).
+ * - udg (or chr$64): I points to area 0x2000-0x3FFF. Otherwise like 'standard'.
+ *   Requires additional HW add on with RAM/ROM for the charsets.
+ * - chr$128: I points to area 0x2000-0x3FFF. Like 'standard' but if bit 0 of I is set and bit 7 of the
+ *   character code (the inverse bit) then 2 * 256 is added to the address to address the upper half
+ *   of the character set with the inverse characters.
+ *   Requires additional HW add on that checks for bit 0 of the I register.
+ * - wrx: The true hires mode. I is outside the ROM area. The byte is taken from the RAM (I*256+R).
+ *   A (simple) HW modification was required.
+ *
  * Chroma81:
  * video_addr: Executed address.
  * character_code = [video_addr & 0x7FFF] & 0x3F
@@ -119,6 +135,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
 				const charcode_plus_linecounter = ulaAddrLatch * 8 + this.ulaLineCounter;
 				addr = (i & 0xFE) * 256 + charcode_plus_linecounter;
+				if (i & 0x01)	// CHR$128?
+					addr += (data & 0b1000_0000) * 4;	// Bit 7 of the character code
 				// Write chroma81 (color) data
 				if (this.chroma81Enabled) {
 					let colorAddr = addr64k;	// Would be already OK for color mode 1

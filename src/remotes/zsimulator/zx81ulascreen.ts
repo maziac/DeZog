@@ -28,6 +28,9 @@ const logOn = false;	// TODO: REMOVE
  * https://problemkaputt.de/zxdocs.htm
  * For details of the ULA HW and signals see:
  * https://oldcomputer.info/8bit/zx81/ULA/ula.htm
+ *
+ * Chroma81 details:
+ * http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/Files/Documents/Chroma81_TechnicalDescription.txt
  */
 export class Zx81UlaScreen extends UlaScreen {
 	// Screen height
