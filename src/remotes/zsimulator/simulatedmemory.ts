@@ -144,6 +144,8 @@ export class SimulatedMemory implements Serializable {
 				const memBank = new Uint8Array(bank.size);
 				this.memoryBanks[i] = memBank;
 				this.bankTypes[i] = bank.bankType;
+				// Fill memory with default value
+				memBank.fill(bank.defaultFill);
 				// Check for rom
 				let rom = bank.rom;
 				if (rom) {
@@ -460,7 +462,7 @@ export class SimulatedMemory implements Serializable {
 	// Read 1 byte.
 	// This is used by the Z80 CPU.
 	// Note: no special check is done reading UNUSED memory. As this cannot be
-	// written a read will always return the default value (0).
+	// written a read will always return the default value (defaultFill).
 	public read8(addr64k: number): number {
 		// Check for watchpoint access
 		const wp = this.watchPointMemory[addr64k];

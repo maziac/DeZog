@@ -630,6 +630,14 @@
 																		],
 																		"description": "Optional offset of the ROM file/content.\nEither use a decimal number or a hex string.",
 																		"default": 0
+																	},
+																	"defaultFill": {
+																		"type": [
+																			"number",
+																			"string"
+																		],
+																		"description": "Optional default byte fill value. If omitted: RAM/ROM uses 0.",
+																		"default": 0
 																	}
 																}
 															}

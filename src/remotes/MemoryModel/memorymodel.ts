@@ -71,6 +71,9 @@ export interface BankInfo {
 	/** Optional offset of the ROM file/content
 	 */
 	romOffset?: number;
+
+	// Optional default byte fill value. If not set; RAM/ROM uses 0, UNUSED uses 0xFF
+	defaultFill: number;
 }
 
 
@@ -231,6 +234,7 @@ export class MemoryModel {
 	 */
 	protected createUnusedBanks() {
 		// Assign banks to unassigned memory (above max bank number)
+		const defaultFill = 0xFF;
 		let unassignedBankIndex = this.banks.length;
 		for (let i = 0; i < this.slotRanges.length; i++) {
 			const slot = this.initialSlots[i];
@@ -244,7 +248,8 @@ export class MemoryModel {
 					name: 'UNUSED',
 					shortName: '',
 					size,
-					bankType: BankType.UNUSED
+					bankType: BankType.UNUSED,
+					defaultFill
 				};
 				this.banks.push(bankInfo);
 				this.initialSlots[i] = unassignedBankIndex;
@@ -320,6 +325,7 @@ export class MemoryModel {
 		let indexStart: number;
 		let indexOrRange = bank.index;
 		const bankType = (bank.rom || typeof bank.rom == 'string') ? BankType.ROM : BankType.RAM;
+		const defaultFill = (bank.defaultFill !== undefined) ? bank.defaultFill : 0;	// 0 for ROM/RAM
 		// Check for bank range
 		if (typeof indexOrRange == 'number') {
 			// Just one bank
@@ -334,7 +340,8 @@ export class MemoryModel {
 				size,
 				bankType,
 				rom: bank.rom,
-				romOffset: bank.romOffset as number
+				romOffset: bank.romOffset as number,
+				defaultFill
 			};
 			this.setBankInfo(indexStart, bankInfo);
 			bankNumbers.push(indexStart);
@@ -358,7 +365,8 @@ export class MemoryModel {
 					size,
 					bankType,
 					rom: bank.rom,
-					romOffset: bank.romOffset as number
+					romOffset: bank.romOffset as number,
+					defaultFill
 				};
 				this.setBankInfo(index, bankInfo);
 				bankNumbers.push(index);
