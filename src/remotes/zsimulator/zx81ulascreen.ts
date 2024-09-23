@@ -3,6 +3,7 @@ import {MemBuffer} from "../../misc/membuffer";
 import {Chroma81Type} from "../../settings/settings";
 import {UlaScreen} from "./ulascreen";
 import {Z80Cpu} from "./z80cpu";
+import {ZSimRemote} from "./zsimremote";
 import {Zx81LoadColorization} from "./zx81loadcolorization";
 
 
@@ -216,8 +217,8 @@ export class Zx81UlaScreen extends UlaScreen {
 	 * @param currentTstates The t-states that were just used by
 	 * DMA or CPU.
 	 */
-	public execute(currentTstates: number) {
-		this.tstates += currentTstates;
+	public execute(zsim: ZSimRemote) {
+		this.tstates += zsim.executeTstates;
 
 		// Execute int38 interrupt?
 		if (this.int38InNextCycle) {
@@ -234,7 +235,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		}
 		this.prevRregister = r;
 
-		this.checkHsync(currentTstates);
+		this.checkHsync(zsim.executeTstates);
 
 		// No vsync/no display detection: no display if for 2*20 ms no Vsync was found
 		if (this.tstates > this.vsyncStartTstates + 2 * Zx81UlaScreen.TSTATES_PER_SCREEN) {

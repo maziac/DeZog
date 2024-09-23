@@ -1,6 +1,7 @@
 import {MemBuffer, Serializable} from "../../misc/membuffer";
 import {UlaScreen} from "./ulascreen";
 import {Z80Cpu} from "./z80cpu";
+import {ZSimRemote} from "./zsimremote";
 
 
 /** Holds the bank used for the ZX Spectrum ULA screen and does the bank switching.
@@ -95,13 +96,12 @@ export class SpectrumUlaScreen extends UlaScreen implements Serializable {
 
 
 	/** Executes the ULA. The ZX81 ULA may grab tstates from
-		 * the CPU to simulate the NMI interrupt.
-		 * @param currentTstates The t-states that were just used by
-		 * DMA or CPU.
-		 */
-	public execute(currentTstates: number) {
+	 * the CPU to simulate the NMI interrupt.
+	 * @Uses zsim.executeTstates The number of t-states.
+	 */
+	public execute(zsim: ZSimRemote) {
 		// Check for vertical interrupt
-		const timeAdd = currentTstates / this.z80Cpu.cpuFreq;
+		const timeAdd = zsim.executeTstates / zsim.z80Cpu.cpuFreq;
 		this.flashTimeCounter += timeAdd;
 		this.vsyncTimeCounter += timeAdd;
 		if (this.vsyncTimeCounter >= SpectrumUlaScreen.VSYNC_TIME) {

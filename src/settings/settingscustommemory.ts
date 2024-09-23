@@ -117,14 +117,12 @@ export interface CustomMemoryBank {
 	// If not given the default is n e.g. "3".
 	shortName?: string;
 
-	/**
-	 * Either one number = index number of the bank or
+	/** Either one number = index number of the bank or
 	 * array of two elements: first and last index of the banks (inclusive).
 	 */
 	index: number | [number, number];
 
-	/**
-	 * Optional. If specified, set the slot as ROM.
+	/** Optional. If specified, set the slot as ROM.
 	 * The content is the path of the ROM content.
 	 * File content should be in raw format (i.e. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).
 	 * If the data is loaded otherwise ("loadObj") it is possible to set this simply to true
@@ -132,8 +130,10 @@ export interface CustomMemoryBank {
 	 */
 	rom?: string | boolean;
 
-	/**
-	 * Optional offset of the ROM file/content
+	/** Optional offset of the ROM file/content
 	 */
 	romOffset?: HexNumber;
+
+	// Optional default byte fill value. If not set; RAM/ROM uses 0, UNUSED uses 0xFF
+	defaultFill?: number;
 }

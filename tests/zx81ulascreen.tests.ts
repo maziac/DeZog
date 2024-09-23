@@ -230,11 +230,13 @@ suite('Zx81UlaScreen', () => {
 			const checkHsyncSpy = sinon.spy(zx81UlaScreen, 'checkHsync');
 			const emitSpy = sinon.spy(zx81UlaScreen, 'emit');
 
+			const zsim = { executeTstates: 0 };
 			zx81UlaScreen.int38InNextCycle = false;
 			zx81UlaScreen.noDisplay = false;
 			zx81UlaScreen.tstates = 0;
 			zx81UlaScreen.vsyncStartTstates = 0;
-			zx81UlaScreen.execute(5);
+			zsim.executeTstates = 5;
+			zx81UlaScreen.execute(zsim);
 			assert.equal(zx81UlaScreen.tstates, 5);
 			assert.equal(zx81UlaScreen.noDisplay, false);
 			assert.equal(interruptSpy.called, false);
@@ -250,7 +252,8 @@ suite('Zx81UlaScreen', () => {
 			zx81UlaScreen.vsyncStartTstates = 0;
 			const tstates_min = 2 * (Zx81UlaScreen as any).TSTATES_PER_SCREEN;
 			zx81UlaScreen.tstates = tstates_min;
-			zx81UlaScreen.execute(5);
+			zsim.executeTstates = 5;
+			zx81UlaScreen.execute(zsim);
 			assert.equal(zx81UlaScreen.noDisplay, true);
 			assert.equal(interruptSpy.called, true);
 			assert.equal(checkHsyncSpy.called, true);
@@ -264,7 +267,8 @@ suite('Zx81UlaScreen', () => {
 			zx81UlaScreen.noDisplay = true;
 			zx81UlaScreen.vsyncStartTstates = 0;
 			zx81UlaScreen.tstates = tstates_min;
-			zx81UlaScreen.execute(5);
+			zsim.executeTstates = 5;
+			zx81UlaScreen.execute(zsim);
 			assert.equal(zx81UlaScreen.noDisplay, true);
 			assert.equal(checkHsyncSpy.called, true);
 			assert.equal(emitSpy.called, false);

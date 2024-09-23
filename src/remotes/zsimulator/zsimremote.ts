@@ -28,6 +28,8 @@ import {Zx81UlaScreen} from './zx81ulascreen';
 import {ZxKeyboard} from './zxkeyboard';
 import {CustomJoystick} from './customjoystick';
 import {Zx81UlaScreenHiRes} from './zx81ulascreenhires';
+import path = require('path');
+import {ExecuteInterface} from './executeinterface';
 
 
 
@@ -76,7 +78,7 @@ export class ZSimRemote extends DzrpRemote {
 
 	// The number of passed t-states. Starts at 0 and is never reset.
 	// Is increased with every executed instruction or by DMA.
-	protected passedTstates: number;
+	public passedTstates: number;
 
 	// Used to calculate the passed instruction time.
 	protected prevPassedTstates: number;
@@ -113,6 +115,16 @@ export class ZSimRemote extends DzrpRemote {
 	// Only updated if Settings.launch.zsim.limitSpeed or Settings.launch.zsim.cpuLoad is set.
 	public simulationTooSlow: boolean;
 
+	// All executors (e.g. DMA devices, ULA) that should be called during an
+	// instruction are added to this array.
+	// Generally the first executors are DMA, followed by the CPU, at the end are executors
+	// that do not change the tstates, like the ULA.
+	protected executors: ExecuteInterface[];
+
+	// T-States used during zsim execute(). An executor can check if tstates
+	// have been set already. or to return used tstates.
+	public executeTstates: number;
+
 
 	/// Constructor.
 	constructor() {
@@ -137,6 +149,7 @@ export class ZSimRemote extends DzrpRemote {
 		this.lastBpId = 0;
 		this.breakOnInterrupt = false;
 		this.tbblueCpuSpeed = 0;
+		this.executors = [];
 		// Set decoder
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 		// Reverse debugging / CPU history
@@ -286,6 +299,8 @@ export class ZSimRemote extends DzrpRemote {
 	 * - "CUSTOM": User defined memory.
 	 */
 	protected configureMachine(zsim: ZSimType) {
+		// The instances executed during an instruction
+		this.executors = [];
 		// For restoring the state
 		this.serializeObjects = [];
 
@@ -393,6 +408,7 @@ export class ZSimRemote extends DzrpRemote {
 
 		// Create a Z80 CPU to emulate Z80 behavior
 		this.z80Cpu = new Z80Cpu(this.memory, this.ports);
+		this.executors.push(this.z80Cpu);
 		this.serializeObjects.push(this.z80Cpu);
 
 		// Check if ULA screen is enabled
@@ -421,6 +437,7 @@ export class ZSimRemote extends DzrpRemote {
 				// Notify
 				this.emit('updateScreen');
 			});
+			this.executors.push(this.zxUlaScreen);	// After z80cpu
 			this.serializeObjects.push(this.zxUlaScreen);
 		}
 
@@ -442,6 +459,7 @@ export class ZSimRemote extends DzrpRemote {
 		if (zxnDMA) {
 			// Create the zxnDMA object
 			this.zxnDMA = new ZxnDma(this.memory, this.ports);
+			this.executors.unshift(this.zxnDMA);	// Before z80cpu
 			this.serializeObjects.push(this.zxnDMA);
 			// Create the read/write port
 			// Register out port $xx6B
@@ -653,21 +671,13 @@ export class ZSimRemote extends DzrpRemote {
 	 * This is normally a CPU instruction.
 	 * But it could also be a DMA operation.
 	 * Also the ula interrupt is handled here.
+	 * @Uses The number of t-states will be set to 0 and changed by the executors.
 	 */
-	protected execute(): number {
-		let tStates = 0;
-		const cpuFreq = this.z80Cpu.cpuFreq;
-		// Execute the DMA function
-		if (this.zxnDMA)
-			tStates = this.zxnDMA.execute(cpuFreq, this.passedTstates);
-		// If DMA does not occupy the bus, run CPU
-		if (tStates === 0)
-			tStates = this.z80Cpu.execute();
-		// Execute ULA
-		if (this.zxUlaScreen) {
-			this.zxUlaScreen.execute(tStates);
+	protected execute() {
+		this.executeTstates = 0;
+		for (const executor of this.executors) {
+			executor.execute(this);
 		}
-		return tStates;
 	}
 
 
@@ -711,10 +721,9 @@ export class ZSimRemote extends DzrpRemote {
 					}
 
 					// Execute one instruction
-					const tStates = this.execute();
-
-					// For custom code: Increase passed t-states
-					this.passedTstates += tStates;
+					this.execute();
+					// E.g. for custom code: Increase passed t-states
+					this.passedTstates += this.executeTstates;
 
 					// Update visual memory
 					this.memory.setVisualProg(prevPc); // Fully correct would be to update all opcodes. But as it is compressed anyway this only gives a more accurate view at a border but on the other hand reduces the performance.
@@ -1057,8 +1066,7 @@ export class ZSimRemote extends DzrpRemote {
 	}
 
 
-	/**
-	 * Returns the buffer with beeper values.
+	/** Returns the buffer with beeper values.
 	 * @returns Structure with:
 	 * time: The start time of the buffer
 	 * startValue: of the beeper (on/off)
@@ -1070,8 +1078,29 @@ export class ZSimRemote extends DzrpRemote {
 	}
 
 
-	/**
-	 * Loads a .sna file.
+	/** Loads a .p, .81 or .p81 file.
+	 * The normal load routine is overwritten to allow loading of
+	 * multiple files.
+	 * I.e. for the ZX81 it is quite common to write loaders fro chroma81 or
+	 * udg support. These loaders (first .p file) have to be loaded/execute before
+	 * the actual program, the second .p file.
+	 * Therefore first the "normal" load routine is called and then a HW emulation is
+	 * installed that is invoked when the LOAD/SAVE routine (0x0207) is called.
+	 * This routine takes care of the loading of the second file.
+	 */
+	protected zx81FileDirectory: string;
+	protected async loadBinZx81(filePath: string): Promise<void> {
+		// Remember the file's directory
+		this.zx81FileDirectory = path.dirname(filePath);
+		// Call super
+		await super.loadBinZx81(filePath);
+		// Install the HW emulation
+		const fileDirectory = path.dirname(filePath);
+	//---TODO:	this.zx81LoadRoutine.setDirectory(fileDirectory);
+	}
+
+
+	/** Loads a .sna file.
 	 * Loading is intelligent. I.e. if a SNA file from a ZX128 is loaded into a ZX48 or a ZXNEXT
 	 * it will work,
 	 * as long as no memory is used that is not present in the memory model.

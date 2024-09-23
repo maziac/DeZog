@@ -4,10 +4,12 @@ import {MemBuffer, Serializable} from '../../misc/membuffer'
 import {Settings} from '../../settings/settings';
 import * as Z80 from '../../3rdparty/z80.js/Z80.js';
 import {SimulatedMemory} from './simulatedmemory';
+import {ExecuteInterface} from './executeinterface';
+import {ZSimRemote} from './zsimremote';
 
 
 
-export class Z80Cpu implements Serializable {
+export class Z80Cpu implements Serializable, ExecuteInterface {
 	// Pointer to the Z80.js (Z80.ts) simulator
 	protected z80: any;
 
@@ -108,12 +110,15 @@ export class Z80Cpu implements Serializable {
 
 
 	/** Executes one instruction.
-	 * @returns The number of t-states used for execution.
+	 * @Uses The number of t-states used for execution.
 	 */
-	public execute(): number {
-		const z80 = this.z80;
+	public execute(zsim: ZSimRemote) {
+		// Check if another component already occupied tstates
+		if (zsim.executeTstates !== 0)
+			return;
 
 		// Handle instruction
+		const z80 = this.z80;
 		const tStates = z80.run_instruction() + this.extraTstatesPerInstruction;
 		this.passedTstates += tStates;
 
@@ -128,7 +133,7 @@ export class Z80Cpu implements Serializable {
 		}
 		this.prevHalted = z80.halted;
 
-		return tStates;
+		zsim.executeTstates = tStates;
 	}
 
 

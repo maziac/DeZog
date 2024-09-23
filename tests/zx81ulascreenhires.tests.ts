@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-import * as sinon from 'sinon';
 import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {SimulatedMemory} from '../src/remotes/zsimulator/simulatedmemory';
 import {Z80Cpu} from '../src/remotes/zsimulator/z80cpu';

@@ -648,10 +648,17 @@ suite('ZxnDma', function () {
 			dma2.writePort(0x87); // Enable DMA
 
 			// Execute the program
-			const tStates = dma2.execute(1000000, 0);
+			const zsim = {
+				executeTstates: 0,
+				passedTstates: 0,
+				z80Cpu: {
+					cpuFreq: 1000000
+				}
+			};
+			dma2.execute(zsim);
 
 			// Check the result
-			assert.ok(tStates > 0);
+			assert.ok(zsim.executeTstates > 0);
 			assert.equal(memory2.read8(portB), 0xA4);
 			assert.equal(memory2.read8(portB + blockLength - 1), 0xA4);
 		});

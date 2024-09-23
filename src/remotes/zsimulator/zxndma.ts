@@ -1,7 +1,9 @@
 import {LogZsimHardware} from "../../log";
 import {Serializable, MemBuffer} from "../../misc/membuffer";
+import {ExecuteInterface} from "./executeinterface";
 import {SimulatedMemory} from "./simulatedmemory";
 import {Z80Ports} from "./z80ports";
+import {ZSimRemote} from "./zsimremote";
 
 
 /** The zxnDMA simulation.
@@ -12,7 +14,7 @@ import {Z80Ports} from "./z80ports";
  * The whole of the zxnDMA is implemented.
  * (The Zilog DMA compatiblity mode is not implemented.)
  */
-export class ZxnDma implements Serializable {
+export class ZxnDma implements Serializable, ExecuteInterface {
 	// Gets the memory handler for the DMA.
 	protected memory: SimulatedMemory;
 
@@ -813,17 +815,20 @@ export class ZxnDma implements Serializable {
 	/** Executes the DMA. Is called by ZSimRemote executeInstruction
 	 * and is just called similar as the Z80.execute.
 	 * It is called before the Z80 would execute it's instruction.
-	 * @param cpuFreq The CPU frequency in Hz. Required to calculate the t-states if prescalar is used.
-	 * @param pastTstates The t-states that have passed since starting the zsimulator. Used to
-	 * calculate the next time a byte will be copied if the prescalar is used.
-	 * @returns The number of t-states the DMA needed. If 0 is returned, the DMA didn't occupy the bus.
+	 * @Uses zsim.z80Cpu.cpuFreq. Required to calculate the t-states if prescalar is used.
+	 * @Uses zsim.passedTstates. Used to calculate the next time a byte
+	 * will be copied if the prescalar is used.
+	 * @Uses zsim.executeTstates The number of t-states the DMA needed.
 	 */
-	public execute(cpuFreq: number, pastTstates: number): number {
+	public execute(zsim: ZSimRemote) {
+		// Check if another component already occupied tstates
+		if (zsim.executeTstates !== 0)
+			return;
 		// Check if enabled at all
 		if (!this.dmaActive)
-			return 0;
+			return;
 		// Copy bytes
-		return this.copy(cpuFreq, pastTstates);
+		zsim.executeTstates = this.copy(zsim.z80Cpu.cpuFreq, zsim.passedTstates);
 	}
 
 

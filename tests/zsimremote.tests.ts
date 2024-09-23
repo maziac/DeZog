@@ -288,8 +288,9 @@ suite('ZSimRemote', () => {
 				// Check default
 				mem.write8(0x0000, 0x00 /* NOP */);
 				cpu.pc = 0x0000;
-				let tStates = cpu.execute();
-				assert.equal(tStates, 4);
+				zsim.executeTstates = 0;
+				cpu.execute(zsim);
+				assert.equal(zsim.executeTstates, 4);
 
 				// Switch to 28Mhz
 				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
@@ -297,32 +298,36 @@ suite('ZSimRemote', () => {
 
 				// Check 5 t-states
 				cpu.pc = 0x0000;
-				tStates = cpu.execute();
-				assert.equal(tStates, 5);
+				zsim.executeTstates = 0;
+				cpu.execute(zsim);
+				assert.equal(zsim.executeTstates, 5);
 
 				// Switch to 14MHz
 				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
 				zsim.ports.write(0x253B, 0b10);	// 14Mhz
 				// Check 4 t-states
 				cpu.pc = 0x0000;
-				tStates = cpu.execute();
-				assert.equal(tStates, 4);
+				zsim.executeTstates = 0;
+				cpu.execute(zsim);
+				assert.equal(zsim.executeTstates, 4);
 
 				// Switch to 7MHz
 				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
 				zsim.ports.write(0x253B, 0b10);	// 7Mhz
 				// Check 4 t-states
 				cpu.pc = 0x0000;
-				tStates = cpu.execute();
-				assert.equal(tStates, 4);
+				zsim.executeTstates = 0;
+				cpu.execute(zsim);
+				assert.equal(zsim.executeTstates, 4);
 
 				// Switch to 3.5MHz
 				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
 				zsim.ports.write(0x253B, 0b10);	// 3.5Mhz
 				// Check 4 t-states
 				cpu.pc = 0x0000;
-				tStates = cpu.execute();
-				assert.equal(tStates, 4);
+				zsim.executeTstates = 0;
+				cpu.execute(zsim);
+				assert.equal(zsim.executeTstates, 4);
 			});
 		});
 	});

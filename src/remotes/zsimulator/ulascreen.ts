@@ -2,11 +2,13 @@
 import {EventEmitter} from "stream";
 import {Z80Cpu} from "./z80cpu";
 import {MemBuffer, Serializable} from "../../misc/membuffer";
+import {ExecuteInterface} from "./executeinterface";
+import {ZSimRemote} from "./zsimremote";
 
 
 /** The base class for the ULA implementation for ZX81 and ZX Spectrum.
  */
-export class UlaScreen extends EventEmitter implements Serializable {
+export class UlaScreen extends EventEmitter implements Serializable, ExecuteInterface {
 	// Required for memory and ports.
 	protected z80Cpu: Z80Cpu;
 
@@ -23,10 +25,8 @@ export class UlaScreen extends EventEmitter implements Serializable {
 
 	/** Executes the ULA. The ZX81 ULA may grab tstates from
 	 * the CPU to simulate the NMI interrupt.
-	 * @param currentTstates The t-states that were just used by
-	 * DMA or CPU.
 	 */
-	public execute(currentTstates: number) {
+	public execute(zsim: ZSimRemote) {
 		throw Error("UlaScreen: execute not implemented");
 	}
 
