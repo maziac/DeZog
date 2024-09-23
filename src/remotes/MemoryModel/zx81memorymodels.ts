@@ -44,7 +44,7 @@ export class MemoryModelZX81_1k extends MemoryModel {	// NOSONAR
 					banks: [
 						{
 							index: 0,
-							name: 'ROM 0x0000-0x1FFF',
+							name: 'ROM 0000-1FFF',
 							rom: Utility.getExtensionPath() + '/data/zx81.rom'
 						}
 					]
@@ -62,7 +62,7 @@ export class MemoryModelZX81_1k extends MemoryModel {	// NOSONAR
 					banks: [
 						{
 							index: 1,
-							name: 'RAM 0x4000-0x43FF'
+							name: 'RAM 4000-43FF'
 						}
 					]
 				},
@@ -86,7 +86,7 @@ export class MemoryModelZX81_1k extends MemoryModel {	// NOSONAR
 					range: [0xC000, 0xC3FF],
 					banks: [
 						{
-							index: 1,	// Mirrored 0x4000-0x43FF
+							index: 1,	// Mirrored RAM 0x4000-0x43FF
 						}
 					]
 				},
@@ -105,7 +105,7 @@ export class MemoryModelZX81_2k extends MemoryModel {	// NOSONAR
 					banks: [
 						{
 							index: 0,
-							name: 'ROM 0x0000-0x1FFF',
+							name: 'ROM 0000-1FFF',
 							rom: Utility.getExtensionPath() + '/data/zx81.rom'
 						}
 					]
@@ -123,7 +123,7 @@ export class MemoryModelZX81_2k extends MemoryModel {	// NOSONAR
 					banks: [
 						{
 							index: 1,
-							name: 'RAM 0x4000-0x47FF'
+							name: 'RAM 4000-47FF'
 						}
 					]
 				},
@@ -166,7 +166,7 @@ export class MemoryModelZX81_16k extends MemoryModel {	// NOSONAR
 					banks: [
 						{
 							index: 0,
-							name: 'ROM 0x0000-0x1FFF',
+							name: 'ROM 0000-1FFF',
 							rom: Utility.getExtensionPath() + '/data/zx81.rom'
 						}
 					]
@@ -184,7 +184,7 @@ export class MemoryModelZX81_16k extends MemoryModel {	// NOSONAR
 					banks: [
 						{
 							index: 1,
-							name: 'RAM 0x4000-0x7FFF'
+							name: 'RAM 4000-7FFF'
 						}
 					]
 				},
@@ -227,7 +227,7 @@ export class MemoryModelZX81_32k extends MemoryModel {	// NOSONAR
 					banks: [
 						{
 							index: 0,
-							name: 'ROM 0x0000-0x1FFF',
+							name: 'ROM 0000-1FFF',
 							rom: Utility.getExtensionPath() + '/data/zx81.rom'
 						}
 					]
@@ -245,7 +245,7 @@ export class MemoryModelZX81_32k extends MemoryModel {	// NOSONAR
 					banks: [
 						{
 							index: 1,
-							name: 'RAM 0x4000-0x7FFF'
+							name: 'RAM 4000-7FFF'
 						}
 					]
 				},
@@ -281,7 +281,7 @@ export class MemoryModelZX81_48k extends MemoryModel {	// NOSONAR
 					banks: [
 						{
 							index: 0,
-							name: 'ROM 0x0000-0x1FFF',
+							name: 'ROM 0000-1FFF',
 							rom: Utility.getExtensionPath() + '/data/zx81.rom'
 						}
 					]
