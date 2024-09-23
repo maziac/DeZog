@@ -1,4 +1,3 @@
-
 import {MemBuffer} from "../../misc/membuffer";
 import {Chroma81Type} from "../../settings/settings";
 import {UlaScreen} from "./ulascreen";
@@ -363,13 +362,13 @@ export class Zx81UlaScreen extends UlaScreen {
 			if (this.hsyncTstatesCounter < Zx81UlaScreen.TSTATES_PER_SCANLINE)
 				return false;	// No HSYNC on yet
 			// HSYNC off
-			this.hsyncTstatesCounter -= Zx81UlaScreen.TSTATES_PER_SCANLINE;
+			this.hsyncTstatesCounter %= Zx81UlaScreen.TSTATES_PER_SCANLINE;
 			this.hsync = false;
 			logOn && console.log(this.hsyncTstatesCounter, "HSYNC off (high)");
 			// Increase line counter
 			this.ulaLineCounter = (this.ulaLineCounter + 1) & 0x07;
 			this.lineCounter++;
-			return false;
+			return true;
 		}
 
 		// HSYNC is off, check for on
@@ -384,7 +383,7 @@ export class Zx81UlaScreen extends UlaScreen {
 
 		this.hsync = true;
 		logOn && console.log(this.hsyncTstatesCounter, "HSYNC on (low)");
-		return true;
+		return false;
 	}
 
 

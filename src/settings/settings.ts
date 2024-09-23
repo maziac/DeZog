@@ -624,10 +624,11 @@ export class Settings {
 					launchCfg.zsim.cpuFrequency = 3250000.0;	// 3.25Mhz
 				if (launchCfg.zsim.defaultPortIn === undefined)
 					launchCfg.zsim.defaultPortIn = 0xFF;
-				if (launchCfg.zsim.zx81UlaOptions?.chroma81 === undefined) {
-					launchCfg.zsim.zx81UlaOptions = {
-						chroma81: {}
-					} as zx81UlaOptions;
+				if (launchCfg.zsim.zx81UlaOptions === undefined) {
+					launchCfg.zsim.zx81UlaOptions = {} as zx81UlaOptions;
+				}
+				if (launchCfg.zsim.zx81UlaOptions.chroma81 === undefined) {
+					launchCfg.zsim.zx81UlaOptions.chroma81 = {} as Chroma81Type;
 				}
 			}
 		}
