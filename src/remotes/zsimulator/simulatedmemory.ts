@@ -564,7 +564,7 @@ export class SimulatedMemory implements Serializable {
 
 	// Reads 2 bytes.
 	// This is **not** used by the Z80 CPU.
-	// Used to read the WORD at SP.
+	// Used e.g to read the WORD at SP.
 	public getMemory16(addr64k: number): number {
 		return this.getMemoryValue(addr64k, 2);
 	}

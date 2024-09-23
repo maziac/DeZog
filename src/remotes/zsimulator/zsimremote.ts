@@ -30,6 +30,7 @@ import {CustomJoystick} from './customjoystick';
 import {Zx81UlaScreenHiRes} from './zx81ulascreenhires';
 import path = require('path');
 import {ExecuteInterface} from './executeinterface';
+import {Zx81LoadTrap} from './zx81loadtrap';
 
 
 
@@ -46,6 +47,9 @@ export class ZSimRemote extends DzrpRemote {
 
 	// The ULA screen simulation.
 	public zxUlaScreen: Zx81UlaScreen | SpectrumUlaScreen;
+
+	// The loading emulation.
+	protected zx81LoadTrap: Zx81LoadTrap;
 
 	// Stores the code coverage.
 	protected codeCoverage: CodeCoverageArray;
@@ -474,6 +478,14 @@ export class ZSimRemote extends DzrpRemote {
 					return undefined;
 				return this.zxnDMA.readPort();
 			});
+		}
+
+		// Check for ZX81 load emulation from file.
+		const zx81LoadTrap = zsim.zx81LoadTrap;
+		if (zx81LoadTrap) {
+			// Create the zxnDMA object
+			this.zx81LoadTrap = new Zx81LoadTrap(this.z80Cpu);
+			this.executors.unshift(this.zx81LoadTrap);	// Before z80cpu
 		}
 
 		// Initialize custom code e.g. for ports.
@@ -1088,15 +1100,14 @@ export class ZSimRemote extends DzrpRemote {
 	 * installed that is invoked when the LOAD/SAVE routine (0x0207) is called.
 	 * This routine takes care of the loading of the second file.
 	 */
-	protected zx81FileDirectory: string;
 	protected async loadBinZx81(filePath: string): Promise<void> {
 		// Remember the file's directory
-		this.zx81FileDirectory = path.dirname(filePath);
+		if (this.zx81LoadTrap) {
+			const folder = path.dirname(filePath);
+			this.zx81LoadTrap.setFolder(folder);
+		}
 		// Call super
 		await super.loadBinZx81(filePath);
-		// Install the HW emulation
-		const fileDirectory = path.dirname(filePath);
-	//---TODO:	this.zx81LoadRoutine.setDirectory(fileDirectory);
 	}
 
 

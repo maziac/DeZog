@@ -3424,6 +3424,13 @@ let cycle_counts_dd = [
    Object.defineProperty(this, "i", {
       get: () => {return i;}
    });
+   Object.defineProperty(this, "d", {
+      get: () => {return d;}
+   });
+
+   Object.defineProperty(this, "e", {
+      get: () => {return e;}
+   });
 
    Object.defineProperty(this, "interruptsEnabled", {
       get: () => {return iff1 != 0;}
