@@ -99,7 +99,9 @@ If you do not enter a filename, e.g. `LOAD ""` then the first (.p) file in the f
 
 You can also use globbing/wildcards. E.g. `LOAD "WR*/**/BOW*"` can result in loading the file from path "wrx/sub/bowling.p".
 
-Note: Globbing is done for `LOAD "..."` but not for "load" in launch.json.
+Note:
+- Globbing is done for `LOAD "..."` but not for "load" in launch.json.
+- `LOAD` also supports the load-address syntax. E.g. `LOAD "MUNCHER.UDG;8192"` will load the raw data file MUNCHER.UDG to address 8192.
 
 ## Loading a .p file
 Outside the "zsim" property use e.g:

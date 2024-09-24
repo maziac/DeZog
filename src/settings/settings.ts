@@ -269,7 +269,7 @@ export interface ZSimType {
 	// Enables overriding the load (save) routine of the ZX81 ROM.
 	// If enabled the load routine (at 0x0343) of the ZX81 is skipped and a file is loaded
 	// directly into the memory. Afterwards execution is continued at 0x0207.
-	zx81LoadTrap: boolean;
+	zx81LoadOverlay: boolean;
 
 	// The displayed border width in pixels. No border if 0. Works only in conjunction with ulaScreen == 'spectrum'.
 	zxBorderWidth: number,
@@ -616,8 +616,8 @@ export class Settings {
 					launchCfg.zsim.visualMemory = true;
 				if (launchCfg.zsim.ulaScreen === undefined)
 					launchCfg.zsim.ulaScreen = 'zx81';
-				if (launchCfg.zsim.zx81LoadTrap === undefined)
-					launchCfg.zsim.zx81LoadTrap = true;
+				if (launchCfg.zsim.zx81LoadOverlay === undefined)
+					launchCfg.zsim.zx81LoadOverlay = true;
 				if (launchCfg.zsim.zxBorderWidth === undefined)
 					launchCfg.zsim.zxBorderWidth = 0;
 				if (launchCfg.zsim.cpuFrequency === undefined)
@@ -660,8 +660,8 @@ export class Settings {
 			launchCfg.zsim.zx81UlaOptions = {
 			} as zx81UlaOptions;
 		}
-		if (launchCfg.zsim.zx81LoadTrap === undefined)
-			launchCfg.zsim.zx81LoadTrap = false;
+		if (launchCfg.zsim.zx81LoadOverlay === undefined)
+			launchCfg.zsim.zx81LoadOverlay = false;
 
 		const ulaScreenOptions = launchCfg.zsim.zx81UlaOptions;
 		if (ulaScreenOptions.hires === undefined)

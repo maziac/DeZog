@@ -30,7 +30,7 @@ import {CustomJoystick} from './customjoystick';
 import {Zx81UlaScreenHiRes} from './zx81ulascreenhires';
 import path = require('path');
 import {ExecuteInterface} from './executeinterface';
-import {Zx81LoadTrap} from './zx81loadtrap';
+import {Zx81LoadOverlay} from './zx81loadoverlay';
 
 
 
@@ -49,7 +49,7 @@ export class ZSimRemote extends DzrpRemote {
 	public zxUlaScreen: Zx81UlaScreen | SpectrumUlaScreen;
 
 	// The loading emulation.
-	protected zx81LoadTrap: Zx81LoadTrap;
+	protected zx81LoadTrap: Zx81LoadOverlay;
 
 	// Stores the code coverage.
 	protected codeCoverage: CodeCoverageArray;
@@ -481,10 +481,10 @@ export class ZSimRemote extends DzrpRemote {
 		}
 
 		// Check for ZX81 load emulation from file.
-		const zx81LoadTrap = zsim.zx81LoadTrap;
+		const zx81LoadTrap = zsim.zx81LoadOverlay;
 		if (zx81LoadTrap) {
 			// Create the zxnDMA object
-			this.zx81LoadTrap = new Zx81LoadTrap(this.z80Cpu);
+			this.zx81LoadTrap = new Zx81LoadOverlay(this.z80Cpu);
 			this.zx81LoadTrap.setFolder(Utility.getRootPath());
 			this.executors.unshift(this.zx81LoadTrap);	// Before z80cpu
 			this.zx81LoadTrap.on('message', txt => {

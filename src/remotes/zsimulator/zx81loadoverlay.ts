@@ -7,7 +7,7 @@ import {EventEmitter} from "stream";
 import * as fglob from 'fast-glob';
 
 
-export class Zx81LoadTrap extends EventEmitter {
+export class Zx81LoadOverlay extends EventEmitter {
 
 	// Reference to the CPU.
 	public z80Cpu: Z80Cpu;
@@ -30,7 +30,7 @@ export class Zx81LoadTrap extends EventEmitter {
 		this.folder = folder;
 		if (!this.folder.endsWith('/'))
 			this.folder += '/';
-		//console.log('Zx81LoadTrap: folder: ' + this.folder);
+		//console.log('Zx81LoadOverlay: folder: ' + this.folder);
 	}
 
 
@@ -60,22 +60,41 @@ export class Zx81LoadTrap extends EventEmitter {
 				break;
 			strAddr64k++;
 		}
-		const fname = zx81FName || '*';	// Use a wildcard for LOAD ""
+		let fname = zx81FName;
 
 		// Set registers
 		const z80Cpu = this.z80Cpu;
 		z80Cpu.pc = 0x0207;	// After LOAD routine
 
+	 	// Check for suffix address like in `LOAD "GRAPHICS.UDG;8192"` that
+		// will load the file to address 8192.
+		const semicolonPos = fname.indexOf(';');
+		let loadAddr;
+		if (semicolonPos >= 0) {
+			// Load raw file
+			const addrStr = fname.substring(semicolonPos + 1);
+			loadAddr = parseInt(addrStr);
+			if (isNaN(loadAddr))
+				throw new Error(`LOAD "${fname}": Invalid address`);
+			fname = fname.substring(0, semicolonPos);
+		}
+
+		// Construct path
+		let filePattern = this.folder + fname;
+		if (!fname)
+			filePattern += '*';	// Use a wildcard for LOAD ""
 		// Check which extension to use: .p or .p81
-		const pathWoExt = this.folder + fname;
-		//console.log('Zx81LoadTrap: pathWoExt: ' + pathWoExt);
-		const filePath = this.findFirstMatchingFile(pathWoExt + '{,.P,.81,.P81}');
+		if (loadAddr === undefined)
+			filePattern += '{,.P,.81,.P81}';
+
+		//console.log('Zx81LoadOverlay: pathWoExt: ' + pathWoExt);
+		const filePath = this.findFirstMatchingFile(filePattern);
 		if (!filePath) {
-			throw new Error(`Trying to LOAD "${zx81FName}". Glob pattern "${pathWoExt}{,.P,.81,.P81}" was not found.`);
+			throw new Error(`Trying to LOAD "${zx81FName}". Glob pattern "${filePattern}" was not found.`);
 		}
 
 		// Load file
-		const len = this.loadPFile(filePath);
+		const len = (loadAddr === undefined) ? this.loadPFile(filePath) : this.loadFile(filePath,loadAddr);
 
 		// Add some tstates. Proportional to the length of the file.
 		// The ZX81 average data transfer rate is about 307 bps (38 bytes/sec).
@@ -87,9 +106,21 @@ export class Zx81LoadTrap extends EventEmitter {
 	}
 
 
+	/** Loads a raw file.
+	 * @param filePath The file path with extension.
+	 * @param addr The address to load the file to.
+	 */
+	protected loadFile(filePath: string, addr: number): number {
+		// Load raw file
+		const fileBuffer = fs.readFileSync(filePath);
+		// Write file
+		this.z80Cpu.memory.writeBlock(addr & 0xFFFF, fileBuffer);
+		return fileBuffer.length;
+	}
+
+
 	/** Inner Zx81 load function.
 	 * Also used by zx81LoadTrap.
-	 * Tries to first load a .p file and if this fails a .p81 file.
 	 * @param filePath The file path with extension.
 	 */
 	protected loadPFile(filePath: string): number {
@@ -149,6 +180,7 @@ export class Zx81LoadTrap extends EventEmitter {
 
 		return len;
 	}
+
 
 	/** Converts a ZX81 character code into an an ASCII character (string)
 	 * @param char The ZX81 character code. Will be anded with 0x3F.
