@@ -726,19 +726,20 @@ export class ZSimulationView extends BaseView {
 					.border {
 						outline: 1px solid var(--vscode-foreground);
 						outline-offset: 0;
-						height:1em;
-						position:absolute;
+						height: 1em;
+						position: absolute;
 						text-align: center;
+            			overflow: hidden;  /* clip */
 					}
 					.disabled {
 						font-style: italic;
 					}
 					.slot {
-						height:2em;
+						height: 2em;
 						background: gray
 					}
 					.transparent {
-						height:2em;
+						height: 2em;
 						background: transparent
 					}
 				</style>
@@ -815,7 +816,7 @@ export class ZSimulationView extends BaseView {
 				const slotRange = slotRanges[i];
 				const pos = slotRange.start * 100 / 0x10000;
 				const width = (slotRange.end + 1 - slotRange.start) * 100 / 0x10000;
-				const add = `<div class="border" id="slot${i}_id" style="top:3.5em; left:${pos}%; width:${width}%; height: 2em"></div>
+				const add = `<div class="border" id="slot${i}_id" style="top:3.5em; left:${pos}%; width:${width}%; height: 2em;"></div>
 			`;
 				html += add;
 			}
