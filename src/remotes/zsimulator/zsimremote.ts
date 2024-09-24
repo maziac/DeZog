@@ -485,7 +485,11 @@ export class ZSimRemote extends DzrpRemote {
 		if (zx81LoadTrap) {
 			// Create the zxnDMA object
 			this.zx81LoadTrap = new Zx81LoadTrap(this.z80Cpu);
+			this.zx81LoadTrap.setFolder(Utility.getRootPath());
 			this.executors.unshift(this.zx81LoadTrap);	// Before z80cpu
+			this.zx81LoadTrap.on('message', txt => {
+				this.emit('debug_console', txt);
+			});
 		}
 
 		// Initialize custom code e.g. for ports.

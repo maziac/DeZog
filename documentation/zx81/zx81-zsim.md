@@ -30,7 +30,8 @@ What it does is to set the following zsim properties:
             "borderColor": 0
         },
         "debug": false
-  	}
+  	},
+    "zx81LoadTrap": true
 ~~~
 
 If you use the preset you can easily override the defaults, e.g. to define a 16k ZX81 use:
@@ -80,8 +81,25 @@ Note:
       - "colourizationFile": You can enter here the file path of your colourization file. You can get a lot of colourization files [here](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_ColourisationDefinitions.htm).
 
 # Load a program
-DeZog can load .p, .p81 and .81 files, which are more or less the same anyway with the "load" property.
+DeZog can load .p, .p81 and .81 files (which are more or less the same anyway) with the "load" property.
 Additionally you can also load raw data with the "loadObjs" property.
+
+You can as well load from a file by entering `LOAD "<filename>"` in the ZX81.
+This is only enabled if "zx81LoadTrap" is set to true.
+In that case the CPU's program counter is checked. When it tries to load from tape the loading from file is injected.
+
+For clarification: if you load with "load" in the launch.json the "zx81LoadTrap" functionality is not used and you don't need to have the flag enabled.
+But any successing `LOAD` of the ZX81 would require this flag to be enabled, so it is enabled by default for the "zx81" preset.
+
+If you use "load" any successing `LOAD` of a .p file will be done from the same folder as you used for "load".
+If you don't use "load" the `LOAD` will search for the file in the workspace of vscode.
+
+It is also possible to use folders within the `LOAD` command and you give the filename without extension, e.g. `LOAD "FOLDER/GAME"` would load the file `GAME.P` from `FOLDER`.
+If you do not enter a filename, e.g. `LOAD ""` then the first (.p) file in the folder will be loaded.
+
+You can also use globbing/wildcards. E.g. `LOAD "WR*/**/BOW*"` can result in loading the file from path "wrx/sub/bowling.p".
+
+Note: Globbing is done for `LOAD "..."` but not for "load" in launch.json.
 
 ## Loading a .p file
 Outside the "zsim" property use e.g:

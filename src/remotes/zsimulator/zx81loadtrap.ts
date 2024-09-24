@@ -4,7 +4,8 @@ import {Z80Cpu} from "./z80cpu";
 import {ZSimRemote} from './zsimremote';
 import * as path from 'path';
 import {EventEmitter} from "stream";
-import {Utility} from '../../misc/utility';
+import * as glob from 'glob';
+import * as fglob from 'fast-glob';
 
 
 export class Zx81LoadTrap extends EventEmitter {
@@ -21,8 +22,6 @@ export class Zx81LoadTrap extends EventEmitter {
 	constructor(z80Cpu: Z80Cpu) {
 		super();
 		this.z80Cpu = z80Cpu;
-		this.setFolder(Utility.getRootPath());
-		console.log('Zx81LoadTrap: folder: ' + this.folder);
 	}
 
 	/** Set the folder to load files from.
@@ -31,7 +30,8 @@ export class Zx81LoadTrap extends EventEmitter {
 	public setFolder(folder: string) {
 		this.folder = folder;
 		if (!this.folder.endsWith('/'))
-			 this.folder += '/';
+			this.folder += '/';
+		console.log('Zx81LoadTrap: folder: ' + this.folder);
 	}
 
 
@@ -50,15 +50,18 @@ export class Zx81LoadTrap extends EventEmitter {
 			return;
 
 		// Get filename
-		let fname = '';
+		let zx81FName = '';
 		let strAddr64k = this.z80Cpu.de;
 		while (strAddr64k < 0x10000) {
 			const byte = this.z80Cpu.memory.read8(strAddr64k);
-			fname += this.zx81CharToAscii(byte);
-			if (byte & 0x80)
+			if (byte === 11)	// In case of LOAD "" (11 is the ")
+				break;
+			zx81FName += this.zx81CharToAscii(byte);
+			if (byte & 0x80 )
 				break;
 			strAddr64k++;
 		}
+		const fname = zx81FName || '*';	// Use a wildcard for LOAD ""
 
 		// Set registers
 		const z80Cpu = this.z80Cpu;
@@ -76,13 +79,10 @@ export class Zx81LoadTrap extends EventEmitter {
 
 		// Check which extension to use: .p or .p81
 		const pathWoExt = this.folder + fname;
-		let filePath = pathWoExt + '.P';
-		if (!fs.existsSync(filePath)) {
-			// If .p file does not exist, check for .p81 file
-			filePath = pathWoExt + '.P81';
-			if (!fs.existsSync(filePath)) {
-				throw new Error(`Neither file ${pathWoExt}.P nor ${pathWoExt}.P81 was found.`);
-			}
+		console.log('Zx81LoadTrap: pathWoExt: ' + pathWoExt);
+		const filePath = this.findFirstMatchingFile(pathWoExt + '.{P,81,P81}');
+		if (!filePath) {
+			throw new Error(`Trying to LOAD "${zx81FName}". Glob pattern "${pathWoExt}.{P,81,P81}" was not found.`);
 		}
 
 		// Load file
@@ -92,6 +92,9 @@ export class Zx81LoadTrap extends EventEmitter {
 		// The ZX81 average data transfer rate is about 307 bps (38 bytes/sec).
 		// => 3250000 * len / 38
 		zsim.executeTstates += Math.ceil(zsim.z80Cpu.cpuFreq * len / 38);
+
+		// Info text
+		this.emit('message', `LOAD "${zx81FName}": loaded ${len} bytes, (${filePath})`);
 	}
 
 
@@ -177,4 +180,15 @@ export class Zx81LoadTrap extends EventEmitter {
 		const conv = convTable[char];
 		return conv;
 	}
+
+
+	/** Find the first file matching the pattern.
+	 * @param pattern The pattern to search for.
+	 * @returns The first file matching the pattern or null if no file was found.
+	 */
+	protected findFirstMatchingFile(pattern: string): string | null {
+		const files = fglob.sync(pattern, {caseSensitiveMatch: false});
+		return files.length > 0 ? files[0] : null;
+	}
+
 }
