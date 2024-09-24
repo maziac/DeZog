@@ -4,7 +4,6 @@ import {Z80Cpu} from "./z80cpu";
 import {ZSimRemote} from './zsimremote';
 import * as path from 'path';
 import {EventEmitter} from "stream";
-import * as glob from 'glob';
 import * as fglob from 'fast-glob';
 
 
@@ -31,7 +30,7 @@ export class Zx81LoadTrap extends EventEmitter {
 		this.folder = folder;
 		if (!this.folder.endsWith('/'))
 			this.folder += '/';
-		console.log('Zx81LoadTrap: folder: ' + this.folder);
+		//console.log('Zx81LoadTrap: folder: ' + this.folder);
 	}
 
 
@@ -66,23 +65,13 @@ export class Zx81LoadTrap extends EventEmitter {
 		// Set registers
 		const z80Cpu = this.z80Cpu;
 		z80Cpu.pc = 0x0207;	// After LOAD routine
-		//await this.sendDzrpCmdSetRegister(Z80_REG.SP, topSpStack);
-		// TODO: löschen was geht
-		z80Cpu.bc = 0x0080;
-		z80Cpu.de = 0xffff;
-		z80Cpu.ix = 0x0281;	// Required?
-		z80Cpu.iy = 0x4000;
-		z80Cpu.de2 = 0x002b;	// Required?
-		z80Cpu.im = 1;
-		z80Cpu.i = 0x1e;
-		z80Cpu.a2 = 0xF8;	// Required?
 
 		// Check which extension to use: .p or .p81
 		const pathWoExt = this.folder + fname;
-		console.log('Zx81LoadTrap: pathWoExt: ' + pathWoExt);
-		const filePath = this.findFirstMatchingFile(pathWoExt + '.{P,81,P81}');
+		//console.log('Zx81LoadTrap: pathWoExt: ' + pathWoExt);
+		const filePath = this.findFirstMatchingFile(pathWoExt + '{,.P,.81,.P81}');
 		if (!filePath) {
-			throw new Error(`Trying to LOAD "${zx81FName}". Glob pattern "${pathWoExt}.{P,81,P81}" was not found.`);
+			throw new Error(`Trying to LOAD "${zx81FName}". Glob pattern "${pathWoExt}{,.P,.81,.P81}" was not found.`);
 		}
 
 		// Load file

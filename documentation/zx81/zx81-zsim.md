@@ -94,7 +94,7 @@ But any successing `LOAD` of the ZX81 would require this flag to be enabled, so 
 If you use "load" any successing `LOAD` of a .p file will be done from the same folder as you used for "load".
 If you don't use "load" the `LOAD` will search for the file in the workspace of vscode.
 
-It is also possible to use folders within the `LOAD` command and you give the filename without extension, e.g. `LOAD "FOLDER/GAME"` would load the file `GAME.P` from `FOLDER`.
+It is also possible to use folders within the `LOAD` command and you give the filename with or without extension, e.g. `LOAD "FOLDER/GAME"` would load the file `GAME.P` from `FOLDER`.
 If you do not enter a filename, e.g. `LOAD ""` then the first (.p) file in the folder will be loaded.
 
 You can also use globbing/wildcards. E.g. `LOAD "WR*/**/BOW*"` can result in loading the file from path "wrx/sub/bowling.p".
