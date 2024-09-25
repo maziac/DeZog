@@ -4,9 +4,6 @@
 # Supported Graphics Modes
 zsim supports number of different ZX81 graphics mode. Apart from the chroma81 all others don't require any flag to be set.
 
-
-
-
 ## standard graphics
 The standard graphics mode. I=0x1E. A character is taken from the ROM.
 Each char is defined by 8 bytes from the ROM.
@@ -53,6 +50,19 @@ character_code = [video_addr & 0x7FFF] & 0x3F
     - mode 0: [$C000 + character_code * 8]
     - mode 1:  [video_addr] (The dfile size and the color attributes size is usually just 32)
 
+# Implementation of Graphic Modes
+There are 2 graphic generators.
+One for character graphics (the standard graphics output) and one for pixel graphics.
+The first one simply takes the dfile from memory and outputs in on screen.
+It does not exactly simulate the video output and the timings.
+But as long as only standard graphics are used the output is good enough.
+
+As soon as the ZX81 software uses some "tricks" to get higher resolution graphics this will lead to wrong output.
+For this a more accurate simulation of the ZX81 video signal creation exists which supports e.g. pseudo-hires or WRX.
+
+The reason why the simpler mode exists is that it can be advantageous in case of debugging.
+In this mode the onscreen characters can be seen as soon as they are placed in the dfile.
+In the other mode they would become visible not before the video signal is created.
 
 # References - games/graphics mode
 - Standard graphics: ["Battlestar Galactica"](https://archive.org/details/Battlestar_Galactica_1982_Ch._Zwerschke)
