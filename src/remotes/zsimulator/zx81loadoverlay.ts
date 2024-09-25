@@ -74,8 +74,12 @@ export class Zx81LoadOverlay extends EventEmitter {
 			// Load raw file
 			const addrStr = fname.substring(semicolonPos + 1);
 			loadAddr = parseInt(addrStr);
-			if (isNaN(loadAddr))
-				throw new Error(`LOAD "${fname}": Invalid address`);
+			if (isNaN(loadAddr)) {
+				z80Cpu.pc = 0x03A6;	// BREAK_CONT_REPEATS;
+				this.emit('message', `Trying to LOAD "${zx81FName}": Invalid address`);
+				return;
+				//throw new Error(`Trying to LOAD "${fname}": Invalid address`);
+			}
 			fname = fname.substring(0, semicolonPos);
 		}
 
@@ -90,7 +94,10 @@ export class Zx81LoadOverlay extends EventEmitter {
 		//console.log('Zx81LoadOverlay: pathWoExt: ' + pathWoExt);
 		const filePath = this.findFirstMatchingFile(filePattern);
 		if (!filePath) {
-			throw new Error(`Trying to LOAD "${zx81FName}". Glob pattern "${filePattern}" was not found.`);
+			z80Cpu.pc = 0x03A6;	// BREAK_CONT_REPEATS;
+			this.emit('message', `Trying to LOAD "${zx81FName}". Glob pattern "${filePattern}" was not found.`);
+			return;
+			//throw new Error(`Trying to LOAD "${zx81FName}". Glob pattern "${filePattern}" was not found.`);
 		}
 
 		// Load file
