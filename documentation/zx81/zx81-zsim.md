@@ -52,34 +52,6 @@ Note:
 - The "execAddress" property is a general property, so it is outside "zsim".
 - In fact you could even skip the "execAddress" property, as it's default is 0 anyway.
 
-# Chroma 81 support
- "zx81UlaOptions":
-  ~~~
-  {
-    "hires": true,
-    "firstLine": 56,
-    "lastLine": 247,
-    "chroma81": {
-        "available": true,
-        "enabled": false,
-        "mode": 0,
-        "borderColor": 0,
-        "colourizationFile": ""
-    },
-    "debug": false
-  }
-  ~~~
-  The above shows the default values.
-    - "hires": If true the generation of the screen output by the cpu is simulated. This allows to display hires programs. If false the ZX81 dfile is converted directly into screen graphics. This can be an advantage when debugging a non-hires game.
-    - "firstLine"/"lastLine": Used only if "hires" is true. The first and last line (inclusive) that should be displayed.
-    - "debug": If true a gray background is shown for the screen areas without output. Makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. If "chroma81" is selected it also initialized the chroma81 RAM (0xC000-0xFFFF) to 2 colors. Otherwise you might not see anything if ink and paper color are equal.
-    - "chroma81": Supports the chroma81 (see [Chroma 81 Interface](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm)).
-      - "available": Attach the chroma81. Now it can be enabled/disabled via port 0x7FEF.
-      - "enabled": The initial state of the chroma81.
-      - "mode": The initial color mode (0/1) of the chroma81.
-      - "borderColor": The border color: 0-15 (like spectrum colors).
-      - "colourizationFile": You can enter here the file path of your colourization file. You can get a lot of colourization files [here](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_ColourisationDefinitions.htm).
-
 # Load a program
 DeZog can load .p, .p81 and .81 files (which are more or less the same anyway) with the "load" property.
 Additionally you can also load raw data with the "loadObjs" property.
@@ -181,9 +153,6 @@ Original:
         DEFB    00000000b
 ~~~
 
-## The Colourization Files
-
-TODO
 
 # ULA (The screen display)
 The ULA was the HW chip that, together with the CPU, was responsible for the video generation.
@@ -201,7 +170,7 @@ You can choose between modes by setting "hires" to true or false (default is tru
 	"hires": true/false
 }
 ~~~
-You can simulate pseudo-hires, hires (wrx, arx) and non-hires games/programs with "hires" set to "true".
+You can simulate pseudo-hires, chr%64/chr$128, hires (wrx, arx) and non-hires games/programs with "hires" set to "true".
 Setting "hires" to false can be an advantage when debugging/developing non-hires games.
 If "hires" is false the dfile (the video screen) is decoded by "zsim" directly.
 The advantage is that any change in the screen is immediately visible as soon as the byte is added to the dfile.
@@ -226,21 +195,54 @@ If you are developing a hires game you have to use `"hires": true`, of course.
 
 Note: To simulate ARX hires graphics you need to use a memory model that enables RAM in the area 0x2000-0x3FFF, i.e. "ZX81-56K".
 
-## Collapsed dfile
+## zx81UlaOptions
+ "zx81UlaOptions":
+  ~~~
+  {
+    "hires": true,
+    "firstLine": 56,
+    "lastLine": 247,
+    "chroma81": {
+        "available": true,
+        "enabled": false,
+        "mode": 0,
+        "borderColor": 0,
+        "colourizationFile": ""
+    },
+    "debug": false
+  }
+  ~~~
+  The above shows the default values.
+
+### "hires"
+If true the generation of the screen output by the cpu is simulated. This allows to display hires programs. If false the ZX81 dfile is converted directly into screen graphics. This can be an advantage when debugging a non-hires game.
+
+### "debug"
+If true a gray background is shown for the screen areas without output. Makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. If "chroma81" is selected it also initializes the chroma81 RAM (0xC000-0xFFFF) to 2 colors. Otherwise you might not see anything if ink and paper color are equal (i.e. 0).
+
+#### Collapsed dfile
 In a ZX81 with 1-2k RAM the dfile is collapsed, i.e. it uses only the full width of a line if necessary. If the line does not contain anything no RAM is used for it.
 In zsim this can be visualized (in standard and hires mode) with the "debug" option.
 If "debug" is true, everything that is not output to the screen is gray.
 
 Here is the display of a ZX81 with only 1k RAM:
-![](images/collapsed-dfile.jpg)
+![](images/collapsed-dfile.jpg).
 
-## firstLine, lastLine
+### firstLine, lastLine
 These 2 properties are only used if "hires" is true.
 With the values you can adjust the shown screen height.
 Normally the default values (46, 247) should work fine.
 However, depending on the hires algorithm the Z80 program uses it might be that a different area has been chosen.
 - firstLine is the first horizontal line that will be displayed
 - lastLine is the last horizontal line that will be displayed (inclusive)
+
+### Chroma 81 support
+"chroma81": Supports the chroma81 (see [Chroma 81 Interface](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm)).
+    - "available": Attaches the chroma81. Now it can be enabled/disabled via port 0x7FEF.
+    - "enabled": The initial state of the chroma81.
+    - "mode": The initial color mode (0/1) of the chroma81.
+    - "borderColor": The initial border color: 0-15 (like spectrum colors).
+    - "colourizationFile": You can enter here the file path of your colourization file. You can get a lot of colourization files [here](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_ColourisationDefinitions.htm)
 
 # CPU frequency
 The original ZX81 runs at 3.25 Mhz.
