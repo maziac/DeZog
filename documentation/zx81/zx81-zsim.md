@@ -79,9 +79,29 @@ Note:
 - If you try to `LOAD` data into ROM. The LOAD routine will not fail but the ROM is unchanged. This is different from using "load" in "launch.json". The "load" is run in debugger context whereas the LOAD is from inside the ZX81 simulation and there ROM is read-only.
 - The file pattern matching is case insensitive.
 
+# Saving
+From the zsim/ZX81 you can save data by using the ZX BASIC SAVE command.
+E.g.
+~~~
+SAVE "MYPROGRAM"
+~~~
+This will save the basic program to the file "MYPROGRAM.P". I.e. if you omit an extension ".P" is added.
+The file is saved into the same folder you used in "load". If you haven't used "load" in "launch.json" then the file is save in the workspace folder.
+If a file with the same name already exists it will be renamed with a suffix that consists of a number counting up.
+E.g. "MYPROGRAM.P.1"
+
+You can not only save basic programs but also memory areas. The syntax is:
+~~~
+SAVE "MYDATA.DAT;<address>,<length>"
+~~~
+
+Eg. `SAVE "THEROM.DAT;0,8192` will save the ZX81 ROM to file "THEROM.DAT".
+
+Note: To save a memory area you can achieve very much the same by using the "DEBUG CONSOLE" and entering `-ms <address> <size> <filename>` which saves the memory block into the temp directory.
+
 
 # ULA (The screen display)
-The ULA was the HW chip that, together with the CPU, was responsible for the video generation.
+The ULA was the Hw/chip that, together with the CPU, was responsible for the video generation.
 It worked closely together with the Z80 CPU to generate the video signal.
 For details here are some references:
 - https://k1.spdns.de/Vintage/Sinclair/80/Sinclair%20ZX80/Tech%20specs/Wilf%20Rigter%27s%20ZX81%20Video%20Display%20Info.htm
@@ -343,8 +363,6 @@ You can also just use you real keyboard to simulate keypresses (note: the simula
 
 The Shift key is mapped to the left Alt key.
 But many real key combinations do work as well, e.g. a Shift-2 will generate the ZX81 key sequence Shift-P to create the quote character ".
-
-# LOAD/SAVE
 
 # Joysticks
 To simulate any joystick you can use the "customJoystick".
