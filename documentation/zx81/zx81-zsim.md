@@ -53,20 +53,22 @@ Note:
 - In fact you could even skip the "execAddress" property, as it's default is 0 anyway.
 
 # Load a program
-DeZog can load .p, .p81 and .81 files (which are more or less the same anyway) with the "load" property.
+DeZog can load .p, .p81 and .81 files (which are more or less the same anyway) with the "load" property, e.g:
+~~~json
+"load": "Galactica.p"
+~~~
 Additionally you can also load raw data with the "loadObjs" property.
 
-You can as well load from a file by entering `LOAD "<filename>"` in the ZX81.
-This is only enabled if "zx81LoadTrap" is set to true.
+You can as well load a file by entering `LOAD "<filename>"` in the ZX81.
+This is only enabled if "zx81LoadTrap" is set to true (which is the default for "preset": "zx81").
 In that case the CPU's program counter is checked. When it tries to load from tape the loading from file is injected.
 
 For clarification: if you load with "load" in the launch.json the "zx81LoadTrap" functionality is not used and you don't need to have the flag enabled.
-But any successing `LOAD` of the ZX81 would require this flag to be enabled, so it is enabled by default for the "zx81" preset.
 
 If you use "load" any successing `LOAD` of a .p file will be done from the same folder as you used for "load".
 If you don't use "load" the `LOAD` will search for the file in the workspace of vscode.
 
-It is also possible to use folders within the `LOAD` command and you give the filename with or without extension, e.g. `LOAD "FOLDER/GAME"` would load the file `GAME.P` from `FOLDER`.
+It is also possible to use folders within the `LOAD` command and you can give the filename with or without extension, e.g. `LOAD "FOLDER/GAME"` would load the file `GAME.P` from `FOLDER`.
 If you do not enter a filename, e.g. `LOAD ""` then the first (.p) file in the folder will be loaded.
 
 You can also use globbing/wildcards. E.g. `LOAD "WR*/**/BOW*"` can result in loading the file from path "wrx/sub/bowling.p".
@@ -74,90 +76,8 @@ You can also use globbing/wildcards. E.g. `LOAD "WR*/**/BOW*"` can result in loa
 Note:
 - Globbing is done for `LOAD "..."` but not for "load" in launch.json.
 - `LOAD` also supports the load-address syntax. E.g. `LOAD "MUNCHER.UDG;8192"` will load the raw data file MUNCHER.UDG to address 8192.
+- If you try to `LOAD` data into ROM. The LOAD routine will not fail but the ROM is unchanged. This is different from using "load" in "launch.json". The "load" is run in debugger context whereas the LOAD is from inside the ZX81 simulation and there ROM is read-only.
 - The file pattern matching is case insensitive.
-
-## Loading a .p file
-Outside the "zsim" property use e.g:
-~~~json
-"load": "Galactica.p"
-~~~
-
-This will correctly load the .p file to memory and set the system variables 0x4000-0x4008.
-Afterwards the program counter (PC) is set to start at 0x0207 (just after the ROM's load/save routine).
-The program either starts automatically or you will get the ZX Basic prompt.
-
-## Modding
-Although this is not directly related to debugging you can use DeZog very easily to mod the graphics of ZX81 games.
-Here as an example "Battlestar Galactica":
-
-The game with normal graphics, using the standard ZX81 charset:
-![](images/galactica-standard-charset.jpg)
-
-Here with a modded, custom charset:
-![](images/galactica-custom-charset.jpg)
-
-And here with added colors:
-![](images/galactica-custom-charset-colored.jpg)
-
-
-Of course, the changes you can do with this are limited as characters are re-used for other purposes (e.g. the "O" in "SCORE" which is also a meteor in the game).
-But on the other hand it is a very easy change.
-
-For the character set changes the only thing you need to do is to overwrite the ROM charset with your custom one.
-You do it with a "loadObjs" like this:
-~~~json
-"loadObjs": [
-	{	// Overwrite the charset
-		"path": "galactica_chars.bin",
-		"start": "0x1E00"
-	}
-]
-~~~
-
-As the ROM can be easily overwritten by DeZog it replaces all original bytes (characters) with that from galactica_chars.bin.
-
-To create galactica_chars.bin you can use a e.g. a hex editor, it's size should not exceed 512 bytes.
-
-More comfortable you could also use an assembler like sjasmplus to generate the bin file.
-
-TODO: Explain the color changes
-
-### Generate a custom charset with sjasmplus
-[galactica_chars.asm](extra/galactica_chars.asm) holds the assembled code for a modified charset.
-Use
-~~~
-sjasmplus --raw=galactica_chars.bin galactica_chars.asm
-~~~
-to convert it into a a binary galactica_chars.bin.
-
-You can use it (as shown above) in "loadObjs".
-
-The assembler code for the original charset can be found here: [zx81-standard-chars.asm](extra/zx81-standard-chars.asm).
-
-Here is the example for the modified "I" which is turned into a rocket:
-~~~asm
-; 0x2E: 'I', modified: Rocket
-        DEFB    00001000b
-        DEFB    00011100b
-        DEFB    00011100b
-        DEFB    00011100b
-        DEFB    00011100b
-        DEFB    00111110b
-        DEFB    00101010b
-        DEFB    00101010b
-~~~
-Original:
-~~~asm
-; 0x2E: 'I'
-        DEFB    00000000b
-        DEFB    00111110b
-        DEFB    00001000b
-        DEFB    00001000b
-        DEFB    00001000b
-        DEFB    00001000b
-        DEFB    00111110b
-        DEFB    00000000b
-~~~
 
 
 # ULA (The screen display)
@@ -245,10 +165,146 @@ However, depending on the hires algorithm the Z80 program uses it might be that 
 ### Chroma 81 support
 "chroma81": Supports the chroma81 (see [Chroma 81 Interface](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm)).
     - "available": Attaches the chroma81. Now it can be enabled/disabled via port 0x7FEF.
-    - "enabled": The initial state of the chroma81.
-    - "mode": The initial color mode (0/1) of the chroma81.
-    - "borderColor": The initial border color: 0-15 (like spectrum colors).
-    - "colourizationFile": You can enter here the file path of your colourization file. You can get a lot of colourization files [here](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_ColourisationDefinitions.htm)
+        - "enabled": The initial state of the chroma81.
+        - "mode": The initial color mode (0/1) of the chroma81.
+        - "borderColor": The initial border color: 0-15 (like spectrum colors).
+        - "colourizationFile": You can enter here the file path of your colourization file. See [Colors with a colourization file](#colors-with-a-colourization-file).
+
+# Modding
+Although not directly related to debugging you can use DeZog very easily to mod the graphics of ZX81 games.
+Here as an example "Battlestar Galactica":
+
+The game with normal graphics, using the standard ZX81 charset:
+![](images/galactica-standard-charset.jpg)
+
+Here with a modded, custom charset:
+![](images/galactica-custom-charset.jpg)
+
+And here with added colors:
+![](images/galactica-custom-charset-colored.jpg)
+
+
+Of course, the changes you can do with this are limited as characters are re-used for other purposes (e.g. the "O" in "SCORE" which is also a meteor in the game).
+But on the other hand it is a very easy change.
+
+For the character set changes the only thing you need to do is to overwrite the ROM charset with your custom one.
+You do it with a "loadObjs" like this:
+~~~json
+"loadObjs": [
+	{	// Overwrite the charset in ROM
+		"path": "galactica_chars.bin",
+		"start": "0x1E00"
+	}
+]
+~~~
+
+As the ROM can be easily overwritten by DeZog it replaces all original bytes (characters) with that from galactica_chars.bin.
+
+To create galactica_chars.bin you can use a e.g. a hex editor, it's size should not exceed 512 bytes.
+
+More comfortable you could also use an assembler like sjasmplus to generate the bin file.
+
+## Generate a custom charset with sjasmplus
+[galactica_chars.asm](extra/galactica_chars.asm) holds the assembler code for a modified charset.
+Use
+~~~
+sjasmplus --raw=galactica_chars.bin [galactica_chars.asm](extra/galactica_chars.bin)
+~~~
+to convert it into a a binary galactica_chars.bin.
+
+You can use it (as shown above) in "loadObjs".
+
+The assembler code for the original charset can be found here: [zx81-standard-chars.asm](extra/zx81-standard-chars.asm).
+
+Here is the example for the modified "I" which is turned into a rocket:
+~~~asm
+; 0x2E: 'I', modified: Rocket
+        DEFB    00001000b
+        DEFB    00011100b
+        DEFB    00011100b
+        DEFB    00011100b
+        DEFB    00011100b
+        DEFB    00111110b
+        DEFB    00101010b
+        DEFB    00101010b
+~~~
+Original:
+~~~asm
+; 0x2E: 'I'
+        DEFB    00000000b
+        DEFB    00111110b
+        DEFB    00001000b
+        DEFB    00001000b
+        DEFB    00001000b
+        DEFB    00001000b
+        DEFB    00111110b
+        DEFB    00000000b
+~~~
+
+## Generate custom colors
+### Colors with "loadObjs"
+[galactica_colors.asm](extra/galactica_colors.asm) holds the assembler code for a custom colors for "Battlestar Galactica".
+Use
+~~~
+sjasmplus --raw=galactica_colors.bin galactica_colors.asm
+~~~
+to convert it into a a binary [galactica_colors.bin](extra/galactica_colors.bin).
+
+You can use it in "loadObjs".
+~~~json
+"loadObjs": [
+    ...,
+	{	// Write colors to RAM
+		"path": "galactica_colors.bin",
+		"start": "0xC000"   // Chroma 81 address
+	}
+]
+~~~
+
+Furthermore you need to enable the Chroma 81:
+~~~json
+"loadObjs": [
+    "zx81UlaOptions": {
+        "chroma81": {
+            "available": true,
+            "enabled": true,
+            "mode": 0,
+            "borderColor": 7
+        }
+    }
+]
+~~~
+
+Examplarily here is the color code for the rocket:
+~~~asm
+; $2E - Character: 'I' / Rocket         CHR$(46)
+    DEFB $F9,$F9,$F9,$F9,$F9,$F9,$F9,$F9    ; blue on white
+~~~
+
+You define 8 colors for the 8 bytes a character is made of.
+In this example all are the same.
+The upper 4 bits are the background (PAPER) color, F = bright white.
+The lower 4 bits are the foreground (INK) color, 9 = bright blue.
+
+### Colors with a colourization file
+You can get a lot of colourization files [here](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_ColourisationDefinitions.htm)
+To use them you need to enable the Chroma 81:
+~~~json
+"loadObjs": [
+    "zx81UlaOptions": {
+        "chroma81": {
+            "available": true,
+            "enabled": true,
+            "mode": 0,
+            "borderColor": 7,
+    		"colourizationFile": "ZX80_Kong.col"
+        }
+    }
+]
+~~~
+
+In this setup the DeZog will enable the Chroma81 and will also load the colourization file.
+You don't need a ZX81 loader program for this to work.
 
 # CPU frequency
 The original ZX81 runs at 3.25 Mhz.
@@ -287,6 +343,8 @@ You can also just use you real keyboard to simulate keypresses (note: the simula
 
 The Shift key is mapped to the left Alt key.
 But many real key combinations do work as well, e.g. a Shift-2 will generate the ZX81 key sequence Shift-P to create the quote character ".
+
+# LOAD/SAVE
 
 # Joysticks
 To simulate any joystick you can use the "customJoystick".
