@@ -93,13 +93,17 @@ Here as an example "Battlestar Galactica":
 The game with normal graphics, using the standard ZX81 charset:
 ![](images/galactica-standard-charset.jpg)
 
-And here with a modded, custom charset:
+Here with a modded, custom charset:
 ![](images/galactica-custom-charset.jpg)
+
+And here with added colors:
+![](images/galactica-custom-charset-colored.jpg)
+
 
 Of course, the changes you can do with this are limited as characters are re-used for other purposes (e.g. the "O" in "SCORE" which is also a meteor in the game).
 But on the other hand it is a very easy change.
 
-The only thing you need to do is to overwrite the ROM charset with your custom one.
+For the character set changes the only thing you need to do is to overwrite the ROM charset with your custom one.
 You do it with a "loadObjs" like this:
 ~~~json
 "loadObjs": [
@@ -115,6 +119,8 @@ As the ROM can be easily overwritten by DeZog it replaces all original bytes (ch
 To create galactica_chars.bin you can use a e.g. a hex editor, it's size should not exceed 512 bytes.
 
 More comfortable you could also use an assembler like sjasmplus to generate the bin file.
+
+TODO: Explain the color changes
 
 ### Generate a custom charset with sjasmplus
 [galactica_chars.asm](extra/galactica_chars.asm) holds the assembled code for a modified charset.
