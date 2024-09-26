@@ -49,7 +49,7 @@ export class ZSimRemote extends DzrpRemote {
 	public zxUlaScreen: Zx81UlaScreen | SpectrumUlaScreen;
 
 	// The loading emulation.
-	protected zx81LoadTrap: Zx81LoadOverlay;
+	protected zx81LoadOverlay: Zx81LoadOverlay;
 
 	// Stores the code coverage.
 	protected codeCoverage: CodeCoverageArray;
@@ -481,13 +481,13 @@ export class ZSimRemote extends DzrpRemote {
 		}
 
 		// Check for ZX81 load emulation from file.
-		const zx81LoadTrap = zsim.zx81LoadOverlay;
-		if (zx81LoadTrap) {
+		const zx81LoadOverlay = zsim.zx81LoadOverlay;
+		if (zx81LoadOverlay) {
 			// Create the zxnDMA object
-			this.zx81LoadTrap = new Zx81LoadOverlay(this.z80Cpu);
-			this.zx81LoadTrap.setFolder(Utility.getRootPath());
-			this.executors.unshift(this.zx81LoadTrap);	// Before z80cpu
-			this.zx81LoadTrap.on('message', txt => {
+			this.zx81LoadOverlay = new Zx81LoadOverlay(this.z80Cpu);
+			this.zx81LoadOverlay.setFolder(Utility.getRootPath());
+			this.executors.unshift(this.zx81LoadOverlay);	// Before z80cpu
+			this.zx81LoadOverlay.on('message', txt => {
 				this.emit('debug_console', txt);
 			});
 		}
@@ -1106,9 +1106,9 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected async loadBinZx81(filePath: string): Promise<void> {
 		// Remember the file's directory
-		if (this.zx81LoadTrap) {
+		if (this.zx81LoadOverlay) {
 			const folder = path.dirname(filePath);
-			this.zx81LoadTrap.setFolder(folder);
+			this.zx81LoadOverlay.setFolder(folder);
 		}
 		// Call super
 		await super.loadBinZx81(filePath);

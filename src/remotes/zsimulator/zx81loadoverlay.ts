@@ -247,7 +247,6 @@ export class Zx81LoadOverlay extends EventEmitter {
 
 
 	/** Inner Zx81 load function.
-	 * Also used by zx81LoadTrap.
 	 * @param filePath The file path with extension.
 	 */
 	protected loadPFile(filePath: string): number {
