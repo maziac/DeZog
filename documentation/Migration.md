@@ -8,6 +8,8 @@ zsim:
 - "cpuLoadInterruptRange": renamed to "cpuLoad".
 - "zx81UlaOptions" has been added.
 
+Note: The release is dedicated to the simulation of the ZX81. You can find some more documentation [here](https://github.com/maziac/DeZog/blob/main/documentation/zx81/zx81-zsim.md).
+
 # Migrate from DeZog 3.3 to DeZog 3.4
 Logging:
 The Settings: 'dezog.log.customCode' changed to 'dezog.log.zsim.customCode'. Simply set the wanted value in the vscode Settings UI again.

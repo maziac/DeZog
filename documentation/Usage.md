@@ -39,6 +39,7 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 [z88dk-z80asm]: https://github.com/z88dk/z88dk
 [NEX File Format]: https://wiki.specnext.dev/NEX_file_format
 [ZX Spectrum Next]: https://www.specnext.com
+[ZX81 Debugging]: https://github.com/maziac/DeZog/blob/main/documentation/zx81/zx81-zsim.md
 [zxnext]: https://www.specnext.com
 
 [SpecBong Fork]: https://github.com/maziac/SpecBong
@@ -53,6 +54,7 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 - [Savannah-z80asm]
 - [z88dk-z80asm]
 - [ZX Spectrum Next]
+- [ZX81 Debugging]
 - [NEX File Format]
 - [SpecBong Fork]
 
@@ -249,13 +251,6 @@ Note: you can also omit this. In that case DeZog attaches to the emulator withou
     { "path": "out/graphics.bin", "start": "0x8000" }
 ],
 ~~~
-Note: "loadObjs" can also be used to load ZX81 *.p or *.81 files. These files are raw data files that are loaded to 0x4009 and could be loaded with
-~~~json
-"loadObjs": [
-    { "path": "myzx81.p", "start": "0x4009" }
-],
-~~~
-(you, of course, still would have to load the ZX81 ROM and to set the exec address.)
 - execAddress: for object files you can set the PC (program counter) start address. I.e. after loading the program will start at this address.
 - smallValuesMaximum: DeZog format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically constants like the maximum number of something you defined in your asm file.
 Big values are typically addresses. Here you can give the boundary between these 2 groups. bigValues usually also show their contents, i.e. the value at the address along the address itself. Usually 512 is a good boundary value.
@@ -878,7 +873,7 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
       - "mode": The initial color mode (0/1) of the chroma81.
       - "borderColor": The border color: 0-15 (like spectrum colors).
       - "colourizationFile": You can enter here the file path of your colourization file. You can get a lot of colourization files [here](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_ColourisationDefinitions.htm).
-- "zx81LoadTrap": true/false. Simulates loading from tape by loading from a file.
+- "zx81LoadOverlay": true/false. Simulates loading from tape by loading from a file.
 - "zxBorderWidth": The displayed border width in pixels. If set to 0 then no border is displayed. Works only for ulaScreen equal to "spectrum".
 - "cpuLoad": The Z80 CPU load is calculated by the number of executed HALT tStates vs all tStates. You can disable the display with a 0. 1 will exactly count till the next occurrence of a HALT. Higher numbers will average over more HALT instructions and lead to a more stable display. Practical values are around 10 (the default).
   Additionally the simulation speed is indicated by the color. If the display turns to yellow the simulation speed is not fast enough to cope with the set cpuFrequency. (If you e.g. set a ZX81 or ZX Spectrum to 35Mhz the display will probably turn to yellow.)

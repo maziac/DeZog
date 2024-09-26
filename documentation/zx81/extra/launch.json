@@ -1,0 +1,64 @@
+	{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "dezog",
+			"request": "launch",
+			"name": "zsim - Galactica",
+			"remoteType": "zsim",
+			"zsim": {
+				"preset": "zx81",
+				"zx81UlaOptions": {
+					"hires": false,
+					"chroma81": {
+						"available": true,
+						"enabled": true,
+						"mode": 0,
+						"borderColor": 0	// black
+					},
+					"borderSize": 20
+				},
+				"customJoy": {
+					"down": { // 6
+						"portMask": "0x0801",
+						"port": "0x00",
+						"bit": "0x10"
+					},
+					"up": { // 7
+						"portMask": "0x0801",
+						"port": "0x00",
+						"bit": "0x08"
+					},
+					"fire2": { // 0
+						"portMask": "0x0801",
+						"port": "0x00",
+						"bit": "0x01"
+					},
+					"fire4": { // 9
+						"portMask": "0x0801",
+						"port": "0x00",
+						"bit": "0x02"
+					}
+				}
+			},
+			"sjasmplus": [
+				{
+					"path": "roms/zx81-rom.sld"
+				}
+			],
+			"startAutomatically": true,
+			"rootFolder": "${workspaceFolder}",
+			"load": "Battlestar_Galactica.p",
+			"loadObjs": [
+				{ 	// Overwrite the charset
+					"path": "galactica_chars.bin",
+					"start": "0x1E00"
+				},
+				{ 	// Set the colors
+					"path": "galactica_colors.bin",
+					"start": "0xC000"
+				}
+			]
+		}
+	]
+}

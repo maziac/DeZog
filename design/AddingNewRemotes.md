@@ -31,7 +31,6 @@ Note: Please be aware that the ZEsarUX Remote was the initial implementation and
 I recommend avoiding the derivation of new Remotes from the ZEsarUX Remote or the RemoteBase. Instead, start with the DzrpQueuedRemote.
 Only consider deriving from RemoteBase if you encounter specific issues that cannot be addressed through the former approach.
 
-
 ~~~
                                        ┌─────────────────────────────┐
                                        │            Dezog            │
@@ -71,11 +70,11 @@ Only consider deriving from RemoteBase if you encounter specific issues that can
                                   │   Z80Cpu    │                                        │                                         │
                                   └─────────────┘                             ┌────────────────────┐                    ┌────────────────────┐
                                          ◆                                    │                    │                    │                    │
-                                ┌────────┴──────┐                             │  DzrpBufferRemote  │                    │     MameRemote     │
-                                │               │                             │                    │                    │                    │
-                          ┌──────────┐    ┌──────────┐                        └────────────────────┘                    └────────────────────┘
-                          │ ZxMemory │    │ Z80Ports │                                   △                                         ▲
-                          └──────────┘    └──────────┘                     ┌─────────────┴────────────────┐                        │
+                              ┌──────────┴──────┐                             │  DzrpBufferRemote  │                    │     MameRemote     │
+                              │                 │                             │                    │                    │                    │
+                     ┌─────────────────┐  ┌──────────┐                        └────────────────────┘                    └────────────────────┘
+                     │ SimulatedMemory │  │ Z80Ports │                                   △                                         ▲
+                     └─────────────────┘  └──────────┘                     ┌─────────────┴────────────────┐                        │
                                                                            │                              │                        │
                                                                 ┌─────────────────────┐        ┌────────────────────┐              │
                                                                 │                     │        │                    │              │

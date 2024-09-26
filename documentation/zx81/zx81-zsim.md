@@ -31,7 +31,7 @@ What it does is to set the following zsim properties:
         },
         "debug": false
   	},
-    "zx81LoadTrap": true
+    "zx81LoadOverlay": true
 ~~~
 
 If you use the preset you can easily override the defaults, e.g. to define a 16k ZX81 use:
@@ -60,10 +60,10 @@ DeZog can load .p, .p81 and .81 files (which are more or less the same anyway) w
 Additionally you can also load raw data with the "loadObjs" property.
 
 You can as well load a file by entering `LOAD "<filename>"` in the ZX81.
-This is only enabled if "zx81LoadTrap" is set to true (which is the default for "preset": "zx81").
+This is only enabled if "zx81LoadOverlay" is set to true (which is the default for "preset": "zx81").
 In that case the CPU's program counter is checked. When it tries to load from tape the loading from file is injected.
 
-For clarification: if you load with "load" in the launch.json the "zx81LoadTrap" functionality is not used and you don't need to have the flag enabled.
+For clarification: if you load with "load" in the launch.json the "zx81LoadOverlay" functionality is not used and you don't need to have the flag enabled.
 
 If you use "load" any successing `LOAD` of a .p file will be done from the same folder as you used for "load".
 If you don't use "load" the `LOAD` will search for the file in the workspace of vscode.
@@ -223,6 +223,8 @@ As the ROM can be easily overwritten by DeZog it replaces all original bytes (ch
 To create galactica_chars.bin you can use a e.g. a hex editor, it's size should not exceed 512 bytes.
 
 More comfortable you could also use an assembler like sjasmplus to generate the bin file.
+
+Here is the full [launch.json](extra/launch.json) for "Battlestar Galactica".
 
 ## Generate a custom charset with sjasmplus
 [galactica_chars.asm](extra/galactica_chars.asm) holds the assembler code for a modified charset.
