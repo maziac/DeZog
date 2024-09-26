@@ -45,9 +45,21 @@ export class Zx81LoadOverlay extends EventEmitter {
 			return;
 
 		// Check for trap
-		if (this.z80Cpu.pc !== 0x0343)
-			return;
+		if (this.z80Cpu.pc === 0x0343) {
+			// LOAD
+			zsim.executeTstates += this.load();
+		}
+		else if (this.z80Cpu.pc === 0x02FB) {
+			// SAVE
+			zsim.executeTstates += this.save();
+		}
+	}
 
+
+	/** Returns the entered file name to use for tape loading.
+	 * @returns The entered file name.
+	 */
+	protected getLoadSaveName(): string {
 		// Get filename
 		let zx81FName = '';
 		let strAddr64k = this.z80Cpu.de;
@@ -56,18 +68,121 @@ export class Zx81LoadOverlay extends EventEmitter {
 			if (byte === 11)	// In case of LOAD "" (11 is the ")
 				break;
 			zx81FName += this.zx81CharToAscii(byte);
-			if (byte & 0x80 )
+			if (byte & 0x80)
 				break;
 			strAddr64k++;
 		}
-		let fname = zx81FName;
+		return zx81FName;
+	}
 
-		// Set registers
+
+	/** Executes the SAVE routine.
+	 * @returns The number of tstates used.
+	 */
+	protected save(): number {
+		try {
+			const z80Cpu = this.z80Cpu;
+
+			// Get filename
+			const zx81FName = this.getLoadSaveName();
+
+			// Check for suffix address like in `SAVE "GRAPHICS.UDG;8192,512"` that
+			// will save the memory @8192 with size of 512 bytes.
+			let fname = zx81FName;
+			const semicolonPos = fname.indexOf(';');
+			let saveAddr, saveLen;
+			if (semicolonPos >= 0) {
+				// Save raw file
+				const suffix = fname.substring(semicolonPos + 1);
+				const [addrStr, lenStr] = suffix.split(',');
+				saveAddr = parseInt(addrStr);
+				saveLen = parseInt(lenStr);
+				if (isNaN(saveAddr))
+					throw new Error(`Trying to SAVE "${zx81FName}": Invalid address`);
+				if (isNaN(saveLen))
+					 throw new Error(`Trying to SAVE "${zx81FName}": Invalid length`);
+				fname = fname.substring(0, semicolonPos);
+			}
+
+			// Construct path:
+			// If an address is given then use the filename as is.
+			// If an extension is given then use it.
+			// If no extension is given add a ".P" extension.
+			const ext = path.extname(fname);
+			if (ext === '' && saveAddr === undefined) {
+				fname += '.P';
+			}
+			if (saveAddr === undefined) {
+				// Add .P extension ?
+				const ext = path.extname(fname);
+				if (ext === '')
+					fname += '.P';
+				// Set saveAddr and saveLen to BASIC program area
+				saveAddr = 0x4009;
+				// Get the end of the BASIC program area from the system variable E_LINE
+				const eLine = z80Cpu.memory.getMemory16(0x4014);
+				// Calculate the length of the BASIC program area
+				saveLen = eLine - 0x4009;
+			}
+
+			// Safety checks
+			if (saveAddr < 0 || saveAddr > 0xFFFF)
+				throw new Error("Trying to save to invalid address " + saveAddr.toString());
+			if (saveLen <= 0)
+				throw Error("Trying to save " + saveLen.toString() + " bytes");
+
+			// Get memory
+			const data = z80Cpu.memory.readBlock(saveAddr, saveLen);
+
+			// Check if the file already exists
+			let filePath = this.folder + fname;
+			if (fs.existsSync(filePath)) {
+				// Rename existing file to filePath.1
+				let suffixNumber = 1;
+				// Increase suffix number until a free file name is found
+				while (fs.existsSync(filePath + '.' + suffixNumber)) {
+					suffixNumber++;
+				}
+				// Rename file
+				const renFilePath = filePath + '.' + suffixNumber;
+				fs.renameSync(filePath, renFilePath);
+				this.emit('message', `File ${filePath} already exists. Renamed to ${renFilePath}.`);
+			}
+
+			// Write file
+			fs.writeFileSync(filePath, data);
+
+			// Info text
+			this.emit('message', `SAVE "${zx81FName}": saved ${saveLen} bytes, (${filePath})`);
+
+			// Jump to end of SAVE routine
+			z80Cpu.pc = 0x0207;
+
+			// Add some tstates. Proportional to the length of the file.
+			// The ZX81 average data transfer rate is about 307 bps (38 bytes/sec)
+			// at 3.25Mhz.
+			const tstates = Math.ceil(3250000 * saveLen / 38);
+			return tstates;
+		}
+		catch(error) {
+			this.emit('message', "SAVE error: " + error.message);
+			return 3250000;    // Return the equivalent of 1 sec @ 3.25Mhz
+		}
+	}
+
+
+	/** Executes the LOAD routine.
+	 * @returns The number of tstates used.
+	 */
+	protected load(): number {
 		const z80Cpu = this.z80Cpu;
-		z80Cpu.pc = 0x0207;	// After LOAD routine
 
-	 	// Check for suffix address like in `LOAD "GRAPHICS.UDG;8192"` that
+		// Get filename
+		const zx81FName = this.getLoadSaveName();
+
+		// Check for suffix address like in `LOAD "GRAPHICS.UDG;8192"` that
 		// will load the file to address 8192.
+		let fname = zx81FName;
 		const semicolonPos = fname.indexOf(';');
 		let loadAddr;
 		if (semicolonPos >= 0) {
@@ -77,7 +192,7 @@ export class Zx81LoadOverlay extends EventEmitter {
 			if (isNaN(loadAddr)) {
 				z80Cpu.pc = 0x03A6;	// BREAK_CONT_REPEATS;
 				this.emit('message', `Trying to LOAD "${zx81FName}": Invalid address`);
-				return;
+				return 3250000;	// Return the equivalent of 1 sec @ 3.25Mhz
 				//throw new Error(`Trying to LOAD "${fname}": Invalid address`);
 			}
 			fname = fname.substring(0, semicolonPos);
@@ -96,20 +211,24 @@ export class Zx81LoadOverlay extends EventEmitter {
 		if (!filePath) {
 			z80Cpu.pc = 0x03A6;	// BREAK_CONT_REPEATS;
 			this.emit('message', `Trying to LOAD "${zx81FName}". Glob pattern "${filePattern}" was not found.`);
-			return;
+			return 3250000;	// Return the equivalent of 1 sec @ 3.25Mhz
 			//throw new Error(`Trying to LOAD "${zx81FName}". Glob pattern "${filePattern}" was not found.`);
 		}
 
 		// Load file
-		const len = (loadAddr === undefined) ? this.loadPFile(filePath) : this.loadFile(filePath,loadAddr);
-
-		// Add some tstates. Proportional to the length of the file.
-		// The ZX81 average data transfer rate is about 307 bps (38 bytes/sec).
-		// => 3250000 * len / 38
-		zsim.executeTstates += Math.ceil(zsim.z80Cpu.cpuFreq * len / 38);
+		const len = (loadAddr === undefined) ? this.loadPFile(filePath) : this.loadFile(filePath, loadAddr);
 
 		// Info text
 		this.emit('message', `LOAD "${zx81FName}": loaded ${len} bytes, (${filePath})`);
+
+		// Jump to end of LOAD routine
+		z80Cpu.pc = 0x0207;
+
+		// Add some tstates. Proportional to the length of the file.
+		// The ZX81 average data transfer rate is about 307 bps (38 bytes/sec)
+		// at 3.25Mhz.
+		const tstates = Math.ceil(3250000 * len / 38);
+		return tstates;
 	}
 
 
