@@ -5,6 +5,7 @@ import {ZSimRemote} from './zsimremote';
 import * as path from 'path';
 import {EventEmitter} from "stream";
 import * as fglob from 'fast-glob';
+import {BankType} from '../MemoryModel/memorymodel';
 
 
 export class Zx81LoadOverlay extends EventEmitter {
@@ -240,7 +241,7 @@ export class Zx81LoadOverlay extends EventEmitter {
 		// Load raw file
 		const fileBuffer = fs.readFileSync(filePath);
 		// Write file
-		this.z80Cpu.memory.writeBlock(addr & 0xFFFF, fileBuffer);
+		this.z80Cpu.memory.writeBlock(addr & 0xFFFF, fileBuffer, [BankType.RAM]);
 		return fileBuffer.length;
 	}
 
@@ -278,7 +279,7 @@ export class Zx81LoadOverlay extends EventEmitter {
 		const ramSize = ramTop - 0x4000;
 
 		// Write file
-		z80Cpu.memory.writeBlock(0x4009, fileBuffer);
+		z80Cpu.memory.writeBlock(0x4009, fileBuffer, [BankType.RAM]);
 
 		// Check possible issues
 		if (len < 0x3c) {

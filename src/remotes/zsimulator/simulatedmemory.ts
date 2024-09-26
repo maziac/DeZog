@@ -672,10 +672,13 @@ export class SimulatedMemory implements Serializable {
 
 
 	/** Writes a block of bytes.
+	 * But does not write to UNUSED memory.
 	 * @param startAddress The 64k start address.
 	 * @param data The block to write.
+	 * @param allowedTypes The allowed bank types. Default is UNKNOWN, ROM and RAM.
+	 * E.g. if you only want to allow to write to RAM set [BankType.RAM].
 	 */
-	public writeBlock(startAddr64k: number, data: Buffer | Uint8Array) {
+	public writeBlock(startAddr64k: number, data: Buffer | Uint8Array, allowedTypes: BankType[] = [BankType.ROM, BankType.RAM, BankType.UNKNOWN]) {
 		if (!(data instanceof Uint8Array))
 			data = new Uint8Array(data);
 		// The block may span several banks.
@@ -697,7 +700,7 @@ export class SimulatedMemory implements Serializable {
 			let sizeOffs = rangeSize - offs;
 			if (sizeOffs > size)
 				sizeOffs = size;
-			if (this.bankTypes[bankNr] !== BankType.UNUSED) {
+			if (allowedTypes.includes(this.bankTypes[bankNr])) {
 				bank.set(data.slice(dataOffset, dataOffset + sizeOffs), offs);
 			}
 			// Next
