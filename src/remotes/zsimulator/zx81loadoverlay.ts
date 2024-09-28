@@ -187,7 +187,7 @@ export class Zx81LoadOverlay extends EventEmitter {
 		const semicolonPos = fname.indexOf(';');
 		let loadAddr;
 		if (semicolonPos >= 0) {
-			// Load raw file
+			// Parse address
 			const addrStr = fname.substring(semicolonPos + 1);
 			loadAddr = parseInt(addrStr);
 			if (isNaN(loadAddr)) {

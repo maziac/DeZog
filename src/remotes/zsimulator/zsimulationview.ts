@@ -708,7 +708,7 @@ export class ZSimulationView extends BaseView {
 			html += `
 			<!-- Z80 CPU load -->
 				<label> - CPU load:</label>
-				<label id="cpu_load_id">100</label>
+				<label id="cpu_load_id" style="border-radius: 3px; padding: 2px">100</label>
 				<label>%</label>
 			`;
 		}
