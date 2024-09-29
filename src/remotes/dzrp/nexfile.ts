@@ -6,6 +6,7 @@ import {MemBank16k} from './membank16k';
 /**
  * A parser for the .nex file format.
  * Reads basically only the different memory banks.
+ * https://wiki.specnext.dev/NEX_file_format
  */
 export class NexFile {
 	// All read memory banks.
@@ -63,15 +64,25 @@ export class NexFile {
 		// Compute memory bank index
 		const loadingScreensFlags = nexBuffer[LOADING_SCREENS];
 		let memBankIndex = FILE_HEADER_SIZE;
-		if (loadingScreensFlags & 0x80) memBankIndex += PALETTE_SIZE;
-		if (loadingScreensFlags & 0x01) memBankIndex += L2_LOADING_SCREEN_SIZE;
-		if (loadingScreensFlags & 0x02) memBankIndex += ULA_LOADING_SCREEN_SIZE;
-		if (loadingScreensFlags & 0x04) memBankIndex += LOWRES_LOADING_SCREEN_SIZE;
-		if (loadingScreensFlags & 0x08) memBankIndex += TIMEX_HIRES_LOADING_SCREEN_SIZE;
-		if (loadingScreensFlags & 0x10) memBankIndex += TIMEX_HICOL_LOADING_SCREEN_SIZE;
-		if (loadingScreensFlags & 0x40) memBankIndex += L2B_LOADING_SCREEN_SIZE;
+		if (!(loadingScreensFlags & 0b1000_0000)	// Has no-palette not set
+			&& (loadingScreensFlags & 0b0000_0101))	// amd (Layer2 or LORES) is set (LOADSCR2 is not taken into account, v1.3)
+			if ((loadingScreensFlags & 0x80) == 0)
+				memBankIndex += PALETTE_SIZE;
+		if (loadingScreensFlags & 0x01)
+			memBankIndex += L2_LOADING_SCREEN_SIZE;
+		if (loadingScreensFlags & 0x02)
+			memBankIndex += ULA_LOADING_SCREEN_SIZE;
+		if (loadingScreensFlags & 0x04)
+			memBankIndex += LOWRES_LOADING_SCREEN_SIZE;
+		if (loadingScreensFlags & 0x08)
+			memBankIndex += TIMEX_HIRES_LOADING_SCREEN_SIZE;
+		if (loadingScreensFlags & 0x10)
+			memBankIndex += TIMEX_HICOL_LOADING_SCREEN_SIZE;
+		if (loadingScreensFlags & 0x40)
+			memBankIndex += L2B_LOADING_SCREEN_SIZE;
 		const copperFlags = nexBuffer[COPPER_CODE_BLOCK];
-		if (copperFlags & 0x01) memBankIndex += COPPER_CODE_BLOCK_SIZE;
+		if (copperFlags & 0x01)
+			memBankIndex += COPPER_CODE_BLOCK_SIZE;
 
 		// Read border color
 		this.borderColor = nexBuffer[BORDER_COLOR];
