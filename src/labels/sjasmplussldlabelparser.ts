@@ -187,7 +187,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 			// Check for right type
 			const type = fields[6];
-			if (type == 'Z') {
+			if (type === 'Z') {
 				// Parse bank size
 				const data = fields[7];
 				// Find bank size
@@ -219,11 +219,11 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		}
 
 		// Check
-		if (bankSize == undefined) {
+		if (bankSize === undefined) {
 			this.throwError("Could not find bank size in SLD file. Did you forget to set the 'DEVICE' in your assembler file? If you use a non ZX Spectrum device you need to choose NOSLOT64K.");
 		}
 		this.bankSize = bankSize;
-		if (slots == undefined) {
+		if (slots === undefined) {
 			this.throwError("Could not find slots in SLD file. Did you forget to set the 'DEVICE' in your assembler file? If you use a non ZX Spectrum device you need to choose NOSLOT64K.");
 		}
 		this.slots = slots;
@@ -254,7 +254,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Get filename
 		let sourceFile = fields[0];
 		// Check for comment or SLD.data.version
-		if (sourceFile == '')
+		if (sourceFile === '')
 			return;
 		// Convert (also use srcDirs)
 		const config = this.config as AsmConfigBase;
@@ -288,7 +288,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					const trait = lbls[3];	// E.g. "+equ", "+module", "+endmod"
 					this.modulePrefix = lbls[0];
 					// Check for ENDMODULE
-					if (trait == "+endmod") {
+					if (trait === "+endmod") {
 						// Remove the last module (note: modules names cannot include a dot)
 						const modArr = this.modulePrefix.split('.');
 						modArr.pop();	// Remove last element
@@ -364,7 +364,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					// are associated to the file, too.
 					if (this.prevLineAddress != undefined) {
 						// Check if same bank
-						if ((address & ~0xFFFF) == (this.prevLineAddress & ~0xFFFF)) {
+						if ((address & ~0xFFFF) === (this.prevLineAddress & ~0xFFFF)) {
 							// Check if distance is smaller/equal 4 (=max instruction size)
 							const dist = (address - this.prevLineAddress) & 0xFFFF;
 							if (dist <= 4) {
@@ -381,7 +381,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 						this.lineArrays.set(sourceFile, lineArray);
 					}
 					// Store long address
-					if (lineArray[lineNr] == undefined) {
+					if (lineArray[lineNr] === undefined) {
 						// Store only the first. Otherwise a breakpoint on a multi instruction
 						// line would be on the last instruction and not the first.
 						lineArray[lineNr] = longAddress;
@@ -419,13 +419,13 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	 * Get sjasmplus memory model.
 	 */
 	protected sourceMemoryModel(): SjasmplusMemoryModel {
-		if (this.slots.length == 1 && this.bankSize == 0x10000 && this.bankCount == 32)
+		if (this.slots.length === 1 && this.bankSize === 0x10000 && this.bankCount === 32)
 			return SjasmplusMemoryModel.NOSLOT64K;
-		if (this.slots.length == 4 && this.bankSize == 0x4000 && this.bankCount == 4)
+		if (this.slots.length === 4 && this.bankSize === 0x4000 && this.bankCount === 4)
 			return SjasmplusMemoryModel.ZX48K;
-		if (this.slots.length == 4 && this.bankSize == 0x4000 && this.bankCount == 8)
+		if (this.slots.length === 4 && this.bankSize === 0x4000 && this.bankCount === 8)
 			return SjasmplusMemoryModel.ZX128K;
-		if (this.slots.length == 8 && this.bankSize == 0x2000 && this.bankCount >= 100)
+		if (this.slots.length === 8 && this.bankSize === 0x2000 && this.bankCount >= 100)
 			return SjasmplusMemoryModel.ZXNEXT;
 		return SjasmplusMemoryModel.NONE;
 	}
@@ -441,7 +441,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	protected checkMappingToTargetMemoryModel() {
 		// Get type
 		const srcMemModel = this.sourceMemoryModel();
-		if (srcMemModel == SjasmplusMemoryModel.NONE)
+		if (srcMemModel === SjasmplusMemoryModel.NONE)
 			this.throwError("Unsupported sjasmplus memory model (DEVICE).");
 
 		// Check as much as possible in a generic way:
@@ -450,8 +450,8 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Also for simple destinations like MemoryModelUnknown and
 		// MemoryModelAllRam, all that only have banks within the 64k.
 		const destMemModel = this.memoryModel;
-		if (srcMemModel === SjasmplusMemoryModel.NOSLOT64K
-			|| srcMemModel === SjasmplusMemoryModel.ZX48K
+		if (srcMemModel ==== SjasmplusMemoryModel.NOSLOT64K
+			|| srcMemModel ==== SjasmplusMemoryModel.ZX48K
 			|| destMemModel instanceof MemoryModelUnknown
 			|| destMemModel instanceof MemoryModelAllRam
 			|| destMemModel instanceof MemoryModelZx16k
@@ -464,7 +464,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 
 		// Check for sjasmplus ZX128K
-		if (srcMemModel === SjasmplusMemoryModel.ZX128K) {
+		if (srcMemModel ==== SjasmplusMemoryModel.ZX128K) {
 			// sjasmplus was compiled for ZX128K
 			if (destMemModel instanceof MemoryModelZxNextBase) {
 				this.funcConvertBank = (address: number, bank: number) => {
@@ -485,7 +485,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		}
 
 		// Check for sjasmplus ZXNEXT
-		if (srcMemModel === SjasmplusMemoryModel.ZXNEXT) {
+		if (srcMemModel ==== SjasmplusMemoryModel.ZXNEXT) {
 			// sjasmplus was compiled for ZXNEXT
 			if (destMemModel instanceof MemoryModelZxNextBase) {
 				this.funcConvertBank = (address: number, bank: number) => {
