@@ -308,7 +308,7 @@ export interface ZSimType {
 	cpuFrequency: number,
 
 	// If enabled the simulated CPU performance is throttled to fit the given CPU frequency.
-	// Is enabled by default.If disabled the CPU will be simulated as fast as possible.
+	// Is enabled by default. If disabled the CPU will be simulated as fast as possible.
 	limitSpeed: boolean;
 
 	// The update frequency of the simulator view in Hz.
