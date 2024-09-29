@@ -22,6 +22,7 @@
   - "chroma81" support (including colourization file support).
   - Fixed bug that IX could grow bigger than 0xFFFF.
 - "topOfStack": default is now taken from the memory model.
+- Loading .nex file: Fix for bit in load screens for ignoring the palette
 
 # 3.4.1
 - zsim: Removed annoying logging.
