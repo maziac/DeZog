@@ -450,8 +450,8 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Also for simple destinations like MemoryModelUnknown and
 		// MemoryModelAllRam, all that only have banks within the 64k.
 		const destMemModel = this.memoryModel;
-		if (srcMemModel ==== SjasmplusMemoryModel.NOSLOT64K
-			|| srcMemModel ==== SjasmplusMemoryModel.ZX48K
+		if (srcMemModel === SjasmplusMemoryModel.NOSLOT64K
+			|| srcMemModel === SjasmplusMemoryModel.ZX48K
 			|| destMemModel instanceof MemoryModelUnknown
 			|| destMemModel instanceof MemoryModelAllRam
 			|| destMemModel instanceof MemoryModelZx16k
@@ -464,7 +464,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 
 		// Check for sjasmplus ZX128K
-		if (srcMemModel ==== SjasmplusMemoryModel.ZX128K) {
+		if (srcMemModel === SjasmplusMemoryModel.ZX128K) {
 			// sjasmplus was compiled for ZX128K
 			if (destMemModel instanceof MemoryModelZxNextBase) {
 				this.funcConvertBank = (address: number, bank: number) => {
@@ -485,7 +485,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		}
 
 		// Check for sjasmplus ZXNEXT
-		if (srcMemModel ==== SjasmplusMemoryModel.ZXNEXT) {
+		if (srcMemModel === SjasmplusMemoryModel.ZXNEXT) {
 			// sjasmplus was compiled for ZXNEXT
 			if (destMemModel instanceof MemoryModelZxNextBase) {
 				this.funcConvertBank = (address: number, bank: number) => {
