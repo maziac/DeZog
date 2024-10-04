@@ -3511,7 +3511,7 @@ E.g. use "-help -view" to put the help text in an own view.
 
 	/**
 	 * Called after a step, step-into, run, hit breakpoint, etc.
-	 * Is used to update anything that need to updated after some Z80 instructions have been executed.
+	 * Is used to update anything that needs to be updated after some Z80 instructions have been executed.
 	 * E.g. the memory dump view.
 	 * @param reason The reason is a data object that contains additional information.
 	 * E.g. for 'step' it contains { step: true };

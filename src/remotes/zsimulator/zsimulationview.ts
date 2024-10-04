@@ -64,11 +64,11 @@ export class ZSimulationView extends BaseView {
 
 
 	/**
-	 * Creates the basic view.
-	 * @param memory The memory of the CPU.
+	 * Creates the zsim simulation view.
+	 * @param simulator The simulator.
 	 */
 	constructor(simulator: ZSimRemote) {
-		super(false);
+		super();
 		// Init
 		this.simulator = simulator;
 		this.countOfOutstandingMessages = 0;
@@ -124,11 +124,6 @@ export class ZSimulationView extends BaseView {
 			// Change previous t-states to force an update.
 			this.updateScreen();
 			this.updateDisplay();
-		});
-
-		// Close
-		this.simulator.once('closed', () => {
-			this.close();
 		});
 
 		// Handle update of the screen (vertical sync)
@@ -205,13 +200,6 @@ export class ZSimulationView extends BaseView {
 	}
 
 
-	/** Closes the view.
-	 */
-	public close() {
-		this.vscodePanel?.dispose();
-	}
-
-
 	/** Dispose the view (called e.g. on close).
 	 * Use this to clean up additional stuff.
 	 * Normally not required.
@@ -219,8 +207,7 @@ export class ZSimulationView extends BaseView {
 	public disposeView() {
 		clearInterval(this.displayTimer);
 		this.displayTimer = undefined as any;
-		// Do not use panel anymore
-		this.vscodePanel = undefined as any;
+		super.disposeView();
 	}
 
 
@@ -478,8 +465,20 @@ export class ZSimulationView extends BaseView {
 	}
 
 
-	/** Retrieves the screen memory content and displays it.
-	 * @param reason Not used.
+	/** Do an update.
+	 * E.g. send when the memory in a memory view has changed.
+	 */
+
+	public async update(_reason?: any): Promise<void> {
+		// Update the display
+		this.updateDisplay();
+		// And also the screen
+		this.updateScreen();
+	}
+
+
+	/** Updates the webview display.
+	 * Everything but the ULA screen.
 	 */
 	public updateDisplay() {
 		// Check if CPU did something
@@ -541,14 +540,7 @@ export class ZSimulationView extends BaseView {
 	}
 
 
-	/** A vertical sync was received from the Z80 simulation.
-	 * Is used to sync the display as best as possible:
-	 * On update the next time is stored (nextUpdateTime).
-	 * The lastVertSyncTime is stored with the current time.
-	 * On next vert sync the diff to lastVertSyncTime is calculated and extrapolated.
-	 * If the next time would be later as the next regular update, then the update is
-	 * done earlier and the timer restarted.
-	 * I.e. the last vert sync before the regular update is used for synched display.
+	/** Gets the ULA screen from the simulator and sends it to the webview.
 	 */
 	protected updateScreen() {
 		try {
@@ -569,8 +561,6 @@ export class ZSimulationView extends BaseView {
 				zx81UlaScreenDebug: zx81UlaScreenOptions.debug
 			};
 			this.sendMessageToWebView(message);
-			// Clear
-			this.simulator.memory.clearVisualMemory();
 		}
 		catch {}
 	}

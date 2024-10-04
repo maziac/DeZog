@@ -539,7 +539,6 @@ export class ZSimRemote extends DzrpRemote {
 		await super.disconnect();
 		// Stop running cpu
 		this.stopCpu = true;
-		this.emit('closed')
 	}
 
 

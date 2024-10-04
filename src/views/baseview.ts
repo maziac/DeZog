@@ -24,8 +24,8 @@ export class BaseView {
 	 * Called at launchRequest.
 	 */
 	public static staticInit() {
-		BaseView.staticViewClasses=new Array<any>();
-		BaseView.staticViews=new Array<BaseView>();
+		BaseView.staticViewClasses = new Array<any>();
+		BaseView.staticViews = new Array<BaseView>();
 	}
 
 
@@ -49,11 +49,11 @@ export class BaseView {
 	 */
 	public static async staticCallUpdateFunctionsAsync(reason?: any): Promise<void> {
 		// Loop all view classes
-		for(const viewClass of BaseView.staticViewClasses) {
+		for (const viewClass of BaseView.staticViewClasses) {
 			await viewClass.staticUpdate(reason);
 		}
 		// Loop all views
-		for(const view of BaseView.staticViews) {
+		for (const view of BaseView.staticViews) {
 			await view.update(reason);
 		}
 	}
@@ -76,9 +76,9 @@ export class BaseView {
 		// Dispose/close all views
 		for (const view of views) {
 			view.vscodePanel.dispose();
-			view.vscodePanel=undefined as any;
+			view.vscodePanel = undefined as any;
 		}
-		BaseView.staticViews.length=0;
+		BaseView.staticViews.length = 0;
 	}
 
 
