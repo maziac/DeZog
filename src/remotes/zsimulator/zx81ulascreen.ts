@@ -51,7 +51,7 @@ export class Zx81UlaScreen extends UlaScreen {
 	// Counts lines independent of the ulaLineCounter. Is reset on a vsync.
 	protected lineCounter = 0;
 
-	// The tstates counter
+	// The tstates counter (is never reset)
 	protected tstates = 0;
 
 	// The number of tstates required for a horizontal scanline.

@@ -206,7 +206,9 @@ function initSimulation(audioSampleRate: number, volume: number, zxKeyboard: 'sp
 		// Note: Normally I would have to distinguish between ZX81 and Spectrum here. But they have the same width and height.
 		//screenImgImgData = screenImgContext.createImageData(SpectrumUlaDraw.SCREEN_WIDTH, SpectrumUlaDraw.SCREEN_HEIGHT);
 		// TODO: Change height
-		screenImgImgData = screenImgContext.createImageData(SpectrumUlaDraw.SCREEN_WIDTH, 400);
+		//screenImgImgData = screenImgContext.createImageData(SpectrumUlaDraw.SCREEN_WIDTH, 400);
+		// TODO
+		screenImgImgData = screenImgContext.createImageData(416, 400);
 	}
 
 	// Get Beeper output object

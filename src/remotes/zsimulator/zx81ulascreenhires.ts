@@ -69,6 +69,10 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// Color (chroma81) data
 	protected colorData: Uint8Array;
 
+	// The tstates state at end of the hsync impulse. Is used to calculate the x-position of the
+	// first write to the screen.
+	protected hsyncStartTstates: number = 0;
+
 
 	/** Constructor.
 	 * @param z80Cpu Mainly for the memoryModel and the ports.
@@ -84,7 +88,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			totalLines = 0;
 		this.screenDataIndex = 0;
 		this.screenLineLengthIndex = 0;
-		this.screenData = new Uint8Array(totalLines * (1 + Zx81UlaScreenHiRes.SCREEN_WIDTH / 8));
+		this.screenData = new Uint8Array(totalLines * (1 + 1 + Zx81UlaScreenHiRes.SCREEN_WIDTH / 8));
 		this.colorData = new Uint8Array(this.screenData.length);
 	}
 
@@ -161,7 +165,15 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			// Add byte to screen
 			this.screenData[this.screenDataIndex++] = videoShiftRegister;
 			// Increase length
-			this.screenData[this.screenLineLengthIndex]++;
+			if (this.screenData[this.screenLineLengthIndex]++ === 0) {
+				// Save also the x start position
+				const xTstates = this.tstates - this.hsyncStartTstates;
+				this.screenData[this.screenLineLengthIndex + 1] = xTstates;
+				if (xTstates > 207) 
+					console.log('lineCounter:' + this.lineCounter, ', xTstates:' + xTstates);
+			}
+
+			//console.log('xlineCounter:' + this.lineCounter, ', xTstates:' + (this.tstates - this.hsyncStartTstates));
 		}
 
 		// Return a NOP to be executed
@@ -198,7 +210,10 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				// Next line (graphics output)
 				this.screenLineLengthIndex = this.screenDataIndex;
 				this.screenData[this.screenLineLengthIndex] = 0;
-				this.screenDataIndex++;
+				this.screenData[this.screenLineLengthIndex + 1] = 0;	// x-position
+				this.screenDataIndex += 2;
+				// Remember the current cpu tstates.
+				this.hsyncStartTstates = this.tstates;
 			}
 		}
 		return lineCounterIncremented;
@@ -214,6 +229,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		memBuffer.writeNumber(this.lastLine);
 		memBuffer.writeNumber(this.screenDataIndex);
 		memBuffer.writeNumber(this.screenLineLengthIndex);
+		// TODO: save the x-position per line
 		memBuffer.writeArrayBuffer(this.screenData);
 		memBuffer.writeArrayBuffer(this.colorData);
 	}

@@ -831,9 +831,10 @@ export class ZSimulationView extends BaseView {
 			if (borderWidth === 0)
 				borderWidth = zsim.zx81UlaOptions.borderSize;
 			// HTML code:
+			// TODO: width="256"
 			html += `
 			<!-- Display the screen gif -->
-			<canvas id="screen_img_id" width="256" height="${height}" style="image-rendering:pixelated; border:${borderWidth}px solid white; outline: 1px solid var(--vscode-foreground); width:100%; height:100%; box-sizing: border-box;">
+			<canvas id="screen_img_id" width="416" height="${height}" style="image-rendering:pixelated; border:${borderWidth}px solid white; outline: 1px solid var(--vscode-foreground); width:100%; height:100%; box-sizing: border-box;">
 			</canvas>
 			`;
 		}

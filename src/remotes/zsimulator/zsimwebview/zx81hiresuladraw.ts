@@ -32,21 +32,27 @@ export class Zx81HiResUlaDraw {
 			return;
 
 		// Whole screen is converted by evaluating blocks that are equal to the color attributes.
-		const width8 = Zx81HiResUlaDraw.SCREEN_WIDTH / 8;
+		const screenWidth = 416;
+		//const width8 = Zx81HiResUlaDraw.SCREEN_WIDTH / 8;
+		const width8 = screenWidth / 8;
 		const white = 255;
 		let index = 0;
 		let len = width8;
+		let xAdd = 0;
 		let fgRed = 0, fgGreen = 0, fgBlue = 0;
 		let bgRed = 0xFF, bgGreen = 0xFF, bgBlue = 0xFF;
 
 		while (index < ulaScreen.length) {
 			// Skip rest of line (make white), len from previous line
-			const remainingLen = (width8 - len) * 8;
-			if(!debug)
+			const remainingLen = (width8 - len) * 8 - xAdd;
+			if(!debug)  // TODO: Check if it still works with xTstates
 				pixels.fill(white, pixelIndex, pixelIndex + remainingLen * 4);	// white and alpha are the same values (255), so I can use fill
 			pixelIndex += remainingLen * 4;
 			// Get length of line
 			len = ulaScreen[index++];
+			const xTstates = ulaScreen[index++];
+			xAdd = xTstates * 2;
+			pixelIndex += xAdd * 4;
 			// Loop over line
 			for (let x = len; x > 0; x--) {
 				// Get color
