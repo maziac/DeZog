@@ -60,8 +60,8 @@ export class Zx81UlaScreen extends UlaScreen {
 	// The number of tstates for one full screen.
 	protected static TSTATES_PER_SCREEN = 65000;	// ~20ms
 
-	// The HSYNC signal stay low for 16 tstates.
-	protected static TSTATES_OF_HSYNC_LOW = 16;
+	// The HSYNC signal stay low for 15 tstates.
+	protected static TSTATES_OF_HSYNC_LOW = 15;
 
 	// The minimal number of tstates for a VSYNC should be ~1ms => 3250 tstates.
 	// But the generated vsync by the zx81 seems to be much smaller: 1233 tstates -> ~0.38ms
@@ -162,12 +162,12 @@ export class Zx81UlaScreen extends UlaScreen {
 	 */
 	protected outPort(port: number, _data: number): void {
 		// NMI generator off?
-		if ((port & 0x0003) === 1) {
+		if ((port & 0b010) === 0) {
 			// Usually 0xFD
 			this.stateNmiGeneratorOn = false;
 		}
 		// NMI generator on?
-		else if ((port & 0x0003) === 2) {
+		else if ((port & 0b001) === 0) {
 			// Usually 0xFE
 			this.stateNmiGeneratorOn = true;
 		}
@@ -427,15 +427,18 @@ export class Zx81UlaScreen extends UlaScreen {
 	/** Generate a HSYNC.
 	 * Is called every instruction. Depending on tstates it generates the HSYNC.
 	 * This is the High/Low switch ^^^^^^\_/^^^
-	 * After ~191 tstates the HSYNC is low for 16 tstates. In total this is
+	 * After ~192 tstates the HSYNC is low for 15 tstates. In total this is
 	 * 207 tstates (=64us).
 	 * On this switch the line counter is incremented.
 	 * During the HSYNC being low a small (undetected) VSYNC may happen
 	 * that resets the line counter for hires.
 	 * @param addTstates The number of tstates to add to the HSYNC tstates counter.
-	 * @returns true if line counter was incremented.
+	 * @returns true if line counter was incremented / if hsync switches from on to off.
 	 */
 	protected checkHsync(addTstates: number): boolean {
+		if (this.vsync)
+			return false;	// No HSYNC during VSYNC
+
 		this.hsyncTstatesCounter += addTstates;
 
 		// Check for HSYNC on or off

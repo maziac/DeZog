@@ -33,28 +33,24 @@ export class Zx81HiResUlaDraw {
 
 		// Whole screen is converted by evaluating blocks that are equal to the color attributes.
 		const screenWidth = 416;
+		const screenHeight = imgData.height
 		//const width8 = Zx81HiResUlaDraw.SCREEN_WIDTH / 8;
 		const width8 = screenWidth / 8;
-		const white = 255;
 		let index = 0;
 		let len = width8;
 		let xAdd = 0;
 		let fgRed = 0, fgGreen = 0, fgBlue = 0;
 		let bgRed = 0xFF, bgGreen = 0xFF, bgBlue = 0xFF;
 
+		let lineCounter = 0;
 		while (index < ulaScreen.length) {
-			// Skip rest of line (make white), len from previous line
-			const remainingLen = (width8 - len) * 8 - xAdd;
-			if(!debug)  // TODO: Check if it still works with xTstates
-				pixels.fill(white, pixelIndex, pixelIndex + remainingLen * 4);	// white and alpha are the same values (255), so I can use fill
-			pixelIndex += remainingLen * 4;
 			// Get length of line
 			len = ulaScreen[index++];
-			const xTstates = ulaScreen[index++];
-			xAdd = xTstates * 2;
-			pixelIndex += xAdd * 4;
 			// Loop over line
 			for (let x = len; x > 0; x--) {
+				const xTstates = ulaScreen[index++];
+				xAdd = xTstates * 2;
+				pixelIndex = (lineCounter * 416 + xAdd) * 4;
 				// Get color
 				if (colorData) {
 					const color = colorData[index];
@@ -92,10 +88,29 @@ export class Zx81HiResUlaDraw {
 					mask /= 2;
 				}
 			}
+			// Next line
+			lineCounter++;
 		}
+
+		// Show HSYNC
+		Zx81HiResUlaDraw.drawVertLine(pixels, 192, screenWidth, screenHeight, 0xFF, 0, 0);
+		// Show left and right border
+		Zx81HiResUlaDraw.drawVertLine(pixels, 32, screenWidth, screenHeight, 0, 0xFF, 0);
+		Zx81HiResUlaDraw.drawVertLine(pixels, 192 - 32, screenWidth, screenHeight, 0, 0xFF, 0);
 
 		// Write image
 		ctx.putImageData(imgData, 0, 0);
 	}
+
+	protected static drawVertLine(pixels: Uint8ClampedArray, tstates: number, screenWidth: number, screenHeight: number, r: number, g: number, b: number) {
+		for (let y = 0; y < screenHeight; y++) {
+			let pixelIndex = (y * screenWidth + tstates * 2) * 4;
+			pixels[pixelIndex++] = r;
+			pixels[pixelIndex++] = g;
+			pixels[pixelIndex++] = b;
+			pixels[pixelIndex] = 0xFF;	// alpha
+		}
+	}
+
 }
 
