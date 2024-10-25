@@ -168,7 +168,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			}
 			// Add byte to screen
 			const xTstates = this.tstates - this.hsyncStartTstates;
-			const cmpTstates = Zx81UlaScreen.TSTATES_PER_SCANLINE - xTstates;
+			//const cmpTstates = Zx81UlaScreen.TSTATES_PER_SCANLINE - xTstates;
 			// Do not write if written during the hsync impulse (minus 1 byte)
 			//if (cmpTstates > Zx81UlaScreen.TSTATES_OF_HSYNC_LOW || cmpTstates < 4)
 			{
@@ -178,8 +178,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				// Increase length
 				this.screenData[this.screenLineLengthIndex]++;
 
-				if(this.lineCounter >= 250 && this.lineCounter <= 256)
-					console.log(this.tstates - this.vsyncStartTstates, ((this.tstates - this.vsyncStartTstates) / 207).toFixed(2).padStart(16, '0'), "out: xTstates=" + xTstates + ", value=" + this.cvtZx81ToAscii(zx81Data));
+				// if(this.lineCounter >= 250 && this.lineCounter <= 256)
+				// 	console.log(this.tstates - this.vsyncStartTstates, ((this.tstates - this.vsyncStartTstates) / 207).toFixed(2).padStart(16, '0'), "out: xTstates=" + xTstates + ", value=" + this.cvtZx81ToAscii(zx81Data));
 			}
 
 			// if (this.lineCounter === 247 || this.lineCounter === 248)
@@ -250,11 +250,22 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	}
 
 
+	/** Switches to the next line. */
+	protected nextLine() {
+		super.nextLine();
+		if (this.isLineVisible()) {
+			// Next line (graphics output)
+			this.screenLineLengthIndex = this.screenDataIndex;
+			this.screenData[this.screenLineLengthIndex] = 0;
+			this.screenDataIndex++;
+		}
+	}
+
 	/** Generate a HSYNC.
 	 * Switch to next line in the screen buffer.
 	 */
-	protected checkHsync(addTstates: number): boolean {
-		const lineCounterIncremented = super.checkHsync(addTstates);
+	protected checkHsyncxx(addTstates: number): boolean {
+		const lineCounterIncremented = super.checkHsyncxx(addTstates);
 		if (lineCounterIncremented) {
 			if (this.isLineVisible()) {
 				// Next line (graphics output)
