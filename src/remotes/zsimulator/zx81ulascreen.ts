@@ -27,6 +27,9 @@ import {Zx81LoadColorization} from "./zx81loadcolorization";
  * https://problemkaputt.de/zxdocs.htm
  * For details of the ULA HW and signals see:
  * https://oldcomputer.info/8bit/zx81/ULA/ula.htm
+ * http://blog.tynemouthsoftware.co.uk/2023/10/how-the-zx81-generates-video.html
+ * http://searle.x10host.com/zx80/zx80nmi.html
+ * https://www.sinclairzxworld.com/viewtopic.php?t=5096
  *
  * Chroma81 details:
  * http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/Files/Documents/Chroma81_TechnicalDescription.txt
@@ -278,6 +281,8 @@ export class Zx81UlaScreen extends UlaScreen {
 		if (this.prevVSYNC) {
 			// Reset HSYNC counter
 			this.hsyncEndTstates = this.tstates;
+			this.HSYNC = false;
+			this.log('VSYNC corrected hsyncEndTstates=' + this.hsyncEndTstates);
 		}
 
 		let hsyncTstates = this.tstates - this.hsyncEndTstates;
@@ -309,6 +314,8 @@ export class Zx81UlaScreen extends UlaScreen {
 			else {
 				// HSYNC pulse ended, the horizontal line starts
 				this.hsyncEndTstates = this.tstates - hsyncTstates;	// HSYNC ended hsyncTstates in the past
+				this.log('HSYNC: hsyncEndTstates=' + this.hsyncEndTstates + ', hsyncTstates=' + hsyncTstates + ', remainder to csync=' + ((this.hsyncEndTstates - this.csyncEndTstates) % 207));
+
 			}
 		}
 
@@ -319,6 +326,14 @@ export class Zx81UlaScreen extends UlaScreen {
 		// NMI
 		this.NMI = this.NMION && this.HSYNC;
 		if (this.prevNMI !== this.NMI && this.NMI) {
+			// Simulate the "Wait Circuit"
+			if ((this.z80Cpu as any).z80.halted) {	// TODO: Needs a more clean approach
+				// Adjust the tstates. The "Wait Circuit" synchronizes the CPU with the ULA.
+				const tstatesNMI = this.tstates - this.hsyncEndTstates;
+				const diffTstatesNMI = tstatesNMI % (Zx81UlaScreen.TSTATES_PER_SCANLINE - Zx81UlaScreen.TSTATES_OF_HSYNC_LOW);
+				zsim.executeTstates += 16 - diffTstatesNMI - 1; // -1 because /WAIT is evaluated in T2
+				this.tstates += 16 - diffTstatesNMI - 1; // TODO: use tstates from zsim directly?
+			}
 			// Generate NMI
 			this.z80Cpu.interrupt(true, 0);
 		}
@@ -326,7 +341,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		if (this.VSYNC !== this.prevVSYNC && this.VSYNC === false)
 			this.vsyncEndAddress = this.tstates;
 
-		// Calculate composite sync
+		// Calculate composite sync. TODO: CSYNC Not required
 		this.CSYNC = this.VSYNC || this.HSYNC;
 		if (this.prevCSYNC !== this.CSYNC) {
 			// CSYNC changed
@@ -345,7 +360,7 @@ export class Zx81UlaScreen extends UlaScreen {
 					this.emit('updateScreen');
 					this.resetVideoBuffer();
 					this.csyncEndTstates = this.tstates;
-					this.log('=========================================');
+					this.log('==================================================================================');
 				}
 			}
 		}
@@ -359,6 +374,7 @@ export class Zx81UlaScreen extends UlaScreen {
 			this.log('NMION: ' + (this.CSYNC ? 'ON' : 'OFF'));
 		if (this.prevNMI !== this.NMI)
 			this.log('NMI Interrupt: ' + (this.CSYNC ? 'ON' : 'OFF'));
+		this.log('--');
 
 		// Reset
 		this.IORD = false;
@@ -677,13 +693,15 @@ export class Zx81UlaScreen extends UlaScreen {
 
 	/** Log	 */
 	protected log(message: string) {
+		if (this.lineCounter >= 57 && this.lineCounter <= 302)
+			return
 		//return;
 		// total tstates, line counter, diff since last csync end, rel. diff since last csync end, diff since last hsync end, rel. diff since last hsync end, message
 		const diffLastCsyncEnd = this.tstates - this.csyncEndTstates;
 		const diffLastHsyncEnd = this.tstates - this.hsyncEndTstates;
 		const relDiffLastCsyncEnd = (diffLastCsyncEnd / 207).toFixed(2).padStart(16, '0');
 		const relDiffLastHsyncEnd = (diffLastHsyncEnd / 207).toFixed(2).padStart(16, '0');
-		console.log(this.tstates, this.lineCounter, "since csync:" + diffLastCsyncEnd, relDiffLastCsyncEnd, "since hsync: " + diffLastHsyncEnd, relDiffLastHsyncEnd, message);
+		console.log(this.tstates, this.lineCounter, "since csync:" + diffLastCsyncEnd, relDiffLastCsyncEnd, "since hsync:" + diffLastHsyncEnd, relDiffLastHsyncEnd, message);
 	}
 
 	/** Logs only the first log for a line */
