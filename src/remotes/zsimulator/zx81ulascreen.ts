@@ -296,19 +296,17 @@ export class Zx81UlaScreen extends UlaScreen {
 			this.z80Cpu.interrupt(true, 0);
 		}
 
-		if (this.VSYNC !== prevVSYNC && this.VSYNC === false)
-			this.vsyncEndAddress = this.tstates;
-
 		// Check for VSYNC change
 		if (prevVSYNC !== this.VSYNC) {
 			// VSYNC changed
 			if (this.VSYNC) {
-				// CSYNC pulse started
+				// VSYNC pulse started
 				this.vsyncStartTstates = this.tstates;
 			}
 			else {
-				// CSYNC pulse ended
-				// Check if CSYNC is long enough to be recognized as VSYNC by a TV.
+				// VSYNC pulse ended
+				this.vsyncEndAddress = this.tstates;
+				// Check if VSYNC is long enough to be recognized as VSYNC by a TV.
 				const lengthOfVsync = this.tstates - this.vsyncStartTstates;
 				if (lengthOfVsync >= Zx81UlaScreen.VSYNC_MINIMAL_TSTATES) {
 					// VSYNC recognized
