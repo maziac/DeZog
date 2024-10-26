@@ -71,7 +71,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 
 	// The tstates state at end of the hsync impulse. Is used to calculate the x-position of the
 	// first write to the screen.
-	protected hsyncStartTstates: number = 0;
+	//protected hsyncEndTstates: number = 0;
 
 
 	/** Constructor.
@@ -167,7 +167,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				videoShiftRegister ^= 0xFF;
 			}
 			// Add byte to screen
-			const xTstates = this.tstates - this.hsyncStartTstates;
+			const xTstates = this.tstates - this.hsyncEndTstates;
 			//const cmpTstates = Zx81UlaScreen.TSTATES_PER_SCANLINE - xTstates;
 			// Do not write if written during the hsync impulse (minus 1 byte)
 			//if (cmpTstates > Zx81UlaScreen.TSTATES_OF_HSYNC_LOW || cmpTstates < 4)
@@ -178,12 +178,8 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				// Increase length
 				this.screenData[this.screenLineLengthIndex]++;
 
-				// if(this.lineCounter >= 250 && this.lineCounter <= 256)
-				// 	console.log(this.tstates - this.vsyncStartTstates, ((this.tstates - this.vsyncStartTstates) / 207).toFixed(2).padStart(16, '0'), "out: xTstates=" + xTstates + ", value=" + this.cvtZx81ToAscii(zx81Data));
+				this.logIfFirst('ulaM1Read8: xTstates=' + xTstates + ', zx81Data=' + zx81Data + ", value='" + this.cvtZx81ToAscii(zx81Data) + "'");
 			}
-
-			// if (this.lineCounter === 247 || this.lineCounter === 248)
-			// 	console.log('lineCounter:' + this.lineCounter, ', tstates=' + (this.z80Cpu as any).passedTstates);
 		}
 
 		// Return a NOP to be executed
@@ -273,7 +269,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				this.screenData[this.screenLineLengthIndex] = 0;
 				this.screenDataIndex++;
 				// Remember the current cpu tstates.
-				this.hsyncStartTstates = this.tstates;
+				this.hsyncEndTstates = this.tstates;
 			}
 		}
 		return lineCounterIncremented;

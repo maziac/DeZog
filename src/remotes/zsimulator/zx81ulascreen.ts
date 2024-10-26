@@ -1,12 +1,11 @@
 import {MemBuffer} from "../../misc/membuffer";
+import {Utility} from "../../misc/utility";
 import {Chroma81Type} from "../../settings/settings";
 import {UlaScreen} from "./ulascreen";
 import {Z80Cpu} from "./z80cpu";
 import {ZSimRemote} from "./zsimremote";
 import {Zx81LoadColorization} from "./zx81loadcolorization";
 
-
-const logOn = false;	// TODO: REMOVE
 
 /** Handles the ZX81 ULA screen.
  * Is derived from the Zx81UlaScreen which simulates the dfile.
@@ -164,6 +163,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		this.IOWR = true;
 		this.A0 = (port & 0x0001) !== 0;
 		this.A1 = (port & 0x0002) !== 0;
+		this.log('outPort($' + Utility.getHexString(port, 4) + ', ' + _data.toString(2).padStart(8, '0') + ')');
 	}
 
 
@@ -176,6 +176,7 @@ export class Zx81UlaScreen extends UlaScreen {
 	protected inPort(port: number): number | undefined {
 		this.IORD = true;
 		this.A0 = ((port & 0x0001) !== 0);
+		this.log('inPort($' + Utility.getHexString(port, 4) + ')');
 		return undefined;
 	}
 
@@ -204,7 +205,6 @@ export class Zx81UlaScreen extends UlaScreen {
 	 * @param currentTstates The t-states that were just used by
 	 * DMA or CPU.
 	 */
-	protected NMION = false;
 	protected A15 = false;
 	protected IORD = false;
 	protected IOWR = false;
@@ -216,9 +216,11 @@ export class Zx81UlaScreen extends UlaScreen {
 	protected prevHSYNC = false;
 	protected CSYNC = false;
 	protected prevCSYNC = false;
+	protected NMION = false;
+	protected prevNMION = false;
 	protected NMI = false;
 	protected prevNMI = false;
-	protected hsyncStartTstates = 0;
+	protected hsyncEndTstates = 0;
 	protected csyncEndTstates = 0;
 
 	public execute(zsim: ZSimRemote) {
@@ -263,14 +265,37 @@ export class Zx81UlaScreen extends UlaScreen {
 		}
 
 		// HSYNC
-		if (this.VSYNC) {
+		// if (this.prevVSYNC) {
+		// 	// Reset HSYNC counter
+		// 	this.hsyncStartTstates = this.tstates;
+		// }
+		// let hsyncTstates = this.tstates - this.hsyncStartTstates;
+		// if (hsyncTstates >= Zx81UlaScreen.TSTATES_PER_SCANLINE)
+		// 	hsyncTstates %= Zx81UlaScreen.TSTATES_PER_SCANLINE;
+		// this.HSYNC = (hsyncTstates >= Zx81UlaScreen.TSTATES_PER_SCANLINE - Zx81UlaScreen.TSTATES_OF_HSYNC_LOW);
+
+		// HSYNC
+		if (this.prevVSYNC) {
 			// Reset HSYNC counter
-			this.hsyncStartTstates = this.tstates;
+			this.hsyncEndTstates = this.tstates;
 		}
-		let hsyncTstates = this.tstates - this.hsyncStartTstates;
+
+		let hsyncTstates = this.tstates - this.hsyncEndTstates;
+		if (this.HSYNC) {
+			// Check for the end of the HSYNC
+			if (hsyncTstates >= Zx81UlaScreen.TSTATES_PER_SCANLINE)
+				this.HSYNC = false;
+		}
+		else {
+			// Check for the start of the HSYNC
+			if (hsyncTstates >= Zx81UlaScreen.TSTATES_PER_SCANLINE - Zx81UlaScreen.TSTATES_OF_HSYNC_LOW)
+				this.HSYNC = true;
+		}
+
 		if (hsyncTstates >= Zx81UlaScreen.TSTATES_PER_SCANLINE)
 			hsyncTstates %= Zx81UlaScreen.TSTATES_PER_SCANLINE;
-		this.HSYNC = (hsyncTstates >= Zx81UlaScreen.TSTATES_PER_SCANLINE - Zx81UlaScreen.TSTATES_OF_HSYNC_LOW);
+
+
 
 		// if (hsyncTstates >= 203 && hsyncTstates < 207)
 		// 	this.hsyncStartTstates = this.tstates;
@@ -280,14 +305,10 @@ export class Zx81UlaScreen extends UlaScreen {
 			if (this.HSYNC) {
 				// HSYNC pulse started, the horizontal line ends, a new line starts
 				this.nextLine();
-				//if (this.lineCounter == 100)
-					console.log(this.tstates, this.tstates - this.csyncEndTstates, ((this.tstates - this.csyncEndTstates) / 207).toFixed(2).padStart(16, '0'), "HSYNC ON: lineCounter=" + this.lineCounter);
 			}
 			else {
 				// HSYNC pulse ended, the horizontal line starts
-				this.hsyncStartTstates = this.tstates;// - hsyncTstates;	// HSYNC started hsyncTstates in the past
-				//if (this.lineCounter === 100)
-					console.log(this.tstates, this.tstates - this.csyncEndTstates, ((this.tstates - this.csyncEndTstates) / 207).toFixed(2).padStart(16, '0'), "HSYNC OFF: lineCounter=" + this.lineCounter);
+				this.hsyncEndTstates = this.tstates - hsyncTstates;	// HSYNC ended hsyncTstates in the past
 			}
 		}
 
@@ -324,11 +345,20 @@ export class Zx81UlaScreen extends UlaScreen {
 					this.emit('updateScreen');
 					this.resetVideoBuffer();
 					this.csyncEndTstates = this.tstates;
-
-					console.log(this.tstates, this.tstates - this.csyncEndTstates, ((this.tstates - this.csyncEndTstates) / 207).toFixed(2).padStart(16, '0'), "----------------\nCSYNC OFF: vsyncEndAddress=" + this.vsyncEndAddress +", hsyncStartTstates=" + this.hsyncStartTstates);
+					this.log('=========================================');
 				}
 			}
 		}
+
+		// Log on changes
+		if (this.prevVSYNC !== this.VSYNC)
+			this.log('VSYNC: ' + (this.VSYNC ? 'ON' : 'OFF'));
+		if (this.prevHSYNC !== this.HSYNC)
+			this.log('HSYNC: ' + (this.HSYNC ? 'ON' : 'OFF'));
+		if (this.prevNMION !== this.NMION)
+			this.log('NMION: ' + (this.CSYNC ? 'ON' : 'OFF'));
+		if (this.prevNMI !== this.NMI)
+			this.log('NMI Interrupt: ' + (this.CSYNC ? 'ON' : 'OFF'));
 
 		// Reset
 		this.IORD = false;
@@ -336,6 +366,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		this.prevVSYNC = this.VSYNC;
 		this.prevHSYNC = this.HSYNC;
 		this.prevCSYNC = this.CSYNC;
+		this.prevNMION = this.NMION;
 		this.prevNMI = this.NMI;
 
 		// No vsync/no display detection: no display if for 2*20 ms no Vsync was found
@@ -499,29 +530,20 @@ export class Zx81UlaScreen extends UlaScreen {
 		if (this.vsync == on)
 			return;
 
-		logOn && console.log(this.tstates, "generateVsync: " + (on ? "on (low)" : "off (high)"));
-
 		// Vsync has changed
 		if (on) {
 			// VSYNC on (low)
 			if (!this.stateNmiGeneratorOn) {
-				logOn && console.log("  inPort A0=0: VSYNC?");
-				logOn && console.log("  -> VSYNC on (low)");
 				this.csyncStartTstates = this.tstates;
-				logOn && console.log(this.tstates, "  reset hsyncCounter");
 				this.vsync = on;
 			}
 			return;
 		}
 
 		// VSYNC off (high)
-		logOn && console.log(this.tstates, "vsync off:  !this.lineCounterEnabled == true");
 		const lengthOfVsync = this.tstates - this.csyncStartTstates;
 		if (lengthOfVsync >= Zx81UlaScreen.VSYNC_MINIMAL_TSTATES) {
-			logOn && console.log(this.tstates, "  lengthOfVsync >= VSYNC_MINIMAL_TSTATES, lengthOfVsync=" + lengthOfVsync);
-
 			// VSYNC
-			//console.log('updateScreen', Date.now());
 			this.noDisplay = false;
 			this.lineCounter = 0;
 			this.emit('updateScreen');
@@ -558,7 +580,6 @@ export class Zx81UlaScreen extends UlaScreen {
 			// HSYNC off
 			this.hsyncTstatesCounter %= Zx81UlaScreen.TSTATES_PER_SCANLINE;
 			this.hsync = false;
-			logOn && console.log(this.hsyncTstatesCounter, "HSYNC off (high)");
 			// Increase line counter
 			this.ulaLineCounter = (this.ulaLineCounter + 1) & 0x07;
 			this.lineCounter++;
@@ -576,7 +597,6 @@ export class Zx81UlaScreen extends UlaScreen {
 		}
 
 		this.hsync = true;
-		logOn && console.log(this.hsyncTstatesCounter, "HSYNC on (low)");
 		return false;
 	}
 
@@ -652,5 +672,26 @@ export class Zx81UlaScreen extends UlaScreen {
 		this.borderColor = memBuffer.read8();
 		this.chroma81Mode = memBuffer.read8();
 		this.chroma81Enabled = memBuffer.readBoolean();
+	}
+
+
+	/** Log	 */
+	protected log(message: string) {
+		//return;
+		// total tstates, line counter, diff since last csync end, rel. diff since last csync end, diff since last hsync end, rel. diff since last hsync end, message
+		const diffLastCsyncEnd = this.tstates - this.csyncEndTstates;
+		const diffLastHsyncEnd = this.tstates - this.hsyncEndTstates;
+		const relDiffLastCsyncEnd = (diffLastCsyncEnd / 207).toFixed(2).padStart(16, '0');
+		const relDiffLastHsyncEnd = (diffLastHsyncEnd / 207).toFixed(2).padStart(16, '0');
+		console.log(this.tstates, this.lineCounter, "since csync:" + diffLastCsyncEnd, relDiffLastCsyncEnd, "since hsync: " + diffLastHsyncEnd, relDiffLastHsyncEnd, message);
+	}
+
+	/** Logs only the first log for a line */
+	protected lastLoggedLine = -1;
+	protected logIfFirst(message: string) {
+		if (this.lineCounter === this.lastLoggedLine)
+			return;
+		this.lastLoggedLine = this.lineCounter;
+		this.log(message);
 	}
 }
