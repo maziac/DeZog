@@ -7,6 +7,8 @@ import {ZSimRemote} from "./zsimremote";
 import {Zx81LoadColorization} from "./zx81loadcolorization";
 
 
+const logOn = false;	// Set to true to enable logging.
+
 /** Handles the ZX81 ULA screen.
  * Is derived from the Zx81UlaScreen which simulates the dfile.
  * The Zx81UlaScreenHiRes simulates/emulates the ZX81 ULA more correctly.
@@ -166,7 +168,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		this.IOWR = true;
 		this.A0 = (port & 0x0001) !== 0;
 		this.A1 = (port & 0x0002) !== 0;
-		this.log('outPort($' + Utility.getHexString(port, 4) + ', ' + _data.toString(2).padStart(8, '0') + ')');
+		logOn && this.log('outPort($' + Utility.getHexString(port, 4) + ', ' + _data.toString(2).padStart(8, '0') + ')');
 	}
 
 
@@ -179,7 +181,7 @@ export class Zx81UlaScreen extends UlaScreen {
 	protected inPort(port: number): number | undefined {
 		this.IORD = true;
 		this.A0 = ((port & 0x0001) !== 0);
-		this.log('inPort($' + Utility.getHexString(port, 4) + ')');
+		logOn && this.log('inPort($' + Utility.getHexString(port, 4) + ')');
 		return undefined;
 	}
 
@@ -282,7 +284,7 @@ export class Zx81UlaScreen extends UlaScreen {
 			// Reset HSYNC counter
 			this.hsyncEndTstates = this.tstates;
 			this.HSYNC = false;
-			this.log('VSYNC corrected hsyncEndTstates=' + this.hsyncEndTstates);
+			logOn && this.log('VSYNC corrected hsyncEndTstates=' + this.hsyncEndTstates);
 		}
 
 		let hsyncTstates = this.tstates - this.hsyncEndTstates;
@@ -314,7 +316,7 @@ export class Zx81UlaScreen extends UlaScreen {
 			else {
 				// HSYNC pulse ended, the horizontal line starts
 				this.hsyncEndTstates = this.tstates - hsyncTstates;	// HSYNC ended hsyncTstates in the past
-				this.log('HSYNC: hsyncEndTstates=' + this.hsyncEndTstates + ', hsyncTstates=' + hsyncTstates + ', remainder to csync=' + ((this.hsyncEndTstates - this.csyncEndTstates) % 207));
+				logOn && this.log('HSYNC: hsyncEndTstates=' + this.hsyncEndTstates + ', hsyncTstates=' + hsyncTstates + ', remainder to csync=' + ((this.hsyncEndTstates - this.csyncEndTstates) % 207));
 
 			}
 		}
@@ -330,9 +332,11 @@ export class Zx81UlaScreen extends UlaScreen {
 			if ((this.z80Cpu as any).z80.halted) {	// TODO: Needs a more clean approach
 				// Adjust the tstates. The "Wait Circuit" synchronizes the CPU with the ULA.
 				const tstatesNMI = this.tstates - this.hsyncEndTstates;
-				const diffTstatesNMI = tstatesNMI % (Zx81UlaScreen.TSTATES_PER_SCANLINE - Zx81UlaScreen.TSTATES_OF_HSYNC_LOW);
-				zsim.executeTstates += 16 - diffTstatesNMI - 1; // -1 because /WAIT is evaluated in T2
-				this.tstates += 16 - diffTstatesNMI - 1; // TODO: use tstates from zsim directly?
+				let diffTstatesNMI = tstatesNMI % (Zx81UlaScreen.TSTATES_PER_SCANLINE - Zx81UlaScreen.TSTATES_OF_HSYNC_LOW);
+				const extendTstates = 8 + 4 - diffTstatesNMI - 1; // -1 because /WAIT is evaluated in T2
+				// I had to add another 4 tstates to get the correct timing, I don't know why.
+				zsim.executeTstates += extendTstates;
+				this.tstates += extendTstates; // TODO: use tstates from zsim directly?
 			}
 			// Generate NMI
 			this.z80Cpu.interrupt(true, 0);
@@ -360,21 +364,21 @@ export class Zx81UlaScreen extends UlaScreen {
 					this.emit('updateScreen');
 					this.resetVideoBuffer();
 					this.csyncEndTstates = this.tstates;
-					this.log('==================================================================================');
+					logOn && this.log('==================================================================================');
 				}
 			}
 		}
 
 		// Log on changes
 		if (this.prevVSYNC !== this.VSYNC)
-			this.log('VSYNC: ' + (this.VSYNC ? 'ON' : 'OFF'));
+			logOn && this.log('VSYNC: ' + (this.VSYNC ? 'ON' : 'OFF'));
 		if (this.prevHSYNC !== this.HSYNC)
-			this.log('HSYNC: ' + (this.HSYNC ? 'ON' : 'OFF'));
+			logOn && this.log('HSYNC: ' + (this.HSYNC ? 'ON' : 'OFF'));
 		if (this.prevNMION !== this.NMION)
-			this.log('NMION: ' + (this.CSYNC ? 'ON' : 'OFF'));
+			logOn && this.log('NMION: ' + (this.CSYNC ? 'ON' : 'OFF'));
 		if (this.prevNMI !== this.NMI)
-			this.log('NMI Interrupt: ' + (this.CSYNC ? 'ON' : 'OFF'));
-		this.log('--');
+			logOn && this.log('NMI Interrupt: ' + (this.CSYNC ? 'ON' : 'OFF'));
+		logOn && this.log('--');
 
 		// Reset
 		this.IORD = false;
@@ -710,6 +714,6 @@ export class Zx81UlaScreen extends UlaScreen {
 		if (this.lineCounter === this.lastLoggedLine)
 			return;
 		this.lastLoggedLine = this.lineCounter;
-		this.log(message);
+		logOn && this.log(message);
 	}
 }
