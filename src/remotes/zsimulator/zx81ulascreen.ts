@@ -229,7 +229,7 @@ export class Zx81UlaScreen extends UlaScreen {
 	protected csyncEndTstates = 0;
 
 	public execute(zsim: ZSimRemote) {
-		this.tstates += zsim.executeTstates;
+		this.tstates = zsim.passedTstates + zsim.executeTstates;
 
 		// Execute int38 interrupt?
 		if (this.int38InNextCycle) {
@@ -333,10 +333,9 @@ export class Zx81UlaScreen extends UlaScreen {
 				// Adjust the tstates. The "Wait Circuit" synchronizes the CPU with the ULA.
 				const tstatesNMI = this.tstates - this.hsyncEndTstates;
 				let diffTstatesNMI = tstatesNMI % (Zx81UlaScreen.TSTATES_PER_SCANLINE - Zx81UlaScreen.TSTATES_OF_HSYNC_LOW);
-				const extendTstates = 8 + 4 - diffTstatesNMI - 1; // -1 because /WAIT is evaluated in T2
-				// I had to add another 4 tstates to get the correct timing, I don't know why.
+				const extendTstates = Zx81UlaScreen.TSTATES_OF_HSYNC_LOW - 3 - diffTstatesNMI - 1; // -1 because /WAIT is evaluated in T2
+				// I had to subtract another 3 tstates to get the correct timing, I don't know why.
 				zsim.executeTstates += extendTstates;
-				this.tstates += extendTstates; // TODO: use tstates from zsim directly?
 			}
 			// Generate NMI
 			this.z80Cpu.interrupt(true, 0);
