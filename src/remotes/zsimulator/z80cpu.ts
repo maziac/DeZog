@@ -343,6 +343,10 @@ export class Z80Cpu implements Serializable, ExecuteInterface {
 		this.z80.setState(r);
 	}
 
+	get isHalted() {
+		return this.z80.halted;
+	}
+
 	// T. Busse, Sep-2022: Added to break on an interrupt.
 	set interruptOccurred(value) {this.z80.interruptOccurred = value;}
 	get interruptOccurred() {return this.z80.interruptOccurred;}

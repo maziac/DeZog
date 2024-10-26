@@ -329,7 +329,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		this.NMI = this.NMION && this.HSYNC;
 		if (this.prevNMI !== this.NMI && this.NMI) {
 			// Simulate the "Wait Circuit"
-			if ((this.z80Cpu as any).z80.halted) {	// TODO: Needs a more clean approach
+			if (this.z80Cpu.isHalted) {
 				// Adjust the tstates. The "Wait Circuit" synchronizes the CPU with the ULA.
 				const tstatesNMI = this.tstates - this.hsyncEndTstates;
 				let diffTstatesNMI = tstatesNMI % (Zx81UlaScreen.TSTATES_PER_SCANLINE - Zx81UlaScreen.TSTATES_OF_HSYNC_LOW);
