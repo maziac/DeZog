@@ -123,8 +123,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		if ((data & 0b0100_0000) !== 0)
 			return data;	// E.g. HALT
 
-		let zx81Data = 0;
-
 		// Check if line should be displayed
 		if (this.isLineVisible()) {
 			const i = this.z80Cpu.i;
@@ -140,7 +138,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 				// i (high byte of address) is inside the ROM area or RAM (2000-3FFF) area -> normal display or pseudo hires, or ARX (2000-3FFF).
 				// Interpret data
 				const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
-			zx81Data = ulaAddrLatch;
 				const charcode_plus_linecounter = ulaAddrLatch * 8 + this.ulaLineCounter;
 				addr = (i & 0xFE) * 256 + charcode_plus_linecounter;
 				if (i & 0x01)	// CHR$128?
@@ -168,63 +165,18 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			}
 			// Add byte to screen
 			const xTstates = this.tstates - this.hsyncEndTstates;
-			//const cmpTstates = Zx81UlaScreen.TSTATES_PER_SCANLINE - xTstates;
-			// Do not write if written during the hsync impulse (minus 1 byte)
-			//if (cmpTstates > Zx81UlaScreen.TSTATES_OF_HSYNC_LOW || cmpTstates < 4)
-			{
-				// 1 Byte is 4 cycles, if it would be written 4 cycles before the end of the line, it is not visible.
-				this.screenData[this.screenDataIndex++] = xTstates;
-				this.screenData[this.screenDataIndex++] = videoShiftRegister;
-				// Increase length
-				this.screenData[this.screenLineLengthIndex]++;
+			// 1 Byte is 4 cycles, if it would be written 4 cycles before the end of the line, it is not visible.
+			this.screenData[this.screenDataIndex++] = xTstates;
+			this.screenData[this.screenDataIndex++] = videoShiftRegister;
+			// Increase length
+			this.screenData[this.screenLineLengthIndex]++;
 
-				this.logIfFirst('ulaM1Read8: xTstates=' + xTstates + ', zx81Data=' + zx81Data + ", value='" + this.cvtZx81ToAscii(zx81Data) + "'");
-			}
+			// this.logIfFirst('ulaM1Read8: xTstates=' + xTstates + ', videoShiftRegister=' + videoShiftRegister + "'");
 		}
 
 		// Return a NOP to be executed
 		return 0x00;
 	}
-
-	protected cvtZx81ToAscii(byte: number): string {
-		return this.tokens[byte];
-	}
-
-	public tokens = [
-		// 0x0
-		" ", "\\' ", "\\ '", "\\''", "\\. ", "\\: ", "\\.'", "\\:'", "\\##", "\\,,", "\\~~", "\"", "#", "$", ":", "?",
-		// 0x1
-		"(", ")", ">", "<", "=", "+", "-", "*", "/", ";", ",", ".", "0", "1", "2", "3",
-		// 0x2
-		"4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
-		// 0x3
-		"K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-		// 0x4
-		"RND", "INKEY$", "PI", "", "", "", "", "", "", "", "", "", "", "", "", "",
-		// 0x5
-		"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-		// 0x6
-		"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-		// 0x7
-		//"UP", "DOWN", "LEFT", "RIGHT", "GRAPHICS", "EDIT", "NEWLINE", "RUBOUT", "K/L", "MODE", "FUNCTION", "", "", "", "NUMBER", "CURSOR",
-		"", "", "", "", "", "", ""/*NL*/, "", "", "", "", "", "", "", "", "",
-		// 0x8 Inverse graphics
-		"\\::", "\\.:", "\\:.", "\\..", "\\':", "\\ :", "\\'.", "\\ .", "\@@", "\\;;", "\\!!", "\"", "#", "$", ":", "?",
-		// 0x9 Inverse
-		"(", ")", ">", "<", "=", "+", "-", "*", "/", ";", ",", ".", "0", "1", "2", "3",
-		// 0xA Inverse
-		"4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
-		// 0xB Inverse
-		"K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-		// 0xC
-		"\\\"", "AT ", "TAB ", "", "CODE ", "VAL ", "LEN ", "SIN ", "COS ", "TAN ", "ASN ", "ACS ", "ATN ", "LN ", "EXP ", "INT ",
-		// 0xD
-		"SQR ", "SGN ", "ABS ", "PEEK ", "USR ", "STR$ ", "CHR$ ", "NOT ", "**", " OR ", " AND ", "<=", ">=", "<>", " THEN ", " TO ",
-		// 0xE
-		" STEP ", "LPRINT ", "LLIST ", "STOP ", "SLOW ", "FAST ", "NEW ", "SCROLL ", "CONT ", "DIM ", "REM ", "FOR ", "GOTO ", "GOSUB ", "INPUT ", "LOAD ",
-		// 0xF
-		"LIST ", "LET ", "PAUSE ", "NEXT ", "POKE ", "PRINT ", "PLOT ", "RUN ", "SAVE ", "RAND ", "IF ", "CLS ", "UNPLOT ", "CLEAR ", "RETURN ", "COPY "
-	];
 
 
 	/** Returns the screen data.
@@ -255,24 +207,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			this.screenData[this.screenLineLengthIndex] = 0;
 			this.screenDataIndex++;
 		}
-	}
-
-	/** Generate a HSYNC.
-	 * Switch to next line in the screen buffer.
-	 */
-	protected checkHsyncxx(addTstates: number): boolean {
-		const lineCounterIncremented = super.checkHsyncxx(addTstates);
-		if (lineCounterIncremented) {
-			if (this.isLineVisible()) {
-				// Next line (graphics output)
-				this.screenLineLengthIndex = this.screenDataIndex;
-				this.screenData[this.screenLineLengthIndex] = 0;
-				this.screenDataIndex++;
-				// Remember the current cpu tstates.
-				this.hsyncEndTstates = this.tstates;
-			}
-		}
-		return lineCounterIncremented;
 	}
 
 
