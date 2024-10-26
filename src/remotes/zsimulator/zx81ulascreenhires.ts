@@ -69,10 +69,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// Color (chroma81) data
 	protected colorData: Uint8Array;
 
-	// The tstates state at end of the hsync impulse. Is used to calculate the x-position of the
-	// first write to the screen.
-	//protected hsyncEndTstates: number = 0;
-
 
 	/** Constructor.
 	 * @param z80Cpu Mainly for the memoryModel and the ports.
@@ -179,6 +175,18 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	}
 
 
+	/** Switches to the next line. */
+	protected nextLine() {
+		super.nextLine();
+		if (this.isLineVisible()) {
+			// Next line (graphics output)
+			this.screenLineLengthIndex = this.screenDataIndex;
+			this.screenData[this.screenLineLengthIndex] = 0;
+			this.screenDataIndex++;
+		}
+	}
+
+
 	/** Returns the screen data.
 	 * @returns The screen as a UInt8Array.
 	 * Returns only the portion that is written.
@@ -195,18 +203,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			data: this.screenData.slice(0, this.screenDataIndex),
 			colorData: this.chroma81Enabled ? this.colorData.slice(0, this.screenDataIndex) : undefined
 		};
-	}
-
-
-	/** Switches to the next line. */
-	protected nextLine() {
-		super.nextLine();
-		if (this.isLineVisible()) {
-			// Next line (graphics output)
-			this.screenLineLengthIndex = this.screenDataIndex;
-			this.screenData[this.screenLineLengthIndex] = 0;
-			this.screenDataIndex++;
-		}
 	}
 
 
