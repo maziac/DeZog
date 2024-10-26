@@ -57,9 +57,6 @@ export class Zx81UlaScreen extends UlaScreen {
 	// So the about the half is used for vsync recognition.
 	protected static VSYNC_MINIMAL_TSTATES = 500;
 
-	// Is set when an interrupt should be generated in the next cycle.
-	protected int38InNextCycle = false;
-
 	// No display.
 	protected noDisplay = false;
 
@@ -78,6 +75,8 @@ export class Zx81UlaScreen extends UlaScreen {
 	protected ulaLineCounter = 0;	// The line 3-bit counter (0-7) to address the 8 lines of a character.
 	protected lineCounter = 0;	// Counts lines independent of the ulaLineCounter. Is reset on a vsync.
 	protected tstates = 0;	// The tstates counter (is never reset)
+	protected int38InNextCycle = false;	// Is set when an interrupt should be generated in the next cycle.
+
 
 	// The original memory read function.
 	protected memoryRead8: (addr64k: number) => number;
@@ -131,7 +130,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		}
 
 		// Read an optional colourization file
-		if(chroma81.colourizationFile) {
+		if (chroma81.colourizationFile) {
 			// Load the colorization file
 			const colourization = Zx81LoadColorization.fromFile(chroma81.colourizationFile);
 			this.z80Cpu.memory.writeBlock(0xC000, colourization.colorMap);
@@ -305,7 +304,6 @@ export class Zx81UlaScreen extends UlaScreen {
 			}
 			else {
 				// VSYNC pulse ended
-				this.vsyncEndAddress = this.tstates;
 				// Check if VSYNC is long enough to be recognized as VSYNC by a TV.
 				const lengthOfVsync = this.tstates - this.vsyncStartTstates;
 				if (lengthOfVsync >= Zx81UlaScreen.VSYNC_MINIMAL_TSTATES) {
@@ -343,7 +341,6 @@ export class Zx81UlaScreen extends UlaScreen {
 		}
 	}
 
-	protected vsyncEndAddress = 0;// For debugging only
 
 	/** Switches to the next line. */
 	protected nextLine() {
@@ -449,14 +446,19 @@ export class Zx81UlaScreen extends UlaScreen {
 	/** Serializes the object.
 	 */
 	public serialize(memBuffer: MemBuffer) {
+		super.serialize(memBuffer);
 		// Write data
-		memBuffer.write8(this.prevRregister);
-		memBuffer.writeNumber(this.ulaLineCounter);
-		memBuffer.writeNumber(this.tstates);
-		memBuffer.writeNumber(this.vsyncStartTstates);
-		memBuffer.writeBoolean(this.int38InNextCycle);
 		memBuffer.writeBoolean(this.noDisplay);
-		memBuffer.write8(this.borderColor);
+		memBuffer.writeBoolean(this.VSYNC);
+		memBuffer.writeBoolean(this.HSYNC);
+		memBuffer.writeNumber(this.vsyncStartTstates);
+		memBuffer.writeNumber(this.vsyncEndTstates);
+		memBuffer.writeNumber(this.hsyncEndTstates);
+		memBuffer.write8(this.prevRregister);
+		memBuffer.write8(this.ulaLineCounter);
+		memBuffer.writeNumber(this.lineCounter);
+		memBuffer.writeNumber(this.tstates);
+		memBuffer.writeBoolean(this.int38InNextCycle);
 		memBuffer.write8(this.chroma81Mode);
 		memBuffer.writeBoolean(this.chroma81Enabled);
 	}
@@ -465,14 +467,19 @@ export class Zx81UlaScreen extends UlaScreen {
 	/** Deserializes the object.
 	 */
 	public deserialize(memBuffer: MemBuffer) {
+		super.deserialize(memBuffer);
 		// Read data
-		this.prevRregister = memBuffer.read8();
-		this.ulaLineCounter = memBuffer.readNumber();
-		this.tstates = memBuffer.readNumber();
-		this.vsyncStartTstates = memBuffer.readNumber();
-		this.int38InNextCycle = memBuffer.readBoolean();
 		this.noDisplay = memBuffer.readBoolean();
-		this.borderColor = memBuffer.read8();
+		this.VSYNC = memBuffer.readBoolean();
+		this.HSYNC = memBuffer.readBoolean();
+		this.vsyncStartTstates = memBuffer.readNumber();
+		this.vsyncEndTstates = memBuffer.readNumber();
+		this.hsyncEndTstates = memBuffer.readNumber();
+		this.prevRregister = memBuffer.read8();
+		this.ulaLineCounter = memBuffer.read8();
+		this.lineCounter = memBuffer.readNumber();
+		this.tstates = memBuffer.readNumber();
+		this.int38InNextCycle = memBuffer.readBoolean();
 		this.chroma81Mode = memBuffer.read8();
 		this.chroma81Enabled = memBuffer.readBoolean();
 	}

@@ -211,12 +211,9 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	public serialize(memBuffer: MemBuffer) {
 		super.serialize(memBuffer);
 		// Write additional data
-		memBuffer.writeNumber(this.firstLine);
-		memBuffer.writeNumber(this.lastLine);
+		memBuffer.writeArrayBuffer(this.screenData);
 		memBuffer.writeNumber(this.screenDataIndex);
 		memBuffer.writeNumber(this.screenLineLengthIndex);
-		// TODO: save the x-position per line
-		memBuffer.writeArrayBuffer(this.screenData);
 		memBuffer.writeArrayBuffer(this.colorData);
 	}
 
@@ -226,11 +223,9 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	public deserialize(memBuffer: MemBuffer) {
 		super.deserialize(memBuffer);
 		// Read additional data
-		this.firstLine = memBuffer.readNumber();
-		this.lastLine = memBuffer.readNumber();
+		this.screenData = memBuffer.readArrayBuffer();
 		this.screenDataIndex = memBuffer.readNumber();
 		this.screenLineLengthIndex = memBuffer.readNumber();
-		this.screenData = memBuffer.readArrayBuffer();
 		this.colorData = memBuffer.readArrayBuffer();
 	}
 }
