@@ -37,6 +37,7 @@ export class Zx81HiResUlaDraw {
 		//const width8 = Zx81HiResUlaDraw.SCREEN_WIDTH / 8;
 		const width8 = screenWidth / 8;
 		let index = 0;
+		let colorIndex = 0;
 		let len = width8;
 		let xAdd = 0;
 		let fgRed = 0, fgGreen = 0, fgBlue = 0;
@@ -53,17 +54,17 @@ export class Zx81HiResUlaDraw {
 				pixelIndex = (lineCounter * 416 + xAdd) * 4;
 				// Get color
 				if (colorData) {
-					const color = colorData[index];
+					const color = colorData[colorIndex++];
 					// fg color
-					let colorIndex = (color & 0x0F) * 3;
-					fgRed = Zx81UlaDraw.chroma81Palette[colorIndex];
-					fgGreen = Zx81UlaDraw.chroma81Palette[colorIndex + 1];
-					fgBlue = Zx81UlaDraw.chroma81Palette[colorIndex + 2];
+					let cIndex = (color & 0x0F) * 3;
+					fgRed = Zx81UlaDraw.chroma81Palette[cIndex];
+					fgGreen = Zx81UlaDraw.chroma81Palette[cIndex + 1];
+					fgBlue = Zx81UlaDraw.chroma81Palette[cIndex + 2];
 					// bg color
-					colorIndex = (color >>> 4) * 3;
-					bgRed = Zx81UlaDraw.chroma81Palette[colorIndex];
-					bgGreen = Zx81UlaDraw.chroma81Palette[colorIndex + 1];
-					bgBlue = Zx81UlaDraw.chroma81Palette[colorIndex + 2];
+					cIndex = (color >>> 4) * 3;
+					bgRed = Zx81UlaDraw.chroma81Palette[cIndex];
+					bgGreen = Zx81UlaDraw.chroma81Palette[cIndex + 1];
+					bgBlue = Zx81UlaDraw.chroma81Palette[cIndex + 2];
 				}
 				// Get screen data
 				const byteValue = ulaScreen[index++];

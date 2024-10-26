@@ -69,6 +69,10 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// Color (chroma81) data
 	protected colorData: Uint8Array;
 
+	// The write index into the color data
+	protected colorDataIndex: number;
+
+
 
 	/** Constructor.
 	 * @param z80Cpu Mainly for the memoryModel and the ports.
@@ -84,9 +88,14 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			totalLines = 0;
 		this.screenDataIndex = 0;
 		this.screenLineLengthIndex = 0;
-//		this.screenData = new Uint8Array(totalLines * (1 + 1 + Zx81UlaScreenHiRes.SCREEN_WIDTH / 8)); // TODO fix magic constant 416
-		this.screenData = new Uint8Array(totalLines * (1 + 2 * 416 / 8) + 2);
-		this.colorData = new Uint8Array(this.screenData.length);
+		this.colorDataIndex = 0;
+		//		this.screenData = new Uint8Array(totalLines * (1 + 1 + Zx81UlaScreenHiRes.SCREEN_WIDTH / 8)); // TODO fix magic constant 416
+		//const width8 = 416 / 8;
+		const maxWidth = 416;
+		const maxWidth8 = maxWidth / 8;
+		const maxHeight = 400;
+		this.screenData = new Uint8Array(maxHeight * (2 * maxWidth8 + 1));
+		this.colorData = new Uint8Array(maxHeight * maxWidth8);
 	}
 
 
@@ -94,6 +103,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	protected resetVideoBuffer() {
 		this.screenLineLengthIndex = 0;
 		this.screenDataIndex = 0;
+		this.colorDataIndex = 0;
 	}
 
 
@@ -124,35 +134,39 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			const i = this.z80Cpu.i;
 			let addr;
 			// Check for WRX (true hires)
+			let lowerAddress: number;
 			if (i >= 0x40) {
 				// i (high byte of address) is outside the ROM (0-1FFF) and RAM (2000-3FFF) area -> WRX
 				const r = this.z80Cpu.r;
 				// Use previous r value
-				addr = i * 256 + (r & 0x80) + ((r - 1) & 0x7F);
+				lowerAddress = (r & 0x80) + ((r - 1) & 0x7F);
+				addr = i * 256 + lowerAddress;
 			}
 			else {
 				// i (high byte of address) is inside the ROM area or RAM (2000-3FFF) area -> normal display or pseudo hires, or ARX (2000-3FFF).
 				// Interpret data
 				const ulaAddrLatch = data & 0b0011_1111;	// 6 bits
-				const charcode_plus_linecounter = ulaAddrLatch * 8 + this.ulaLineCounter;
-				addr = (i & 0xFE) * 256 + charcode_plus_linecounter;
+				lowerAddress = ulaAddrLatch * 8 + this.ulaLineCounter;
+				addr = (i & 0xFE) * 256 + lowerAddress;
 				if (i & 0x01)	// CHR$128?
 					addr += (data & 0b1000_0000) * 4;	// Bit 7 of the character code
-				// Write chroma81 (color) data
-				if (this.chroma81Enabled) {
-					let colorAddr = addr64k;	// Would be already OK for color mode 1
-					if (this.chroma81Mode === 0) {
-						// Character code mode.
-						// Get the index into the character color data:
-						colorAddr = 0xC000 + charcode_plus_linecounter;
-						if (data & 0b1000_0000) {	// Inverted bit
-							colorAddr += 64 * 8;	// Used to add 64 more characters for colors
-						}
-					}
-					const color = this.memoryRead8(colorAddr);
-					this.colorData[this.screenDataIndex] = color;
-				}
 			}
+
+			// Write chroma81 (color) data
+			if (this.chroma81Enabled) {
+				let colorAddr = addr64k;	// Would be already OK for color mode 1
+				if (this.chroma81Mode === 0) {
+					// Character code mode.
+					// Get the index into the character color data:
+					colorAddr = 0xC000 + lowerAddress;
+					if (data & 0b1000_0000) {	// Inverted bit
+						colorAddr += 64 * 8;	// Used to add 64 more characters for colors
+					}
+				}
+				const color = this.memoryRead8(colorAddr);
+				this.colorData[this.colorDataIndex++] = color;
+			}
+
 			// Load byte from character (ROM)
 			let videoShiftRegister = this.memoryRead8(addr);
 			// Check to invert the byte
@@ -214,6 +228,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		memBuffer.writeArrayBuffer(this.screenData);
 		memBuffer.writeNumber(this.screenDataIndex);
 		memBuffer.writeNumber(this.screenLineLengthIndex);
+		memBuffer.writeNumber(this.colorDataIndex);
 		memBuffer.writeArrayBuffer(this.colorData);
 	}
 
@@ -226,6 +241,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		this.screenData = memBuffer.readArrayBuffer();
 		this.screenDataIndex = memBuffer.readNumber();
 		this.screenLineLengthIndex = memBuffer.readNumber();
+		this.colorDataIndex = memBuffer.readNumber();
 		this.colorData = memBuffer.readArrayBuffer();
 	}
 }
