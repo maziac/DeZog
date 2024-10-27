@@ -17,19 +17,17 @@ export class Zx81HiResUlaDraw {
 	 * @param debug true if debug mode is on. Shows grey background if
 	 * dfile is not elapsed.
 	 */
-	public static drawUlaScreen(ctx: CanvasRenderingContext2D, imgData: ImageData, ulaScreen: Uint8Array, colorData: Uint8Array, debug: boolean) {
-		// Get pixels memory
-		const pixels = imgData.data;
-		let pixelIndex = 0;
-
-		if (debug)
-			pixels.fill(128);	// gray background
-		else
-			pixels.fill(0xFF);	// white background
-
+	public static drawUlaScreen(ctx: CanvasRenderingContext2D, imgData: ImageData, ulaScreen: Uint8Array, colorData: Uint8Array, backgroundColor: string) {
 		// Safety check
 		if (!ulaScreen)
 			return;
+
+		// Get pixels memory (Get a 32bit view of the buffer)
+		const pixels = new Uint32Array(imgData.data.buffer);
+		let pixelIndex = 0;
+
+		// Default is transparent
+		pixels.fill(0xFFFF0000);
 
 		// Whole screen is converted by evaluating blocks that are equal to the color attributes.
 		const screenWidth = 416;
@@ -51,7 +49,7 @@ export class Zx81HiResUlaDraw {
 			for (let x = len; x > 0; x--) {
 				const xTstates = ulaScreen[index++];
 				xAdd = xTstates * 2;
-				pixelIndex = (lineCounter * 416 + xAdd) * 4;
+				pixelIndex = (lineCounter * 416 + xAdd);
 				// Get color
 				if (colorData) {
 					const color = colorData[colorIndex++];
@@ -73,17 +71,11 @@ export class Zx81HiResUlaDraw {
 				while (mask >= 1) {	// 8x
 					if (byteValue & mask) {
 						// Foreground color
-						pixels[pixelIndex++] = fgRed;
-						pixels[pixelIndex++] = fgGreen;
-						pixels[pixelIndex++] = fgBlue;
-						pixels[pixelIndex++] = 0xFF;	// alpha
+						pixels[pixelIndex++] = 0xFF000000 + 65536 * fgBlue + fgGreen * 256 + fgRed;
 					}
 					else {
 						// Background color
-						pixels[pixelIndex++] = bgRed;
-						pixels[pixelIndex++] = bgGreen;
-						pixels[pixelIndex++] = bgBlue;
-						pixels[pixelIndex++] = 0xFF;	// alpha
+						pixels[pixelIndex++] = 0xFF000000 + 65536 * bgBlue + bgGreen * 256 + bgRed;
 					}
 					// Next pixel
 					mask /= 2;
@@ -103,13 +95,12 @@ export class Zx81HiResUlaDraw {
 		ctx.putImageData(imgData, 0, 0);
 	}
 
-	protected static drawVertLine(pixels: Uint8ClampedArray, tstates: number, screenWidth: number, screenHeight: number, r: number, g: number, b: number) {
+	
+	/** Draws a vertical line. */
+	protected static drawVertLine(pixels: Uint32Array, tstates: number, screenWidth: number, screenHeight: number, r: number, g: number, b: number) {
 		for (let y = 0; y < screenHeight; y++) {
-			let pixelIndex = (y * screenWidth + tstates * 2) * 4;
-			pixels[pixelIndex++] = r;
-			pixels[pixelIndex++] = g;
-			pixels[pixelIndex++] = b;
-			pixels[pixelIndex] = 0xFF;	// alpha
+			let pixelIndex = (y * screenWidth + tstates * 2);
+			pixels[pixelIndex++] = 0xFF000000 + 65536 * b + g * 256 + r;
 		}
 	}
 
