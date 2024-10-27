@@ -74,7 +74,7 @@ export class Zx81UlaScreen extends UlaScreen {
 	protected prevRregister = 0;	// The previous state of the R-register.
 	protected ulaLineCounter = 0;	// The line 3-bit counter (0-7) to address the 8 lines of a character.
 	protected lineCounter = 0;	// Counts lines independent of the ulaLineCounter. Is reset on a vsync.
-	protected tstates = 0;	// The tstates counter (is never reset)
+	protected tstates = 0;	// The tstates counter (is never reset). Copy of passedTstates + executeTstates.
 	protected int38InNextCycle = false;	// Is set when an interrupt should be generated in the next cycle.
 
 
@@ -233,11 +233,9 @@ export class Zx81UlaScreen extends UlaScreen {
 				this.NMION = false;
 			}
 		}
-		if (this.IORD && (this.A0 === false)) {
-			if (this.NMION === false) {
-				// Start VSYNC
-				this.VSYNC = true;
-			}
+		if (this.IORD && !this.A0 && !this.NMION) {
+			// Start VSYNC
+			this.VSYNC = true;
 		}
 
 		// HSYNC
@@ -276,10 +274,6 @@ export class Zx81UlaScreen extends UlaScreen {
 			}
 		}
 
-		// ULA line counter is reset when VSYNC is on
-		if (this.VSYNC)
-			this.ulaLineCounter = 0;
-
 		// NMI
 		if (this.NMION && (prevHSYNC !== this.HSYNC) && this.HSYNC) {
 			// Simulate the "Wait Circuit"
@@ -294,6 +288,10 @@ export class Zx81UlaScreen extends UlaScreen {
 			// Generate NMI
 			this.z80Cpu.interrupt(true, 0);
 		}
+
+		// ULA line counter is reset when VSYNC is on
+		if (this.VSYNC)
+			this.ulaLineCounter = 0;
 
 		// Check for VSYNC change
 		if (prevVSYNC !== this.VSYNC) {

@@ -27,182 +27,55 @@ suite('Zx81UlaScreen', () => {
 	test('constructor', () => {
 		assert.equal(zx81UlaScreen.z80Cpu, z80Cpu);
 		assert.equal(zx81UlaScreen.prevRregister, 0);
-		assert.equal(zx81UlaScreen.stateNmiGeneratorOn, false);
 		assert.equal(zx81UlaScreen.ulaLineCounter, 0);
 		assert.equal(zx81UlaScreen.lineCounter, 0);
 		assert.equal(zx81UlaScreen.vsyncStartTstates, 0);
-		assert.equal(zx81UlaScreen.hsyncTstatesCounter, 0);
+		assert.equal(zx81UlaScreen.vsyncEndTstates, 0);
+		assert.equal(zx81UlaScreen.hsyncEndTstates, 0);
 		assert.equal(zx81UlaScreen.int38InNextCycle, false);
-		assert.equal(zx81UlaScreen.hsync, false);
+		assert.equal(zx81UlaScreen.VSYNC, false);
+		assert.equal(zx81UlaScreen.HSYNC, false);
 		assert.equal(zx81UlaScreen.noDisplay, false);
 		assert.equal(zx81UlaScreen.chroma81Mode, 0);
 		assert.equal(zx81UlaScreen.chroma81Enabled, false);
 	});
 
 	test('outPort handles NMI generator off', () => {
-		zx81UlaScreen.vsync = true;
+		zx81UlaScreen.A0 = false;
+		zx81UlaScreen.A1 = false;
 		zx81UlaScreen.outPort(0xAAFD, 0);	// Partly decoded
-		assert.equal(zx81UlaScreen.stateNmiGeneratorOn, false);
-		assert.equal(zx81UlaScreen.vsync, false);
+		assert.equal(zx81UlaScreen.A0, true);
+		assert.equal(zx81UlaScreen.A1, false);
 
-		zx81UlaScreen.vsync = true;
+		zx81UlaScreen.A0 = false;
+		zx81UlaScreen.A1 = false;
 		zx81UlaScreen.outPort(0xBB01, 0);	// Partly decoded
-		assert.equal(zx81UlaScreen.stateNmiGeneratorOn, false);
-		assert.equal(zx81UlaScreen.vsync, false);
+		assert.equal(zx81UlaScreen.A0, true);
+		assert.equal(zx81UlaScreen.A1, false);
 	});
 
 	test('outPort handles NMI generator on', () => {
-		zx81UlaScreen.vsync = true;
+		zx81UlaScreen.A0 = false;
+		zx81UlaScreen.A1 = false;
 		zx81UlaScreen.outPort(0xAAFE, 0);	// Partly decoded
-		assert.equal(zx81UlaScreen.stateNmiGeneratorOn, true);
-		assert.equal(zx81UlaScreen.vsync, false);
+		assert.equal(zx81UlaScreen.A0, false);
+		assert.equal(zx81UlaScreen.A1, true);
 
-		zx81UlaScreen.vsync = true;
+		zx81UlaScreen.A0 = false;
+		zx81UlaScreen.A1 = false;
 		zx81UlaScreen.outPort(0xBB02, 0);		// Partly decoded
-		assert.equal(zx81UlaScreen.stateNmiGeneratorOn, true);
-		assert.equal(zx81UlaScreen.vsync, false);
+		assert.equal(zx81UlaScreen.A0, false);
+		assert.equal(zx81UlaScreen.A1, true);
 	});
 
 	test('inPort partial decoding', () => {
-		zx81UlaScreen.vsync = false;
-		zx81UlaScreen.stateNmiGeneratorOn = false;
+		zx81UlaScreen.A0 = true;
 		zx81UlaScreen.inPort(0xaafe);  // Partly decoded
-		assert.equal(zx81UlaScreen.vsync, true);
+		assert.equal(zx81UlaScreen.A0, false);
 
 		zx81UlaScreen.vsync = false;
-		zx81UlaScreen.stateNmiGeneratorOn = false;
 		zx81UlaScreen.inPort(0xbbff);
-		assert.equal(zx81UlaScreen.vsync, false);  // Partly decoded (but unmatched)
-	});
-
-	test('VSYNC', () => {
-		const emitSpy = sinon.spy(zx81UlaScreen, 'emit');
-		const resetVideoBufferSpy = sinon.spy(zx81UlaScreen, 'resetVideoBuffer');
-		// inport 0xfe: -> vsync on
-		// outport: -> vsync off
-
-		// OFF -> ON
-		zx81UlaScreen.vsync = false;
-		zx81UlaScreen.stateNmiGeneratorOn = true;
-		zx81UlaScreen.inPort(0xfe);	// VSYNC on
-		assert.equal(zx81UlaScreen.vsync, false);
-
-		zx81UlaScreen.vsync = false;
-		zx81UlaScreen.stateNmiGeneratorOn = false;
-		zx81UlaScreen.tstates = 507;
-		zx81UlaScreen.inPort(0xfe);	// VSYNC on
-		assert.equal(zx81UlaScreen.vsync, true);
-		assert.equal(zx81UlaScreen.vsyncStartTstates, 507);	// Remembered
-		assert.equal(emitSpy.called, false);
-		assert.equal(resetVideoBufferSpy.called, false);
-
-		// ON -> OFF
-		const vsync_min_tstates = (Zx81UlaScreen as any).VSYNC_MINIMAL_TSTATES;
-		zx81UlaScreen.vsync = true;
-		zx81UlaScreen.vsyncStartTstates = 100;
-		zx81UlaScreen.tstates = zx81UlaScreen.vsyncStartTstates + vsync_min_tstates - 1;
-		zx81UlaScreen.ulaLineCounter = 6;
-		zx81UlaScreen.hsyncTstatesCounter = 77;
-		zx81UlaScreen.noDisplay = true;
-		zx81UlaScreen.lineCounter = 101;
-		zx81UlaScreen.outPort(0);	// VSYNC off
-		assert.equal(zx81UlaScreen.vsync, false);
-		assert.equal(zx81UlaScreen.ulaLineCounter, 0);
-		assert.equal(zx81UlaScreen.hsyncTstatesCounter, 0);
-		assert.equal(zx81UlaScreen.noDisplay, true);
-		assert.equal(zx81UlaScreen.lineCounter, 101);
-		assert.equal(emitSpy.called, false);
-		assert.equal(resetVideoBufferSpy.called, false);
-
-		zx81UlaScreen.vsync = true;
-		zx81UlaScreen.vsyncStartTstates = 100;
-		zx81UlaScreen.tstates = zx81UlaScreen.vsyncStartTstates + vsync_min_tstates;
-		zx81UlaScreen.ulaLineCounter = 6;
-		zx81UlaScreen.hsyncTstatesCounter = 77;
-		zx81UlaScreen.noDisplay = true;
-		zx81UlaScreen.lineCounter = 101;
-		zx81UlaScreen.outPort(0);	// VSYNC off
-		assert.equal(zx81UlaScreen.vsync, false);
-		assert.equal(zx81UlaScreen.ulaLineCounter, 0);
-		assert.equal(zx81UlaScreen.hsyncTstatesCounter, 0);
-		assert.equal(zx81UlaScreen.noDisplay, false);
-		assert.equal(zx81UlaScreen.lineCounter, 0);
-		assert.equal(emitSpy.called, true);
-		assert.equal(emitSpy.calledWith('updateScreen'), true);
-		assert.equal(resetVideoBufferSpy.called, true);
-	});
-
-	test('HSYNC', () => {
-		// ON -> ON
-		const interruptSpy = sinon.spy(zx81UlaScreen.z80Cpu, 'interrupt');
-		zx81UlaScreen.hsync = true;
-		zx81UlaScreen.hsyncTstatesCounter = 1;
-		zx81UlaScreen.ulaLineCounter = 5;
-		zx81UlaScreen.lineCounter = 66;
-		zx81UlaScreen.stateNmiGeneratorOn = false;
-		assert.equal(zx81UlaScreen.checkHsync(4), false);
-		assert.equal(zx81UlaScreen.hsync, true);
-		assert.equal(zx81UlaScreen.hsyncTstatesCounter, 5);
-		assert.equal(zx81UlaScreen.ulaLineCounter, 5);
-		assert.equal(zx81UlaScreen.lineCounter, 66);
-		assert.equal(interruptSpy.called, false);
-
-		// ON -> OFF
-		interruptSpy.resetHistory();
-		zx81UlaScreen.hsync = true;
-		zx81UlaScreen.hsyncTstatesCounter = 1;
-		zx81UlaScreen.ulaLineCounter = 5;
-		zx81UlaScreen.lineCounter = 66;
-		zx81UlaScreen.stateNmiGeneratorOn = false;
-		assert.equal(zx81UlaScreen.checkHsync((Zx81UlaScreen as any).TSTATES_PER_SCANLINE + 2), false);
-		assert.equal(zx81UlaScreen.hsync, false);
-		assert.equal(zx81UlaScreen.hsyncTstatesCounter, 3);
-		assert.equal(zx81UlaScreen.ulaLineCounter, 6);
-		assert.equal(zx81UlaScreen.lineCounter, 67);
-		assert.equal(interruptSpy.called, false);
-
-		// OFF -> OFF
-		interruptSpy.resetHistory();
-		zx81UlaScreen.hsync = false;
-		zx81UlaScreen.hsyncTstatesCounter = 1;
-		zx81UlaScreen.ulaLineCounter = 5;
-		zx81UlaScreen.lineCounter = 66;
-		zx81UlaScreen.stateNmiGeneratorOn = false;
-		assert.equal(zx81UlaScreen.checkHsync(4), false);
-		assert.equal(zx81UlaScreen.hsync, false);
-		assert.equal(zx81UlaScreen.hsyncTstatesCounter, 5);
-		assert.equal(zx81UlaScreen.ulaLineCounter, 5);
-		assert.equal(zx81UlaScreen.lineCounter, 66);
-		assert.equal(interruptSpy.called, false);
-
-		// OFF -> ON
-		interruptSpy.resetHistory();
-		zx81UlaScreen.hsync = false;
-		const hsync_min = (Zx81UlaScreen as any).TSTATES_PER_SCANLINE - (Zx81UlaScreen as any).TSTATES_OF_HSYNC_LOW;
-		zx81UlaScreen.hsyncTstatesCounter = hsync_min - 4;
-		zx81UlaScreen.ulaLineCounter = 5;
-		zx81UlaScreen.lineCounter = 66;
-		zx81UlaScreen.stateNmiGeneratorOn = false;
-		assert.equal(zx81UlaScreen.checkHsync(4), true);
-		assert.equal(zx81UlaScreen.hsync, true);
-		assert.equal(zx81UlaScreen.hsyncTstatesCounter, hsync_min);
-		assert.equal(zx81UlaScreen.ulaLineCounter, 5);
-		assert.equal(zx81UlaScreen.lineCounter, 66);
-		assert.equal(interruptSpy.called, false);
-
-		// OFF -> ON (with NMI)
-		interruptSpy.resetHistory();
-		zx81UlaScreen.hsync = false;
-		zx81UlaScreen.hsyncTstatesCounter = hsync_min - 4;
-		zx81UlaScreen.ulaLineCounter = 5;
-		zx81UlaScreen.lineCounter = 66;
-		zx81UlaScreen.stateNmiGeneratorOn = true;
-		assert.equal(zx81UlaScreen.checkHsync(4), true);
-		assert.equal(zx81UlaScreen.hsync, true);
-		assert.equal(zx81UlaScreen.hsyncTstatesCounter, hsync_min);
-		assert.equal(zx81UlaScreen.ulaLineCounter, 5);
-		assert.equal(zx81UlaScreen.lineCounter, 66);
-		assert.equal(interruptSpy.called, true);
+		assert.equal(zx81UlaScreen.A0, true);  // Partly decoded (but unmatched)
 	});
 
 	suite('ulaM1Read8', () => {
@@ -225,72 +98,256 @@ suite('Zx81UlaScreen', () => {
 	});
 
 	suite('execute', () => {
-		test('execute calls', () => {
-			const interruptSpy = sinon.spy(zx81UlaScreen.z80Cpu, 'interrupt');
-			const emitSpy = sinon.spy(zx81UlaScreen, 'emit');
+		suite('NMION', () => {
+			test('IOWR', () => {
+				zx81UlaScreen.IOWR = true;
+				zx81UlaScreen.VSYNC = undefined;
+				zx81UlaScreen.A0 = true;
+				zx81UlaScreen.A1 = true;
+				zx81UlaScreen.NMION = undefined;
+				zx81UlaScreen.execute({});
+				assert.equal(zx81UlaScreen.NMION, undefined);
+				assert.equal(zx81UlaScreen.VSYNC, false);
 
-			const zsim = { executeTstates: 0 };
-			zx81UlaScreen.int38InNextCycle = false;
-			zx81UlaScreen.noDisplay = false;
-			zx81UlaScreen.tstates = 0;
-			zx81UlaScreen.vsyncStartTstates = 0;
-			zsim.executeTstates = 5;
-			zx81UlaScreen.execute(zsim);
-			assert.equal(zx81UlaScreen.tstates, 5);
-			assert.equal(zx81UlaScreen.noDisplay, false);
-			assert.equal(interruptSpy.called, false);
-			assert.equal(emitSpy.called, false);
+				zx81UlaScreen.IOWR = true;
+				zx81UlaScreen.A0 = false;
+				zx81UlaScreen.execute({});
+				assert.equal(zx81UlaScreen.NMION, true);
 
-			// Call NMI, call updateScreen
-			interruptSpy.resetHistory();
-			checkHsyncSpy.resetHistory();
-			emitSpy.resetHistory();
-			zx81UlaScreen.int38InNextCycle = true;
-			zx81UlaScreen.noDisplay = false;
-			zx81UlaScreen.vsyncStartTstates = 0;
-			const tstates_min = 2 * (Zx81UlaScreen as any).TSTATES_PER_SCREEN;
-			zx81UlaScreen.tstates = tstates_min;
-			zsim.executeTstates = 5;
-			zx81UlaScreen.execute(zsim);
-			assert.equal(zx81UlaScreen.noDisplay, true);
-			assert.equal(interruptSpy.called, true);
-			assert.equal(checkHsyncSpy.called, true);
-			assert.equal(emitSpy.called, true);
-			assert.equal(emitSpy.calledWith('updateScreen'), true);
+				zx81UlaScreen.IOWR = true;
+				zx81UlaScreen.A0 = true;
+				zx81UlaScreen.A1 = false;
+				zx81UlaScreen.NMION = undefined;
+				zx81UlaScreen.execute({});
+				assert.equal(zx81UlaScreen.NMION, false);
 
-			// Don't call updateScreen
-			checkHsyncSpy.resetHistory();
-			emitSpy.resetHistory();
-			zx81UlaScreen.int38InNextCycle = false;
-			zx81UlaScreen.noDisplay = true;
-			zx81UlaScreen.vsyncStartTstates = 0;
-			zx81UlaScreen.tstates = tstates_min;
-			zsim.executeTstates = 5;
-			zx81UlaScreen.execute(zsim);
-			assert.equal(zx81UlaScreen.noDisplay, true);
-			assert.equal(checkHsyncSpy.called, true);
-			assert.equal(emitSpy.called, false);
+				zx81UlaScreen.IOWR = false;
+				zx81UlaScreen.VSYNC = undefined;
+				zx81UlaScreen.A0 = false;
+				zx81UlaScreen.A1 = false;
+				zx81UlaScreen.NMION = undefined;
+				zx81UlaScreen.execute({});
+				assert.equal(zx81UlaScreen.NMION, undefined);
+				assert.equal(zx81UlaScreen.VSYNC, undefined);
+			});
+
+			test('IORD', () => {
+				zx81UlaScreen.IORD = true;
+				zx81UlaScreen.VSYNC = undefined;
+				zx81UlaScreen.A0 = false;
+				zx81UlaScreen.NMION = false;
+				zx81UlaScreen.execute({});
+				assert.equal(zx81UlaScreen.VSYNC, true);
+
+				zx81UlaScreen.IORD = true;
+				zx81UlaScreen.VSYNC = undefined;
+				zx81UlaScreen.A0 = true;
+				zx81UlaScreen.NMION = false;
+				zx81UlaScreen.execute({});
+				assert.equal(zx81UlaScreen.VSYNC, undefined);
+
+				zx81UlaScreen.IORD = true;
+				zx81UlaScreen.VSYNC = undefined;
+				zx81UlaScreen.A0 = false;
+				zx81UlaScreen.NMION = true;
+				zx81UlaScreen.execute({});
+				assert.equal(zx81UlaScreen.VSYNC, undefined);
+
+				zx81UlaScreen.IORD = false;
+				zx81UlaScreen.VSYNC = undefined;
+				zx81UlaScreen.A0 = false;
+				zx81UlaScreen.NMION = false;
+				zx81UlaScreen.execute({});
+				assert.equal(zx81UlaScreen.VSYNC, undefined);
+			});
 		});
 
-		test('execute, int38 generation', () => {
-			const z80 = zx81UlaScreen.z80Cpu;
+		suite('HSYNC', () => {
+			test('prevVSYNC', () => {
+				zx81UlaScreen.VSYNC = false;
+				zx81UlaScreen.hsyncEndTstates = undefined;
+				zx81UlaScreen.HSYNC = undefined;
+				zx81UlaScreen.execute({passedTstates: 1, executeTstates: 0});
+				assert.equal(zx81UlaScreen.hsyncEndTstates, undefined);
+				assert.equal(zx81UlaScreen.HSYNC, undefined);
 
-			// No interrupt
-			z80.r = 1;
-			zx81UlaScreen.prevRregister = 0;
-			zx81UlaScreen.int38InNextCycle = false;
-			zx81UlaScreen.execute(0);
-			assert.equal(zx81UlaScreen.prevRregister, 1);
-			assert.equal(zx81UlaScreen.int38InNextCycle, false);
+				zx81UlaScreen.VSYNC = true;
+				zx81UlaScreen.hsyncEndTstates = undefined;
+				zx81UlaScreen.HSYNC = undefined;
+				zx81UlaScreen.execute({passedTstates: 2, executeTstates: 0});
+				assert.equal(zx81UlaScreen.hsyncEndTstates, 2);
+				assert.equal(zx81UlaScreen.HSYNC, false);
+			});
 
-			// Interrupt
-			z80.r = 5;
-			zx81UlaScreen.prevRregister = 0b0100_0000;
-			zx81UlaScreen.int38InNextCycle = false;
-			zx81UlaScreen.execute(0);
-			assert.equal(zx81UlaScreen.prevRregister, 5);
-			assert.equal(zx81UlaScreen.int38InNextCycle, true);
+			test('HSYNC change', () => {
+				zx81UlaScreen.HSYNC = false;
+				zx81UlaScreen.hsyncEndTstates = 0;
+				zx81UlaScreen.execute({passedTstates: 192 - 1, executeTstates: 0});
+				assert.equal(zx81UlaScreen.HSYNC, false);
+
+				zx81UlaScreen.HSYNC = false;
+				zx81UlaScreen.hsyncEndTstates = 0;
+				zx81UlaScreen.execute({passedTstates: 192, executeTstates: 0});
+				assert.equal(zx81UlaScreen.HSYNC, true);
+
+				zx81UlaScreen.HSYNC = true;
+				zx81UlaScreen.hsyncEndTstates = 0;
+				zx81UlaScreen.execute({passedTstates: 207 - 1, executeTstates: 0});
+				assert.equal(zx81UlaScreen.HSYNC, true);
+
+				zx81UlaScreen.HSYNC = true;
+				zx81UlaScreen.hsyncEndTstates = 0;
+				zx81UlaScreen.execute({passedTstates: 207, executeTstates: 0});
+				assert.equal(zx81UlaScreen.HSYNC, false);
+			});
+
+			test('act on HSYNC change', () => {
+				const nextLineSpy = sinon.spy(zx81UlaScreen, 'nextLine');
+
+				// HSYNC: OFF -> ON
+				zx81UlaScreen.HSYNC = false;
+				zx81UlaScreen.hsyncEndTstates = 0;
+				zx81UlaScreen.execute({passedTstates: 192, executeTstates: 0});
+				assert.equal(nextLineSpy.called, true);
+
+				// HSYNC: ON -> OFF
+				nextLineSpy.resetHistory();
+				zx81UlaScreen.HSYNC = true;
+				zx81UlaScreen.hsyncEndTstates = 1;
+				zx81UlaScreen.execute({passedTstates: 215, executeTstates: 0});
+				assert.equal(nextLineSpy.called, false);
+				assert.equal(zx81UlaScreen.hsyncEndTstates, 208);	// 215 - ((215-1) % 207)
+			});
 		});
+
+		suite('NMI', () => {
+			test('interrupt called', () => {
+				const interruptSpy = sinon.spy(zx81UlaScreen.z80Cpu, 'interrupt');
+
+				zx81UlaScreen.HSYNC = false;
+				zx81UlaScreen.NMION = false;
+				zx81UlaScreen.hsyncEndTstates = 0;
+				zx81UlaScreen.execute({passedTstates: 0, executeTstates: 0});
+				assert.equal(interruptSpy.called, false);
+
+				// HSYNC: OFF -> ON
+				zx81UlaScreen.HSYNC = false;
+				zx81UlaScreen.NMION = true;
+				zx81UlaScreen.hsyncEndTstates = 0;
+				zx81UlaScreen.execute({passedTstates: 192, executeTstates: 0});
+				assert.equal(interruptSpy.called, true);
+			});
+
+			test('"wait circuit"', () => {
+				const z80CpuMock = {isHalted: true, interrupt: () => {}};
+				zx81UlaScreen.z80Cpu = z80CpuMock;
+
+				{
+					// HSYNC: OFF -> ON
+					zx81UlaScreen.HSYNC = false;
+					zx81UlaScreen.NMION = true;
+					zx81UlaScreen.hsyncEndTstates = 1;
+					const zsim = {passedTstates: 195, executeTstates: 0};
+					zx81UlaScreen.execute(zsim);
+					assert.equal(zsim.executeTstates, 9);
+				}
+
+				{
+					// HSYNC: ON -> OFF, cpu not halted
+					z80CpuMock.isHalted = false;
+					zx81UlaScreen.HSYNC = false;
+					zx81UlaScreen.NMION = true;
+					zx81UlaScreen.hsyncEndTstates = 1;
+					const zsim = {passedTstates: 195, executeTstates: 0};
+					zx81UlaScreen.execute(zsim);
+					assert.equal(zsim.executeTstates, 0);
+				}
+			});
+		});
+
+		suite('VSYNC', () => {
+			test('reset ulLineCounter', () => {
+				zx81UlaScreen.VSYNC = false;
+				zx81UlaScreen.ulaLineCounter = undefined;
+				zx81UlaScreen.execute({});
+				assert.equal(zx81UlaScreen.ulaLineCounter, undefined);
+
+				zx81UlaScreen.VSYNC = true;
+				zx81UlaScreen.ulaLineCounter = undefined;
+				zx81UlaScreen.execute({});
+				assert.equal(zx81UlaScreen.ulaLineCounter, 0);
+			});
+
+			test('act on VSYNC change', () => {
+				const emitSpy = sinon.spy(zx81UlaScreen, 'emit');
+				const resetVideoBufferSpy = sinon.spy(zx81UlaScreen, 'resetVideoBuffer');
+				// VSYNC: OFF -> ON
+				zx81UlaScreen.VSYNC = false;
+				zx81UlaScreen.IORD = true;
+				zx81UlaScreen.A0 = false;
+				zx81UlaScreen.NMION = false;
+				zx81UlaScreen.noDisplay = undefined;
+				zx81UlaScreen.lineCounter = undefined;
+				zx81UlaScreen.vsyncEndTstates = undefined;
+				zx81UlaScreen.vsyncStartTstates = undefined;
+				zx81UlaScreen.execute({passedTstates: 100, executeTstates: 0});
+				assert.equal(zx81UlaScreen.vsyncStartTstates, 100);
+				assert.equal(zx81UlaScreen.noDisplay, undefined);
+				assert.equal(zx81UlaScreen.lineCounter, undefined);
+				assert.equal(zx81UlaScreen.vsyncEndTstates, undefined);
+				assert.equal(emitSpy.called, false);
+				assert.equal(resetVideoBufferSpy.called, false);
+
+				// VSYNC: ON -> OFF, length too short
+				zx81UlaScreen.VSYNC = true;
+				zx81UlaScreen.IOWR = true;
+				zx81UlaScreen.noDisplay = undefined;
+				zx81UlaScreen.lineCounter = undefined;
+				zx81UlaScreen.vsyncEndTstates = undefined;
+				zx81UlaScreen.vsyncStartTstates = 0;
+				zx81UlaScreen.execute({passedTstates: 499, executeTstates: 0});
+				assert.equal(zx81UlaScreen.vsyncStartTstates, 0);
+				assert.equal(zx81UlaScreen.noDisplay, undefined);
+				assert.equal(zx81UlaScreen.lineCounter, undefined);
+				assert.equal(zx81UlaScreen.vsyncEndTstates, undefined);
+				assert.equal(emitSpy.called, false);
+				assert.equal(resetVideoBufferSpy.called, false);
+
+				// VSYNC: ON -> OFF, length big enough
+				zx81UlaScreen.VSYNC = true;
+				zx81UlaScreen.IOWR = true;
+				zx81UlaScreen.noDisplay = undefined;
+				zx81UlaScreen.lineCounter = undefined;
+				zx81UlaScreen.vsyncEndTstates = undefined;
+				zx81UlaScreen.vsyncStartTstates = 0;
+				zx81UlaScreen.execute({passedTstates: 500, executeTstates: 0});
+				assert.equal(zx81UlaScreen.vsyncStartTstates, 0);
+				assert.equal(zx81UlaScreen.noDisplay, false);
+				assert.equal(zx81UlaScreen.lineCounter, 0);
+				assert.equal(zx81UlaScreen.vsyncEndTstates, 500);
+				assert.equal(emitSpy.called, true);
+				assert.equal(resetVideoBufferSpy.called, true);
+			});
+		});
+
+		suite('noDisplay', () => {
+			test('not set', () => {
+				const emitSpy = sinon.spy(zx81UlaScreen, 'emit');
+				zx81UlaScreen.vsyncStartTstates = 1000;
+				zx81UlaScreen.noDisplay = undefined;
+				zx81UlaScreen.execute({passedTstates: 0, executeTstates: 0});
+				assert.equal(emitSpy.called, false);
+				assert.equal(zx81UlaScreen.noDisplay, undefined);
+			});
+
+			test('set', () => {
+				const emitSpy = sinon.spy(zx81UlaScreen, 'emit');
+				zx81UlaScreen.vsyncStartTstates = 1000;
+				zx81UlaScreen.noDisplay = undefined;
+				zx81UlaScreen.execute({passedTstates: 1000 + 2*65000 + 1, executeTstates: 0});
+				assert.equal(emitSpy.called, true);
+				assert.equal(zx81UlaScreen.noDisplay, true);
+			});
 	});
 
 	suite('getUlaScreen', () => {
