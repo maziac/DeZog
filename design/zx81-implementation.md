@@ -65,9 +65,9 @@ In this mode the onscreen characters can be seen as soon as they are placed in t
 In the other mode they would become visible not before the video signal is created.
 
 # References - games/graphics mode
-- Standard graphics: ["Battlestar Galactica"](https://archive.org/details/Battlestar_Galactica_1982_Ch._Zwerschke)
-- Pseudo hires, chroma81: ["Against The Elements"](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm])
-- Pseudo hires: [Forty Niner](https://archive.org/details/Forty_Niner_19xx_Cosmic_Cockerel)
-- CHR$128, chroma81: [Alien Attack](https://sinclairzxworld.com/viewtopic.php?t=5427)
-- WRX: [Bowling](https://www.rwapsoftware.co.uk/zx81/zx81_software.html)
-- ARX: [arx_hangman, arx_sampler.zip](https://www.sinclairzxworld.com/viewtopic.php?t=5448&start=20)
+- Standard graphics: ["Battlestar Galactica"](https://archive.org/details/Battlestar_Galactica_1982_Ch._Zwerschke), 16-56k
+- Pseudo hires, chroma81: ["Against The Elements"](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm]), 56k
+- Pseudo hires: [Forty Niner](https://archive.org/details/Forty_Niner_19xx_Cosmic_Cockerel), 16-56k
+- CHR$128, chroma81: [Alien Attack](https://sinclairzxworld.com/viewtopic.php?t=5427), 56k
+- WRX: [Bowling](https://www.rwapsoftware.co.uk/zx81/zx81_software.html), 1k
+- ARX: [arx_hangman, arx_sampler.zip](https://www.sinclairzxworld.com/viewtopic.php?t=5448&start=20), 56k

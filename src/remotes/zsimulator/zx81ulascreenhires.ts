@@ -1,5 +1,6 @@
 
 import {MemBuffer} from "../../misc/membuffer";
+import {ScreenAreaType} from "../../settings/settings";
 import {Z80Cpu} from "./z80cpu";
 import {Zx81UlaScreen} from "./zx81ulascreen";
 
@@ -60,18 +61,14 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	// The write index pointing to tje line length
 	protected screenLineLengthIndex: number;
 
-	// The first line to display.
-	protected firstLine: number;
-
-	// The last line to display (inclusive).
-	protected lastLine: number;
-
 	// Color (chroma81) data
 	protected colorData: Uint8Array;
 
 	// The write index into the color data
 	protected colorDataIndex: number;
 
+	// First/last x/y position of the screen area
+	protected screenArea: ScreenAreaType;
 
 
 	/** Constructor.
@@ -79,11 +76,10 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	 * @param firstLine The first line to display.
 	 * @param lastLine The last line to display (inclusive).
 	 */
-	constructor(z80Cpu: Z80Cpu, firstLine: number, lastLine: number) {
+	constructor(z80Cpu: Z80Cpu, screenArea: ScreenAreaType) {
 		super(z80Cpu);
-		this.firstLine = firstLine;
-		this.lastLine = lastLine;
-		let totalLines = lastLine - firstLine + 1;
+		this.screenArea = screenArea;
+		let totalLines = screenArea.lastY - screenArea.firstY + 1;
 		if (totalLines < 0)
 			totalLines = 0;
 		this.screenDataIndex = 0;
@@ -110,7 +106,7 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	/** Checks if the line is visible.
 	 */
 	protected isLineVisible(): boolean {
-		const visible = (this.lineCounter >= this.firstLine && this.lineCounter <= this.lastLine);
+		const visible = (this.lineCounter >= this.screenArea.firstY && this.lineCounter <= this.screenArea.lastY);
 		return visible;
 	}
 
@@ -180,7 +176,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 			this.screenData[this.screenDataIndex++] = videoShiftRegister;
 			// Increase length
 			this.screenData[this.screenLineLengthIndex]++;
-
 			// this.logIfFirst('ulaM1Read8: xTstates=' + xTstates + ', videoShiftRegister=' + videoShiftRegister + "'");
 		}
 

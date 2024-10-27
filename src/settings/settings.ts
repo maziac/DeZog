@@ -214,6 +214,26 @@ export interface CustomJoyType {
 	down: JoyBitPort;
 }
 
+
+// The ZX81 screen area.
+// The ZX81 has typically around 300 lines (of course, not all are used).
+// And 207*2=414 pixels in width, including the horizontal blank.
+// Without hor. blank it is 192*2=384 pixels of which 256 (32*8) are used in standard mode.
+// Then the left and right borders are 64 pixels each.
+// For a CRT there were also some areas around the HSYNC pulse that were
+// not visible. These seem to have been 16-32 pixels. (From youtube videos.)
+// As default I have chosen a border of 8 pixels around the "normal" screen (x:64-319, y:56-247):
+// firstX=56, lastX=327, firstY=48, lastY=255.
+// Users can change it to there needs.
+export interface ScreenAreaType {
+	firstX: number;	// First x position to display
+	lastX: number;	// Last x position to display (inclusive)
+	firstY: number;	// First y position to display
+	lastY: number;	// Last y position to display (inclusive)
+
+}
+
+
 // Chroma 81 interface
 export interface Chroma81Type {
 	available: boolean;	// Turn chroma81 support on/off (port in/out)
@@ -227,9 +247,10 @@ export interface Chroma81Type {
 // Options for the ZX81 ULA screen.
 export interface zx81UlaOptions {
 	hires: boolean;		// Use hires mode
-	firstLine: number;	// The first line to display (hires mode)
-	lastLine: number;	// The last line to display (hires mode)
-	borderSize: number;	// The size of the border in pixels
+	screenArea: ScreenAreaType;	// The screen area
+	// firstLine: number;	// The first line to display (hires mode)
+	// lastLine: number;	// The last line to display (hires mode)
+	// borderSize: number;	// The size of the border in pixels
 	chroma81: Chroma81Type;	// Chroma 81 interface
 	debug: boolean;		// Debug mode: show gray in collapsed dfile
 }
@@ -666,14 +687,19 @@ export class Settings {
 		const ulaScreenOptions = launchCfg.zsim.zx81UlaOptions;
 		if (ulaScreenOptions.hires === undefined)
 			ulaScreenOptions.hires = true;
-		if (ulaScreenOptions.firstLine === undefined)
-			ulaScreenOptions.firstLine = 56;
-		if (ulaScreenOptions.lastLine === undefined)
-			ulaScreenOptions.lastLine = 247;
+		if (ulaScreenOptions.screenArea === undefined)
+			ulaScreenOptions.screenArea = {} as any;
+		const screenArea = ulaScreenOptions.screenArea;
+		if (screenArea.firstX === undefined)
+			screenArea.firstX = 56;
+		if (screenArea.lastX === undefined)
+			screenArea.lastX = 327;
+		if (screenArea.firstY === undefined)
+			screenArea.firstY = 48;
+		if (screenArea.lastY === undefined)
+			screenArea.lastY = 255;
 		if (ulaScreenOptions.debug === undefined)
 			ulaScreenOptions.debug = false;
-		if (ulaScreenOptions.borderSize === undefined)
-			ulaScreenOptions.borderSize = 0;
 		if (ulaScreenOptions.chroma81 === undefined)
 			ulaScreenOptions.chroma81 = {
 				available: false
@@ -1213,8 +1239,12 @@ export class Settings {
 			throw Error("'ulaScreen': Allowed values are 'spectrum' or 'zx81'.");
 		}
 		const zx81UlaOptions = Settings.launch.zsim.zx81UlaOptions;
-		if (zx81UlaOptions.lastLine < zx81UlaOptions.firstLine) {
-			throw Error("'zx81UlaOptions': lastLine < firstLine.");
+		const screenArea = zx81UlaOptions.screenArea;
+		if (screenArea.lastY < screenArea.firstY) {
+			throw Error("'zx81UlaOptions': lastY < firstY.");
+		}
+		if (screenArea.lastX < screenArea.firstX) {
+			throw Error("'zx81UlaOptions': lastX < firstX.");
 		}
 
 		// Check border (Spectrum vs. ZX81)

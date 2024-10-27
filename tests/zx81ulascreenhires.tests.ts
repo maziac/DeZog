@@ -20,12 +20,15 @@ suite('Zx81UlaScreenHiRes', () => {
 		const ports = new Z80Ports(true);
 		const memory = new SimulatedMemory(new MemoryModelAllRam, ports);
 		z80Cpu = new Z80Cpu(memory, ports);
-		zx81UlaScreen = new Zx81UlaScreenHiRes(z80Cpu, 100, 200);
+		const screenArea = { firstX: 0, lastX: 383, firstY: 100, lastY: 200} ;
+		zx81UlaScreen = new Zx81UlaScreenHiRes(z80Cpu, screenArea);
 	});
 
 	test('constructor', () => {
-		assert.equal(zx81UlaScreen.firstLine, 100);
-		assert.equal(zx81UlaScreen.lastLine, 200);
+		assert.equal(zx81UlaScreen.screenArea.firstX, 0);
+		assert.equal(zx81UlaScreen.screenArea.lastX, 383);
+		assert.equal(zx81UlaScreen.screenArea.firstY, 100);
+		assert.equal(zx81UlaScreen.screenArea.lastY, 200);
 		assert.equal(zx81UlaScreen.screenDataIndex, 0);
 		assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
 		assert.equal(zx81UlaScreen.colorDataIndex, 0);
@@ -288,7 +291,8 @@ suite('Zx81UlaScreenHiRes', () => {
 			const memModel = new MemoryModelAllRam();
 			const ports = new Z80Ports(true);
 			const rCpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
-			const rZx81UlaScreen = new Zx81UlaScreenHiRes(rCpu, 0, 0) as any;
+			const screenArea = {firstX: 0, lastX: 0, firstY: 0, lastY: 0};
+			const rZx81UlaScreen = new Zx81UlaScreenHiRes(rCpu, screenArea) as any;
 
 			// Restore values
 			rZx81UlaScreen.deserialize(memBuffer);

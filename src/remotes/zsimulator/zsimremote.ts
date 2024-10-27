@@ -425,7 +425,7 @@ export class ZSimRemote extends DzrpRemote {
 					const chroma81 = options.chroma81;
 					if (options.hires) {
 						// Hires
-						this.zxUlaScreen = new Zx81UlaScreenHiRes(this.z80Cpu, options.firstLine, options.lastLine);
+						this.zxUlaScreen = new Zx81UlaScreenHiRes(this.z80Cpu, options.screenArea);
 					}
 					else {
 						// Normal

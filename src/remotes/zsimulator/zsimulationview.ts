@@ -824,12 +824,11 @@ export class ZSimulationView extends BaseView {
 			const zx81UlaOptions = zsim.zx81UlaOptions;
 			if (zsim.ulaScreen === 'zx81' && zsim.zx81UlaOptions.hires) {
 				// Set configured height
-				height = zx81UlaOptions.lastLine - zx81UlaOptions.firstLine + 1;
+				const screenArea = zx81UlaOptions.screenArea;
+				height = screenArea.lastY - screenArea.firstY + 1;
 			}
 			// Border width
-			let borderWidth = zsim.zxBorderWidth;
-			if (borderWidth === 0)
-				borderWidth = zsim.zx81UlaOptions.borderSize;
+			const borderWidth =(zsim.ulaScreen === 'spectrum')? zsim.zxBorderWidth : 0;
 			// HTML code:
 			// TODO: width="256"
 			html += `
