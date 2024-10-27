@@ -227,7 +227,6 @@ suite('Zx81UlaScreen', () => {
 	suite('execute', () => {
 		test('execute calls', () => {
 			const interruptSpy = sinon.spy(zx81UlaScreen.z80Cpu, 'interrupt');
-			const checkHsyncSpy = sinon.spy(zx81UlaScreen, 'checkHsync');
 			const emitSpy = sinon.spy(zx81UlaScreen, 'emit');
 
 			const zsim = { executeTstates: 0 };
@@ -240,7 +239,6 @@ suite('Zx81UlaScreen', () => {
 			assert.equal(zx81UlaScreen.tstates, 5);
 			assert.equal(zx81UlaScreen.noDisplay, false);
 			assert.equal(interruptSpy.called, false);
-			assert.equal(checkHsyncSpy.called, true);
 			assert.equal(emitSpy.called, false);
 
 			// Call NMI, call updateScreen
@@ -365,17 +363,17 @@ suite('Zx81UlaScreen', () => {
 
 		{
 			// Set values
-			zx81UlaScreen.prevRregister = 62;
-			zx81UlaScreen.stateNmiGeneratorOn = true;
-			zx81UlaScreen.ulaLineCounter = 4;
-			zx81UlaScreen.tstates = 77;
+			zx81UlaScreen.borderColor = 6;
+			zx81UlaScreen.VSYNC = true;
+			zx81UlaScreen.HSYNC = true;
 			zx81UlaScreen.vsyncStartTstates = 88;
-			zx81UlaScreen.hsyncTstatesCounter = 99;
+			zx81UlaScreen.vsyncEndTstates = 92;
+			zx81UlaScreen.hsyncEndTstates = 99;
+			zx81UlaScreen.prevRregister = 62;
+			zx81UlaScreen.ulaLineCounter = 4;
+			zx81UlaScreen.lineCounter = 251;
+			zx81UlaScreen.tstates = 12345;
 			zx81UlaScreen.int38InNextCycle = true;
-			zx81UlaScreen.hsync = true;
-			zx81UlaScreen.vsync = true;
-			zx81UlaScreen.noDisplay = true;
-			zx81UlaScreen.borderColor = 3;
 			zx81UlaScreen.chroma81Mode = true;
 			zx81UlaScreen.chroma81Enabled = true;
 
@@ -402,18 +400,16 @@ suite('Zx81UlaScreen', () => {
 			assert.equal(readSize, writeSize);
 
 			// And test
-			assert.equal(rZx81UlaScreen.prevRregister, 62);
-			assert.equal(rZx81UlaScreen.stateNmiGeneratorOn, true);
-			assert.equal(rZx81UlaScreen.ulaLineCounter, 4);
-			assert.equal(rZx81UlaScreen.tstates, 77);
+			assert.equal(rZx81UlaScreen.borderColor, 6);
+			assert.equal(rZx81UlaScreen.VSYNC, true);
+			assert.equal(rZx81UlaScreen.HSYNC, true);
 			assert.equal(rZx81UlaScreen.vsyncStartTstates, 88);
-			assert.equal(rZx81UlaScreen.hsyncTstatesCounter, 99);
+			assert.equal(rZx81UlaScreen.vsyncEndTstates, 92);
+			assert.equal(rZx81UlaScreen.hsyncEndTstates, 99);
+			assert.equal(rZx81UlaScreen.prevRregister, 62);
+			assert.equal(rZx81UlaScreen.ulaLineCounter, 4);
+			assert.equal(rZx81UlaScreen.lineCounter, 251);
 			assert.equal(rZx81UlaScreen.int38InNextCycle, true);
-			assert.equal(rZx81UlaScreen.hsync, true);
-			assert.equal(rZx81UlaScreen.vsync, true);
-			assert.equal(rZx81UlaScreen.noDisplay, true);
-			assert.equal(rZx81UlaScreen.noDisplay, true);
-			assert.equal(rZx81UlaScreen.borderColor, 3);
 			assert.equal(rZx81UlaScreen.chroma81Mode, true);
 			assert.equal(rZx81UlaScreen.chroma81Enabled, true);
 		}
