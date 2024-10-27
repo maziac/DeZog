@@ -28,9 +28,9 @@ suite('Zx81UlaScreenHiRes', () => {
 		assert.equal(zx81UlaScreen.lastLine, 200);
 		assert.equal(zx81UlaScreen.screenDataIndex, 0);
 		assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
+		assert.equal(zx81UlaScreen.colorDataIndex, 0);
 		assert.notEqual(zx81UlaScreen.screenData, undefined);
 		assert.notEqual(zx81UlaScreen.colorData, undefined);
-		assert.equal(zx81UlaScreen.screenData.length, zx81UlaScreen.colorData.length);
 	});
 
 	test('resetVideoBuffer', () => {
@@ -90,10 +90,10 @@ suite('Zx81UlaScreenHiRes', () => {
 			zx81UlaScreen.screenDataIndex = 10;
 			zx81UlaScreen.lineCounter = 100;
 			zx81UlaScreen.ulaM1Read8(0x8000);
-			assert.equal(zx81UlaScreen.screenDataIndex, 11);	// Changed
+			assert.equal(zx81UlaScreen.screenDataIndex, 12);	// 2 bytes per entry
 			zx81UlaScreen.lineCounter = 200;
 			zx81UlaScreen.ulaM1Read8(0x8000);
-			assert.equal(zx81UlaScreen.screenDataIndex, 12);	// Changed
+			assert.equal(zx81UlaScreen.screenDataIndex, 14);	// 2 bytes per entry
 		});
 
 		test('standard graphics', () => {
@@ -112,26 +112,32 @@ suite('Zx81UlaScreenHiRes', () => {
 			};
 			const cpu = zx81UlaScreen.z80Cpu;
 			cpu.i = 0x1E;
+			zx81UlaScreen.hsyncEndTstates = 10;
+			zx81UlaScreen.tstates = 23;
 			zx81UlaScreen.ulaM1Read8(0x8000);
 			assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
 			assert.equal(zx81UlaScreen.screenData[0], 1);
-			assert.equal(zx81UlaScreen.screenDataIndex, 2);
-			assert.equal(zx81UlaScreen.screenData[1], 0b1010_0101);
+			assert.equal(zx81UlaScreen.screenDataIndex, 3);
+			assert.equal(zx81UlaScreen.screenData[1], 13);	// 23 - 10
+			assert.equal(zx81UlaScreen.screenData[2], 0b1010_0101);
 
 			// Inverted
+			zx81UlaScreen.tstates = 34;
 			zx81UlaScreen.ulaM1Read8(0x8001);
 			assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
 			assert.equal(zx81UlaScreen.screenData[0], 2);
-			assert.equal(zx81UlaScreen.screenDataIndex, 3);
-			assert.equal(zx81UlaScreen.screenData[2], 0b0101_1010);	// Inverted
+			assert.equal(zx81UlaScreen.screenDataIndex, 5);
+			assert.equal(zx81UlaScreen.screenData[3], 24);
+			assert.equal(zx81UlaScreen.screenData[4], 0b0101_1010);	// Inverted
 
 			// ULA line counter <> 0
 			zx81UlaScreen.ulaLineCounter = 1;
 			zx81UlaScreen.ulaM1Read8(0x8000);
 			assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
 			assert.equal(zx81UlaScreen.screenData[0], 3);
-			assert.equal(zx81UlaScreen.screenDataIndex, 4);
-			assert.equal(zx81UlaScreen.screenData[3], 0b1010_0110);
+			assert.equal(zx81UlaScreen.screenDataIndex, 7);
+			assert.equal(zx81UlaScreen.screenData[5], 24);
+			assert.equal(zx81UlaScreen.screenData[6], 0b1010_0110);
 		});
 
 		test('arx', () => {
@@ -153,23 +159,23 @@ suite('Zx81UlaScreenHiRes', () => {
 			zx81UlaScreen.ulaM1Read8(0x8000);
 			assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
 			assert.equal(zx81UlaScreen.screenData[0], 1);
-			assert.equal(zx81UlaScreen.screenDataIndex, 2);
-			assert.equal(zx81UlaScreen.screenData[1], 0b1010_0101);
+			assert.equal(zx81UlaScreen.screenDataIndex, 3);
+			assert.equal(zx81UlaScreen.screenData[2], 0b1010_0101);
 
 			// Inverted
 			zx81UlaScreen.ulaM1Read8(0x8001);
 			assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
 			assert.equal(zx81UlaScreen.screenData[0], 2);
-			assert.equal(zx81UlaScreen.screenDataIndex, 3);
-			assert.equal(zx81UlaScreen.screenData[2], 0b0101_1010);	// Inverted
+			assert.equal(zx81UlaScreen.screenDataIndex, 5);
+			assert.equal(zx81UlaScreen.screenData[4], 0b0101_1010);	// Inverted
 
 			// ULA line counter <> 0
 			zx81UlaScreen.ulaLineCounter = 1;
 			zx81UlaScreen.ulaM1Read8(0x8000);
 			assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
 			assert.equal(zx81UlaScreen.screenData[0], 3);
-			assert.equal(zx81UlaScreen.screenDataIndex, 4);
-			assert.equal(zx81UlaScreen.screenData[3], 0b1010_0110);
+			assert.equal(zx81UlaScreen.screenDataIndex, 7);
+			assert.equal(zx81UlaScreen.screenData[6], 0b1010_0110);
 		});
 
 		test('wrx', () => {
@@ -192,17 +198,17 @@ suite('Zx81UlaScreenHiRes', () => {
 			zx81UlaScreen.ulaM1Read8(0x8000);
 			assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
 			assert.equal(zx81UlaScreen.screenData[0], 1);
-			assert.equal(zx81UlaScreen.screenDataIndex, 2);
-			assert.equal(zx81UlaScreen.screenData[1], 0b1010_0101);
+			assert.equal(zx81UlaScreen.screenDataIndex, 3);
+			assert.equal(zx81UlaScreen.screenData[2], 0b1010_0101);
 
 			// Inverted
 			cpu.r = 2;
 			zx81UlaScreen.ulaM1Read8(0x8001);
 			assert.equal(zx81UlaScreen.screenLineLengthIndex, 0);
 			assert.equal(zx81UlaScreen.screenData[0], 2);
-			assert.equal(zx81UlaScreen.screenDataIndex, 3);
+			assert.equal(zx81UlaScreen.screenDataIndex, 5);
 
-			assert.equal(zx81UlaScreen.screenData[2], 0b0101_1001);	// Inverted
+			assert.equal(zx81UlaScreen.screenData[4], 0b0101_1001);	// Inverted
 		});
 	});
 
@@ -263,13 +269,10 @@ suite('Zx81UlaScreenHiRes', () => {
 
 		{
 			// Set values
-			zx81UlaScreen.prevRregister = 62;	// Parent class member
-			// New members
 			zx81UlaScreen.screenData = screenData;
 			zx81UlaScreen.screenDataIndex = 10;
 			zx81UlaScreen.screenLineLengthIndex = 20;
-			zx81UlaScreen.firstLine = 300;
-			zx81UlaScreen.lastLine = 400;
+			zx81UlaScreen.colorDataIndex = 11;
 			zx81UlaScreen.colorData = colorData;
 
 			// Get size
@@ -294,14 +297,11 @@ suite('Zx81UlaScreenHiRes', () => {
 			const readSize = memBuffer.readOffset;
 			assert.equal(readSize, writeSize);
 
-			// Test old value to make sure that super is called
-			assert.equal(rZx81UlaScreen.prevRregister, 62);
 			// Test new values
 			assert.deepEqual(rZx81UlaScreen.screenData, screenData);
 			assert.equal(rZx81UlaScreen.screenDataIndex, 10);
 			assert.equal(rZx81UlaScreen.screenLineLengthIndex, 20);
-			assert.equal(rZx81UlaScreen.firstLine, 300);
-			assert.equal(rZx81UlaScreen.lastLine, 400);
+			assert.equal(rZx81UlaScreen.colorDataIndex, 11);
 			assert.deepEqual(rZx81UlaScreen.colorData, colorData);
 		}
 	});

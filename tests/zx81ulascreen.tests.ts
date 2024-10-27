@@ -344,10 +344,11 @@ suite('Zx81UlaScreen', () => {
 				const emitSpy = sinon.spy(zx81UlaScreen, 'emit');
 				zx81UlaScreen.vsyncStartTstates = 1000;
 				zx81UlaScreen.noDisplay = undefined;
-				zx81UlaScreen.execute({passedTstates: 1000 + 2*65000 + 1, executeTstates: 0});
+				zx81UlaScreen.execute({passedTstates: 1000 + 2 * 65000 + 1, executeTstates: 0});
 				assert.equal(emitSpy.called, true);
 				assert.equal(zx81UlaScreen.noDisplay, true);
 			});
+		});
 	});
 
 	suite('getUlaScreen', () => {
