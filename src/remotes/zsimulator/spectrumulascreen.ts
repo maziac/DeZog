@@ -121,7 +121,8 @@ export class SpectrumUlaScreen extends UlaScreen implements Serializable {
 		const screenData = {
 			name: 'spectrum',
 			time: this.flashTimeCounter,
-			data: bank.slice(0, 0x1B00)
+			data: bank.slice(0, 0x1B00),
+			borderColor: this.borderColor
 		};
 		return screenData;
 	}

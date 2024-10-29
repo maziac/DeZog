@@ -40,13 +40,6 @@ export class UlaScreen extends EventEmitter implements Serializable, ExecuteInte
 	}
 
 
-	/** Returns the border color.
-	 */
-	public getBorderColor() {
-		return this.borderColor;
-	}
-
-
 	/** Serializes the object.
 	 */
 	public serialize(memBuffer: MemBuffer) {

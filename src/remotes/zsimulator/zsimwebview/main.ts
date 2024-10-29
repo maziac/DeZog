@@ -6,6 +6,7 @@ import {SpectrumUlaDraw} from "./spectrumuladraw";
 import {VisualMem} from "./visualmem";
 import {joystickObjs, initJoystickPolling} from "./joysticks";
 import {UIAPI, UiBit, UiByte} from "./helper";
+import {UlaDraw} from "./uladraw";
 
 
 // HTML element used for the cpu frequency.
@@ -29,8 +30,7 @@ const slots: HTMLElement[] = [];
 
 // For the ULA screen.
 let screenImg: HTMLCanvasElement;
-let screenImgImgData: ImageData;
-let screenImgContext: CanvasRenderingContext2D;
+let ulaDraw: UlaDraw;
 
 // Holds the HTML (UI) elements for the zxnDMA.
 let zxnDmaHtml: {
@@ -85,7 +85,7 @@ window.addEventListener('message', event => {// NOSONAR
 		case 'init':
 			// Configuration received. Is received once after 'configRequest' was sent.
 			// Is only done once after loading.
-			initSimulation(message.audioSampleRate, message.volume, message.zxKeyboard);
+			initSimulation(message);
 			break;
 
 		case 'cpuStopped':
@@ -98,23 +98,7 @@ window.addEventListener('message', event => {// NOSONAR
 			// Update the screen
 			const ulaData = message.ulaData;
 			if (ulaData) {
-				const name = ulaData.name;
-				if (name === 'spectrum') {
-					SpectrumUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.data, ulaData.time);
-				}
-				else if (name === 'zx81') {
-					Zx81UlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.dfile, ulaData.charset, ulaData.chroma, message.zx81UlaScreenDebug);
-				}
-				else if (name === 'zx81-hires') {
-					Zx81HiResUlaDraw.drawUlaScreen(screenImgContext, screenImgImgData, ulaData.data, ulaData.colorData, message.zx81UlaScreenDebug);
-				}
-			}
-			// Update the border
-			if (message.borderColor != undefined) {
-				// Convert ZX color to html color
-				const htmlColor = SpectrumUlaDraw.getHtmlColor(message.borderColor);
-				// Set color
-				screenImg.style.borderColor = htmlColor;
+				ulaDraw.drawUlaScreen(ulaData);
 			}
 			break;
 
@@ -173,10 +157,12 @@ window.addEventListener('message', event => {// NOSONAR
  * @param audioSampleRate In Hz.
  * @param volume Number in range [0;1.0]
  * @param zxKeyboard The type of keyboard.
+ * @param screenWidth The width of the screen.
+ * @param screenHeight The height of the screen.
  */
-function initSimulation(audioSampleRate: number, volume: number, zxKeyboard: 'spectrum'|'zx81'|'none') {
+function initSimulation(message) {
 	// Store keyboard type
-	zxKeyboardType = zxKeyboard;
+	zxKeyboardType = message.zxKeyboard;
 
 	// Store the cpu_freq_id
 	cpuFreq = document.getElementById("cpu_freq_id") as HTMLLabelElement;
@@ -202,28 +188,35 @@ function initSimulation(audioSampleRate: number, volume: number, zxKeyboard: 'sp
 	// Store the screen image source
 	screenImg = document.getElementById("screen_img_id") as HTMLCanvasElement;
 	if (screenImg) {
-		screenImgContext = screenImg.getContext("2d")!;
-		// Note: Normally I would have to distinguish between ZX81 and Spectrum here. But they have the same width and height.
-		//screenImgImgData = screenImgContext.createImageData(SpectrumUlaDraw.SCREEN_WIDTH, SpectrumUlaDraw.SCREEN_HEIGHT);
-		// TODO: Change height
-		//screenImgImgData = screenImgContext.createImageData(SpectrumUlaDraw.SCREEN_WIDTH, 400);
-		// TODO
-		screenImgImgData = screenImgContext.createImageData(416, 400);
+		switch (message.ulaScreen) {
+			case 'zx81':
+				if (message.zx81UlaOptions.hires) {
+					ulaDraw = new Zx81HiResUlaDraw(screenImg, message.zx81UlaOptions);
+				}
+				else {
+					ulaDraw = new Zx81UlaDraw(screenImg, message.zx81UlaOptions);
+				}
+				break;
+			case 'spectrum':
+			default:
+				ulaDraw = new SpectrumUlaDraw(screenImg, message.zxBorderWidth);
+				break;
+		}
 	}
 
 	// Get Beeper output object
 	const beeperOutput = document.getElementById("beeper.output");
 	if (beeperOutput) {
 		// Singleton for audio
-		ZxAudioBeeper.createZxAudioBeeper(audioSampleRate, beeperOutput);
-		if (zxAudioBeeper.sampleRate != audioSampleRate) {
+		ZxAudioBeeper.createZxAudioBeeper(message.audioSampleRate, beeperOutput);
+		if (zxAudioBeeper.sampleRate != message.audioSampleRate) {
 			// Send warning to vscode
 			vscode.postMessage({
 				command: 'warning',
-				text: "Sample rate of " + audioSampleRate + "Hz could not be set. Try setting it to e.g. " + zxAudioBeeper.sampleRate + "Hz instead."
+				text: "Sample rate of " + message.audioSampleRate + "Hz could not be set. Try setting it to e.g. " + zxAudioBeeper.sampleRate + "Hz instead."
 			});
 		}
-		zxAudioBeeper.setVolume(volume);
+		zxAudioBeeper.setVolume(message.volume);
 
 		// Get Volume slider
 		const volumeSlider = document.getElementById("audio.volume") as HTMLInputElement;

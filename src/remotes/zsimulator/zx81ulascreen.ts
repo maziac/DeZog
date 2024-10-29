@@ -352,15 +352,16 @@ export class Zx81UlaScreen extends UlaScreen {
 	 * { charset: Uint8Array, dfile: Uint8Array }
 	 */
 	public getUlaScreen(): any {
-		// Read the charset 0x1E00-0x1FFF (512 bytes)
-		const memory = this.z80Cpu.memory;
-		const charset = memory.readBlock(0x1E00, 512);
 		// Check for available VSYNC
 		if (this.noDisplay)
 			return {
 				name: 'zx81',
-				charset
+				borderColor: this.borderColor
 			};
+
+		// Read the charset 0x1E00-0x1FFF (512 bytes)
+		const memory = this.z80Cpu.memory;
+		const charset = memory.readBlock(0x1E00, 512);
 		// Get the content of the D_FILE system variable (2 bytes).
 		const dfile_ptr = memory.getMemory16(0x400c);
 		// 24 lines of 33 bytes (could be less).
@@ -402,7 +403,8 @@ export class Zx81UlaScreen extends UlaScreen {
 			name: 'zx81',
 			dfile,
 			charset,
-			chroma
+			chroma,
+			borderColor: this.borderColor
 		};
 	}
 

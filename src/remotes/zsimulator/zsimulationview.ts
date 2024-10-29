@@ -547,8 +547,6 @@ export class ZSimulationView extends BaseView {
 			// The screen data
 			const ulaScreen = this.simulator.zxUlaScreen;
 			const ulaData = ulaScreen.getUlaScreen();
-			// Get color
-			const borderColor = ulaScreen.getBorderColor();
 
 			// Check for zx81 debug mode
 			const zx81UlaScreenOptions = Settings.launch.zsim.zx81UlaOptions;
@@ -557,7 +555,6 @@ export class ZSimulationView extends BaseView {
 			const message = {
 				command: 'updateScreen',
 				ulaData,
-				borderColor,
 				zx81UlaScreenDebug: zx81UlaScreenOptions.debug
 			};
 			this.sendMessageToWebView(message);
@@ -820,20 +817,11 @@ export class ZSimulationView extends BaseView {
 
 		// Add code for the screen (Spectrum or ZX81)
 		if (zsim.ulaScreen) {
-			let height = 192;	// Standard
-			const zx81UlaOptions = zsim.zx81UlaOptions;
-			if (zsim.ulaScreen === 'zx81' && zsim.zx81UlaOptions.hires) {
-				// Set configured height
-				const screenArea = zx81UlaOptions.screenArea;
-				height = screenArea.lastY - screenArea.firstY + 1;
-			}
-			// Border width
-			const borderWidth =(zsim.ulaScreen === 'spectrum')? zsim.zxBorderWidth : 0;
-			// HTML code:
-			// TODO: width="256"
+			// HTML code. Note: the canvas width and hide is just very preliminary.
+			// It will be set by the UlaDraw classes.
 			html += `
 			<!-- Display the screen gif -->
-			<canvas id="screen_img_id" width="416" height="${height}" style="image-rendering:pixelated; border:${borderWidth}px solid white; outline: 1px solid var(--vscode-foreground); width:100%; height:100%; box-sizing: border-box;">
+			<canvas id="screen_img_id" width="256" height="192" style="image-rendering:pixelated; outline: 1px solid var(--vscode-foreground); width:100%; height:100%; box-sizing: border-box;">
 			</canvas>
 			`;
 		}
@@ -1270,7 +1258,10 @@ export class ZSimulationView extends BaseView {
 			command: 'init',
 			audioSampleRate: zsim.audioSampleRate,
 			zxKeyboard: zsim.zxKeyboard,
-			volume
+			volume,
+			ulaScreen: zsim.ulaScreen,
+			zx81UlaOptions: zsim.zx81UlaOptions,
+			zxBorderWidth: zsim.zxBorderWidth
 		};
 		this.sendMessageToWebView(sendMsg);
 	}

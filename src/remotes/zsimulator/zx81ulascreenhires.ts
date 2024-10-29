@@ -92,15 +92,6 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 		const maxHeight = 400;
 		this.screenData = new Uint8Array(maxHeight * (2 * maxWidth8 + 1));
 		this.colorData = new Uint8Array(maxHeight * maxWidth8);
-
-		const a = new Uint8Array(4);
-		a[0] = 1;
-		a[1] = 2;
-		a[2] = 3;
-		a[3] = 4;
-		const b = new Uint32Array(a.buffer);
-		b[0] = 0x12345678;
-
 	}
 
 
@@ -214,12 +205,14 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	public getUlaScreen(): any {
 		if (this.noDisplay)
 			return {
-				name: 'zx81-hires'
+				name: 'zx81-hires',
+				borderColor: this.borderColor
 			};
 		return {
 			name: 'zx81-hires',
 			data: this.screenData.slice(0, this.screenDataIndex),
-			colorData: this.chroma81Enabled ? this.colorData.slice(0, this.screenDataIndex) : undefined
+			colorData: this.chroma81Enabled ? this.colorData.slice(0, this.screenDataIndex) : undefined,
+			borderColor: this.borderColor
 		};
 	}
 
