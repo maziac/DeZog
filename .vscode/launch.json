@@ -13,7 +13,7 @@
 			"debugWebviews": true,
 			"sourceMaps": true,
 			"outFiles": [
-				"${workspaceFolder}/out/extension.js"
+				"${workspaceFolder}/out/**/*.js"
 			],
 			"preLaunchTask": "watch",
 			"skipFiles": [
