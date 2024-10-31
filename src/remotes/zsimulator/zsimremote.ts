@@ -423,7 +423,7 @@ export class ZSimRemote extends DzrpRemote {
 				break;
 			case 'zx81':
 				{
-					const options = zsim.zx81UlaOptions;
+					const options = zsim.ulaOptions;
 					const chroma81 = options.chroma81;
 					if (options.hires) {
 						// Hires

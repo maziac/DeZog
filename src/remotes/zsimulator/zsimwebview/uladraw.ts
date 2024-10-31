@@ -79,6 +79,11 @@ export class UlaDraw {
 			line.y2 -= y1;
 			if (line.y2 > y2)
 				line.y2 = y2;
+			// Adjust for the half pixel, for sharper lines
+			line.x1 = Math.round(line.x1) + 0.5;
+			line.y1 = Math.round(line.y1) + 0.5;
+			line.x2 = Math.round(line.x2) + 0.5;
+			line.y2 = Math.round(line.y2) + 0.5;
 		}
 	}
 

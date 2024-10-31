@@ -847,7 +847,7 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
 - "ulaScreen": "spectrum" | "zx81". If enabled it shows the contents of the ZX Spectrum screen or that of a ZX81.
 ![](images/zsim_ula_screen_spectrum.jpg)
 ![](images/zsim_ula_screen_zx81.jpg)
-- "zx81UlaOptions":
+- "ulaoptions":
   ~~~
   {
     "hires": true,

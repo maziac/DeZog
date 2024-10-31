@@ -675,7 +675,7 @@
 										"description": "If defined it shows the contents of the ZX Spectrum (\"spectrum\") or ZX81 (\"zx81\") screen. It supports also the ZX128K screen switching.",
 										"default": null
 									},
-									"zx81UlaOptions": {
+									"ulaOptions": {
 										"type": "object",
 										"properties": {
 											"hires": {

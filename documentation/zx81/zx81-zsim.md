@@ -19,7 +19,7 @@ What it does is to set the following zsim properties:
 	"defaultPortIn": 0xFF,
 	"zxKeyboard": "zx81",
 	"ulaScreen": "zx81",
-	"zx81UlaOptions": {
+	"ulaoptions": {
 		"hires": true,
 		"firstLine": 56,
 		"lastLine": 247,
@@ -112,7 +112,7 @@ The simulator is capable of 2 different systems to display video.
 Both simulate the timing as much as possible enabling the simulator to display hires graphics.
 You can choose between modes by setting "hires" to true or false (default is true).
 ~~~json
-"zx81UlaOptions": {
+"ulaoptions": {
 	"hires": true/false
 }
 ~~~
@@ -141,8 +141,8 @@ If you are developing a hires game you have to use `"hires": true`, of course.
 
 Note: To simulate ARX hires graphics you need to use a memory model that enables RAM in the area 0x2000-0x3FFF, i.e. "ZX81-56K".
 
-## zx81UlaOptions
- "zx81UlaOptions":
+## ulaoptions
+ "ulaoptions":
   ~~~
   {
     "hires": true,
@@ -286,7 +286,7 @@ You can use it in "loadObjs".
 Furthermore you need to enable the Chroma 81:
 ~~~json
 "loadObjs": [
-    "zx81UlaOptions": {
+    "ulaoptions": {
         "chroma81": {
             "available": true,
             "enabled": true,
@@ -313,7 +313,7 @@ You can get a lot of colourization files [here](http://www.fruitcake.plus.com/Si
 To use them you need to enable the Chroma 81:
 ~~~json
 "loadObjs": [
-    "zx81UlaOptions": {
+    "ulaoptions": {
         "chroma81": {
             "available": true,
             "enabled": true,

@@ -254,7 +254,7 @@ export interface LineType {
 }
 
 // Options for the ZX81 ULA screen.
-export interface zx81UlaOptions {	// TODO: Rename to ulaOptions
+export interface UlaOptions {	// TODO: Rename to ulaOptions
 	// For both, ZX81 and Spectrum:
 	screenArea: ScreenAreaType;	// The screen area
 	borderSize: number;	// The border size in pixels, alternative for screenArea
@@ -297,15 +297,12 @@ export interface ZSimType {
 	ulaScreen: 'spectrum' | 'zx81' | 'none',	// "spectrum" or "zx81"
 
 	// Options for the zx81 screen.
-	zx81UlaOptions: zx81UlaOptions;
+	ulaOptions: UlaOptions;
 
 	// Enables overriding the load (save) routine of the ZX81 ROM.
 	// If enabled the load routine (at 0x0343) of the ZX81 is skipped and a file is loaded
 	// directly into the memory. Afterwards execution is continued at 0x0207.
 	zx81LoadOverlay: boolean;
-
-	// The displayed border width in pixels. No border if 0. Works only in conjunction with ulaScreen == 'spectrum'.
-	zxBorderWidth: number, // TODO: REMOVE
 
 	// Enables ZX Spectrum sound through it's beeper.
 	zxBeeper: boolean,
@@ -630,8 +627,6 @@ export class Settings {
 					launchCfg.zsim.visualMemory = true;
 				if(launchCfg.zsim.ulaScreen === undefined)
 					launchCfg.zsim.ulaScreen = 'spectrum';
-				if(launchCfg.zsim.zxBorderWidth === undefined)
-					launchCfg.zsim.zxBorderWidth = 15;
 				if (launchCfg.zsim.zxBeeper === undefined)
 					launchCfg.zsim.zxBeeper = true;
 				if(launchCfg.zsim.cpuFrequency === undefined)
@@ -651,17 +646,15 @@ export class Settings {
 					launchCfg.zsim.ulaScreen = 'zx81';
 				if (launchCfg.zsim.zx81LoadOverlay === undefined)
 					launchCfg.zsim.zx81LoadOverlay = true;
-				if (launchCfg.zsim.zxBorderWidth === undefined)
-					launchCfg.zsim.zxBorderWidth = 0;
 				if (launchCfg.zsim.cpuFrequency === undefined)
 					launchCfg.zsim.cpuFrequency = 3250000.0;	// 3.25Mhz
 				if (launchCfg.zsim.defaultPortIn === undefined)
 					launchCfg.zsim.defaultPortIn = 0xFF;
-				if (launchCfg.zsim.zx81UlaOptions === undefined) {
-					launchCfg.zsim.zx81UlaOptions = {} as zx81UlaOptions;
+				if (launchCfg.zsim.ulaOptions === undefined) {
+					launchCfg.zsim.ulaOptions = {} as UlaOptions;
 				}
-				if (launchCfg.zsim.zx81UlaOptions.chroma81 === undefined) {
-					launchCfg.zsim.zx81UlaOptions.chroma81 = {} as Chroma81Type;
+				if (launchCfg.zsim.ulaOptions.chroma81 === undefined) {
+					launchCfg.zsim.ulaOptions.chroma81 = {} as Chroma81Type;
 				}
 			}
 		}
@@ -689,39 +682,67 @@ export class Settings {
 			launchCfg.zsim.ulaScreen = 'none';
 		else if (launchCfg.zsim.ulaScreen as any === true) // Old config
 			launchCfg.zsim.ulaScreen = 'spectrum';
-		if (launchCfg.zsim.zx81UlaOptions === undefined) {
-			launchCfg.zsim.zx81UlaOptions = {
-			} as zx81UlaOptions;
+		if (launchCfg.zsim.ulaOptions === undefined) {
+			launchCfg.zsim.ulaOptions = {
+			} as UlaOptions;
 		}
 		if (launchCfg.zsim.zx81LoadOverlay === undefined)
 			launchCfg.zsim.zx81LoadOverlay = false;
 
-		const ulaScreenOptions = launchCfg.zsim.zx81UlaOptions;
-		if (ulaScreenOptions.hires === undefined)
-			ulaScreenOptions.hires = true;
-		if (ulaScreenOptions.screenArea === undefined)
-			ulaScreenOptions.screenArea = {} as any;
-		const screenArea = ulaScreenOptions.screenArea;
-		if (screenArea.firstX === undefined)
-			screenArea.firstX = 56;
-		if (screenArea.lastX === undefined)
-			screenArea.lastX = 327;
-		if (screenArea.firstY === undefined)
-			screenArea.firstY = 48;
-		if (screenArea.lastY === undefined)
-			screenArea.lastY = 255;
-		if (ulaScreenOptions.debug === undefined)
-			ulaScreenOptions.debug = false;
-		if (ulaScreenOptions.showStandardLines === undefined)
-			ulaScreenOptions.showStandardLines = false;
-		if (ulaScreenOptions.lines === undefined)
-			ulaScreenOptions.lines = [];
-		if (ulaScreenOptions.chroma81 === undefined)
-			ulaScreenOptions.chroma81 = {
+		const ulaOptions = launchCfg.zsim.ulaOptions;
+		if (ulaOptions.hires === undefined)
+			ulaOptions.hires = true;
+
+		// screenArea and borderSize, only one can be defined by the user.
+		// Settings will turn borderSize into screenArea.
+		// I.e. afterwards borderSize is removed.
+		const ulaScreen = launchCfg.zsim.ulaScreen;
+		let bSize = ulaOptions.borderSize;
+		if (ulaOptions.borderSize !== undefined && ulaOptions.screenArea === undefined) {
+			ulaOptions.borderSize = undefined as any;
+		}
+		if (ulaOptions.screenArea === undefined)
+			ulaOptions.screenArea = {} as ScreenAreaType;
+		const screenArea = ulaOptions.screenArea;
+		if (ulaScreen === 'zx81') {
+			if (screenArea.firstX === undefined)
+				screenArea.firstX = 64;
+			if (screenArea.lastX === undefined)
+				screenArea.lastX = 320;
+			if (screenArea.firstY === undefined)
+				screenArea.firstY = 56;
+			if (screenArea.lastY === undefined)
+				screenArea.lastY = 248;
+		}
+		else if (ulaScreen === 'spectrum') {
+			if (screenArea.firstX === undefined)
+				screenArea.firstX = 48;
+			if (screenArea.lastX === undefined)
+				screenArea.lastX = 304;
+			if (screenArea.firstY === undefined)
+				screenArea.firstY = 56;
+			if (screenArea.lastY === undefined)
+				screenArea.lastY = 248;
+		}
+
+		// Subtract border
+		if (bSize === undefined)
+			bSize = 10;	// Default border
+		screenArea.firstX -= bSize;
+		screenArea.lastX += bSize;
+		screenArea.firstY -= bSize;
+		screenArea.lastY += bSize;
+
+		if (ulaOptions.showStandardLines === undefined)
+			ulaOptions.showStandardLines = false;
+		if (ulaOptions.lines === undefined)
+			ulaOptions.lines = [];
+		if (ulaOptions.chroma81 === undefined)
+			ulaOptions.chroma81 = {
 				available: false
 			} as Chroma81Type;
 
-		const chroma81 = ulaScreenOptions.chroma81;
+		const chroma81 = ulaOptions.chroma81;
 		if (chroma81.available === undefined)
 			chroma81.available = true;
 		if (chroma81.enabled === undefined)
@@ -732,9 +753,6 @@ export class Settings {
 			chroma81.borderColor = 0x00;	// Black
 		if (chroma81.colourizationFile === undefined)
 			chroma81.colourizationFile = '';
-
-		if (launchCfg.zsim.zxBorderWidth === undefined )
-			launchCfg.zsim.zxBorderWidth = 0;
 
 		if (launchCfg.zsim.zxBeeper === undefined)
 			launchCfg.zsim.zxBeeper = false;
@@ -1254,18 +1272,17 @@ export class Settings {
 		if (ulaScreen !== 'spectrum' && ulaScreen !== 'zx81' && ulaScreen !== 'none') {
 			throw Error("'ulaScreen': Allowed values are 'spectrum' or 'zx81'.");
 		}
-		const zx81UlaOptions = Settings.launch.zsim.zx81UlaOptions;
-		const screenArea = zx81UlaOptions.screenArea;
+		const ulaOptions = Settings.launch.zsim.ulaOptions;
+		const screenArea = ulaOptions.screenArea;
+		const borderSize = ulaOptions.borderSize;
+		if (screenArea !== undefined && borderSize !== undefined) {
+			throw Error("You can only define one, 'screenArea' or 'borderSize'. You must not define both.");
+		}
 		if (screenArea.lastY < screenArea.firstY) {
-			throw Error("'zx81UlaOptions': lastY < firstY.");
+			throw Error("'ulaOptions': lastY < firstY.");
 		}
 		if (screenArea.lastX < screenArea.firstX) {
-			throw Error("'zx81UlaOptions': lastX < firstX.");
-		}
-
-		// Check border (Spectrum vs. ZX81)
-		if (Settings.launch.zsim.zxBorderWidth > 0 && (ulaScreen !== 'spectrum' && ulaScreen !== 'none')) {
-			throw Error("'zxBorderWidth' used for 'ulaScreen' = '" + ulaScreen + "'. Should be used only for 'spectrum'.");
+			throw Error("'ulaOptions': lastX < firstX.");
 		}
 	}
 }

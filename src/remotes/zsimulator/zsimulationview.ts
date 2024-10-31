@@ -1256,7 +1256,7 @@ export class ZSimulationView extends BaseView {
 			zxKeyboard: zsim.zxKeyboard,
 			volume,
 			ulaScreen: zsim.ulaScreen,
-			ulaOptions: zsim.zx81UlaOptions
+			ulaOptions: zsim.ulaOptions
 		};
 		this.sendMessageToWebView(sendMsg);
 	}

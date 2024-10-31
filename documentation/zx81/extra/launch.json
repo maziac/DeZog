@@ -8,7 +8,7 @@
 			"remoteType": "zsim",
 			"zsim": {
 				"preset": "zx81",
-				"zx81UlaOptions": {
+				"ulaOptions": {
 					"hires": false,
 					"chroma81": {
 						"available": true,
