@@ -16,8 +16,11 @@ export class UlaDraw {
 	// A 32bit view of the imgData buffer
 	protected pixels: Uint32Array;
 
+	// 	The vertical and horizontal lines to draw.
+	protected lines: {x1: number, y1: number, x2: number, y2: number, color: string}[];
+
 	// The ZX palette.
-	protected zxPalette = [
+	protected zxPalette = [	// TODO: change to 3 byte colors and change access to Uint32Array
 		// Bright 0: r,g,b
 		0x00, 0x00, 0x00,	// Black:	0
 		0x00, 0x00, 0xD7,	// Blue:	1
@@ -47,10 +50,48 @@ export class UlaDraw {
 	 * by the derived classes.
 	 * You also need to set the height and width of the canvas.
 	 * @param htmlCanvas The html canvas to draw to.
+	 * @param ulaOptions The ULA options.
 	 */
-	constructor(htmlCanvas: HTMLCanvasElement) {
+	constructor(htmlCanvas: HTMLCanvasElement, ulaOptions: any) {
 		// Store
 		this.screenImgContext = htmlCanvas.getContext('2d')!;
+		// Lines
+		this.lines = [...ulaOptions.lines];
+	}
+
+
+	/** Adjusts the coordinates of the lines by the given offset. */
+	protected adjustLines(x1: number, y1: number) {
+		const width = this.imgData.width;
+		const height = this.imgData.height;
+		const x2 = width - 1;
+		const y2 = height - 1;
+		for (let line of this.lines) {
+			line.x1 -= x1;
+			if (line.x1 < 0)
+				line.x1 = 0;
+			line.x2 -= x1;
+			if (line.x2 > x2)
+				line.x2 = x2;
+			line.y1 -= y1;
+			if (line.y1 < 0)
+				line.y1 = 0;
+			line.y2 -= y1;
+			if (line.y2 > y2)
+				line.y2 = y2;
+		}
+	}
+
+
+	/** Draws all lines. */
+	protected drawAllLines() {
+		for (let line of this.lines) {
+			this.screenImgContext.beginPath();
+			this.screenImgContext.strokeStyle = line.color;
+			this.screenImgContext.moveTo(line.x1, line.y1);
+			this.screenImgContext.lineTo(line.x2, line.y2);
+			this.screenImgContext.stroke();
+		}
 	}
 
 

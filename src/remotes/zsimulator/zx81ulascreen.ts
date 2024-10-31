@@ -366,7 +366,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		const dfile_ptr = memory.getMemory16(0x400c);
 		// 24 lines of 33 bytes (could be less).
 		const dfile_maxlen = 33 * 24;
-		const dfile = memory.readBlock(dfile_ptr, dfile_maxlen);
+		const dfile = memory.readBlock(dfile_ptr + 1, dfile_maxlen);	// Skips the first 0x76
 
 		// Color / Chroma 81
 		let chroma;

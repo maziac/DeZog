@@ -548,14 +548,10 @@ export class ZSimulationView extends BaseView {
 			const ulaScreen = this.simulator.zxUlaScreen;
 			const ulaData = ulaScreen.getUlaScreen();
 
-			// Check for zx81 debug mode
-			const zx81UlaScreenOptions = Settings.launch.zsim.zx81UlaOptions;
-
 			// Create message to update the webview
 			const message = {
 				command: 'updateScreen',
-				ulaData,
-				zx81UlaScreenDebug: zx81UlaScreenOptions.debug
+				ulaData
 			};
 			this.sendMessageToWebView(message);
 		}
@@ -1260,8 +1256,7 @@ export class ZSimulationView extends BaseView {
 			zxKeyboard: zsim.zxKeyboard,
 			volume,
 			ulaScreen: zsim.ulaScreen,
-			zx81UlaOptions: zsim.zx81UlaOptions,
-			zxBorderWidth: zsim.zxBorderWidth
+			ulaOptions: zsim.zx81UlaOptions
 		};
 		this.sendMessageToWebView(sendMsg);
 	}

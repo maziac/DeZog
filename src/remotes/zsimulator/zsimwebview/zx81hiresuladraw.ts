@@ -1,17 +1,14 @@
-import {UlaDraw} from "./uladraw";
+import {Zx81BaseUlaDraw} from "./zx81baseuladraw";
 
-/** Draws a ZX81 (HiRes) screen of size 256*192.
+/** Draws a ZX81 (HiRes) screen.
  */
-export class Zx81HiResUlaDraw extends UlaDraw {
+export class Zx81HiResUlaDraw extends Zx81BaseUlaDraw {
 	// The virtual size including the HSYNC, i.e. 207 clock cycles.
 	protected SCREEN_TOTAL_WIDTH = 414;
 
 	// The screen x to width to show.
 	protected firstX: number;
 	protected width: number;
-
-	// If debug mode is on: Shows grey background if nothing is drawn.
-	protected debug: boolean;
 
 
 	/** Constructor.
@@ -24,8 +21,12 @@ export class Zx81HiResUlaDraw extends UlaDraw {
 	 * @param ulaOptions The ULA options.
 	 */
 	constructor(htmlCanvas: HTMLCanvasElement, ulaOptions: any) {
-		super(htmlCanvas);
-		this.debug = ulaOptions.debug;
+		super(htmlCanvas, ulaOptions);
+
+		if (ulaOptions.showStandardLines) {
+		// HSYNC (after 192 clock cycles, 2cc = 1 px)
+			this.lines.push({x1: 2 * 192, y1: 0, x2: 2 * 192, y2: 1000, color: "red"});
+		}
 
 		const area = ulaOptions.screenArea;
 		this.firstX = area.firstX;
@@ -38,6 +39,9 @@ export class Zx81HiResUlaDraw extends UlaDraw {
 		this.imgData = this.screenImgContext.createImageData(this.SCREEN_TOTAL_WIDTH, height);
 		// Get pixels memory (Get a 32bit view of the buffer)
 		this.pixels = new Uint32Array(this.imgData.data.buffer);
+
+		// Adjust the lines
+		this.adjustLines(area.firstX, area.firstY);
 	}
 
 
@@ -52,8 +56,6 @@ export class Zx81HiResUlaDraw extends UlaDraw {
 
 		const colorData = ulaData.colorData;
 		const backgroundColor = this.getRgbColor(ulaData.borderColor);
-
-		let pixelIndex = 0;
 
 		// Default is transparent
 		let rgb = 65536 * backgroundColor.b + backgroundColor.g * 256 + backgroundColor.r;
@@ -75,7 +77,7 @@ export class Zx81HiResUlaDraw extends UlaDraw {
 			for (let x = len; x > 0; x--) {
 				const xTstates = ulaScreen[index++];
 				xAdd = xTstates * 2;
-				pixelIndex = (lineCounter * this.SCREEN_TOTAL_WIDTH + xAdd);
+				let pixelIndex = lineCounter * this.SCREEN_TOTAL_WIDTH + xAdd;
 				// Get color
 				if (colorData) {
 					const color = colorData[colorIndex++];
@@ -111,14 +113,10 @@ export class Zx81HiResUlaDraw extends UlaDraw {
 			lineCounter++;
 		}
 
-		// Show HSYNC
-		this.drawVertLine(this.pixels, 192, 0xFF, 0, 0);
-		// Show left and right border
-		this.drawVertLine(this.pixels, 32, 0, 0xFF, 0);
-		this.drawVertLine(this.pixels, 192 - 32, 0, 0xFF, 0);
-
 		// Write image
 		this.screenImgContext.putImageData(this.imgData, 0, 0, this.firstX, 0, this.width, this.imgData.height);
+		// Draw lines
+		this.drawAllLines();
 	}
 
 

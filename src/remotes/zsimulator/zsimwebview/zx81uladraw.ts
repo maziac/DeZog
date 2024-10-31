@@ -1,19 +1,10 @@
-import {UlaDraw} from "./uladraw";
+import {Zx81BaseUlaDraw} from "./zx81baseuladraw";
 
 /** Represents the ZX81 simulated screen.
  */
-export class Zx81UlaDraw extends UlaDraw {
-	// For the standard screen the minimum/maximum x/y values
-	protected SCREEN_MIN_X = 56;
-	protected SCREEN_MAX_X = 327;
-	protected SCREEN_MIN_Y = 48;
-	protected SCREEN_MAX_Y = 255;
-
+export class Zx81UlaDraw extends Zx81BaseUlaDraw {
 	// First index where the drawing starts.
 	protected pixelsStartIndex: number;
-
-	// If debug mode is on: Shows grey background if nothing is drawn.
-	protected debug: boolean;
 
 
 	/** Constructor.
@@ -24,18 +15,17 @@ export class Zx81UlaDraw extends UlaDraw {
 	 * @param ulaOptions The ULA options.
 	 */
 	constructor(htmlCanvas: HTMLCanvasElement, ulaOptions: any) {
-		super(htmlCanvas);
-		this.debug = ulaOptions.debug;
+		super(htmlCanvas, ulaOptions);
 
 		const area = {...ulaOptions.screenArea};
-		if (area.firstX > this.SCREEN_MIN_X)
-			area.firstX = this.SCREEN_MIN_X;
-		if (area.lastX < this.SCREEN_MAX_X)
-			area.lastX = this.SCREEN_MAX_X;
-		if (area.firstY > this.SCREEN_MIN_Y)
-			area.firstY = 0;
-		if (area.lastY < this.SCREEN_MAX_Y)
-			area.lastY = this.SCREEN_MAX_Y;
+		if (area.firstX > this.ZX81_STD_SCREEN_MIN_X)
+			area.firstX = this.ZX81_STD_SCREEN_MIN_X;
+		if (area.lastX < this.ZX81_STD_SCREEN_MAX_X)
+			area.lastX = this.ZX81_STD_SCREEN_MAX_X;
+		if (area.firstY > this.ZX81_STD_SCREEN_MIN_Y)
+			area.firstY = this.ZX81_STD_SCREEN_MIN_Y;
+		if (area.lastY < this.ZX81_STD_SCREEN_MAX_Y)
+			area.lastY = this.ZX81_STD_SCREEN_MAX_Y;
 		const width = area.lastX - area.firstX + 1;
 		const height = area.lastY - area.firstY + 1;
 
@@ -50,7 +40,10 @@ export class Zx81UlaDraw extends UlaDraw {
 
 		// Calculate first index into the pixels data
 		// (the left, top corner to start drawing)
-		this.pixelsStartIndex = (area.firstY - this.SCREEN_MIN_Y) * width + (area.firstX - this.SCREEN_MAX_X);
+		this.pixelsStartIndex = (this.ZX81_STD_SCREEN_MIN_Y - area.firstY) * width + this.ZX81_STD_SCREEN_MIN_X - area.firstX;
+
+		// Adjust the lines
+		this.adjustLines(area.firstX, area.firstY);
 	}
 
 
@@ -65,17 +58,17 @@ export class Zx81UlaDraw extends UlaDraw {
 
 		const chroma = ulaData.chroma;
 		const chromaMode = chroma?.mode;
-		let dfileIndex = (dfile[0] === 0x76) ? 1 : 0;	// TODO: Required?
+		let dfileIndex = 0;
 
 		// Background color
-		const bgCol = this.getRgbColor(ulaData.borderColor); 
+		const bgCol = this.getRgbColor(ulaData.borderColor);
 		let rgb = 65536 * bgCol.b + bgCol.g * 256 + bgCol.r;
 		rgb += this.debug ? 0x80000000 : 0xFF000000;	// semi transparent for debug mode
 		this.pixels.fill(rgb);
 
 		const pixelsWidth = this.imgData.width;
-		const width = this.SCREEN_WIDTH / 8;
-		const height = this.SCREEN_HEIGHT / 8;
+		const width8 = this.SCREEN_WIDTH / 8;
+		const height8 = this.SCREEN_HEIGHT / 8;
 		let x = 0;
 		let y = 0;
 
@@ -83,9 +76,9 @@ export class Zx81UlaDraw extends UlaDraw {
 		let bgRed = 0xFF, bgGreen = 0xFF, bgBlue = 0xFF;
 		const charset = ulaData.charset;
 
-		while(y < height) {
+		while(y < height8) {
 			const char = dfile[dfileIndex];
-			if(x >= width || char === 0x76) {
+			if(x >= width8 || char === 0x76) {
 				x = 0;
 				y++;
 				dfileIndex++;
@@ -153,6 +146,8 @@ export class Zx81UlaDraw extends UlaDraw {
 
 		// Write image
 		this.screenImgContext.putImageData(this.imgData, 0, 0);
+		// Draw lines
+		this.drawAllLines();
     }
 }
 

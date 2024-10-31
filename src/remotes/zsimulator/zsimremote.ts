@@ -418,7 +418,9 @@ export class ZSimRemote extends DzrpRemote {
 		// Check if ULA screen is enabled
 		const zxUlaScreen = zsim.ulaScreen;
 		switch(zxUlaScreen) {
-			case 'spectrum': this.zxUlaScreen = new SpectrumUlaScreen(this.z80Cpu); break;
+			case 'spectrum':
+				this.zxUlaScreen = new SpectrumUlaScreen(this.z80Cpu);
+				break;
 			case 'zx81':
 				{
 					const options = zsim.zx81UlaOptions;

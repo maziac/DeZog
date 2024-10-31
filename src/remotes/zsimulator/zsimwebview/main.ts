@@ -190,16 +190,16 @@ function initSimulation(message) {
 	if (screenImg) {
 		switch (message.ulaScreen) {
 			case 'zx81':
-				if (message.zx81UlaOptions.hires) {
-					ulaDraw = new Zx81HiResUlaDraw(screenImg, message.zx81UlaOptions);
+				if (message.ulaOptions.hires) {
+					ulaDraw = new Zx81HiResUlaDraw(screenImg, message.ulaOptions);
 				}
 				else {
-					ulaDraw = new Zx81UlaDraw(screenImg, message.zx81UlaOptions);
+					ulaDraw = new Zx81UlaDraw(screenImg, message.ulaOptions);
 				}
 				break;
 			case 'spectrum':
 			default:
-				ulaDraw = new SpectrumUlaDraw(screenImg, message.zxBorderWidth);
+				ulaDraw = new SpectrumUlaDraw(screenImg, message.ulaOptions);
 				break;
 		}
 	}

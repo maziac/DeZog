@@ -244,13 +244,25 @@ export interface Chroma81Type {
 }
 
 
+// The type to define aline with color
+export interface LineType {
+	x1: number,
+	y1: number,
+	x2: number,
+	y2: number,
+	color: string	// HTML coloe, e.g. "red" of "#FF0000"
+}
+
 // Options for the ZX81 ULA screen.
-export interface zx81UlaOptions {
-	hires: boolean;		// Use hires mode
+export interface zx81UlaOptions {	// TODO: Rename to ulaOptions
+	// For both, ZX81 and Spectrum:
 	screenArea: ScreenAreaType;	// The screen area
-	// firstLine: number;	// The first line to display (hires mode)
-	// lastLine: number;	// The last line to display (hires mode)
-	// borderSize: number;	// The size of the border in pixels
+	borderSize: number;	// The border size in pixels, alternative for screenArea
+	showStandardLines: boolean; // Shows standard lines like HSYNC in the display
+	lines: LineType[];	// Additional lines to draw
+
+	// Only ZX81:
+	hires: boolean;		// Use hires mode
 	chroma81: Chroma81Type;	// Chroma 81 interface
 	debug: boolean;		// Debug mode: show gray in collapsed dfile
 }
@@ -259,7 +271,7 @@ export interface zx81UlaOptions {
 /// Definitions for the 'zsim' remote type.
 export interface ZSimType {
 	// Defines a preset of settings to simulate a ZX Spectrum or ZX81.
-	// I.e. for a Spectrum it defines zxKeyboard, zxInterface2Joy, visualMemory, 48K, ulaScreen, zxBorderWidth, zxBeeper, cpuFrequency, defaultPortIn.
+	// I.e. for a Spectrum it defines zxKeyboard, zxInterface2Joy, visualMemory, 48K, ulaScreen, zxBeeper, cpuFrequency, defaultPortIn.
 	// For a ZX81 it defines zxKeyboard, visualMemory, 16K, ulaScreen, cpuFrequency, defaultPortIn.
 	// All settings can be overwritten if explicitly set.
 	preset: 'spectrum' | 'zx81' | 'none';
@@ -293,7 +305,7 @@ export interface ZSimType {
 	zx81LoadOverlay: boolean;
 
 	// The displayed border width in pixels. No border if 0. Works only in conjunction with ulaScreen == 'spectrum'.
-	zxBorderWidth: number,
+	zxBorderWidth: number, // TODO: REMOVE
 
 	// Enables ZX Spectrum sound through it's beeper.
 	zxBeeper: boolean,
@@ -700,6 +712,10 @@ export class Settings {
 			screenArea.lastY = 255;
 		if (ulaScreenOptions.debug === undefined)
 			ulaScreenOptions.debug = false;
+		if (ulaScreenOptions.showStandardLines === undefined)
+			ulaScreenOptions.showStandardLines = false;
+		if (ulaScreenOptions.lines === undefined)
+			ulaScreenOptions.lines = [];
 		if (ulaScreenOptions.chroma81 === undefined)
 			ulaScreenOptions.chroma81 = {
 				available: false

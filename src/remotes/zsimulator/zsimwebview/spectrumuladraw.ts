@@ -2,8 +2,22 @@ import {UlaDraw} from "./uladraw";
 
 /** Represents the ZX 48K ULA screen. (0x4000-0x5AFF)
  * I.e. it takes a bank and converts it to a gif image.
+ * ZX Spectrum Video Timings:
+ * - one video line is: 448 px. 224 clock cycles @3.5Mhz = 64us.
+ * - one frame is: 312 lines  => 50.08Hz => 19.958ms
+ * - horizontal pixels: 48 (left border) + 256 (screen) + 48 (right border) + 96 (HSYNC) = 448
+ * - vertical lines: 8 (VSYNC) + 56 (top border) + 192 (screen) + 56 (bottom border) + 24 (VSYNC) = 312
+ *
+ * See https://worldofspectrum.org/faq/reference/48kreference.htm
+ * http://www.zxdesign.info/interrupts.shtml
  */
 export class SpectrumUlaDraw extends UlaDraw {
+	// For the standard screen the minimum/maximum x/y values
+	protected SPECTRUM_SCREEN_MIN_X = 48;
+	protected SPECTRUM_SCREEN_MAX_X = this.SPECTRUM_SCREEN_MIN_X + this.SCREEN_WIDTH;	// (240) Exclusive
+	protected SPECTRUM_SCREEN_MIN_Y = 56;
+	protected SPECTRUM_SCREEN_MAX_Y = this.SPECTRUM_SCREEN_MIN_Y + this.SCREEN_HEIGHT;	// (248) Exclusive
+
 	// First index where the drawing starts.
 	protected pixelsStartIndex: number;
 
@@ -15,14 +29,34 @@ export class SpectrumUlaDraw extends UlaDraw {
 	 * @param htmlCanvas The html canvas to draw to.
 	 * @param ulaOptions The ULA options.
 	 */
-	constructor(htmlCanvas: HTMLCanvasElement, borderWidth: number) {
-		super(htmlCanvas);
+	constructor(htmlCanvas: HTMLCanvasElement, ulaOptions: any) {
+		super(htmlCanvas, ulaOptions);
+
+		if (ulaOptions.showStandardLines) {
+			// The horizontal border
+			this.lines.push({x1: this.SPECTRUM_SCREEN_MIN_X, y1: 0, x2: this.SPECTRUM_SCREEN_MIN_X, y2: 1000, color: "yellow"});		// Left border
+			this.lines.push({x1: this.SPECTRUM_SCREEN_MAX_X, y1: 0, x2: this.SPECTRUM_SCREEN_MAX_X, y2: 1000, color: "yellow"});	// Right border
+			// The vertical standard border
+			this.lines.push({x1: 0, y1: this.SPECTRUM_SCREEN_MIN_Y, x2: 1000, y2: this.SPECTRUM_SCREEN_MIN_Y, color: "yellow"});		// Top border
+			this.lines.push({x1: 0, y1: this.SPECTRUM_SCREEN_MAX_Y, x2: 1000, y2: this.SPECTRUM_SCREEN_MAX_Y, color: "yellow"});	// Bottom border
+		}
+
+		const area = {...ulaOptions.screenArea};
+		if (area.firstX > this.SPECTRUM_SCREEN_MIN_X)
+			area.firstX = this.SPECTRUM_SCREEN_MIN_X;
+		if (area.lastX < this.SPECTRUM_SCREEN_MAX_X)
+			area.lastX = this.SPECTRUM_SCREEN_MAX_X;
+		if (area.firstY > this.SPECTRUM_SCREEN_MIN_Y)
+			area.firstY = this.SPECTRUM_SCREEN_MIN_Y;
+		if (area.lastY < this.SPECTRUM_SCREEN_MAX_Y)
+			area.lastY = this.SPECTRUM_SCREEN_MAX_Y;
+		const width = area.lastX - area.firstX + 1;
+		const height = area.lastY - area.firstY + 1;
 
 		// Change html canvas and context width and height
-		const width = this.SCREEN_WIDTH + 2 * borderWidth;
-		const height = this.SCREEN_HEIGHT + 2 * borderWidth;
 		htmlCanvas.width = width;
 		htmlCanvas.height = height;
+
 		// Create image data
 		this.imgData = this.screenImgContext.createImageData(width, height);
 		// Get pixels memory (Get a 32bit view of the buffer)
@@ -30,7 +64,10 @@ export class SpectrumUlaDraw extends UlaDraw {
 
 		// Calculate first index into the pixels data
 		// (the left, top corner to start drawing)
-		this.pixelsStartIndex = borderWidth * width + borderWidth;
+		this.pixelsStartIndex = (this.SPECTRUM_SCREEN_MIN_Y - area.firstY) * width + this.SPECTRUM_SCREEN_MIN_X - area.firstX;
+
+		// Adjust the lines
+		this.adjustLines(area.firstX, area.firstY);
 	}
 
 
@@ -43,7 +80,7 @@ export class SpectrumUlaDraw extends UlaDraw {
 	 * - borderColor According zx spectrum palette.
 	 */
 	public drawUlaScreen(ulaData: any) {
-		const ulaScreen = ulaData.ulaScreen;
+		const ulaScreen = ulaData.data;
 		const time = ulaData.time;
 
 		// Border (background) color
@@ -101,9 +138,9 @@ export class SpectrumUlaDraw extends UlaDraw {
 
 						// Save colors from index
 						cIndex *= 3;	// rgb = 3 bytes
-						const red = this.zxPalette[colorIndex];
-						const green = this.zxPalette[colorIndex + 1];
-						const blue = this.zxPalette[colorIndex + 2];
+						const red = this.zxPalette[cIndex];
+						const green = this.zxPalette[cIndex + 1];
+						const blue = this.zxPalette[cIndex + 2];
 						this.pixels[pixelIndex++] = 0xFF000000 + 65536 * blue + green * 256 + red;
 
 						// Next pixel
@@ -120,5 +157,7 @@ export class SpectrumUlaDraw extends UlaDraw {
 
 		// Write image
 		this.screenImgContext.putImageData(this.imgData, 0, 0);
+		// Draw lines
+		this.drawAllLines();
 	}
 }
