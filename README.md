@@ -143,31 +143,14 @@ If you own a ZX Next you also have the option to debug your SW directly on the N
 
 
 ### DeZog
-
-In Visual Studio Code simply install "DeZog" (maziac.dezog) from the Marketplace.
-
-There are a few other extensions that are not required to work with DeZog but may help:
-- [ASM Code Lens]:
-	- Z80 assembler syntax highlighting
-	- completions, references, jump to label, renaming
-- [Z80 Instruction Set]:
-	- shows the opcode, affected flags and a description on hovering over a Z80 instruction
-- [Hex Hover Converter]:
-	- converts numbers into their decimal, hexadecimal and binary format on hovering
-- [ZX SNA File Viewer]/[ZX NEX File Viewer]:
-	- Viewer for the ZX Spectrum snapshot (.sna) format and the ZX Spectrum Next (.nex) file format (in marketplace search for "snafile" and "nexfile")
-
-
-All can be installed directly inside vscode from the market place.
-
-To use DeZog in Visual Studio Code, simply install the "DeZog" extension (maziac.dezog) from the Marketplace. Although not required, there are several other helpful extensions available, including:
+To use DeZog in Visual Studio Code, simply install the "DeZog" extension (maziac.dezog) from the Visual Studio Code Marketplace. Although not required, there are several other helpful extensions available, including:
 
 - [ASM Code Lens], which provides syntax highlighting for Z80 assembler, as well as completions, references, jump to label, and renaming functionality.
 - [Z80 Instruction Set], which displays opcode, affected flags, and a description when hovering over a Z80 instruction.
 - [Hex Hover Converter], which converts numbers to decimal, hexadecimal, and binary formats when hovering over them.
 - [ZX SNA File Viewer]/[ZX NEX File Viewer], which allow viewing of ZX Spectrum snapshot (.sna) and ZX Spectrum Next (.nex) files (search for "snafile" and "nexfile" in the Marketplace).
 
-All of these extensions can be easily installed directly from the Visual Studio Code Marketplace.
+All of these extensions can be easily installed directly from the marketplace.
 
 ## Usage
 
