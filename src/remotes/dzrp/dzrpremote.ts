@@ -1471,15 +1471,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		const topStack = (ramTop - 4) & 0xFFFF;
 		let topSpStack = topStack;
 
-		// Override with hidden option
-		if (Settings.launch.hidden.loadPStack !== "") {
-			topSpStack = Utility.parseValue(Settings.launch.hidden.loadPStack);
-		}
-		// Hack: For OSMO.P the length is 0xC000. The zx81 program is wrong but too difficult to change: TODO: REMOVE
-		if (path.basename(filePath).toLowerCase() === 'osmo.p') {
-			topSpStack = 0xB000;
-		}
-
 		// Read file
 		let fileBuffer = fs.readFileSync(filePath);
 		let len = fileBuffer.length;
