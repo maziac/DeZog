@@ -49,10 +49,6 @@ export class SpectrumUlaScreen extends UlaScreen implements Serializable {
 			}
 			// Use ZX128K ULA Bank switching.
 			this.currentUlaBank = this.normalUlaBank;
-			z80Cpu.ports.registerGenericOutPortFunction((port, value) => {
-				this.outPortBorderColor(port, value);
-				this.outPortZx128UlaScreenSwitch(port, value);
-			});
 		}
 		else if (bankCount > 1) {
 			// Otherwise assume ZX16/48K with bank 1
@@ -61,6 +57,21 @@ export class SpectrumUlaScreen extends UlaScreen implements Serializable {
 		else {
 			// Only one bank
 			throw Error("ulaScreen is not available with the memory model.");
+		}
+		// Register ports
+
+		if (bankCount > 7) {
+			// Screen switching and border
+			z80Cpu.ports.registerGenericOutPortFunction((port, value) => {
+				this.outPortBorderColor(port, value);
+				this.outPortZx128UlaScreenSwitch(port, value);
+			});
+		}
+		else {
+			// Just the border
+			z80Cpu.ports.registerGenericOutPortFunction((port, value) => {
+				this.outPortBorderColor(port, value);
+			});
 		}
 	}
 
