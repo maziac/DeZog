@@ -451,7 +451,7 @@ To simulate any joystick you can use the "customJoystick".
 It will map the keys of a joystick attached to your computer to ports/bits in the ZX81.
 Please refer to the description in [Usage.md](../Usage.md).
 For "Battlestar Galactica" you could use:
-~~~json
+~~~jsonc
     "customJoy": {
         // ZX81: Battlestar Galactica
         "down": { // 6
@@ -474,7 +474,7 @@ For "Battlestar Galactica" you could use:
             "port": "0x00",
             "bit": "0x02"
         }
-	}
+    }
 ~~~
 Please note that "Battlestar Galactica" only uses a partial address decoding.
 
