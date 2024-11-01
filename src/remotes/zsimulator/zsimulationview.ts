@@ -572,6 +572,7 @@ export class ZSimulationView extends BaseView {
 		const zsim = Settings.launch.zsim;
 		// Predefine with spectrum keyboard
 		let zxKeybImg = "48k_kbd.svg";
+		let zxKeybAspectRatio = 1378/538;
 		let zxKeybKeyWidth = 7.4;
 		let zxKeybKeyHeight = 15;
 		let zxKeybKeyMarginRight = 1.8;
@@ -586,6 +587,7 @@ export class ZSimulationView extends BaseView {
 		// Redefine for ZX81
 		if (zsim.zxKeyboard === "zx81") {
 			zxKeybImg = "zx81_kbd.svg";
+			zxKeybAspectRatio = 512 / 186;
 			zxKeybKeyWidth = 8.1;
 			zxKeybKeyHeight = 17;
 			zxKeybKeyMarginRight = 1.125;
@@ -626,7 +628,7 @@ export class ZSimulationView extends BaseView {
 			.keyboard {
 				position: relative;
 				width: 100%;
-				aspect-ratio: 760/280;
+				aspect-ratio: ${zxKeybAspectRatio};
 				font-size: 0; /* Removes space between 2 spans */
 				background-image: url('html/images/${zxKeybImg}');
 				background-size: cover;
