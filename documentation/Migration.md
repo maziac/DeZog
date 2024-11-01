@@ -6,7 +6,8 @@ zsim:
 - "ulaScreen": The type was changed from boolean to 'spectrum' | 'zx81'.
 - "zxKeyboard": The type was changed from boolean to 'spectrum' | 'zx81'.
 - "cpuLoadInterruptRange": renamed to "cpuLoad".
-- "ulaoptions" has been added.
+- "ulaOptions" has been added.
+- "zxBorderWidth" removed. Use "ulaOptions.borderSize" instead.
 
 Note: The release is dedicated to the simulation of the ZX81. You can find some more documentation [here](https://github.com/maziac/DeZog/blob/main/documentation/zx81/zx81-zsim.md).
 

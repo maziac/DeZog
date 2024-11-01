@@ -680,8 +680,34 @@
 										"properties": {
 											"hires": {
 												"type": "boolean",
-												"description": "If true the generation of the screen output by the cpu is simulated. This allows to display hires programs. If false the ZX81 dfile is converted directly into screen graphics. This can be an advantage when debugging a non-hires game. Defaults to true.",
+												"description": "ZX81 only. If true the generation of the screen output by the cpu is simulated. This allows to display hires programs. If false the ZX81 dfile is converted directly into screen graphics. This can be an advantage when debugging a non-hires game. Defaults to true.",
 												"default": true
+											},
+											"lines": {
+												"type": "array",
+												"description": "Used to define lines that are drawn on the screen area for orientation.",
+												"default": [],
+												"items": {
+													"type": "object",
+													"properties": {
+														"x1": {
+															"type": "string",
+															"description": "Start x position of the line."
+														},
+														"y1": {
+															"type": "string",
+															"description": "Start y position of the line."
+														},
+														"x2": {
+															"type": "string",
+															"description": "End x position of the line."
+														},
+														"y2": {
+															"type": "string",
+															"description": "End y position of the line."
+														}
+													}
+												}
 											},
 											"firstLine": {
 												"type": "number",
@@ -693,12 +719,17 @@
 												"description": "Used only if \"hires\" is true. The last line (inclusive) that should be displayed. Defaults to 247.",
 												"default": 247
 											},
+											"showStandardLines": {
+												"type": "boolean",
+												"description": "In some modes (e.g. zx81/hires) this shows some lines over the display for the borders or the start of the HSYNC pulse.",
+												"default": false
+											},
 											"chroma81": {
 												"type": "object",
 												"properties": {
 													"available": {
 														"type": "boolean",
-														"description": "If true the chroma81 is 'attached' and can be accessed through in/out port 0x7FEF.",
+														"description": "ZX81 only. If true the chroma81 is 'attached' and can be accessed through in/out port 0x7FEF.",
 														"default": true
 													},
 													"enabled": {
@@ -724,17 +755,12 @@
 											},
 											"debug": {
 												"type": "boolean",
-												"description": "If true a gray background is shown for the screen areas without output. Only makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. Defaults to false.",
+												"description": "ZX81 only. If true a gray background is shown for the screen areas without output. Only makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. Defaults to false.",
 												"default": false
 											}
 										},
-										"description": "Several options for the ZX81 ULA screen.",
+										"description": "Several options for the ZX81 and ZX Spectrum ULA screen.",
 										"default": {}
-									},
-									"zxBorderWidth": {
-										"type": "number",
-										"description": "The displayed ZX Spectrum border width in pixels. If set to 0 then no border is displayed. Works only if 'ulaScreen' is set.",
-										"default": true
 									},
 									"zxBeeper": {
 										"type": "boolean",
@@ -1214,8 +1240,7 @@
 							"visualMemory": true,
 							"memoryModel": "ZX48K",
 							"ulaScreen": "spectrum",
-							"zxBorderWidth": 20,
-							"zxKeyboard": true,
+							"zxKeyboard": "spectrum",
 							"zxBeeper": true
 						},
 						"sjasmplus": [
@@ -1246,11 +1271,8 @@
 							"remoteType": "zsim",
 							"zsim": {
 								"visualMemory": true,
-								"memoryModel": "ZX48K",
-								"ulaScreen": "spectrum",
-								"zxBorderWidth": 20,
-								"zxKeyboard": true,
-								"zxBeeper": true
+								"preset": "spectrum",
+								"memoryModel": "ZX48K"
 							},
 							"sjasmplus": [
 								{
@@ -1267,6 +1289,35 @@
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}",
 							"topOfStack": "${3: Top of stack / label name}"
+						}
+					},
+					{
+						"label": "DeZog: Simulator - ZX81",
+						"description": "Configuration for DeZog to use the internal simulator for a ZX81 with 56k RAM. Can be used to simulate a ZX81.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "Simulator - ZX81 56k RAM",
+							"remoteType": "zsim",
+							"zsim": {
+								"visualMemory": true,
+								"preset": "zx81",
+								"memoryModel": "ZX81-56K"
+							},
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": true
+							},
+							"startAutomatically": false,
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
+							"load": "${2:.p file to load}"
 						}
 					},
 					{

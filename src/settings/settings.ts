@@ -215,15 +215,7 @@ export interface CustomJoyType {
 }
 
 
-// The ZX81 screen area.
-// The ZX81 has typically around 300 lines (of course, not all are used).
-// And 207*2=414 pixels in width, including the horizontal blank.
-// Without hor. blank it is 192*2=384 pixels of which 256 (32*8) are used in standard mode.
-// Then the left and right borders are 64 pixels each.
-// For a CRT there were also some areas around the HSYNC pulse that were
-// not visible. These seem to have been 16-32 pixels. (From youtube videos.)
-// As default I have chosen a border of 8 pixels around the "normal" screen (x:64-319, y:56-247):
-// firstX=56, lastX=327, firstY=48, lastY=255.
+// The ZX81 and ZX Spectrum screen area.
 // Users can change it to there needs.
 export interface ScreenAreaType {
 	firstX: number;	// First x position to display
@@ -750,7 +742,7 @@ export class Settings {
 		if (chroma81.mode === undefined)
 			chroma81.mode = 0;
 		if (chroma81.borderColor === undefined)
-			chroma81.borderColor = 0x00;	// Black
+			chroma81.borderColor = 0x0F;	// White
 		if (chroma81.colourizationFile === undefined)
 			chroma81.colourizationFile = '';
 

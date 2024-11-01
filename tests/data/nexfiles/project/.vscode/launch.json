@@ -36,8 +36,7 @@
 				"visualMemory": true,
 				"memoryModel": "ZXNEXT",
 				"ulaScreen": "spectrum",
-				"zxBorderWidth": 20,
-				"zxKeyboard": true,
+				"zxKeyboard": "spectrum",
 				"zxBeeper": true
 			},
 			"disassemblerArgs": {

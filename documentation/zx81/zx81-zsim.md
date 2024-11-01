@@ -19,15 +19,14 @@ What it does is to set the following zsim properties:
 	"defaultPortIn": 0xFF,
 	"zxKeyboard": "zx81",
 	"ulaScreen": "zx81",
-	"ulaoptions": {
+	"ulaOptions": {
 		"hires": true,
-		"firstLine": 56,
-		"lastLine": 247,
+        "borderSize": 10,
         "chroma81": {
             "available": true,
             "enabled": false,
             "mode": 0,
-            "borderColor": 0
+            "borderColor": 15
         },
         "debug": false
   	},
@@ -112,7 +111,7 @@ The simulator is capable of 2 different systems to display video.
 Both simulate the timing as much as possible enabling the simulator to display hires graphics.
 You can choose between modes by setting "hires" to true or false (default is true).
 ~~~json
-"ulaoptions": {
+"ulaOptions": {
 	"hires": true/false
 }
 ~~~
@@ -133,7 +132,7 @@ When single stepping this changes as more bytes are written one by one:
 ![](images/against-write-4.jpg)
 ![](images/against-write-5.jpg)
 
-If "hires" is set to false you will always see a complete screen independent of the exact vertical and horizontal timing.
+If "hires" is set to false you will always see a standard screen independent of the exact vertical and horizontal timing.
 
 So it depends:
 If you are developing a standard graphics game then `"hires": false` is the recommended choice.
@@ -141,30 +140,50 @@ If you are developing a hires game you have to use `"hires": true`, of course.
 
 Note: To simulate ARX hires graphics you need to use a memory model that enables RAM in the area 0x2000-0x3FFF, i.e. "ZX81-56K".
 
-## ulaoptions
- "ulaoptions":
-  ~~~
+## ulaOptions
+"ulaOptions":
+~~~json
   {
     "hires": true,
-    "firstLine": 56,
-    "lastLine": 247,
+    "borderSize": 10,
+    "screenArea": {
+        "firstX": 54,
+        "lastX": 330,
+        "firstY": 46,
+        "lastY": 258
+    },
+    "lines": [
+        {
+            "x1": 0,
+            "x2": 1000,
+            "y1": 55,
+            "y2": 55,
+            "color": "green"
+        }
+    ],
+    "showStandardLines": true,
     "chroma81": {
         "available": true,
         "enabled": false,
         "mode": 0,
-        "borderColor": 0,
+        "borderColor": 15,
         "colourizationFile": ""
     },
     "debug": false
   }
-  ~~~
-  The above shows the default values.
+~~~
+
+Please note that you cannot use "borderSize" and "screenArea" together. For tandard programs the "borderSize" might be easier to use. If you need more fine-grained control use the "screenArea".
 
 ### "hires"
 If true the generation of the screen output by the cpu is simulated. This allows to display hires programs. If false the ZX81 dfile is converted directly into screen graphics. This can be an advantage when debugging a non-hires game.
 
+Defaults to true.
+
 ### "debug"
-If true a gray background is shown for the screen areas without output. Makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. If "chroma81" is selected it also initializes the chroma81 RAM (0xC000-0xFFFF) to 2 colors. Otherwise you might not see anything if ink and paper color are equal (i.e. 0).
+If true a gray background is shown for the screen areas without output. Makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. If "chroma81" is selected it also initializes the chroma81 RAM (0xC000-0xFFFF) to 2 colors. Otherwise you might not see anything initially if ink and paper color are equal (i.e. 0).
+
+Defaults to false.
 
 #### Collapsed dfile
 In a ZX81 with 1-2k RAM the dfile is collapsed, i.e. it uses only the full width of a line if necessary. If the line does not contain anything no RAM is used for it.
@@ -174,20 +193,81 @@ If "debug" is true, everything that is not output to the screen is gray.
 Here is the display of a ZX81 with only 1k RAM:
 ![](images/collapsed-dfile.jpg).
 
-### firstLine, lastLine
-These 2 properties are only used if "hires" is true.
-With the values you can adjust the shown screen height.
-Normally the default values (46, 247) should work fine.
-However, depending on the hires algorithm the Z80 program uses it might be that a different area has been chosen.
-- firstLine is the first horizontal line that will be displayed
-- lastLine is the last horizontal line that will be displayed (inclusive)
+# borderSize
+Select the pixel size you would like to see around a standard ZX81 display.
+"Standard" means a display that you would get from the ZX81 BASIC. I.e. without any tricks to achieve higher quality graphics like arx, wrx or using different timings.
+The "standard" position and size used is:
+(x=64, y=56, w=256, y=192)
+So, by setting "borderSize" you get (x=64-borderSize, y=56-borderSize, w=256+borderSize, y=192+borderSize)
+
+Defaults to 10.
+
+# screenArea
+With "screenArea" you can set the displayed screen area.
+You have more fine-grained control as with "borderSize" as you can change each parameter independently of the others.
+
+Here is a screenArea that shows everything, also the data written during a HSYNC.
+~~~json
+    "screenArea": {
+        "firstX": 0,
+        "lastX": 413,
+        "firstY": 0,
+        "lastY": 300
+    }
+~~~
+
+Defaults to:
+~~~json
+    "screenArea": {
+        "firstX": 54,
+        "lastX": 330,
+        "firstY": 46,
+        "lastY": 258
+    }
+~~~
+
+# lines
+This is a debugging feature.
+It allows to draw fixed lines on top of the screen area.
+You can use to mark a position and to easily verify that your program's output is matching.
+To position a vertical and a horizontal line for the center, use:
+~~~json
+    "lines": [
+        {
+            "x1": 0,
+            "x2": 1000,
+            "y1": 152,
+            "y2": 152,
+            "color": "red"
+        },
+        {
+            "x1": 192,
+            "x2": 192,
+            "y1": 0,
+            "y2": 1000,
+            "color": "red"
+        }
+    ]
+~~~
+
+![](images/lines-crosshair.jpg)
+
+Defaults to [] (empty).
+
+# showStandardLines
+If enabled and if "hires" is enabled a few standard lines are drawn.
+Example ([25thanni.p](https://bodo4all.fortunecity.ws/zx/25thanni.html)):
+![](images/standard-lines.jpg)
+
+The yellow lines show the standard border. The red line shows the start of the HSYNC pulse.
+
 
 ### Chroma 81 support
 "chroma81": Supports the chroma81 (see [Chroma 81 Interface](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm)).
     - "available": Attaches the chroma81. Now it can be enabled/disabled via port 0x7FEF.
         - "enabled": The initial state of the chroma81.
         - "mode": The initial color mode (0/1) of the chroma81.
-        - "borderColor": The initial border color: 0-15 (like spectrum colors).
+        - "borderColor": The initial border color: 0-15 (like spectrum colors). Defaults to 15 (bright white).
         - "colourizationFile": You can enter here the file path of your colourization file. See [Colors with a colourization file](#colors-with-a-colourization-file).
 
 # Modding
@@ -286,12 +366,12 @@ You can use it in "loadObjs".
 Furthermore you need to enable the Chroma 81:
 ~~~json
 "loadObjs": [
-    "ulaoptions": {
+    "ulaOptions": {
         "chroma81": {
             "available": true,
             "enabled": true,
             "mode": 0,
-            "borderColor": 7
+            "borderColor": 15
         }
     }
 ]
@@ -313,12 +393,12 @@ You can get a lot of colourization files [here](http://www.fruitcake.plus.com/Si
 To use them you need to enable the Chroma 81:
 ~~~json
 "loadObjs": [
-    "ulaoptions": {
+    "ulaOptions": {
         "chroma81": {
             "available": true,
             "enabled": true,
             "mode": 0,
-            "borderColor": 7,
+            "borderColor": 15,
     		"colourizationFile": "ZX80_Kong.col"
         }
     }
@@ -400,6 +480,7 @@ Please note that "Battlestar Galactica" only uses a partial address decoding.
 
 
 # Attribution
-Many thanks to the authors of the shown games:
+Many thanks to the authors of the shown games/programs:
 - ["Against The Elements"](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm]), Paul Farrow
 - "Battlestar Galactica", Ch. Zwerschke
+- ["25th Anniversary"](https://bodo4all.fortunecity.ws/zx/25thanni.html) (25thanni.p), Bodo Wenzel

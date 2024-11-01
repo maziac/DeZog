@@ -14,7 +14,7 @@
 						"available": true,
 						"enabled": true,
 						"mode": 0,
-						"borderColor": 0	// black
+						"borderColor": 15 // White
 					},
 					"borderSize": 20
 				},

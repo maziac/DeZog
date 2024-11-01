@@ -15,21 +15,12 @@ export class Zx81BaseUlaDraw extends UlaDraw {
 
 
 	/** Constructor.
-	 * Checks the ulaOptions for the horizontal and vertical lines to draw.
 	 * @param htmlCanvas The html canvas to draw to.
 	 * @param ulaOptions The ULA options.
 	 */
 	constructor(htmlCanvas: HTMLCanvasElement, ulaOptions: any) {
 		super(htmlCanvas, ulaOptions);
 		this.debug = ulaOptions.debug;
-		if (ulaOptions.showStandardLines) {
-			// The horizontal standard border
-			this.lines.push({x1: this.ZX81_STD_SCREEN_MIN_X, y1: 0, x2: this.ZX81_STD_SCREEN_MIN_X, y2: 1000, color: "yellow"});		// Left border
-			this.lines.push({x1: this.ZX81_STD_SCREEN_MAX_X, y1: 0, x2: this.ZX81_STD_SCREEN_MAX_X, y2: 1000, color: "yellow"});	// Right border
-			// The vertical standard border
-			this.lines.push({x1: 0, y1: this.ZX81_STD_SCREEN_MIN_Y, x2: 1000, y2: this.ZX81_STD_SCREEN_MIN_Y, color: "yellow"});		// Top border
-			this.lines.push({x1: 0, y1: this.ZX81_STD_SCREEN_MAX_Y, x2: 1000, y2: this.ZX81_STD_SCREEN_MAX_Y, color: "yellow"});	// Bottom border
-		}
 	}
 }
 

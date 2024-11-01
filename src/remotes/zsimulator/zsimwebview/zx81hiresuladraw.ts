@@ -24,8 +24,18 @@ export class Zx81HiResUlaDraw extends Zx81BaseUlaDraw {
 		super(htmlCanvas, ulaOptions);
 
 		if (ulaOptions.showStandardLines) {
-		// HSYNC (after 192 clock cycles, 2cc = 1 px)
-			this.lines.push({x1: 2 * 192, y1: 0, x2: 2 * 192, y2: 1000, color: "red"});
+			// The horizontal standard border
+			this.lines.push({x1: this.ZX81_STD_SCREEN_MIN_X, y1: -1000, x2: this.ZX81_STD_SCREEN_MIN_X, y2: 1000, color: "yellow"});		// Left border
+			this.lines.push({x1: this.ZX81_STD_SCREEN_MAX_X, y1: -1000, x2: this.ZX81_STD_SCREEN_MAX_X, y2: 1000, color: "yellow"});	// Right border
+
+			/*
+			// The vertical standard border
+			this.lines.push({x1: -1000, y1: this.ZX81_STD_SCREEN_MIN_Y, x2: 1000, y2: this.ZX81_STD_SCREEN_MIN_Y, color: "yellow"});		// Top border
+			this.lines.push({x1: -1000, y1: this.ZX81_STD_SCREEN_MAX_Y, x2: 1000, y2: this.ZX81_STD_SCREEN_MAX_Y, color: "yellow"});	// Bottom border
+			*/
+
+			// HSYNC (after 192 clock cycles, 2cc = 1 px)
+			this.lines.push({x1: 2 * 192, y1: -1000, x2: 2 * 192, y2: 1000, color: "red"});
 		}
 
 		const area = ulaOptions.screenArea;
@@ -114,7 +124,7 @@ export class Zx81HiResUlaDraw extends Zx81BaseUlaDraw {
 		}
 
 		// Write image
-		this.screenImgContext.putImageData(this.imgData, 0, 0, this.firstX, 0, this.width, this.imgData.height);
+		this.screenImgContext.putImageData(this.imgData, -this.firstX, 0, this.firstX, 0, this.width, this.imgData.height);
 		// Draw lines
 		this.drawAllLines();
 	}

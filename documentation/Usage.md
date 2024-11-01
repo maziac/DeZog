@@ -663,7 +663,6 @@ Example launch.json configuration:
         "Z80N": true,
         "zxKeyboard": true,
 	    "ulaScreen": "spectrum",
-        "zxBorderWidth": 20,
 	    "visualMemory": true,
         "cpuLoad": 10,
         "cpuFrequency": 3500000.0,
@@ -847,25 +846,44 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
 - "ulaScreen": "spectrum" | "zx81". If enabled it shows the contents of the ZX Spectrum screen or that of a ZX81.
 ![](images/zsim_ula_screen_spectrum.jpg)
 ![](images/zsim_ula_screen_zx81.jpg)
-- "ulaoptions":
-  ~~~
+- "ulaOptions":
+  ~~~json
   {
     "hires": true,
-    "firstLine": 56,
-    "lastLine": 247,
+    "borderSize": 10,
+    "screenArea": {
+        "firstX": 54,
+        "lastX": 330,
+        "firstY": 46,
+        "lastY": 258
+    },
+    "lines": [
+        {
+            "x1": 0,
+            "x2": 1000,
+            "y1": 55,
+            "y2": 55,
+            "color": "green"
+        }
+    ],
+    "showStandardLines": true,
     "chroma81": {
         "available": true,
         "enabled": false,
         "mode": 0,
-        "borderColor": 0,
+        "borderColor": 15,
         "colourizationFile": ""
     },
     "debug": false
   }
   ~~~
-  The above shows the default values.
+  The values:
     - "hires": If true the generation of the screen output by the cpu is simulated. This allows to display hires programs. If false the ZX81 dfile is converted directly into screen graphics. This can be an advantage when debugging a non-hires game.
-    - "firstLine"/"lastLine": Used only if "hires" is true. The first and last line (inclusive) that should be displayed.
+    - "borderSize": Defaults to 10.
+    - "screenArea": Similar to "borderSize" but more fine-grained control.
+      Either use "borderSize" or "screenArea", not both.
+    - "lines": Used to define lines that are drawn on the screen area for orientation.
+    - "showStandardLines": Defaults to false. In some modes (e.g. zx81/hires) this shows some lines over the display for the borders or the start of the HSYNC pulse.
     - "debug": If true a gray background is shown for the screen areas without output. Makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. If "chroma81" is selected it also initialized the chroma81 RAM (0xC000-0xFFFF) to 2 colors. Otherwise you might not see anything if ink and paper color are equal.
     - "chroma81": Supports the chroma81 (see [Chroma 81 Interface](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm)).
       - "available": Attach the chroma81. Now it can be enabled/disabled via port 0x7FEF.

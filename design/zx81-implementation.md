@@ -64,6 +64,18 @@ The reason why the simpler mode exists is that it can be advantageous in case of
 In this mode the onscreen characters can be seen as soon as they are placed in the dfile.
 In the other mode they would become visible not before the video signal is created.
 
+# Timings
+Standard width x height = 256 x 192
+
+The ZX81 has typically around 300 lines (of course, not all are used).
+And 207*2=414 pixels in width, including the horizontal blank.
+Without hor. blank it is 192*2=384 pixels of which 256 (32*8) are used in standard mode.
+Then the left and right borders are 64 pixels each.
+For a CRT there were also some areas around the HSYNC pulse that were
+not visible. These seem to have been 16-32 pixels. (From youtube videos.)
+As default I have chosen a border of 8 pixels around the "normal" screen (x:64-319, y:56-247):
+firstX=56, lastX=327, firstY=48, lastY=255.
+
 # References - games/graphics mode
 - Standard graphics: ["Battlestar Galactica"](https://archive.org/details/Battlestar_Galactica_1982_Ch._Zwerschke), 16-56k
 - Pseudo hires, chroma81: ["Against The Elements"](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm]), 56k

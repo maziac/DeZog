@@ -13,7 +13,7 @@ export class UlaScreen extends EventEmitter implements Serializable, ExecuteInte
 	protected z80Cpu: Z80Cpu;
 
 	// The border color:
-	protected borderColor = 0x07; // White without brightness
+	protected borderColor = 0x0F; // White with brightness
 
 	/** Constructor.
 	 * @param z80Cpu Mainly for the memoryModel and the ports.
