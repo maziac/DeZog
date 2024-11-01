@@ -275,12 +275,15 @@ Although not directly related to debugging you can use DeZog very easily to mod 
 Here as an example "Battlestar Galactica":
 
 The game with normal graphics, using the standard ZX81 charset:
+
 ![](images/galactica-standard-charset.jpg)
 
 Here with a modded, custom charset:
+
 ![](images/galactica-custom-charset.jpg)
 
 And here with added colors:
+
 ![](images/galactica-custom-charset-colored.jpg)
 
 
@@ -451,7 +454,7 @@ To simulate any joystick you can use the "customJoystick".
 It will map the keys of a joystick attached to your computer to ports/bits in the ZX81.
 Please refer to the description in [Usage.md](../Usage.md).
 For "Battlestar Galactica" you could use:
-~~~jsonc
+~~~json
     "customJoy": {
         // ZX81: Battlestar Galactica
         "down": { // 6
