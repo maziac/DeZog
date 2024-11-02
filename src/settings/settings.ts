@@ -216,7 +216,7 @@ export interface CustomJoyType {
 
 
 // The ZX81 and ZX Spectrum screen area.
-// Users can change it to there needs.
+// Users can change it to their needs.
 export interface ScreenAreaType {
 	firstX: number;	// First x position to display
 	lastX: number;	// Last x position to display (inclusive)
@@ -350,7 +350,7 @@ export interface ZSimType {
 	// Inside the tbblue registers available can be specified.
 	// Please note: the MMU registers are enabled already by the memoryModel
 	// "ZXNEXT" and do not appear here.
-	// TODO: Experimental
+	// Experimental
 	tbblue: TBBlueType,
 
 	// The zxnDMA hardware simulation.

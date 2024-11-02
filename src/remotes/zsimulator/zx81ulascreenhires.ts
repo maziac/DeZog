@@ -50,6 +50,10 @@ import {Zx81UlaScreen} from "./zx81ulascreen";
  * - mode 1:  [video_addr] (The dfile size and the color attributes size is usually just 32)
  */
 export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
+	// Only used for detemining the max required buffer size.
+	// The ZX81 real number of lines is probably around 300 lines.
+	protected static readonly MAX_USED_VERT_LINES = 310;
+
 	// Holds the data for the screen, i.e. the generated screen.
 	// The format is simple: upto 192 lines. Each line begins with a length byte.
 	// Followed byte the pixel data (bits of the byte) for the line.
@@ -79,17 +83,12 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	constructor(z80Cpu: Z80Cpu, screenArea: ScreenAreaType) {
 		super(z80Cpu);
 		this.screenArea = screenArea;
-		let totalLines = screenArea.lastY - screenArea.firstY + 1;
-		if (totalLines < 0)
-			totalLines = 0;
 		this.screenDataIndex = 0;
 		this.screenLineLengthIndex = 0;
 		this.colorDataIndex = 0;
-		//		this.screenData = new Uint8Array(totalLines * (1 + 1 + Zx81UlaScreenHiRes.SCREEN_WIDTH / 8)); // TODO fix magic constant 416
-		//const width8 = 416 / 8;
-		const maxWidth = 416;
+		const maxWidth = 2 * Zx81UlaScreen.TSTATES_PER_SCANLINE;
 		const maxWidth8 = maxWidth / 8;
-		const maxHeight = 400;
+		const maxHeight = Zx81UlaScreenHiRes.MAX_USED_VERT_LINES;
 		this.screenData = new Uint8Array(maxHeight * (2 * maxWidth8 + 1));
 		this.colorData = new Uint8Array(maxHeight * maxWidth8);
 	}
