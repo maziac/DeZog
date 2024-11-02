@@ -246,7 +246,7 @@ export interface LineType {
 }
 
 // Options for the ZX81 ULA screen.
-export interface UlaOptions {	// TODO: Rename to ulaOptions
+export interface UlaOptions {
 	// For both, ZX81 and Spectrum:
 	screenArea: ScreenAreaType;	// The screen area
 	borderSize: number;	// The border size in pixels, alternative for screenArea

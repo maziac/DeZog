@@ -17,8 +17,10 @@ If you like DeZog please consider supporting it.
 [Hex Hover Converter]: https://github.com/maziac/hex-hover-converter
 [ZX SNA File Viewer]: https://github.com/maziac/sna-fileviewer
 [ZX NEX File Viewer]: https://github.com/maziac/nex-fileviewer
+[ZX81 BASIC to P-File Converter and P-File Viewer]: https://github.com/maziac/zx81-bastop
 
 [z80-sample-program]: https://github.com/maziac/z80-sample-program
+[zx81-sample-program]: https://github.com/maziac/zx81-sample-program
 [z80-peripherals-sample]: https://github.com/maziac/z80-peripherals-sample
 [dezogif]: https://github.com/maziac/dezogif
 [DZRP]: https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md
@@ -54,7 +56,9 @@ DeZog facilitates the debugging of Z80 assembler programs using Visual Studio Co
 
 DeZog needs a "[Remote](documentation/Usage.md#remote-types)" to  execute the Z80 binaries. You can either use the built-in Z80/ZX simulator or connect to [ZEsarUX], [CSpect] or [MAME] via a socket connection for more advanced projects.
 
-Note: DeZog itself does not include any support for building from assembler sources. For this you need a build task and an assembler. For an example look here: https://github.com/maziac/z80-sample-program
+Note: DeZog itself does not include any support for building from assembler sources. For this you need a build task and an assembler. For an example look into one of the 2 example projects:
+- [z80-sample-program] (ZXSpectrum)
+- [zx81-sample-program]
 
 
 ## Gallery
@@ -149,6 +153,7 @@ To use DeZog in Visual Studio Code, simply install the "DeZog" extension (maziac
 - [Z80 Instruction Set], which displays opcode, affected flags, and a description when hovering over a Z80 instruction.
 - [Hex Hover Converter], which converts numbers to decimal, hexadecimal, and binary formats when hovering over them.
 - [ZX SNA File Viewer]/[ZX NEX File Viewer], which allow viewing of ZX Spectrum snapshot (.sna) and ZX Spectrum Next (.nex) files (search for "snafile" and "nexfile" in the Marketplace).
+- [ZX81 BASIC to P-File Converter and P-File Viewer], which converts ZX81 P-Files (.p) to ZX81 BASIC (.bas) and vice versa.
 
 All of these extensions can be easily installed directly from the marketplace.
 

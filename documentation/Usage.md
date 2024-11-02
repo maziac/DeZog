@@ -27,6 +27,7 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 <!-- When reference, upper or lower case can be used -->
 
 [z80-sample-program]: https://github.com/maziac/z80-sample-program
+[zx81-sample-program]: https://github.com/maziac/zx81-sample-program
 [z80-peripherals-sample]: https://github.com/maziac/z80-peripherals-sample
 [dezogif]: https://github.com/maziac/dezogif
 [DZRP]: https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md
@@ -45,6 +46,7 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 [SpecBong Fork]: https://github.com/maziac/SpecBong
 
 - [Z80-Sample-Program]
+- [ZX81-Sample-Program]
 - [Z80-Peripherals-Sample]
 - [DeZogIf]
 - [CSpect]
