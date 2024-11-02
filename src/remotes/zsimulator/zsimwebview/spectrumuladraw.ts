@@ -85,8 +85,7 @@ export class SpectrumUlaDraw extends UlaDraw {
 
 		// Border (background) color
 		const bgCol = this.getRgbColor(ulaData.borderColor);
-		const rgb = 0xFF000000 + 65536 * bgCol.b + bgCol.g * 256 + bgCol.r;
-		this.pixels.fill(rgb);
+		this.pixels.fill(bgCol);
 
 		// Check time. Calculate remainder.
 		const interval = 640 / 1000.0;	// 640 ms
@@ -137,11 +136,8 @@ export class SpectrumUlaDraw extends UlaDraw {
 						}
 
 						// Save colors from index
-						cIndex *= 3;	// rgb = 3 bytes
-						const red = this.zxPalette[cIndex];
-						const green = this.zxPalette[cIndex + 1];
-						const blue = this.zxPalette[cIndex + 2];
-						this.pixels[pixelIndex++] = 0xFF000000 + 65536 * blue + green * 256 + red;
+						const rgba = this.zxPalette[cIndex];
+						this.pixels[pixelIndex++] = rgba;
 
 						// Next pixel
 						mask /= 2;

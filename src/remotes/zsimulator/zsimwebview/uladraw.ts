@@ -19,30 +19,30 @@ export class UlaDraw {
 	// 	The vertical and horizontal lines to draw.
 	protected lines: {x1: number, y1: number, x2: number, y2: number, color: string}[];
 
-	// The ZX palette.
-	protected zxPalette = [	// TODO: change to 3 byte colors and change access to Uint32Array
-		// Bright 0: r,g,b
-		0x00, 0x00, 0x00,	// Black:	0
-		0x00, 0x00, 0xD7,	// Blue:	1
-		0xD7, 0x00, 0x00,	// Red:		2
-		0xD7, 0x00, 0xD7,	// Magenta:	3
+	// The ZX palette. Each index is a 32bit value: r,g,b,a (from low byte to high byte)
+	protected zxPalette = new Uint32Array(new Uint8Array([
+		// Bright 0: r,g,b,a
+		0x00, 0x00, 0x00, 0xFF,	// Black:	0
+		0x00, 0x00, 0xD7, 0xFF,	// Blue:	1
+		0xD7, 0x00, 0x00, 0xFF,	// Red:		2
+		0xD7, 0x00, 0xD7, 0xFF,	// Magenta:	3
 
-		0x00, 0xD7, 0x00,	// Green:	4
-		0x00, 0xD7, 0xD7,	// Cyan:	5
-		0xD7, 0xD7, 0x00,	// Yellow:	6
-		0xD7, 0xD7, 0xD7,	// White:	7
+		0x00, 0xD7, 0x00, 0xFF,	// Green:	4
+		0x00, 0xD7, 0xD7, 0xFF,	// Cyan:	5
+		0xD7, 0xD7, 0x00, 0xFF,	// Yellow:	6
+		0xD7, 0xD7, 0xD7, 0xFF,	// White:	7
 
-		// Bright 1: r,g,b
-		0x00, 0x00, 0x00,	// Black:	8
-		0x00, 0x00, 0xFF,	// Blue:	9
-		0xFF, 0x00, 0x00,	// Red:		10
-		0xFF, 0x00, 0xFF,	// Magenta:	11
+		// Bright 1: r,g,b,a
+		0x00, 0x00, 0x00, 0xFF,	// Black:	8
+		0x00, 0x00, 0xFF, 0xFF,	// Blue:	9
+		0xFF, 0x00, 0x00, 0xFF,	// Red:		10
+		0xFF, 0x00, 0xFF, 0xFF,	// Magenta:	11
 
-		0x00, 0xFF, 0x00,	// Green:	12
-		0x00, 0xFF, 0xFF,	// Cyan:	13
-		0xFF, 0xFF, 0x00,	// Yellow:	14
-		0xFF, 0xFF, 0xFF,	// White:	15
-	];
+		0x00, 0xFF, 0x00, 0xFF,	// Green:	12
+		0x00, 0xFF, 0xFF, 0xFF,	// Cyan:	13
+		0xFF, 0xFF, 0x00, 0xFF,	// Yellow:	14
+		0xFF, 0xFF, 0xFF, 0xFF,	// White:	15
+	]).buffer);
 
 	/** Constructor.
 	 * Store the canvas context and the debug option.
@@ -108,13 +108,13 @@ export class UlaDraw {
 	}
 
 
-	/** Returns the color as rgb value for a ZX color.
+	/** Returns the color as 32 bit rgba value for a ZX color.
 	 * @param zxColor [0;15]. 0-7 = black-white, 8-15 = bright: black - white
-	 * @returns {r: number, g: number, b: number}
+	 * @returns E.g. 0xFF800040
 	 */
-	public getRgbColor(zxColor: number): {r: number, g: number, b: number} {
-		let i = 3 * zxColor;
-		return {r: this.zxPalette[i++], g: this.zxPalette[i++], b: this.zxPalette[i]};
+	public getRgbColor(zxColor: number): number {
+		const rgba = this.zxPalette[zxColor];
+		return rgba;
 	}
 
 

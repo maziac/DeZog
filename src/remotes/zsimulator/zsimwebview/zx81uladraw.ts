@@ -61,10 +61,10 @@ export class Zx81UlaDraw extends Zx81BaseUlaDraw {
 		let dfileIndex = 0;
 
 		// Background color
-		const bgCol = this.getRgbColor(ulaData.borderColor);
-		let rgb = 65536 * bgCol.b + bgCol.g * 256 + bgCol.r;
-		rgb += this.debug ? 0x80000000 : 0xFF000000;	// semi transparent for debug mode
-		this.pixels.fill(rgb);
+		let bgCol = this.getRgbColor(ulaData.borderColor);
+		if(this.debug)
+			bgCol -= 0x7F000000;	// semi transparent for debug mode
+		this.pixels.fill(bgCol);
 
 		const pixelsWidth = this.imgData.width;
 		const width8 = this.SCREEN_WIDTH / 8;
@@ -72,8 +72,8 @@ export class Zx81UlaDraw extends Zx81BaseUlaDraw {
 		let x = 0;
 		let y = 0;
 
-		let fgRed = 0, fgGreen = 0, fgBlue = 0;
-		let bgRed = 0xFF, bgGreen = 0xFF, bgBlue = 0xFF;
+		let rgbaFg = 0xFF000000;
+		let rgbaBg = 0xFFFFFFFF;
 		const charset = ulaData.charset;
 
 		while(y < height8) {
@@ -94,15 +94,11 @@ export class Zx81UlaDraw extends Zx81BaseUlaDraw {
 				// Mode 1: Attribute file (similar to ZX Spectrum)
 				const color = chroma.data[dfileIndex];
 				// fg color
-				let colorIndex = (color & 0x0F) * 3;
-				fgRed = this.zxPalette[colorIndex];
-				fgGreen = this.zxPalette[colorIndex + 1];
-				fgBlue = this.zxPalette[colorIndex + 2];
+				const colorIndexFg = (color & 0x0F);
+				rgbaFg = this.zxPalette[colorIndexFg];
 				// bg color
-				colorIndex = (color >>> 4) * 3;
-				bgRed = this.zxPalette[colorIndex];
-				bgGreen = this.zxPalette[colorIndex + 1];
-				bgBlue = this.zxPalette[colorIndex + 2];
+				const colorIndexBg = (color >>> 4);
+				rgbaBg = this.zxPalette[colorIndexBg];
 			}
 			// 8 lines per character
 			for(let charY = 0; charY < 8; ++charY) {
@@ -113,25 +109,21 @@ export class Zx81UlaDraw extends Zx81BaseUlaDraw {
 					// Chroma mode 0: Character code
 					const color = chroma.data[charIndex + (inverted? 512 : 0)];
 					// fg color
-					let colorIndex = (color & 0x0F) * 3;
-					fgRed = this.zxPalette[colorIndex];
-					fgGreen = this.zxPalette[colorIndex + 1];
-					fgBlue = this.zxPalette[colorIndex + 2];
+					const colorIndexFg = (color & 0x0F);
+					rgbaFg = this.zxPalette[colorIndexFg];
 					// bg color
-					colorIndex = (color >>> 4) * 3;
-					bgRed = this.zxPalette[colorIndex];
-					bgGreen = this.zxPalette[colorIndex + 1];
-					bgBlue = this.zxPalette[colorIndex + 2];
+					const colorIndexBg = (color >>> 4);
+					rgbaBg = this.zxPalette[colorIndexBg];
 				}
 				// 8 pixels par line
 				for(let charX = 0; charX < 8; ++charX) {
 					if (byte & 0x80) {
 						// Foreground color
-						this.pixels[pixelIndex++] = 0xFF000000 + 65536 * fgBlue + fgGreen * 256 + fgRed;
+						this.pixels[pixelIndex++] = rgbaFg;
 					}
 					else {
 						// Background color
-						this.pixels[pixelIndex++] = 0xFF000000 + 65536 * bgBlue + bgGreen * 256 + bgRed;
+						this.pixels[pixelIndex++] = rgbaBg;
 					}
 					byte = (byte & 0x7F) * 2;
 				}

@@ -64,22 +64,21 @@ export class Zx81HiResUlaDraw extends Zx81BaseUlaDraw {
 		if (!ulaScreen)
 			return;
 
-		const colorData = ulaData.colorData;
-		const backgroundColor = this.getRgbColor(ulaData.borderColor);
-
 		// Default is transparent
-		let rgb = 65536 * backgroundColor.b + backgroundColor.g * 256 + backgroundColor.r;
-		rgb += this.debug ? 0x80000000 : 0xFF000000;	// semi transparent for debug mode
-		this.pixels.fill(rgb);
+		let bgCol = this.getRgbColor(ulaData.borderColor);
+		if (this.debug)
+			bgCol -= 0x7F000000;	// semi transparent for debug mode
+		this.pixels.fill(bgCol);
 
 		// Whole screen is converted by evaluating blocks that are equal to the color attributes.
 		let index = 0;
 		let colorIndex = 0;
 		let xAdd = 0;
-		let fgRed = 0, fgGreen = 0, fgBlue = 0;
-		let bgRed = 0xFF, bgGreen = 0xFF, bgBlue = 0xFF;
-
+		let rgbaFg = 0xFF000000;
+		let rgbaBg = 0xFFFFFFFF;
 		let lineCounter = 0;
+		const colorData = ulaData.colorData;
+
 		while (index < ulaScreen.length) {
 			// Get length of line
 			const len = ulaScreen[index++];
@@ -92,15 +91,11 @@ export class Zx81HiResUlaDraw extends Zx81BaseUlaDraw {
 				if (colorData) {
 					const color = colorData[colorIndex++];
 					// fg color
-					let cIndex = (color & 0x0F) * 3;
-					fgRed = this.zxPalette[cIndex];
-					fgGreen = this.zxPalette[cIndex + 1];
-					fgBlue = this.zxPalette[cIndex + 2];
+					const colorIndexFg = (color & 0x0F);
+					rgbaFg = this.zxPalette[colorIndexFg];
 					// bg color
-					cIndex = (color >>> 4) * 3;
-					bgRed = this.zxPalette[cIndex];
-					bgGreen = this.zxPalette[cIndex + 1];
-					bgBlue = this.zxPalette[cIndex + 2];
+					const colorIndexBg = (color >>> 4);
+					rgbaBg = this.zxPalette[colorIndexBg];
 				}
 				// Get screen data
 				const byteValue = ulaScreen[index++];
@@ -109,11 +104,11 @@ export class Zx81HiResUlaDraw extends Zx81BaseUlaDraw {
 				while (mask >= 1) {	// 8x
 					if (byteValue & mask) {
 						// Foreground color
-						this.pixels[pixelIndex++] = 0xFF000000 + 65536 * fgBlue + fgGreen * 256 + fgRed;
+						this.pixels[pixelIndex++] = rgbaFg;
 					}
 					else {
 						// Background color
-						this.pixels[pixelIndex++] = 0xFF000000 + 65536 * bgBlue + bgGreen * 256 + bgRed;
+						this.pixels[pixelIndex++] = rgbaBg;
 					}
 					// Next pixel
 					mask /= 2;
