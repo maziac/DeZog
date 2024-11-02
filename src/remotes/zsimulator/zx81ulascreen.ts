@@ -1,5 +1,5 @@
 import {MemBuffer} from "../../misc/membuffer";
-import {Utility} from "../../misc/utility";
+//import {Utility} from "../../misc/utility";
 import {Chroma81Type} from "../../settings/settings";
 import {UlaScreen} from "./ulascreen";
 import {Z80Cpu} from "./z80cpu";
@@ -7,7 +7,7 @@ import {ZSimRemote} from "./zsimremote";
 import {Zx81LoadColorization} from "./zx81loadcolorization";
 
 
-const logOn = false;	// Set to true to enable logging.
+//const logOn = false;	// Set to true to enable logging.
 
 /** Handles the ZX81 ULA screen.
  * Is derived from the Zx81UlaScreen which simulates the dfile.
@@ -156,7 +156,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		this.IOWR = true;
 		this.A0 = (port & 0x0001) !== 0;
 		this.A1 = (port & 0x0002) !== 0;
-		logOn && this.log('outPort($' + Utility.getHexString(port, 4) + ', ' + _data.toString(2).padStart(8, '0') + ')');
+		//logOn && this.log('outPort($' + Utility.getHexString(port, 4) + ', ' + _data.toString(2).padStart(8, '0') + ')');
 	}
 
 
@@ -169,7 +169,7 @@ export class Zx81UlaScreen extends UlaScreen {
 	protected inPort(port: number): number | undefined {
 		this.IORD = true;
 		this.A0 = ((port & 0x0001) !== 0);
-		logOn && this.log('inPort($' + Utility.getHexString(port, 4) + ')');
+		//logOn && this.log('inPort($' + Utility.getHexString(port, 4) + ')');
 		return undefined;
 	}
 
@@ -243,7 +243,7 @@ export class Zx81UlaScreen extends UlaScreen {
 			// Reset HSYNC counter
 			this.hsyncEndTstates = this.tstates;
 			this.HSYNC = false;
-			logOn && this.log('VSYNC corrected hsyncEndTstates=' + this.hsyncEndTstates);
+			//logOn && this.log('VSYNC corrected hsyncEndTstates=' + this.hsyncEndTstates);
 		}
 
 		let hsyncTstates = this.tstates - this.hsyncEndTstates;
@@ -252,10 +252,9 @@ export class Zx81UlaScreen extends UlaScreen {
 			if (hsyncTstates >= Zx81UlaScreen.TSTATES_PER_SCANLINE)
 				this.HSYNC = false;
 		}
-		else {
-			// Check for the start of the HSYNC
-			if (hsyncTstates >= Zx81UlaScreen.TSTATES_PER_SCANLINE - Zx81UlaScreen.TSTATES_OF_HSYNC_LOW)
-				this.HSYNC = true;
+		// Check for the start of the HSYNC
+		else if (hsyncTstates >= Zx81UlaScreen.TSTATES_PER_SCANLINE - Zx81UlaScreen.TSTATES_OF_HSYNC_LOW) {
+			this.HSYNC = true;
 		}
 
 		if (hsyncTstates >= Zx81UlaScreen.TSTATES_PER_SCANLINE)
@@ -270,7 +269,7 @@ export class Zx81UlaScreen extends UlaScreen {
 			else {
 				// HSYNC pulse ended, the horizontal line starts
 				this.hsyncEndTstates = this.tstates - hsyncTstates;	// HSYNC ended hsyncTstates in the past
-				logOn && this.log('HSYNC: hsyncEndTstates=' + this.hsyncEndTstates + ', hsyncTstates=' + hsyncTstates + ', remainder to csync=' + ((this.hsyncEndTstates - this.vsyncEndTstates) % 207));
+				//logOn && this.log('HSYNC: hsyncEndTstates=' + this.hsyncEndTstates + ', hsyncTstates=' + hsyncTstates + ', remainder to csync=' + ((this.hsyncEndTstates - this.vsyncEndTstates) % 207));
 			}
 		}
 
@@ -311,19 +310,19 @@ export class Zx81UlaScreen extends UlaScreen {
 					this.emit('updateScreen');
 					this.resetVideoBuffer();
 					this.vsyncEndTstates = this.tstates;
-					logOn && this.log('==================================================================================');
+					//logOn && this.log('==================================================================================');
 				}
 			}
 		}
 
-		// Log on changes
-		if (logOn) {
-			if (prevVSYNC !== this.VSYNC)
-				logOn && this.log('VSYNC: ' + (this.VSYNC ? 'ON' : 'OFF'));
-			if (prevHSYNC !== this.HSYNC)
-				logOn && this.log('HSYNC: ' + (this.HSYNC ? 'ON' : 'OFF'));
-			logOn && this.log('--');
-		}
+		// // Log on changes
+		// if (logOn) {
+		// 	if (prevVSYNC !== this.VSYNC)
+		// 		logOn && this.log('VSYNC: ' + (this.VSYNC ? 'ON' : 'OFF'));
+		// 	if (prevHSYNC !== this.HSYNC)
+		// 		logOn && this.log('HSYNC: ' + (this.HSYNC ? 'ON' : 'OFF'));
+		// 	logOn && this.log('--');
+		// }
 
 		// Reset
 		this.IORD = false;
@@ -484,27 +483,25 @@ export class Zx81UlaScreen extends UlaScreen {
 		this.chroma81Enabled = memBuffer.readBoolean();
 	}
 
+	// /** Log	 */
+	// protected log(message: string) {
+	// 	if (this.lineCounter >= 57 && this.lineCounter <= 302)
+	// 		return
+	// 	//return;
+	// 	// total tstates, line counter, diff since last csync end, rel. diff since last csync end, diff since last hsync end, rel. diff since last hsync end, message
+	// 	const diffLastCsyncEnd = this.tstates - this.vsyncEndTstates;
+	// 	const diffLastHsyncEnd = this.tstates - this.hsyncEndTstates;
+	// 	const relDiffLastCsyncEnd = (diffLastCsyncEnd / 207).toFixed(2).padStart(16, '0');
+	// 	const relDiffLastHsyncEnd = (diffLastHsyncEnd / 207).toFixed(2).padStart(16, '0');
+	// 	console.log(this.tstates, this.lineCounter, "since csync:" + diffLastCsyncEnd, relDiffLastCsyncEnd, "since hsync:" + diffLastHsyncEnd, relDiffLastHsyncEnd, message);
+	// }
 
-	// TODO: Once this is all working comment the lines that use the log
-	/** Log	 */
-	protected log(message: string) {
-		if (this.lineCounter >= 57 && this.lineCounter <= 302)
-			return
-		//return;
-		// total tstates, line counter, diff since last csync end, rel. diff since last csync end, diff since last hsync end, rel. diff since last hsync end, message
-		const diffLastCsyncEnd = this.tstates - this.vsyncEndTstates;
-		const diffLastHsyncEnd = this.tstates - this.hsyncEndTstates;
-		const relDiffLastCsyncEnd = (diffLastCsyncEnd / 207).toFixed(2).padStart(16, '0');
-		const relDiffLastHsyncEnd = (diffLastHsyncEnd / 207).toFixed(2).padStart(16, '0');
-		console.log(this.tstates, this.lineCounter, "since csync:" + diffLastCsyncEnd, relDiffLastCsyncEnd, "since hsync:" + diffLastHsyncEnd, relDiffLastHsyncEnd, message);
-	}
-
-	/** Logs only the first log for a line */
-	protected lastLoggedLine = -1;
-	protected logIfFirst(message: string) {
-		if (this.lineCounter === this.lastLoggedLine)
-			return;
-		this.lastLoggedLine = this.lineCounter;
-		logOn && this.log(message);
-	}
+	// /** Logs only the first log for a line */
+	// protected lastLoggedLine = -1;
+	// protected logIfFirst(message: string) {
+	// 	if (this.lineCounter === this.lastLoggedLine)
+	// 		return;
+	// 	this.lastLoggedLine = this.lineCounter;
+	// 	//logOn && this.log(message);
+	// }
 }
