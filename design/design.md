@@ -124,6 +124,10 @@ Remote <-> Socket:
 
 ![](images/remote_zsim_dependency_chart.jpg)
 
+#### ZSim Webview
+
+![](images/zsimwebview_dependency_chart.jpg)
+
 ### ZEsarUX Remote
 
 ![](images/remote_zesarux_dependency_chart.jpg)

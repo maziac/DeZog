@@ -93,15 +93,6 @@ export class Z80RegistersClass {
 
 
 	/**
-	 * Constructor.
-	 * @param slotCount The number of used slots (used for memory banks).
-	 */
-	constructor() {
-		//
-	}
-
-
-	/**
 	 * Called during the launchRequest.
 	 */
 	public static Init() {
