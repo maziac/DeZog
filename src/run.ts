@@ -9,6 +9,7 @@ import {ZSimulationView} from './remotes/zsimulator/zsimulationview';
 import {DebugSessionClass} from './debugadapter';
 
 
+
 /** Class to run a file.
  * .sna, .p and .p81 files are supported.
  */
@@ -46,7 +47,10 @@ export class Run {
 				// Determine the parameters
 				const ext = path.extname(fsPath).toLowerCase();
 				if (ext == '.sna') {
-					zsim = {preset: 'spectrum'};
+					zsim = {
+						preset: 'spectrum',
+						memoryModel: 'ZX128K'
+					};
 				}
 				else if (ext == '.p') {
 					zsim = {preset: 'zx81'};

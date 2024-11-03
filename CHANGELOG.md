@@ -21,6 +21,7 @@
   - "ulaOptions" added.
   - "chroma81" support (including colourization file support).
   - Fixed bug that IX could grow bigger than 0xFFFF.
+  - Fixed: debugging now stops when windows is closed.
 - "topOfStack": default is now taken from the memory model.
 - Loading .nex file: Fix for bit in load screens for ignoring the palette
 
