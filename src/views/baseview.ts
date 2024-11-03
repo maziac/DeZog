@@ -13,10 +13,10 @@ export class BaseView {
 
 	/// Holds a list of all derived view classes.
 	/// Used to call the static update functions.
-	public static staticViewClasses: Array<any>;
+	public static staticViewClasses: Array<any> = [];
 
 	/// Holds a list of all open views.
-	protected static staticViews: Array<BaseView>;
+	protected static staticViews: Array<BaseView> = [];
 
 
 	/**
@@ -24,8 +24,7 @@ export class BaseView {
 	 * Called at launchRequest.
 	 */
 	public static staticInit() {
-		BaseView.staticViewClasses = new Array<any>();
-		BaseView.staticViews = new Array<BaseView>();
+		BaseView.staticCloseAll();
 	}
 
 
@@ -79,6 +78,7 @@ export class BaseView {
 			view.vscodePanel = undefined as any;
 		}
 		BaseView.staticViews.length = 0;
+		BaseView.staticViewClasses.length = 0;
 	}
 
 

@@ -38,6 +38,7 @@ import {RenderFlowChart} from './disassembler/renderflowchart';
 import {RenderHtml} from './disassembler/renderhtml';
 import {ExceptionBreakpoints} from './exceptionbreakpoints';
 import {MemoryCommands} from './commands/memorycommands';
+import {Run} from './run';
 
 
 
@@ -150,6 +151,14 @@ export class DebugSessionClass extends DebugSession {
 		return this.debugAdapterSingleton;
 	}
 	protected static debugAdapterSingleton: DebugSessionClass;
+
+
+	/** Returns if a DeZog debug session is currently running. */
+	public static isRunning(): boolean {
+		if (this.debugAdapterSingleton == undefined)
+			return false;
+		return this.debugAdapterSingleton.running;
+	}
 
 
 	/**
@@ -428,6 +437,9 @@ export class DebugSessionClass extends DebugSession {
 	 * Respond with supported features.
 	 */
 	protected async initializeRequest(response: DebugProtocol.InitializeResponse, _args: DebugProtocol.InitializeRequestArguments): Promise<void> {
+		// Stop any running program.
+		Run.terminate();
+
 		//const dbgSession = vscode.debug.activeDebugSession;
 		// build and return the capabilities of this debug adapter:
 		response.body = response.body ?? {};

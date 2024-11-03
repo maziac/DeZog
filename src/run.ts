@@ -6,12 +6,16 @@ import {ZSimRemote} from './remotes/zsimulator/zsimremote';
 import {Utility} from './misc/utility';
 import {BaseView} from './views/baseview';
 import {ZSimulationView} from './remotes/zsimulator/zsimulationview';
+import {DebugSessionClass} from './debugadapter';
 
 
 /** Class to run a file.
  * .sna, .p and .p81 files are supported.
  */
 export class Run {
+	// Indicates if a 'Run' is currently active.
+	public static isRunning: boolean = false;
+
 
 	/** Executes a given file.
 	 * @param fileUri The file to run.
@@ -21,48 +25,80 @@ export class Run {
 		// Safety check
 		if (!fileUri)
 			return;
-		const fsPath = fileUri.fsPath;
 
-		// Determine the parameters
-		if (zsim === undefined) {
-			// Determine the parameters
-			const ext = path.extname(fsPath).toLowerCase();
-			if (ext == '.sna') {
-				zsim = {preset: 'spectrum'};
-			}
-			else if (ext == '.p') {
-				zsim = {preset: 'zx81'};
-			}
-			else {
-				throw Error('Invalid file extension: ' + ext);
-			}
+		// Check if debugger is running
+		if (DebugSessionClass.isRunning()) {
+			vscode.window.showErrorMessage('A DeZog debug session is active. Please close it first.');
+			return;
 		}
 
-		// Set all unset settings.
-		const rootFolder = path.dirname(fsPath);
-		const launchPrev: any = {
-			zsim,
-			rootFolder,
-			"history": {
-				"reverseDebugInstructionCount": 0,
-				"codeCoverageEnabled": false
-			},
-			"load": fsPath, // Run the file
-		};
-		const launch = Settings.Init(launchPrev);
-		Settings.launch = {} as any;	// Workaround or the remaining cases that use Settings directly. TODO: Better make Settings a general parameter for all remotes.
-		// Create zsim
-		Z80RegistersClass.createRegisters(launch);
-		const remote = new ZSimRemote(launch)
-		Utility.setRootPath(rootFolder);
-		remote.configureMachine();
-		await remote.loadBin(fsPath);
-		// Adds a window that displays the ZX screen.
-		BaseView.staticInit();
-		const zsimView = new ZSimulationView(remote);
-		await zsimView.waitOnInitView();
+		// Check if already running
+		if (Run.isRunning) {
+			// Close the previous run.
+			BaseView.staticCloseAll();
+		}
+		Run.isRunning = true;
 
-		// Run
-		remote.continue();
+		try {
+			// Determine the parameters
+			const fsPath = fileUri.fsPath;
+			if (zsim === undefined) {
+				// Determine the parameters
+				const ext = path.extname(fsPath).toLowerCase();
+				if (ext == '.sna') {
+					zsim = {preset: 'spectrum'};
+				}
+				else if (ext == '.p') {
+					zsim = {preset: 'zx81'};
+				}
+				else {
+					throw Error('Invalid file extension: ' + ext);
+				}
+			}
+
+			// Set all unset settings.
+			const rootFolder = path.dirname(fsPath);
+			const launchPrev: any = {
+				zsim,
+				rootFolder,
+				"history": {
+					"reverseDebugInstructionCount": 0,
+					"codeCoverageEnabled": false
+				},
+				"load": fsPath, // Run the file
+			};
+			const launch = Settings.Init(launchPrev);
+			Settings.launch = {} as any;	// Workaround or the remaining cases that use Settings directly. TODO: Better make Settings a general parameter for all remotes.
+			// Create zsim
+			Z80RegistersClass.createRegisters(launch);
+			const remote = new ZSimRemote(launch)
+			Utility.setRootPath(rootFolder);
+			remote.configureMachine();
+			await remote.loadBin(fsPath);
+			// Adds a window that displays the ZX screen.
+			BaseView.staticInit();
+			const zsimView = new ZSimulationView(remote);
+			await zsimView.waitOnInitView();
+
+			// Run
+			remote.on('terminated', () => {
+				Run.isRunning = false;
+			});
+			remote.continue();
+		}
+		catch (e) {
+			Run.isRunning = false;
+			vscode.window.showErrorMessage('Error during run: ' + e.message);
+			BaseView.staticCloseAll();
+		}
+	}
+
+
+	/** Terminates an active running program.
+	 * If no program is active, nothing happens.
+	 * Called when a debug session is started.
+	 */
+	public static terminate() {
+		BaseView.staticCloseAll();
 	}
 }

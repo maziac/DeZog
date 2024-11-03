@@ -207,6 +207,10 @@ export class ZSimulationView extends BaseView {
 		clearInterval(this.displayTimer);
 		this.displayTimer = undefined as any;
 		super.disposeView();
+		// Terminate remote
+		(async () => {
+			this.simulator.terminate()
+		})();
 	}
 
 
