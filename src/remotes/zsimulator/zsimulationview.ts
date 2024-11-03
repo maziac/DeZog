@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import {BaseView} from '../../views/baseview';
 import {ZSimRemote} from './zsimremote';
-import {Settings} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {LogZsimCustomCode} from '../../log';
 import {GlobalStorage} from '../../globalstorage';
@@ -72,7 +71,7 @@ export class ZSimulationView extends BaseView {
 		// Init
 		this.simulator = simulator;
 		this.countOfOutstandingMessages = 0;
-		this.displayTime = 1000 / Settings.launch.zsim.updateFrequency;
+		this.displayTime = 1000 / simulator.zsim.updateFrequency;
 		this.displayTimer = undefined as any;
 		this.stopTime = 2 * this.displayTime;
 		if (this.stopTime < 500)
@@ -84,7 +83,7 @@ export class ZSimulationView extends BaseView {
 		this.lowAddressSimulatedPorts = new Map<number, number>();
 
 		// Check for Kempston Joystick
-		if (Settings.launch.zsim.kempstonJoy) {
+		if (simulator.zsim.kempstonJoy) {
 			// Prepare port:  Port 0x1f, 000FUDLR, Active = 1
 			this.lowAddressSimulatedPorts.set(0x1F, 0x00);
 		}
@@ -100,10 +99,10 @@ export class ZSimulationView extends BaseView {
 
 		// Add title
 		Utility.assert(this.vscodePanel);
-		this.vscodePanel.title = 'Z80 Simulator - ' + Settings.launch.zsim.memoryModel;
+		this.vscodePanel.title = 'Z80 Simulator - ' + simulator.zsim.memoryModel;
 
 		// Read path for additional javascript code
-		this.customUiPath = Settings.launch.zsim.customCode.uiPath;
+		this.customUiPath = simulator.zsim.customCode.uiPath;
 	}
 
 
@@ -255,7 +254,7 @@ export class ZSimulationView extends BaseView {
 				// Clear any diagnostics
 				DiagnosticsHandler.clear();
 				// Reload the custom code
-				const jsPath = Settings.launch.zsim.customCode?.jsPath;
+				const jsPath = this.simulator.zsim.customCode?.jsPath;
 				if (jsPath) {
 					// Can throw an error
 					this.simulator.customCode.load(jsPath);
@@ -498,20 +497,20 @@ export class ZSimulationView extends BaseView {
 			}
 
 			// Update cpuload
-			if (Settings.launch.zsim.cpuLoad > 0) {
+			if (this.simulator.zsim.cpuLoad > 0) {
 				cpuLoad = (this.simulator.z80Cpu.cpuLoad * 100).toFixed(0);
 				simulationTooSlow = this.simulator.simulationTooSlow;
 			}
 
 			// Visual Memory
-			if (Settings.launch.zsim.visualMemory) {
+			if (this.simulator.zsim.visualMemory) {
 				slots = this.simulator.getSlots();
 				const banks = this.simulator.memoryModel.getMemoryBanks(slots);
 				slotNames = banks.map(bank => bank.name);
 				visualMem = this.simulator.memory.getVisualMemory();
 			}
 
-			if (Settings.launch.zsim.zxBeeper) {
+			if (this.simulator.zsim.zxBeeper) {
 				// Audio
 				audio = this.simulator.getZxBeeperBuffer();
 			}
@@ -569,7 +568,7 @@ export class ZSimulationView extends BaseView {
 		const resourcePath = vscode.Uri.file(extPath);
 		const vscodeResPath = this.vscodePanel.webview.asWebviewUri(resourcePath).toString();
 		// Set keyboard values
-		const zsim = Settings.launch.zsim;
+		const zsim = this.simulator.zsim;
 		// Predefine with spectrum keyboard
 		let zxKeybImg = "48k_kbd.svg";
 		let zxKeybAspectRatio = 1378/538;
@@ -1247,7 +1246,7 @@ export class ZSimulationView extends BaseView {
 	/** Sends the initialization message to the webview just after the 'loaded' has been received.
 	 */
 	protected sendInit() {
-		const zsim = Settings.launch.zsim;
+		const zsim = this.simulator.zsim;
 		// Is sent only once, just after the webview initially loads.
 		let volume = GlobalStorage.Get<number>('audio.volume');
 		if (volume === undefined)

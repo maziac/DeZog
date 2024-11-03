@@ -1,7 +1,7 @@
 import {Z80Ports} from './z80ports';
 import {Z80RegistersClass} from '../z80registers';
 import {MemBuffer, Serializable} from '../../misc/membuffer'
-import {Settings} from '../../settings/settings';
+import {ZSimType} from '../../settings/settings';
 import * as Z80 from '../../3rdparty/z80.js/Z80.js';
 import {SimulatedMemory} from './simulatedmemory';
 import {ExecuteInterface} from './executeinterface';
@@ -60,11 +60,11 @@ export class Z80Cpu implements Serializable, ExecuteInterface {
 	 * @param memory The Z80 memory.
 	 * @param ports The Z80 ports.
 	 */
-	constructor(memory: SimulatedMemory, ports: Z80Ports) {
+	constructor(memory: SimulatedMemory, ports: Z80Ports, zsim: ZSimType) {
 		this.error = undefined;
 		this.memory = memory;
 		this.ports = ports;
-		this.cpuFreq = Settings.launch.zsim.cpuFrequency;	// e.g. 3500000.0 for 3.5MHz.
+		this.cpuFreq = zsim.cpuFrequency;	// e.g. 3500000.0 for 3.5MHz.
 		this.INTERRUPT_TIME_AS_T_STATES = 0.02 * this.cpuFreq;  // 20ms * 3.5 MHz
 		this.remainingInterruptTstates = this.INTERRUPT_TIME_AS_T_STATES;
 		/*
@@ -78,11 +78,11 @@ export class Z80Cpu implements Serializable, ExecuteInterface {
 		this.prevTstatesOnInterrupt = 0;
 		this.cpuLoad = 1.0;	// Start with full load
 		this.cpuLoadRangeCounter = 0;
-		this.cpuLoadRange = Settings.launch.zsim.cpuLoad;
+		this.cpuLoadRange = zsim.cpuLoad;
 		this.prevHalted = false;
 
 		// Initialize Z80, call constructor
-		const z80n_enabled = Settings.launch.zsim.Z80N;
+		const z80n_enabled = zsim.Z80N;
 		this.z80 = new (Z80.Z80 as any)({
 			m1_mem_read: address => memory.m1Read8(address),
 			mem_read: address => memory.read8(address),

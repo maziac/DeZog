@@ -300,7 +300,7 @@ export class Z80UnitTestRunner {
 		Decoration.clearAllDecorations();
 
 		// Create the registers
-		Z80RegistersClass.createRegisters();
+		Z80RegistersClass.createRegisters(Settings.launch);
 
 		// Start emulator.
 		RemoteFactory.createRemote(configuration.remoteType);

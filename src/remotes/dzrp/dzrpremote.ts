@@ -1413,7 +1413,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 	/** Loads .nex, .sna or .p files.
 	 */
-	protected async loadBin(filePath: string): Promise<void> {
+	public async loadBin(filePath: string): Promise<void> {
 		try {
 			// Check file extension
 			const ext = path.extname(filePath).toLowerCase();

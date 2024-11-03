@@ -14,6 +14,12 @@ import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
 import {ZxNextSerialLoopback} from './remotes/dzrpbuffer/zxnextserialloopback';
+import path = require('path');
+import {ZSimRemote} from './remotes/zsimulator/zsimremote';
+import {Settings} from './settings/settings';
+import {ZSimulationView} from './remotes/zsimulator/zsimulationview';
+import {Z80RegistersClass} from './remotes/z80registers';
+import {BaseView} from './views/baseview';
 
 
 
@@ -118,6 +124,60 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 		await zxnextLoopback.runLoopbackTest(selectedPortPath.value, 1000, 10);
 		// zxnextLoopback will close itself when the loopback test is finished.
+	}));
+
+	// Command to directly run a .sna or .p file. Bypassing the debugger.
+	// If command is executed from a right click in the explorer parameter 1 and 2, both contain the file path.
+	// The 2nd parameter embedded in an array.
+	// Therefore, parameter 2 is ignored.
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.run', async (fileUri: vscode.Uri, _p2, zsim: {} = undefined as any) => {
+		vscode.window.showInformationMessage(`Parameter 1: ${fileUri}, Parameter 2: ${_p2}, Parameter 3: ${zsim}`);
+		// Safety check
+		if (!fileUri)
+			return;
+		const fsPath = fileUri.fsPath;
+
+		// Determine the parameters
+		if (zsim === undefined) {
+			// Determine the parameters
+			const ext = path.extname(fsPath).toLowerCase();
+			if (ext == '.sna') {
+				zsim = {preset: 'spectrum'};
+			}
+			else if (ext == '.p') {
+				zsim = {preset: 'zx81'};
+			}
+			else {
+				throw Error('Invalid file extension: ' + ext);
+			}
+		}
+
+		// Set all unset settings.
+		const rootFolder = path.dirname(fsPath);
+		const launchPrev: any = {
+			zsim,
+			rootFolder,
+			"history": {
+				"reverseDebugInstructionCount": 0,
+				"codeCoverageEnabled": false
+			},
+			"load": fsPath, // Run the file
+		};
+		const launch = Settings.Init(launchPrev);
+		Settings.launch = {} as any;	// Workaround or the remaining cases that use Settings directly. TODO: Better make Settings a general parameter for all remotes.
+		// Create zsim
+		Z80RegistersClass.createRegisters(launch);
+		const remote = new ZSimRemote(launch)
+		Utility.setRootPath(rootFolder);
+		remote.configureMachine();
+		await remote.loadBin(fsPath);
+		// Adds a window that displays the ZX screen.
+		BaseView.staticInit();
+		const zsimView = new ZSimulationView(remote);
+		await zsimView.waitOnInitView();
+
+		// Run
+		remote.continue();
 	}));
 
 

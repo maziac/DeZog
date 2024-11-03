@@ -272,7 +272,7 @@ export class RemoteBase extends EventEmitter {
 	 * Loads sna or nex file. (or any other file type supported by remote.)
 	 * @param path The (absolute) path to the file.
 	 */
-	protected async loadBin(path: string): Promise<void> {
+	public async loadBin(path: string): Promise<void> {
 		// Override
 		throw Error('Loading files is not supported.');
 	}

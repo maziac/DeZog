@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.5.0-rc3",
+	"version": "3.5.0-rc4",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum/ZX81.",
 	"author": {
@@ -257,6 +257,11 @@
 				"title": "Refresh disassembly",
 				"category": "DeZog",
 				"icon": "$(refresh)"
+			},
+			{
+				"command": "dezog.run",
+				"title": "Run with DeZog",
+				"category": "DeZog"
 			}
 		],
 		"menus": {
@@ -310,6 +315,13 @@
 				},
 				{
 					"command": "dezog.reload"
+				}
+			],
+			"explorer/context": [
+				{
+					"group": "1_dezog",
+					"command": "dezog.run",
+					"when": "resourceExtname == .p || resourceExtname == .p81 || resourceExtname == .o || resourceExtname == .P || resourceExtname == .P81 || resourceExtname == .O || resourceExtname == .sna || resourceExtname == .SNA"
 				}
 			],
 			"editor/context": [

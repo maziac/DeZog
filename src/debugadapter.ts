@@ -618,7 +618,7 @@ export class DebugSessionClass extends DebugSession {
 		Decoration.clearAllDecorations();
 
 		// Create the registers
-		Z80RegistersClass.createRegisters();
+		Z80RegistersClass.createRegisters(Settings.launch);
 
 		// Make sure the history is cleared
 		CpuHistoryClass.setCpuHistory(undefined);

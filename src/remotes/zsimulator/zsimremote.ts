@@ -2,7 +2,7 @@ import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80_REG, Z80Registers} from '../z80registers';
 import {Z80Ports} from './z80ports';
 import {Z80Cpu} from './z80cpu';
-import {Settings, ZSimType} from '../../settings/settings';
+import {SettingsParameters, ZSimType} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {MemBuffer} from '../../misc/membuffer';
@@ -39,6 +39,9 @@ import {Zx81LoadOverlay} from './zx81loadoverlay';
  * With options to simulate ZX Spectrum or some ZX Next features.
  */
 export class ZSimRemote extends DzrpRemote {
+
+	// Pointer to the settings.
+	public zsim: ZSimType;
 
 	// For emulation of the CPU.
 	public z80Cpu: Z80Cpu;
@@ -131,9 +134,10 @@ export class ZSimRemote extends DzrpRemote {
 
 
 	/// Constructor.
-	constructor() {
+	constructor(launchArguments: SettingsParameters) {
 		super();
 		// Init
+		this.zsim = launchArguments.zsim;
 		this.simulationTooSlow = false;
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = true;
@@ -147,7 +151,7 @@ export class ZSimRemote extends DzrpRemote {
 		this.tbblueRegisterReadHandler = new Map<number, () => number>();
 		this.passedTstates = 0;
 		this.prevPassedTstates = 0;
-		this.timeStep = Settings.launch.zsim.customCode.timeStep;
+		this.timeStep = this.zsim.customCode.timeStep;
 		this.nextStepTstates = 0;
 		this.stopCpu = true;
 		this.lastBpId = 0;
@@ -157,12 +161,12 @@ export class ZSimRemote extends DzrpRemote {
 		// Set decoder
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 		// Reverse debugging / CPU history
-		if (Settings.launch.history.reverseDebugInstructionCount > 0) {
+		if (launchArguments.history.reverseDebugInstructionCount > 0) {
 			CpuHistoryClass.setCpuHistory(new ZSimCpuHistory());
 			CpuHistory.decoder = new DecodeStandardHistoryInfo();
 		}
 		// Code coverage
-		if (Settings.launch.history.codeCoverageEnabled)
+		if (launchArguments.history.codeCoverageEnabled)
 			this.codeCoverage = new CodeCoverageArray();
 	}
 
@@ -302,7 +306,8 @@ export class ZSimRemote extends DzrpRemote {
 		   * - "COLECOVISION": Memory map for the Coleco Vision (8k slots, no banking).
 	 * - "CUSTOM": User defined memory.
 	 */
-	protected configureMachine(zsim: ZSimType) {
+	public configureMachine() {
+		const zsim = this.zsim;
 		// The instances executed during an instruction
 		this.executors = [];
 		// For restoring the state
@@ -411,7 +416,7 @@ export class ZSimRemote extends DzrpRemote {
 		this.memoryModel.init();
 
 		// Create a Z80 CPU to emulate Z80 behavior
-		this.z80Cpu = new Z80Cpu(this.memory, this.ports);
+		this.z80Cpu = new Z80Cpu(this.memory, this.ports, this.zsim);
 		this.executors.push(this.z80Cpu);
 		this.serializeObjects.push(this.z80Cpu);
 
@@ -522,7 +527,7 @@ export class ZSimRemote extends DzrpRemote {
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization(): Promise<void> {
 		// Decide what machine
-		this.configureMachine(Settings.launch.zsim);
+		this.configureMachine();
 
 		// Load sna/nex and loadObjs:
 		this.customCode?.execute();	// Need to be initialized here also because e.g. nex loading sets the border (port).
@@ -704,8 +709,8 @@ export class ZSimRemote extends DzrpRemote {
 	 * @param bp2 Breakpoint 2 address or -1 if not used.
 	 */
 	protected async z80CpuContinue(bp1: number, bp2: number): Promise<void> {
-		const zsimCpuLoad = Settings.launch.zsim.cpuLoad;
-		const limitSpeed = Settings.launch.zsim.limitSpeed;
+		const zsimCpuLoad = this.zsim.cpuLoad;
+		const limitSpeed = this.zsim.limitSpeed;
 		let limitSpeedPrevTime = Date.now();
 		let limitSpeedPrevTstates = this.passedTstates;
 

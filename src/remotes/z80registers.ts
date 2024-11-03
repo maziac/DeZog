@@ -1,5 +1,5 @@
 import {Utility} from '../misc/utility';
-import {Settings} from '../settings/settings';
+import {SettingsParameters} from '../settings/settings';
 import {DecodeRegisterData, RegisterData} from './decoderegisterdata';
 
 
@@ -76,10 +76,10 @@ export class Z80RegistersClass {
 	/**
 	 * Called during the launchRequest to create the singleton.
 	 */
-	public static createRegisters() {
+	public static createRegisters(launchArguments: SettingsParameters) {
 		Z80Registers = new Z80RegistersClass();
 		// Init the registers
-		Z80RegistersClass.Init();  // Needs to be done here to honor the formatting in the Settings.
+		Z80RegistersClass.Init(launchArguments);  // Needs to be done here to honor the formatting in the Settings.
 	}
 
 
@@ -95,7 +95,7 @@ export class Z80RegistersClass {
 	/**
 	 * Called during the launchRequest.
 	 */
-	public static Init() {
+	public static Init(launchArguments: SettingsParameters) {
 		// Fill array with register names
 		const names = Object.values(Z80_REG);
 		this.registerNames = new Array<string>();
@@ -107,8 +107,8 @@ export class Z80RegistersClass {
 		}
 
 		// Formatting
-		Z80RegisterVarFormat = Z80RegistersClass.createFormattingMap(Settings.launch.formatting.registerVar);
-		Z80RegisterHoverFormat = Z80RegistersClass.createFormattingMap(Settings.launch.formatting.registerHover);
+		Z80RegisterVarFormat = Z80RegistersClass.createFormattingMap(launchArguments.formatting.registerVar);
+		Z80RegisterHoverFormat = Z80RegistersClass.createFormattingMap(launchArguments.formatting.registerHover);
 	}
 
 
