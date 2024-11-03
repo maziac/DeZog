@@ -183,21 +183,15 @@ Please note that all your contributions/sources should be under MIT license.
 If you would like to contact me beforehand you can create a new issue in github and we can discuss.
 
 
-## License
+## Licenses
 
-DeZog is licensed under the [MIT license](https://github.com/maziac/dezog/blob/master/LICENSE.txt).
 
-The source code is available on [github](https://github.com/maziac/dezog).
-
-DeZog also includes a Z80/48k ZX Spectrum simulator. For this the original 48/128k ROM code is included and here is the copyright notice:
-"Amstrad have kindly given their permission for the redistribution of their copyrighted material but retain that copyright".
-See [Amstrad ROM permissions](documentation/amstrad-rom-permissions.txt).
-
-Furthermore DeZog includes slightly modified sources of the Z80.js simulator. It was taken from https://bitbucket.org/DrGoldfire/z80.js/src/master/ which is MIT licensed. Many thanks to Molly Howell.
-
-For the "What's New" feature the [vscode-whats-new](https://github.com/alefragnani/vscode-whats-new) project from Alessandro Fragnani aka [alefragni](https://github.com/alefragnani) has been incorporated. The project is MIT licensed.
-
-For the other included SW see the 'dependencies' section in [package.json](https://github.com/maziac/DeZog/blob/main/package.json)
+- DeZog, [MIT license](https://github.com/maziac/dezog/blob/master/LICENSE.txt)
+- ZX81 ROM Copyright © 1981 Nine Tiles - Included with the permission of Nine Tiles
+- ZX Spectrum ROM, "Amstrad have kindly given their permission for the redistribution of their copyrighted material but retain that copyright". See [Amstrad ROM permissions](documentation/amstrad-rom-permissions.txt).
+- [Z80.js](https://bitbucket.org/DrGoldfire/z80.js/src/master/) (Z80 CPU simulator), Molly Howell, MIT license.
+- [vscode-whats-new](https://github.com/alefragnani/vscode-whats-new), Alessandro Fragnani aka [alefragni](https://github.com/alefragnani), MIT license.
+- For the other included SW see the 'dependencies' section in [package.json](https://github.com/maziac/DeZog/blob/main/package.json)
 
 
 ## Acknowledgements
@@ -282,8 +276,8 @@ Nevertheless Cesar (W. M.) also shows how to setup the system under Windows and 
 
 # Fork
 
-The [ZX81 Debugger](https://github.com/andrivet/ZX81-Debugger) by [Sebastien Andrivet](https://github.com/andrivet) is a fork of DeZog that contains a complete development environment for the ZX81. I.e. it comes with an integrated Z80 assembler, an integrated ZX81 simulator, syntax highlighting, sample code that you just need to paste to get started and DeZog as a debugging backend.
-So if you're looking for a development program for the ZX81, you should give it a try.
-It's also much easier to set up than DeZog because you don't have any external dependencies.
-If you want to test the capabilities of DeZog without configuring anything, then you should also check it out.
+The [ZX81 Debugger](https://github.com/andrivet/ZX81-Debugger) by [Sebastien Andrivet](https://github.com/andrivet) is a specialized version of DeZog for the ZX81.
+Since v3.5 DeZog is capable to support ZX81 development in the internal simulator as well.
+However, Sebastien's DeZog fork in general is easier to setup as it contains the complete development environment for the ZX81 (assembler, syntax highlighting, sample code).
+
 
