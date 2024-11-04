@@ -545,6 +545,7 @@ export class ZSimRemote extends DzrpRemote {
 	public async disconnect(): Promise<void> {
 		await super.disconnect();
 		// Stop running cpu
+		this.funcContinueResolve = undefined;
 		this.stopCpu = true;
 	}
 
