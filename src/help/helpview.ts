@@ -238,9 +238,9 @@ window.addEventListener('message', event => {
 	/**
 	 * Additionally clear singleton.
 	 */
-	public disposeView() {
+	public dispose() {
 		HelpView.singleton = undefined as any;
-		super.disposeView();
+		super.dispose();
 	}
 
 

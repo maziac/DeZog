@@ -78,9 +78,9 @@ export class MemoryDumpView extends BaseView {
 	 * Dispose the view (called e.g. on close).
 	 * Removes it from the static list.
 	 */
-	public disposeView() {
+	public dispose() {
 		// Remove from base list
-		super.disposeView();
+		super.dispose();
 		// Remove from list
 		const arr = MemoryDumpView.MemoryViews;
 		const index = arr.indexOf(this);

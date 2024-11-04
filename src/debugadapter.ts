@@ -387,7 +387,7 @@ export class DebugSessionClass extends DebugSession {
 			this.removeReloadFileWatchers();
 
 			// Close views, e.g. register memory view
-			BaseView.staticCloseAll();
+			BaseView.staticClearAll();
 			this.removeListener('update', BaseView.staticCallUpdateFunctions);
 			// Stop machine
 			this.removeAllListeners();	// Don't react on events anymore
@@ -542,7 +542,7 @@ export class DebugSessionClass extends DebugSession {
 			DiagnosticsHandler.clear();
 
 			// Initialize
-			BaseView.staticInit();
+			BaseView.staticClearAll();
 			ZxNextSpritePatternsView.staticInit();
 
 			// Action on changed value (i.e. when the user changed a value

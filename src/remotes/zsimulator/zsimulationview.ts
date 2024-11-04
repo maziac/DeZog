@@ -103,6 +103,12 @@ export class ZSimulationView extends BaseView {
 
 		// Read path for additional javascript code
 		this.customUiPath = simulator.zsim.customCode.uiPath;
+
+		// Terminate the Remote if user closes the view.
+		this.on('remove', async () => {
+			// Terminate remote
+			await simulator.terminate();
+		});
 	}
 
 
@@ -203,14 +209,10 @@ export class ZSimulationView extends BaseView {
 	 * Use this to clean up additional stuff.
 	 * Normally not required.
 	 */
-	public disposeView() {
+	public dispose() {
 		clearInterval(this.displayTimer);
 		this.displayTimer = undefined as any;
-		super.disposeView();
-		// Terminate remote
-		(async () => {
-			this.simulator.terminate()
-		})();
+		super.dispose();
 	}
 
 

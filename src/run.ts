@@ -36,7 +36,7 @@ export class Run {
 		// Check if already running
 		if (Run.isRunning) {
 			// Close the previous run.
-			BaseView.staticCloseAll();
+			BaseView.staticClearAll();
 		}
 		Run.isRunning = true;
 
@@ -80,7 +80,7 @@ export class Run {
 			remote.configureMachine();
 			await remote.loadBin(fsPath);
 			// Adds a window that displays the ZX screen.
-			BaseView.staticInit();
+			BaseView.staticClearAll();
 			const zsimView = new ZSimulationView(remote);
 			await zsimView.waitOnInitView();
 
@@ -93,7 +93,7 @@ export class Run {
 		catch (e) {
 			Run.isRunning = false;
 			vscode.window.showErrorMessage('Error during run: ' + e.message);
-			BaseView.staticCloseAll();
+			BaseView.staticClearAll();
 		}
 	}
 
@@ -103,6 +103,6 @@ export class Run {
 	 * Called when a debug session is started.
 	 */
 	public static terminate() {
-		BaseView.staticCloseAll();
+		BaseView.staticClearAll();
 	}
 }

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import {Utility} from '../misc/utility';
+import {EventEmitter} from 'stream';
 
 
 
@@ -7,7 +8,7 @@ import {Utility} from '../misc/utility';
  * A Webview that serves as base class for other views like the MemoryDumpView or the
  * ZxNextSpritesView.
  */
-export class BaseView {
+export class BaseView extends EventEmitter {
 
 	// STATIC:
 
@@ -23,8 +24,18 @@ export class BaseView {
 	 * Initializes the static variables.
 	 * Called at launchRequest.
 	 */
-	public static staticInit() {
-		BaseView.staticCloseAll();
+	public static staticClearAll() {
+		// Copy view array
+		const views = [...BaseView.staticViews];
+		// Clear old
+		BaseView.staticViews = [];
+		BaseView.staticViewClasses = [];
+		// Remove listeners/prohibit de-registration by emit/on.
+		views.forEach(view => view.removeAllListeners());
+		// Dispose/close all views
+		for (const view of views) {
+			view.vscodePanel.dispose();
+		}
 	}
 
 
@@ -62,23 +73,6 @@ export class BaseView {
 		(async () => {
 			await BaseView.staticCallUpdateFunctionsAsync(reason);
 		})();
-	}
-
-
-	/**
-	 * Closes all opened views.
-	 * Is called when the debugger closes.
-	 */
-	public static staticCloseAll() {
-		// Copy view array
-		const views = BaseView.staticViews.map(view => view);
-		// Dispose/close all views
-		for (const view of views) {
-			view.vscodePanel.dispose();
-			view.vscodePanel = undefined as any;
-		}
-		BaseView.staticViews.length = 0;
-		BaseView.staticViewClasses.length = 0;
 	}
 
 
@@ -125,9 +119,11 @@ export class BaseView {
 	 * @param enableGenericFindWidget Set to true to enable the vscode find widget.
 	 */
 	constructor(addToStaticViews = true, enableGenericFindWidget = true) {
+		super();
 		// Add to view list
-		if (addToStaticViews)
+		if (addToStaticViews) {
 			BaseView.staticViews.push(this);
+		}
 
 		// Create vscode panel view
 		this.vscodePanel = vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true, enableFindWidget: enableGenericFindWidget, retainContextWhenHidden: true});
@@ -137,10 +133,18 @@ export class BaseView {
 			await this.webViewMessageReceived(message);
 		});
 
-		// Handle closing of the view
+		// Handle closing of the view: Is called when user closes
+		// the view and by staticClearAll
+
 		this.vscodePanel.onDidDispose(() => {
 			// Call overwritable function
-			this.disposeView();
+			this.vscodePanel = undefined as any;
+			this.dispose();
+			// Remove from list
+			const index = BaseView.staticViews.indexOf(this);
+			if (index >= 0) {
+				BaseView.staticViews.splice(index, 1);
+			}
 		});
 
 	}
@@ -150,13 +154,8 @@ export class BaseView {
 	 * Use this to clean up additional stuff.
 	 * Normally not required.
 	 */
-	public disposeView() {
-		const index = BaseView.staticViews.indexOf(this);
-		if (index >= 0) {
-			BaseView.staticViews.splice(index, 1);
-		}
-		// Do not use panel anymore
-		this.vscodePanel = undefined as any;
+	public dispose() {
+		this.emit('remove');
 	}
 
 

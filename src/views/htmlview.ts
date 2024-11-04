@@ -9,13 +9,6 @@ import {TextView} from './textview';
  * E.g. used for the flow charts and call graphs.
  */
 export class HtmlView extends TextView {
-
-	// Is set with the 'on' function. A Map with command <-> function references.
-	// If a message is received from the webview the 'command' is looked up
-	// and the corresponding function is called.
-	protected messageHandler = new Map<string, (message: any) => void>();
-
-
 	/**
 	 * Sets the html code to display the text.
 	 * @param body The html body code to display.
@@ -86,25 +79,6 @@ ${body}
 	 */
 	protected async webViewMessageReceived(message: any) {
 		const command = message.command;
-		const func = this.messageHandler.get(command);
-		if (func)
-			func(message);
-	}
-
-
-	/**
-	 * Works very much like the Emitter function 'on'.
-	 * It registers a function that is invoked when the command
-	 * string is received from the webview.
-	 * @param command E.g. 'clicked'.
-	 * @param func The function to call. The function is called with 'message'
-	 * as parameter. The data can be obtained from message.data.
-	 * If undefined the registration is cleared.
-	 */
-	public on(command: string, func?: (message: any) => void) {
-		if (func)
-			this.messageHandler.set(command, func);
-		else
-			this.messageHandler.delete(command);
+		this.emit(command, message);
 	}
 }
