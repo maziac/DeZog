@@ -6,6 +6,7 @@ import {LogZsimCustomCode} from '../../log';
 import {GlobalStorage} from '../../globalstorage';
 import {readFileSync} from 'fs';
 import {DiagnosticsHandler} from '../../diagnosticshandler';
+import {Z80Registers} from '../z80registers';
 
 
 /**
@@ -510,6 +511,8 @@ export class ZSimulationView extends BaseView {
 
 			// Visual Memory
 			if (this.simulator.zsim.visualMemory) {
+				const regs = this.simulator.z80Cpu.getRegisterData();
+				Z80Registers.setCache(regs);
 				slots = this.simulator.getSlots();
 				const banks = this.simulator.memoryModel.getMemoryBanks(slots);
 				slotNames = banks.map(bank => bank.name);
