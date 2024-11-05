@@ -718,6 +718,16 @@ export class Settings {
 		screenArea.firstY -= bSize;
 		screenArea.lastY += bSize;
 
+		// Check for min max screen area
+		if (screenArea.firstX < 0)
+			screenArea.firstX = 0;
+		if (screenArea.lastX > 1000)
+			screenArea.lastX = 1000;
+		if (screenArea.firstY < 0)
+			screenArea.firstY = 0;
+		if (screenArea.lastY > 1000)
+			screenArea.lastY = 1000;
+
 		if (ulaOptions.showStandardLines === undefined)
 			ulaOptions.showStandardLines = false;
 		if (ulaOptions.lines === undefined)

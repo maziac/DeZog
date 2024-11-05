@@ -125,7 +125,8 @@ export function activate(context: vscode.ExtensionContext) {
 	// The 2nd parameter embedded in an array.
 	// Therefore, parameter 2 is ignored.
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.run', async (fileUri: vscode.Uri, _p2, zsim: {} = undefined as any) => {
-		vscode.window.showInformationMessage(`Parameter 1: ${fileUri}, Parameter 2: ${_p2}, Parameter 3: ${zsim}`);
+		//vscode.window.showInformationMessage(`fileUri: ${fileUri}, Parameter 2: ${_p2}, zsim: ${zsim}`);
+		//console.log(`fileUri: ${fileUri}, Parameter 2: ${_p2}, zsim: ${zsim}`);
 		Run.execute(fileUri, zsim);
 	}));
 
