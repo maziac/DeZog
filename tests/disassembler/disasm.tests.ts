@@ -14,14 +14,10 @@ import {Opcode} from '../../src/disassembler/core/opcode';
 
 suite('Disassembler', () => {
 
-	// Function that cann strip the main label from a local label.
+	// Function that can strip the main label from a local label.
 	function ll(label: string): string {
 		const localLabel = label.replace(/\w+\./, '.');
 		return localLabel;
-		// const k = label.indexOf('.');
-		// if (k >= 0)
-		// 	return label.substring(k);
-		// return label;
 	}
 
 
@@ -51,8 +47,8 @@ suite('Disassembler', () => {
 			const cfg: any = {
 				remoteType: 'zsim'
 			};
-			Settings.launch = Settings.Init(cfg);
-			Z80RegistersClass.createRegisters();
+			const launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(launch);
 			Z80Registers.decoder = new Z80RegistersStandardDecoder();
 			Opcode.InitOpcodes();
 			dng = new SmartDisassembler();
@@ -537,8 +533,8 @@ suite('Disassembler', () => {
 			const cfg: any = {
 				remoteType: 'zsim'
 			};
-			Settings.launch = Settings.Init(cfg);
-			Z80RegistersClass.createRegisters();
+			const launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(launch);
 			Z80Registers.decoder = new Z80RegistersStandardDecoder();
 			Opcode.InitOpcodes();
 			dng = new SmartDisassembler();
@@ -787,8 +783,8 @@ suite('Disassembler', () => {
 			const cfg: any = {
 				remoteType: 'zsim'
 			};
-			Settings.launch = Settings.Init(cfg);
-			Z80RegistersClass.createRegisters();
+			const launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(launch);
 			Z80Registers.decoder = new Z80RegistersStandardDecoder();
 			Opcode.InitOpcodes();
 			dng = new SmartDisassembler();
@@ -1071,8 +1067,8 @@ suite('Disassembler', () => {
 			const cfg: any = {
 				remoteType: 'zsim'
 			};
-			Settings.launch = Settings.Init(cfg);
-			Z80RegistersClass.createRegisters();
+			const launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(launch);
 			Z80Registers.decoder = new Z80RegistersStandardDecoder();
 			Z80Registers.setSlotsAndBanks(	// Doesn't matter what these functions return:
 				(address: number, slots: number[]) => 0x10000 + address,
@@ -1321,8 +1317,8 @@ suite('Disassembler', () => {
 			const cfg: any = {
 				remoteType: 'zsim'
 			};
-			Settings.launch = Settings.Init(cfg);
-			Z80RegistersClass.createRegisters();
+			const launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(launch);
 			Z80Registers.decoder = new Z80RegistersStandardDecoder();
 			Z80Registers.setSlotsAndBanks(	// Doesn't matter what these functions return:
 				(address: number, slots: number[]) => 0x10000 + address,

@@ -20,7 +20,10 @@ suite('Zx81UlaScreen', () => {
 		Settings.launch = Settings.Init(cfg);
 		const ports = new Z80Ports(true);
 		const memory = new SimulatedMemory(new MemoryModelAllRam, ports);
-		z80Cpu = new Z80Cpu(memory, ports);
+		const zsim: any = {
+			cpuFrequency: 3500000
+		};
+		z80Cpu = new Z80Cpu(memory, ports, zsim);
 		zx81UlaScreen = new Zx81UlaScreen(z80Cpu);
 	});
 
@@ -451,7 +454,10 @@ suite('Zx81UlaScreen', () => {
 		{
 			const memModel = new MemoryModelAllRam();
 			const ports = new Z80Ports(true);
-			const rCpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
+			const zsim: any = {
+				cpuFrequency: 3500000
+			};
+			const rCpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports, zsim) as any;
 			const rZx81UlaScreen = new Zx81UlaScreen(rCpu) as any;
 
 			// Restore values

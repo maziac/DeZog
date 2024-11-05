@@ -48,7 +48,11 @@ suite('Z80Cpu', () => {
 			{
 				const memModel = new MemoryModelAllRam();
 				const ports = new Z80Ports(true);
-				cpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
+				const memory = new SimulatedMemory(memModel, ports);
+				const zsim: any = {
+					cpuFrequency: 3500000
+				};
+				cpu = new Z80Cpu(memory, ports, zsim);
 
 				cpu.pc = 0x1020;
 				cpu.sp = 0x1121;
@@ -82,7 +86,10 @@ suite('Z80Cpu', () => {
 			// Create a new object
 			const memModel = new MemoryModelAllRam();
 			const ports = new Z80Ports(true);
-			const rCpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
+			const zsim: any = {
+				cpuFrequency: 3500000
+			};
+			const rCpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports, zsim) as any;
 			rCpu.deserialize(memBuffer);
 
 			// Check size
@@ -125,7 +132,10 @@ suite('Z80Cpu', () => {
 				Settings.launch = Settings.Init({} as any);
 				const memModel = new MemoryModelAllRam();
 				const ports = new Z80Ports(true);
-				cpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
+				const zsim: any = {
+					cpuFrequency: 3500000
+				};
+				cpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports, zsim) as any;
 				z80 = cpu.z80;
 				mem = cpu.memory;
 				portAddress = 0;	// Stores the last accessed port address (IN and OUT)
@@ -280,15 +290,13 @@ suite('Z80Cpu', () => {
 		suite('Z80N instructions', () => {
 
 			setup(() => {
-				const cfg: any = {
-					zsim: {
-						Z80N: true
-					}
-				};
-				Settings.launch = Settings.Init(cfg);
 				const memModel = new MemoryModelAllRam();
 				const ports = new Z80Ports(true);
-				cpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports) as any;
+				const zsim: any = {
+					cpuFrequency: 3500000,
+					Z80N: true
+				};
+				cpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports, zsim) as any;
 				z80 = cpu.z80;
 				mem = cpu.memory;
 			});

@@ -1125,10 +1125,11 @@ suite('MemoryModel', () => {
 
 	suite('long address and slot calculations', () => {
 
+		let launch;
 		setup(() => {
 			const cfgEmpty: any = {
 			};
-			Settings.launch = Settings.Init(cfgEmpty);
+			launch = Settings.Init(cfgEmpty);
 		});
 
 		test('ZX16K', () => {
@@ -1137,7 +1138,7 @@ suite('MemoryModel', () => {
 			const slots = [0, 1, 2];	// 0 = ROM (0-0x3FFF), 1 = RAM (0x4000-0x7FFF), 2 = UNUSED (0x8000-0xFFFF)
 
 			// Z80Registers
-			Z80RegistersClass.createRegisters();
+			Z80RegistersClass.createRegisters(launch);
 			mm.init();
 
 			// Long address
@@ -1163,7 +1164,7 @@ suite('MemoryModel', () => {
 			const slots = [0, 1];	// 0 = ROM (0-0x3FFF), 1 = RAM (0x4000-0x7FFF)
 
 			// Z80Registers
-			Z80RegistersClass.createRegisters();
+			Z80RegistersClass.createRegisters(launch);
 			mm.init();
 
 			// Long address
@@ -1185,7 +1186,7 @@ suite('MemoryModel', () => {
 			const slots = [0, 1, 2, 3];	// 4 slots a 16K
 
 			// Z80Registers
-			Z80RegistersClass.createRegisters();
+			Z80RegistersClass.createRegisters(launch);
 			mm.init();
 
 			// Long address
@@ -1207,7 +1208,7 @@ suite('MemoryModel', () => {
 			const slots = [7, 6, 5, 4, 3, 2, 1, 0];	// 8 slots a 8K
 
 			// Z80Registers
-			Z80RegistersClass.createRegisters();
+			Z80RegistersClass.createRegisters(launch);
 			mm.init();
 
 			// Long address
@@ -1237,7 +1238,7 @@ suite('MemoryModel', () => {
 			const slots = [7, 6, 5, 4, 3, 2, 1, 0];	// 8 slots a 8K
 
 			// Z80Registers
-			Z80RegistersClass.createRegisters();
+			Z80RegistersClass.createRegisters(launch);
 			mm.init();
 
 			// Long address

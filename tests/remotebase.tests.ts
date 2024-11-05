@@ -20,8 +20,8 @@ suite('RemoteBase', () => {
 		const cfg: any = {
 			remoteType: 'zsim'
 		};
-		Settings.launch = Settings.Init(cfg);
-		Z80RegistersClass.createRegisters();
+		const launch = Settings.Init(cfg);
+		Z80RegistersClass.createRegisters(launch);
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 		Opcode.InitOpcodes();
 		DisassemblyClass.createDisassemblySingleton();

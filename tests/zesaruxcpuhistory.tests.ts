@@ -32,12 +32,13 @@ class MockZesaruxSocket extends ZesaruxSocket {
 
 suite('ZesaruxCpuHistory', () => {
 
+	let launch;
 	setup(() => {
 		const cfg: any = {
 			remoteType: 'zrcp'
 		};
-		Settings.launch = Settings.Init(cfg);
-		Z80RegistersClass.createRegisters();
+		launch = Settings.Init(cfg);
+		Z80RegistersClass.createRegisters(launch);
 		Labels.readListFiles(cfg, new MemoryModelUnknown());	// To reset the labels
 		Format.hexFormat = 'h';
 		Opcode.InitOpcodes();
@@ -552,8 +553,7 @@ suite('ZesaruxCpuHistory', () => {
 		let mockSocket: MockZesaruxSocket;
 
 		setup(() => {
-			Z80RegistersClass.Init();
-			Z80RegistersClass.createRegisters();
+			Z80RegistersClass.createRegisters(launch);
 			RemoteFactory.createRemote('zrcp');
 			Z80Registers.decoder = new DecodeZesaruxRegistersZx48k();
 			const mm = new MemoryModelZx48k();
@@ -846,8 +846,7 @@ suite('ZesaruxCpuHistory', () => {
 		let mockSocket: MockZesaruxSocket;
 
 		setup(() => {
-			Z80RegistersClass.Init();
-			Z80RegistersClass.createRegisters();
+			Z80RegistersClass.createRegisters(launch);
 			Z80Registers.decoder = new DecodeZesaruxRegistersZx48k();
 			const mm = new MemoryModelZx48k();
 			mm.init(); // Required for setting the funcCreateLongAddress and funcGetSlotFromAddress

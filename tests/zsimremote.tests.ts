@@ -32,9 +32,9 @@ suite('ZSimRemote', () => {
 					codeCoverageEnabled: false
 				}
 			};
-			Settings.launch = Settings.Init(cfg);
-			Z80RegistersClass.createRegisters();
-			zsim = new ZSimRemote();
+			const launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(launch);
+			zsim = new ZSimRemote(launch);
 			zsimAny = zsim as any;
 			zsimAny.configureMachine(Settings.launch.zsim);
 		});
@@ -84,10 +84,10 @@ suite('ZSimRemote', () => {
 					codeCoverageEnabled: false
 				}
 			};
-			Settings.launch = Settings.Init(cfg);
-			Z80RegistersClass.createRegisters();
+			const launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(launch);
 			Utility.setRootPath('/');	// Does not matter but must be set.
-			zsim = new ZSimRemote();
+			zsim = new ZSimRemote(launch);
 			zsimAny = zsim as any;
 			zsimAny.configureMachine(Settings.launch.zsim);
 		});
@@ -221,10 +221,10 @@ suite('ZSimRemote', () => {
 						codeCoverageEnabled: false
 					}
 				};
-				Settings.launch = Settings.Init(cfg);
-				Z80RegistersClass.createRegisters();
+				const launch = Settings.Init(cfg);
+				Z80RegistersClass.createRegisters(launch);
 				Utility.setRootPath('/');	// Does not matter but must be set.
-				zsim = new ZSimRemote() as any;
+				zsim = new ZSimRemote(launch) as any;
 				zsimAny = zsim as any;
 				zsimAny.configureMachine(Settings.launch.zsim);
 			});
@@ -353,10 +353,10 @@ suite('ZSimRemote', () => {
 					codeCoverageEnabled: false
 				}
 			};
-			Settings.launch = Settings.Init(cfg);
-			Z80RegistersClass.createRegisters();
+			const launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(launch);
 			Utility.setRootPath('/');	// Does not matter but must be set.
-			zsim = new ZSimRemote();
+			zsim = new ZSimRemote(launch) as any;
 			zsimAny = zsim as any;
 			zsimAny.configureMachine(Settings.launch.zsim);
 		});
@@ -458,9 +458,9 @@ suite('ZSimRemote', () => {
 					codeCoverageEnabled: false
 				}
 			};
-			Settings.launch = Settings.Init(cfg);
-			Z80RegistersClass.createRegisters();
-			zsim = new ZSimRemote();
+			const launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(launch);
+			zsim = new ZSimRemote(launch) as any;
 			zsimAny = zsim as any;
 			zsimAny.configureMachine(Settings.launch.zsim);
 
