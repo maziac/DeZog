@@ -46,13 +46,13 @@ export class Run {
 			if (zsim === undefined) {
 				// Determine the parameters
 				const ext = path.extname(fsPath).toLowerCase();
-				if (ext == '.sna') {
+				if (ext === '.sna') {
 					zsim = {
 						preset: 'spectrum',
 						memoryModel: 'ZX128K'
 					};
 				}
-				else if (ext == '.p') {
+				else if (['.p', '.81', '.p81'].includes(ext)) {
 					zsim = {preset: 'zx81'};
 				}
 				else {

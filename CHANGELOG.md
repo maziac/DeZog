@@ -1,4 +1,7 @@
 # Changelog
+# 3.5.1
+- dezog.run: Fixed extensions. Now also .p81 and .81 files are supported (ZX81).
+
 # 3.5.0
 - zsim:
   - Simulation of ZX81. (Supports hires graphics modes, WRX, ARX)

@@ -321,7 +321,7 @@
 				{
 					"group": "1_dezog",
 					"command": "dezog.run",
-					"when": "resourceExtname == .p || resourceExtname == .p81 || resourceExtname == .o || resourceExtname == .P || resourceExtname == .P81 || resourceExtname == .O || resourceExtname == .sna || resourceExtname == .SNA"
+					"when": "resourceExtname == .p || resourceExtname == .81 || resourceExtname == .p81 || resourceExtname == .P || resourceExtname == .P81 || resourceExtname == .sna || resourceExtname == .SNA"
 				}
 			],
 			"editor/context": [
