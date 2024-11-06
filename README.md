@@ -63,7 +63,7 @@ Note: DeZog itself does not include any support for building from assembler sour
 
 ## Gallery
 
-### Sprites:
+### Sprites
 
 - Display of sprites with register indices and position
 - Display of all patterns with indices
@@ -71,12 +71,12 @@ Note: DeZog itself does not include any support for building from assembler sour
 ![](documentation/images/gallery_sprites.jpg)
 
 
-### Execution time:
+### Execution time
 
 ![](documentation/images/gallery_tstates.gif)
 
 
-### Unit tests:
+### Unit tests
 
 ![](documentation/images/gallery_unit_test.gif)
 
@@ -281,3 +281,12 @@ Since v3.5 DeZog is capable to support ZX81 development in the internal simulato
 However, Sebastien's DeZog fork in general is easier to setup as it contains the complete development environment for the ZX81 (assembler, syntax highlighting, sample code).
 
 
+# What else
+
+DeZog also allows to start ZX Spectrum (.sna) and ZX81 (.p) binaries directly.
+In vscode's file explorer use a right click and select "Run with DeZog".
+This will start the ZX Spectrum / ZX81 simulator right away.
+But please note: this only **runs** the binary, all debugging features like breakpoints and stepping are disabled in this mode.
+
+The feature can be used by other extensions.
+For example the [ZX81 BASIC to P-File Converter and P-File Viewer] starts a ZX81 BASIC program inside DeZog's simulator.
