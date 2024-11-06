@@ -1529,10 +1529,22 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	/**
 	 * Sends the command to wite a previously saved state to the remote.
 	 * I.e. memory, registers etc.
+	 * Save the current state first in order to rollback if there occurs
+	 * an error during deserialization.
 	 * @param The state data. Format is unknown (remote specific).
 	  */
 	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
-		this.deserializeState(stateData);
+		// Save current state
+		const currentState = this.serializeState();
+		// Try to restore state
+		try {
+			this.deserializeState(stateData);
+		}
+		catch (e) {
+			// Error occurred: restore previous state
+			this.deserializeState(currentState);
+			throw e;
+		}
 	}
 
 

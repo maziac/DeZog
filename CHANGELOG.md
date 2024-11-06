@@ -1,6 +1,7 @@
 # Changelog
 # 3.5.1
 - dezog.run: Fixed extensions. Now also .p81 and .81 files are supported (ZX81).
+- zsim restore: In case of an error during "restore" a rollback is done.
 
 # 3.5.0
 - zsim:
