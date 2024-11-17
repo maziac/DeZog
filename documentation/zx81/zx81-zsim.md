@@ -126,6 +126,7 @@ To visualize this a little bit, here is a screenshot of the hires game ["Against
 ![](images/against-write-total.jpg)
 The current write position is where the bottom black line ends.
 When single stepping this changes as more bytes are written one by one:
+
 ![](images/against-write-1.jpg)
 ![](images/against-write-2.jpg)
 ![](images/against-write-3.jpg)
@@ -191,6 +192,7 @@ In zsim this can be visualized (in standard and hires mode) with the "debug" opt
 If "debug" is true, everything that is not output to the screen is gray.
 
 Here is the display of a ZX81 with only 1k RAM:
+
 ![](images/collapsed-dfile.jpg).
 
 # borderSize
@@ -257,6 +259,7 @@ Defaults to [] (empty).
 # showStandardLines
 If enabled and if "hires" is enabled a few standard lines are drawn.
 Example ([25thanni.p](https://bodo4all.fortunecity.ws/zx/25thanni.html)):
+
 ![](images/standard-lines.jpg)
 
 The yellow lines show the standard border. The red line shows the start of the HSYNC pulse.
@@ -441,6 +444,7 @@ Set
 	"zxKeyboard": "zx81"
 ~~~
 to show the keyboard:
+
 ![](../../html/images/zx81_kbd.svg)
 
 The keys on the keyboard can be turned on/off by clicking with the mouse.
@@ -484,6 +488,6 @@ Please note that "Battlestar Galactica" only uses a partial address decoding.
 
 # Attribution
 Many thanks to the authors of the shown games/programs:
-- ["Against The Elements"](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm]), Paul Farrow
+- ["Against The Elements"](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm), Paul Farrow
 - "Battlestar Galactica", Ch. Zwerschke
 - ["25th Anniversary"](https://bodo4all.fortunecity.ws/zx/25thanni.html) (25thanni.p), Bodo Wenzel

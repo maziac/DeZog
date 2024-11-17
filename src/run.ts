@@ -73,7 +73,7 @@ export class Run {
 			};
 			const launch = Settings.Init(launchPrev);
 			//console.log('Run: launch=' + JSON.stringify(launch));
-			Settings.launch = {} as any;	// Workaround or the remaining cases that use Settings directly. TODO: Better make Settings a general parameter for all remotes.
+			Settings.launch = {} as any;	// Workaround for the remaining cases that use Settings directly.
 			// Create zsim
 			Z80RegistersClass.createRegisters(launch);
 			const remote = new ZSimRemote(launch)

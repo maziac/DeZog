@@ -206,6 +206,7 @@ I would like to express my gratitude to the following individuals for their inva
 - Cesar Wagener Moriana, [Dean Belfield](https://github.com/breakintoprogram), [Daren May](https://github.com/darenm), [Patricia Curtis](https://luckyredfish.com/who-am-i/) and [A MAN IN HIS TECHNO SHED](https://amaninhistechnoshed.com/a-man-in-his-technoshed/) for writing tutorials.
 - [Luciano Martorella](https://github.com/lmartorella) for his contribution of the custom memory model.
 - [Sebastien Andrivet](https://github.com/andrivet) for help with the ZX81 simulator and the ZX81 and ZX Spectrum keyboard svg files. Great work. Both are included under the [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/?ref=chooser-v1) license.
+- [Paul Farrow](http://www.fruitcake.plus.com/) for the help on the ZX81 graphics modes.
 
 
 # Tutorials
