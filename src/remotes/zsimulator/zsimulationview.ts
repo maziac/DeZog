@@ -596,7 +596,7 @@ export class ZSimulationView extends BaseView {
 		if (zsim.zxKeyboard === "zx81") {
 			zxKeybImg = "zx81_kbd.svg";
 			zxKeybAspectRatio = 512 / 186;
-			zxKeybKeyWidth = 8.1;
+			zxKeybKeyWidth = 7.975;
 			zxKeybKeyHeight = 17;
 			zxKeybKeyMarginRight = 1.125;
 			zxKeybOffY = 1.6;
