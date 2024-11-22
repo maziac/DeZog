@@ -24,11 +24,11 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Version etc. (please complete the following information):**
- - DeZog SW Version: 
- - OS: [the OS you used]
- - Remote: zsim or zrcp (ZEsarUX):
+ - DeZog SW Version:
+ - OS:
+ - Remote: zsim, zrcp (ZEsarUX), cspect, mame or zxnext:
 
 
 **Additional context**
-If possible please attach your complete Z80 project as a zip file. 
+If possible please attach your complete Z80 project as a zip file.
 It should also include the .vscode folder with the launch.json file and the list (.lst) file.

@@ -8,7 +8,7 @@ suite('CustomJoystick', () => {
 	let customJoy: CustomJoyType;
 	let customJoystick: any;
 
-	beforeEach(() => {
+	setup(() => {
 		ports = new Z80Ports(true);
 		customJoy = {
 			fire: {port: 0x01, portMask: 0xFF, bit: 0x01, lowActive: true},
