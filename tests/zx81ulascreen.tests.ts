@@ -12,7 +12,7 @@ suite('Zx81UlaScreen', () => {
 	let z80Cpu: Z80Cpu;
 	let zx81UlaScreen: any;
 
-	beforeEach(() => {
+	setup(() => {
 		// Initialize Settings
 		const cfg: any = {
 			remoteType: 'zsim'
