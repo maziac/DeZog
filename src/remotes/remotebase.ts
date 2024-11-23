@@ -492,7 +492,9 @@ export class RemoteBase extends EventEmitter {
 				}
 				catch (e) {
 					// Show error
-					console.log("Problem with LOGPOINT. Could not evaluate: '" + entry.line + "': " + e.message + "");
+					const msg = "Problem with LOGPOINT. Could not evaluate: '" + entry.line + "': " + e.message;
+					console.log(msg);
+					this.emit('warning', msg);
 				}
 			}
 		}
