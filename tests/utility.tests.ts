@@ -681,8 +681,8 @@ suite('Utility', () => {
 					memoryModel: "RAM"
 				}
 			} as any;
-			const launch = Settings.Init(cfg);
-			Z80RegistersClass.createRegisters(launch);
+			Settings.launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(Settings.launch);
 			RemoteFactory.createRemote(cfg.remoteType);
 			(Remote as any).configureMachine(Settings.launch.zsim);
 		});
@@ -733,7 +733,7 @@ suite('Utility', () => {
 			const regs = cpu.getRegisterData();
 			Z80Registers.setCache(regs);
 
-			let log = '${(8000h)}';
+			let log = '${(7FFFh+1)}';
 			let evalString = await Utility.evalLogString(log);
 			assert.equal('255', evalString);
 
@@ -749,7 +749,7 @@ suite('Utility', () => {
 			evalString = await Utility.evalLogString(log);
 			assert.equal('FF', evalString);
 
-			log = '${w@(hl):hex}';
+			log = '${w@(hl-1+1):hex}';
 			evalString = await Utility.evalLogString(log);
 			assert.equal('5BFF', evalString);
 		});
@@ -893,10 +893,7 @@ suite('Utility', () => {
 		});
 	});
 
-
-
 	suite('convertHexNumber', () => {
-
 		test('number', () => {
 			assert.equal(Utility.convertHexNumber(6), 6);
 			assert.equal(Utility.convertHexNumber(0), 0);

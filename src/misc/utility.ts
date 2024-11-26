@@ -49,7 +49,7 @@ export class Utility {
 	 * @returns E.g. "AF" or "0BC8"
 	 */
 	public static getHexString(value: number | undefined, size: number): string {
-		if (value != undefined) {
+		if (value !== undefined) {
 			const s = value.toString(16).toUpperCase().padStart(size, '0');
 			return s;
 		}
@@ -298,6 +298,7 @@ export class Utility {
 	 * @returns A number. In case of boolean: 0 or 1.
 	 * Throws an error if evaluation not possible.
 	  */
+	// TODO: REMOVE?
 	public static evalExpression(expr: string, evalRegisters = true, modulePrefix?: string, lastLabel?: string): number {
 		try {
 			// Get all labels and registers replaced with numbers
@@ -318,6 +319,7 @@ export class Utility {
 			throw Error("Error evaluating '" + expr + "': " + e.message);
 		}
 	}
+
 
 	/**
 	 * Evaluates all registers and labels in a string.

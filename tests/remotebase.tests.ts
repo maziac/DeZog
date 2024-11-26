@@ -20,8 +20,9 @@ suite('RemoteBase', () => {
 		const cfg: any = {
 			remoteType: 'zsim'
 		};
-		const launch = Settings.Init(cfg);
-		Z80RegistersClass.createRegisters(launch);
+
+		Settings.launch = Settings.Init(cfg);
+		Z80RegistersClass.createRegisters(Settings.launch);
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 		Opcode.InitOpcodes();
 		DisassemblyClass.createDisassemblySingleton();
@@ -29,7 +30,6 @@ suite('RemoteBase', () => {
 		memModel.init();
 		Disassembly.setMemoryModel(memModel);
 	});
-
 
 
 	suite('WPMEM, ASSERTION, LOGPOINT', () => {
@@ -612,4 +612,57 @@ suite('RemoteBase', () => {
 
 	});
 
+
+
+	suite('evalLogMessage', () => {
+
+		const remote = new RemoteBase();
+
+		class RemoteBaseMock extends RemoteBase { // TODO: REMOVE
+			public pc: number;
+			public sp: number;
+			public hl: number;
+			public ix: number;
+			public iy: number;
+			public pcMemory = new Uint8Array(4);
+			public spMemory = new Uint16Array(1);
+			public async getRegistersFromEmulator(): Promise<void> {
+				const cache = Z80RegistersClass.getRegisterData(this.pc, this.sp, 0, 0, 0, this.hl, this.ix, this.iy, 0, 0, 0, 0, 0, 0, 0, [0]);
+				Z80Registers.setCache(cache);
+
+			}
+			public async readMemoryDump(addr64k: number, size: number): Promise<Uint8Array> {
+				switch (addr64k) {
+					case this.pc: return this.pcMemory;
+					case this.sp: return new Uint8Array(this.spMemory.buffer);
+				}
+				assert(false);
+				return undefined as any;
+			}
+		}
+
+		test('simple', async () => {
+			assert.equal(remote.evalLogMessage(undefined), undefined);
+			assert.equal(remote.evalLogMessage("A=1"), "A=1");
+
+		});
+
+		test('unknown_label', async () => {
+			assert.throws(() => {
+				remote.evalLogMessage("${(unknown_label):signed}");
+			});
+		});
+
+		test('${(var):signed}', async () => {
+			assert.equal(remote.evalLogMessage("${(my_label):signed}"), "A=1");
+		});
+
+		test('${(1000+1)}', async () => {
+			assert.equal(remote.evalLogMessage("${(1000+1)}"), "${(1001)}");
+		});
+
+		test('${1000+1}', async () => {
+			assert.equal(remote.evalLogMessage("${1000+1}"), "${1001}");
+		});
+	});
 });

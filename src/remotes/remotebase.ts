@@ -503,13 +503,13 @@ export class RemoteBase extends EventEmitter {
 	}
 
 
-	/**
-	 * Evaluates a log message, i.e. a message that was given for a logpoint.
+	/** Evaluates a log message, i.e. a message that was given for a logpoint.
 	 * The format is checked and also the labels are changed into numbers.
 	 * Throws an exception in case of a formatting error.
 	 * @param logMsg A message in log format, e.g. "Status=${w@(status_byte):unsigned}"
 	 * @returns The converted string. I.e. label names are converted to numbers.
 	 */
+	protected regexLogMessage = /(([bw]@)?\s*\(\s*(.*?)\s*\)|(.*)\s*)\s*(:\s*(unsigned|signed|hex|bits|flags))?\s*/i;
 	public evalLogMessage(logMsg: string | undefined): string | undefined {
 		if (!logMsg)
 			return undefined
@@ -517,7 +517,7 @@ export class RemoteBase extends EventEmitter {
 		// Search all "${...}""
 		const result = logMsg.replace(/\${\s*(.*?)\s*}/g, (match, inner) => {
 			// Check syntax
-			const matchInner = /(([bw]@)?\s*\(\s*(.*?)\s*\)|(\w*)\s*)\s*(:\s*(unsigned|signed|hex|bits|flags))?\s*/i.exec(inner); // NOSONAR
+			const matchInner = this.regexLogMessage.exec(inner); // NOSONAR
 			if (!matchInner)
 				throw Error("Log message format error: '" + match + "' in '" + logMsg + "'");
 			const end = (matchInner[6]) ? ':' + matchInner[6] : '';
