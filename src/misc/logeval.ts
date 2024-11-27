@@ -13,15 +13,24 @@ import {Utility} from '../misc/utility';
 
 
 /** Evaluates log expressions.
+ * The evaluation is a 2 step process:
+ * 1. Prepare the expression: Replace labels with their values,
+ * b@ and w@ with function calls and register names with object variables.
+ * 2. Evaluate the expression: Evaluate the expression with the real memory contents.
  */
 export class LogEval {
 
 	// The Remote.
 	protected remote: RemoteBase;
 
+	// The Z80 registers.
+	protected z80Registers: Z80RegistersClass;
+
+
 	/** Constructor. */
-	constructor(remote : RemoteBase) {
+	constructor(remote : RemoteBase, z80Registers: Z80RegistersClass) {
 		this.remote = remote;
+		this.z80Registers = z80Registers;
 	}
 
 
@@ -51,8 +60,12 @@ export class LogEval {
 		const exprWithFunc = exprLabelled.replace(regexAt, (match, p1) => {
 			return (p1 === 'w') ? 'await getWord(' : 'await getByte(';
 		});
+		const result = format + ':' + exprWithFunc;
 
-		return format + ':' + exprWithFunc;
+		// Check
+		this.checkExpressionSyntax(result);
+
+		return result;
 	}
 
 
@@ -61,7 +74,7 @@ export class LogEval {
 	 * @param expr The expression to check. Use the output of prepareExpression.
 	 * E.g. string:2*getByte(HL+0x1234)
 	*/
-	public static checkExpressionSyntax(expr: string) {
+	protected static checkExpressionSyntax(expr: string) {
 		// Check format
 		const match = /((.*):)?(.*)/.exec(expr)!;
 		const format = match[2];
@@ -169,9 +182,14 @@ export class LogEval {
 		return value[0] + 256 * value[1];
 	}
 
+	protected getRegValue(regName: string): Promise<number> {
+		const value = this.z80Registers.getRegValue(regName);
+		return value;
+	}
+
 	protected async customEval(expr: string): Promise<any> {
-		const func = new Function('getByte', 'getWord', `return (async () => { return ${expr}; })();`);
-		const result = func(this.getByteEval.bind(this), this.getWordEval.bind(this));
+		const func = new Function('getByte', 'getWord', 'getRegValue' , `return (async () => { return ${expr}; })();`);
+		const result = func(this.getByteEval.bind(this), this.getWordEval.bind(this), this.getRegValue.bind(this));
 		return result;
 	}
 }

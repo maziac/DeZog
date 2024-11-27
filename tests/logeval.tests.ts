@@ -15,54 +15,57 @@ suite('LogEval', () => {
 			assert.equal(LogEval.prepareExpression(''), 'string:');
 		});
 		test('b@() w@()', async () => {
-			assert.equal(LogEval.prepareExpression('b@(8) - w@(15):hex'), 'hex:await getByte(8) - await getWord(15)');
+			assert.equal(LogEval.prepareExpression('b@(8) - w@(15):hex8'), 'hex8:await getByte(8) - await getWord(15)');
 		});
-	});
+		test('without format', async () => {
+			assert.equal(LogEval.prepareExpression('b@(8) - w@(15)'), 'string:await getByte(8) - await getWord(15)');
+		});
 
-	suite('checkExpressionSyntax', () => {
-		suite('correct', () => {
-			test('empty', async () => {
-				assert.doesNotThrow(() => {
-					LogEval.checkExpressionSyntax("string:");
+		suite('checkExpressionSyntax', () => {
+			suite('correct', () => {
+				test('empty', async () => {
+					assert.doesNotThrow(() => {
+						LogEval.prepareExpression(":string");
+					});
 				});
-			});
-			test('getByte/Word', async () => {
-				assert.doesNotThrow(() => {
-					LogEval.checkExpressionSyntax("string:await getByte(9)+await getWord(8)");
+				test('getByte/Word', async () => {
+					assert.doesNotThrow(() => {
+						LogEval.prepareExpression("await getByte(9)+await getWord(8):string");
+					});
 				});
-			});
-			test('boolean', async () => {
-				assert.doesNotThrow(() => {
-					LogEval.checkExpressionSyntax("string:2 == 2");
+				test('boolean', async () => {
+					assert.doesNotThrow(() => {
+						LogEval.prepareExpression("2 == 2:string");
+					});
 				});
-			});
-			test('format', async () => {
-				assert.doesNotThrow(() => {
-					LogEval.checkExpressionSyntax("string:");
-				});
-				assert.doesNotThrow(() => {
-					LogEval.checkExpressionSyntax("hex8:");
-				});
-				assert.doesNotThrow(() => {
-					LogEval.checkExpressionSyntax("hex16:");
-				});
-				assert.doesNotThrow(() => {
-					LogEval.checkExpressionSyntax("int8:");
-				});
-				assert.doesNotThrow(() => {
-					LogEval.checkExpressionSyntax("int16:");
-				});
-				assert.doesNotThrow(() => {
-					LogEval.checkExpressionSyntax("uint8:");
-				});
-				assert.doesNotThrow(() => {
-					LogEval.checkExpressionSyntax("uint16:");
-				});
-				assert.doesNotThrow(() => {
-					LogEval.checkExpressionSyntax("bits:");
-				});
-				assert.doesNotThrow(() => {
-					LogEval.checkExpressionSyntax("flags:");
+				test('format', async () => {
+					assert.doesNotThrow(() => {
+						LogEval.prepareExpression(":string");
+					});
+					assert.doesNotThrow(() => {
+						LogEval.prepareExpression(":hex8");
+					});
+					assert.doesNotThrow(() => {
+						(LogEval.prepareExpression(":hex16");
+					});
+					assert.doesNotThrow(() => {
+						LogEval.prepareExpression(":int8");
+					});
+					assert.doesNotThrow(() => {
+						LogEval.prepareExpression(":int16");
+					});
+					assert.doesNotThrow(() => {
+						LogEval.prepareExpression(":uint8");
+					});
+					assert.doesNotThrow(() => {
+						LogEval.prepareExpression(":uint16");
+					});
+					assert.doesNotThrow(() => {
+						LogEval.prepareExpression(":bits");
+					});
+					assert.doesNotThrow(() => {
+						LogEval.prepareExpression(":flags");
+					});
 				});
 			});
 		});
@@ -70,12 +73,12 @@ suite('LogEval', () => {
 		suite('wrong', () => {
 			test('format', async () => {
 				assert.throws(() => {
-					LogEval.checkExpressionSyntax("xxx:");
+					LogEval.prepareExpression(":xxx");
 				});
 			});
 			test('* * (wrong syntax)', async () => {
 				assert.throws(() => {
-					LogEval.checkExpressionSyntax("string:await getByte(9)* *await getWord(8)");
+					LogEval.prepareExpression("await getByte(9)* *await getWord(8):string");
 				});
 			});
 		});
@@ -94,10 +97,10 @@ suite('LogEval', () => {
 			}
 		}
 		const remote = new MockRemote();
-		const logEval = new LogEval(remote as any);
+		const z80Registers = new Z80RegistersClass();
+		const logEval = new LogEval(remote as any, z80Registers);
 
 		test('simple', async () => {
-			// TODO: Return memory
 			let evalString = await logEval.evalFullExpression("string:await getByte(9)+await getWord(4660)");
 			assert.equal(evalString, "4669");	// 9 + 4660 = 4669
 		});
