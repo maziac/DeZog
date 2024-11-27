@@ -21,11 +21,16 @@ export class LogEval {
 	// The labels.
 	protected labels: LabelsClass;
 
-	// The output format.
-	protected format: string;
+	// The prepared expression: Labels are replaced with their values,
+	// @replaced with getByte/Word and registers with object variables.
+	// The string is still somthing like: "STATUS=${A}, VALUE=${await getByte(getRegByName('HL'))}"
+	protected preparedExpression: string;
 
 	// The created evaluation function.
 	protected evalFunc: Function;
+
+	// Regex to extract "${...}" expressions.
+	protected regexMain = /\${([^}]*)}/g;
 
 
 	/** Constructor. */
@@ -35,43 +40,42 @@ export class LogEval {
 		this.labels = labels;
 
 		// Prepare expression
-		const preparedExpr = this.prepareExpression(expression);
-		// Check syntax
-		this.checkExpressionSyntax(preparedExpr);	// Throws an exception if the syntax is wrong.
-
-		// Create evaluation function
-		this.evalFunc = new Function('getByte', 'getWord', 'getRegValue', `return (async () => { return ${preparedExpr}; })();`);
+		this.preparedExpression = expression.replace(this.regexMain, (_match, p1) => {
+			const [format, prepared] = this.prepareExpression(p1);
+			this.checkExpressionSyntax(prepared);	// Throws an exception if the syntax is wrong.
+			return "${" + format + ":" + prepared + "}";
+		});
 	}
 
 
 	/** Prepares an expression:
 	 * Exchanges labels with their values and b@ and w@ with
 	 * function calls.
-	 * Register names are untouched.
+	 * Register names are also converted into function calls.
 	 * @param expr The expression to evaluate. May contain math expressions and labels.
 	 * Also evaluates numbers in formats like '$4000', '2FACh', 100111b, 'G'.
-	 * E.g. 2*b@abstract(HL+LABEL):hex8
+	 * E.g. 2*b@(HL+LABEL):hex8
 	 * Also extracts the format and set this.format accordingly.
 	 * @param modulePrefix An optional prefix to use for each label. (sjasmplus)
 	 * @param lastLabel An optional last label to use for local labels. (sjasmplus)
-	 * @returns The prepared expression.
+	 * @returns The prepared expression. E.g. ["hex8", "2*await getByte(HL+12345)]"
 	 */
-	public prepareExpression(expr: string): string {
+	public prepareExpression(expr: string): string[] {
 		// Tear apart the format string
 		const match = /([^:]*)(:(.*))?/.exec(expr)!;
 		const expression = match[1].trim();
-		this.format = (match[3] || 'string').trim();
-		if (!['string', 'hex8', 'hex16', 'int8', 'int16', 'uint8', 'uint16', 'bits', 'flags'].includes(this.format))
-			throw Error("Unknown format '" + this.format + "'.");
+		const format = (match[3] || 'string').trim();
+		if (!['string', 'hex8', 'hex16', 'int8', 'int16', 'uint8', 'uint16', 'bits', 'flags'].includes(format))
+			throw Error("Unknown format '" + format + "'.");
 
+		// Replace b@ and w@ with getByte and getWord
+		const exprWithFunc = this.replaceAt(expression);
 		// Replace labels
-		const labelsReplaced = this.replaceLabels(expression);
+		const labelsReplaced = this.replaceLabels(exprWithFunc);
 		// Replace registers
 		const regsReplaced = this.replaceRegisters(labelsReplaced);
-		// Replace b@ and w@ with getByte and getWord
-		const exprWithFunc = this.replaceAt(regsReplaced);
 
-		return exprWithFunc;
+		return [format, regsReplaced];
 	}
 
 
@@ -97,11 +101,12 @@ export class LogEval {
 	 */
 	protected replaceRegisters(expr: string): string {
 		// Replace all registers
-		const regex = /PC|SP|AF|BC|DE|HL|IX|IY|AF'|BC'|DE'|HL'|IR|IM|F|A|C|B|E|D|L|H|IXL|IXH|IYL|IYH|A'|C'|B'|E'|D'|L'|H'|R|I|/ig;
-		const replaced = expr.replace(regex, match => {
-			const reg = match.toUpperCase();
-			const regFunc = `getRegValue(${reg})`;
-			return regFunc;
+		// TODO: test with "AF'"
+		const regex = /\b(AF'|BC'|DE'|HL'|A'|C'|B'|E'|D'|L'|H'|PC|SP|AF|BC|DE|HL|IX|IY|IR|IM|F|A|C|B|E|D|L|H|IXL|IXH|IYL|IYH|R|I)(\W)/ig;
+		const replaced = expr.replace(regex, (_match, p1, p2) => {
+			const reg = p1.toUpperCase();
+			const regFunc = `getRegValue('${reg}')`;
+			return regFunc + p2;
 		});
 		return replaced;
 	}
@@ -123,22 +128,18 @@ export class LogEval {
 	/** Checks the syntax of the expression.
 	 * Throws an exception if the syntax is wrong.
 	 * @param expr The expression to check. Use the output of prepareExpression.
-	 * E.g. string:2*getByte(HL+0x1234)
+	 * E.g. 2*getByte(HL+0x1234)
 	*/
 	protected checkExpressionSyntax(expr: string) {
-		// Check format
-		const match = /((.*):)?(.*)/.exec(expr)!;
-
 		// Make function 'sync' for checking
-		const expression = match[3];
-		const exprSync = expression.replace(/await/g, '');
+		const exprSync = expr.replace(/await/g, '');
 
 		function getByte(addr: number): number {return 1;}
 		function getWord(addr: number): number {return 2;}
-		function getRegValue(addr: number): number {return 14;}
+		function getRegValue(regName: string): number {return 14;}
 
 		function checkEval(expr: string): any {
-			const func = new Function('getByte', 'getWord', `return ${expr};`);
+			const func = new Function('getByte', 'getWord', 'getRegValue', `return ${expr};`);
 			return func(getByte, getWord, getRegValue);
 		}
 
@@ -148,7 +149,8 @@ export class LogEval {
 
 
 	/** Formats a given numeric value according to the specified format.
-	 * @param value - The numeric value to format.
+	 * @param format The format to use.
+	 * @param value The numeric value to format.
 	 * @returns The formatted string representation of the value.
 	 * @throws Will throw an error if the format is unknown.
 	 *
@@ -163,10 +165,10 @@ export class LogEval {
 	 * - 'bits': TODO
 	 * - 'flags': TODO
 	 */
-	protected formatValue(value: number): string {
+	protected formatValue(format: string, value: number): string {
 		// Format
 		let retValue: string;
-		switch (this.format) {
+		switch (format) {
 			case 'string':
 				retValue = value.toString();
 				break;
@@ -207,7 +209,7 @@ export class LogEval {
 				retValue = value.toString(2).padStart(8, '0');	// TODO
 				break;
 			default:
-				throw Error("Unknown format '" + this.format + "'.");
+				throw Error("Unknown format '" + format + "'.");
 		}
 		return retValue;
 	}
@@ -236,13 +238,32 @@ export class LogEval {
 	 */
 	public async evaluate(): Promise<string> {
 		try {
-			// Evaluate
-			const result = this.evalFunc(this.getByteEval.bind(this), this.getWordEval.bind(this), this.getRegValue.bind(this)); // TODO: Maybe I could pass 'this' as variable instead of passing the functions.
-			// Format
-			const retValue = this.formatValue(result);
+			// Evaluate all "${...}" expressions.
+			let match;
+			let k = 0;
+			let evaluatedString = '';
+			while ((match = this.regexMain.exec(this.preparedExpression)) !== null) {
+				const p1 = match[1];
+				const i = match.index;
+				const len = match[0].length;
+				// Divide in format and expression
+				const j = p1.indexOf(':');
+				const format = p1.substring(0, j);
+				const expr = p1.substring(j + 1);
+				const result = await this.customEval(expr);
+				// Format
+				const retValue = this.formatValue(format, result);
+				// Concatenate
+				evaluatedString += this.preparedExpression.substring(k, i);
+				evaluatedString += retValue;
+				// Next
+				k = i + len;
+			}
+			// Add remaining
+			evaluatedString += this.preparedExpression.substring(k);
 
 			// Return string
-			return retValue;
+			return evaluatedString;
 		}
 		catch (e) {
 			// Rethrow, Should not happen because the expression was checked before.
@@ -263,5 +284,11 @@ export class LogEval {
 	protected getRegValue(regName: string): number {
 		const value = this.z80Registers.getRegValueByName(regName);
 		return value;
+	}
+
+	protected async customEval(expr: string): Promise<any> {
+		const func = new Function('getByte', 'getWord', 'getRegValue', `return (async () => { return ${expr}; })();`);
+		const result = func(this.getByteEval.bind(this), this.getWordEval.bind(this), this.getRegValue.bind(this));
+		return result;
 	}
 }
