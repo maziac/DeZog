@@ -786,8 +786,10 @@ export class ZSimRemote extends DzrpRemote {
 								// Emit log?
 								if (log) {
 									// Convert and print
-									const evalLog = await Utility.evalLogString(log)
-									this.emit('debug_console', "Log: " + evalLog);
+									//const evalLog = await Utility.evalLogString(log);
+									const evaluatedLog = await log.evaluate();
+									// Print
+									this.emit('debug_console', "Log: " + evaluatedLog);
 								}
 								// Not a logpoint.
 								// Condition met?

@@ -46,7 +46,7 @@ suite('LogEval', () => {
 						LogEval.prepareExpression(":hex8");
 					});
 					assert.doesNotThrow(() => {
-						(LogEval.prepareExpression(":hex16");
+						LogEval.prepareExpression(":hex16");
 					});
 					assert.doesNotThrow(() => {
 						LogEval.prepareExpression(":int8");
@@ -101,72 +101,72 @@ suite('LogEval', () => {
 		const logEval = new LogEval(remote as any, z80Registers);
 
 		test('simple', async () => {
-			let evalString = await logEval.evalFullExpression("string:await getByte(9)+await getWord(4660)");
+			let evalString = await logEval.evaluate("string:await getByte(9)+await getWord(4660)");
 			assert.equal(evalString, "4669");	// 9 + 4660 = 4669
 		});
 
 
 		suite('format', () => {
 			test('string', async () => {
-				let evalString = await logEval.evalFullExpression("string:1234");
+				let evalString = await logEval.evaluate("string:1234");
 				assert.equal(evalString, "1234");
 			});
 
 			test('boolean', async () => {
-				let evalString = await logEval.evalFullExpression("string:1 == 1");
+				let evalString = await logEval.evaluate("string:1 == 1");
 				assert.equal(evalString, "true");
 			});
 
 			test('hex8', async () => {
-				let evalString = await logEval.evalFullExpression("hex8:10");
+				let evalString = await logEval.evaluate("hex8:10");
 				assert.equal(evalString, "0x0A");
 			});
 			test('hex16', async () => {
-				let evalString = await logEval.evalFullExpression("hex16:258");
+				let evalString = await logEval.evaluate("hex16:258");
 				assert.equal(evalString, "0x0102");
 			});
 
 			test('int8', async () => {
-				let evalString = await logEval.evalFullExpression("int8:10");
+				let evalString = await logEval.evaluate("int8:10");
 				assert.equal(evalString, "10");
-				evalString = await logEval.evalFullExpression("int8:255");
+				evalString = await logEval.evaluate("int8:255");
 				assert.equal(evalString, "-1");
-				evalString = await logEval.evalFullExpression("int8:-2");
+				evalString = await logEval.evaluate("int8:-2");
 				assert.equal(evalString, "-2");
 			});
 			test('int16', async () => {
-				let evalString = await logEval.evalFullExpression("int16:258");
+				let evalString = await logEval.evaluate("int16:258");
 				assert.equal(evalString, "258");
-				evalString = await logEval.evalFullExpression("int16:65535");
+				evalString = await logEval.evaluate("int16:65535");
 				assert.equal(evalString, "-1");
-				evalString = await logEval.evalFullExpression("int16:-2");
+				evalString = await logEval.evaluate("int16:-2");
 				assert.equal(evalString, "-2");
 			});
 
 			test('uint8', async () => {
-				let evalString = await logEval.evalFullExpression("uint8:10");
+				let evalString = await logEval.evaluate("uint8:10");
 				assert.equal(evalString, "10");
-				evalString = await logEval.evalFullExpression("uint8:255");
+				evalString = await logEval.evaluate("uint8:255");
 				assert.equal(evalString, "255");
-				evalString = await logEval.evalFullExpression("uint8:-2");
+				evalString = await logEval.evaluate("uint8:-2");
 				assert.equal(evalString, "254");
 			});
 			test('uint16', async () => {
-				let evalString = await logEval.evalFullExpression("uint16:258");
+				let evalString = await logEval.evaluate("uint16:258");
 				assert.equal(evalString, "258");
-				evalString = await logEval.evalFullExpression("uint16:65535");
+				evalString = await logEval.evaluate("uint16:65535");
 				assert.equal(evalString, "65535");
-				evalString = await logEval.evalFullExpression("uint16:-2");
+				evalString = await logEval.evaluate("uint16:-2");
 				assert.equal(evalString, "65534");
 			});
 
 			test('bits', async () => {
-				let evalString = await logEval.evalFullExpression("bits:258");
+				let evalString = await logEval.evaluate("bits:258");
 				assert.equal(evalString, "TODO");
 			});
 
 			test('flags', async () => {
-				let evalString = await logEval.evalFullExpression("flags:258");
+				let evalString = await logEval.evaluate("flags:258");
 				assert.equal(evalString, "TODO");
 			});
 		});

@@ -17,6 +17,7 @@ import {PromiseCallbacks} from '../../misc/promisecallbacks';
 import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../MemoryModel/zxspectrummemorymodels';
 import {MemoryModelZxNextOneROM} from '../MemoryModel/zxnextmemorymodels';
 import {DzrpTransportTest} from './dzrptransporttest';
+import {LogEval} from '../../misc/logeval';
 
 
 
@@ -774,7 +775,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * - undefined: No log breakpoint or condition not met
 	 * - otherwise: The logpoint text (and condition met).
 	 */
-	protected checkConditionAndLog(bp: GenericBreakpoint | undefined): {condition: string | undefined, log: string | undefined} {
+	protected checkConditionAndLog(bp: GenericBreakpoint | undefined): {condition: string | undefined, log: LogEval | undefined} {
 		if (bp) {
 			if (bp.condition) {
 				// Check if condition is true
@@ -960,9 +961,10 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 					// Emit log?
 					if (cond != undefined && log) {
 						// Convert
-						const evalLog = await Utility.evalLogString(log);
+						//const evalLog = await Utility.evalLogString(log);
+						const evaluatedLog = await log.evaluate();
 						// Print
-						this.emit('debug_console', "Log: " + evalLog);
+						this.emit('debug_console', "Log: " + evaluatedLog);
 						// Don't eval condition again
 						cond = undefined;
 					}

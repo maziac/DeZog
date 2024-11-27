@@ -1,4 +1,4 @@
-import {Labels} from '../labels/labels';
+import {Labels, LabelsClass} from '../labels/labels';
 import {Settings} from '../settings/settings';
 import {Z80RegistersClass} from '../remotes/z80registers';
 import {Remote, RemoteBase} from '../remotes/remotebase';
@@ -26,11 +26,29 @@ export class LogEval {
 	// The Z80 registers.
 	protected z80Registers: Z80RegistersClass;
 
+	// The labels.
+	protected labels: LabelsClass;
+
+	// The output format.
+	protected format: string;
+
+	// The created evaluation function.
+	protected evalFunc: Function;
+
 
 	/** Constructor. */
-	constructor(remote : RemoteBase, z80Registers: Z80RegistersClass) {
+	constructor(expression: string, remote: RemoteBase, z80Registers: Z80RegistersClass, labels: LabelsClass) {
 		this.remote = remote;
 		this.z80Registers = z80Registers;
+		this.labels = labels;
+
+		// Prepare expression
+		const preparedExpr = this.prepareExpression(expression);
+		// Check syntax
+		this.checkExpressionSyntax(preparedExpr);	// Throws an exception if the syntax is wrong.
+
+		// Create evaluation function
+		this.evalFunc = new Function('getByte', 'getWord', 'getRegValue', `return (async () => { return ${preparedExpr}; })();`);
 	}
 
 
@@ -40,17 +58,19 @@ export class LogEval {
 	 * Register names are untouched.
 	 * @param expr The expression to evaluate. May contain math expressions and labels.
 	 * Also evaluates numbers in formats like '$4000', '2FACh', 100111b, 'G'.
-	 * E.g. 2*b@abstract(HL+LABEL):hex
+	 * E.g. 2*b@abstract(HL+LABEL):hex8
+	 * Also extracts the format and set this.format accordingly.
 	 * @param modulePrefix An optional prefix to use for each label. (sjasmplus)
 	 * @param lastLabel An optional last label to use for local labels. (sjasmplus)
-	 * @returns The 'expr' with all labels replaced by numbers.
-	 * E.g. hex:2*getByte(HL+0x1234)
+	 * @returns The prepared expression.
 	 */
-	public static prepareExpression(expr: string, modulePrefix?: string, lastLabel?: string): string {
+	public prepareExpression(expr: string): string {
 		// Tear apart the format string
 		const match = /([^:]*)(:(.*))?/.exec(expr)!;
 		const expression = match[1].trim();
-		const format = (match[3] || 'string').trim();
+		this.format = (match[3] || 'string').trim();
+		if (!['string', 'hex8', 'hex16', 'int8', 'int16', 'uint8', 'uint16', 'bits', 'flags'].includes(this.format))
+			throw Error("Unknown format '" + this.format + "'.");
 
 		// Get all labels and registers replaced with numbers
 		const exprLabelled = Utility.replaceVarsWithValues(expression, false, modulePrefix, lastLabel);
@@ -60,12 +80,8 @@ export class LogEval {
 		const exprWithFunc = exprLabelled.replace(regexAt, (match, p1) => {
 			return (p1 === 'w') ? 'await getWord(' : 'await getByte(';
 		});
-		const result = format + ':' + exprWithFunc;
 
-		// Check
-		this.checkExpressionSyntax(result);
-
-		return result;
+		return exprWithFunc;
 	}
 
 
@@ -74,12 +90,9 @@ export class LogEval {
 	 * @param expr The expression to check. Use the output of prepareExpression.
 	 * E.g. string:2*getByte(HL+0x1234)
 	*/
-	protected static checkExpressionSyntax(expr: string) {
+	protected checkExpressionSyntax(expr: string) {
 		// Check format
 		const match = /((.*):)?(.*)/.exec(expr)!;
-		const format = match[2];
-		if (!['string', 'hex8', 'hex16', 'int8', 'int16', 'uint8', 'uint16', 'bits', 'flags'].includes(format))
-			throw Error("Unknown format '" + format + "'.");
 
 		// Make function 'sync' for checking
 		const expression = match[3];
@@ -98,6 +111,84 @@ export class LogEval {
 	}
 
 
+	/** Formats a given numeric value according to the specified format.
+	 * @param value - The numeric value to format.
+	 * @returns The formatted string representation of the value.
+	 * @throws Will throw an error if the format is unknown.
+	 *
+	 * The possible formats are:
+	 * - 'string': Converts the value to a string.
+	 * - 'hex8': Converts the value to a hexadecimal string with at least 2 digits, prefixed with '0x'.
+	 * - 'hex16': Converts the value to a hexadecimal string with at least 4 digits, prefixed with '0x'.
+	 * - 'int8': Converts the value to an 8-bit signed integer string.
+	 * - 'int16': Converts the value to a 16-bit signed integer string.
+	 * - 'uint8': Converts the value to an 8-bit unsigned integer string.
+	 * - 'uint16': Converts the value to a 16-bit unsigned integer string.
+	 * - 'bits': TODO
+	 * - 'flags': TODO
+	 */
+	protected formatValue(value: number): string {
+		// Format
+		let retValue: string;
+		switch (this.format) {
+			case 'string':
+				retValue = value.toString();
+				break;
+			case 'hex8':
+				retValue = '0x' + Utility.getHexString(value, 2);
+				break;
+			case 'hex16':
+				retValue = '0x' + Utility.getHexString(value, 4);
+				break;
+			case 'int8': {
+				let iResult = value & 0xFF;
+				if (iResult > 0x7F)
+					iResult -= 0x100;
+				retValue = iResult.toString();
+			}
+				break;
+			case 'int16': {
+				let iResult = value & 0xFFFF;
+				if (iResult > 0x7FFF)
+					iResult -= 0x10000;
+				retValue = iResult.toString();
+			}
+				break;
+			case 'uint8': {
+				let iResult = value & 0xFF;
+				retValue = iResult.toString();
+			}
+				break;
+			case 'uint16': {
+				let iResult = value & 0xFFFF;
+				retValue = iResult.toString();
+			}
+				break;
+			case 'bits':
+				retValue = value.toString(2).padStart(8, '0');
+				break;
+			case 'flags':
+				retValue = value.toString(2).padStart(8, '0');	// TODO
+				break;
+			default:
+				throw Error("Unknown format '" + this.format + "'.");
+		}
+		return retValue;
+	}
+
+
+	/**
+	 * The function `evaluate` in TypeScript asynchronously evaluates an expression based on a specified
+	 * format and returns the result in the desired format.
+	 * @param {string} expr - The `evaluate` function takes an expression string as input, which consists
+	 * of a format specifier followed by the expression to evaluate. The format specifier determines how
+	 * the result of the expression should be formatted.
+	 * @returns The `evaluate` function returns a Promise that resolves to a string value based on the
+	 * format specified in the input expression. The function first extracts the format and expression
+	 * from the input string, then evaluates the expression using a custom evaluation function. Depending
+	 * on the format specified, it processes the result accordingly and returns the formatted string
+	 * value. If an unknown format is encountered, it throws an error.
+	 */
 	/** Evals a full expression.
 	 * Labels have already been replaced with their values and b@ and w@ with getByte and getWord.
 	 * See prepareExpression.
@@ -107,61 +198,12 @@ export class LogEval {
 	 * E.g. string:2*getByte(HL+2453)
 	 * @returns The output of the evaluation as string.
 	 */
-	public async evalFullExpression(expr: string): Promise<string> {
+	public async evaluate(): Promise<string> {
 		try {
-			// Get format
-			const k = expr.indexOf(':');
-			const format = expr.substring(0, k);
-			const expression = expr.substring(k + 1);
-
 			// Evaluate
-			const result = await this.customEval(expression);
-
+			const result = this.evalFunc(this.getByteEval.bind(this), this.getWordEval.bind(this), this.getRegValue.bind(this)); // TODO: Maybe I could pass 'this' as variable instead of passing the functions.
 			// Format
-			let retValue: string;
-			switch (format) {
-				case 'string':
-					retValue = result.toString();
-					break;
-				case 'hex8':
-					retValue = '0x' + Utility.getHexString(result, 2);
-					break;
-				case 'hex16':
-					retValue = '0x' + Utility.getHexString(result, 4);
-					break;
-				case 'int8': {
-						let iResult = result & 0xFF;
-						if (iResult > 0x7F)
-							iResult -= 0x100;
-						retValue = iResult.toString();
-					}
-					break;
-				case 'int16': {
-						let iResult = result & 0xFFFF;
-						if (iResult > 0x7FFF)
-							iResult -= 0x10000;
-						retValue = iResult.toString();
-					}
-					break;
-				case 'uint8': {
-						let iResult = result & 0xFF;
-						retValue = iResult.toString();
-					}
-					break;
-				case 'uint16': {
-						let iResult = result & 0xFFFF;
-						retValue = iResult.toString();
-					}
-					break;
-				case 'bits':
-					retValue = result.toString(2).padStart(8, '0');
-					break;
-				case 'flags':
-					retValue = result.toString(2).padStart(8, '0');	// TODO
-					break;
-				default:
-					throw Error("Unknown format '" + format + "'.");
-			}
+			const retValue = this.formatValue(result);
 
 			// Return string
 			return retValue;
@@ -182,8 +224,8 @@ export class LogEval {
 		return value[0] + 256 * value[1];
 	}
 
-	protected getRegValue(regName: string): Promise<number> {
-		const value = this.z80Registers.getRegValue(regName);
+	protected getRegValue(regName: string): number {
+		const value = this.z80Registers.getRegValueByName(regName);
 		return value;
 	}
 

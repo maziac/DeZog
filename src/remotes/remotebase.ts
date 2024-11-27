@@ -12,6 +12,7 @@ import {Opcode, OpcodeFlag} from '../disassembler/core/opcode';
 import {Disassembly, DisassemblyClass} from '../disassembler/disassembly';
 import {MemoryBank, MemoryModel} from './MemoryModel/memorymodel';
 import {Log} from '../log';
+import {LogEval} from '../misc/logeval';
 
 
 
@@ -486,7 +487,8 @@ export class RemoteBase extends EventEmitter {
 				}
 				// Convert labels
 				try {
-					const log = this.evalLogMessage(logMsg);
+					//const log = this.evalLogMessage(logMsg);
+					const log = new LogEval(logMsg, this, Z80Registers, Labels);
 					// set watchpoint
 					array.push({longAddress: entry.address, condition: '', log: log});
 				}
