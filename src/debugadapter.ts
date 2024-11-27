@@ -39,6 +39,7 @@ import {RenderHtml} from './disassembler/renderhtml';
 import {ExceptionBreakpoints} from './exceptionbreakpoints';
 import {MemoryCommands} from './commands/memorycommands';
 import {Run} from './run';
+import {LogEval} from './misc/logeval';
 
 
 
@@ -849,14 +850,17 @@ export class DebugSessionClass extends DebugSession {
 		const bps = new Array<RemoteBreakpoint>();
 		for (const bp of givenBps) {
 			try {
-				const log = Remote.evalLogMessage(bp.logMessage);
+				//const log = Remote.evalLogMessage(bp.logMessage);
+				let log;
+				if (bp.logMessage)
+					log = new LogEval(bp.logMessage, Remote, Z80Registers, Labels);
 				const mbp: RemoteBreakpoint = {
 					bpId: 0,
 					filePath: path,
 					lineNr: this.convertClientLineToDebugger(bp.line),
 					longAddress: -1,	// not known yet
 					condition: (bp.condition) ? bp.condition : '',
-					log: log
+					log
 				};
 				bps.push(mbp);
 			}

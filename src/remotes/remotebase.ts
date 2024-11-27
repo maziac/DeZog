@@ -511,6 +511,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param logMsg A message in log format, e.g. "Status=${w@(status_byte):unsigned}"
 	 * @returns The converted string. I.e. label names are converted to numbers.
 	 */
+	// TODO: Remove?
 	protected regexLogMessage = /(([bw]@)?\s*\(\s*(.*?)\s*\)|(.*)\s*)\s*(:\s*(unsigned|signed|hex|bits|flags))?\s*/i;
 	public evalLogMessage(logMsg: string | undefined): string | undefined {
 		if (!logMsg)

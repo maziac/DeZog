@@ -1,14 +1,6 @@
-import {Labels, LabelsClass} from '../labels/labels';
-import {Settings} from '../settings/settings';
+import {LabelsClass} from '../labels/labels';
 import {Z80RegistersClass} from '../remotes/z80registers';
-import {Remote, RemoteBase} from '../remotes/remotebase';
-import * as fs from 'fs';
-import {UnifiedPath} from './unifiedpath';
-import {Log} from '../log';
-//import requireFromString from 'require-from-string';
-import * as vm from 'vm';
-import * as jsonc from 'jsonc-parser';
-import {HexNumber} from '../settings/settingscustommemory';
+import {RemoteBase} from '../remotes/remotebase';
 import {Utility} from '../misc/utility';
 
 
@@ -72,16 +64,59 @@ export class LogEval {
 		if (!['string', 'hex8', 'hex16', 'int8', 'int16', 'uint8', 'uint16', 'bits', 'flags'].includes(this.format))
 			throw Error("Unknown format '" + this.format + "'.");
 
-		// Get all labels and registers replaced with numbers
-		const exprLabelled = Utility.replaceVarsWithValues(expression, false, modulePrefix, lastLabel);
-
-		// Exchange w@(...) and b@(...) with getWord(...) and getByte(...)
-		const regexAt = /([bw])@\(/g;
-		const exprWithFunc = exprLabelled.replace(regexAt, (match, p1) => {
-			return (p1 === 'w') ? 'await getWord(' : 'await getByte(';
-		});
+		// Replace labels
+		const labelsReplaced = this.replaceLabels(expression);
+		// Replace registers
+		const regsReplaced = this.replaceRegisters(labelsReplaced);
+		// Replace b@ and w@ with getByte and getWord
+		const exprWithFunc = this.replaceAt(regsReplaced);
 
 		return exprWithFunc;
+	}
+
+
+	/** Replaces all labels with their numbers.
+	 * (Supports only fully qualified labels.)
+	 * @param expr The expression to replace the labels in.
+	 * @returns The expression with the labels replaced.
+	 */
+	protected replaceLabels(expr: string): string {
+		const regex = /[A-Za-z_][A-Za-z0-9_]*/g;
+		const replaced = expr.replace(regex, match => {
+			const lbl = match;
+			const value = this.labels.getNumberFromString64k(lbl);
+			return (isNaN(value)) ? lbl : value.toString();
+		});
+		return replaced;
+	}
+
+
+	/** Replaces all registers.
+	 * @param expr The expression to replace the registers in.
+	 * @returns The expression with the registers replaced.
+	 */
+	protected replaceRegisters(expr: string): string {
+		// Replace all registers
+		const regex = /PC|SP|AF|BC|DE|HL|IX|IY|AF'|BC'|DE'|HL'|IR|IM|F|A|C|B|E|D|L|H|IXL|IXH|IYL|IYH|A'|C'|B'|E'|D'|L'|H'|R|I|/ig;
+		const replaced = expr.replace(regex, match => {
+			const reg = match.toUpperCase();
+			const regFunc = `getRegValue(${reg})`;
+			return regFunc;
+		});
+		return replaced;
+	}
+
+
+	/** Replaces all b@(...) and w@(...) with 'await getByte/Word(...)'.
+	 * @param expr The expression to replace the b@ and w@ in.
+	 * @returns The expression with the b@ and w@ replaced.
+	 */
+	protected replaceAt(expr: string): string {
+		const regex = /([bw])@\(/g;
+		const replaced = expr.replace(regex, (match, p1) => {
+			return (p1 === 'w') ? 'await getWord(' : 'await getByte(';
+		});
+		return replaced;
 	}
 
 
@@ -100,10 +135,11 @@ export class LogEval {
 
 		function getByte(addr: number): number {return 1;}
 		function getWord(addr: number): number {return 2;}
+		function getRegValue(addr: number): number {return 14;}
 
 		function checkEval(expr: string): any {
 			const func = new Function('getByte', 'getWord', `return ${expr};`);
-			return func(getByte, getWord);
+			return func(getByte, getWord, getRegValue);
 		}
 
 		// Check syntax
@@ -227,11 +263,5 @@ export class LogEval {
 	protected getRegValue(regName: string): number {
 		const value = this.z80Registers.getRegValueByName(regName);
 		return value;
-	}
-
-	protected async customEval(expr: string): Promise<any> {
-		const func = new Function('getByte', 'getWord', 'getRegValue' , `return (async () => { return ${expr}; })();`);
-		const result = func(this.getByteEval.bind(this), this.getWordEval.bind(this), this.getRegValue.bind(this));
-		return result;
 	}
 }
