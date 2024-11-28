@@ -60,7 +60,7 @@ export class LogEval {
 	 * @param lastLabel An optional last label to use for local labels. (sjasmplus)
 	 * @returns The prepared expression. E.g. ["hex8", "2*await getByte(HL+12345)]"
 	 */
-	public prepareExpression(expr: string): string[] {
+	protected prepareExpression(expr: string): string[] {
 		// Tear apart the format string
 		const match = /([^:]*)(:(.*))?/.exec(expr)!;
 		const expression = match[1].trim();
@@ -102,10 +102,10 @@ export class LogEval {
 	protected replaceRegisters(expr: string): string {
 		// Replace all registers
 		// TODO: test with "AF'"
-		const regex = /\b(AF'|BC'|DE'|HL'|A'|C'|B'|E'|D'|L'|H'|PC|SP|AF|BC|DE|HL|IX|IY|IR|IM|F|A|C|B|E|D|L|H|IXL|IXH|IYL|IYH|R|I)(\W)/ig;
+		const regex = /\b(AF'|BC'|DE'|HL'|A'|C'|B'|E'|D'|L'|H'|PC|SP|AF|BC|DE|HL|IX|IY|IR|IM|F|A|C|B|E|D|L|H|IXL|IXH|IYL|IYH|R|I)(\W|$)/ig;
 		const replaced = expr.replace(regex, (_match, p1, p2) => {
 			const reg = p1.toUpperCase();
-			const regFunc = `getRegValue('${reg}')`;
+			const regFunc = `getRegValue("${reg}")`;
 			return regFunc + p2;
 		});
 		return replaced;
@@ -215,8 +215,7 @@ export class LogEval {
 	}
 
 
-	/**
-	 * The function `evaluate` in TypeScript asynchronously evaluates an expression based on a specified
+	/** The function `evaluate` in TypeScript asynchronously evaluates an expression based on a specified
 	 * format and returns the result in the desired format.
 	 * @param {string} expr - The `evaluate` function takes an expression string as input, which consists
 	 * of a format specifier followed by the expression to evaluate. The format specifier determines how

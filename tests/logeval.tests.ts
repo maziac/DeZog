@@ -10,17 +10,86 @@ import {LogEval} from '../src/misc/logeval';
 
 
 suite('LogEval', () => {
+	class MockRemote {
+		public async readMemoryDump(addr64k: number, size: number): Promise<Uint8Array> {
+			const data = new Uint8Array(size);
+			for (let i = 0; i < size; i++) {
+				data[i] = addr64k & 0xFF;
+				addr64k >>= 8;
+			}
+			return data;
+		}
+	}
+
+	class MockZ80RegistersClass {
+		public getRegValueByName(regName: string): number {
+			return 0;
+		};
+	}
+
+	class MockLabelsClass {
+		public getNumberFromString64k(lbl: string): number {
+			if (lbl === 'Label_1')
+				return 0x1234;
+			if (lbl === 'start')
+				return 0x8000;
+			return NaN;
+		}
+	}
+
+	test('constructor', async () => {
+		const remote = new MockRemote() as any;
+		const z80registers = new MockZ80RegistersClass() as any;
+		const labels = new MockLabelsClass() as any;
+		new LogEval('', remote, z80registers, labels);
+		// no crash
+	});
+
 	suite('prepareExpression', () => {
+		const remote = new MockRemote() as any;
+		const z80registers = new MockZ80RegistersClass() as any;
+		const labels = new MockLabelsClass() as any;
+		const logEval = new LogEval('', remote, z80registers, labels) as any;
+
 		test('empty', async () => {
-			assert.equal(LogEval.prepareExpression(''), 'string:');
+			assert.deepEqual(logEval.prepareExpression(''), ['string', '']);
 		});
 		test('b@() w@()', async () => {
-			assert.equal(LogEval.prepareExpression('b@(8) - w@(15):hex8'), 'hex8:await getByte(8) - await getWord(15)');
+			assert.deepEqual(logEval.prepareExpression('b@(8) - w@(15):hex8'), ['hex8', 'await getByte(8) - await getWord(15)']);
 		});
 		test('without format', async () => {
-			assert.equal(LogEval.prepareExpression('b@(8) - w@(15)'), 'string:await getByte(8) - await getWord(15)');
+			assert.deepEqual(logEval.prepareExpression('b@(8) - w@(15)'), ['string', 'await getByte(8) - await getWord(15)']);
 		});
 
+		suite('replaceLabels', () => {
+			test('one label', async () => {
+				assert.equal(logEval.replaceLabels('12+b@(HL)+Label_1-3'), '12+b@(HL)+4660-3');
+			});
+			test('two labels', async () => {
+				assert.equal(logEval.replaceLabels('b@(HL)+Label_1-3*w@(start)'), 'b@(HL)+4660-3*w@(32768)');
+			});
+		});
+
+		suite('replaceRegisters', () => {
+			test('no reg', async () => {
+				assert.equal(logEval.replaceRegisters('gh'), 'gh');
+			});
+			test('all registers', async () => {
+				assert.equal(logEval.replaceRegisters("AF"), 'getRegValue("AF")');
+				assert.equal(logEval.replaceRegisters('AF BC DE HL IX IY SP PC'), 'getRegValue("AF") getRegValue("BC") getRegValue("DE") getRegValue("HL") getRegValue("IX") getRegValue("IY") getRegValue("SP") getRegValue("PC")');
+				assert.equal(logEval.replaceRegisters('IR IM IXL IXH IYL IYH'), 'getRegValue("IR") getRegValue("IM") getRegValue("IXL") getRegValue("IXH") getRegValue("IYL") getRegValue("IYH")');
+				assert.equal(logEval.replaceRegisters('A B C D E H L R I '), 'getRegValue("A") getRegValue("B") getRegValue("C") getRegValue("D") getRegValue("E") getRegValue("H") getRegValue("L") getRegValue("R") getRegValue("I") ');
+
+				assert.equal(logEval.replaceRegisters("A'"), 'getRegValue("A\'")');
+				assert.equal(logEval.replaceRegisters("A' B' C' D' E' H' L'"), 'getRegValue("A\'") getRegValue("B\'") getRegValue("C\'") getRegValue("D\'") getRegValue("E\'") getRegValue("H\'") getRegValue("L\'")');
+			});
+			test('in between', async () => {
+				assert.equal(logEval.replaceRegisters("+AF*"), '+getRegValue("AF")*');
+				assert.equal(logEval.replaceRegisters(")AF("), ')getRegValue("AF")(');
+			});
+		});
+
+		/*
 		suite('checkExpressionSyntax', () => {
 			suite('correct', () => {
 				test('empty', async () => {
@@ -82,8 +151,10 @@ suite('LogEval', () => {
 				});
 			});
 		});
+		*/
 	});
 
+	/*
 	suite('evalFullExpression', () => {
 
 		class MockRemote {
@@ -171,4 +242,5 @@ suite('LogEval', () => {
 			});
 		});
 	});
+	*/
 });

@@ -956,7 +956,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				for (const bp of bps) {
 					// Check for condition
 					let {condition: cond, log} = this.checkConditionAndLog(bp);
-					//condition=cond;
 
 					// Emit log?
 					if (cond != undefined && log) {
