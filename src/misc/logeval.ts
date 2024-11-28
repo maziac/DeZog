@@ -173,10 +173,10 @@ export class LogEval {
 				retValue = value.toString();
 				break;
 			case 'hex8':
-				retValue = '0x' + Utility.getHexString(value, 2);
+				retValue = '0x' + Utility.getHexString(value & 0xFF, 2);
 				break;
 			case 'hex16':
-				retValue = '0x' + Utility.getHexString(value, 4);
+				retValue = '0x' + Utility.getHexString(value & 0xFFFF, 4);
 				break;
 			case 'int8': {
 				let iResult = value & 0xFF;

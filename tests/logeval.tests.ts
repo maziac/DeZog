@@ -54,11 +54,66 @@ suite('LogEval', () => {
 		test('empty', async () => {
 			assert.deepEqual(logEval.prepareExpression(''), ['string', '']);
 		});
+
 		test('b@() w@()', async () => {
 			assert.deepEqual(logEval.prepareExpression('b@(8) - w@(15):hex8'), ['hex8', 'await getByte(8) - await getWord(15)']);
 		});
 		test('without format', async () => {
 			assert.deepEqual(logEval.prepareExpression('b@(8) - w@(15)'), ['string', 'await getByte(8) - await getWord(15)']);
+		});
+
+		test('format', async () => {
+			let res;
+			assert.doesNotThrow(() => {
+				res = logEval.prepareExpression(":string");
+			});
+			assert.deepEqual(res, ['string', '']);
+
+			assert.doesNotThrow(() => {
+				res = logEval.prepareExpression(":hex8");
+			});
+			assert.deepEqual(res, ['hex8', '']);
+
+			assert.doesNotThrow(() => {
+				res = logEval.prepareExpression(":hex16");
+			});
+			assert.deepEqual(res, ['hex16', '']);
+
+			assert.doesNotThrow(() => {
+				res = logEval.prepareExpression(":int8");
+			});
+			assert.deepEqual(res, ['int8', '']);
+
+			assert.doesNotThrow(() => {
+				res = logEval.prepareExpression(":int16");
+			});
+			assert.deepEqual(res, ['int16', '']);
+
+			assert.doesNotThrow(() => {
+				res = logEval.prepareExpression(":uint8");
+			});
+			assert.deepEqual(res, ['uint8', '']);
+
+			assert.doesNotThrow(() => {
+				res = logEval.prepareExpression(":uint16");
+			});
+			assert.deepEqual(res, ['uint16', '']);
+
+			assert.doesNotThrow(() => {
+				res = logEval.prepareExpression(":bits");
+			});
+			assert.deepEqual(res, ['bits', '']);
+
+			assert.doesNotThrow(() => {
+				res = logEval.prepareExpression(":flags");
+			});
+			assert.deepEqual(res, ['flags', '']);
+		});
+
+		test('wrong format', async () => {
+			assert.throws(() => {
+				logEval.prepareExpression(":xxx");
+			});
 		});
 
 		suite('replaceLabels', () => {
@@ -89,69 +144,79 @@ suite('LogEval', () => {
 			});
 		});
 
-		/*
+		suite('replaceAt', () => {
+			test('b@(...)', async () => {
+				assert.equal(logEval.replaceAt('b@(20+5)'), 'await getByte(20+5)');
+			});
+			test('w@(...)', async () => {
+				assert.equal(logEval.replaceAt('5*w@(20+5)-3'), '5*await getWord(20+5)-3');
+			});
+		});
+
 		suite('checkExpressionSyntax', () => {
 			suite('correct', () => {
 				test('empty', async () => {
 					assert.doesNotThrow(() => {
-						LogEval.prepareExpression(":string");
+						logEval.checkExpressionSyntax("");
 					});
 				});
 				test('getByte/Word', async () => {
 					assert.doesNotThrow(() => {
-						LogEval.prepareExpression("await getByte(9)+await getWord(8):string");
+						logEval.checkExpressionSyntax("await getByte(9)+await getWord(8)");
 					});
 				});
 				test('boolean', async () => {
 					assert.doesNotThrow(() => {
-						LogEval.prepareExpression("2 == 2:string");
-					});
-				});
-				test('format', async () => {
-					assert.doesNotThrow(() => {
-						LogEval.prepareExpression(":string");
-					});
-					assert.doesNotThrow(() => {
-						LogEval.prepareExpression(":hex8");
-					});
-					assert.doesNotThrow(() => {
-						LogEval.prepareExpression(":hex16");
-					});
-					assert.doesNotThrow(() => {
-						LogEval.prepareExpression(":int8");
-					});
-					assert.doesNotThrow(() => {
-						LogEval.prepareExpression(":int16");
-					});
-					assert.doesNotThrow(() => {
-						LogEval.prepareExpression(":uint8");
-					});
-					assert.doesNotThrow(() => {
-						LogEval.prepareExpression(":uint16");
-					});
-					assert.doesNotThrow(() => {
-						LogEval.prepareExpression(":bits");
-					});
-					assert.doesNotThrow(() => {
-						LogEval.prepareExpression(":flags");
+						logEval.checkExpressionSyntax("2 == 2");
 					});
 				});
 			});
-		});
 
-		suite('wrong', () => {
-			test('format', async () => {
-				assert.throws(() => {
-					LogEval.prepareExpression(":xxx");
-				});
-			});
-			test('* * (wrong syntax)', async () => {
-				assert.throws(() => {
-					LogEval.prepareExpression("await getByte(9)* *await getWord(8):string");
+			suite('wrong', () => {
+				test('* * (wrong syntax)', async () => {
+					assert.throws(() => {
+						logEval.checkExpressionSyntax("await getByte(9)* *await getWord(8):string");
+					});
 				});
 			});
 		});
-		*/
+	});
+
+	suite('formatValue', () => {
+		const logEval = new LogEval('', undefined as any, undefined as any, undefined as any) as any;
+		test('string', async () => {
+			assert.equal(logEval.formatValue('string', 1234), '1234');
+		});
+		test('hex8', async () => {
+			assert.equal(logEval.formatValue('hex8', 0xABCD), '0xCD');
+		});
+		test('hex16', async () => {
+			assert.equal(logEval.formatValue('hex16', 0xABCD), '0xABCD');
+		});
+		test('int8', async () => {
+			assert.equal(logEval.formatValue('int8', 0xAB56), '86');
+		});
+		test('int8', async () => {
+			assert.equal(logEval.formatValue('int8', 0xABFE), '-2');
+		});
+		test('int16', async () => {
+			assert.equal(logEval.formatValue('int16', 0x12345), '9029');
+		});
+		test('int16', async () => {
+			assert.equal(logEval.formatValue('int16', 0x1FFFE), '-2');
+		});
+		test('uint8', async () => {
+			assert.equal(logEval.formatValue('uint8', 0x129A), '154');
+		});
+		test('uint16', async () => {
+			assert.equal(logEval.formatValue('uint16', 0x3FE9A), '65178');
+		});
+		test('bits', async () => {
+			assert.equal(logEval.formatValue('bits', 1234), 'TODO');
+		});
+		test('flags', async () => {
+			assert.equal(logEval.formatValue('flags', 1234), 'TODO');
+		});
 	});
 
 	/*
