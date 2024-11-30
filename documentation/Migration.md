@@ -1,5 +1,9 @@
 This guide will provide some info what to do to update your projects from an earlier version.
 
+# Migrate from DeZog 3.5.1 to DeZog 3.5.2
+There are changes to the syntax for LOGPOINTs. Please refer to the [Usage.md](Usage.md#logpoint).
+
+
 # Migrate from DeZog 3.4 to DeZog 3.5
 zsim:
 - The "vsyncInterrupt" has been removed. It is automatically enabled if the spectrum ULA (ulaScreen = 'spectrum') is enabled.

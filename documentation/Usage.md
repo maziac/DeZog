@@ -1759,24 +1759,25 @@ A LOGPOINT is translated by DeZog into a breakpoint that does not stop execution
 The LOGPOINT syntax is:
 
 ~~~
-; LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ${b@(reg):unsigned}
+; LOGPOINT [group] text ${expression[:format]}
 ~~~
 with:
 
 - [group]: (Note: the [ ] are meant literally here) The log group. Separate log groups might be turned on/off separately. E.g. "[SPRITES]". If omitted "DEFAULT" is used as group.
-- reg: a register name, e.g. A, BC, HL, IX, H, IXL.
-- var: a label.
-- Allowed modifiers are ':signed', ':unsigned', ':hex', ':bits' and ':flags' (for register F).
-- text: A simple text that may include variables. Here are a few examples for variables:
-    - ```LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}```
-    - ```LOGPOINT Status=${w@(HL)}, ${(DE)}, ${b@(DE)}```
-Note: ```${(DE)}``` is equal to ```${b@(DE)}``` and prints the byte value at DE.
+- expression: a mathematical expression, e.g. 2*7. It can contain special values like:
+  - register names, e.g. A, BC, HL, IX, H, IXL, AF'
+  - labels
+  - memory accessors: b@(...) and w@(...) to obtain a byte or a word at the memory position
+- optional formatting: 'string', 'hex8', 'hex16', 'int8', 'int16', 'uint8', 'uint16', 'bits', 'flags'
+- examples:
+    - ```LOGPOINT [SPRITES] Status=${A:hex8}, Counter=${b@(sprite.counter)}```
+    - ```LOGPOINT Status=${w@(HL)}, ${DE}, ${b@(DE+1)}```
 
 In the vscode UI LOGPOINT breakpoints can be turned on or off altogether in the breakpoints pane:
 ![](images/exception_bp_logpoint.jpg)
 
 As LOGPOINTs are organized in groups you can turn on also only specific LOGPOINT groups.
-This is done by editing the LOGPOINTs in vscode (i.e. press the small pecil right to the 'LOGPOINTs' text). You have to pass a space separated list of the groups you want to enable.
+This is done by editing the LOGPOINTs in vscode (i.e. press the small pencil right to the 'LOGPOINTs' text). You have to pass a space separated list of the groups you want to enable.
 ![](images/exception_bp_logpoint_edited.jpg)
 If no group is given always all groups will be enabled (disabled).
 
@@ -1785,8 +1786,7 @@ Notes:
 - The LOGPOINTs are checked in the list file. I.e. whenever you change a LOGPOINT it is not immediately used. You have to assemble a new list file and start the debugger anew.
 - LOGPOINTs are not available in ZEsarUX.
 - sjasmplus: If you use label names make sure to use the global name (i.e. full dot notation).
-- LOGPOINTs can do math with fixed labels but not with registers. I.e. ```${b@(my_data+5)}``` will work. It will statically calculate ```my_data+5``` and lookup the memory value. But ```${b@(IX+1)}``` will not work as it would have to dynamically calculate ```IX+1``` at runtime.
-
+- You can also create temporary logpoints in vscode's UI: where you would normally create a breakpoint by a mouse-click in the assembly file do a right-click instead and choose "Add logpoint...". Now enter the logpoint text as explained above.
 
 ### Break on Interrupt
 
