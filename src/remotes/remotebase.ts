@@ -487,7 +487,6 @@ export class RemoteBase extends EventEmitter {
 				}
 				// Convert labels
 				try {
-					//const log = this.evalLogMessage(logMsg);
 					const log = new LogEval(logMsg, this, Z80Registers, Labels);
 					// set watchpoint
 					array.push({longAddress: entry.address, condition: '', log: log});
@@ -502,61 +501,6 @@ export class RemoteBase extends EventEmitter {
 		}
 
 		return logpoints;
-	}
-
-
-	/** Evaluates a log message, i.e. a message that was given for a logpoint.
-	 * The format is checked and also the labels are changed into numbers.
-	 * Throws an exception in case of a formatting error.
-	 * @param logMsg A message in log format, e.g. "Status=${w@(status_byte):unsigned}"
-	 * @returns The converted string. I.e. label names are converted to numbers.
-	 */
-	// TODO: Remove?
-	protected regexLogMessage = /(([bw]@)?\s*\(\s*(.*?)\s*\)|(.*)\s*)\s*(:\s*(unsigned|signed|hex|bits|flags))?\s*/i;
-	public evalLogMessage(logMsg: string | undefined): string | undefined {
-		if (!logMsg)
-			return undefined
-
-		// Search all "${...}""
-		const result = logMsg.replace(/\${\s*(.*?)\s*}/g, (match, inner) => {
-			// Check syntax
-			const matchInner = this.regexLogMessage.exec(inner); // NOSONAR
-			if (!matchInner)
-				throw Error("Log message format error: '" + match + "' in '" + logMsg + "'");
-			const end = (matchInner[6]) ? ':' + matchInner[6] : '';
-			let addr = matchInner[3] || '';
-			if (addr.length) {
-				const access = matchInner[2] || '';
-				// Check if it is a register
-				if (Z80RegistersClass.isRegister(addr)) {
-					// e.g. addr == "HL" in "(HL)"
-					return "${" + access + "(" + addr + ")" + end + "}";
-				}
-				else {
-					// Check variable for label
-					try {
-						//console.log('evalLogMessage: ' + logMsg + ': ' + addr);
-						const converted = Utility.evalExpression(addr, false);
-						return "${" + access + "(" + converted.toString() + ")" + end + "}";
-					}
-					catch (e) {
-						// If it cannot be converted (e.g. a register name) an exception will be thrown.
-						throw Error("Log message format error: " + e.message + " in '" + logMsg + "'");
-					}
-				}
-			}
-			else {
-				// Should be a register (Note: this is not 100% fool proof since there are more registers defined than allowed in logs)
-				const reg = matchInner[4];
-				if (!Z80RegistersClass.isRegister(reg))
-					throw Error("Log message format error: Unsupported register '" + reg + "' in '" + logMsg + "'");
-				return "${" + reg + end + "}";
-			}
-		});
-
-		//console.log('evalLog(point)Message: ' + result);
-		Log.log('evalLog(point)Message: ' + result);
-		return result;
 	}
 
 

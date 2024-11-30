@@ -850,7 +850,6 @@ export class DebugSessionClass extends DebugSession {
 		const bps = new Array<RemoteBreakpoint>();
 		for (const bp of givenBps) {
 			try {
-				//const log = Remote.evalLogMessage(bp.logMessage);
 				let log;
 				if (bp.logMessage)
 					log = new LogEval(bp.logMessage, Remote, Z80Registers, Labels);
@@ -866,7 +865,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 			catch (e) {
 				// Show error
-				this.showWarning(e.message);
+				this.showWarning(e.message + ' in "' + bp.logMessage + '"');
 			}
 		}
 

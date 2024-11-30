@@ -53,18 +53,18 @@ suite('LogEval', () => {
 		const labels = new MockLabelsClass() as any;
 		const logEval = new LogEval('', remote, z80registers, labels) as any;
 
-		test('empty', async () => {
+		test('empty', () => {
 			assert.deepEqual(logEval.prepareExpression(''), ['string', '']);
 		});
 
-		test('b@() w@()', async () => {
+		test('b@() w@()', () => {
 			assert.deepEqual(logEval.prepareExpression('b@(8) - w@(15):hex8'), ['hex8', 'await getByte(8) - await getWord(15)']);
 		});
-		test('without format', async () => {
+		test('without format', () => {
 			assert.deepEqual(logEval.prepareExpression('b@(8) - w@(15)'), ['string', 'await getByte(8) - await getWord(15)']);
 		});
 
-		test('format', async () => {
+		test('format', () => {
 			let res;
 			assert.doesNotThrow(() => {
 				res = logEval.prepareExpression(":string");
@@ -112,26 +112,38 @@ suite('LogEval', () => {
 			assert.deepEqual(res, ['flags', '']);
 		});
 
-		test('wrong format', async () => {
+		test('wrong format', () => {
 			assert.throws(() => {
 				logEval.prepareExpression(":xxx");
 			});
 		});
 
 		suite('replaceLabels', () => {
-			test('one label', async () => {
+			test('one label', () => {
 				assert.equal(logEval.replaceLabels('12+b@(HL)+Label_1-3'), '12+b@(HL)+4660-3');
 			});
-			test('two labels', async () => {
+			test('two labels', () => {
 				assert.equal(logEval.replaceLabels('b@(HL)+Label_1-3*w@(start)'), 'b@(HL)+4660-3*w@(32768)');
 			});
 		});
 
+		suite('replaceHexNumbers', () => {
+			test('$F12A', () => {
+				assert.equal(logEval.replaceHexNumbers('$F12A'), '0xF12A');
+			});
+			test('F12Ah', () => {
+				assert.equal(logEval.replaceHexNumbers('F12Ah'), '0xF12A');
+			});
+			test('212Ah', () => {
+				assert.equal(logEval.replaceHexNumbers('212Ah'), '0x212A');
+			});
+		});
+
 		suite('replaceRegisters', () => {
-			test('no reg', async () => {
+			test('no reg', () => {
 				assert.equal(logEval.replaceRegisters('gh'), 'gh');
 			});
-			test('all registers', async () => {
+			test('all registers', () => {
 				assert.equal(logEval.replaceRegisters("AF"), 'getRegValue("AF")');
 				assert.equal(logEval.replaceRegisters('AF BC DE HL IX IY SP PC'), 'getRegValue("AF") getRegValue("BC") getRegValue("DE") getRegValue("HL") getRegValue("IX") getRegValue("IY") getRegValue("SP") getRegValue("PC")');
 				assert.equal(logEval.replaceRegisters('IR IM IXL IXH IYL IYH'), 'getRegValue("IR") getRegValue("IM") getRegValue("IXL") getRegValue("IXH") getRegValue("IYL") getRegValue("IYH")');
@@ -147,27 +159,27 @@ suite('LogEval', () => {
 		});
 
 		suite('replaceAt', () => {
-			test('b@(...)', async () => {
+			test('b@(...)', () => {
 				assert.equal(logEval.replaceAt('b@(20+5)'), 'await getByte(20+5)');
 			});
-			test('w@(...)', async () => {
+			test('w@(...)', () => {
 				assert.equal(logEval.replaceAt('5*w@(20+5)-3'), '5*await getWord(20+5)-3');
 			});
 		});
 
 		suite('checkExpressionSyntax', () => {
 			suite('correct', () => {
-				test('empty', async () => {
+				test('empty', () => {
 					assert.doesNotThrow(() => {
 						logEval.checkExpressionSyntax("");
 					});
 				});
-				test('getByte/Word', async () => {
+				test('getByte/Word', () => {
 					assert.doesNotThrow(() => {
 						logEval.checkExpressionSyntax("await getByte(9)+await getWord(8)");
 					});
 				});
-				test('boolean', async () => {
+				test('boolean', () => {
 					assert.doesNotThrow(() => {
 						logEval.checkExpressionSyntax("2 == 2");
 					});
@@ -175,7 +187,7 @@ suite('LogEval', () => {
 			});
 
 			suite('wrong', () => {
-				test('* * (wrong syntax)', async () => {
+				test('* * (wrong syntax)', () => {
 					assert.throws(() => {
 						logEval.checkExpressionSyntax("await getByte(9)* *await getWord(8):string");
 					});
@@ -186,38 +198,38 @@ suite('LogEval', () => {
 
 	suite('formatValue', () => {
 		const logEval = new LogEval('', undefined as any, undefined as any, undefined as any) as any;
-		test('string', async () => {
+		test('string', () => {
 			assert.equal(logEval.formatValue('string', 1234), '1234');
 		});
-		test('hex8', async () => {
+		test('hex8', () => {
 			assert.equal(logEval.formatValue('hex8', 0xABCD), '0xCD');
 		});
-		test('hex16', async () => {
+		test('hex16', () => {
 			assert.equal(logEval.formatValue('hex16', 0xABCD), '0xABCD');
 		});
-		test('int8', async () => {
+		test('int8', () => {
 			assert.equal(logEval.formatValue('int8', 0xAB56), '86');
 		});
-		test('int8', async () => {
+		test('int8', () => {
 			assert.equal(logEval.formatValue('int8', 0xABFE), '-2');
 		});
-		test('int16', async () => {
+		test('int16', () => {
 			assert.equal(logEval.formatValue('int16', 0x12345), '9029');
 		});
-		test('int16', async () => {
+		test('int16', () => {
 			assert.equal(logEval.formatValue('int16', 0x1FFFE), '-2');
 		});
-		test('uint8', async () => {
+		test('uint8', () => {
 			assert.equal(logEval.formatValue('uint8', 0x129A), '154');
 		});
-		test('uint16', async () => {
+		test('uint16', () => {
 			assert.equal(logEval.formatValue('uint16', 0x3FE9A), '65178');
 		});
-		test('bits', async () => {
+		test('bits', () => {
 			assert.equal(logEval.formatValue('bits', 0b1100101), '01100101');
 			assert.equal(logEval.formatValue('bits', 0x2EE), '1011101110');
 		});
-		test('flags', async () => {
+		test('flags', () => {
 			// TODO
 			assert.equal(logEval.formatValue('flags', 1234), 'TODO');
 		});

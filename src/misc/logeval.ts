@@ -42,7 +42,12 @@ export class LogEval {
 		// Prepare expression
 		this.preparedExpression = expression.replace(this.regexMain, (_match, p1) => {
 			const [format, prepared] = this.prepareExpression(p1);
-			this.checkExpressionSyntax(prepared);	// Throws an exception if the syntax is wrong.
+			try {
+				this.checkExpressionSyntax(prepared);	// Throws an exception if the syntax is wrong.
+			}
+			catch (e) {
+				throw Error(e.message + ': "' + p1 + '"');
+			}
 			return "${" + format + ":" + prepared + "}";
 		});
 	}
@@ -72,8 +77,10 @@ export class LogEval {
 		const exprWithFunc = this.replaceAt(expression);
 		// Replace labels
 		const labelsReplaced = this.replaceLabels(exprWithFunc);
+		// Replace hex numbers (Note: a label, e.g. ABBAh, would have higher priority)
+		const hexRegex = this.replaceHexNumbers(labelsReplaced);
 		// Replace registers
-		const regsReplaced = this.replaceRegisters(labelsReplaced);
+		const regsReplaced = this.replaceRegisters(hexRegex);
 
 		return [format, regsReplaced];
 	}
@@ -90,6 +97,19 @@ export class LogEval {
 			const lbl = match;
 			const value = this.labels.getNumberFromString64k(lbl);
 			return (isNaN(value)) ? lbl : value.toString();
+		});
+		return replaced;
+	}
+
+
+	/** Replaces hex numbers like '$4000', '2FACh' into '0x...' numbers.
+	 * @param expr The expression to replace the hex numbers in.
+	 * @returns The expression with the numbers replaced.
+	 */
+	protected replaceHexNumbers(expr: string): string {
+		const regex = /\$([A-Fa-f0-9]+)|([A-Fa-f0-9]+)h/g;
+		const replaced = expr.replace(regex, (_match, p1, p2) => {
+			return '0x' + (p1 || p2);
 		});
 		return replaced;
 	}
