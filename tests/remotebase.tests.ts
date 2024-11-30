@@ -96,10 +96,14 @@ suite('RemoteBase', () => {
 		test('LOGPOINT', async () => {
 			const remote = new RemoteBase();
 			const rem = remote as any;
+			let warning = false;
+			remote.on('warning', () => {
+				warning = true;
+			});
 
 			const lpLines = [
 				{address: 0xA023, line: "LOGPOINT [GROUP1] ${A}"},
-				{address: 0xA024, line: "LOGPOINT [GROUP1] BC=${BC:hex}"},
+				{address: 0xA024, line: "LOGPOINT [GROUP1] BC=${BC:hex16}"},
 				{address: 0xA025, line: "LOGPOINT [GROUP1]"},
 				{address: 0xA026, line: "LOGPOINT MY LOG"},
 				{address: 0xA027, line: "LOGPOINTx [GROUP2] ${A}"}
@@ -109,22 +113,23 @@ suite('RemoteBase', () => {
 			assert.equal(lps.size, 2);
 
 			let bps: Array<GenericBreakpoint> = lps.get("GROUP1")!;
+			assert.equal(warning, false);
 			assert.equal(bps.length, 3);
 			assert.equal(bps[0].longAddress, 0xA023);
 			assert.equal(bps[0].condition, "");
-			assert.equal(bps[0].log, "[GROUP1] ${A}");
+			assert.equal((bps[0].log as any).preparedExpression, '[GROUP1] ${string:getRegValue("A")}');
 			assert.equal(bps[1].longAddress, 0xA024);
 			assert.equal(bps[1].condition, "");
-			assert.equal(bps[1].log, "[GROUP1] BC=${BC:hex}");
+			assert.equal((bps[1].log as any).preparedExpression, '[GROUP1] BC=${hex16:getRegValue("BC")}');
 			assert.equal(bps[2].longAddress, 0xA025);
 			assert.equal(bps[2].condition, "");
-			assert.equal(bps[2].log, "[GROUP1] ");
+			assert.equal((bps[2].log as any).preparedExpression, "[GROUP1] ");
 
 			bps = lps.get("DEFAULT")!;
 			assert.equal(bps.length, 1);
 			assert.equal(bps[0].longAddress, 0xA026);
 			assert.equal(bps[0].condition, "");
-			assert.equal(bps[0].log, "[DEFAULT] MY LOG");
+			assert.equal((bps[0].log as any).preparedExpression, "[DEFAULT] MY LOG");
 		});
 	});
 
@@ -614,6 +619,7 @@ suite('RemoteBase', () => {
 
 
 
+	// TODO: Still used?
 	suite('evalLogMessage', () => {
 
 		const remote = new RemoteBase();
@@ -649,11 +655,11 @@ suite('RemoteBase', () => {
 
 		test('unknown_label', async () => {
 			assert.throws(() => {
-				remote.evalLogMessage("${(unknown_label):signed}");
+				remote.evalLogMessage("${b@(unknown_label)}");
 			});
 		});
 
-		test('${(var):signed}', async () => {
+		test('${(var):int16}', async () => {
 			assert.equal(remote.evalLogMessage("${(my_label):signed}"), "A=1");
 		});
 
