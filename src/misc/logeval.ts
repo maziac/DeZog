@@ -121,7 +121,6 @@ export class LogEval {
 	 */
 	protected replaceRegisters(expr: string): string {
 		// Replace all registers
-		// TODO: test with "AF'"
 		const regex = /\b(AF'|BC'|DE'|HL'|A'|C'|B'|E'|D'|L'|H'|PC|SP|AF|BC|DE|HL|IX|IY|IR|IM|F|A|C|B|E|D|L|H|IXL|IXH|IYL|IYH|R|I)(\W|$)/ig;
 		const replaced = expr.replace(regex, (_match, p1, p2) => {
 			const reg = p1.toUpperCase();
@@ -182,8 +181,7 @@ export class LogEval {
 	 * - 'int16': Converts the value to a 16-bit signed integer string.
 	 * - 'uint8': Converts the value to an 8-bit unsigned integer string.
 	 * - 'uint16': Converts the value to a 16-bit unsigned integer string.
-	 * - 'bits': TODO
-	 * - 'flags': TODO
+	 * - 'bits': Converts to e.g. 100111
 	 */
 	protected formatValue(format: string, value: number): string {
 		// Format
@@ -224,9 +222,6 @@ export class LogEval {
 				break;
 			case 'bits':
 				retValue = value.toString(2).padStart(8, '0');
-				break;
-			case 'flags':
-				retValue = value.toString(2).padStart(8, '0');	// TODO
 				break;
 			default:
 				throw Error("Unknown format '" + format + "'.");

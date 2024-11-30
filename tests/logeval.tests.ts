@@ -229,10 +229,6 @@ suite('LogEval', () => {
 			assert.equal(logEval.formatValue('bits', 0b1100101), '01100101');
 			assert.equal(logEval.formatValue('bits', 0x2EE), '1011101110');
 		});
-		test('flags', () => {
-			// TODO
-			assert.equal(logEval.formatValue('flags', 1234), 'TODO');
-		});
 	});
 
 	suite('evaluate', () => {

@@ -1768,7 +1768,7 @@ with:
   - register names, e.g. A, BC, HL, IX, H, IXL, AF'
   - labels
   - memory accessors: b@(...) and w@(...) to obtain a byte or a word at the memory position
-- optional formatting: 'string', 'hex8', 'hex16', 'int8', 'int16', 'uint8', 'uint16', 'bits', 'flags'
+- optional formatting: 'string', 'hex8', 'hex16', 'int8', 'int16', 'uint8', 'uint16', 'bits'
 - examples:
     - ```LOGPOINT [SPRITES] Status=${A:hex8}, Counter=${b@(sprite.counter)}```
     - ```LOGPOINT Status=${w@(HL)}, ${DE}, ${b@(DE+1)}```
