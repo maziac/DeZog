@@ -1,0 +1,43 @@
+import {LabelsClass} from '../labels/labels';
+import {Z80RegistersClass} from '../remotes/z80registers';
+import {RemoteBase} from '../remotes/remotebase';
+import {LogEval} from './logeval';
+
+
+/** Creates a log message to log a ZX81 BASIC line.
+ * It logs the line number and the contents of the line.
+ * E.g. Log: BASIC: 10 PRINT "HELLO"
+ * This logpoint is part of the [BASIC] group.
+ * How it works:
+ * A breakpoint is set into ROM at 0x067A TODO: 0x0692.
+ * This is the start of the evaluation of a BASIC line.
+ * The address of the next BASIC line is retrieved by (NXTLIN), i.e. addr=w@(0x4029).
+ * At this address the BASIC line number is stored in big endian:
+ * line_number = b@(addr+1)+256*b@(addr)
+ * Thereafter the size of the BASIC line is stored, followed by the contents.
+ * (NXTLIN):
+ * LINE: 1 word, big endian
+ * SIZE: 1 word, little endian
+ * CONTENT: SIZE bytes, ended by newline=0x76
+ */
+export class LogEvalBasicZx81 extends LogEval {
+	/** Constructor. */
+	constructor(remote: RemoteBase, z80Registers: Z80RegistersClass, labels: LabelsClass) {
+		super('', remote, z80Registers, labels);
+	}
+
+
+	/** Returns the BASIC line.
+	 * @returns E.g. 'BASIC: 10 PRINT "HELLO"'
+	 */
+	public async evaluate(): Promise<string> {
+		const NXTLIN = 0x4029;
+		const addr = await this.getWordEval(NXTLIN);
+		const line_number_array = await this.remote.readMemoryDump(addr, 2);
+		const line_number = line_number_array[1] + 256 * line_number_array[0];
+		const size = await this.getWordEval(addr + 2);
+		// TODO: evaluate BASIC
+		const result = `BASIC: ${line_number} `;
+		return result;;
+	}
+}

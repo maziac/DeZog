@@ -278,7 +278,7 @@ export class ExceptionBreakpoints {
 		// Check if some groups might not exist
 		const groupsNotExist: string[] = [];
 		for (const group of groups) {
-			if (Remote.logpointsEnabled.get(group) == undefined)
+			if (Remote.logpointsEnabled.get(group) === undefined)
 				groupsNotExist.push(group);
 		}
 		if (groupsNotExist.length > 0) {

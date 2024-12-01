@@ -1,5 +1,5 @@
 
-import {Z80RegistersClass, Z80_REG, Z80Registers} from './z80registers';
+import {Z80_REG, Z80Registers, Z80RegistersClass} from './z80registers';
 import {RefList} from '../misc/reflist';
 import {CallStackFrame} from '../callstackframe';
 import {EventEmitter} from 'events';
@@ -11,9 +11,8 @@ import {BaseMemory} from '../disassembler/core/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/core/opcode';
 import {Disassembly, DisassemblyClass} from '../disassembler/disassembly';
 import {MemoryBank, MemoryModel} from './MemoryModel/memorymodel';
-import {Log} from '../log';
 import {LogEval} from '../misc/logeval';
-
+import {LogEvalBasicZx81} from '../misc/logevalbasiczx81';
 
 
 
@@ -200,6 +199,17 @@ export class RemoteBase extends EventEmitter {
 		// LOGPOINTs
 		const logPointLines = Labels.getLogPointLines();
 		const logPointsMap = this.createLogPoints(logPointLines);
+		// BASIC LOGPOINT
+		let array = logPointsMap.get('BASIC');
+		if (!array) {
+			array = new Array<GenericBreakpoint>();
+			logPointsMap.set('BASIC', array);
+		}
+		const log = new LogEvalBasicZx81(this, Z80Registers, Labels);
+		// For all ZX81 memory models ROM is bank 0.
+		// TODO: I need some check that the address is used for the right bank:
+		const longAddress = Z80RegistersClass.getLongAddressWithBank(0x067A, 0);
+		array.push({longAddress, condition: '', log});
 		this.setLOGPOINTArray(logPointsMap);
 
 		// Re-enable

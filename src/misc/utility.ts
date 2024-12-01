@@ -297,8 +297,9 @@ export class Utility {
 	 * HL' != 1111h
 	 * @returns A number. In case of boolean: 0 or 1.
 	 * Throws an error if evaluation not possible.
+	 * Note: LogEval does something similar but async.
+	 * 'evalExpression' is e.g. used by the breakpoint condition.
 	  */
-	// TODO: REMOVE?
 	public static evalExpression(expr: string, evalRegisters = true, modulePrefix?: string, lastLabel?: string): number {
 		try {
 			// Get all labels and registers replaced with numbers

@@ -230,23 +230,11 @@ export class LogEval {
 	}
 
 
-	/** The function `evaluate` in TypeScript asynchronously evaluates an expression based on a specified
-	 * format and returns the result in the desired format.
-	 * @param {string} expr - The `evaluate` function takes an expression string as input, which consists
-	 * of a format specifier followed by the expression to evaluate. The format specifier determines how
-	 * the result of the expression should be formatted.
-	 * @returns The `evaluate` function returns a Promise that resolves to a string value based on the
-	 * format specified in the input expression. The function first extracts the format and expression
-	 * from the input string, then evaluates the expression using a custom evaluation function. Depending
-	 * on the format specified, it processes the result accordingly and returns the formatted string
-	 * value. If an unknown format is encountered, it throws an error.
-	 */
 	/** Evals a full expression.
 	 * Labels have already been replaced with their values and b@ and w@ with getByte and getWord.
 	 * See prepareExpression.
 	 * So here the registers are replaced with real values.
 	 * And the real memory contents is used.
-	 * @param expr The expression to evaluate. May contain math expressions and registers.
 	 * E.g. string:2*getByte(HL+2453)
 	 * @returns The output of the evaluation as string.
 	 */
