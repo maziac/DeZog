@@ -771,6 +771,7 @@ export class ZSimRemote extends DzrpRemote {
 					slots = this.memory.getSlots();
 					pcLong = Z80Registers.createLongAddress(pc, slots);
 					const bpInner = this.tmpBreakpoints.get(pcLong);
+					let logEvals;
 					if (bpInner) {
 						// To improve performance of condition and log breakpoints the condition check is also done below.
 						// So it is not required to go back up to the debug adapter, just to return here in case the condition is wrong.
@@ -778,32 +779,29 @@ export class ZSimRemote extends DzrpRemote {
 						// Get registers
 						const regs = this.z80Cpu.getRegisterData();
 						Z80Registers.setCache(regs);
-						// Now check if condition met or if logpoint
+						// Now check if condition met or if logpoint:
 						let bp;
 						for (const bpElem of bpInner) {
 							try {
 								const {condition, log} = this.checkConditionAndLog(bpElem);
 								// Emit log?
 								if (log) {
-									// Convert and print
-									//const evalLog = await Utility.evalLogString(log);
-									const evaluatedLog = await log.evaluate();
-									// Print
-									this.emit('debug_console', "Log: " + evaluatedLog);
+									// Temporarily store
+									if (!logEvals)
+										logEvals = [];
+									logEvals.push(log);
 								}
 								// Not a logpoint.
-								// Condition met?
-								else if (condition != undefined) {
+								else if (condition !== undefined) {	// Condition met?
 									bp = bpElem;
 									break_happened = true;
-									break;
+									// Note: do not break: There could be more than logpoints in the list
 								}
 							}
 							catch (e) {
 								// Some problem occurred, pass evaluation to DebugSessionClass
 								bp = bpElem;
 								break_happened = true;
-								break;
 							}
 						}
 						// Breakpoint and condition OK
@@ -851,6 +849,16 @@ export class ZSimRemote extends DzrpRemote {
 						breakNumber = BREAK_REASON_NUMBER.MANUAL_BREAK;	// Manual break
 						break_happened = true;
 						break;
+					}
+
+					// Note: logpoints are only evaluated if no other breakpoint is hit
+					// because otherwise the logpoints are handled by DzrpRemote.
+					if (logEvals) {
+						for (const log of logEvals) {
+							const evaluatedLog = await log.evaluate();
+							// Print
+							this.emit('debug_console', "Log: " + evaluatedLog);
+						}
 					}
 				}
 			}
