@@ -31,8 +31,8 @@ export class LogEvalBasicZx81 extends LogEval {
 	 * @returns E.g. 'BASIC: 10 PRINT "HELLO"'
 	 */
 	public async evaluate(): Promise<string> {
-		const NXTLIN = 0x4029;
-		const addr = await this.getWordEval(NXTLIN);
+		// HL points to the address just after LINE and SIZE:
+		const addr = this.remote.getRegisterValue('HL') - 4;
 		const line_number_array = await this.remote.readMemoryDump(addr, 2);
 		const line_number = line_number_array[1] + 256 * line_number_array[0];
 		const size = await this.getWordEval(addr + 2);

@@ -208,7 +208,7 @@ export class RemoteBase extends EventEmitter {
 		const log = new LogEvalBasicZx81(this, Z80Registers, Labels);
 		// For all ZX81 memory models ROM is bank 0.
 		// TODO: I need some check that the address is used for the right bank:
-		const longAddress = Z80RegistersClass.getLongAddressWithBank(0x067A, 0);
+		const longAddress = Z80RegistersClass.getLongAddressWithBank(0x0CC1, 0);
 		array.push({longAddress, condition: '', log});
 		this.setLOGPOINTArray(logPointsMap);
 
