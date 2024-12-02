@@ -1,7 +1,8 @@
-import {LabelsClass} from '../labels/labels';
-import {Z80RegistersClass} from '../remotes/z80registers';
-import {RemoteBase} from '../remotes/remotebase';
-import {LogEval} from './logeval';
+import {LabelsClass} from '../../labels/labels';
+import {Z80RegistersClass} from '../../remotes/z80registers';
+import {RemoteBase} from '../../remotes/remotebase';
+import {LogEval} from '../logeval';
+import {Zx81Tokens} from './zx81tokens';
 
 
 /** Creates a log message to log a ZX81 BASIC line.
@@ -32,12 +33,17 @@ export class LogEvalBasicZx81 extends LogEval {
 	 */
 	public async evaluate(): Promise<string> {
 		// HL points to the address just after LINE and SIZE:
-		const addr = this.remote.getRegisterValue('HL') - 4;
-		const line_number_array = await this.remote.readMemoryDump(addr, 2);
-		const line_number = line_number_array[1] + 256 * line_number_array[0];
-		const size = await this.getWordEval(addr + 2);
-		// TODO: evaluate BASIC
-		const result = `BASIC: ${line_number} `;
-		return result;;
+		const lineContentsAddr = this.remote.getRegisterValue('HL');
+		const lineNumberArray = await this.remote.readMemoryDump(lineContentsAddr-4, 2);
+		const lineNumber = lineNumberArray[1] + 256 * lineNumberArray[0];
+		const size = await this.getWordEval(lineContentsAddr - 2);
+		let result = `BASIC: ${lineNumber} `;
+
+		// Convert BASIC tokens into text
+		const buffer = await this.remote.readMemoryDump(lineContentsAddr, size);
+		const txt = Zx81Tokens.convertBasLine(buffer);
+
+		result += txt;
+		return result;
 	}
 }

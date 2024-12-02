@@ -12,7 +12,7 @@ import {Opcode, OpcodeFlag} from '../disassembler/core/opcode';
 import {Disassembly, DisassemblyClass} from '../disassembler/disassembly';
 import {MemoryBank, MemoryModel} from './MemoryModel/memorymodel';
 import {LogEval} from '../misc/logeval';
-import {LogEvalBasicZx81} from '../misc/logevalbasiczx81';
+import {LogEvalBasicZx81} from '../misc/zx81/logevalbasiczx81';
 
 
 

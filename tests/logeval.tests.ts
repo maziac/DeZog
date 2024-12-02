@@ -1,11 +1,4 @@
 import * as assert from 'assert';
-import {Z80RegistersClass, Z80Registers} from '../src/remotes/z80registers';
-import {RemoteFactory} from '../src/remotes/remotefactory';
-import {Remote} from '../src/remotes/remotebase';
-import {Settings, SettingsParameters} from '../src/settings/settings';
-import {Labels} from '../src/labels/labels';
-import {DecodeZesaruxRegisters, DecodeZesaruxRegistersZx128k} from '../src/remotes/zesarux/decodezesaruxdata';
-import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import {LogEval} from '../src/misc/logeval';
 
 
