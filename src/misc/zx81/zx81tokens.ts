@@ -157,8 +157,10 @@ export class Zx81Tokens {
 	public static convertBufToZx81Float(buf: Uint8Array): number {
 		if (buf.length !== 5)
 			throw Error("Expected 5 bytes for a ZX81 float number.");
-		const exponent = buf[0] - 129;
 		const mantissa = (buf[1] << 24) + (buf[2] << 16) + (buf[3] << 8) + buf[4];
+		if (mantissa === 0 && buf[0] === 0)
+			return 0;
+		const exponent = buf[0] - 129;
 		const value = (mantissa / 0x80000000 + 1) * Math.pow(2, exponent);
 		return value;
 	}
