@@ -145,18 +145,19 @@ export class Zx81BasicVars {
 						// Read array total length
 						const arrayLength = basicVars[i++] + 256 * basicVars[i++];
 						// Number of dimensions
-						const dimensions = basicVars[i++];	// +1 ?? TODO check
+						const dimensions = basicVars[i++];
+						const charsLength = arrayLength - 1 - 2 * dimensions;
 						// Read size of each dimension
 						const dimSizes: number[] = [];
 						const dimIndex: number[] = [];
 						for (let j = 0; j < dimensions; j++) {
 							const dimSize = basicVars[i++] + 256 * basicVars[i++];
 							dimSizes.push(dimSize);
-							dimIndex.push(0);
+							dimIndex.push(1);
 						}
 						// Read values
 						let k = 0;
-						while (k < arrayLength) {
+						while (k < charsLength) {
 							const char = basicVars[i++];
 							const value = Zx81Tokens.tokens[char];
 							k++;
@@ -167,9 +168,9 @@ export class Zx81BasicVars {
 							let j = dimensions - 1;
 							while (j >= 0) {
 								dimIndex[j]++;
-								if (dimIndex[j] < dimSizes[j])
+								if (dimIndex[j] <= dimSizes[j])
 									break;
-								dimIndex[j] = 0;
+								dimIndex[j] = 1;
 								j--;
 							}
 						}
