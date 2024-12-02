@@ -31,6 +31,7 @@ import {Zx81UlaScreenHiRes} from './zx81ulascreenhires';
 import path = require('path');
 import {ExecuteInterface} from './executeinterface';
 import {Zx81LoadOverlay} from './zx81loadoverlay';
+import {Zx81BasicVars} from '../../misc/zx81/zx81basicvars';
 
 
 
@@ -1275,19 +1276,20 @@ export class ZSimRemote extends DzrpRemote {
 			let response = '';
 			const tokens = cmd.split(' ');
 			const cmd_name = tokens.shift();
-			if (cmd_name == "help") {
+			if (cmd_name === "help") {
 				// Add this to the help text
 				response = `zsim specific commands:
-out port value: Output 'value' to 'port'. E.g. "zsim out 0x9000 0xFE"
-in port: Print input value from 'port'. E.g. "zsim in 0x8000"
-tstates set value: set t-states to 'value', then create a tick event. E.g. "zsim tstates set 1000"
-tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim tstates add 1000"
+out port value: Output 'value' to 'port'. E.g. "-e out 0x9000 0xFE"
+in port: Print input value from 'port'. E.g. "-e in 0x8000"
+tstates set value: set t-states to 'value', then create a tick event. E.g. "-e tstates set 1000"
+tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e tstates add 1000"
+"zx81-basic-vars": Get all ZX81 BASIC variables. E.g. "-e zx81 basic-vars"
 `;
 				return response;
 			}
-			if (cmd_name == "out") {
+			if (cmd_name === "out") {
 				// Check count of arguments
-				if (tokens.length != 2) {
+				if (tokens.length !== 2) {
 					throw new Error("Wrong number of arguments: port and value expected.");
 				}
 				// Get port and value
@@ -1299,9 +1301,9 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 				response = "Wrote " + Utility.getHexString(value, 2) + "h to port " + Utility.getHexString(port, 4) + "h";
 				return response;
 			}
-			if (cmd_name == "in") {
+			if (cmd_name === "in") {
 				// Check count of arguments
-				if (tokens.length != 1) {
+				if (tokens.length !== 1) {
 					throw new Error("Wrong number of arguments: port expected.");
 				}
 				// Get port and value
@@ -1312,16 +1314,16 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 				response = "Read port " + Utility.getHexString(port, 4) + "h: " + Utility.getHexString(value, 2) + "h";
 				return response;
 			}
-			if (cmd_name == "tstates") {
+			if (cmd_name === "tstates") {
 				// Check count of arguments
-				if (tokens.length != 2) {
+				if (tokens.length !== 2) {
 					throw new Error("Wrong number of arguments.");
 				}
 				const subcmd = tokens[0];
 				const value = Utility.parseValue(tokens[1]);
-				if (subcmd == "set")
+				if (subcmd === "set")
 					this.passedTstates = value;
-				else if (subcmd == "add")
+				else if (subcmd === "add")
 					this.passedTstates += value;
 				else
 					throw Error("Expected 'set' or 'add' but got '" + subcmd + "'.");
@@ -1332,6 +1334,27 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 				}
 				// Return
 				response = "T-states set to " + this.passedTstates + ".";
+				return response;
+			}
+			if (cmd_name === "zx81-basic-vars") {
+				// Check count of arguments
+				if (tokens.length !== 0) {
+					throw new Error("Wrong number of arguments.");
+				}
+				// Get basic variables
+				const varsBuf = await this.readMemoryDump(16400, 2);
+				const vars = varsBuf[0] + varsBuf[1] * 256;
+				const elineBuf = await this.readMemoryDump(16404, 2);
+				const eline = elineBuf[0] + elineBuf[1] * 256;
+				const size = eline - vars - 1;
+				const basicVars = await this.readMemoryDump(vars, size);
+				// Interprete
+				const zx81BasicVars = new Zx81BasicVars();
+				zx81BasicVars.parseBasicVars(basicVars);
+				// Get all vars
+				const allValues = zx81BasicVars.getAllVariablesWithValues();
+				// Return
+				response = allValues.join('\n');
 				return response;
 			}
 

@@ -2,6 +2,7 @@
 # 3.5.2
 - LOGPOINTs improved. It is now possible to do any maths with the LOGPOINTs. E.g. "b@(HL+2*A)" is a valid expression.
 - If there is a problem with a logpoint it is now shown as warning to the user. Before it was silently ignored.
+- zsim: Command "-e zx81-basic-vars" to print all BASIC variables.
 
 # 3.5.1
 - dezog.run: Fixed extensions. Now also .p81 and .81 files are supported (ZX81).
