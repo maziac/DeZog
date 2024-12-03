@@ -1350,11 +1350,11 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 				const basicVars = await this.readMemoryDump(vars, size);
 				// Interprete
 				const zx81BasicVars = new Zx81BasicVars();
-				zx81BasicVars.parseBasicVars(basicVars);
+				zx81BasicVars.parseBasicVars(basicVars, vars);
 				// Get all vars
 				const allValues = zx81BasicVars.getAllVariablesWithValues();
 				// Return
-				response = allValues.join('\n');
+				response = `BASIC-vars @0x${Utility.getHexString(vars, 4)} (${vars}), size=0x${Utility.getHexString(size, 4)} (${size}):\n${allValues.join('\n')}`;
 				return response;
 			}
 

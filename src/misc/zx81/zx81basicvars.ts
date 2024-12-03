@@ -1,3 +1,4 @@
+import {Utility} from "../utility";
 import {Zx81Tokens} from "./zx81tokens";
 
 /** Class to read and interpret the ZX81 BASIC variables. */
@@ -8,20 +9,26 @@ export class Zx81BasicVars {
 	// New/current BASIC vars
 	public basicVars: Map<string, number | string> = new Map();
 
+	// Addresses of the BASIC vars
+	protected basicVarsAddress: Map<string, number> = new Map();
+
 
 	/** Creates a map of variables and values from the BASIC vars buffer.
 	 * Stores it in this.basicVars. The map is cleared before.
 	 * @param basicVars The BASIC vars buffer.
+	 * @param address The start address of the BASIC vars.
 	 */
-	public parseBasicVars(basicVars: Uint8Array) {
+	public parseBasicVars(basicVars: Uint8Array, address: number): void {
 		// Clear new BASIC vars
 		this.basicVars.clear();
+		this.basicVarsAddress.clear();
 
 		// Parse the BASIC vars
 		let i = 0; const len = basicVars.length;
 		while (i < len) {
 			// Check for type
 			const firstByte = basicVars[i++];
+			address++;
 			let firstLetter = (firstByte & 0b0001_1111) + 0x20;
 			const type = firstByte & 0b1110_0000;
 			switch (type) {
@@ -37,7 +44,11 @@ export class Zx81BasicVars {
 						const value = Zx81Tokens.convertBufToZx81Float(valueBuf);
 						// Store the variable
 						this.basicVars.set(varName, value);
+						// Store the address
+						this.basicVarsAddress.set(varName, address);
+						// Next
 						i += 5;
+						address += 5;
 
 						// Now check if it is FOR-NEXT
 						if (type === 0b1110_0000) {
@@ -56,6 +67,7 @@ export class Zx81BasicVars {
 						// Now find more characters
 						while (true) {
 							const byte = basicVars[i++];
+							address++;
 							const end = byte & 0b1100_0000;
 							if (end !== 0 && end !== 0b1000_0000)
 								throw Error('Corrupted BASIC variable.');
@@ -71,7 +83,11 @@ export class Zx81BasicVars {
 						const value = Zx81Tokens.convertBufToZx81Float(valueBuf);
 						// Store the variable
 						this.basicVars.set(varName, value);
+						// Store the address
+						this.basicVarsAddress.set(varName, address);
+						// Next
 						i += 5;
+						address += 5;
 					}
 					break;
 
@@ -96,12 +112,15 @@ export class Zx81BasicVars {
 						}
 						// Read values
 						let k = 0;
+						address += 3 + 2 * dimensions;
 						while (k < floatsLength) {
 							const valueBuf = basicVars.slice(i, i + 5);
 							const value = Zx81Tokens.convertBufToZx81Float(valueBuf);
 							// Store the variable
 							const varNameWithIndex = varName + '(' + dimIndex.join(',') + ')';
 							this.basicVars.set(varNameWithIndex, value);
+							// Store the address
+							this.basicVarsAddress.set(varNameWithIndex, address);
 							// Next
 							let j = dimensions - 1;
 							while (j >= 0) {
@@ -113,6 +132,7 @@ export class Zx81BasicVars {
 							}
 							i += 5;
 							k += 5;
+							address += 5;
 						}
 					}
 					break;
@@ -125,14 +145,19 @@ export class Zx81BasicVars {
 						const varName = Zx81Tokens.tokens[firstLetter] + '$';
 						// Read length
 						const length = basicVars[i++] + 256 * basicVars[i++];
+						address += 2;
 						// Read chars
-						let str = '';
+						let str = '"';
 						for (let j = 0; j < length; j++) {
 							const char = basicVars[i++];
 							str += Zx81Tokens.tokens[char];
 						}
+						str += '"';
 						// Store the variable
 						this.basicVars.set(varName, str);
+						// Store the address
+						this.basicVarsAddress.set(varName, address);
+						address += length;
 					}
 					break;
 
@@ -141,12 +166,13 @@ export class Zx81BasicVars {
 						// Letter
 						if (firstLetter < 0x26 || firstLetter > 0x3F)
 							throw Error('Invalid BASIC variable.');
-						const varName = Zx81Tokens.tokens[firstLetter];
+						const varName = Zx81Tokens.tokens[firstLetter] + '$';
 						// Read array total length
 						const arrayLength = basicVars[i++] + 256 * basicVars[i++];
 						// Number of dimensions
 						const dimensions = basicVars[i++];
 						const charsLength = arrayLength - 1 - 2 * dimensions;
+						address += 3 + 2 * dimensions;
 						// Read size of each dimension
 						const dimSizes: number[] = [];
 						const dimIndex: number[] = [];
@@ -163,7 +189,10 @@ export class Zx81BasicVars {
 							k++;
 							// Store the variable
 							const varNameWithIndex = varName + '(' + dimIndex.join(',') + ')';
-							this.basicVars.set(varNameWithIndex, value);
+							this.basicVars.set(varNameWithIndex, '"' + value + '"');
+							// Store the address
+							this.basicVarsAddress.set(varNameWithIndex, address);
+							address++;
 							// Next
 							let j = dimensions - 1;
 							while (j >= 0) {
@@ -202,7 +231,15 @@ export class Zx81BasicVars {
 	public getAllVariablesWithValues(): string[] {
 		const results: string[] = [];
 		for (let [varName, value] of this.basicVars) {
-			results.push(varName + '=' + (value === undefined ? 'undefined' : value));
+			let txt = varName + '=';
+			if (value === undefined)
+				txt += 'undefined';
+			else {
+				txt += value;
+				const address = this.basicVarsAddress.get(varName)!;
+				txt += ' @0x' + Utility.getHexString(address, 4);
+			}
+			results.push(txt);
 		}
 		return results;
 	}
