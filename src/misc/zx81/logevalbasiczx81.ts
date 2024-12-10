@@ -32,8 +32,13 @@ export class LogEvalBasicZx81 extends LogEval {
 	 * @returns E.g. 'BASIC: 10 PRINT "HELLO"'
 	 */
 	public async evaluate(): Promise<string> {
-		// HL points to the address just after LINE and SIZE:
+		// Only output everything below VARS (i.e. in program area, but allow also DFILE)
 		const lineContentsAddr = this.remote.getRegisterValue('HL');
+		const vars = await this.getWordEval(16400);
+		if (lineContentsAddr >= vars)
+			return 'BASIC: ---';
+
+		// HL points to the address just after LINE and SIZE:
 		const lineNumberArray = await this.remote.readMemoryDump(lineContentsAddr-4, 2);
 		const lineNumber = lineNumberArray[1] + 256 * lineNumberArray[0];
 		const size = await this.getWordEval(lineContentsAddr - 2);
