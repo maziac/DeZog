@@ -238,7 +238,7 @@ export class LogEval {
 	 * E.g. string:2*getByte(HL+2453)
 	 * @returns The output of the evaluation as string.
 	 */
-	public async evaluate(): Promise<string> {
+	public async evaluate(): Promise<string | undefined> {
 		try {
 			// Evaluate all "${...}" expressions.
 			let match;

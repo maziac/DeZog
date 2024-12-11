@@ -858,7 +858,9 @@ export class ZSimRemote extends DzrpRemote {
 						for (const log of logEvals) {
 							const evaluatedLog = await log.evaluate();
 							// Print
-							this.emit('debug_console', "Log: " + evaluatedLog);
+							if (evaluatedLog) {
+								this.emit('debug_console', "Log: " + evaluatedLog);
+							}
 						}
 					}
 				}

@@ -963,7 +963,9 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 						//const evalLog = await Utility.evalLogString(log);
 						const evaluatedLog = await log.evaluate();
 						// Print
-						this.emit('debug_console', "Log: " + evaluatedLog);
+						if (evaluatedLog) {
+							this.emit('debug_console', "Log: " + evaluatedLog);
+						}
 						// Don't eval condition again
 						cond = undefined;
 					}
