@@ -23,13 +23,18 @@ import {GenericBreakpoint} from '../../genericwatchpoint';
  * CONTENT: SIZE bytes, ended by newline=0x76
  */
 export class LogEvalBasicZx81 extends LogEval {
-	// The breakpoints for the logpoints.
+	protected static readonly BP_ADDR_BASIC_LINE = 0x0673;	// The breakpoint address for the BASIC line.
+	protected static readonly BP_ADDR_BASIC_VARS = 0x0676;	// The breakpoint address for the BASIC variables.
+
+	// The long breakpoints for the logpoints.
 	protected bpLongAddressLine: number;	// For BASIC line decoding
 	protected bpLongAddressVars: number;	// For BASIC variables decoding
 
 	// The cached BASIC line.
 	protected cachedBasicLine: string | undefined;
 
+	// The cached variable names.
+	protected cachedVarNames: string[];
 
 	/** Constructor. */
 	constructor(remote: RemoteBase, z80Registers: Z80RegistersClass, labels: LabelsClass) {
@@ -52,8 +57,8 @@ export class LogEvalBasicZx81 extends LogEval {
 		// For all ZX81 memory models ROM is bank 0.
 		// TODO: I need some check that the address is used for the right bank:
 		//const longAddress = Z80RegistersClass.getLongAddressWithBank(0x0CC1, 0);
-		this.bpLongAddressLine = Z80RegistersClass.getLongAddressWithBank(0x0673, 0);	// CALL L0CC1
-		this.bpLongAddressVars = Z80RegistersClass.getLongAddressWithBank(0x13AE, 0);	// L-ENTER
+		this.bpLongAddressLine = Z80RegistersClass.getLongAddressWithBank(LogEvalBasicZx81.BP_ADDR_BASIC_LINE, 0);	// CALL L0CC1
+		this.bpLongAddressVars = Z80RegistersClass.getLongAddressWithBank(LogEvalBasicZx81.BP_ADDR_BASIC_VARS, 0);	// RES 1,(IY+$01)
 		array.push({longAddress: this.bpLongAddressLine, condition: '', log: this});
 		array.push({longAddress: this.bpLongAddressVars, condition: '', log: this});
 	}
@@ -99,7 +104,66 @@ export class LogEvalBasicZx81 extends LogEval {
 		const buffer = await this.remote.readMemoryDump(lineContentsAddr, size);
 		const txt = Zx81Tokens.convertBasLine(buffer);
 
+		// Extract variables from BASIC buffer
+		this.cachedVarNames = this.extractVarNames(buffer);
+
 		this.cachedBasicLine += txt;
+	}
+
+	/** Extract variable names from the BASIC line buffer.
+	 * Simply everything that is a letter+ is taken as a variable name.
+	 * @param buffer The BASIC line buffer.
+	 * @returns An array with the variable names.
+	 * Note: Does not evaluate "IF ... THEN REM" correctly
+	 */
+	protected extractVarNames(buffer: Uint8Array): string[] {
+		const varNames: string[] = [];
+		let varName = '';
+		for (let i = 0; i < buffer.length; i++) {
+			const c = buffer[i];
+			if (c === Zx81Tokens.REM)
+				break;	// No more variables
+			if (c === Zx81Tokens.NUMBER) {
+				// Skip number part
+				i += 5;
+				continue;
+			}
+			if (c === Zx81Tokens.QUOTE) {
+				// Skip quoted text
+				i++;
+				for (; i < buffer.length; i++) {
+					if (c === Zx81Tokens.QUOTE)
+						break;
+				}
+				continue;
+			}
+			if (varName.length === 0) {
+				// First char must be a letter
+				if (c >= 0x26 && c <= 0x3F) {
+					varName += Zx81Tokens.convertToken(c);
+				}
+			}
+			else {
+				// Second or later letter, then allow also digits.
+				if ((c >= 0x1C && c <= 0x3F) || c === 0x0D) {  // Or $
+					varName += Zx81Tokens.convertToken(c);
+				}
+				else if (c === 0x10) {
+					// Opening bracket "(": Arrays are not shown
+					varName = '';
+				}
+				else {
+					// Does not belong to var name, store var name
+					varNames.push(varName);
+					varName = '';
+				}
+			}
+		}
+		// Push also last var name if necessary
+		if (varName.length > 0)
+			varNames.push(varName);
+
+		return varNames;
 	}
 
 
@@ -109,8 +173,12 @@ export class LogEvalBasicZx81 extends LogEval {
 	protected async evaluateVars(): Promise<string | undefined> {
 		if (this.cachedBasicLine === undefined)
 			return undefined;
-		const txt = this.cachedBasicLine;
+		let txt = this.cachedBasicLine;
 		this.cachedBasicLine = undefined;
+
+		// Add variables
+		txt += ' [' + this.cachedVarNames.join(', ') + ']';
+
 		return txt;
 	}
 }
