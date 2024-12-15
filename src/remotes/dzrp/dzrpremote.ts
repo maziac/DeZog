@@ -1316,11 +1316,19 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				// Set breakpoint
 				if (!lp.bpId) {
 					await this.sendDzrpCmdAddBreakpoint(lp);
+					// If running then add also to temporary list
+					if (this.funcContinueResolve) {
+						this.addTmpBreakpoint(lp);
+					}
 				}
 			}
 			// Remove breakpoint
 			else if (lp.bpId) {
 				await this.sendDzrpCmdRemoveBreakpoint(lp);
+				// If running then remove from temporary list
+				if (this.funcContinueResolve) {
+					this.removeTmpBreakpoint(lp);
+				}
 				lp.bpId = undefined;
 			}
 		}
@@ -1368,7 +1376,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		Utility.assert(index !== -1, 'Breakpoint should be removed but does not exist.');
 		this.breakpoints.splice(index, 1);
 
-		// If running then add remove to temporary list
+		// If running then remove from temporary list
 		if (this.funcContinueResolve) {
 			this.removeTmpBreakpoint(bp);
 		}
