@@ -1343,20 +1343,15 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 				if (tokens.length !== 0) {
 					throw new Error("Wrong number of arguments.");
 				}
-				// Get basic variables
-				const varsBuf = await this.readMemoryDump(16400, 2);
-				const vars = varsBuf[0] + varsBuf[1] * 256;
-				const elineBuf = await this.readMemoryDump(16404, 2);
-				const eline = elineBuf[0] + elineBuf[1] * 256;
-				const size = eline - vars - 1;
-				const basicVars = await this.readMemoryDump(vars, size);
 				// Interprete
 				const zx81BasicVars = new Zx81BasicVars();
-				zx81BasicVars.parseBasicVars(basicVars, vars);
+				const [varBuffer, varsStart] = await zx81BasicVars.getBasicVars((addr64k, size) => this.readMemoryDump(addr64k, size));
+				zx81BasicVars.parseBasicVars(varBuffer, varsStart);
 				// Get all vars
 				const allValues = zx81BasicVars.getAllVariablesWithValues();
 				// Return
-				response = `BASIC-vars @0x${Utility.getHexString(vars, 4)} (${vars}), size=0x${Utility.getHexString(size, 4)} (${size}):\n${allValues.join('\n')}`;
+				const size = varBuffer.length;
+				response = `BASIC-vars @0x${Utility.getHexString(varsStart, 4)} (${varsStart}), size=0x${Utility.getHexString(size, 4)} (${size}):\n${allValues.join('\n')}`;
 				return response;
 			}
 

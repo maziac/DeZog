@@ -4,6 +4,7 @@ import {RemoteBase} from '../../remotes/remotebase';
 import {LogEval} from '../logeval';
 import {Zx81Tokens} from './zx81tokens';
 import {GenericBreakpoint} from '../../genericwatchpoint';
+import {Zx81BasicVars} from './zx81basicvars';
 
 
 /** Creates a log message to log a ZX81 BASIC line.
@@ -36,9 +37,14 @@ export class LogEvalBasicZx81 extends LogEval {
 	// The cached variable names.
 	protected cachedVarNames: string[];
 
+	// Holds the last BASIC vars.
+	protected zx81BasicVars: Zx81BasicVars;
+
+
 	/** Constructor. */
 	constructor(remote: RemoteBase, z80Registers: Z80RegistersClass, labels: LabelsClass) {
 		super('', remote, z80Registers, labels);
+		this.zx81BasicVars = new Zx81BasicVars();
 	}
 
 
@@ -154,14 +160,15 @@ export class LogEvalBasicZx81 extends LogEval {
 				}
 				else {
 					// Does not belong to var name, store var name
-					varNames.push(varName);
+					if(!varNames.includes(varName))
+						varNames.push(varName);
 					varName = '';
 				}
 			}
 		}
 		// Push also last var name if necessary
-		if (varName.length > 0)
-			varNames.push(varName);
+		if (varName.length > 0 && !varNames.includes(varName))
+				varNames.push(varName);
 
 		return varNames;
 	}
@@ -171,14 +178,33 @@ export class LogEvalBasicZx81 extends LogEval {
 	 * with their values.
 	*/
 	protected async evaluateVars(): Promise<string | undefined> {
+		// Get the BASIC variables (store old values)
+		const [varBuffer, varsStart] = await this.zx81BasicVars.getBasicVars((addr64k, size) => this.remote.readMemoryDump(addr64k, size));
+		this.zx81BasicVars.parseBasicVars(varBuffer, varsStart);
+
+		// Check if there was any decoded BASIC line
 		if (this.cachedBasicLine === undefined)
 			return undefined;
 		let txt = this.cachedBasicLine;
 		this.cachedBasicLine = undefined;
 
-		// Add variables
-		txt += ' [' + this.cachedVarNames.join(', ') + ']';
+		// Add all vars with their values
+		let varsTxt = '';
+		let sep = '';
+		for (let varName of this.cachedVarNames) {
+			varsTxt += sep + varName + '=';
+			// Gt old and new value
+			const oldValue = this.zx81BasicVars.lastBasicVars.get(varName);
+			const newValue = this.zx81BasicVars.basicVars.get(varName);
+			varsTxt += newValue;
+			if (oldValue !== undefined && oldValue !== newValue)
+				varsTxt += '(' + oldValue + ')';
+			// Separator
+			sep = ', ';
+		}
 
+		// Add variables
+		txt += ' [' + varsTxt + ']';
 		return txt;
 	}
 }

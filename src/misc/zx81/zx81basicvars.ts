@@ -3,6 +3,10 @@ import {Zx81Tokens} from "./zx81tokens";
 
 /** Class to read and interpret the ZX81 BASIC variables. */
 export class Zx81BasicVars {
+	// The address of the VARS and E_LINE system variable.
+	protected static readonly VARS = 16400;
+	protected static readonly E_LINE = 16404;
+
 	// Last BASIC vars
 	public lastBasicVars: Map<string, number | string> = new Map();
 
@@ -13,14 +17,33 @@ export class Zx81BasicVars {
 	protected basicVarsAddress: Map<string, number> = new Map();
 
 
+	/** Reads the BASIC vars from the memory.
+	 * @param readMemory The function to read memory. (addresses as 64k)
+	 * @returns The BASIC vars buffer and the start address: [buffer, start].
+	 */
+	public async getBasicVars(readMemory: (addr64k: number, len: number) => Promise<Uint8Array>): Promise<[Uint8Array, number]> {
+		// Get basic variables
+		const varsBuf = await readMemory(Zx81BasicVars.VARS, 2);
+		const vars = varsBuf[0] + varsBuf[1] * 256;
+		const elineBuf = await readMemory(Zx81BasicVars.E_LINE, 2);
+		const eline = elineBuf[0] + elineBuf[1] * 256;
+		const size = eline - vars - 1;
+		const basicVars = await readMemory(vars, size);
+		return [basicVars, vars];
+	}
+
+
 	/** Creates a map of variables and values from the BASIC vars buffer.
 	 * Stores it in this.basicVars. The map is cleared before.
+	 * The previous buffer (this.baxicVars) is stored in this.lastBasicVars.
 	 * @param basicVars The BASIC vars buffer.
 	 * @param address The start address of the BASIC vars.
 	 */
 	public parseBasicVars(basicVars: Uint8Array, address: number): void {
+		// Remember old values
+		this.lastBasicVars = this.basicVars;
 		// Clear new BASIC vars
-		this.basicVars.clear();
+		this.basicVars = new Map<string, number | string>();
 		this.basicVarsAddress.clear();
 
 		// Parse the BASIC vars
