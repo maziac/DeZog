@@ -132,7 +132,7 @@ export class LogEvalBasicZx81 extends LogEval {
 				// Skip quoted text
 				i++;
 				for (; i < buffer.length; i++) {
-					if (c === Zx81Tokens.QUOTE)
+					if (buffer[i] === Zx81Tokens.QUOTE)
 						break;
 				}
 				continue;

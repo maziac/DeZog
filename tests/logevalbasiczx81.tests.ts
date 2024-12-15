@@ -187,16 +187,19 @@ suite('LogEvalBasicZx81', () => {
 			]));
 			assert.equal(vars.length, 0);
 		});
-		test('quoted, PRINT "A";B;"C"', () => {
+		test('quoted, PRINT "SRC";B;"C";D;"E"', () => {
 			const log = new LogEvalBasicZx81(mockRemote, mockZ80Registers, mockLabels) as any;
 			const vars = log.extractVarNames(new Uint8Array([
 				0xF5, 	// PRINT
-				0x0B, 0x26, 0x0B, 0x19,	// "A";
+				0x0B, 0x38, 0x37, 0x28, 0x0B, 0x19,	// "SRC";
 				0x27, 	// B
-				0x19, 0x0B, 0x26, 0x0B,	// ;"C"
+				0x19, 0x0B, 0x28, 0x0B, 0x19,	// ;"C";
+				0x29,	// D
+				0x19, 0x0B, 0x2A, 0x0B,	// ;"E"
 			]));
-			assert.equal(vars.length, 1);
+			assert.equal(vars.length, 2);
 			assert.equal(vars[0], 'B');
+			assert.equal(vars[1], 'D');
 		});
 	});
 
