@@ -64,7 +64,7 @@ In that case the CPU's program counter is checked. When it tries to load from ta
 
 For clarification: if you load with "load" in the launch.json the "zx81LoadOverlay" functionality is not used and you don't need to have the flag enabled.
 
-If you use "load" any successing `LOAD` of a .p file will be done from the same folder as you used for "load".
+If you use "load" any successive `LOAD` of a .p file will be done from the same folder as you used for "load".
 If you don't use "load" the `LOAD` will search for the file in the workspace of vscode.
 
 It is also possible to use folders within the `LOAD` command and you can give the filename with or without extension, e.g. `LOAD "FOLDER/GAME"` would load the file `GAME.P` from `FOLDER`.
@@ -174,7 +174,7 @@ Note: To simulate ARX hires graphics you need to use a memory model that enables
   }
 ~~~
 
-Please note that you cannot use "borderSize" and "screenArea" together. For tandard programs the "borderSize" might be easier to use. If you need more fine-grained control use the "screenArea".
+Please note that you cannot use "borderSize" and "screenArea" together. For standard programs the "borderSize" might be easier to use. If you need more fine-grained control use the "screenArea".
 
 ### "hires"
 If true the generation of the screen output by the cpu is simulated. This allows to display hires programs. If false the ZX81 dfile is converted directly into screen graphics. This can be an advantage when debugging a non-hires game.
@@ -383,7 +383,7 @@ Furthermore you need to enable the Chroma 81:
 ]
 ~~~
 
-Examplarily here is the color code for the rocket:
+Exemplarily here is the color code for the rocket:
 ~~~asm
 ; $2E - Character: 'I' / Rocket         CHR$(46)
     DEFB $F9,$F9,$F9,$F9,$F9,$F9,$F9,$F9    ; blue on white
@@ -448,7 +448,7 @@ to show the keyboard:
 ![](../../html/images/zx81_kbd.svg)
 
 The keys on the keyboard can be turned on/off by clicking with the mouse.
-You can also just use you real keyboard to simulate keypresses (note: the simulator view nees to have focus to receive keypresses, i.e. click once inside the simulator view so that it has focus).
+You can also just use you real keyboard to simulate keypresses (note: the simulator view needs to have focus to receive keypresses, i.e. click once inside the simulator view so that it has focus).
 
 The Shift key is mapped to the left Alt key.
 But many real key combinations do work as well, e.g. a Shift-2 will generate the ZX81 key sequence Shift-P to create the quote character ".
@@ -506,7 +506,7 @@ Then you will find a logging of the BASIC in the "DEBUG CONSOLE". Here is an exa
 The logging of the line (e.g. `1030 IF L=25 THEN LET L=26 [L=1]`) happens **before** the line is executed.
 In brackets [...] you find the used variables **before** the line is executed.
 If a variable is changed it will **appear** after the BASIC line prefixed by a "Changed:".
-E.g. see line 1135 above. When the line is entered N exists alread and contains the value 15.
+E.g. see line 1135 above. When the line is entered N exists already and contains the value 15.
 After the FOR-LOOP has been executed the first time, N becomes 0.
 
 Notes:
