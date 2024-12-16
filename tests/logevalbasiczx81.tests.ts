@@ -9,8 +9,6 @@ import {Settings} from '../src/settings/settings';
 suite('LogEvalBasicZx81', () => {
 	let remote: ZSimRemote;
 	let mockRemote: sinon.SinonMock;
-	let mockZ80Registers: sinon.SinonMock;
-	let mockLabels: sinon.SinonMock;
 
 	setup(() => {
 		// Initialize Settings
@@ -107,7 +105,7 @@ suite('LogEvalBasicZx81', () => {
 			mockRemote.expects('readMemoryDump').withArgs(lineContentsAddr - 4).returns(Promise.resolve(new Uint8Array([1, 4])));	// line number 260
 			mockRemote.expects('readMemoryDump').withArgs(lineContentsAddr - 2).returns(Promise.resolve(new Uint8Array([buf.length & 0xFF, buf.length >> 8])));	// size
 			mockRemote.expects('readMemoryDump').withArgs(lineContentsAddr).returns(Promise.resolve(buf));	// BASIC line buffer
-			const log = new LogEvalBasicZx81(remote, mockZ80Registers, mockLabels) as any;
+			const log = new LogEvalBasicZx81(remote, Z80Registers, undefined as any) as any;
 			const txt = await log.evaluateLine();
 			assert.equal(txt, 'BASIC: 260 LET N=0 ');
 			assert.equal(log.cachedVarNames.length, 1);
@@ -117,7 +115,7 @@ suite('LogEvalBasicZx81', () => {
 
 	suite('extractVarNames', () => {
 		test('LET N=5', () => {
-			const log = new LogEvalBasicZx81(mockRemote, mockZ80Registers, mockLabels) as any;
+			const log = new LogEvalBasicZx81(remote, Z80Registers, undefined as any) as any;
 			const vars = log.extractVarNames(new Uint8Array([
 				0xF1, 	// LET
 				0x33, 	// N
@@ -130,7 +128,7 @@ suite('LogEvalBasicZx81', () => {
 			assert.equal(vars[0], 'N');
 		});
 		test('LET N=MAB+1', () => {
-			const log = new LogEvalBasicZx81(mockRemote, mockZ80Registers, mockLabels) as any;
+			const log = new LogEvalBasicZx81(remote, Z80Registers, undefined as any) as any;
 			const vars = log.extractVarNames(new Uint8Array([
 				0xF1, 	// LET
 				0x33, 	// N
@@ -144,7 +142,7 @@ suite('LogEvalBasicZx81', () => {
 			assert.equal(vars[1], 'MAB');
 		});
 		test('LET N$=MAB$', () => {
-			const log = new LogEvalBasicZx81(mockRemote, mockZ80Registers, mockLabels) as any;
+			const log = new LogEvalBasicZx81(remote, Z80Registers, undefined as any) as any;
 			const vars = log.extractVarNames(new Uint8Array([
 				0xF1, 	// LET
 				0x33, 0x0D,	// N$
@@ -159,7 +157,7 @@ suite('LogEvalBasicZx81', () => {
 		});
 		test('LET N(5)=M', () => {
 			// Fields (e.g. N(5)) are not extracted
-			const log = new LogEvalBasicZx81(mockRemote, mockZ80Registers, mockLabels) as any;
+			const log = new LogEvalBasicZx81(remote, Z80Registers, undefined as any) as any;
 			const vars = log.extractVarNames(new Uint8Array([
 				0xF1, 	// LET
 				0x33, 0x10,	// N(
@@ -174,7 +172,7 @@ suite('LogEvalBasicZx81', () => {
 			assert.equal(vars[0], 'M');
 		});
 		test('REM N=5', () => {
-			const log = new LogEvalBasicZx81(mockRemote, mockZ80Registers, mockLabels) as any;
+			const log = new LogEvalBasicZx81(remote, Z80Registers, undefined as any) as any;
 			const vars = log.extractVarNames(new Uint8Array([
 				0xEA, 	// REM
 				0x33, 	// N
@@ -186,7 +184,7 @@ suite('LogEvalBasicZx81', () => {
 			assert.equal(vars.length, 0);
 		});
 		test('quoted, PRINT "SRC";B;"C";D;"E"', () => {
-			const log = new LogEvalBasicZx81(mockRemote, mockZ80Registers, mockLabels) as any;
+			const log = new LogEvalBasicZx81(remote, Z80Registers, undefined as any) as any;
 			const vars = log.extractVarNames(new Uint8Array([
 				0xF5, 	// PRINT
 				0x0B, 0x38, 0x37, 0x28, 0x0B, 0x19,	// "SRC";
@@ -203,12 +201,12 @@ suite('LogEvalBasicZx81', () => {
 
 	suite('evaluateVars', () => {
 		test('undefined', async () => {
-			const log = new LogEvalBasicZx81(mockRemote, mockZ80Registers, mockLabels) as any;
+			const log = new LogEvalBasicZx81(remote, Z80Registers, undefined as any) as any;
 			const txt = await log.evaluateVars();
 			assert.equal(txt, '');
 		});
 		test('A,B', async () => {
-			const log = new LogEvalBasicZx81(mockRemote, mockZ80Registers, mockLabels) as any;
+			const log = new LogEvalBasicZx81(remote, Z80Registers, undefined as any) as any;
 			log.cachedBasicLine = new Uint8Array();
 			log.zx81BasicVars.basicVars = new Map<string, number | string>([['A', 1], ['B', 2]]);
 			log.cachedVarNames = ['A', 'B'];
