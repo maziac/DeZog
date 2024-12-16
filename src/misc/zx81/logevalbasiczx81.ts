@@ -204,7 +204,8 @@ export class LogEvalBasicZx81 extends LogEval {
 		}
 
 		// Add variables
-		txt += ' [' + varsTxt + ']';
+		if(varsTxt.length > 0)
+			txt += ' [' + varsTxt + ']';
 		return txt;
 	}
 }
