@@ -31,13 +31,10 @@ export class LogEvalBasicZx81 extends LogEval {
 	protected bpLongAddressLine: number;	// For BASIC line decoding
 	protected bpLongAddressVars: number;	// For BASIC variables decoding
 
-	// The cached BASIC line.
-	protected cachedBasicLine: string | undefined;
-
 	// The cached variable names.
-	protected cachedVarNames: string[];
+	protected cachedVarNames: string[] = [];
 
-	// Holds the last BASIC vars.
+	// Holds the BASIC vars.
 	protected zx81BasicVars: Zx81BasicVars;
 
 
@@ -77,11 +74,11 @@ export class LogEvalBasicZx81 extends LogEval {
 		// Check which breakpoint is hit
 		const pc = this.remote.getPCLong();
 		if (pc === this.bpLongAddressLine) {
-			await this.evaluateLine();
-			return undefined;	// No output yet
+			const txt = await this.evaluateLine();
+			return txt;
 		}
 		if (pc === this.bpLongAddressVars) {
-			const txt = await this.evaluateVars();
+			const txt = await this.evaluateChangedVars();
 			return txt;
 		}
 		// Should not happen
@@ -92,8 +89,7 @@ export class LogEvalBasicZx81 extends LogEval {
 	/** Returns the BASIC line.
 	 * @returns E.g. 'BASIC: 10 PRINT "HELLO"'
 	 */
-	protected async evaluateLine(): Promise<void> {
-		this.cachedBasicLine = undefined;
+	protected async evaluateLine(): Promise<string | undefined> {
 		// Only output everything below VARS (i.e. in program area, but allow also DFILE)
 		const lineContentsAddr = this.remote.getRegisterValue('HL');
 		const vars = await this.getWordEval(16400);
@@ -104,7 +100,7 @@ export class LogEvalBasicZx81 extends LogEval {
 		const lineNumberArray = await this.remote.readMemoryDump(lineContentsAddr-4, 2);
 		const lineNumber = lineNumberArray[1] + 256 * lineNumberArray[0];
 		const size = await this.getWordEval(lineContentsAddr - 2);
-		this.cachedBasicLine = `BASIC: ${lineNumber} `;
+		let basicLine = `BASIC: ${lineNumber} `;
 
 		// Convert BASIC tokens into text
 		const buffer = await this.remote.readMemoryDump(lineContentsAddr, size);
@@ -112,9 +108,12 @@ export class LogEvalBasicZx81 extends LogEval {
 
 		// Extract variables from BASIC buffer
 		this.cachedVarNames = this.extractVarNames(buffer);
+		const varsTxt = this.evaluateVars();
 
-		this.cachedBasicLine += txt;
+		basicLine += txt + ' ' + varsTxt;
+		return basicLine;
 	}
+
 
 	/** Extract variable names from the BASIC line buffer.
 	 * Simply everything that is a letter+ is taken as a variable name.
@@ -168,44 +167,66 @@ export class LogEvalBasicZx81 extends LogEval {
 		}
 		// Push also last var name if necessary
 		if (varName.length > 0 && !varNames.includes(varName))
-				varNames.push(varName);
+			varNames.push(varName);
 
 		return varNames;
 	}
 
 
-	/** Returns the cached BASIC line text plus the variables mentioned
+	/** Returns the variables mentioned
 	 * with their values.
 	*/
-	protected async evaluateVars(): Promise<string | undefined> {
-		// Get the BASIC variables (store old values)
+	protected evaluateVars(): string {
+		// Add all vars with their values
+		let varsTxt = '';
+		let sep = '';
+		for (let varName of this.cachedVarNames) {
+			// Gt current value
+			const value = this.zx81BasicVars.basicVars.get(varName);
+			if (value !== undefined) {
+				varsTxt += sep + varName + '=' + value;
+				// Separator
+				sep = ', ';
+			}
+		}
+
+		// Check if there are any variables
+		if (varsTxt.length > 0)
+			varsTxt = '[' + varsTxt + ']';
+
+		return varsTxt;
+	}
+
+
+	/** Returns the variables mentioned
+	 * with their values.
+	*/
+	protected async evaluateChangedVars(): Promise<string | undefined> {
+		// Remember old values
+		const lastBasicVars = this.zx81BasicVars.basicVars;
+		// Get the BASIC variables
 		const [varBuffer, varsStart] = await this.zx81BasicVars.getBasicVars((addr64k, size) => this.remote.readMemoryDump(addr64k, size));
 		this.zx81BasicVars.parseBasicVars(varBuffer, varsStart);
-
-		// Check if there was any decoded BASIC line
-		if (this.cachedBasicLine === undefined)
-			return undefined;
-		let txt = this.cachedBasicLine;
-		this.cachedBasicLine = undefined;
 
 		// Add all vars with their values
 		let varsTxt = '';
 		let sep = '';
 		for (let varName of this.cachedVarNames) {
-			varsTxt += sep + varName + '=';
 			// Gt old and new value
-			const oldValue = this.zx81BasicVars.lastBasicVars.get(varName);
-			const newValue = this.zx81BasicVars.basicVars.get(varName);
-			varsTxt += newValue;
-			if (oldValue !== undefined && oldValue !== newValue)
-				varsTxt += '(' + oldValue + ')';
+			const oldValue = lastBasicVars.get(varName);
+			const changedValue = this.zx81BasicVars.basicVars.get(varName);
+			if (changedValue !== undefined && oldValue !== changedValue)
+				varsTxt += sep + varName + '=' + changedValue;
 			// Separator
 			sep = ', ';
 		}
+		this.cachedVarNames = [];
 
-		// Add variables
-		if(varsTxt.length > 0)
-			txt += ' [' + varsTxt + ']';
+		// Check if any variable has changed
+		if (varsTxt.length === 0)
+			return undefined;
+
+		const txt = 'BASIC: Changed: ' + varsTxt;
 		return txt;
 	}
 }

@@ -7,9 +7,6 @@ export class Zx81BasicVars {
 	protected static readonly VARS = 16400;
 	protected static readonly E_LINE = 16404;
 
-	// Last BASIC vars
-	public lastBasicVars: Map<string, number | string> = new Map();
-
 	// New/current BASIC vars
 	public basicVars: Map<string, number | string> = new Map();
 
@@ -35,13 +32,11 @@ export class Zx81BasicVars {
 
 	/** Creates a map of variables and values from the BASIC vars buffer.
 	 * Stores it in this.basicVars. The map is cleared before.
-	 * The previous buffer (this.baxicVars) is stored in this.lastBasicVars.
+	 * The previous buffer (this.basicVars) is stored in this.lastBasicVars.
 	 * @param basicVars The BASIC vars buffer.
 	 * @param address The start address of the BASIC vars.
 	 */
 	public parseBasicVars(basicVars: Uint8Array, address: number): void {
-		// Remember old values
-		this.lastBasicVars = this.basicVars;
 		// Clear new BASIC vars
 		this.basicVars = new Map<string, number | string>();
 		this.basicVarsAddress.clear();

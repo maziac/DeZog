@@ -485,6 +485,60 @@ For "Battlestar Galactica" you could use:
 ~~~
 Please note that "Battlestar Galactica" only uses a partial address decoding.
 
+# BASIC logging
+'zsim' automatically does a logging of the ZX81 BASIC.
+If LOGPOINT is enabled in the vscode UI:
+![](images/vscode-logpoint.jpg)
+Then you will find a logging of the BASIC in the "DEBUG CONSOLE". Here is an example:
+~~~
+  Log: BASIC: 9902 GOSUB 1000
+  Log: BASIC: 1000 PRINT AT 0,0;X$ [X$="Hello World"]
+  Log: BASIC: 1030 IF L=25 THEN LET L=26 [L=1]
+  Log: BASIC: 1050 PRINT AT 12,L;">" [L=1]
+  Log: BASIC: 1100 PRINT AT 15,19;
+  Log: BASIC: 1110 IF PEEK O/2<>INT (PEEK O/2) THEN PRINT TAB 15;"%A" [O=18208]
+  Log: BASIC: 1120 IF PEEK O=2 OR PEEK O=3 OR PEEK O>5 THEN PRINT TAB 14;"%<%*%>" [O=18208]
+  Log: BASIC: 1130 IF PEEK O>3 THEN PRINT TAB 13;"%(\'.%Y\.'%)" [O=18208]
+  Log: BASIC: 1135 FOR N=0 TO 200 [N=15]
+  Log: BASIC: Changed: N=0
+~~~
+
+The logging of the line (e.g. `1030 IF L=25 THEN LET L=26 [L=1]`) happens **before** the line is executed.
+In brackets [...] you find the used variables **before** the line is executed.
+If a variable is changed it will **appear** after the BASIC line prefixed by a "Changed:".
+E.g. see line 1135 above. When the line is entered N exists alread and contains the value 15.
+After the FOR-LOOP has been executed the first time, N becomes 0.
+
+Notes:
+- Fields are not printed. E.g. if you defined a string as `DIM A$(10)` and use `PRINT A$` the A$ string is not logged. Same if you used `LET M(1,1)=6` then `M(1,1)` is not printed.
+
+
+## BASIC variables dumping
+In the "DEBUG CONSOLE" there is another helpful command for 'zsim': `-e zx81-basic-vars`
+It prints the values of all current BASIC variables in the debug console.
+Also for fields (specified with `DIM`).
+Furthermore you get the address of the location of the variable.
+Example:
+~~~
+L$="" @0x83A4
+G(1)=20824 @0x83AA
+G(2)=20830 @0x83AF
+G(3)=20835 @0x83B4
+LL=3 @0x83BB
+N0=2 @0x83C2
+MM=20904 @0x83C9
+G1=168 @0x83D0
+G2=81 @0x83D7
+BON=350 @0x83DF
+SC=700 @0x83E6
+E(1,1)=140.728515625 @0x83F3
+E(1,2)=1 @0x83F8
+E(1,3)=3 @0x83FD
+~~~
+
+E.g. "G1" has the value of 168 and the location of it's value in memory is 0x83C9.
+Note: 0x83C9 points to the value of G1, not to the start of the variable.
+This is also true for arrays. E.g. 0x83FD points to the value of E(1,3).
 
 # Attribution
 Many thanks to the authors of the shown games/programs:
