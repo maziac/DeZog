@@ -231,6 +231,7 @@ export class Zx81BasicVars {
 	/** Returns all values for the given list of strings.
 	 * @param varNames The list of variable names.
 	 * @returns A string with variable names and values.
+	 * Note: Not used.
 	*/
 	public getVariableValues(varNames: string[]): string {
 		const results: string[] = [];

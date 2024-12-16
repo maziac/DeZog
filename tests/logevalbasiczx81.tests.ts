@@ -64,7 +64,7 @@ suite('LogEvalBasicZx81', () => {
 			mockLog.expects('evaluateLine').once();
 			mockLog.expects('evaluateVars').never();
 			log.setLogPoints(new Map<string, any[]>());
-			mockRemote.expects('getPCLong').returns(0x10000 + (LogEvalBasicZx81 as any).BP_ADDR_BASIC_LINE);	// Long address, pc = 0
+			mockRemote.expects('getPCLong').returns(0x10000 + (LogEvalBasicZx81 as any).BP_ADDR_BASIC_LINE);	// Long address
 			const txt = await log.evaluate();
 			mockLog.verify();
 			assert.equal(txt, undefined);
@@ -73,9 +73,9 @@ suite('LogEvalBasicZx81', () => {
 			const log = new LogEvalBasicZx81(remote, Z80Registers, undefined as any) as any;
 			const mockLog = sinon.mock(log);
 			mockLog.expects('evaluateLine').never();
-			mockLog.expects('evaluateVars').once().returns(Promise.resolve('x'));
+			mockLog.expects('evaluateChangedVars').once().returns(Promise.resolve('x'));
 			log.setLogPoints(new Map<string, any[]>());
-			mockRemote.expects('getPCLong').returns(0x10000 + (LogEvalBasicZx81 as any).BP_ADDR_BASIC_VARS);	// Long address, pc = 0
+			mockRemote.expects('getPCLong').returns(0x10000 + (LogEvalBasicZx81 as any).BP_ADDR_BASIC_VARS);	// Long address
 			const txt = await log.evaluate();
 			mockLog.verify();
 			assert.equal(txt, 'x');
@@ -88,9 +88,8 @@ suite('LogEvalBasicZx81', () => {
 			mockRemote.expects('getRegisterValue').withArgs('HL').returns(lineContentsAddr);
 			mockRemote.expects('readMemoryDump').withArgs(16400).returns(new Uint8Array([19999 & 0xFF, 19999 >> 8]));	// VARS
 			const log = new LogEvalBasicZx81(remote, Z80Registers, undefined as any) as any;
-			log.cachedBasicLine = new Uint8Array();
-			await log.evaluateLine();
-			assert.equal(log.cachedBasicLine, undefined);
+			const txt = await log.evaluateLine();
+			assert.equal(txt, undefined);
 		});
 		test('260 LET N=5', async () => {
 			const buf = new Uint8Array([
@@ -109,9 +108,8 @@ suite('LogEvalBasicZx81', () => {
 			mockRemote.expects('readMemoryDump').withArgs(lineContentsAddr - 2).returns(Promise.resolve(new Uint8Array([buf.length & 0xFF, buf.length >> 8])));	// size
 			mockRemote.expects('readMemoryDump').withArgs(lineContentsAddr).returns(Promise.resolve(buf));	// BASIC line buffer
 			const log = new LogEvalBasicZx81(remote, mockZ80Registers, mockLabels) as any;
-			log.cachedBasicLine = new Uint8Array();
-			await log.evaluateLine();
-			assert.equal(log.cachedBasicLine, 'BASIC: 260 LET N=0');
+			const txt = await log.evaluateLine();
+			assert.equal(txt, 'BASIC: 260 LET N=0 ');
 			assert.equal(log.cachedVarNames.length, 1);
 			assert.equal(log.cachedVarNames[0], 'N');
 		});
@@ -206,17 +204,16 @@ suite('LogEvalBasicZx81', () => {
 	suite('evaluateVars', () => {
 		test('undefined', async () => {
 			const log = new LogEvalBasicZx81(mockRemote, mockZ80Registers, mockLabels) as any;
-			log.cachedBasicLine = undefined;
 			const txt = await log.evaluateVars();
-			assert.equal(txt, undefined);
+			assert.equal(txt, '');
 		});
 		test('A,B', async () => {
 			const log = new LogEvalBasicZx81(mockRemote, mockZ80Registers, mockLabels) as any;
 			log.cachedBasicLine = new Uint8Array();
+			log.zx81BasicVars.basicVars = new Map<string, number | string>([['A', 1], ['B', 2]]);
 			log.cachedVarNames = ['A', 'B'];
 			const txt = await log.evaluateVars();
-			assert.equal(txt, ' [A, B]');
-			assert.equal(log.cachedBasicLine, undefined);
+			assert.equal(txt, '[A=1, B=2]');
 		});
 	});
 });
