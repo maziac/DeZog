@@ -1285,7 +1285,7 @@ out port value: Output 'value' to 'port'. E.g. "-e out 0x9000 0xFE"
 in port: Print input value from 'port'. E.g. "-e in 0x8000"
 tstates set value: set t-states to 'value', then create a tick event. E.g. "-e tstates set 1000"
 tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e tstates add 1000"
-"zx81-basic-vars": Get all ZX81 BASIC variables. E.g. "-e zx81 basic-vars"
+"zx81-basic-vars [var1] [,var2...]": Get all or certain ZX81 BASIC variables. E.g. "-e zx81 basic-vars" or "-e zx81-basic-vars N Z$"
 `;
 				return response;
 			}
@@ -1339,19 +1339,25 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 				return response;
 			}
 			if (cmd_name === "zx81-basic-vars") {
-				// Check count of arguments
-				if (tokens.length !== 0) {
-					throw new Error("Wrong number of arguments.");
-				}
 				// Interprete
 				const zx81BasicVars = new Zx81BasicVars();
 				const [varBuffer, varsStart] = await zx81BasicVars.getBasicVars((addr64k, size) => this.readMemoryDump(addr64k, size));
 				zx81BasicVars.parseBasicVars(varBuffer, varsStart);
-				// Get all vars
-				const allValues = zx81BasicVars.getAllVariablesWithValues();
+				// Get vars
+				let values;
+				if (tokens.length === 0) {
+					// No arguments -> get all variables
+					values = zx81BasicVars.getAllVariablesWithValues();
+					const size = varBuffer.length;
+					response = `BASIC-vars @0x${Utility.getHexString(varsStart, 4)} (${varsStart}), size=0x${Utility.getHexString(size, 4)} (${size}):\n`;
+				}
+				else {
+					// Get certain variables
+					values = zx81BasicVars.getVariableValues(tokens);
+					response = '';
+				}
+				response += `${values.join('\n')}`;
 				// Return
-				const size = varBuffer.length;
-				response = `BASIC-vars @0x${Utility.getHexString(varsStart, 4)} (${varsStart}), size=0x${Utility.getHexString(size, 4)} (${size}):\n${allValues.join('\n')}`;
 				return response;
 			}
 

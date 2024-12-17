@@ -233,14 +233,22 @@ export class Zx81BasicVars {
 	 * @returns A string with variable names and values.
 	 * Note: Not used.
 	*/
-	public getVariableValues(varNames: string[]): string {
+	public getVariableValues(varNames: string[]): string[] {
 		const results: string[] = [];
-		for (let varName of varNames) {
+		for (let varNameIn of varNames) {
+			const varName = varNameIn.toUpperCase();
 			const value = this.basicVars.get(varName);
-			results.push(varName + '=' + (value === undefined ? 'undefined' : value));
+			let txt = varName + '=';
+			if (value === undefined)
+				txt += 'undefined';
+			else {
+				txt += value;
+				const address = this.basicVarsAddress.get(varName)!;
+				txt += ' @0x' + Utility.getHexString(address, 4);
+			}
+			results.push(txt);
 		}
-		const result = results.join(', ');
-		return result;
+		return results;
 	}
 
 
