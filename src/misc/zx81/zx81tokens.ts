@@ -19,7 +19,7 @@ export class Zx81Tokens {
 	 * The codes that correspondent to commands like " GOTO " are additionally but in brackets,
 	 * e.g. "[GOTO]" when they appear in REM statements or quoted text.
 	 */
-	public static tokens = [
+	protected static tokens = [
 		// 0x0
 		" ", "\\' ", "\\ '", "\\''", "\\. ", "\\: ", "\\.'", "\\:'", "\\##", "\\,,", "\\~~", "\"", "#", "$", ":", "?",
 		// 0x1

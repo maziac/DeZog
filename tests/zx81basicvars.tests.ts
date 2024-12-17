@@ -27,12 +27,18 @@ suite('Zx81BasicVars', () => {
 
 	test('getVariableValues', () => {
 		bvAny.basicVars.set('X', 2);
+		bvAny.basicVarsAddress.set('X', 0xF000);
 		bvAny.basicVars.set('BC', 5);
+		bvAny.basicVarsAddress.set('BC', 0xF100);
 		bvAny.basicVars.set('D(1,2)', 12);
+		bvAny.basicVarsAddress.set('D(1,2)', 0xF200);
 		let vars = basicVars.getVariableValues([]);
 		assert.equal(vars, '');
 		vars = basicVars.getVariableValues(['A', 'X', 'D(1,2)']);
-		assert.equal(vars, 'A=undefined, X=2, D(1,2)=12');
+		assert.deepEqual(vars, ['A=undefined',
+			'X=2 @0xF000',
+			'D(1,2)=12 @0xF200'
+		]);
 	});
 
 	suite('parseBasicVars', () => {
@@ -123,11 +129,11 @@ suite('Zx81BasicVars', () => {
 				0x00, 0x85, 0x68, 0x00, 0x00, 0x00,
 			]);
 			basicVars.parseBasicVars(data, 0x1000);
-			assert.equal(basicVars.getVariableValues(['C(1,1,1)']), 'C(1,1,1)=0');
-			assert.equal(basicVars.getVariableValues(['C(1,1,2)']), 'C(1,1,2)=10');
-			assert.equal(basicVars.getVariableValues(['C(9,1,3)']), 'C(9,1,3)=19');
-			assert.equal(basicVars.getVariableValues(['C(10,2,2)']), 'C(10,2,2)=0');
-			assert.equal(basicVars.getVariableValues(['C(10,2,3)']), 'C(10,2,3)=29');
+			assert.deepEqual(basicVars.getVariableValues(['C(1,1,1)']), ['C(1,1,1)=0 @0x100A']);
+			assert.deepEqual(basicVars.getVariableValues(['C(1,1,2)']), ['C(1,1,2)=10 @0x100F']);
+			assert.deepEqual(basicVars.getVariableValues(['C(9,1,3)']), ['C(9,1,3)=19 @0x1104']);
+			assert.deepEqual(basicVars.getVariableValues(['C(10,2,2)']), ['C(10,2,2)=0 @0x112C']);
+			assert.deepEqual(basicVars.getVariableValues(['C(10,2,3)']), ['C(10,2,3)=29 @0x1131']);
 		});
 
 		test('0b0100_0000 String', () => {
@@ -149,10 +155,10 @@ suite('Zx81BasicVars', () => {
 				0x26, 0x27, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3f
 			]);
 			basicVars.parseBasicVars(data, 0x1000);
-			assert.equal(basicVars.getVariableValues(['A$(1,1)']), 'A$(1,1)="A"');
-			assert.equal(basicVars.getVariableValues(['A$(1,2)']), 'A$(1,2)="B"');
-			assert.equal(basicVars.getVariableValues(['A$(2,1)']), 'A$(2,1)=" "');
-			assert.equal(basicVars.getVariableValues(['A$(4,2)']), 'A$(4,2)="Z"');
+			assert.deepEqual(basicVars.getVariableValues(['A$(1,1)']), ['A$(1,1)="A" @0x1008']);
+			assert.deepEqual(basicVars.getVariableValues(['A$(1,2)']), ['A$(1,2)="B" @0x1009']);
+			assert.deepEqual(basicVars.getVariableValues(['A$(2,1)']), ['A$(2,1)=" " @0x100A']);
+			assert.deepEqual(basicVars.getVariableValues(['A$(4,2)']), ['A$(4,2)="Z" @0x100F']);
 		});
 	});
 });

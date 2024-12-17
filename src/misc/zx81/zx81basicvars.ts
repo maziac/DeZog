@@ -56,7 +56,7 @@ export class Zx81BasicVars {
 						// Letter, 5 byte value
 						if (firstLetter < 0x26 || firstLetter > 0x3F)
 							throw Error('Invalid BASIC variable.');
-						const varName = Zx81Tokens.tokens[firstLetter];
+						const varName = Zx81Tokens.convertToken(firstLetter);
 						// Read value
 						const valueBuf = basicVars.slice(i, i + 5);
 						const value = Zx81Tokens.convertBufToZx81Float(valueBuf);
@@ -81,7 +81,7 @@ export class Zx81BasicVars {
 						// Letter, +characters, 5 byte value
 						if (firstLetter < 0x26 || firstLetter > 0x3F)
 							throw Error('Invalid BASIC variable.');
-						let varName = Zx81Tokens.tokens[firstLetter];
+						let varName = Zx81Tokens.convertToken(firstLetter);
 						// Now find more characters
 						while (true) {
 							const byte = basicVars[i++];
@@ -92,7 +92,7 @@ export class Zx81BasicVars {
 							const char = byte & 0b0011_1111;
 							if (char < 0x1C || char > 0x3F)
 								throw Error('Invalid BASIC variable.');
-							varName += Zx81Tokens.tokens[char];
+							varName += Zx81Tokens.convertToken(char);
 							if(end === 0b1000_0000)
 								break;
 						}
@@ -114,7 +114,7 @@ export class Zx81BasicVars {
 						// Letter
 						if (firstLetter < 0x26 || firstLetter > 0x3F)
 							throw Error('Invalid BASIC variable.');
-						const varName = Zx81Tokens.tokens[firstLetter];
+						const varName = Zx81Tokens.convertToken(firstLetter);
 						// Read array total length
 						const arrayLength = basicVars[i++] + 256 * basicVars[i++];
 						// Number of dimensions
@@ -160,7 +160,7 @@ export class Zx81BasicVars {
 						// Letter, number of chars, chars
 						if (firstLetter < 0x26 || firstLetter > 0x3F)
 							throw Error('Invalid BASIC variable.');
-						const varName = Zx81Tokens.tokens[firstLetter] + '$';
+						const varName = Zx81Tokens.convertToken(firstLetter) + '$';
 						// Read length
 						const length = basicVars[i++] + 256 * basicVars[i++];
 						address += 2;
@@ -168,7 +168,7 @@ export class Zx81BasicVars {
 						let str = '"';
 						for (let j = 0; j < length; j++) {
 							const char = basicVars[i++];
-							str += Zx81Tokens.tokens[char];
+							str += Zx81Tokens.convertToken(char);
 						}
 						str += '"';
 						// Store the variable
@@ -184,7 +184,7 @@ export class Zx81BasicVars {
 						// Letter
 						if (firstLetter < 0x26 || firstLetter > 0x3F)
 							throw Error('Invalid BASIC variable.');
-						const varName = Zx81Tokens.tokens[firstLetter] + '$';
+						const varName = Zx81Tokens.convertToken(firstLetter) + '$';
 						// Read array total length
 						const arrayLength = basicVars[i++] + 256 * basicVars[i++];
 						// Number of dimensions
@@ -203,7 +203,7 @@ export class Zx81BasicVars {
 						let k = 0;
 						while (k < charsLength) {
 							const char = basicVars[i++];
-							const value = Zx81Tokens.tokens[char];
+							const value = Zx81Tokens.convertToken(char);
 							k++;
 							// Store the variable
 							const varNameWithIndex = varName + '(' + dimIndex.join(',') + ')';
