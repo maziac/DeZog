@@ -98,12 +98,13 @@ To keep the disassembly up-to-date most of the time DeZog decides to automatical
 Anyhow: If in doubt that the disassembly is recent you can also compare it with the (brute force) disassembly in the VARIABLE pane, e.g.:
 
 ![](images/ReverseEngineeringUsage/variables_disassembly.jpg)
+
 which is **always** up-to-date.
 
 
 Some special notes about ZX Next disassembly:
-a) There are several ways in the ZX Next to e.g. overlay the ROM area. E.g. although the memory banks may show that ROM is paged in, it might be that this is overlayed by Layer2 RAM. A disassembly would then show the disassembled Layer2 (which is most probably nonsense as Layer2 normally would contain data).
-b) The ZX Next works with 8 banks each with 8k byte size. If disassembled code would pass a bank border the disassembly stops at this point.
+1. There are several ways in the ZX Next to e.g. overlay the ROM area. For example, although the memory banks may show that ROM is paged in, it might be that this is overlayed by Layer2 RAM. A disassembly would then show the disassembled Layer2 (which is most probably nonsense as Layer2 normally would contain data).
+2. The ZX Next works with 8 banks each with 8k byte size. If disassembled code would pass a bank border the disassembly stops at this point.
 This is simply because it is not safe to assume that the bank will still be paged in when the opcode is executed. E.g. let's assume in the slot 0x8000-0xBFFF there is a call to 0xC000. The disassembly would not follow the address 0xC000.
 This is why a disassembly on a ZX48K may disassembly more code than on a ZX Next: The ZX48K supports no banking so the disassembly can follow the execution flow in all cases. In this example also the subroutine at 0xC000 would be disassembled.
 
@@ -114,9 +115,9 @@ If you run the program and then manually pause or a breakpoint is reached, DeZog
 In such cases, you will see the disassembly directly from the current PC without any previous lines.
 But of course, you often want to know how you got here.
 There are a few ways you can deal with this:
-- a) Use 'zsim: the internal simulator keeps a list of the most recently executed addresses used by DeZog for disassembly.
-- b) Use the command '-dasm' in the debug console: Simply specify an address slightly before that of the current PC (program counter). 'dasm' will perform a brute force disassembly. But this only works if the 'dasm' address is not too far away from the current PC. And of course it can fail because Z80 commands can be up to 4 bytes long, so you might choose an address somewhere in the middle of a command. In that case, try a slightly different address.
-- c) Use '-dasm', but also take a look at the callstack and use the address from the callstack.
+1. Use 'zsim: the internal simulator keeps a list of the most recently executed addresses used by DeZog for disassembly.
+2. Use the command '-dasm' in the debug console: Simply specify an address slightly before that of the current PC (program counter). 'dasm' will perform a brute force disassembly. But this only works if the 'dasm' address is not too far away from the current PC. And of course it can fail because Z80 commands can be up to 4 bytes long, so you might choose an address somewhere in the middle of a command. In that case, try a slightly different address.
+3. Use '-dasm', but also take a look at the callstack and use the address from the callstack.
 
 
 ## Memory Model
