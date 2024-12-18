@@ -101,7 +101,7 @@ export class LogEvalBasicZx81 extends LogEval {
 			return undefined;
 
 		// HL points to the address just after LINE and SIZE:
-		const lineNumberArray = await this.remote.readMemoryDump(lineContentsAddr-4, 2);
+		const lineNumberArray = await this.remote.readMemoryDump(lineContentsAddr - 4, 2);
 		const lineNumber = lineNumberArray[1] + 256 * lineNumberArray[0];
 		const size = await this.getWordEval(lineContentsAddr - 2);
 		let basicLine = `BASIC: ${lineNumber} `;
@@ -111,10 +111,16 @@ export class LogEvalBasicZx81 extends LogEval {
 		const txt = Zx81Tokens.convertBasLine(buffer);
 
 		// Extract variables from BASIC buffer
-		this.cachedVarNames = this.extractVarNames(buffer);
-		const varsTxt = this.evaluateVars();
-
-		basicLine += txt + ' ' + varsTxt;
+		basicLine += txt;
+		if (txt.startsWith('NEXT ')) {
+			// Don't show variables for NEXT
+			this.cachedVarNames = [];
+		}
+		else {
+			this.cachedVarNames = this.extractVarNames(buffer);
+			const varsTxt = this.evaluateVars();
+			basicLine += ' ' + varsTxt;
+		}
 		return basicLine;
 	}
 

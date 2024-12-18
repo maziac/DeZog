@@ -511,6 +511,7 @@ After the FOR-LOOP has been executed the first time, N becomes 0.
 
 Notes:
 - Fields are not printed. E.g. if you defined a string as `DIM A$(10)` and use `PRINT A$` the A$ string is not logged. Same if you used `LET M(1,1)=6` then `M(1,1)` is not printed.
+- For `NEXT` the variable value is not printed. `NEXT` is often used in delay loops. vscode can collect multiple same logs into one log which keeps the trace more readable. If the `NEXT` log would print the variable then every logged line would be different and this feature could not be used.
 
 
 ## BASIC variables dumping
