@@ -1021,8 +1021,9 @@ The setup is slightly more complicated as it involves communication with another
 
 The remote type is "zrcp".
 ZEsarUX needs to run before the debug session starts and needs to be connected via a socket interface (ZRCP).
-You need to enable the ZRCP in ZEsarUX. In ZEsarUX enable the socket zrcp protocol either by command-line ("--enable-remoteprotocol")
-or from the ZEsarUX UI ("Settings"->"Debug"->"Remote protocol" to "Enabled").
+You need to enable the ZRCP in ZEsarUX.
+The preferred/easier way is to to enable the zrcp protocol by command-line ("--enable-remoteprotocol").
+But you can also do it in the ZEsarUX UI ("Settings"->"Debug"->"Remote protocol" to "Enabled", you need to enable "Advanced menu items" under "Settings" to get to the "Debug" menu).
 
 You need to enable ZEsarUX in your Z80 program's launch.json configuration, e.g.:
 ~~~json
