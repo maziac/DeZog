@@ -1036,7 +1036,7 @@ You need to enable ZEsarUX in your Z80 program's launch.json configuration, e.g.
 
 The "zrcp" configuration allows the following additional parameters:
 - "port": The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
-- "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: Real remote debugging (emulator running on another PC) does work, but requires a mechanism to copy the .sna/nex file to the remote computer.
+- "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: Real remote debugging (emulator running on another PC) does work, but requires a mechanism to copy the .sna/nex file to the remote computer (for ZEsarUX just the filename is passed through zrcp, ZEsarUX reads the file from the local PC).
 You don't have to enter a hostname, the default is "localhost".
 - skipInterrupt: Is passed to ZEsarUX at the start of the debug session. If true (default is false) ZEsarUX does not break in interrupts (on manual break).
 - "loadDelay": Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session when running under Windows. If that is true for you as well you can experiment with the "loadDelay" option which adds an additional delay at startup. This mitigates the problem.
