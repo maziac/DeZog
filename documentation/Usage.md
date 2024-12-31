@@ -1024,6 +1024,7 @@ ZEsarUX needs to run before the debug session starts and needs to be connected v
 You need to enable the ZRCP in ZEsarUX.
 The preferred/easier way is to to enable the zrcp protocol by command-line ("--enable-remoteprotocol").
 But you can also do it in the ZEsarUX UI ("Settings"->"Debug"->"Remote protocol" to "Enabled", you need to enable "Advanced menu items" under "Settings" to get to the "Debug" menu).
+Please check that you have the "ZENG Online Server" disabled in ZEsarUX. It might interfere with the zrcp.
 
 You need to enable ZEsarUX in your Z80 program's launch.json configuration, e.g.:
 ~~~json
