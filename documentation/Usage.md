@@ -2005,6 +2005,7 @@ The register memory view:
 To search the memory there is a search bar in the top.
 A search is done on the given memory range.
 You can search for strings or byte sequences and you can also search for a mix of strings and bytes.
+
 ![](images/memoryviewer_search1.jpg)
 
 To search for a string use quotation marks, e.g. ```"abcde"```. A sequence of bytes is simply separated by a space. Bytes can be entered as decimal (e.g. ```193```) or hex (e.g. ```$AF```, ```AFh``` or ```0xAF```). Only positive values are allowed and they must be smaller than 256. (If you want to search for a " you need to escape it, e.g. use "\\"".
@@ -2055,6 +2056,7 @@ To use it invoke the Memory Diff View via
 ~~~
 
 This will e.g. show you the contents:
+
 ![](images/memoryviewer_diff1.jpg)
 
 Internally a snapshot of the memory area is taken.
@@ -2065,11 +2067,13 @@ Now press the combobox and choose to display any memory location that was change
 ![](images/memoryviewer_diff_select.gif)
 
 This already could give you the information you need. But if you need to narrow down the location in question you can store the current displayed memory as the new snapshot by pressing "Store" and run your SW once again.
+
 ![](images/memoryviewer_store.jpg)
 Please note that the title now changed to reflect the new observed memory locations.
 You can stop your program and like above check for any changes.
 
 The Memory Diff View allows a few different checks that can be selected with the combobox:
+
 ![](images/memoryviewer_diff_combobox.jpg)
 
 - "--" will display the current memory contents and does not do a filtering at all.
@@ -2082,6 +2086,7 @@ The Memory Diff View allows a few different checks that can be selected with the
 
 
 If you hover over a value you will see a few conversions of the value, it's address AND also the previous value, i.e. the value of the snapshot:
+
 ![](images/memoryviewer_diff_hover.gif)
 
 
