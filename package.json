@@ -1079,7 +1079,7 @@
 								"description": "(Optional) Load a .nex or .sna file (or .tap in case of ZEsarUX) into the emulator on startup of the debug session."
 							},
 							"loadObjs": {
-								"description": "List of one or many object files, i.e. memory dumps. Contain 'path' and 'start' address. (Optional)",
+								"description": "List of one or many object files, i.e. memory dumps. Contains 'path' and 'start' address. (Optional)",
 								"type": "array",
 								"items": {
 									"type": "object",
