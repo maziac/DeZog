@@ -716,6 +716,7 @@ export class ZesaruxSocket extends Socket {
 				await this.sendAwait('extended-stack enabled no', false);	// NOSONAR
 				await this.sendAwait('clear-membreakpoints', false);
 				await this.sendAwait('disable-breakpoints', false);
+				await this.sendAwait('exit-cpu-step', false);
 				await this.sendAwait('quit', false);
 				// Close connection (ZEsarUX also closes the connection)
 				//zSocket.end(); // "end()" takes too long > 1 s
