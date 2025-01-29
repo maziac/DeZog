@@ -2,6 +2,7 @@ import { LabelParserBase } from './labelparserbase';
 import { Utility } from '../misc/utility';
 import { readFileSync } from 'fs';
 import { AsmConfigBase, Z88dkConfig } from '../settings/settings';
+import * as fglob from 'fast-glob';
 
 /**
  * This class parses z88dk asm list files.
@@ -200,9 +201,11 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
         try {
             const mapFile: string = (config as Z88dkConfig).mapFile;
             this.readmapFile(mapFile);
-            const listFiles = typeof zconfig.path == 'string' ? [config.path] : config.path;
+            const listFiles = Array.isArray(zconfig.path) ? config.path : [config.path];
+            const listFilesExp = fglob.sync(listFiles);	// Expand wildcards
 
-            for (const listFile of listFiles) {
+
+            for (const listFile of listFilesExp) {
                 const fileConfig = { ...config, path: listFile };
                 super.loadAsmListFile(fileConfig);
             }
