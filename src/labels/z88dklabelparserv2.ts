@@ -196,10 +196,16 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
      * PC value.
      */
     public loadAsmListFile(config: AsmConfigBase) {
+        const zconfig = config as Z88dkConfig;
         try {
             const mapFile: string = (config as Z88dkConfig).mapFile;
             this.readmapFile(mapFile);
-            super.loadAsmListFile(config);
+            const listFiles = typeof zconfig.path == 'string' ? [config.path] : config.path;
+
+            for (const listFile of listFiles) {
+                const fileConfig = { ...config, path: listFile };
+                super.loadAsmListFile(fileConfig);
+            }
         }
         catch (e) {
             this.throwError(e.message);
