@@ -250,7 +250,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 				// Add label
 				this.addLabelForNumber(value, label);
 			}
-			catch { }	// do nothing in case of an error
+			catch {}	// do nothing in case of an error
 		}
 		else {
 			// Check if there is a label (no equ)
