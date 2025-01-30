@@ -1,9 +1,9 @@
-import { DebugProtocol } from '@vscode/debugprotocol';
-import { Utility } from '../misc/utility';
+import {DebugProtocol} from '@vscode/debugprotocol';
+import {Utility} from '../misc/utility';
 import * as fs from 'fs';
 import * as fglob from 'fast-glob';
-import { UnifiedPath } from '../misc/unifiedpath';
-import { CustomMemoryType } from './settingscustommemory';
+import {UnifiedPath} from '../misc/unifiedpath';
+import {CustomMemoryType} from './settingscustommemory';
 
 
 ///  The absolute minimum base for all assembler configurations.
@@ -543,7 +543,7 @@ export class Settings {
             // If no exception occurs the path is valid:
             rootFolder = result;
         }
-        catch { }
+		catch {}
         // Also use for the launch config.
         rootFolder = UnifiedPath.getUnifiedPath(rootFolder);
         launchCfg.rootFolder = rootFolder;
@@ -608,15 +608,15 @@ export class Settings {
                     launchCfg.zsim.zxInterface2Joy = true;
                 if (launchCfg.zsim.memoryModel === undefined)
                     launchCfg.zsim.memoryModel = "ZX48K";
-                if (launchCfg.zsim.visualMemory === undefined)
+				if(launchCfg.zsim.visualMemory === undefined)
                     launchCfg.zsim.visualMemory = true;
-                if (launchCfg.zsim.ulaScreen === undefined)
+				if(launchCfg.zsim.ulaScreen === undefined)
                     launchCfg.zsim.ulaScreen = 'spectrum';
                 if (launchCfg.zsim.zxBeeper === undefined)
                     launchCfg.zsim.zxBeeper = true;
-                if (launchCfg.zsim.cpuFrequency === undefined)
+				if(launchCfg.zsim.cpuFrequency === undefined)
                     launchCfg.zsim.cpuFrequency = 3500000.0;	// 3.5Mhz
-                if (launchCfg.zsim.defaultPortIn === undefined)
+				if(launchCfg.zsim.defaultPortIn === undefined)
                     launchCfg.zsim.defaultPortIn = 0xFF;
             }
             // ZX81
@@ -652,7 +652,7 @@ export class Settings {
         if (launchCfg.zsim.customJoy !== undefined) {
             const customJoy = launchCfg.zsim.customJoy;
             // Loop over all defined properties
-            for (const prop in customJoy) {
+			for(const prop in customJoy) {
                 const button = customJoy[prop];
                 button.portMask = (button.portMask === undefined) ? 0xFFFF : parseInt(button.portMask);
                 if (button.port !== undefined)
@@ -771,7 +771,7 @@ export class Settings {
         if (launchCfg.zsim.Z80N === undefined)
             launchCfg.zsim.Z80N = false;
         if (launchCfg.zsim.tbblue === undefined)
-            launchCfg.zsim.tbblue = { REG_TURBO_MODE: false } as TBBlueType;
+			launchCfg.zsim.tbblue = {REG_TURBO_MODE: false} as TBBlueType;
 
         // Check for DMA
         if (launchCfg.zsim.zxnDMA === undefined)
@@ -1224,7 +1224,7 @@ export class Settings {
         }
 
         // Rev-Eng: Check that glob pattern at least finds one file.
-        if (Settings.launch.revEng) {
+		if(Settings.launch.revEng) {
             // Check that file exists
             for (const config of Settings.launch.revEng) {
                 const paths = fglob.sync([config.path]);
