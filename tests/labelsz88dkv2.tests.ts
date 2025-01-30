@@ -505,19 +505,19 @@ suite('Labels (z88dk v2 format)', () => {
 			// Write file.
 			fs.writeFileSync(tmpFile,
 				`
-	15                  label0000:
-	16                  label2000:
-	17                  label4000:
-	18                  label6000:
-	19                  label8000:
-	20                  labelA000:
-	21                  labelC000:
+    15                  label0000:
+    16                  label2000:
+    17                  label4000:
+    18                  label6000:
+    19                  label8000:
+    20                  labelA000:
+    21                  labelC000:
  99999                  labelE000:
 `);
 			//Write also map file.
 			tmpMapFile = path.join(os.tmpdir(), 'dezog_labels_z88dk.map');
 			fs.writeFileSync(tmpMapFile,
-				`label0000                          = $0000 ; addr, local, , main, , main.asm:15
+    			`label0000                          = $0000 ; addr, local, , main, , main.asm:15
 label2000                          = $2000 ; addr, local, , main, , main.asm:16
 label4000                          = $4000 ; addr, local, , main, , main.asm:17
 label6000                          = $6000 ; addr, local, , main, , main.asm:18
