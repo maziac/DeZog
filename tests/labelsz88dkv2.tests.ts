@@ -3,12 +3,12 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { LabelsClass, SourceFileEntry } from '../src/labels/labels';
-import { Z88dkLabelParserV2 } from '../src/labels/z88dklabelparserv2';
-import { MemoryModel } from '../src/remotes/MemoryModel/memorymodel';
-import { MemoryModelAllRam } from '../src/remotes/MemoryModel/genericmemorymodels';
-import { MemoryModelZx48k } from '../src/remotes/MemoryModel/zxspectrummemorymodels';
-import { MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom } from '../src/remotes/MemoryModel/zxnextmemorymodels';
+import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
+import {Z88dkLabelParserV2} from '../src/labels/z88dklabelparserv2';
+import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
+import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
+import {MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
+import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 
 suite('Labels (z88dk v2 format)', () => {
 	let lbls;
@@ -536,18 +536,18 @@ labelE000                          = $E000 ; addr, local, , main, , main.asm:22
 				srcDirs: [],
 				excludeFiles: []
 			};
-			parser = new Z88dkLabelParserV2(
+			parser = new Z88dkLabelParserV2 (
 				mm,
 				new Map<number, SourceFileEntry>(),
 				new Map<string, Array<number>>(),
 				new Array<any>(),
 				new Map<number, Array<string>>(),
 				new Map<string, number>(),
-				new Map<string, { file: string, lineNr: number, address: number }>(),
-				new Array<{ address: number, line: string }>(),
-				new Array<{ address: number, line: string }>(),
-				new Array<{ address: number, line: string }>(),
-				(issue) => { });	// NOSONAR
+				new Map<string, {file: string, lineNr: number, address: number}>(),
+				new Array<{address: number, line: string}>(),
+				new Array<{address: number, line: string}>(),
+				new Array<{address: number, line: string}>(),
+				(issue) => {});	// NOSONAR
 			parser.loadAsmListFile(config);
 		}
 
