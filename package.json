@@ -1,1517 +1,1517 @@
 {
-    "name": "dezog",
-    "displayName": "DeZog",
-    "version": "3.5.2-rc1",
-    "publisher": "maziac",
-    "description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum/ZX81.",
-    "author": {
-        "name": "Thomas Busse"
-    },
-    "license": "MIT",
-    "keywords": [
-        "z80",
-        "assembler",
-        "zx spectrum",
-        "zx81",
-        "mame",
-        "cspect"
-    ],
-    "engines": {
-        "vscode": ">=1.71.0",
-        "node": ">=16.14.0"
-    },
-    "icon": "assets/icon.png",
-    "categories": [
-        "Debuggers"
-    ],
-    "private": true,
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/maziac/DeZog"
-    },
-    "sponsor": {
-        "url": "https://github.com/sponsors/maziac"
-    },
-    "files": [],
-    "scripts": {
-        "compile": "tsc -p ./",
-        "watch-tsc": "tsc -w -p ./",
-        "test": "mocha -u tdd ./out/tests/ --exit",
-        "vscode:prepublish": "npm run esbuild-node -- --minify && npm run esbuild-browser -- --minify",
-        "esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --external:node-graphviz --format=cjs --platform=node",
-        "esbuild-browser": "esbuild ./src/remotes/zsimulator/zsimwebview/main.ts --bundle --outdir=out --outbase=src --platform=browser",
-        "watch-node": "npm run esbuild-node -- --sourcemap --watch",
-        "watch-browser": "npm run esbuild-browser -- --sourcemap --watch",
-        "package": "vsce package",
-        "package:small": "file=$npm_package_name-$npm_package_version.vsix ; vsce package --ignoreFile .vscodeignore_small --out $file ; zip $file.zip $file",
-        "check-env": "node -e 'console.log(process.env)' | grep npm"
-    },
-    "dependencies": {
-        "@vscode/debugadapter": "^1.57.0",
-        "@vscode/debugprotocol": "^1.57.0",
-        "fast-glob": "^3.2.12",
-        "gif-writer": "^0.9.4",
-        "intel-hex": "^0.1.2",
-        "jsonc-parser": "^3.2.0",
-        "leader-line": "^1.0.7",
-        "minimatch": "^7.2.0",
-        "node-graphviz": "^0.1.1",
-        "node-gzip": "^1.1.2",
-        "posthtml": "^0.16.6",
-        "posthtml-toc": "^1.0.3",
-        "rng": "^0.2.2",
-        "semver": "^7.5.4",
-        "serialport": "^10.4.0",
-        "showdown": "^2.1.0",
-        "xml2js": "^0.6.2"
-    },
-    "devDependencies": {
-        "@types/mocha": "10.0.0",
-        "@types/node": "^18.8.2",
-        "@types/vscode": "^1.71.0",
-        "@types/vscode-webview": "^1.57.0",
-        "esbuild": "^0.17.10",
-        "mocha": "^10.2.0",
-        "sinon": "^18.0.0",
-        "source-map-support": "^0.5.21",
-        "typescript": "^4.8.4",
-        "vsce": "^2.15.0"
-    },
-    "bugs": {
-        "url": "https://github.com/maziac/DeZog/issues"
-    },
-    "main": "./out/extension.js",
-    "activationEvents": [
-        "onStartupFinished"
-    ],
-    "contributes": {
-        "views": {
-            "debug": [
-                {
-                    "type": "webview",
-                    "id": "dezog.helpview",
-                    "name": "DeZog Help",
-                    "icon": "assets/help_icon.svg",
-                    "contextualTitle": "DeZog Help",
-                    "when": "config.dezog.showHelp"
-                }
-            ]
-        },
-        "configuration": {
-            "type": "object",
-            "title": "DeZog configuration",
-            "properties": {
-                "dezog.showHelp": {
-                    "description": "Enables the 'DeZog Help' view in the debug sidebar.",
-                    "type": "boolean",
-                    "scope": "resource",
-                    "default": true
-                },
-                "dezog.log.global": {
-                    "description": "Write global logs to an output panel.",
-                    "type": "boolean",
-                    "scope": "resource",
-                    "default": false
-                },
-                "dezog.log.transport": {
-                    "description": "Write transport logs (socket, serial, etc.) to an output panel.",
-                    "type": "boolean",
-                    "scope": "resource",
-                    "default": false
-                },
-                "dezog.log.zsim.hardware": {
-                    "description": "Write logs from simulated hardware, e.g. zxnDMA, to an output panel. For the internal simulator (zsim).",
-                    "type": "boolean",
-                    "scope": "resource",
-                    "default": true
-                },
-                "dezog.log.zsim.customCode": {
-                    "description": "Write logs regarding custom (js) code to an output panel. For the internal simulator (zsim).",
-                    "type": "boolean",
-                    "scope": "resource",
-                    "default": true
-                },
-                "dezog.donated": {
-                    "description": "If you donated (press the donate button in the help) you can hide the button by setting this parameter.",
-                    "type": "boolean",
-                    "scope": "resource",
-                    "default": false
-                }
-            }
-        },
-        "languages": [
-            {
-                "id": "asm-collection",
-                "extensions": [
-                    ".a80",
-                    ".z80",
-                    ".asm",
-                    ".inc",
-                    ".s"
-                ],
-                "aliases": [
-                    "Assembler file"
-                ]
-            },
-            {
-                "id": "asm-list-file",
-                "extensions": [
-                    ".list",
-                    ".lis"
-                ],
-                "aliases": [
-                    "Assembler list file"
-                ]
-            }
-        ],
-        "breakpoints": [
-            {
-                "language": "asm-collection"
-            },
-            {
-                "language": "asm-list-file"
-            },
-            {
-                "language": "z80-macroasm"
-            },
-            {
-                "language": "z80-asm"
-            },
-            {
-                "language": "zeus-asm"
-            },
-            {
-                "language": "gbz80"
-            },
-            {
-                "language": "pasmo"
-            }
-        ],
-        "commands": [
-            {
-                "command": "dezog.whatsNew",
-                "title": "Show 'What's New' page of this DeZog release.",
-                "category": "DeZog"
-            },
-            {
-                "command": "dezog.help",
-                "title": "Show the DeZog Help page.",
-                "category": "DeZog"
-            },
-            {
-                "command": "dezog.movePCtoCursor",
-                "title": "Move Program Counter to Cursor",
-                "category": "DeZog"
-            },
-            {
-                "command": "dezog.clearAllDecorations",
-                "title": "Clear all decorations",
-                "category": "DeZog"
-            },
-            {
-                "command": "dezog.serialport.list",
-                "title": "Get list of all available serial ports",
-                "category": "DeZog"
-            },
-            {
-                "command": "dezog.serialport.test",
-                "title": "Test communication through a serial port",
-                "category": "DeZog"
-            },
-            {
-                "command": "dezog.reload",
-                "title": "Reload the list file(s).",
-                "category": "DeZog"
-            },
-            {
-                "command": "dezog.disassemblyAtCursor.code",
-                "title": "Code",
-                "category": "DeZog"
-            },
-            {
-                "command": "dezog.disassemblyAtCursor.data",
-                "title": "Data",
-                "category": "DeZog"
-            },
-            {
-                "command": "dezog.disassemblyAtCursor.string",
-                "title": "String",
-                "category": "DeZog"
-            },
-            {
-                "command": "dezog.analyzeAtCursor.disassembly",
-                "title": "Smart Disassembly",
-                "category": "DeZog"
-            },
-            {
-                "command": "dezog.analyzeAtCursor.flowChart",
-                "title": "Flow Chart",
-                "category": "DeZog"
-            },
-            {
-                "command": "dezog.analyzeAtCursor.callGraph",
-                "title": "Call Graph",
-                "category": "DeZog"
-            },
-            {
-                "command": "dezog.disassembly.refresh",
-                "title": "Refresh disassembly",
-                "category": "DeZog",
-                "icon": "$(refresh)"
-            },
-            {
-                "command": "dezog.run",
-                "title": "Run with DeZog",
-                "category": "DeZog"
-            }
-        ],
-        "menus": {
-            "commandPalette": [
-                {
-                    "command": "dezog.whatsNew"
-                },
-                {
-                    "command": "dezog.help"
-                },
-                {
-                    "command": "dezog.movePCtoCursor",
-                    "when": "false"
-                },
-                {
-                    "command": "dezog.disassemblyAtCursor.code",
-                    "when": "false"
-                },
-                {
-                    "command": "dezog.disassemblyAtCursor.data",
-                    "when": "false"
-                },
-                {
-                    "command": "dezog.disassemblyAtCursor.string",
-                    "when": "false"
-                },
-                {
-                    "command": "dezog.analyzeAtCursor.disassembly",
-                    "when": "false"
-                },
-                {
-                    "command": "dezog.analyzeAtCursor.flowChart",
-                    "when": "false"
-                },
-                {
-                    "command": "dezog.analyzeAtCursor.callGraph",
-                    "when": "false"
-                },
-                {
-                    "command": "dezog.disassembly.refresh",
-                    "when": "false"
-                },
-                {
-                    "command": "dezog.clearAllDecorations"
-                },
-                {
-                    "command": "dezog.serialport.list"
-                },
-                {
-                    "command": "dezog.serialport.test"
-                },
-                {
-                    "command": "dezog.reload"
-                }
-            ],
-            "explorer/context": [
-                {
-                    "group": "1_dezog",
-                    "command": "dezog.run",
-                    "when": "resourceExtname == .p || resourceExtname == .81 || resourceExtname == .p81 || resourceExtname == .P || resourceExtname == .P81 || resourceExtname == .sna || resourceExtname == .SNA"
-                }
-            ],
-            "editor/context": [
-                {
-                    "when": "inDebugMode && resourceLangId == asm-collection || inDebugMode && resourceLangId == asm-list-file",
-                    "command": "dezog.movePCtoCursor",
-                    "group": "debug"
-                },
-                {
-                    "when": "inDebugMode && resourceLangId == asm-collection || inDebugMode && resourceLangId == asm-list-file",
-                    "submenu": "dezog.disassemblyAtCursor",
-                    "group": "debug"
-                },
-                {
-                    "when": "inDebugMode && resourceLangId == asm-collection || inDebugMode && resourceLangId == asm-list-file",
-                    "submenu": "dezog.analyzeAtCursor",
-                    "group": "debug"
-                }
-            ],
-            "editor/title": [
-                {
-                    "when": "inDebugMode && resourcePath in dezog.disassembler.disasmPath",
-                    "command": "dezog.disassembly.refresh",
-                    "group": "navigation"
-                }
-            ],
-            "dezog.disassemblyAtCursor": [
-                {
-                    "command": "dezog.disassemblyAtCursor.code"
-                },
-                {
-                    "command": "dezog.disassemblyAtCursor.data"
-                },
-                {
-                    "command": "dezog.disassemblyAtCursor.string"
-                }
-            ],
-            "dezog.analyzeAtCursor": [
-                {
-                    "command": "dezog.analyzeAtCursor.disassembly"
-                },
-                {
-                    "command": "dezog.analyzeAtCursor.flowChart"
-                },
-                {
-                    "command": "dezog.analyzeAtCursor.callGraph"
-                }
-            ]
-        },
-        "submenus": [
-            {
-                "id": "dezog.disassemblyAtCursor",
-                "label": "Disassembly at Cursor / of Selection"
-            },
-            {
-                "id": "dezog.analyzeAtCursor",
-                "label": "Analyze at Cursor"
-            }
-        ],
-        "debuggers": [
-            {
-                "type": "dezog",
-                "label": "DeZog",
-                "program": "./out/src/debugadapter.js",
-                "runtime": "node",
-                "configurationAttributes": {
-                    "launch": {
-                        "required": [
-                            "name",
-                            "remoteType",
-                            "rootFolder"
-                        ],
-                        "properties": {
-                            "remoteType": {
-                                "type": "string",
-                                "enum": [
-                                    "zrcp",
-                                    "cspect",
-                                    "zsim",
-                                    "zxnext",
-                                    "mame"
-                                ],
-                                "description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'zxnext' or 'zsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
-                                "default": "zsim"
-                            },
-                            "zrcp": {
-                                "description": "The configuration for the ZEsarUX emulator.",
-                                "type": "object",
-                                "properties": {
-                                    "hostname": {
-                                        "type": "string",
-                                        "description": "The hostname/IP address of the ZEsarUX Emulator.",
-                                        "default": "localhost"
-                                    },
-                                    "port": {
-                                        "type": "number",
-                                        "description": "The port of the ZEsarUX Emulator."
-                                    },
-                                    "loadDelay": {
-                                        "type": "number",
-                                        "description": "An additional delay before the assembler program is loaded in ZEsarUX. Use this only if you have problems starting the debug session on Windows. Default: 100ms on Windows, 0ms on other systems."
-                                    },
-                                    "skipInterrupt": {
-                                        "type": "boolean",
-                                        "description": "Skips the interrupt during stepping. Defaults to false."
-                                    },
-                                    "resetOnLaunch": {
-                                        "type": "boolean",
-                                        "description": "Resets the device after starting the debugger before starting the program to debug. Defaults to true."
-                                    },
-                                    "socketTimeout": {
-                                        "type": "number",
-                                        "description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
-                                    }
-                                }
-                            },
-                            "cspect": {
-                                "description": "The configuration for the CSpect emulator.",
-                                "type": "object",
-                                "properties": {
-                                    "hostname": {
-                                        "type": "string",
-                                        "description": "The hostname/IP address of the CSpect socket.",
-                                        "default": "localhost"
-                                    },
-                                    "port": {
-                                        "type": "number",
-                                        "description": "The port of the CSpect socket."
-                                    },
-                                    "socketTimeout": {
-                                        "type": "number",
-                                        "description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
-                                    }
-                                }
-                            },
-                            "zsim": {
-                                "description": "'The configuration of the internal Z80 simulator.",
-                                "type": "object",
-                                "properties": {
-                                    "preset": {
-                                        "type": "string",
-                                        "enum": [
-                                            "spectrum",
-                                            "zx81"
-                                        ],
-                                        "description": "The preset of the simulator. It will set the default values for a 56k Spectrum. You can override these settings. If you e.g. set the 'memoryModel' explicitly.",
-                                        "default": "spectrum"
-                                    },
-                                    "zxKeyboard": {
-                                        "type": "string",
-                                        "enum": [
-                                            "spectrum",
-                                            "zx81"
-                                        ],
-                                        "description": "Select a keyboard. ZX81 or ZX Spectrum.",
-                                        "default": "spectrum"
-                                    },
-                                    "zxInterface2Joy": {
-                                        "type": "boolean",
-                                        "description": "If enabled the simulator shows  a pad to simulate the joysticks for ZX Interface 2.",
-                                        "default": true
-                                    },
-                                    "kempstonJoy": {
-                                        "type": "boolean",
-                                        "description": "If enabled the simulator shows a pad to simulate the Kempston joystick at port 0x1F.",
-                                        "default": true
-                                    },
-                                    "customJoy": {
-                                        "type": "object",
-                                        "description": "Used to define a custom joystick.",
-                                        "properties": {
-                                            "fire": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "port": {},
-                                                    "bit": {}
-                                                }
-                                            },
-                                            "fire2": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "port": {},
-                                                    "bit": {}
-                                                }
-                                            },
-                                            "fire3": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "port": {},
-                                                    "bit": {}
-                                                }
-                                            },
-                                            "fire4": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "port": {},
-                                                    "bit": {}
-                                                }
-                                            },
-                                            "left": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "port": {},
-                                                    "bit": {}
-                                                }
-                                            },
-                                            "down": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "port": {},
-                                                    "bit": {}
-                                                }
-                                            },
-                                            "up": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "port": {},
-                                                    "bit": {}
-                                                }
-                                            },
-                                            "right": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "port": {},
-                                                    "bit": {}
-                                                }
-                                            }
-                                        }
-                                    },
-                                    "visualMemory": {
-                                        "type": "boolean",
-                                        "description": "If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.",
-                                        "default": true
-                                    },
-                                    "memoryModel": {
-                                        "type": "string",
-                                        "enum": [
-                                            "RAM",
-                                            "ZX16K",
-                                            "ZX48K",
-                                            "ZX128K",
-                                            "ZXNEXT",
-                                            "ZX81-1K",
-                                            "ZX81-2K",
-                                            "ZX81-16K",
-                                            "ZX81-32K",
-                                            "ZX81-48K",
-                                            "ZX81-56K",
-                                            "ColecoVision",
-                                            "CUSTOM"
-                                        ],
-                                        "description": "Chooses the right memory model. I.e. how the memory maps to ROM and RAM and if and how paging is done.\nA few examples:\n- 'RAM': One memory area of 64K, 1 bank.\n- 'ZX16K': ROM and RAM as of the ZX Spectrum 16K, 1 ROM, 1 RAM bank.\n- 'ZX48K': ROM and RAM as of the ZX Spectrum 48K, 1 ROM, 1 RAM bank.\n- 'ZX128K': Banked memory, 16k slots, 8 RAM banks, 2 ROM banks .\n- 'ZXNEXT': Banked memory as of the ZX Next (8k slots/banks).\n- 'ZX81-16K': ROM and RAM as of a 16k ZX81.\n- 'CUSTOM': A customizable memory model. You define the memory in the 'customMemory' property.",
-                                        "default": "RAM"
-                                    },
-                                    "customMemory": {
-                                        "description": "Only evaluated if 'memoryModel' is set to 'CUSTOM'. Chooses the banks and their memory types. Please refer to the documentation.",
-                                        "type": "object",
-                                        "properties": {
-                                            "slots": {
-                                                "type": "array",
-                                                "description": "An array with the slot definitions.",
-                                                "items": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "name": {
-                                                            "type": "string",
-                                                            "description": "The name of the slot.\nOptional. Required for bank switching slots. This name can be used in 'ioMmu' to assign a different bank to the slot.",
-                                                            "default": ""
-                                                        },
-                                                        "range": {
-                                                            "type": "array",
-                                                            "description": "Array with first and last (inclusive) address of the slot.\nEither use a decimal number or a hex string.",
-                                                            "default": [],
-                                                            "items": {
-                                                                "type": [
-                                                                    "number",
-                                                                    "string"
-                                                                ]
-                                                            }
-                                                        },
-                                                        "banks": {
-                                                            "type": "array",
-                                                            "description": "Array with the banks that can be associated with the slot.",
-                                                            "default": [],
-                                                            "items": {
-                                                                "type": "object",
-                                                                "description": "The bank description. You need to describe a bank only once. If it is also used in another slot just assign the bank via the index.",
-                                                                "properties": {
-                                                                    "name": {
-                                                                        "type": "string",
-                                                                        "description": "The name of the bank.\nOptional. Is used in the 'Memory Banks' section in the VARIABLE pane. If not set a name is given automatically.",
-                                                                        "default": ""
-                                                                    },
-                                                                    "shortName": {
-                                                                        "type": "string",
-                                                                        "description": "The short name of the bank.\nOptional. Is used in the disassembly (disasm.list). If not set a name is given automatically.",
-                                                                        "default": ""
-                                                                    },
-                                                                    "index": {
-                                                                        "type": [
-                                                                            "number",
-                                                                            "array"
-                                                                        ],
-                                                                        "description": "Either the single index/number of the bank. Or the start and end index of a range of banks.",
-                                                                        "default": 0,
-                                                                        "items": {
-                                                                            "type": "number"
-                                                                        }
-                                                                    },
-                                                                    "rom": {
-                                                                        "type": "string",
-                                                                        "description": "The path to a rom bin file.\nOptional. File content should be in raw format (i.e. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).",
-                                                                        "default": ""
-                                                                    },
-                                                                    "romOffset": {
-                                                                        "type": [
-                                                                            "number",
-                                                                            "string"
-                                                                        ],
-                                                                        "description": "Optional offset of the ROM file/content.\nEither use a decimal number or a hex string.",
-                                                                        "default": 0
-                                                                    },
-                                                                    "defaultFill": {
-                                                                        "type": [
-                                                                            "number",
-                                                                            "string"
-                                                                        ],
-                                                                        "description": "Optional default byte fill value. If omitted: RAM/ROM uses 0.",
-                                                                        "default": 0
-                                                                    }
-                                                                }
-                                                            }
-                                                        },
-                                                        "initialBank": {
-                                                            "type": "number",
-                                                            "description": "For 'zsim': The number of the bank which is assigned to the slot initially.\nOptional. If not used the first given bank is used instead.",
-                                                            "default": 0
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            "ioMmu": {
-                                                "description": "The javascript code for bank switching.\nOptional. Only required for memory models that use banking/paging. Please refer to the documentation.\nPlease enter the code as a string or (for readability) as an arra of strings.",
-                                                "type": [
-                                                    "string",
-                                                    "array"
-                                                ],
-                                                "default": [
-                                                    ""
-                                                ],
-                                                "items": {
-                                                    "type": "string"
-                                                }
-                                            }
-                                        }
-                                    },
-                                    "ulaScreen": {
-                                        "type": "string",
-                                        "enum": [
-                                            "spectrum",
-                                            "zx81"
-                                        ],
-                                        "description": "If defined it shows the contents of the ZX Spectrum (\"spectrum\") or ZX81 (\"zx81\") screen. It supports also the ZX128K screen switching.",
-                                        "default": null
-                                    },
-                                    "ulaOptions": {
-                                        "type": "object",
-                                        "properties": {
-                                            "hires": {
-                                                "type": "boolean",
-                                                "description": "ZX81 only. If true the generation of the screen output by the cpu is simulated. This allows to display hires programs. If false the ZX81 dfile is converted directly into screen graphics. This can be an advantage when debugging a non-hires game. Defaults to true.",
-                                                "default": true
-                                            },
-                                            "lines": {
-                                                "type": "array",
-                                                "description": "Used to define lines that are drawn on the screen area for orientation.",
-                                                "default": [],
-                                                "items": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "x1": {
-                                                            "type": "string",
-                                                            "description": "Start x position of the line."
-                                                        },
-                                                        "y1": {
-                                                            "type": "string",
-                                                            "description": "Start y position of the line."
-                                                        },
-                                                        "x2": {
-                                                            "type": "string",
-                                                            "description": "End x position of the line."
-                                                        },
-                                                        "y2": {
-                                                            "type": "string",
-                                                            "description": "End y position of the line."
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            "firstLine": {
-                                                "type": "number",
-                                                "description": "Used only if \"hires\" is true. The first line that should be displayed. Defaults to 56.",
-                                                "default": 56
-                                            },
-                                            "lastLine": {
-                                                "type": "number",
-                                                "description": "Used only if \"hires\" is true. The last line (inclusive) that should be displayed. Defaults to 247.",
-                                                "default": 247
-                                            },
-                                            "showStandardLines": {
-                                                "type": "boolean",
-                                                "description": "In some modes (e.g. zx81/hires) this shows some lines over the display for the borders or the start of the HSYNC pulse.",
-                                                "default": false
-                                            },
-                                            "chroma81": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "available": {
-                                                        "type": "boolean",
-                                                        "description": "ZX81 only. If true the chroma81 is 'attached' and can be accessed through in/out port 0x7FEF.",
-                                                        "default": true
-                                                    },
-                                                    "enabled": {
-                                                        "type": "boolean",
-                                                        "description": "Initial enable state. I.e. you can enable the chroma81 here right from the start without the need to write to a port.",
-                                                        "default": false
-                                                    },
-                                                    "mode": {
-                                                        "type": "number",
-                                                        "enum": [
-                                                            0,
-                                                            1
-                                                        ],
-                                                        "description": "The initial mode (if 'enabled' is true).",
-                                                        "default": 0
-                                                    },
-                                                    "borderColor": {
-                                                        "type": "number",
-                                                        "description": "The initial border color (if 'enabled' is true). Colors 0-15 like Spectrum colors.",
-                                                        "default": 0
-                                                    }
-                                                }
-                                            },
-                                            "debug": {
-                                                "type": "boolean",
-                                                "description": "ZX81 only. If true a gray background is shown for the screen areas without output. Only makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. Defaults to false.",
-                                                "default": false
-                                            }
-                                        },
-                                        "description": "Several options for the ZX81 and ZX Spectrum ULA screen.",
-                                        "default": {}
-                                    },
-                                    "zxBeeper": {
-                                        "type": "boolean",
-                                        "description": "Enables ZX Spectrum sound through it's beeper.",
-                                        "default": true
-                                    },
-                                    "audioSampleRate": {
-                                        "type": "number",
-                                        "description": "The sample rate used for audio. Defaults to 22050 Hz.",
-                                        "default": 22050
-                                    },
-                                    "cpuLoad": {
-                                        "type": "number",
-                                        "description": "The CPU load is calculated by the number of executed HALT tStates vs all tStates. You can disable the display with a 0. 1 will exactly count till the next occurrence of a HALT. Higher numbers will average over more HALT instructions and lead to a more stable display. Practical values are around 10 (the default).",
-                                        "default": 10
-                                    },
-                                    "cpuFrequency": {
-                                        "type": "number",
-                                        "description": "The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here.",
-                                        "default": 3500000
-                                    },
-                                    "limitSpeed": {
-                                        "type": "boolean",
-                                        "description": "If enabled the simulated CPU performance is throttled to fit the given CPU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.",
-                                        "default": false
-                                    },
-                                    "updateFrequency": {
-                                        "type": "number",
-                                        "description": "The update frequency of the simulator view in Hz. Defaults to 10 Hz. Possible range is 5 to 100 Hz.",
-                                        "default": 10
-                                    },
-                                    "defaultPortIn": {
-                                        "type": "number",
-                                        "description": "The default value that is read if the read port is unused. Allowed is 255 or 0. 255 also sets the port as 'Open Collector', all triggered ports would be ANDed. Default to 0xFF.",
-                                        "default": 255
-                                    },
-                                    "Z80N": {
-                                        "type": "boolean",
-                                        "description": "Default is false. If enabled the Z80N extended instructions are supported. Default: If 'tbblueMemoryManagementSlots' defaults to true, otherwise false.",
-                                        "default": false
-                                    },
-                                    "tbblue": {
-                                        "description": "Experimental. Use to enable some specific tbblue features.",
-                                        "REG_TURBO_MODE": {
-                                            "type": "boolean",
-                                            "description": "If true the register 0x07 is simulated which controls the CPU speed.",
-                                            "default": false
-                                        }
-                                    },
-                                    "customCode": {
-                                        "description": "This enables custom code to run inside the simulator, e.g. to simulate additional ports.",
-                                        "properties": {
-                                            "debug": {
-                                                "type": "boolean",
-                                                "description": "If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).",
-                                                "default": false
-                                            },
-                                            "jsPath": {
-                                                "type": "string",
-                                                "description": "A relative path to additional javascript code that is included into the Z80 simulator."
-                                            },
-                                            "uiPath": {
-                                                "type": "string",
-                                                "description": "A relative path to additional javascript code that is included into the Z80 simulator view/UI. This code acts as UI for the code in 'jsPath'"
-                                            },
-                                            "timeStep": {
-                                                "type": "number",
-                                                "description": "You can set a time step (interval) to call the tick() function. If not set then tick() will not be called (although time/t-states still do advance)."
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            "zxnext": {
-                                "description": "The configuration for debugging on the ZXNEXT device.",
-                                "type": "object",
-                                "properties": {
-                                    "serial": {
-                                        "type": "string",
-                                        "description": "The name of the serial port interface, on macOS e.g. \"/dev/tty.usbserial-AQ\", on Windows e.g. \"COM8\"",
-                                        "default": ""
-                                    },
-                                    "timeout": {
-                                        "type": "number",
-                                        "description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
-                                    }
-                                }
-                            },
-                            "mame": {
-                                "description": "The configuration for debugging with the mame gdbstub.",
-                                "type": "object",
-                                "properties": {
-                                    "hostname": {
-                                        "type": "string",
-                                        "description": "The hostname/IP address of the MAME socket.",
-                                        "default": "localhost"
-                                    },
-                                    "port": {
-                                        "type": "number",
-                                        "description": "The port of the CSpect socket."
-                                    },
-                                    "socketTimeout": {
-                                        "type": "number",
-                                        "description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
-                                    }
-                                }
-                            },
-                            "unitTests": {
-                                "description": "Whether the configuration contains the unit tests or not. Default: false.",
-                                "type": "boolean"
-                            },
-                            "rootFolder": {
-                                "description": "The path of the root folder. All other paths are relative to this. Usually set to ${workspaceFolder}.",
-                                "type": "string"
-                            },
-                            "sjasmplus": {
-                                "description": "All sjasmplus list files. (Typically only one, but it's possible to add more here.)",
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "required": [
-                                        "path"
-                                    ],
-                                    "properties": {
-                                        "path": {
-                                            "type": "string",
-                                            "description": "Path to the assembler '*.sld' file."
-                                        },
-                                        "srcDirs": {
-                                            "type": "array",
-                                            "description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here as an array of strings. All dirs are relative to the 'rootFolder'.",
-                                            "default": [
-                                                ""
-                                            ]
-                                        },
-                                        "excludeFiles": {
-                                            "type": "array",
-                                            "description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
-                                            "default": []
-                                        }
-                                    }
-                                }
-                            },
-                            "z80asm": {
-                                "description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "required": [
-                                        "path"
-                                    ],
-                                    "properties": {
-                                        "path": {
-                                            "type": "string",
-                                            "description": "Path to the assembler .list file."
-                                        },
-                                        "srcDirs": {
-                                            "type": "array",
-                                            "description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here either as an array of strings. All dirs are relative to the 'rootFolder'.",
-                                            "default": [
-                                                ""
-                                            ]
-                                        },
-                                        "excludeFiles": {
-                                            "type": "array",
-                                            "description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
-                                            "default": []
-                                        }
-                                    }
-                                }
-                            },
-                            "z88dk": {
-                                "description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "required": [
-                                        "path",
-                                        "mapFile"
-                                    ],
-                                    "properties": {
-                                        "path": {
-                                            "type": "string",
-                                            "description": "Path to the assembler .list file."
-                                        },
-                                        "srcDirs": {
-                                            "type": "array",
-                                            "description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here as an array of strings. All dirs are relative to the 'rootFolder'.",
-                                            "default": [
-                                                ""
-                                            ]
-                                        },
-                                        "excludeFiles": {
-                                            "type": "array",
-                                            "description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
-                                            "default": []
-                                        },
-                                        "mainFile": {
-                                            "type": "string",
-                                            "description": "Path to the main assembler source file that was used to produce the .list file.",
-                                            "default": null
-                                        },
-                                        "mapFile": {
-                                            "type": "string",
-                                            "description": "The map file is required to correctly parse the label values and to get correct file/line to address associations.",
-                                            "default": 0
-                                        }
-                                    }
-                                }
-                            },
-                            "z88dkv2": {
-                                "description": "All list files (one or many).",
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "required": [
-                                        "path",
-                                        "mapFile"
-                                    ],
-                                    "properties": {
-                                        "path": {
-                                            "description": "Path to the assembler .list file. A string or an array for multiple files. Wildcards are allowed.",
-                                            "oneOf": [
-                                                {
-                                                    "type": "string"
-                                                },
-                                                {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    }
-                                                }
-                                            ]
-                                        },
-                                        "srcDirs": {
-                                            "type": "array",
-                                            "description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here as an array of strings. All dirs are relative to the 'rootFolder'.",
-                                            "default": [
-                                                ""
-                                            ]
-                                        },
-                                        "excludeFiles": {
-                                            "type": "array",
-                                            "description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
-                                            "default": []
-                                        },
-                                        "mapFile": {
-                                            "type": "string",
-                                            "description": "The map file is required to correctly parse the label values and to get correct file/line to address associations.",
-                                            "default": 0
-                                        }
-                                    }
-                                }
-                            },
-                            "revEng": {
-                                "description": "List here all manually edited list files.",
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "required": [
-                                        "path"
-                                    ],
-                                    "properties": {
-                                        "path": {
-                                            "type": "string",
-                                            "description": "Path to the .list file. For 'revEng' you may also add a glob pattern here."
-                                        },
-                                        "reloadOnSave": {
-                                            "type": "boolean",
-                                            "description": "If true all list files (and labels) will be automatically re-loaded if this list file has been changed. Otherwise the reload has to be done manually through the command palette.\nDefault is false."
-                                        }
-                                    }
-                                }
-                            },
-                            "smallValuesMaximum": {
-                                "type": "number",
-                                "description": "Interprets labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.",
-                                "default": 512
-                            },
-                            "disassemblerArgs": {
-                                "description": "Arguments passed to the disassembler (in the VARIABLES pane).",
-                                "properties": {
-                                    "numberOfLines": {
-                                        "type": "number",
-                                        "description": "The number of lines displayed in the disassembly.",
-                                        "default": 10
-                                    }
-                                }
-                            },
-                            "smartDisassemblerArgs": {
-                                "description": "Arguments passed to the smart disassembler used in 'Analyze', i.e. call graph, flow chart and smart (text) disassembler.",
-                                "properties": {
-                                    "lowerCase": {
-                                        "type": "boolean",
-                                        "description": "true = use lower case for the instructions, false = use upper case.",
-                                        "default": true
-                                    }
-                                }
-                            },
-                            "tmpDir": {
-                                "type": "string",
-                                "description": "A directory for temporary files created by this debug adapter. Used e.g. for disassemblies. E.g. '.tmp'"
-                            },
-                            "topOfStack": {
-                                "type": "string",
-                                "description": "(Optional) You should set this to the label or address which is above the topmost entry on the stack. It is used to determine the end of the call stack."
-                            },
-                            "execAddress": {
-                                "type": "string",
-                                "description": "The start address of program execution. Use a label or a number. Can only be omitted if a .sna or .nex file is loaded."
-                            },
-                            "load": {
-                                "type": "string",
-                                "description": "(Optional) Load a .nex or .sna file (or .tap in case of ZEsarUX) into the emulator on startup of the debug session."
-                            },
-                            "loadObjs": {
-                                "description": "List of one or many object files, i.e. memory dumps. Contains 'path' and 'start' address. (Optional)",
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "required": [
-                                        "path"
-                                    ],
-                                    "properties": {
-                                        "path": {
-                                            "type": "string",
-                                            "description": "Path to the object file (.o/.obj) file."
-                                        },
-                                        "start": {
-                                            "type": "string",
-                                            "description": "The start address of the object file, e.g. 32768. Can also be a label."
-                                        }
-                                    }
-                                }
-                            },
-                            "startAutomatically": {
-                                "type": "boolean",
-                                "description": "Start automatically after launch. Default is false."
-                            },
-                            "commandsAfterLaunch": {
-                                "description": "An array with commands that are executed after the program-to-debug is loaded. With '-e' or '-exec' you can pass commands to the debugger directly.",
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                }
-                            },
-                            "history": {
-                                "description": "Configures the 'reverse debugging' (time travel).",
-                                "type": "object",
-                                "properties": {
-                                    "reverseDebugInstructionCount": {
-                                        "type": "number",
-                                        "description": "Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off. Default is 10000."
-                                    },
-                                    "spotCount": {
-                                        "type": "number",
-                                        "description": "Sets the number of instructions to show in a spot. If you set this e.g. to 5 then the 5 previous and the 5 next instructions related to the current position are shown. Use 0 to disable. Default is 10."
-                                    },
-                                    "spotShowRegisters": {
-                                        "type": "boolean",
-                                        "description": "If true it shows the changed register values in the spot history. You can disable the feature here. Defaults to true."
-                                    },
-                                    "codeCoverageEnabled": {
-                                        "type": "boolean",
-                                        "description": "Enables/disables code coverage. Default is true."
-                                    }
-                                }
-                            },
-                            "formatting": {
-                                "description": "Configures the display of values of DeZog. e.g. it is possible to customize how the registers are displayed or what is displayed on hovering.",
-                                "type": "object",
-                                "properties": {
-                                    "registerVar": {
-                                        "description": "Defines the formatting of the registers when displayed in the VARIABLES area. E.g. as hex value or as integer. Also allows to display labels and various other formats. Use:\n${name} = the name of the register, e.g. HL\n${hex} = value as hex, e.g. A9F5\n${dhex} = value as hex with space between bytes, e.g. A9 F5\n${unsigned} = value as unsigned, e.g. 1234\n$(signed) = value as signed, e.g. -59\n$(bits) = value as bits , e.g. 10011011\n$(flags) = value interpreted as status flags (only useful for F and F'), e.g. ZNC\n${labels} = value as label (or several labels)\n{labelsplus} = value as label (or several labels) plus an index/offset\n${pre:labels:join} = value as label (or several labels). If no label is found nothing is printed. If at least 1 label is found the 'pre' string is printed followed by the label(s). If more than 1 label is found they are concatenated with the 'join' string.\nNote: The ${b@:...} prefix is not allowed in for the VARIABLES section.",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "registerHover": {
-                                        "description": "Format how the registers are displayed when hovering with the mouse. Is an array with 2 strings tuples. The first is an regex that checks the register. If fulfilled the 2nd is used to format the value.",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "bigValues": {
-                                        "type": "string",
-                                        "description": "The general formatting for address labels bigger than 'smallValuesMaximum'."
-                                    },
-                                    "smallValues": {
-                                        "type": "string",
-                                        "description": "The general formatting for small values like constants smaller/equal than 'smallValuesMaximum'."
-                                    },
-                                    "watchByte": {
-                                        "type": "string",
-                                        "description": "The 'byte' formatting for labels in the WATCHes area."
-                                    },
-                                    "watchWord": {
-                                        "type": "string",
-                                        "description": "The 'word' formatting for labels in the WATCHes area."
-                                    },
-                                    "stackVar": {
-                                        "type": "string",
-                                        "description": "Format for the pushed values in the STACK area."
-                                    }
-                                }
-                            },
-                            "memoryViewer": {
-                                "description": "The appearance of the memory viewer can be customized here. E.g. the colors or the hover display.",
-                                "type": "object",
-                                "properties": {
-                                    "addressColor": {
-                                        "type": "string",
-                                        "description": "The text color of the address field."
-                                    },
-                                    "bytesColor": {
-                                        "type": "string",
-                                        "description": "The color of the bytes shown in hex."
-                                    },
-                                    "asciiColor": {
-                                        "type": "string",
-                                        "description": "The text color of the ascii field."
-                                    },
-                                    "addressHoverFormat": {
-                                        "type": "string",
-                                        "description": "see registerVarFormat. Format for the address when hovering."
-                                    },
-                                    "valueHoverFormat": {
-                                        "type": "string",
-                                        "description": "see registerVarFormat. Format for the value when hovering."
-                                    },
-                                    "registerPointerColors": {
-                                        "type": "array",
-                                        "description": "An array with register/color pairs. All selected register will appear with the correspondent color in the memory view. Registers not chosen will not appear.",
-                                        "items": [
-                                            {
-                                                "type": "string"
-                                            },
-                                            {
-                                                "type": "string"
-                                            }
-                                        ],
-                                        "default": [
-                                            "HL",
-                                            "darkgreen",
-                                            "DE",
-                                            "darkcyan",
-                                            "BC",
-                                            "dimgray",
-                                            "IX",
-                                            "darkorange",
-                                            "IY",
-                                            "darkviolet"
-                                        ]
-                                    },
-                                    "registersMemoryView": {
-                                        "type": "array",
-                                        "description": "An array of register to show in the register memory view. This view is automatically opened at startup and shows the memory the registers point to. E.g. [ 'HL', 'DE', 'IX' ].",
-                                        "items": {
-                                            "type": "string"
-                                        },
-                                        "default": [
-                                            "HL",
-                                            "DE",
-                                            "BC",
-                                            "IX",
-                                            "IY"
-                                        ]
-                                    }
-                                }
-                            },
-                            "unitTestTimeout": {
-                                "type": "number",
-                                "description": "(Optional) The timeout for unit tests. If a test lasts longer it is assumed as failed. In secs. Default = 5s."
-                            }
-                        }
-                    }
-                },
-                "initialConfigurations": [
-                    {
-                        "type": "dezog",
-                        "request": "launch",
-                        "name": "Simulator - ZX48K Spectrum",
-                        "remoteType": "zsim",
-                        "zsim": {
-                            "visualMemory": true,
-                            "memoryModel": "ZX48K",
-                            "ulaScreen": "spectrum",
-                            "zxKeyboard": "spectrum",
-                            "zxBeeper": true
-                        },
-                        "sjasmplus": [
-                            {
-                                "path": "Add your assembler list or sld file"
-                            }
-                        ],
-                        "commandsAfterLaunch": [],
-                        "history": {
-                            "reverseDebugInstructionCount": 1000000,
-                            "spotCount": 10,
-                            "codeCoverageEnabled": true
-                        },
-                        "startAutomatically": false,
-                        "rootFolder": "${workspaceFolder}",
-                        "load": "Add your .nex or .sna file to load",
-                        "topOfStack": "Add your top of stack / label name"
-                    }
-                ],
-                "configurationSnippets": [
-                    {
-                        "label": "DeZog: Simulator - ZX Spectrum",
-                        "description": "Configuration for DeZog to use the internal simulator for a ZX Spectrum 48K. Can be used to simulate a ZX 48K.",
-                        "body": {
-                            "type": "dezog",
-                            "request": "launch",
-                            "name": "Simulator - ZX48K Spectrum",
-                            "remoteType": "zsim",
-                            "zsim": {
-                                "visualMemory": true,
-                                "preset": "spectrum",
-                                "memoryModel": "ZX48K"
-                            },
-                            "sjasmplus": [
-                                {
-                                    "path": "${1:Assembler list or sld file}"
-                                }
-                            ],
-                            "commandsAfterLaunch": [],
-                            "history": {
-                                "reverseDebugInstructionCount": 1000000,
-                                "spotCount": 10,
-                                "codeCoverageEnabled": true
-                            },
-                            "startAutomatically": false,
-                            "rootFolder": "^\"\\${workspaceFolder\\}\"",
-                            "load": "${2:.nex or .sna file to load}",
-                            "topOfStack": "${3: Top of stack / label name}"
-                        }
-                    },
-                    {
-                        "label": "DeZog: Simulator - ZX81",
-                        "description": "Configuration for DeZog to use the internal simulator for a ZX81 with 56k RAM. Can be used to simulate a ZX81.",
-                        "body": {
-                            "type": "dezog",
-                            "request": "launch",
-                            "name": "Simulator - ZX81 56k RAM",
-                            "remoteType": "zsim",
-                            "zsim": {
-                                "visualMemory": true,
-                                "preset": "zx81",
-                                "memoryModel": "ZX81-56K"
-                            },
-                            "sjasmplus": [
-                                {
-                                    "path": "${1:Assembler list or sld file}"
-                                }
-                            ],
-                            "commandsAfterLaunch": [],
-                            "history": {
-                                "reverseDebugInstructionCount": 1000000,
-                                "spotCount": 10,
-                                "codeCoverageEnabled": true
-                            },
-                            "startAutomatically": false,
-                            "rootFolder": "^\"\\${workspaceFolder\\}\"",
-                            "load": "${2:.p file to load}"
-                        }
-                    },
-                    {
-                        "label": "DeZog: Simulator - Bare Z80",
-                        "description": "Configuration for DeZog to use the internal simulator for a bare Z80 without an peripherals or memory banking.",
-                        "body": {
-                            "type": "dezog",
-                            "request": "launch",
-                            "name": "Simulator - Bare Z80",
-                            "remoteType": "zsim",
-                            "zsim": {
-                                "visualMemory": true,
-                                "memoryModel": "RAM"
-                            },
-                            "sjasmplus": [
-                                {
-                                    "path": "${1:Assembler list or sld file}"
-                                }
-                            ],
-                            "commandsAfterLaunch": [],
-                            "history": {
-                                "reverseDebugInstructionCount": 1000000,
-                                "spotCount": 10,
-                                "codeCoverageEnabled": true
-                            },
-                            "startAutomatically": false,
-                            "rootFolder": "^\"\\${workspaceFolder\\}\"",
-                            "loadObjs": [
-                                {
-                                    "path": "${2:The .obj file to load}"
-                                }
-                            ],
-                            "execAddress": "${3:The start address / label name}",
-                            "topOfStack": "${4: Top of stack / label name}"
-                        }
-                    },
-                    {
-                        "label": "DeZog: CSpect",
-                        "description": "Configuration for DeZog to use the CSpect emulator.",
-                        "body": {
-                            "type": "dezog",
-                            "request": "launch",
-                            "name": "CSpect",
-                            "remoteType": "cspect",
-                            "sjasmplus": [
-                                {
-                                    "path": "${1:Assembler list or sld file}"
-                                }
-                            ],
-                            "commandsAfterLaunch": [],
-                            "history": {
-                                "reverseDebugInstructionCount": 1000000,
-                                "spotCount": 10,
-                                "codeCoverageEnabled": false
-                            },
-                            "startAutomatically": false,
-                            "rootFolder": "^\"\\${workspaceFolder\\}\"",
-                            "load": "${2:.nex or .sna file to load}",
-                            "topOfStack": "${3: Top of stack / label name}"
-                        }
-                    },
-                    {
-                        "label": "DeZog: ZEsarUX",
-                        "description": "Configuration for DeZog to use the ZEsarUX emulator.",
-                        "body": {
-                            "type": "dezog",
-                            "request": "launch",
-                            "name": "ZEsarUX",
-                            "remoteType": "zesarux",
-                            "sjasmplus": [
-                                {
-                                    "path": "${1:Assembler list or sld file}"
-                                }
-                            ],
-                            "commandsAfterLaunch": [],
-                            "history": {
-                                "reverseDebugInstructionCount": 1000000,
-                                "spotCount": 10,
-                                "codeCoverageEnabled": true
-                            },
-                            "startAutomatically": false,
-                            "rootFolder": "^\"\\${workspaceFolder\\}\"",
-                            "load": "${2:.nex or .sna file to load}",
-                            "topOfStack": "${3: Top of stack / label name}"
-                        }
-                    },
-                    {
-                        "label": "DeZog: MAME",
-                        "description": "Configuration for DeZog to use the MAME emulator.",
-                        "body": {
-                            "type": "dezog",
-                            "request": "launch",
-                            "name": "MAME",
-                            "remoteType": "mame",
-                            "mame": {
-                                "port": 12000
-                            },
-                            "startAutomatically": false,
-                            "revEng": [
-                                {
-                                    "path": "${1:The list file (initially an empty file with extension *.list)}"
-                                }
-                            ],
-                            "history": {
-                                "codeCoverageEnabled": false
-                            },
-                            "rootFolder": "^\"\\${workspaceFolder\\}\""
-                        }
-                    },
-                    {
-                        "label": "DeZog: ZX Next",
-                        "description": "Configuration for DeZog to use the ZX Next for remote debugging.",
-                        "body": {
-                            "type": "dezog",
-                            "request": "launch",
-                            "name": "ZX Next",
-                            "remoteType": "zxnext",
-                            "zxnext": {
-                                "serial": "${1:The serial COM port}"
-                            },
-                            "sjasmplus": [
-                                {
-                                    "path": "${2:Assembler list or sld file}"
-                                }
-                            ],
-                            "commandsAfterLaunch": [],
-                            "history": {
-                                "reverseDebugInstructionCount": 1000000,
-                                "spotCount": 10,
-                                "codeCoverageEnabled": false
-                            },
-                            "startAutomatically": false,
-                            "rootFolder": "^\"\\${workspaceFolder\\}\"",
-                            "load": "${3:.nex or .sna file to load}",
-                            "topOfStack": "${4: Top of stack / label name}"
-                        }
-                    },
-                    {
-                        "label": "DeZog: Unit Tests",
-                        "description": "Configuration for DeZog to use the internal simulator for unit tests.",
-                        "body": {
-                            "type": "dezog",
-                            "request": "launch",
-                            "name": "Unit Tests - Simulator",
-                            "unitTests": true,
-                            "presentation": {
-                                "hidden": true
-                            },
-                            "remoteType": "zsim",
-                            "zsim": {
-                                "Z80N": true,
-                                "visualMemory": true,
-                                "memoryModel": "ZXNEXT"
-                            },
-                            "sjasmplus": [
-                                {
-                                    "path": "${1:Assembler list or sld file}"
-                                }
-                            ],
-                            "history": {
-                                "reverseDebugInstructionCount": 1000000,
-                                "spotCount": 10,
-                                "codeCoverageEnabled": true
-                            },
-                            "startAutomatically": true,
-                            "rootFolder": "^\"\\${workspaceFolder\\}\"",
-                            "load": "${2:.nex or .sna file to load}"
-                        }
-                    }
-                ]
-            }
-        ]
-    }
+	"name": "dezog",
+	"displayName": "DeZog",
+	"version": "3.5.2-rc1",
+	"publisher": "maziac",
+	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum/ZX81.",
+	"author": {
+		"name": "Thomas Busse"
+	},
+	"license": "MIT",
+	"keywords": [
+		"z80",
+		"assembler",
+		"zx spectrum",
+		"zx81",
+		"mame",
+		"cspect"
+	],
+	"engines": {
+		"vscode": ">=1.71.0",
+		"node": ">=16.14.0"
+	},
+	"icon": "assets/icon.png",
+	"categories": [
+		"Debuggers"
+	],
+	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/maziac/DeZog"
+	},
+	"sponsor": {
+		"url": "https://github.com/sponsors/maziac"
+	},
+	"files": [],
+	"scripts": {
+		"compile": "tsc -p ./",
+		"watch-tsc": "tsc -w -p ./",
+		"test": "mocha -u tdd ./out/tests/ --exit",
+		"vscode:prepublish": "npm run esbuild-node -- --minify && npm run esbuild-browser -- --minify",
+		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --external:node-graphviz --format=cjs --platform=node",
+		"esbuild-browser": "esbuild ./src/remotes/zsimulator/zsimwebview/main.ts --bundle --outdir=out --outbase=src --platform=browser",
+		"watch-node": "npm run esbuild-node -- --sourcemap --watch",
+		"watch-browser": "npm run esbuild-browser -- --sourcemap --watch",
+		"package": "vsce package",
+		"package:small": "file=$npm_package_name-$npm_package_version.vsix ; vsce package --ignoreFile .vscodeignore_small --out $file ; zip $file.zip $file",
+		"check-env": "node -e 'console.log(process.env)' | grep npm"
+	},
+	"dependencies": {
+		"@vscode/debugadapter": "^1.57.0",
+		"@vscode/debugprotocol": "^1.57.0",
+		"fast-glob": "^3.2.12",
+		"gif-writer": "^0.9.4",
+		"intel-hex": "^0.1.2",
+		"jsonc-parser": "^3.2.0",
+		"leader-line": "^1.0.7",
+		"minimatch": "^7.2.0",
+		"node-graphviz": "^0.1.1",
+		"node-gzip": "^1.1.2",
+		"posthtml": "^0.16.6",
+		"posthtml-toc": "^1.0.3",
+		"rng": "^0.2.2",
+		"semver": "^7.5.4",
+		"serialport": "^10.4.0",
+		"showdown": "^2.1.0",
+		"xml2js": "^0.6.2"
+	},
+	"devDependencies": {
+		"@types/mocha": "10.0.0",
+		"@types/node": "^18.8.2",
+		"@types/vscode": "^1.71.0",
+		"@types/vscode-webview": "^1.57.0",
+		"esbuild": "^0.17.10",
+		"mocha": "^10.2.0",
+		"sinon": "^18.0.0",
+		"source-map-support": "^0.5.21",
+		"typescript": "^4.8.4",
+		"vsce": "^2.15.0"
+	},
+	"bugs": {
+		"url": "https://github.com/maziac/DeZog/issues"
+	},
+	"main": "./out/extension.js",
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"contributes": {
+		"views": {
+			"debug": [
+				{
+					"type": "webview",
+					"id": "dezog.helpview",
+					"name": "DeZog Help",
+					"icon": "assets/help_icon.svg",
+					"contextualTitle": "DeZog Help",
+					"when": "config.dezog.showHelp"
+				}
+			]
+		},
+		"configuration": {
+			"type": "object",
+			"title": "DeZog configuration",
+			"properties": {
+				"dezog.showHelp": {
+					"description": "Enables the 'DeZog Help' view in the debug sidebar.",
+					"type": "boolean",
+					"scope": "resource",
+					"default": true
+				},
+				"dezog.log.global": {
+					"description": "Write global logs to an output panel.",
+					"type": "boolean",
+					"scope": "resource",
+					"default": false
+				},
+				"dezog.log.transport": {
+					"description": "Write transport logs (socket, serial, etc.) to an output panel.",
+					"type": "boolean",
+					"scope": "resource",
+					"default": false
+				},
+				"dezog.log.zsim.hardware": {
+					"description": "Write logs from simulated hardware, e.g. zxnDMA, to an output panel. For the internal simulator (zsim).",
+					"type": "boolean",
+					"scope": "resource",
+					"default": true
+				},
+				"dezog.log.zsim.customCode": {
+					"description": "Write logs regarding custom (js) code to an output panel. For the internal simulator (zsim).",
+					"type": "boolean",
+					"scope": "resource",
+					"default": true
+				},
+				"dezog.donated": {
+					"description": "If you donated (press the donate button in the help) you can hide the button by setting this parameter.",
+					"type": "boolean",
+					"scope": "resource",
+					"default": false
+				}
+			}
+		},
+		"languages": [
+			{
+				"id": "asm-collection",
+				"extensions": [
+					".a80",
+					".z80",
+					".asm",
+					".inc",
+					".s"
+				],
+				"aliases": [
+					"Assembler file"
+				]
+			},
+			{
+				"id": "asm-list-file",
+				"extensions": [
+					".list",
+					".lis"
+				],
+				"aliases": [
+					"Assembler list file"
+				]
+			}
+		],
+		"breakpoints": [
+			{
+				"language": "asm-collection"
+			},
+			{
+				"language": "asm-list-file"
+			},
+			{
+				"language": "z80-macroasm"
+			},
+			{
+				"language": "z80-asm"
+			},
+			{
+				"language": "zeus-asm"
+			},
+			{
+				"language": "gbz80"
+			},
+			{
+				"language": "pasmo"
+			}
+		],
+		"commands": [
+			{
+				"command": "dezog.whatsNew",
+				"title": "Show 'What's New' page of this DeZog release.",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.help",
+				"title": "Show the DeZog Help page.",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.movePCtoCursor",
+				"title": "Move Program Counter to Cursor",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.clearAllDecorations",
+				"title": "Clear all decorations",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.serialport.list",
+				"title": "Get list of all available serial ports",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.serialport.test",
+				"title": "Test communication through a serial port",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.reload",
+				"title": "Reload the list file(s).",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.disassemblyAtCursor.code",
+				"title": "Code",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.disassemblyAtCursor.data",
+				"title": "Data",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.disassemblyAtCursor.string",
+				"title": "String",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.analyzeAtCursor.disassembly",
+				"title": "Smart Disassembly",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.analyzeAtCursor.flowChart",
+				"title": "Flow Chart",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.analyzeAtCursor.callGraph",
+				"title": "Call Graph",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.disassembly.refresh",
+				"title": "Refresh disassembly",
+				"category": "DeZog",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "dezog.run",
+				"title": "Run with DeZog",
+				"category": "DeZog"
+			}
+		],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "dezog.whatsNew"
+				},
+				{
+					"command": "dezog.help"
+				},
+				{
+					"command": "dezog.movePCtoCursor",
+					"when": "false"
+				},
+				{
+					"command": "dezog.disassemblyAtCursor.code",
+					"when": "false"
+				},
+				{
+					"command": "dezog.disassemblyAtCursor.data",
+					"when": "false"
+				},
+				{
+					"command": "dezog.disassemblyAtCursor.string",
+					"when": "false"
+				},
+				{
+					"command": "dezog.analyzeAtCursor.disassembly",
+					"when": "false"
+				},
+				{
+					"command": "dezog.analyzeAtCursor.flowChart",
+					"when": "false"
+				},
+				{
+					"command": "dezog.analyzeAtCursor.callGraph",
+					"when": "false"
+				},
+				{
+					"command": "dezog.disassembly.refresh",
+					"when": "false"
+				},
+				{
+					"command": "dezog.clearAllDecorations"
+				},
+				{
+					"command": "dezog.serialport.list"
+				},
+				{
+					"command": "dezog.serialport.test"
+				},
+				{
+					"command": "dezog.reload"
+				}
+			],
+			"explorer/context": [
+				{
+					"group": "1_dezog",
+					"command": "dezog.run",
+					"when": "resourceExtname == .p || resourceExtname == .81 || resourceExtname == .p81 || resourceExtname == .P || resourceExtname == .P81 || resourceExtname == .sna || resourceExtname == .SNA"
+				}
+			],
+			"editor/context": [
+				{
+					"when": "inDebugMode && resourceLangId == asm-collection || inDebugMode && resourceLangId == asm-list-file",
+					"command": "dezog.movePCtoCursor",
+					"group": "debug"
+				},
+				{
+					"when": "inDebugMode && resourceLangId == asm-collection || inDebugMode && resourceLangId == asm-list-file",
+					"submenu": "dezog.disassemblyAtCursor",
+					"group": "debug"
+				},
+				{
+					"when": "inDebugMode && resourceLangId == asm-collection || inDebugMode && resourceLangId == asm-list-file",
+					"submenu": "dezog.analyzeAtCursor",
+					"group": "debug"
+				}
+			],
+			"editor/title": [
+				{
+					"when": "inDebugMode && resourcePath in dezog.disassembler.disasmPath",
+					"command": "dezog.disassembly.refresh",
+					"group": "navigation"
+				}
+			],
+			"dezog.disassemblyAtCursor": [
+				{
+					"command": "dezog.disassemblyAtCursor.code"
+				},
+				{
+					"command": "dezog.disassemblyAtCursor.data"
+				},
+				{
+					"command": "dezog.disassemblyAtCursor.string"
+				}
+			],
+			"dezog.analyzeAtCursor": [
+				{
+					"command": "dezog.analyzeAtCursor.disassembly"
+				},
+				{
+					"command": "dezog.analyzeAtCursor.flowChart"
+				},
+				{
+					"command": "dezog.analyzeAtCursor.callGraph"
+				}
+			]
+		},
+		"submenus": [
+			{
+				"id": "dezog.disassemblyAtCursor",
+				"label": "Disassembly at Cursor / of Selection"
+			},
+			{
+				"id": "dezog.analyzeAtCursor",
+				"label": "Analyze at Cursor"
+			}
+		],
+		"debuggers": [
+			{
+				"type": "dezog",
+				"label": "DeZog",
+				"program": "./out/src/debugadapter.js",
+				"runtime": "node",
+				"configurationAttributes": {
+					"launch": {
+						"required": [
+							"name",
+							"remoteType",
+							"rootFolder"
+						],
+						"properties": {
+							"remoteType": {
+								"type": "string",
+								"enum": [
+									"zrcp",
+									"cspect",
+									"zsim",
+									"zxnext",
+									"mame"
+								],
+								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'zxnext' or 'zsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
+								"default": "zsim"
+							},
+							"zrcp": {
+								"description": "The configuration for the ZEsarUX emulator.",
+								"type": "object",
+								"properties": {
+									"hostname": {
+										"type": "string",
+										"description": "The hostname/IP address of the ZEsarUX Emulator.",
+										"default": "localhost"
+									},
+									"port": {
+										"type": "number",
+										"description": "The port of the ZEsarUX Emulator."
+									},
+									"loadDelay": {
+										"type": "number",
+										"description": "An additional delay before the assembler program is loaded in ZEsarUX. Use this only if you have problems starting the debug session on Windows. Default: 100ms on Windows, 0ms on other systems."
+									},
+									"skipInterrupt": {
+										"type": "boolean",
+										"description": "Skips the interrupt during stepping. Defaults to false."
+									},
+									"resetOnLaunch": {
+										"type": "boolean",
+										"description": "Resets the device after starting the debugger before starting the program to debug. Defaults to true."
+									},
+									"socketTimeout": {
+										"type": "number",
+										"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
+									}
+								}
+							},
+							"cspect": {
+								"description": "The configuration for the CSpect emulator.",
+								"type": "object",
+								"properties": {
+									"hostname": {
+										"type": "string",
+										"description": "The hostname/IP address of the CSpect socket.",
+										"default": "localhost"
+									},
+									"port": {
+										"type": "number",
+										"description": "The port of the CSpect socket."
+									},
+									"socketTimeout": {
+										"type": "number",
+										"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
+									}
+								}
+							},
+							"zsim": {
+								"description": "'The configuration of the internal Z80 simulator.",
+								"type": "object",
+								"properties": {
+									"preset": {
+										"type": "string",
+										"enum": [
+											"spectrum",
+											"zx81"
+										],
+										"description": "The preset of the simulator. It will set the default values for a 56k Spectrum. You can override these settings. If you e.g. set the 'memoryModel' explicitly.",
+										"default": "spectrum"
+									},
+									"zxKeyboard": {
+										"type": "string",
+										"enum": [
+											"spectrum",
+											"zx81"
+										],
+										"description": "Select a keyboard. ZX81 or ZX Spectrum.",
+										"default": "spectrum"
+									},
+									"zxInterface2Joy": {
+										"type": "boolean",
+										"description": "If enabled the simulator shows  a pad to simulate the joysticks for ZX Interface 2.",
+										"default": true
+									},
+									"kempstonJoy": {
+										"type": "boolean",
+										"description": "If enabled the simulator shows a pad to simulate the Kempston joystick at port 0x1F.",
+										"default": true
+									},
+									"customJoy": {
+										"type": "object",
+										"description": "Used to define a custom joystick.",
+										"properties": {
+											"fire": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											},
+											"fire2": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											},
+											"fire3": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											},
+											"fire4": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											},
+											"left": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											},
+											"down": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											},
+											"up": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											},
+											"right": {
+												"type": "object",
+												"properties": {
+													"port": {},
+													"bit": {}
+												}
+											}
+										}
+									},
+									"visualMemory": {
+										"type": "boolean",
+										"description": "If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.",
+										"default": true
+									},
+									"memoryModel": {
+										"type": "string",
+										"enum": [
+											"RAM",
+											"ZX16K",
+											"ZX48K",
+											"ZX128K",
+											"ZXNEXT",
+											"ZX81-1K",
+											"ZX81-2K",
+											"ZX81-16K",
+											"ZX81-32K",
+											"ZX81-48K",
+											"ZX81-56K",
+											"ColecoVision",
+											"CUSTOM"
+										],
+										"description": "Chooses the right memory model. I.e. how the memory maps to ROM and RAM and if and how paging is done.\nA few examples:\n- 'RAM': One memory area of 64K, 1 bank.\n- 'ZX16K': ROM and RAM as of the ZX Spectrum 16K, 1 ROM, 1 RAM bank.\n- 'ZX48K': ROM and RAM as of the ZX Spectrum 48K, 1 ROM, 1 RAM bank.\n- 'ZX128K': Banked memory, 16k slots, 8 RAM banks, 2 ROM banks .\n- 'ZXNEXT': Banked memory as of the ZX Next (8k slots/banks).\n- 'ZX81-16K': ROM and RAM as of a 16k ZX81.\n- 'CUSTOM': A customizable memory model. You define the memory in the 'customMemory' property.",
+										"default": "RAM"
+									},
+									"customMemory": {
+										"description": "Only evaluated if 'memoryModel' is set to 'CUSTOM'. Chooses the banks and their memory types. Please refer to the documentation.",
+										"type": "object",
+										"properties": {
+											"slots": {
+												"type": "array",
+												"description": "An array with the slot definitions.",
+												"items": {
+													"type": "object",
+													"properties": {
+														"name": {
+															"type": "string",
+															"description": "The name of the slot.\nOptional. Required for bank switching slots. This name can be used in 'ioMmu' to assign a different bank to the slot.",
+															"default": ""
+														},
+														"range": {
+															"type": "array",
+															"description": "Array with first and last (inclusive) address of the slot.\nEither use a decimal number or a hex string.",
+															"default": [],
+															"items": {
+																"type": [
+																	"number",
+																	"string"
+																]
+															}
+														},
+														"banks": {
+															"type": "array",
+															"description": "Array with the banks that can be associated with the slot.",
+															"default": [],
+															"items": {
+																"type": "object",
+																"description": "The bank description. You need to describe a bank only once. If it is also used in another slot just assign the bank via the index.",
+																"properties": {
+																	"name": {
+																		"type": "string",
+																		"description": "The name of the bank.\nOptional. Is used in the 'Memory Banks' section in the VARIABLE pane. If not set a name is given automatically.",
+																		"default": ""
+																	},
+																	"shortName": {
+																		"type": "string",
+																		"description": "The short name of the bank.\nOptional. Is used in the disassembly (disasm.list). If not set a name is given automatically.",
+																		"default": ""
+																	},
+																	"index": {
+																		"type": [
+																			"number",
+																			"array"
+																		],
+																		"description": "Either the single index/number of the bank. Or the start and end index of a range of banks.",
+																		"default": 0,
+																		"items": {
+																			"type": "number"
+																		}
+																	},
+																	"rom": {
+																		"type": "string",
+																		"description": "The path to a rom bin file.\nOptional. File content should be in raw format (i.e. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).",
+																		"default": ""
+																	},
+																	"romOffset": {
+																		"type": [
+																			"number",
+																			"string"
+																		],
+																		"description": "Optional offset of the ROM file/content.\nEither use a decimal number or a hex string.",
+																		"default": 0
+																	},
+																	"defaultFill": {
+																		"type": [
+																			"number",
+																			"string"
+																		],
+																		"description": "Optional default byte fill value. If omitted: RAM/ROM uses 0.",
+																		"default": 0
+																	}
+																}
+															}
+														},
+														"initialBank": {
+															"type": "number",
+															"description": "For 'zsim': The number of the bank which is assigned to the slot initially.\nOptional. If not used the first given bank is used instead.",
+															"default": 0
+														}
+													}
+												}
+											},
+											"ioMmu": {
+												"description": "The javascript code for bank switching.\nOptional. Only required for memory models that use banking/paging. Please refer to the documentation.\nPlease enter the code as a string or (for readability) as an arra of strings.",
+												"type": [
+													"string",
+													"array"
+												],
+												"default": [
+													""
+												],
+												"items": {
+													"type": "string"
+												}
+											}
+										}
+									},
+									"ulaScreen": {
+										"type": "string",
+										"enum": [
+											"spectrum",
+											"zx81"
+										],
+										"description": "If defined it shows the contents of the ZX Spectrum (\"spectrum\") or ZX81 (\"zx81\") screen. It supports also the ZX128K screen switching.",
+										"default": null
+									},
+									"ulaOptions": {
+										"type": "object",
+										"properties": {
+											"hires": {
+												"type": "boolean",
+												"description": "ZX81 only. If true the generation of the screen output by the cpu is simulated. This allows to display hires programs. If false the ZX81 dfile is converted directly into screen graphics. This can be an advantage when debugging a non-hires game. Defaults to true.",
+												"default": true
+											},
+											"lines": {
+												"type": "array",
+												"description": "Used to define lines that are drawn on the screen area for orientation.",
+												"default": [],
+												"items": {
+													"type": "object",
+													"properties": {
+														"x1": {
+															"type": "string",
+															"description": "Start x position of the line."
+														},
+														"y1": {
+															"type": "string",
+															"description": "Start y position of the line."
+														},
+														"x2": {
+															"type": "string",
+															"description": "End x position of the line."
+														},
+														"y2": {
+															"type": "string",
+															"description": "End y position of the line."
+														}
+													}
+												}
+											},
+											"firstLine": {
+												"type": "number",
+												"description": "Used only if \"hires\" is true. The first line that should be displayed. Defaults to 56.",
+												"default": 56
+											},
+											"lastLine": {
+												"type": "number",
+												"description": "Used only if \"hires\" is true. The last line (inclusive) that should be displayed. Defaults to 247.",
+												"default": 247
+											},
+											"showStandardLines": {
+												"type": "boolean",
+												"description": "In some modes (e.g. zx81/hires) this shows some lines over the display for the borders or the start of the HSYNC pulse.",
+												"default": false
+											},
+											"chroma81": {
+												"type": "object",
+												"properties": {
+													"available": {
+														"type": "boolean",
+														"description": "ZX81 only. If true the chroma81 is 'attached' and can be accessed through in/out port 0x7FEF.",
+														"default": true
+													},
+													"enabled": {
+														"type": "boolean",
+														"description": "Initial enable state. I.e. you can enable the chroma81 here right from the start without the need to write to a port.",
+														"default": false
+													},
+													"mode": {
+														"type": "number",
+														"enum": [
+															0,
+															1
+														],
+														"description": "The initial mode (if 'enabled' is true).",
+														"default": 0
+													},
+													"borderColor": {
+														"type": "number",
+														"description": "The initial border color (if 'enabled' is true). Colors 0-15 like Spectrum colors.",
+														"default": 0
+													}
+												}
+											},
+											"debug": {
+												"type": "boolean",
+												"description": "ZX81 only. If true a gray background is shown for the screen areas without output. Only makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. Defaults to false.",
+												"default": false
+											}
+										},
+										"description": "Several options for the ZX81 and ZX Spectrum ULA screen.",
+										"default": {}
+									},
+									"zxBeeper": {
+										"type": "boolean",
+										"description": "Enables ZX Spectrum sound through it's beeper.",
+										"default": true
+									},
+									"audioSampleRate": {
+										"type": "number",
+										"description": "The sample rate used for audio. Defaults to 22050 Hz.",
+										"default": 22050
+									},
+									"cpuLoad": {
+										"type": "number",
+										"description": "The CPU load is calculated by the number of executed HALT tStates vs all tStates. You can disable the display with a 0. 1 will exactly count till the next occurrence of a HALT. Higher numbers will average over more HALT instructions and lead to a more stable display. Practical values are around 10 (the default).",
+										"default": 10
+									},
+									"cpuFrequency": {
+										"type": "number",
+										"description": "The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here.",
+										"default": 3500000
+									},
+									"limitSpeed": {
+										"type": "boolean",
+										"description": "If enabled the simulated CPU performance is throttled to fit the given CPU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.",
+										"default": false
+									},
+									"updateFrequency": {
+										"type": "number",
+										"description": "The update frequency of the simulator view in Hz. Defaults to 10 Hz. Possible range is 5 to 100 Hz.",
+										"default": 10
+									},
+									"defaultPortIn": {
+										"type": "number",
+										"description": "The default value that is read if the read port is unused. Allowed is 255 or 0. 255 also sets the port as 'Open Collector', all triggered ports would be ANDed. Default to 0xFF.",
+										"default": 255
+									},
+									"Z80N": {
+										"type": "boolean",
+										"description": "Default is false. If enabled the Z80N extended instructions are supported. Default: If 'tbblueMemoryManagementSlots' defaults to true, otherwise false.",
+										"default": false
+									},
+									"tbblue": {
+										"description": "Experimental. Use to enable some specific tbblue features.",
+										"REG_TURBO_MODE": {
+											"type": "boolean",
+											"description": "If true the register 0x07 is simulated which controls the CPU speed.",
+											"default": false
+										}
+									},
+									"customCode": {
+										"description": "This enables custom code to run inside the simulator, e.g. to simulate additional ports.",
+										"properties": {
+											"debug": {
+												"type": "boolean",
+												"description": "If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).",
+												"default": false
+											},
+											"jsPath": {
+												"type": "string",
+												"description": "A relative path to additional javascript code that is included into the Z80 simulator."
+											},
+											"uiPath": {
+												"type": "string",
+												"description": "A relative path to additional javascript code that is included into the Z80 simulator view/UI. This code acts as UI for the code in 'jsPath'"
+											},
+											"timeStep": {
+												"type": "number",
+												"description": "You can set a time step (interval) to call the tick() function. If not set then tick() will not be called (although time/t-states still do advance)."
+											}
+										}
+									}
+								}
+							},
+							"zxnext": {
+								"description": "The configuration for debugging on the ZXNEXT device.",
+								"type": "object",
+								"properties": {
+									"serial": {
+										"type": "string",
+										"description": "The name of the serial port interface, on macOS e.g. \"/dev/tty.usbserial-AQ\", on Windows e.g. \"COM8\"",
+										"default": ""
+									},
+									"timeout": {
+										"type": "number",
+										"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
+									}
+								}
+							},
+							"mame": {
+								"description": "The configuration for debugging with the mame gdbstub.",
+								"type": "object",
+								"properties": {
+									"hostname": {
+										"type": "string",
+										"description": "The hostname/IP address of the MAME socket.",
+										"default": "localhost"
+									},
+									"port": {
+										"type": "number",
+										"description": "The port of the CSpect socket."
+									},
+									"socketTimeout": {
+										"type": "number",
+										"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
+									}
+								}
+							},
+							"unitTests": {
+								"description": "Whether the configuration contains the unit tests or not. Default: false.",
+								"type": "boolean"
+							},
+							"rootFolder": {
+								"description": "The path of the root folder. All other paths are relative to this. Usually set to ${workspaceFolder}.",
+								"type": "string"
+							},
+							"sjasmplus": {
+								"description": "All sjasmplus list files. (Typically only one, but it's possible to add more here.)",
+								"type": "array",
+								"items": {
+									"type": "object",
+									"required": [
+										"path"
+									],
+									"properties": {
+										"path": {
+											"type": "string",
+											"description": "Path to the assembler '*.sld' file."
+										},
+										"srcDirs": {
+											"type": "array",
+											"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here as an array of strings. All dirs are relative to the 'rootFolder'.",
+											"default": [
+												""
+											]
+										},
+										"excludeFiles": {
+											"type": "array",
+											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
+											"default": []
+										}
+									}
+								}
+							},
+							"z80asm": {
+								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
+								"type": "array",
+								"items": {
+									"type": "object",
+									"required": [
+										"path"
+									],
+									"properties": {
+										"path": {
+											"type": "string",
+											"description": "Path to the assembler .list file."
+										},
+										"srcDirs": {
+											"type": "array",
+											"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here either as an array of strings. All dirs are relative to the 'rootFolder'.",
+											"default": [
+												""
+											]
+										},
+										"excludeFiles": {
+											"type": "array",
+											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
+											"default": []
+										}
+									}
+								}
+							},
+							"z88dk": {
+								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
+								"type": "array",
+								"items": {
+									"type": "object",
+									"required": [
+										"path",
+										"mapFile"
+									],
+									"properties": {
+										"path": {
+											"type": "string",
+											"description": "Path to the assembler .list file."
+										},
+										"srcDirs": {
+											"type": "array",
+											"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here as an array of strings. All dirs are relative to the 'rootFolder'.",
+											"default": [
+												""
+											]
+										},
+										"excludeFiles": {
+											"type": "array",
+											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
+											"default": []
+										},
+										"mainFile": {
+											"type": "string",
+											"description": "Path to the main assembler source file that was used to produce the .list file.",
+											"default": null
+										},
+										"mapFile": {
+											"type": "string",
+											"description": "The map file is required to correctly parse the label values and to get correct file/line to address associations.",
+											"default": 0
+										}
+									}
+								}
+							},
+							"z88dkv2": {
+								"description": "All list files (one or many).",
+								"type": "array",
+								"items": {
+									"type": "object",
+									"required": [
+										"path",
+										"mapFile"
+									],
+									"properties": {
+										"path": {
+											"description": "Path to the assembler .list file. A string or an array for multiple files. Wildcards are allowed.",
+											"oneOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "array",
+													"items": {
+														"type": "string"
+													}
+												}
+											]
+										},
+										"srcDirs": {
+											"type": "array",
+											"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here as an array of strings. All dirs are relative to the 'rootFolder'.",
+											"default": [
+												""
+											]
+										},
+										"excludeFiles": {
+											"type": "array",
+											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
+											"default": []
+										},
+										"mapFile": {
+											"type": "string",
+											"description": "The map file is required to correctly parse the label values and to get correct file/line to address associations.",
+											"default": 0
+										}
+									}
+								}
+							},
+							"revEng": {
+								"description": "List here all manually edited list files.",
+								"type": "array",
+								"items": {
+									"type": "object",
+									"required": [
+										"path"
+									],
+									"properties": {
+										"path": {
+											"type": "string",
+											"description": "Path to the .list file. For 'revEng' you may also add a glob pattern here."
+										},
+										"reloadOnSave": {
+											"type": "boolean",
+											"description": "If true all list files (and labels) will be automatically re-loaded if this list file has been changed. Otherwise the reload has to be done manually through the command palette.\nDefault is false."
+										}
+									}
+								}
+							},
+							"smallValuesMaximum": {
+								"type": "number",
+								"description": "Interprets labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.",
+								"default": 512
+							},
+							"disassemblerArgs": {
+								"description": "Arguments passed to the disassembler (in the VARIABLES pane).",
+								"properties": {
+									"numberOfLines": {
+										"type": "number",
+										"description": "The number of lines displayed in the disassembly.",
+										"default": 10
+									}
+								}
+							},
+							"smartDisassemblerArgs": {
+								"description": "Arguments passed to the smart disassembler used in 'Analyze', i.e. call graph, flow chart and smart (text) disassembler.",
+								"properties": {
+									"lowerCase": {
+										"type": "boolean",
+										"description": "true = use lower case for the instructions, false = use upper case.",
+										"default": true
+									}
+								}
+							},
+							"tmpDir": {
+								"type": "string",
+								"description": "A directory for temporary files created by this debug adapter. Used e.g. for disassemblies. E.g. '.tmp'"
+							},
+							"topOfStack": {
+								"type": "string",
+								"description": "(Optional) You should set this to the label or address which is above the topmost entry on the stack. It is used to determine the end of the call stack."
+							},
+							"execAddress": {
+								"type": "string",
+								"description": "The start address of program execution. Use a label or a number. Can only be omitted if a .sna or .nex file is loaded."
+							},
+							"load": {
+								"type": "string",
+								"description": "(Optional) Load a .nex or .sna file (or .tap in case of ZEsarUX) into the emulator on startup of the debug session."
+							},
+							"loadObjs": {
+								"description": "List of one or many object files, i.e. memory dumps. Contains 'path' and 'start' address. (Optional)",
+								"type": "array",
+								"items": {
+									"type": "object",
+									"required": [
+										"path"
+									],
+									"properties": {
+										"path": {
+											"type": "string",
+											"description": "Path to the object file (.o/.obj) file."
+										},
+										"start": {
+											"type": "string",
+											"description": "The start address of the object file, e.g. 32768. Can also be a label."
+										}
+									}
+								}
+							},
+							"startAutomatically": {
+								"type": "boolean",
+								"description": "Start automatically after launch. Default is false."
+							},
+							"commandsAfterLaunch": {
+								"description": "An array with commands that are executed after the program-to-debug is loaded. With '-e' or '-exec' you can pass commands to the debugger directly.",
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							},
+							"history": {
+								"description": "Configures the 'reverse debugging' (time travel).",
+								"type": "object",
+								"properties": {
+									"reverseDebugInstructionCount": {
+										"type": "number",
+										"description": "Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off. Default is 10000."
+									},
+									"spotCount": {
+										"type": "number",
+										"description": "Sets the number of instructions to show in a spot. If you set this e.g. to 5 then the 5 previous and the 5 next instructions related to the current position are shown. Use 0 to disable. Default is 10."
+									},
+									"spotShowRegisters": {
+										"type": "boolean",
+										"description": "If true it shows the changed register values in the spot history. You can disable the feature here. Defaults to true."
+									},
+									"codeCoverageEnabled": {
+										"type": "boolean",
+										"description": "Enables/disables code coverage. Default is true."
+									}
+								}
+							},
+							"formatting": {
+								"description": "Configures the display of values of DeZog. e.g. it is possible to customize how the registers are displayed or what is displayed on hovering.",
+								"type": "object",
+								"properties": {
+									"registerVar": {
+										"description": "Defines the formatting of the registers when displayed in the VARIABLES area. E.g. as hex value or as integer. Also allows to display labels and various other formats. Use:\n${name} = the name of the register, e.g. HL\n${hex} = value as hex, e.g. A9F5\n${dhex} = value as hex with space between bytes, e.g. A9 F5\n${unsigned} = value as unsigned, e.g. 1234\n$(signed) = value as signed, e.g. -59\n$(bits) = value as bits , e.g. 10011011\n$(flags) = value interpreted as status flags (only useful for F and F'), e.g. ZNC\n${labels} = value as label (or several labels)\n{labelsplus} = value as label (or several labels) plus an index/offset\n${pre:labels:join} = value as label (or several labels). If no label is found nothing is printed. If at least 1 label is found the 'pre' string is printed followed by the label(s). If more than 1 label is found they are concatenated with the 'join' string.\nNote: The ${b@:...} prefix is not allowed in for the VARIABLES section.",
+										"type": "array",
+										"items": {
+											"type": "string"
+										}
+									},
+									"registerHover": {
+										"description": "Format how the registers are displayed when hovering with the mouse. Is an array with 2 strings tuples. The first is an regex that checks the register. If fulfilled the 2nd is used to format the value.",
+										"type": "array",
+										"items": {
+											"type": "string"
+										}
+									},
+									"bigValues": {
+										"type": "string",
+										"description": "The general formatting for address labels bigger than 'smallValuesMaximum'."
+									},
+									"smallValues": {
+										"type": "string",
+										"description": "The general formatting for small values like constants smaller/equal than 'smallValuesMaximum'."
+									},
+									"watchByte": {
+										"type": "string",
+										"description": "The 'byte' formatting for labels in the WATCHes area."
+									},
+									"watchWord": {
+										"type": "string",
+										"description": "The 'word' formatting for labels in the WATCHes area."
+									},
+									"stackVar": {
+										"type": "string",
+										"description": "Format for the pushed values in the STACK area."
+									}
+								}
+							},
+							"memoryViewer": {
+								"description": "The appearance of the memory viewer can be customized here. E.g. the colors or the hover display.",
+								"type": "object",
+								"properties": {
+									"addressColor": {
+										"type": "string",
+										"description": "The text color of the address field."
+									},
+									"bytesColor": {
+										"type": "string",
+										"description": "The color of the bytes shown in hex."
+									},
+									"asciiColor": {
+										"type": "string",
+										"description": "The text color of the ascii field."
+									},
+									"addressHoverFormat": {
+										"type": "string",
+										"description": "see registerVarFormat. Format for the address when hovering."
+									},
+									"valueHoverFormat": {
+										"type": "string",
+										"description": "see registerVarFormat. Format for the value when hovering."
+									},
+									"registerPointerColors": {
+										"type": "array",
+										"description": "An array with register/color pairs. All selected register will appear with the correspondent color in the memory view. Registers not chosen will not appear.",
+										"items": [
+											{
+												"type": "string"
+											},
+											{
+												"type": "string"
+											}
+										],
+										"default": [
+											"HL",
+											"darkgreen",
+											"DE",
+											"darkcyan",
+											"BC",
+											"dimgray",
+											"IX",
+											"darkorange",
+											"IY",
+											"darkviolet"
+										]
+									},
+									"registersMemoryView": {
+										"type": "array",
+										"description": "An array of register to show in the register memory view. This view is automatically opened at startup and shows the memory the registers point to. E.g. [ 'HL', 'DE', 'IX' ].",
+										"items": {
+											"type": "string"
+										},
+										"default": [
+											"HL",
+											"DE",
+											"BC",
+											"IX",
+											"IY"
+										]
+									}
+								}
+							},
+							"unitTestTimeout": {
+								"type": "number",
+								"description": "(Optional) The timeout for unit tests. If a test lasts longer it is assumed as failed. In secs. Default = 5s."
+							}
+						}
+					}
+				},
+				"initialConfigurations": [
+					{
+						"type": "dezog",
+						"request": "launch",
+						"name": "Simulator - ZX48K Spectrum",
+						"remoteType": "zsim",
+						"zsim": {
+							"visualMemory": true,
+							"memoryModel": "ZX48K",
+							"ulaScreen": "spectrum",
+							"zxKeyboard": "spectrum",
+							"zxBeeper": true
+						},
+						"sjasmplus": [
+							{
+								"path": "Add your assembler list or sld file"
+							}
+						],
+						"commandsAfterLaunch": [],
+						"history": {
+							"reverseDebugInstructionCount": 1000000,
+							"spotCount": 10,
+							"codeCoverageEnabled": true
+						},
+						"startAutomatically": false,
+						"rootFolder": "${workspaceFolder}",
+						"load": "Add your .nex or .sna file to load",
+						"topOfStack": "Add your top of stack / label name"
+					}
+				],
+				"configurationSnippets": [
+					{
+						"label": "DeZog: Simulator - ZX Spectrum",
+						"description": "Configuration for DeZog to use the internal simulator for a ZX Spectrum 48K. Can be used to simulate a ZX 48K.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "Simulator - ZX48K Spectrum",
+							"remoteType": "zsim",
+							"zsim": {
+								"visualMemory": true,
+								"preset": "spectrum",
+								"memoryModel": "ZX48K"
+							},
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": true
+							},
+							"startAutomatically": false,
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
+							"load": "${2:.nex or .sna file to load}",
+							"topOfStack": "${3: Top of stack / label name}"
+						}
+					},
+					{
+						"label": "DeZog: Simulator - ZX81",
+						"description": "Configuration for DeZog to use the internal simulator for a ZX81 with 56k RAM. Can be used to simulate a ZX81.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "Simulator - ZX81 56k RAM",
+							"remoteType": "zsim",
+							"zsim": {
+								"visualMemory": true,
+								"preset": "zx81",
+								"memoryModel": "ZX81-56K"
+							},
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": true
+							},
+							"startAutomatically": false,
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
+							"load": "${2:.p file to load}"
+						}
+					},
+					{
+						"label": "DeZog: Simulator - Bare Z80",
+						"description": "Configuration for DeZog to use the internal simulator for a bare Z80 without an peripherals or memory banking.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "Simulator - Bare Z80",
+							"remoteType": "zsim",
+							"zsim": {
+								"visualMemory": true,
+								"memoryModel": "RAM"
+							},
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": true
+							},
+							"startAutomatically": false,
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
+							"loadObjs": [
+								{
+									"path": "${2:The .obj file to load}"
+								}
+							],
+							"execAddress": "${3:The start address / label name}",
+							"topOfStack": "${4: Top of stack / label name}"
+						}
+					},
+					{
+						"label": "DeZog: CSpect",
+						"description": "Configuration for DeZog to use the CSpect emulator.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "CSpect",
+							"remoteType": "cspect",
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": false
+							},
+							"startAutomatically": false,
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
+							"load": "${2:.nex or .sna file to load}",
+							"topOfStack": "${3: Top of stack / label name}"
+						}
+					},
+					{
+						"label": "DeZog: ZEsarUX",
+						"description": "Configuration for DeZog to use the ZEsarUX emulator.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "ZEsarUX",
+							"remoteType": "zesarux",
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": true
+							},
+							"startAutomatically": false,
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
+							"load": "${2:.nex or .sna file to load}",
+							"topOfStack": "${3: Top of stack / label name}"
+						}
+					},
+					{
+						"label": "DeZog: MAME",
+						"description": "Configuration for DeZog to use the MAME emulator.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "MAME",
+							"remoteType": "mame",
+							"mame": {
+								"port": 12000
+							},
+							"startAutomatically": false,
+							"revEng": [
+								{
+									"path": "${1:The list file (initially an empty file with extension *.list)}"
+								}
+							],
+							"history": {
+								"codeCoverageEnabled": false
+							},
+							"rootFolder": "^\"\\${workspaceFolder\\}\""
+						}
+					},
+					{
+						"label": "DeZog: ZX Next",
+						"description": "Configuration for DeZog to use the ZX Next for remote debugging.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "ZX Next",
+							"remoteType": "zxnext",
+							"zxnext": {
+								"serial": "${1:The serial COM port}"
+							},
+							"sjasmplus": [
+								{
+									"path": "${2:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": false
+							},
+							"startAutomatically": false,
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
+							"load": "${3:.nex or .sna file to load}",
+							"topOfStack": "${4: Top of stack / label name}"
+						}
+					},
+					{
+						"label": "DeZog: Unit Tests",
+						"description": "Configuration for DeZog to use the internal simulator for unit tests.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "Unit Tests - Simulator",
+							"unitTests": true,
+							"presentation": {
+								"hidden": true
+							},
+							"remoteType": "zsim",
+							"zsim": {
+								"Z80N": true,
+								"visualMemory": true,
+								"memoryModel": "ZXNEXT"
+							},
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": true
+							},
+							"startAutomatically": true,
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
+							"load": "${2:.nex or .sna file to load}"
+						}
+					}
+				]
+			}
+		]
+	}
 }
