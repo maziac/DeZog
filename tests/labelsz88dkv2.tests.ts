@@ -348,6 +348,111 @@ suite('Labels (z88dk v2 format)', () => {
 				assert.equal(address, 0x18027);
 			});
 
+			test('C-code: Test.c.lis', () => {
+				// Read the list file
+				const config = {
+					z88dkv2: [{
+						path: './tests/data/labels/projects/z88dk/test_c_v2/Test.c.lis',
+						srcDirs: [""],	// Sources-Mode
+						mapFile: "./tests/data/labels/projects/z88dk/test_c_v2/Test.map",
+						excludeFiles: []
+					}]
+				};
+				lbls.readListFiles(config, new MemoryModelZx48k());
+
+				let res = lbls.getFileAndLineForAddress(0x028FB7);
+				assert.ok(res.fileName.endsWith('Test.c'));
+				assert.equal(res.lineNr, 7 - 1);
+
+				res = lbls.getFileAndLineForAddress(0x028FBA);
+				assert.ok(res.fileName.endsWith('Test.c'));
+				assert.equal(res.lineNr, 7 - 1);
+
+				res = lbls.getFileAndLineForAddress(0x028FBB);
+				assert.ok(res.fileName.endsWith('Test.c'));
+				assert.equal(res.lineNr, 7 - 1);
+
+				res = lbls.getFileAndLineForAddress(0x028FBE);
+				assert.ok(res.fileName.endsWith('Test.c'));
+				assert.equal(res.lineNr, 7 - 1);
+
+				res = lbls.getFileAndLineForAddress(0x028FBF);
+				assert.ok(res.fileName.endsWith('Test.c'));
+				assert.equal(res.lineNr, 8 - 1);
+			});
+
+			test('C-code: array of .lis files', () => {
+				// Read the list file
+				const config = {
+					z88dkv2: [{
+						path: [
+							'./tests/data/labels/projects/z88dk/test_multiple_c_v2/main.c.lis',
+							'./tests/data/labels/projects/z88dk/test_multiple_c_v2/test.asm.lis',
+						],
+						srcDirs: [""],	// Sources-Mode
+						mapFile: "./tests/data/labels/projects/z88dk/test_multiple_c_v2/main.map",
+						excludeFiles: []
+					}]
+				};
+				lbls.readListFiles(config, new MemoryModelZx48k());
+
+				let res = lbls.getFileAndLineForAddress(0x28d3b);
+				assert.equal(res.fileName, 'main.c');
+				assert.equal(res.lineNr, 6 - 1);
+
+				res = lbls.getFileAndLineForAddress(0x028d43);
+				assert.equal(res.fileName, 'main.c');
+				assert.equal(res.lineNr, 7 - 1);
+
+				res = lbls.getFileAndLineForAddress(0x028d46);
+				assert.equal(res.fileName, 'main.c');
+				assert.equal(res.lineNr, 8 - 1);
+
+				res = lbls.getFileAndLineForAddress(0x028d49);
+				assert.equal(res.fileName, 'main.c');
+				assert.equal(res.lineNr, 9 - 1);
+
+				res = lbls.getFileAndLineForAddress(0x28d59);
+				assert.equal(res.fileName, 'test.asm');
+				assert.equal(res.lineNr, 16 - 1);
+
+			});
+
+			test('C-code: glob path expression for list files', () => {
+				// Read the list file
+				const config = {
+					z88dkv2: [{
+						path: './tests/data/labels/projects/z88dk/test_multiple_c_v2/*.lis',
+						srcDirs: [""],	// Sources-Mode
+						mapFile: "./tests/data/labels/projects/z88dk/test_multiple_c_v2/main.map",
+						excludeFiles: []
+					}]
+				};
+				lbls.readListFiles(config, new MemoryModelZx48k());
+
+				let res = lbls.getFileAndLineForAddress(0x28d3b);
+				assert.equal(res.fileName, 'main.c');
+				assert.equal(res.lineNr, 6 - 1);
+
+				res = lbls.getFileAndLineForAddress(0x028d43);
+				assert.equal(res.fileName, 'main.c');
+				assert.equal(res.lineNr, 7 - 1);
+
+				res = lbls.getFileAndLineForAddress(0x028d46);
+				assert.equal(res.fileName, 'main.c');
+				assert.equal(res.lineNr, 8 - 1);
+
+				res = lbls.getFileAndLineForAddress(0x028d49);
+				assert.equal(res.fileName, 'main.c');
+				assert.equal(res.lineNr, 9 - 1);
+
+				res = lbls.getFileAndLineForAddress(0x28d59);
+				assert.equal(res.fileName, 'test.asm');
+				assert.equal(res.lineNr, 16 - 1);
+
+			});
+
+
 		});
 
 	});
@@ -399,7 +504,7 @@ suite('Labels (z88dk v2 format)', () => {
 			tmpFile = path.join(os.tmpdir(), 'dezog_labels_z88dk.lis');
 			// Write file.
 			fs.writeFileSync(tmpFile,
-			`
+                `
     15                  label0000:
     16                  label2000:
     17                  label4000:
