@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.5.2",
+	"version": "3.5.3",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum/ZX81.",
 	"author": {
@@ -38,7 +38,7 @@
 		"watch-tsc": "tsc -w -p ./",
 		"test": "mocha -u tdd ./out/tests/ --exit",
 		"vscode:prepublish": "npm run esbuild-node -- --minify && npm run esbuild-browser -- --minify",
-		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --external:node-graphviz --format=cjs --platform=node",
+		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --external:node-graphviz --external:ms --format=cjs --platform=node",
 		"esbuild-browser": "esbuild ./src/remotes/zsimulator/zsimwebview/main.ts --bundle --outdir=out --outbase=src --platform=browser",
 		"watch-node": "npm run esbuild-node -- --sourcemap --watch",
 		"watch-browser": "npm run esbuild-browser -- --sourcemap --watch",

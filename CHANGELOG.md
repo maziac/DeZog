@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.5.3
+- Added missing package ms to vsix.
+
 # 3.5.2
 - "What's new" not shown on first installation.
 
