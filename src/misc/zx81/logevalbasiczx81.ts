@@ -62,8 +62,6 @@ export class LogEvalBasicZx81 extends LogEval {
 			logPointsMap.set('BASIC', array);
 		}
 		// For all ZX81 memory models ROM is bank 0.
-		// TODO: I need some check that the address is used for the right bank:
-		//const longAddress = Z80RegistersClass.getLongAddressWithBank(0x0CC1, 0);
 		this.bpLongAddressLine = Z80RegistersClass.getLongAddressWithBank(LogEvalBasicZx81.BP_ADDR_BASIC_LINE, 0);	// CALL L0CC1
 		this.bpLongAddressVars = Z80RegistersClass.getLongAddressWithBank(LogEvalBasicZx81.BP_ADDR_BASIC_VARS, 0);	// RES 1,(IY+$01)
 		array.push({longAddress: this.bpLongAddressLine, condition: '', log: this});

@@ -76,7 +76,7 @@ export class Run {
 			Settings.launch = {} as any;	// Workaround for the remaining cases that use Settings directly.
 			// Create zsim
 			Z80RegistersClass.createRegisters(launch);
-			const remote = new ZSimRemote(launch)
+			const remote = new ZSimRemote(launch);
 			Utility.setRootPath(rootFolder);
 			remote.configureMachine();
 			await remote.loadBin(fsPath);
