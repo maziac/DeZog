@@ -1,0 +1,22 @@
+/tmp/tmpxVxMWKIA.asm:
+     1                          MODULE test_asm
+     2                          LINE 0, "test.asm"
+test.asm:
+                                
+     1                          SECTION code_user
+     2                          
+     3                          PUBLIC _test
+     4                          
+     5                          _test:
+     6  0000  210040                ld hl, 0x4000
+     7  0003  01001b                ld bc, 6912
+     8  0006  16ff                  ld d, 255
+     9                          vicloop:
+    10  0008  72                    ld (hl), d
+    11  0009  23                    inc hl
+    12  000a  0b                    dec bc
+    13  000b  78                    ld a, b
+    14  000c  b1                    or c
+    15  000d  20f9                  jr nz, vicloop
+    16  000f  c9                    ret
+    17                          

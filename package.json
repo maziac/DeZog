@@ -984,7 +984,7 @@
 								}
 							},
 							"z88dkv2": {
-								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
+								"description": "All list files (one or many).",
 								"type": "array",
 								"items": {
 									"type": "object",
@@ -994,8 +994,18 @@
 									],
 									"properties": {
 										"path": {
-											"type": "string",
-											"description": "Path to the assembler .list file."
+											"description": "Path to the assembler .list file. A string or an array for multiple files. Wildcards are allowed.",
+											"oneOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "array",
+													"items": {
+														"type": "string"
+													}
+												}
+											]
 										},
 										"srcDirs": {
 											"type": "array",

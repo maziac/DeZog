@@ -5,6 +5,7 @@
 - Fixed logpoints enabling/disabling while zsim assembly program is running.
 - If there is a problem with a logpoint it is now shown as warning to the user. Before it was silently ignored.
 - zsim: Command "-e zx81-basic-vars" to print all BASIC variables.
+- PR140: Basic z88dk c support - Breakpoints and stepping through c files (thanks to vmorilla)
 
 # 3.5.3
 - Added missing package ms to vsix.

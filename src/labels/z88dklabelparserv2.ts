@@ -2,6 +2,7 @@ import {LabelParserBase} from './labelparserbase';
 import {Utility} from '../misc/utility';
 import {readFileSync} from 'fs';
 import {AsmConfigBase, Z88dkConfig} from '../settings/settings';
+import * as fglob from 'fast-glob';
 
 /**
  * This class parses z88dk asm list files.
@@ -60,9 +61,9 @@ main.asm:
     47                          	;ORG 0x8200
     48                          data:
     49  000d  0102030405060708  	defb 1, 2, 3, 4, 5, 6, 7, 8, $FA		; WPMEM
-              fa
+    		  fa
     50  0016  fe02030405060708  data2:	defb $FE, 2, 3, 4, 5, 6, 7, 8, 9		; WPMEM
-              09
+    		  09
     51
     52                          	;ORG 0x9000
     53
@@ -150,6 +151,12 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	// RegEx to extract the line number for Sources-mode.
 	protected lineNumberRegEx = /^(\s*\d+\s*)/;
 
+	// RegEx to distinguish C source files
+	protected cFileRegEx = /([^/]*\.[cC])$/;
+
+	// RegEx to parse comment lines with reference to c source line
+	protected cFileReference = /^\s*\d+\s+;(.*?):(\d+):/;
+
 	// To correct address by the values given in the map file.
 	protected z88dkMapOffset: number | undefined;
 
@@ -159,6 +166,30 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	// The last used address in the list file.
 	protected lastAddr64k: number;
 
+	// In sources mode with C files, it tracks the current C line
+	protected currentCLine: number;
+
+	// If current source if a C file, returns the filename (with no path)
+	protected currentCSourceFile(): string | undefined {
+		Utility.assert(this.includeFileStack.length);
+		const currentSource = this.includeFileStack[this.includeFileStack.length - 1].fileName;
+		const matchCSource = this.cFileRegEx.exec(currentSource);
+		return matchCSource?.[1];
+	}
+
+	// parses the line number corresponding to the C file
+	// If the file has just a line number followed by a comment with the c file and the file number
+	// sets the file number. Otherwise, reuses the previous one
+	protected parseCSourceFileLine(line: string, fileName: string): number {
+		const match = this.cFileReference.exec(line);
+		if (match == null || match[1] !== fileName) {
+			return this.currentCLine;
+		}
+		else {
+			this.currentCLine = parseInt(match[2]);
+			return this.currentCLine;
+		}
+	}
 
 	/**
 	 * Reads the given file (an assembler .list file) and extracts all PC
@@ -166,10 +197,18 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	 * PC value.
 	 */
 	public loadAsmListFile(config: AsmConfigBase) {
+		const zconfig = config as Z88dkConfig;
 		try {
 			const mapFile: string = (config as Z88dkConfig).mapFile;
 			this.readmapFile(mapFile);
-			super.loadAsmListFile(config);
+			const listFiles = Array.isArray(zconfig.path) ? config.path : [config.path];
+			const listFilesExp = fglob.sync(listFiles);	// Expand wildcards
+
+
+			for (const listFile of listFilesExp) {
+				const fileConfig = { ...config, path: listFile };
+				super.loadAsmListFile(fileConfig);
+			}
 		}
 		catch (e) {
 			this.throwError(e.message);
@@ -270,17 +309,27 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 			// Filename has been found, use it
 			const fileName = matchFileName[1];
 			this.includeStart(fileName);
+			// Resets current C line
+			this.currentCLine = 0;
 			return;
 		}
 
 		// Get line number
-		const matchLineNumber = this.lineNumberRegEx.exec(line);
-		if (!matchLineNumber)
-			return;	// Should not happen
-		const lineNumber = parseInt(matchLineNumber[1])
+		const cSourceFile = this.currentCSourceFile();
+		if (cSourceFile) {
+			const lineNumber = this.parseCSourceFileLine(line, cSourceFile);
+			// Associate with line number
+			this.setLineNumber(lineNumber - 1);	// line numbers start at 0
+		}
+		else {
+			const matchLineNumber = this.lineNumberRegEx.exec(line);
+			if (!matchLineNumber)
+				return;	// Should not happen
+			const lineNumber = parseInt(matchLineNumber[1])
 
-		// Associate with line number
-		this.setLineNumber(lineNumber - 1);	// line numbers start at 0
+			// Associate with line number
+			this.setLineNumber(lineNumber - 1);	// line numbers start at 0
+		}
 	}
 
 
