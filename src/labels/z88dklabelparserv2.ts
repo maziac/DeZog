@@ -2,7 +2,6 @@ import {LabelParserBase} from './labelparserbase';
 import {Utility} from '../misc/utility';
 import {readFileSync} from 'fs';
 import {AsmConfigBase, Z88dkConfig} from '../settings/settings';
-import * as fglob from 'fast-glob';
 
 /**
  * This class parses z88dk asm list files.
@@ -169,7 +168,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	// In sources mode with C files, it tracks the current C line
 	protected currentCLine: number;
 
-	// If current source if a C file, returns the filename (with no path)
+	// If current source is a C file, returns the filename (with no path)
 	protected currentCSourceFile(): string | undefined {
 		Utility.assert(this.includeFileStack.length);
 		const currentSource = this.includeFileStack[this.includeFileStack.length - 1].fileName;
@@ -191,24 +190,17 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 		}
 	}
 
+
 	/**
 	 * Reads the given file (an assembler .list file) and extracts all PC
 	 * values (the first 4 digits), so that each line can be associated with a
 	 * PC value.
 	 */
 	public loadAsmListFile(config: AsmConfigBase) {
-		const zconfig = config as Z88dkConfig;
 		try {
 			const mapFile: string = (config as Z88dkConfig).mapFile;
 			this.readmapFile(mapFile);
-			const listFiles = Array.isArray(zconfig.path) ? config.path : [config.path];
-			const listFilesExp = fglob.sync(listFiles);	// Expand wildcards
-
-
-			for (const listFile of listFilesExp) {
-				const fileConfig = { ...config, path: listFile };
-				super.loadAsmListFile(fileConfig);
-			}
+			super.loadAsmListFile(config);
 		}
 		catch (e) {
 			this.throwError(e.message);

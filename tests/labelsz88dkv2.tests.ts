@@ -385,10 +385,13 @@ suite('Labels (z88dk v2 format)', () => {
 				// Read the list file
 				const config = {
 					z88dkv2: [{
-						path: [
-							'./tests/data/labels/projects/z88dk/test_multiple_c_v2/main.c.lis',
-							'./tests/data/labels/projects/z88dk/test_multiple_c_v2/test.asm.lis',
-						],
+						path: './tests/data/labels/projects/z88dk/test_multiple_c_v2/main.c.lis',
+						srcDirs: [""],	// Sources-Mode
+						mapFile: "./tests/data/labels/projects/z88dk/test_multiple_c_v2/main.map",
+						excludeFiles: []
+					},
+					{
+						path: './tests/data/labels/projects/z88dk/test_multiple_c_v2/test.asm.lis',
 						srcDirs: [""],	// Sources-Mode
 						mapFile: "./tests/data/labels/projects/z88dk/test_multiple_c_v2/main.map",
 						excludeFiles: []

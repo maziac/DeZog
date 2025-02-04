@@ -1,4 +1,4 @@
-import {ListConfigBase, ReverseEngineeringConfig} from './../settings/settings';
+import {ListConfigBase} from './../settings/settings';
 import {Utility} from '../misc/utility';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {Remote} from '../remotes/remotebase';
@@ -10,7 +10,6 @@ import {SettingsParameters} from '../settings/settings';
 import {Issue, LabelParserBase} from './labelparserbase';
 import * as fs from 'fs';
 import * as fglob from 'fast-glob';
-import {UnifiedPath} from '../misc/unifiedpath';
 import {Z88dkLabelParser} from './z88dklabelparser';
 
 
@@ -242,17 +241,14 @@ export class LabelsClass {
 		if (mainConfig.revEng) {
 			const parser = new ReverseEngineeringLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, this.skipAddresses, this.codeAddresses, issueHandler);
 			for (const config of mainConfig.revEng) {
-				// For rev-eng the path may contain a glob pattern
-				const paths = fglob.sync([config.path]);	// config.path is absolute
-				for (const path of paths) {
-					const unifiedPath = UnifiedPath.getUnifiedPath(path);
-					const pathConfig: ReverseEngineeringConfig = {...config, path: unifiedPath};	// complicated, but safe in case structure is extended in the future
-					// Load file
-					this.loadAsmListFile(parser, pathConfig);
-					// Check if files need to be watched
-					if (config.reloadOnSave) {
-						// Watch file for save
-						this.watchedFiles.push(config.path);
+				// Load file(s) (with globbing)
+				this.loadAsmListFile(parser, config);
+				// Check if files need to be watched
+				if (config.reloadOnSave) {
+					// Watch file for save
+					const paths = fglob.sync([config.path]);	// config.path is absolute
+					for (const path of paths) {
+						this.watchedFiles.push(path);
 					}
 				}
 			}
@@ -272,12 +268,18 @@ export class LabelsClass {
 
 	/**
 	 * Calls loadAsmFile while catching exceptions.
+	 * parser.loadAsmFile is called more than once if the config.path is a glob pattern.
 	 * @param parser The parser to call.
 	 * @param config The configuration.
 	 */
 	protected loadAsmListFile(parser: LabelParserBase, config: ListConfigBase) {
 		try {
-			parser.loadAsmListFile(config);
+			const paths = fglob.sync([config.path]);	// config.path is absolute
+			for (const path of paths) {
+				const pathConfig: ListConfigBase = {...config, path: path};	// complicated, but safe in case structure is extended in the future
+				// Load file
+				parser.loadAsmListFile(pathConfig);
+			}
 		}
 		catch (e) {
 			// Just remember that an exception happened

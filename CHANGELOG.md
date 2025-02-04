@@ -10,6 +10,7 @@
   - A LOGPOINT for "BASIC" line logging is automatically available:
 	The executec lines of a BASIC program will be logged together with the used BASIC variables in the debug console.
 - PR140: Basic z88dk c support - Breakpoints and stepping through c files (thanks to vmorilla)
+- Globbing enabled for all label parsers. I.e. now you could use `"z88dkv2": [{"path": "./out/*.lis"}]` in launch.json.
 
 # 3.5.3
 - Added missing package ms to vsix.

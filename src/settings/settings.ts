@@ -907,9 +907,7 @@ export class Settings {
 		if (launchCfg.z88dkv2) {
 			launchCfg.z88dkv2 = launchCfg.z88dkv2.map(fp => {
 				// ListFile structure
-
-				const paths = Array.isArray(fp.path) ? fp.path : [fp.path];
-				const fpPaths = UnifiedPath.getUnifiedPathArray(paths).filter(p => p);
+				const fpPath = UnifiedPath.getUnifiedPath(fp.path);
 				const fpSrcDirs = UnifiedPath.getUnifiedPathArray(fp.srcDirs);
 				const fpMapFile = UnifiedPath.getUnifiedPath(fp.mapFile);
 				const fpExclFiles = UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
@@ -919,9 +917,8 @@ export class Settings {
 					excludeFiles: fpExclFiles || [],
 					mapFile: undefined as any,
 				};
-
-
-				file.path = fpPaths.map(fpPath => Utility.getAbsFilePath(fpPath, rootFolder));
+				if (fpPath)
+					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
 				if (fpMapFile)
 					file.mapFile = Utility.getAbsFilePath(fpMapFile, rootFolder);
 				return file;
