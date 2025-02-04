@@ -198,7 +198,7 @@ If you would like to contact me beforehand you can create a new issue in github 
 
 I would like to express my gratitude to the following individuals for their invaluable support:
 
-- Cesar Hernandez Bano for developing the great [ZEsarUX] emulator which very early offered the possibility to remotely connect to it. And for being patient with all my request for the ZRCP protocol. Without ZEsarUX I wouldn't have started DeZog at all. So, if you like DeZog thank Cesar.
+- [Cesar Hernandez Bano](https://github.com/chernandezba) for developing the great [ZEsarUX] emulator which very early offered the possibility to remotely connect to it. And for being patient with all my request for the ZRCP protocol. Without ZEsarUX I wouldn't have started DeZog at all. So, if you like DeZog thank Cesar.
 - Mike Dailly for the wonderful [CSpect] emulator, for opening the debug interface to plugins and for giving support to use it properly.
 - [Molly Howell/DrGoldfire](https://bitbucket.org/DrGoldfire/z80.js/src/main/) for the Z80 CPU simulation code.
 - [Kris Borowinski](https://github.com/kborowinski) for his tireless efforts testing DeZog.
@@ -207,6 +207,7 @@ I would like to express my gratitude to the following individuals for their inva
 - [Luciano Martorella](https://github.com/lmartorella) for his contribution of the custom memory model.
 - [Sebastien Andrivet](https://github.com/andrivet) for help with the ZX81 simulator and the ZX81 and ZX Spectrum keyboard svg files. Great work. Both are included under the [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/?ref=chooser-v1) license.
 - [Paul Farrow](http://www.fruitcake.plus.com/) for the help on the ZX81 graphics modes.
+- [Víctor Morilla](https://github.com/vmorilla) for the z88dk addition to label parsing, enabling setting of breakpoints and stepping through C source code.
 
 
 # Tutorials
