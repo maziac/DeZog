@@ -3,6 +3,7 @@ import { Socket } from 'net';
 import { Settings } from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {Mutex} from '../../misc/mutex';
+import {ErrorWrapper} from '../../misc/errorwrapper';
 
 
 /*
@@ -256,6 +257,7 @@ export class ZesaruxSocket extends Socket {
 		});
 
 		this.on('error', err => {
+			err = ErrorWrapper.wrap(err);
 			LogTransport.log('Socket: ' + err);
 			this.state = SocketState.UNCONNECTED;
 		});

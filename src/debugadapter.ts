@@ -40,6 +40,7 @@ import {ExceptionBreakpoints} from './exceptionbreakpoints';
 import {MemoryCommands} from './commands/memorycommands';
 import {Run} from './run';
 import {LogEval} from './misc/logeval';
+import {ErrorWrapper} from './misc/errorwrapper';
 
 
 
@@ -650,10 +651,11 @@ export class DebugSessionClass extends DebugSession {
 		});
 
 		Remote.once('error', err => {
+			err = ErrorWrapper.wrap(err);
 			(async () => {
 				// Some error occurred
 				await Remote.disconnect();
-				this.terminate(err?.message);
+				this.terminate(err?.message || "Unspecified error!");
 			})();
 		});
 

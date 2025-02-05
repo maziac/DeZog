@@ -3,6 +3,7 @@ import {DzrpBufferRemote, CONNECTION_TIMEOUT} from './dzrpbufferremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings/settings';
 import {GenericWatchpoint} from '../../genericwatchpoint';
+import {ErrorWrapper} from '../../misc/errorwrapper';
 
 
 
@@ -77,8 +78,9 @@ export class CSpectRemote extends DzrpBufferRemote {
 
 		// Handle errors
 		this.socket.on('error', err => {
+			ErrorWrapper.wrap(err);
 			LogTransport.log('CSpectRemote: Error: ' + err);
-			//console.log('Error: ', err);
+			//console.log('Error: ', err.message);
 			// Error
 			try {
 				this.emit('error', err);

@@ -14,6 +14,7 @@ import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../MemoryMo
 import {MemoryModelZxNextTwoRom} from '../MemoryModel/zxnextmemorymodels';
 import * as semver from 'semver';
 import {MemoryModelColecoVision} from '../MemoryModel/colecovisionmemorymodels';
+import {ErrorWrapper} from '../../misc/errorwrapper';
 
 
 /// Minimum required ZEsarUX version.
@@ -154,6 +155,7 @@ export class ZesaruxRemote extends RemoteBase {
 			if (this.terminating)
 				return;
 			// and terminate
+			err = ErrorWrapper.wrap(err);
 			err.message += " (Error in connection to ZEsarUX!)";
 			try {
 				this.emit('error', err);

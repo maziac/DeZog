@@ -12,6 +12,7 @@ import {MemoryModelUnknown} from '../MemoryModel/genericmemorymodels';
 import {SnaFile} from '../dzrp/snafile';
 import {MemBank16k} from '../dzrp/membank16k';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
+import {ErrorWrapper} from '../../misc/errorwrapper';
 
 
 
@@ -87,6 +88,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 		// Handle errors
 		this.socket.on('error', err => {
+			ErrorWrapper.wrap(err);
 			//console.log('Error: ', err);
 			LogTransport.log('MameRemote: Error: ' + err);
 			// Error
@@ -476,6 +478,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
 			this.socket.write(buffer, err => {
+				ErrorWrapper.wrap(err);
 				if (err)
 					reject(err);
 				else

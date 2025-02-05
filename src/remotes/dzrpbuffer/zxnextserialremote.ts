@@ -10,6 +10,7 @@ import {Z80Registers, Z80RegistersClass} from '../z80registers';
 import {SerialPort} from 'serialport';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {Z80RegistersZxNextDecoder} from './z80registerszxnextdecoder';
+import {ErrorWrapper} from '../../misc/errorwrapper';
 
 
 // Each sent message has to start with this byte.
@@ -121,6 +122,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 
 		// Handle errors
 		this.serialPort.on('error', err => {
+			ErrorWrapper.wrap(err);
 			LogTransport.log('ZxNextSerialRemote: ' + err);
 			// Error
 			try {
