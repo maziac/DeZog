@@ -7,7 +7,7 @@
   - If there is a problem with a logpoint it is now shown as warning to the user. (Before it was silently ignored.)
 - zsim (zx81):
   - Command "-e zx81-basic-vars" to print all BASIC variables.
-  - A LOGPOINT for "BASIC" line logging is automatically available:
+  - A LOGPOINT for "BASIC" line logging is now automatically available:
 	The executed lines of a BASIC program will be logged together with the used BASIC variables in the debug console.
 - PR140: Basic z88dk c support - Breakpoints and stepping through c files (thanks to vmorilla)
 - Globbing enabled for all label parsers. I.e. now you could use `"z88dkv2": [{"path": "./out/*.lis"}]` in launch.json.

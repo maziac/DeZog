@@ -1,6 +1,6 @@
 This guide will provide some info what to do to update your projects from an earlier version.
 
-# Migrate from DeZog 3.5.1 to DeZog 3.5.2
+# Migrate from DeZog 3.5 to DeZog 3.6
 There are changes to the syntax for LOGPOINTs. Please refer to the [Usage.md](Usage.md#logpoint).
 
 
@@ -109,7 +109,7 @@ With this you could implement different behavior depending on the executed unit 
 See [UnitTests.md](UnitTests.md).
 
 ## Expressions
-Setting expressions: For years the vscode/debug-adapter was not able to set values in the WACTHes pane. Last month I decided to implement a workaround for this: the 'Expressions' section in the VARIABLES pane. This was bad timing. 4 weeks later with vscode 1.60 the setting of values was also supported by vscode. So I removed the 'Expressions' from the VARIABLES pane again. I.e. also the commands '-addexpr' and '-delexpr' have been removed.
+Setting expressions: For years the vscode/debug-adapter was not able to set values in the WATCHes pane. Last month I decided to implement a workaround for this: the 'Expressions' section in the VARIABLES pane. This was bad timing. 4 weeks later with vscode 1.60 the setting of values was also supported by vscode. So I removed the 'Expressions' from the VARIABLES pane again. I.e. also the commands '-addexpr' and '-delexpr' have been removed.
 Instead, in the WATCHes pane, you can now right click and select 'Set value' to change the value.
 
 From migration point of view: If you've added '-addexpr' or '-delexpr' to the "commandsAfterLaunch" section of your launch.json file, you would have to remove them.

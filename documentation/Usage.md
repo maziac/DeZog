@@ -72,7 +72,7 @@ If you migrate from an older version of DeZog you can find [here](https://github
 - [Savannah-z80asm] (or z80asm) by Bas Wijnen
 - [z88dk-z80asm] (or z88dk)
 
-Futhermore, if you like to use the [fasmg](https://flatassembler.net) assembler, although it is not supported out-of-the-box, you find a description how to use it [here](https://sinclairzxworld.com/viewtopic.php?f=6&t=4572) (by [stevexyz](https://github.com/stevexyz)).
+Furthermore, if you like to use the [fasmg](https://flatassembler.net) assembler, although it is not supported out-of-the-box, you find a description how to use it [here](https://sinclairzxworld.com/viewtopic.php?f=6&t=4572) (by [stevexyz](https://github.com/stevexyz)).
 
 
 ## General Usage
@@ -238,7 +238,7 @@ Your assembler file:
 
     In the SNA and NEX file format you can also set the stack address if you use sjasmplus.
     If you omit the stack address some defaults are used that you can set "topOfStack" to:
-    - SNA: 0x5D58 (Note/sjasmplus: If you add the RAMTOP to your DEVICE entry then it seems the stack is RAMTOP-3. For both, ZXSPECTRUM48 and ZXSPCTRUM128.)
+    - SNA: 0x5D58 (Note/sjasmplus: If you add the RAMTOP to your DEVICE entry then it seems the stack is RAMTOP-3. For both, ZXSPECTRUM48 and ZXSPECTRUM128.)
     - NEX: 0xFFFE
 
     The "topOfStack" is a string so that you can put a label name inside. But you can also set a number (in parenthesis) directly or even a calculation, e.g. "label-2".
@@ -397,7 +397,7 @@ Same as sjasmplus but use: ```z80asm```, e.g.:
 }]
 ~~~
 
-- path: The path to the list file.
+- path: The path to the list file. Can also include globbing, e.g. "*.list".
 - srcDirs (default=[""]):
     - [] = Empty array or undefined. Use .list file directly for stepping and setting of breakpoints.
     - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried. If you don't arrange your files in sub-folders just use '[""]' here or omit the parameter to use the default.
@@ -408,21 +408,19 @@ Same as sjasmplus but use: ```z80asm```, e.g.:
 **z88dk-z80asm configuration:**
 
 ~~~json
-"z88dk": [{
+"z88dkv2": [{
     "path": "currah_uspeech_tests.lis",
     "srcDirs": [""],
     "mapFile": "currah_uspeech_tests.map",
-    "mainFile": "currah_uspeech_tests.asm",
     "excludeFiles": [ "some_folder/*" ]
 }]
 ~~~
 
 For 'path', 'srcDirs' and 'excludeFiles' see z80asm configuration.
 
-- mapFile: The map file is required to correctly parse the label values and to get correct file/line to address associations.
-- mainFile: The relative path of the file used to create the list file.
+- 'mapFile': The map file is required to correctly parse the label values and to get correct file/line to address associations.
 
-Since (about) version 2 the .lis file format has changed for z88dk.
+Since version 2 (z88dkv2) the .lis file format has changed for z88dk.
 You can easily distinguish the 2 versions. The newer format does start with the sources file name.
 In the example below 'main.asm:':
 ~~~list
@@ -433,22 +431,58 @@ main.asm:
 ...
 ~~~
 
-That is also the reason why you don't need to tell DeZog the "mainFile" name anymore.
-Here are the parameters for "z88dkv2":
-
+If you are still on an older version, DeZog can parse these as well:
 ~~~json
-"z88dkv2": [{
+"z88dk": [{
     "path": "currah_uspeech_tests.lis",
     "srcDirs": [""],
     "mapFile": "currah_uspeech_tests.map",
+    "mainFile": "currah_uspeech_tests.asm",
     "excludeFiles": [ "some_folder/*" ]
 }]
 ~~~
 
-Note:
-With z88dk DeZog supports only the assembler, not the c-compiler.
-I.e. it is not possible to step through or set breakpoints in c-files.
-The closest you can get is to use a .lis file created from the c-file and use the .lis file for stepping or setting a breakpoint.
+But it requires an additional file:
+- 'mainFile': The relative path of the file used to create the list file.
+
+
+**z88dk-zcc configuration:**
+
+Beginning with v3.6 DeZog is now able to work partly with C-code.
+You can:
+- set breakpoints
+- step through C-files, step-over, step-in, step-out
+- 'watch' global C-variables
+
+![](images/z88dk-c.jpg)
+
+For this to work you need to pass `--c-code-in-asm` to `zcc` so that the *.lis file will also contain references to the C-file.
+Furthermore `--lstcwd` is helpful if you are working with sub-directories.
+
+An example for a full commandline is e.g.:
+~~~
+zcc +zxn -subtype=nex -vn --list -m --c-code-in-asm -clib=sdcc_iy -Cz"--clean" -startup=0 factorial.c fibonacci.c main.c clear-ula.asm -create-app -o ../build/main.nex
+~~~
+
+~~~json
+"z88dkv2": [
+    {
+        "path": "src/*.lis",
+        "srcDirs": [
+            "src"
+        ],
+        "mapFile": "build/main.map",
+        "excludeFiles": []
+    }
+]
+~~~
+
+You can find a sample project that uses the zcc c-compiler here:
+https://github.com/vmorilla/vscode-z88dk-next-sample-project
+
+Notes:
+- C-support only works for "z88dkv2" not for "z88dk"
+- For the "path" you can use globbing
 
 
 **Reverse Engineering configuration**
@@ -473,7 +507,7 @@ See [ReverseEngineeringUsage.md](https://github.com/maziac/DeZog/blob/master/doc
 If you use an assembler which produces a different file format you may convert it via a script to the one of the supported formats.
 But this makes sense only if the format is very similar.
 
-It is a better choice either to switch the assembler (e.g. I recommend sjasmplus) or write a new parser the assembler and add it to Dezog.
+It is a better choice either to switch the assembler (e.g. I recommend sjasmplus) or write a new parser for the assembler and add it to Dezog.
 
 The process of writing a parser is described in detail here: [AddingNewAssemblers.md](https://github.com/maziac/DeZog/blob/master/design/AddingNewAssemblers.md)
 
@@ -2284,7 +2318,7 @@ If you like you can also "comment" your watches which e.g. further explains the 
 
 
 Notes:
-- Watches always work in the 64k area. I.e. they don't use 'long addresses' (banks). If the wrong bank is paged in you will see worng values here.
+- Watches always work in the 64k area. I.e. they don't use 'long addresses' (banks). If the wrong bank is paged in you will see wrong values here.
 - You can also put a register name (e.g. "BC") in the WATCHes area. E.g. you can easily watch the last 10 elements on the stack by typing:```SP,2,10```.
 - Don't get confused: If you use a register then not the register content is shown! Instead the memory contents the register points to is displayed. The same as it is with labels. And, consequently, if you have an EQU not the value itself but that of the memory location the EQU points to is shown.
 - Instead of simple labels ore integers it is possible to use expressions. E.g. you could use ```BC+2*INV_COUNT[4]``` which translates to: Use the value of register BC, add 2 times the INV_COUNT constant. From the resulting address use the 4th element.
@@ -2295,7 +2329,7 @@ Notes:
 
 ### Change the Program Counter
 
-The PC can be changed via the menu. Click in a source line with an assmbly statement. Then do a right-click and choose "Move Program Counter to Cursor".
+The PC can be changed via the menu. Click in a source line with an assembly statement. Then do a right-click and choose "Move Program Counter to Cursor".
 
 You can as well simply change the PC in the VARIABLES pane and enter a new value.
 
