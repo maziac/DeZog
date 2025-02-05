@@ -239,8 +239,23 @@ suite('Labels (z80asm)', () => {
 				assert.equal(address, 0x19008);
 			});
 
-		});
 
+			test('glob path expression: *.list', () => {
+				// Read the list file
+				const config = {
+					z80asm: [{
+						path: './tests/data/labels/projects/z80asm/general/gen*.list',
+						srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
+
+				lbls.readListFiles(config, new MemoryModelAllRam());
+
+				// Tests
+				let address = lbls.getAddrForFileAndLine('main.asm', 16 - 1);
+				assert.equal(address, 0x18000);
+		});
 	});
 
 

@@ -319,8 +319,24 @@ suite('Labels (z88dk)', () => {
 				assert.equal(address, 0x18015);
 			});
 
-		});
+			test('glob path expression: *.lis', () => {
+				// Read the list file
+				const config = {
+					z88dk: [{
+						path: './tests/data/labels/projects/z88dk/general_old/mai*.lis',
+						mainFile: "main.asm",
+						mapFile: "./tests/data/labels/projects/z88dk/general_old/main.map",
+						srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
+				lbls.readListFiles(config, new MemoryModelAllRam());
 
+				// Tests
+				let address = lbls.getAddrForFileAndLine('main.asm', 16 - 1);
+				assert.equal(address, 0x18000);
+			});
+		});
 	});
 
 
@@ -358,7 +374,7 @@ suite('Labels (z88dk)', () => {
 
 
 	suite('checkMappingToTargetMemoryModel', () => {
-		// z88dk uses the base LabelParserBase checkMappingToTargetMemoryModel function. 
+		// z88dk uses the base LabelParserBase checkMappingToTargetMemoryModel function.
 		// So strictly speaking this test would not be necessary.
 		let tmpFile;
 		let tmpMapFile;

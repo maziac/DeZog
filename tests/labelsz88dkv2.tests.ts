@@ -452,12 +452,8 @@ suite('Labels (z88dk v2 format)', () => {
 				res = lbls.getFileAndLineForAddress(0x28d59);
 				assert.equal(res.fileName, 'test.asm');
 				assert.equal(res.lineNr, 16 - 1);
-
 			});
-
-
 		});
-
 	});
 
 

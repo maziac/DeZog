@@ -182,8 +182,23 @@ suite('Labels (sjasmplus)', () => {
 				assert.equal(0x10000 + 0x900B, address);
 			});
 
-		});
 
+			test('glob path expression: *.sld', () => {
+				// Read the list file
+				const config: any = {
+					sjasmplus: [{
+						path: './tests/data/labels/projects/sjasmplus/general/gen*.sld', srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
+				const lbls = new LabelsClass();
+				lbls.readListFiles(config, new MemoryModelUnknown());
+
+				// Tests
+				let address = lbls.getAddrForFileAndLine('main.asm', 19 - 1);
+				assert.equal(0x10000 + 0x8000, address);
+			});
+		});
 	});
 
 

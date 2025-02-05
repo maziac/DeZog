@@ -213,6 +213,23 @@ suite('Labels (revEng)', () => {
 			addr = lbls.getAddrForFileAndLine(fname, 39);
 			assert.equal(addr, 0xC1AC + (3 + 1) * 0x10000);
 		});
+
+
+		test('glob path expression: *.list', () => {
+			const configGlob: any = {
+				revEng: [{
+					path: 'tests/data/labels/projects/revEng/ma*.list'
+				}]
+			};
+			lbls.readListFiles(configGlob, testMm);
+			const fname = config.revEng[0].path;
+
+			// label2
+			let addr = lbls.getAddrForFileAndLine(fname, 6);
+			assert.equal(addr, 0x10001);
+			addr = lbls.getAddrForFileAndLine(fname, 7);
+			assert.equal(addr, -1);
+		});
 	});
 
 
