@@ -107,7 +107,10 @@ export class LabelParserBase {
 	protected currentFileEntry: ListFileLine;
 
 	/// The stack of include files. For parsing filenames and line numbers.
-	protected includeFileStack: Array<{fileName: string, lineNr: number}>;
+	/// filename: modified file path, e.g. with srcDirs
+	/// includeFileName: the original include file name, but unified
+	/// lineNr: the line number in the include file
+	protected includeFileStack: Array<{fileName: string, includeFileName: string, lineNr: number}>;
 
 
 	// Regexes to find WPMEM, ASSERTION and LOGPOINT in the comments
@@ -646,7 +649,7 @@ export class LabelParserBase {
 			fileName = Utility.getRelSourceFilePath(includeFileName, config.srcDirs);
 		}
 
-		this.includeFileStack.push({fileName, lineNr: 0});
+		this.includeFileStack.push({fileName, includeFileName, lineNr: 0});
 
 		// Now check if we need to exclude it from file/line <-> address relationship.
 		if (this.excludedFileStackIndex == -1) {

@@ -2,6 +2,7 @@ import {LabelParserBase} from './labelparserbase';
 import {Utility} from '../misc/utility';
 import {readFileSync} from 'fs';
 import {AsmConfigBase, Z88dkConfig} from '../settings/settings';
+import {UnifiedPath} from '../misc/unifiedpath';
 
 /**
  * This class parses z88dk asm list files.
@@ -151,7 +152,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	protected lineNumberRegEx = /^(\s*\d+\s*)/;
 
 	// RegEx to distinguish C source files
-	protected cFileRegEx = /([^/]*\.[cC])$/;
+	protected cFileRegEx = /(.*\.[cC])$/;
 
 	// RegEx to parse comment lines with reference to c source line
 	protected cFileReference = /^\s*\d+\s+;(.*?):(\d+):/;
@@ -171,23 +172,24 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	// If current source is a C file, returns the filename (with no path)
 	protected currentCSourceFile(): string | undefined {
 		Utility.assert(this.includeFileStack.length);
-		const currentSource = this.includeFileStack[this.includeFileStack.length - 1].fileName;
+		const currentSource = this.includeFileStack[this.includeFileStack.length - 1].includeFileName;
 		const matchCSource = this.cFileRegEx.exec(currentSource);
 		return matchCSource?.[1];
 	}
 
-	// parses the line number corresponding to the C file
+	// Parses the line number corresponding to the C file
 	// If the file has just a line number followed by a comment with the c file and the file number
 	// sets the file number. Otherwise, reuses the previous one
 	protected parseCSourceFileLine(line: string, fileName: string): number {
 		const match = this.cFileReference.exec(line);
-		if (match == null || match[1] !== fileName) {
-			return this.currentCLine;
+		if (match) {
+			const matchFileName = match[1];
+			const unifiedFileName = UnifiedPath.getUnifiedPath(matchFileName);
+			if (unifiedFileName === fileName) {
+				this.currentCLine = parseInt(match[2]);
+			}
 		}
-		else {
-			this.currentCLine = parseInt(match[2]);
-			return this.currentCLine;
-		}
+		return this.currentCLine;
 	}
 
 
