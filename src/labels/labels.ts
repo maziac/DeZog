@@ -258,7 +258,7 @@ export class LabelsClass {
 
 
 		// Check errors
-		if (this.errorHappened != undefined)
+		if (this.errorHappened !== undefined)
 			throw Error("Error during parsing of the list/sld file(s).\n" + this.errorHappened);
 
 		// Finish
@@ -389,7 +389,7 @@ export class LabelsClass {
 		let prevAddr;
 		for (let [labelName, longAddr] of this.numberForLabel) {
 			// Skip first entry
-			if (prevAddr != undefined) {
+			if (prevAddr !== undefined) {
 				// Check if it is a higher address (in 64k area)
 				const dist = (longAddr & 0xFFFF) - (prevAddr & 0xFFFF);
 				if (dist > 0) {
@@ -572,7 +572,7 @@ export class LabelsClass {
 			const parts = label.split('.');
 			// Special case: I.e. z80asm allows labels like ".label"
 			// but that doesn't mean they are hierarchly ordered:
-			if (parts[0] == '') {
+			if (parts[0] === '') {
 				// Label starts with '.'
 				parts.shift();	// Remove first entry
 				parts[0] = '.' + parts[0];	// Re-add the '.'
@@ -625,10 +625,10 @@ export class LabelsClass {
 	 * @returns The correspondent (64k) number. May return NaN.
 	 */
 	public getNumberFromString64k(text: string): number {
-		if (text == undefined)
+		if (text === undefined)
 			return NaN;
 		let result = this.getNumberForLabel(text);
-		if (result == undefined) {
+		if (result === undefined) {
 			// Try convert as string
 			if (text.startsWith('_'))
 				return NaN;
@@ -696,7 +696,7 @@ export class LabelsClass {
 			if (lineNr < 0)
 				return {modulePrefix: '', lastLabel: ''};
 			longAddr = lineArray[lineNr];
-			if (longAddr != undefined)
+			if (longAddr !== undefined)
 				break;
 			// Previous
 			lineNr--;
@@ -723,7 +723,7 @@ export class LabelsClass {
 		const lineArray = this.lineArrays.get(filePath);
 		if (lineArray) {
 			addr = lineArray[lineNr];
-			if (addr == undefined)
+			if (addr === undefined)
 				addr = -1;
 		}
 		return addr;

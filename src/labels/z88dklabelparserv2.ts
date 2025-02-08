@@ -116,7 +116,7 @@ main.asm:
     57
     58
  *
- * The address field ov v2.2 is 6 bytes although it is 64k address range only.
+ * The address field of v2.2 is 6 bytes although it is 64k address range only.
  * It is changed afterwards to 4 bytes.
  */
 export class Z88dkLabelParserV2 extends LabelParserBase {
@@ -253,11 +253,12 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 				const label = matchLabel[1];
 				// Special handling for z88dk to overcome the relative addresses (note: the map is empty if no z88dk is used/no map file given)
 				const realAddress = this.z88dkMappings.get(label);
-				if (realAddress != undefined) {	// Is e.g. undefined if in an IF/ENDIF
+				if (realAddress !== undefined) {	// Is e.g. undefined if in an IF/ENDIF
+					//console.log('z88dk: label=' + label + ', realAddress=' + Utility.getHexString(realAddress, 4));
 					// Use label address
 					this.lastLabelAddress = realAddress;
 					this.lastAddr64k = realAddress;
-					this.z88dkMapOffset = undefined
+					this.z88dkMapOffset = undefined;
 					// Add label
 					const longAddr = this.createLongAddress(realAddress, 0);
 					this.addLabelForNumber(longAddr, label);
@@ -275,6 +276,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 				this.z88dkMapOffset = this.lastLabelAddress - addr64k;
 			}
 			this.lastAddr64k = addr64k + this.z88dkMapOffset;
+			//console.log('z88dk: lastAddr64k=' + Utility.getHexString(this.lastAddr64k, 4) + ', addr64k=' + Utility.getHexString(addr64k, 4) + ', offset=' + Utility.getHexString(this.z88dkMapOffset, 4));
 
 			// Search for bytes after the address:
 			// E.g. "80F1  d5c6";

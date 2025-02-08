@@ -127,11 +127,12 @@ export class Z88dkLabelParser extends LabelParserBase {
 				else {
 					// Special handling for z88dk to overcome the relative addresses (note: the map is empty if no z88dk is used/no map file given)
 					const realAddress = this.z88dkMappings.get(label);
-					if (realAddress != undefined) {
+					if (realAddress !== undefined) {
 						//console.log('z88dk: label='+label+', '+Utility.getHexString(realAddress, 4));
 						// Label/symbol found
 						this.z88dkMapOffset = realAddress - readAddress;
 						addr64k = realAddress;
+						//console.log('z88dk: realAddress='+Utility.getHexString(realAddress, 4)+', readAddress='+Utility.getHexString(readAddress, 4)+', offset='+this.z88dkMapOffset);
 					}
 					// Create long address
 					longAddr = this.createLongAddress(addr64k, 0);
@@ -141,7 +142,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 			}
 
 			// Calculate long address (if not yet done)
-			if (longAddr == undefined)
+			if (longAddr === undefined)
 				longAddr = this.createLongAddress(addr64k, 0);
 
 			// Search for bytes after the address:
@@ -177,8 +178,8 @@ export class Z88dkLabelParser extends LabelParserBase {
 		const lineNumber = parseInt(matchLineNumber[1]);
 
 		// z88dk: Check for end of include file
-		if (lineNumber != this.expectedLineNr
-			&& lineNumber != this.expectedLineNr + 1) {
+		if (lineNumber !== this.expectedLineNr
+			&& lineNumber !== this.expectedLineNr + 1) {
 			// End of include found
 			// Note: this is not 100% error proof.
 			// E.g. if modules are used (speccytron) this happens also after the MODULE lines:

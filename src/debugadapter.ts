@@ -157,7 +157,7 @@ export class DebugSessionClass extends DebugSession {
 
 	/** Returns if a DeZog debug session is currently running. */
 	public static isRunning(): boolean {
-		if (this.debugAdapterSingleton == undefined)
+		if (this.debugAdapterSingleton === undefined)
 			return false;
 		return this.debugAdapterSingleton.running;
 	}
@@ -192,7 +192,7 @@ export class DebugSessionClass extends DebugSession {
 		// Return if currently a debug session is running
 		if (this.running)
 			throw Error("There is already an active debug session.");
-		if (this.state != DbgAdapterState.NORMAL)
+		if (this.state !== DbgAdapterState.NORMAL)
 			throw Error("Debugger state is wrong.");
 
 
@@ -500,7 +500,7 @@ export class DebugSessionClass extends DebugSession {
 				filter: bp.name,
 				label: bp.name,
 				description: bp.description,
-				supportsCondition: (bp.conditionString != undefined)
+				supportsCondition: (bp.conditionString !== undefined)
 			}));
 		}
 
@@ -889,7 +889,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Create vscode breakpoint with verification
-			const verified = (foundCbp != undefined) && (foundCbp.longAddress >= 0);
+			const verified = (foundCbp !== undefined) && (foundCbp.longAddress >= 0);
 			const bp = new Breakpoint(verified, lineNr, 0, source);
 			if (foundCbp && foundCbp.longAddress >= 0) {
 				// Add address to source name.
@@ -1104,7 +1104,7 @@ export class DebugSessionClass extends DebugSession {
 				// Get line number for stack address from disassembly
 				const addr = sf.longAddress;
 				const lineNr = Disassembly.getLineForAddress(addr);
-				if (lineNr != undefined) {
+				if (lineNr !== undefined) {
 					// Store
 					sf.source = this.createSource(DisassemblyClass.getAbsFilePath());
 					sf.line = this.convertDebuggerLineToClient(lineNr);
@@ -1636,9 +1636,9 @@ export class DebugSessionClass extends DebugSession {
 				// Compare with start location
 				if (prevFileLoc.fileName === '')
 					break;
-				if (nextFileLoc.lineNr != prevFileLoc.lineNr)
+				if (nextFileLoc.lineNr !== prevFileLoc.lineNr)
 					break;
-				if (nextFileLoc.fileName != prevFileLoc.fileName)
+				if (nextFileLoc.fileName !== prevFileLoc.fileName)
 					break;
 			}
 
@@ -2129,7 +2129,7 @@ export class DebugSessionClass extends DebugSession {
 						const modulePrefix = entry.modulePrefix;
 						// Get label value
 						const labelValue = Utility.evalExpression(expression, true, modulePrefix, lastLabel);
-						if (labelValue != undefined) {
+						if (labelValue !== undefined) {
 							// Get content
 							const memDump = await Remote.readMemoryDump(labelValue, 2);
 							// Format byte
@@ -2243,7 +2243,7 @@ export class DebugSessionClass extends DebugSession {
 		let littleEndian = true;
 		if (endianness === 'big')
 			littleEndian = false;	// At the moment it is used only for immediate values
-		else if (endianness != 'little') {
+		else if (endianness !== 'little') {
 			throw Error("Unknown endianness: " + endianness);
 		}
 
@@ -2336,7 +2336,7 @@ export class DebugSessionClass extends DebugSession {
 		// Check for sub labels (i.e. check for struct)
 		let props;
 		let propsLength = 0
-		if (lblType != undefined) {
+		if (lblType !== undefined) {
 			props = Labels.getSubLabels(lblType);
 			propsLength = props.length;
 		}
@@ -2575,7 +2575,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	 */
 	protected async evalMemModel(tokens: Array<string>): Promise<string> {
 		// Check count of arguments
-		if (tokens.length != 0) {
+		if (tokens.length !== 0) {
 			// Error Handling: No arguments
 			throw new Error("No arguments are expected.");
 		}
@@ -2719,7 +2719,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		// Size
 		let size = 1;
 		let access = 'rw';
-		if (tokens[1] != undefined)
+		if (tokens[1] !== undefined)
 			size = Utility.evalExpression(tokens[1]);
 		// Access
 		if (tokens[2]) {
@@ -2757,7 +2757,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		// Size
 		let size = 1;
 		let access = 'rw';
-		if (tokens[1] != undefined)
+		if (tokens[1] !== undefined)
 			size = Utility.evalExpression(tokens[1]);
 		// Access
 		if (tokens[2]) {
@@ -3129,7 +3129,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			const bank = Z80RegistersClass.getBankFromAddress(addr);
 			if (bank >= 0) {
 				const slotIndex = Z80Registers.getSlotFromAddress(addr);
-				if (bank != slots[slotIndex]) {
+				if (bank !== slots[slotIndex]) {
 					this.showError("Cannot set PC to a location (address=" + Utility.getHexString(addr & 0xFFFF, 4) + "h) of a bank (bank " + bank + ") that is currently not paged in.");
 					return;
 				}
@@ -3177,7 +3177,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		while (address < 0xFFFF) {
 			const longAddr = (address + 1) | upperAddr;
 			const fileLine = Remote.getFileAndLineForAddress(longAddr);
-			if (fileLine.lineNr != toLineNr || fileLine.fileName != filename)
+			if (fileLine.lineNr !== toLineNr || fileLine.fileName !== filename)
 				break;
 			// Next
 			address++;
@@ -3193,7 +3193,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			const bank = Z80RegistersClass.getBankFromAddress(fromAddr);
 			if (bank >= 0) {
 				const slotIndex = Z80Registers.getSlotFromAddress(addr);
-				if (bank != slots[slotIndex]) {
+				if (bank !== slots[slotIndex]) {
 					throw Error("Memory currently not paged in.  (address=" + Utility.getHexString(bank & 0xFFFF, 4) + "h, bank=" + bank + ")");
 				}
 			}
@@ -3472,7 +3472,7 @@ E.g. use "-help -view" to put the help text in an own view.
 						let k = i + 1;
 						for (; k < lineNrs.length; k++) {
 							lineNr++;
-							if (lineNr != lineNrs[k])
+							if (lineNr !== lineNrs[k])
 								break;
 						}
 						compressed.push([lineNrs[i], lineNrs[k - 1]]);
