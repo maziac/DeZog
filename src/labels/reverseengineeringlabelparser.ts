@@ -121,7 +121,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 			this.config = config;
 			// Init (in case of several list files)
 			this.excludedFileStackIndex = -1;
-			this.includeFileStack = new Array<{fileName: string, lineNr: number}>();
+			this.includeFileStack = new Array<{fileName: string, includeFileName: string, lineNr: number}>();
 			this.listFile = new Array<ListFileLine>();
 			this.modulePrefixStack = new Array<string>();
 			this.modulePrefix = undefined as any;

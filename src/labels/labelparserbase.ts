@@ -181,7 +181,7 @@ export class LabelParserBase {
 			this.config = config;
 			// Init (in case of several list files)
 			this.excludedFileStackIndex = -1;
-			this.includeFileStack = new Array<{fileName: string, lineNr: number}>();
+			this.includeFileStack = new Array<{fileName: string, includeFileName: string, lineNr: number}>();
 			this.listFile = new Array<ListFileLine>();
 			this.modulePrefixStack = new Array<string>();
 			this.modulePrefix = undefined as any;
@@ -195,7 +195,7 @@ export class LabelParserBase {
 			this.parseAllLabelsAndAddresses();
 
 			// Check if Listfile-Mode
-			if (config.srcDirs == undefined || config.srcDirs.length == 0) {
+			if (config.srcDirs === undefined || config.srcDirs.length === 0) {
 				// Listfile-Mode
 				this.listFileModeFinish();
 				return;
@@ -254,7 +254,7 @@ export class LabelParserBase {
 		for (let listFileNumber = startLineNr; listFileNumber < count; listFileNumber++) {
 			const entry = this.listFile[listFileNumber];
 			const line = entry.line;
-			if (line.length == 0)
+			if (line.length === 0)
 				continue;
 			// Let it parse
 			this.currentFileEntry = entry;
@@ -293,7 +293,7 @@ export class LabelParserBase {
 			this.watchPointLines.push({address: address!, line: match[1]});
 		}
 
-		if (address == undefined)
+		if (address === undefined)
 			return;
 
 		// ASSERTION
@@ -334,7 +334,7 @@ export class LabelParserBase {
 	 */
 	protected associateSourceFileName() {
 		let fName = "";
-		if (this.excludedFileStackIndex == -1) {
+		if (this.excludedFileStackIndex === -1) {
 			// Not excluded
 			const index = this.includeFileStack.length - 1;
 			if (index >= 0)	// safety check
@@ -369,7 +369,7 @@ export class LabelParserBase {
 			}
 
 			// Check address
-			if (entry.longAddr == undefined)
+			if (entry.longAddr === undefined)
 				continue;
 
 			const countBytes = entry.size;
@@ -424,7 +424,7 @@ export class LabelParserBase {
 	 */
 	protected sourcesModeFinish() {
 		for (const entry of this.listFile) {
-			if (entry.fileName.length == 0)
+			if (entry.fileName.length === 0)
 				continue;	// Skip lines with no filename (e.g. '# End of file')
 
 			// Create label -> file location association
@@ -441,12 +441,12 @@ export class LabelParserBase {
 			}
 
 			// Check address
-			if (entry.longAddr == undefined)
+			if (entry.longAddr === undefined)
 				continue;
 
 			// last address entry wins:
 			for (let i = 0; i < entry.size; i++) {
-				const addr = (i == 0) ? entry.longAddr : (entry.longAddr + i) & 0xFFFF;	// Don't mask entry addr if size is 1, i.e. for sjasmplus sld allow higher addresses
+				const addr = (i === 0) ? entry.longAddr : (entry.longAddr + i) & 0xFFFF;	// Don't mask entry addr if size is 1, i.e. for sjasmplus sld allow higher addresses
 				this.setFileLineNrForAddress(addr, {
 					fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: entry.size
 				});
@@ -619,7 +619,7 @@ export class LabelParserBase {
 	 */
 	protected getFullLabel(modulePrefix: string | undefined, label: string) {
 		let result = modulePrefix ?? '';
-		if (result.length == 0)
+		if (result.length === 0)
 			return label;
 		result += label;
 		return result;
@@ -652,7 +652,7 @@ export class LabelParserBase {
 		this.includeFileStack.push({fileName, includeFileName, lineNr: 0});
 
 		// Now check if we need to exclude it from file/line <-> address relationship.
-		if (this.excludedFileStackIndex == -1) {
+		if (this.excludedFileStackIndex === -1) {
 			// Check if filename is one of the excluded file names.
 			for (const exclGlob of config.excludeFiles) {
 				const found = minimatch(fileName, exclGlob);
@@ -669,14 +669,14 @@ export class LabelParserBase {
 	 * Called by the parser if the end of an include file is found.
 	 */
 	protected includeEnd() {
-		if (this.includeFileStack.length == 0)
+		if (this.includeFileStack.length === 0)
 			throw Error("File parsing error: include file stacking.");
 		// Remove last include file
 		this.includeFileStack.pop();
 
 		// Check if excluding files ended
 		const index = this.includeFileStack.length;
-		if (this.excludedFileStackIndex == index) {
+		if (this.excludedFileStackIndex === index) {
 			// Stop excluding
 			this.excludedFileStackIndex = -1;
 		}
@@ -739,9 +739,9 @@ export class LabelParserBase {
 	 * @param message The text to print.
 	 */
 	protected sendWarning(message: string, severity: "error" | "warning" = "warning", filepath?: string, lineNr?: number) {
-		if (filepath == undefined)
+		if (filepath === undefined)
 			filepath = this.config.path;
-		if (lineNr == undefined)
+		if (lineNr === undefined)
 			lineNr = this.currentLineNr;
 		const issue: Issue = {
 			parser: this.parserName,

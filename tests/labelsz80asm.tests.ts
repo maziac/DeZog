@@ -255,54 +255,54 @@ suite('Labels (z80asm)', () => {
 				// Tests
 				let address = lbls.getAddrForFileAndLine('main.asm', 16 - 1);
 				assert.equal(address, 0x18000);
+			});
 		});
-	});
 
 
-	test('Occurrence of WPMEM, ASSERTION, LOGPOINT', () => {
-		// Read the list file
-		const config = {
-			z80asm: [{
-				path: './tests/data/labels/projects/z80asm/general/general.list',
-				srcDirs: [""],	// Sources mode
-				excludeFiles: []
-			}]
-		};
+		test('Occurrence of WPMEM, ASSERTION, LOGPOINT', () => {
+			// Read the list file
+			const config = {
+				z80asm: [{
+					path: './tests/data/labels/projects/z80asm/general/general.list',
+					srcDirs: [""],	// Sources mode
+					excludeFiles: []
+				}]
+			};
 
-		lbls.readListFiles(config, new MemoryModelAllRam());
+			lbls.readListFiles(config, new MemoryModelAllRam());
 
-		// Test WPMEM
-		const wpLines = lbls.getWatchPointLines();
-		assert.equal(wpLines.length, 1);
-		assert.equal(wpLines[0].address, 0x18200);
-		assert.equal(wpLines[0].line, "WPMEM");
+			// Test WPMEM
+			const wpLines = lbls.getWatchPointLines();
+			assert.equal(wpLines.length, 1);
+			assert.equal(wpLines[0].address, 0x18200);
+			assert.equal(wpLines[0].line, "WPMEM");
 
-		// Test ASSERTION
-		const assertionLines = lbls.getAssertionLines();
-		assert.equal(assertionLines.length, 1);
-		assert.equal(assertionLines[0].address, 0x18005);
-		assert.equal(assertionLines[0].line, "ASSERTION");
+			// Test ASSERTION
+			const assertionLines = lbls.getAssertionLines();
+			assert.equal(assertionLines.length, 1);
+			assert.equal(assertionLines[0].address, 0x18005);
+			assert.equal(assertionLines[0].line, "ASSERTION");
 
-		// Test LOGPOINT
-		const lpLines = lbls.getLogPointLines();
-		assert.equal(lpLines.length, 1);
-		assert.equal(lpLines[0].address, 0x1800F);
-		assert.equal(lpLines[0].line, "LOGPOINT");
-	});
+			// Test LOGPOINT
+			const lpLines = lbls.getLogPointLines();
+			assert.equal(lpLines.length, 1);
+			assert.equal(lpLines[0].address, 0x1800F);
+			assert.equal(lpLines[0].line, "LOGPOINT");
+		});
 
 
-	suite('checkMappingToTargetMemoryModel', () => {
-		// z80asm uses the base LabelParserBase checkMappingToTargetMemoryModel function.
-		// So strictly speaking this test would not be necessary.
-		let tmpFile;
-		let parser: any;
+		suite('checkMappingToTargetMemoryModel', () => {
+			// z80asm uses the base LabelParserBase checkMappingToTargetMemoryModel function.
+			// So strictly speaking this test would not be necessary.
+			let tmpFile;
+			let parser: any;
 
-		setup(() => {
-			// File path for a temporary file.
-			tmpFile = path.join(os.tmpdir(), 'dezog_labels_z80asm.list');
-			// Write file.
-			fs.writeFileSync(tmpFile,
-`0000           label0000:
+			setup(() => {
+				// File path for a temporary file.
+				tmpFile = path.join(os.tmpdir(), 'dezog_labels_z80asm.list');
+				// Write file.
+				fs.writeFileSync(tmpFile,
+					`0000           label0000:
 2000           label2000:
 4000           label4000:
 6000           label6000:
@@ -311,65 +311,66 @@ A000           labelA000:
 C000           labelC000:
 E000           labelE000:
 `);
-		});
+			});
 
-		function createParser(mm: MemoryModel) {
-			// Read the empty list file
-			const config: any = {
-				path: tmpFile,
-				srcDirs: [],
-				excludeFiles: []
-			};
-			parser = new Z80asmLabelParser(
-				mm,
-				new Map<number, SourceFileEntry>(),
-				new Map<string, Array<number>>(),
-				new Array<any>(),
-				new Map<number, Array<string>>(),
-				new Map<string, number>(),
-				new Map<string, {file: string, lineNr: number, address: number}>(),
-				new Array<{address: number, line: string}>(),
-				new Array<{address: number, line: string}>(),
-				new Array<{address: number, line: string}>(),
-				(issue) => {});	// NOSONAR
-			parser.loadAsmListFile(config);
-		}
+			function createParser(mm: MemoryModel) {
+				// Read the empty list file
+				const config: any = {
+					path: tmpFile,
+					srcDirs: [],
+					excludeFiles: []
+				};
+				parser = new Z80asmLabelParser(
+					mm,
+					new Map<number, SourceFileEntry>(),
+					new Map<string, Array<number>>(),
+					new Array<any>(),
+					new Map<number, Array<string>>(),
+					new Map<string, number>(),
+					new Map<string, {file: string, lineNr: number, address: number}>(),
+					new Array<{address: number, line: string}>(),
+					new Array<{address: number, line: string}>(),
+					new Array<{address: number, line: string}>(),
+					(issue) => {});	// NOSONAR
+				parser.loadAsmListFile(config);
+			}
 
-		// Cleanup
-		teardown(() => {
-			fs.unlinkSync(tmpFile);
-		});
+			// Cleanup
+			teardown(() => {
+				fs.unlinkSync(tmpFile);
+			});
 
 
-		test('createLongAddress MemoryModelZxNextOneROM', () => {
-			const mm = new MemoryModelZxNextOneROM();
-			createParser(mm);
+			test('createLongAddress MemoryModelZxNextOneROM', () => {
+				const mm = new MemoryModelZxNextOneROM();
+				createParser(mm);
 
-			assert.equal(parser.numberForLabel.get('label0000'), 0x0FF0000);
-			assert.equal(parser.numberForLabel.get('label2000'), 0x1002000);
-			assert.equal(parser.numberForLabel.get('label4000'), 0x00B4000);
-			assert.equal(parser.numberForLabel.get('label6000'), 0x00C6000);
-			assert.equal(parser.numberForLabel.get('label8000'), 0x0058000);
-			assert.equal(parser.numberForLabel.get('labelA000'), 0x006A000);
-			assert.equal(parser.numberForLabel.get('labelC000'), 0x001C000);
-			assert.equal(parser.numberForLabel.get('labelE000'), 0x002E000);
-		});
+				assert.equal(parser.numberForLabel.get('label0000'), 0x0FF0000);
+				assert.equal(parser.numberForLabel.get('label2000'), 0x1002000);
+				assert.equal(parser.numberForLabel.get('label4000'), 0x00B4000);
+				assert.equal(parser.numberForLabel.get('label6000'), 0x00C6000);
+				assert.equal(parser.numberForLabel.get('label8000'), 0x0058000);
+				assert.equal(parser.numberForLabel.get('labelA000'), 0x006A000);
+				assert.equal(parser.numberForLabel.get('labelC000'), 0x001C000);
+				assert.equal(parser.numberForLabel.get('labelE000'), 0x002E000);
+			});
 
-		test('createLongAddress MemoryModelZxNextTwoRom', () => {
-			const mm = new MemoryModelZxNextTwoRom();
-			createParser(mm);
+			test('createLongAddress MemoryModelZxNextTwoRom', () => {
+				const mm = new MemoryModelZxNextTwoRom();
+				createParser(mm);
 
-			assert.equal(parser.numberForLabel.get('label0000'), 0x0FF0000);
-			assert.equal(parser.numberForLabel.get('label2000'), 0x1002000);
-			assert.equal(parser.numberForLabel.get('label4000'), 0x00B4000);
-			assert.equal(parser.numberForLabel.get('label6000'), 0x00C6000);
-			assert.equal(parser.numberForLabel.get('label8000'), 0x0058000);
-			assert.equal(parser.numberForLabel.get('labelA000'), 0x006A000);
-			assert.equal(parser.numberForLabel.get('labelC000'), 0x001C000);
-			assert.equal(parser.numberForLabel.get('labelE000'), 0x002E000);
+				assert.equal(parser.numberForLabel.get('label0000'), 0x0FF0000);
+				assert.equal(parser.numberForLabel.get('label2000'), 0x1002000);
+				assert.equal(parser.numberForLabel.get('label4000'), 0x00B4000);
+				assert.equal(parser.numberForLabel.get('label6000'), 0x00C6000);
+				assert.equal(parser.numberForLabel.get('label8000'), 0x0058000);
+				assert.equal(parser.numberForLabel.get('labelA000'), 0x006A000);
+				assert.equal(parser.numberForLabel.get('labelC000'), 0x001C000);
+				assert.equal(parser.numberForLabel.get('labelE000'), 0x002E000);
+			});
+
 		});
 
 	});
 
 });
-
