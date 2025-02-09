@@ -203,6 +203,15 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 			const mapFile: string = (config as Z88dkConfig).mapFile;
 			this.readmapFile(mapFile);
 			super.loadAsmListFile(config);
+
+			// Check for "topOfStack" (for z88dk C-compiler)
+			const __register_sp = this.z88dkMappings.get('__register_sp');
+			// Add label
+			if (__register_sp !== undefined) {
+				const longAddr = this.createLongAddress(__register_sp & 0xFFFF, 0);
+				this.addLabelForNumber(longAddr, "__register_sp");
+				// I.e. Now in lauch.json "topOfStack": "__register_sp" can be used
+			}
 		}
 		catch (e) {
 			this.throwError(e.message);
