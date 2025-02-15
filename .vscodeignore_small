@@ -34,6 +34,7 @@ node_modules/
 !node_modules/node-gyp-build/
 !node_modules/jsonc-parser/
 !node_modules/node-graphviz/
+!node_modules/ms/
 out/src
 out/tests
 
