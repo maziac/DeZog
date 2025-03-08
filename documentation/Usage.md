@@ -477,6 +477,13 @@ zcc +zxn -subtype=nex -vn --list -m --c-code-in-asm -clib=sdcc_iy -Cz"--clean" -
 ]
 ~~~
 
+## Top of stack
+In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
+~~~json
+"topOfStack": "__register_sp",
+~~~
+
+
 You can find a sample project that uses the zcc c-compiler here:
 https://github.com/vmorilla/vscode-z88dk-next-sample-project
 
@@ -489,6 +496,11 @@ Arrays can be viewed by appending the number of elements.
 Notes:
 - C-support only works for "z88dkv2" not for "z88dk"
 - For the "path" you can use globbing
+- Top of stack:
+    In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
+    ~~~json
+    "topOfStack": "__register_sp",
+    ~~~
 
 
 **Reverse Engineering configuration**
