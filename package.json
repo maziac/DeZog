@@ -994,18 +994,8 @@
 									],
 									"properties": {
 										"path": {
-											"description": "Path to the assembler .list file. A string or an array for multiple files. Wildcards are allowed.",
-											"oneOf": [
-												{
-													"type": "string"
-												},
-												{
-													"type": "array",
-													"items": {
-														"type": "string"
-													}
-												}
-											]
+											"description": "Path to the assembler .list file. Wildcards are allowed.",
+											"type": "string"
 										},
 										"srcDirs": {
 											"type": "array",
