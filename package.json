@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.6.0-rc2",
+	"version": "3.6.0-rc3",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum/ZX81.",
 	"author": {
@@ -70,7 +70,7 @@
 		"@types/node": "^18.18.2",
 		"@types/vscode": "^1.96.0",
 		"@types/vscode-webview": "^1.57.5",
-		"esbuild": "^0.24.2",
+		"esbuild": "^0.25.0",
 		"mocha": "^11.1.0",
 		"sinon": "^19.0.2",
 		"source-map-support": "^0.5.21",

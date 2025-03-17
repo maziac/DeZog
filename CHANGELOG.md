@@ -1,6 +1,8 @@
 # Changelog
 
 # 3.5.4
+- PR140: Basic z88dk c support - Breakpoints and stepping through c files (thanks to vmorilla)
+- Globbing enabled for all label parsers. I.e. now you could use `"z88dkv2": [{"path": "src/**/*.lis"}]` in launch.json.
 - LOGPOINTs:
   - Improvement: It is now possible to do any maths with the LOGPOINTs. E.g. "b@(HL+2*A)" is a valid expression.
   - Fixed logpoints enabling/disabling while zsim assembly program is running.
@@ -9,8 +11,6 @@
   - Command "-e zx81-basic-vars" to print all BASIC variables.
   - A LOGPOINT for "BASIC" line logging is now automatically available:
 	The executed lines of a BASIC program will be logged together with the used BASIC variables in the debug console.
-- PR140: Basic z88dk c support - Breakpoints and stepping through c files (thanks to vmorilla)
-- Globbing enabled for all label parsers. I.e. now you could use `"z88dkv2": [{"path": "./out/*.lis"}]` in launch.json.
 
 # 3.5.3
 - Added missing package ms to vsix.
