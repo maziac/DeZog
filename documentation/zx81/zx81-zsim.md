@@ -1,6 +1,10 @@
 # ZX81
 This document describes how the ZX81 "zsim" configuration can be used.
 
+Please also have a look at the [zx81-sample-program](https://github.com/maziac/zx81-sample-program).
+It is a github project with a simple ZX81 program that you could use as starting point for your own projects.
+
+
 # zsim
 The internal simulator "zsim" can be used for the ZX81.
 The easiest thing to do so is by using a "preset", e.g.

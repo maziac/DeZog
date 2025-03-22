@@ -775,6 +775,7 @@ For a ZX Next like system (note: this simulates only the Next's memory paging):
 
 Here is the explanations of all the options:
 - "preset": Either "spectrum", "zx81" or "none" (default). It will set the default values for a 48k Spectrum or a 56k ZX81. You can override these settings. If you e.g. set the 'memoryModel' explicitly.
+  For especially "zx81" debugging please see the [ZX81 Debugging] document.
 - "Z80N": true/false. Defaults to false. Enables the Z80N (ZX Next) instruction set. See https://wiki.specnext.dev/Extended_Z80_instruction_set .
 - "zxKeyboard": Either "spectrum", "zx81" or "none" (default). If enabled the simulator shows a keyboard to simulate keypresses.
 ![](images/zsim_keyboard.jpg)
