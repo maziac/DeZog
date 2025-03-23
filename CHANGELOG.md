@@ -11,6 +11,7 @@
   - Command "-e zx81-basic-vars" to print all BASIC variables.
   - A LOGPOINT for "BASIC" line logging is now automatically available:
 	The executed lines of a BASIC program will be logged together with the used BASIC variables in the debug console.
+- Fixed freeze zesarux on stop debugging by @dgzornoza
 
 # 3.5.3
 - Added missing package ms to vsix.
