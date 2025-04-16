@@ -179,7 +179,7 @@ A typical configuration looks like this:
             },
             "sjasmplus": [
                 {
-                    "path": "z80-sample-program.list",
+                    "path": "z80-sample-program.sld",
                 }
             ],
             "startAutomatically": false,
@@ -212,7 +212,7 @@ A typical configuration looks like this:
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
     - "cspect": Use of CSpect emulator with the DeZog plugin. See [CSpect](#cspect).
     - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [ZX Next / Serial Interface](#zx-next--serial-interface).
-- [sjasmplus] (or z80asm or z88dk): The assembled configuration. An array of list files. Typically it includes only one. But if you e.g. have a
+- [sjasmplus] (or z80asm or z88dk): The assembled configuration. An array of list files. (Or in case of sjasmplus: sld files.) Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Assembler Configuration](#assembler-configuration) section.
 - startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=true). Please note: If this is set to true and a .tap file is loaded it will stop at address 0x0000 as this is where ZEsarUX tape load emulation starts.
