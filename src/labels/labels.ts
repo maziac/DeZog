@@ -4,13 +4,14 @@ import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {Remote} from '../remotes/remotebase';
 import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';
+import {Z88dkLabelParser} from './z88dklabelparser';
 import {Z88dkLabelParserV2} from './z88dklabelparserv2';
 import {ReverseEngineeringLabelParser} from './reverseengineeringlabelparser';
 import {SettingsParameters} from '../settings/settings';
 import {Issue, LabelParserBase} from './labelparserbase';
 import * as fs from 'fs';
-import * as fglob from 'fast-glob';
-import {Z88dkLabelParser} from './z88dklabelparser';
+//import * as fglob from 'fast-glob';
+import {globSync} from 'glob';
 
 
 /**
@@ -246,7 +247,8 @@ export class LabelsClass {
 				// Check if files need to be watched
 				if (config.reloadOnSave) {
 					// Watch file for save
-					const paths = fglob.sync([config.path]);	// config.path is absolute
+					const paths = globSync(config.path);	// config.path is absolute
+					//const paths = fglob.sync([config.path]);	// config.path is absolute
 					for (const path of paths) {
 						this.watchedFiles.push(path);
 					}
@@ -274,7 +276,9 @@ export class LabelsClass {
 	 */
 	protected loadAsmListFile(parser: LabelParserBase, config: ListConfigBase) {
 		try {
-			const paths = fglob.sync([config.path]);	// config.path is absolute
+			// const repl = config.path.replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+			// const paths = fglob.sync(repl);	// config.path is absolute
+			const paths = globSync(config.path);	// config.path is absolute
 			for (const path of paths) {
 				const pathConfig: ListConfigBase = {...config, path: path};	// complicated, but safe in case structure is extended in the future
 				// Load file
