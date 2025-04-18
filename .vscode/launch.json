@@ -15,7 +15,6 @@
 			"outFiles": [
 				"${workspaceFolder}/out/**/*.js"
 			],
-			"preLaunchTask": "watch",
 			"skipFiles": [
 				"**/extensionHostProcess.js"
 			]
