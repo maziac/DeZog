@@ -148,7 +148,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	public static singleton(): DebugSessionClass {
 		if (!this.debugAdapterSingleton) {
-			this.debugAdapterSingleton = new DebugSessionClass();
+		    new DebugSessionClass();
 		}
 		return this.debugAdapterSingleton;
 	}
@@ -169,9 +169,11 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	public constructor() {
 		super();
+        DebugSessionClass.debugAdapterSingleton = this;
 		// Init line numbering
 		this.setDebuggerLinesStartAt1(false);
 		this.setDebuggerColumnsStartAt1(false);
+        this.setRunAsServer(true);
 		vscode.debug.onDidChangeActiveDebugSession(dbgSession => {
 			if (dbgSession?.configuration.type === 'dezog') {
 				if (this.debugConsoleSavedText) {
