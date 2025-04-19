@@ -22,7 +22,7 @@ export interface AsmConfigBase extends ListConfigBase {
 	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
 	srcDirs: Array<string>;
 
-	// An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not used shown during stepping.
+	// An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping.
 	excludeFiles: Array<string>;
 }
 
@@ -855,8 +855,13 @@ export class Settings {
 					srcDirs: fpSrcDirs || [""],
 					excludeFiles: fpExclFiles || []
 				};
-				if (fpPath)
-					file.path = Utility.getAbsFilePath(fpPath, rootFolder)
+				if (fpPath) {
+					// Note: path is a glob path
+					const unifiedRootFolder = UnifiedPath.getUnifiedPath(rootFolder);
+					const escapedRootFolder = Utility.escapePathForGlob(unifiedRootFolder);
+					const unifiedFpPath = UnifiedPath.getUnifiedPath(fpPath);
+					file.path = Utility.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
+				}
 				return file;
 			});
 		}
@@ -1126,6 +1131,8 @@ export class Settings {
 			listFiles.push(...configuration.z80asm);
 		if (configuration.z88dk)
 			listFiles.push(...configuration.z88dk);
+		if (configuration.z88dkv2)
+			listFiles.push(...configuration.z88dkv2);
 
 		return listFiles;
 	}
@@ -1171,7 +1178,7 @@ export class Settings {
 			if (path === undefined)
 				throw Error("'path': You need to define a path to your file.");
 			// Check that file exists
-			if (!fs.existsSync(path))
+			if (!fglob.sync(path))
 				throw Error("'path': File '" + path + "' does not exist.");
 		}
 

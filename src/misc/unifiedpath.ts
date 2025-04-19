@@ -37,8 +37,15 @@ export class UnifiedPath {
 	}
 
 
-	/**
-	 * Like 'join' but afterwards converts to unified path.
+	/** Like the original 'join'.
+	 */
+	public static joinWounify(...paths: string[]): string {
+		const s = redirectedPath.join(...paths);
+		return s;
+	}
+
+
+	/** Like 'join' but afterwards converts to unified path.
 	 */
 	public static join(...paths: string[]): string {
 		const s = redirectedPath.join(...paths);

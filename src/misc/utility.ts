@@ -906,8 +906,23 @@ export class Utility {
 	}
 
 
-	/**
-	 * If relFilePath is a relative path the vscode.workspace.rootPath
+	/** If relFilePath is a relative path the vscode.workspace.rootPath
+	 * path is added.
+	 * @param relFilePath A relative path
+	 * @returns An absolute path
+	 */
+	public static getAbsFilePathWoUnify(relFilePath: string, rootPath?: string): string {
+		if (UnifiedPath.isAbsolute(relFilePath))
+			return relFilePath;
+		// Change from relative to absolute
+		const usedRootPath = ((rootPath) ?? Utility.rootPath) ?? '';
+		const filePath = UnifiedPath.joinWounify(usedRootPath, relFilePath);
+		return filePath;
+	}
+
+
+
+	/** If relFilePath is a relative path the vscode.workspace.rootPath
 	 * path is added.
 	 * @param relFilePath A relative path
 	 * @returns An absolute path
@@ -1026,8 +1041,16 @@ export class Utility {
 	}
 
 
-	/**
-	 * Call the 'handler' in an interval until 'handler' returns true.
+	/** Escapes special characters in a file path for safe usage in glob patterns or regex.
+	 * @param path The file path to escape.
+	 * @returns The escaped file path.
+	 */
+	public static escapePathForGlob(path: string): string {
+		return path.replace(/([*?[\]{}()!|\\])/g, '\\$1');
+	}
+
+
+	/** Call the 'handler' in an interval until 'handler' returns true.
 	 * This can be used to wait on an event to happen, e.g. to poll
 	 * a variable.
 	 * @param handler(time) The handler. I t normally checks a value

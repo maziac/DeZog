@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.6.1-rc1",
+	"version": "3.6.1-rc2",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum/ZX81.",
 	"author": {
@@ -50,7 +50,6 @@
 		"@vscode/debugadapter": "^1.68.0",
 		"@vscode/debugprotocol": "^1.68.0",
 		"fast-glob": "^3.3.3",
-		"glob": "^11.0.1",
 		"gif-writer": "^0.9.4",
 		"intel-hex": "^0.2.0",
 		"jsonc-parser": "^3.3.1",
