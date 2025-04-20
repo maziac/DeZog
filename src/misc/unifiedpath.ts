@@ -62,7 +62,7 @@ export class UnifiedPath {
 	 * If fpath is undefined an undefined value is returned.
 	 */
 	public static getUnifiedPath(fpath: string | undefined): string {
-		if (!fpath)
+		if (fpath === undefined)
 			return undefined as any;
 		let uPath = fpath.replace(/\\/g, '/');
 		if (uPath.length > 1) {

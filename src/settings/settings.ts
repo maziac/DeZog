@@ -535,7 +535,7 @@ export class Settings {
 		}
 
 		// Check rootFolder
-		let rootFolder = launchCfg.rootFolder || '';	// Will be checked in the CheckSettings.
+		let rootFolder = launchCfg.rootFolder ?? '';	// Will be checked in the CheckSettings.
 		// Change to a true-case-path (E.g. the user might have given "/volumes..." but the real path is "/Volumes...")
 		try {
 			const result = fs.realpathSync.native(rootFolder); // On windows this returns a capital drive letter
@@ -852,8 +852,8 @@ export class Settings {
 				const fpExclFiles = UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
 				const file = {
 					path: undefined as any,
-					srcDirs: fpSrcDirs || [""],
-					excludeFiles: fpExclFiles || []
+					srcDirs: fpSrcDirs ?? [""],
+					excludeFiles: fpExclFiles ?? []
 				};
 				if (fpPath) {
 					// Note: path is a glob path
@@ -875,11 +875,16 @@ export class Settings {
 				const fpExclFiles = UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
 				const file = {
 					path: undefined as any,
-					srcDirs: fpSrcDirs || [""],
-					excludeFiles: fpExclFiles || []
+					srcDirs: fpSrcDirs ?? [""],
+					excludeFiles: fpExclFiles ?? []
 				};
-				if (fpPath)
-					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
+				if (fpPath) {
+					// Note: path is a glob path
+					const unifiedRootFolder = UnifiedPath.getUnifiedPath(rootFolder);
+					const escapedRootFolder = Utility.escapePathForGlob(unifiedRootFolder);
+					const unifiedFpPath = UnifiedPath.getUnifiedPath(fpPath);
+					file.path = Utility.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
+				}
 				return file;
 			});
 		}
@@ -895,13 +900,18 @@ export class Settings {
 				const fpMainFile = UnifiedPath.getUnifiedPath(fp.mainFile);
 				const file = {
 					path: undefined as any,
-					srcDirs: fpSrcDirs || [""],
-					excludeFiles: fpExclFiles || [],
-					mainFile: fpMainFile || "",
+					srcDirs: fpSrcDirs ?? [""],
+					excludeFiles: fpExclFiles ?? [],
+					mainFile: fpMainFile ?? "",
 					mapFile: undefined as any
 				};
-				if (fpPath)
-					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
+				if (fpPath) {
+					// Note: path is a glob path
+					const unifiedRootFolder = UnifiedPath.getUnifiedPath(rootFolder);
+					const escapedRootFolder = Utility.escapePathForGlob(unifiedRootFolder);
+					const unifiedFpPath = UnifiedPath.getUnifiedPath(fpPath);
+					file.path = Utility.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
+				}
 				if (fpMapFile)
 					file.mapFile = Utility.getAbsFilePath(fpMapFile, rootFolder);
 				return file;
@@ -918,12 +928,17 @@ export class Settings {
 				const fpExclFiles = UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
 				const file = {
 					path: undefined as any,
-					srcDirs: fpSrcDirs || [""],
-					excludeFiles: fpExclFiles || [],
+					srcDirs: fpSrcDirs ?? [""],
+					excludeFiles: fpExclFiles ?? [],
 					mapFile: undefined as any,
 				};
-				if (fpPath)
-					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
+				if (fpPath) {
+					// Note: path is a glob path
+					const unifiedRootFolder = UnifiedPath.getUnifiedPath(rootFolder);
+					const escapedRootFolder = Utility.escapePathForGlob(unifiedRootFolder);
+					const unifiedFpPath = UnifiedPath.getUnifiedPath(fpPath);
+					file.path = Utility.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
+				}
 				if (fpMapFile)
 					file.mapFile = Utility.getAbsFilePath(fpMapFile, rootFolder);
 				return file;
@@ -941,8 +956,13 @@ export class Settings {
 				};
 				if (file.reloadOnSave === undefined)
 					file.reloadOnSave = false;
-				if (fpPath)
-					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
+				if (fpPath) {
+					// Note: path is a glob path
+					const unifiedRootFolder = UnifiedPath.getUnifiedPath(rootFolder);
+					const escapedRootFolder = Utility.escapePathForGlob(unifiedRootFolder);
+					const unifiedFpPath = UnifiedPath.getUnifiedPath(fpPath);
+					file.path = Utility.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
+				}
 				return file;
 			});
 		}
@@ -1178,7 +1198,8 @@ export class Settings {
 			if (path === undefined)
 				throw Error("'path': You need to define a path to your file.");
 			// Check that file exists
-			if (!fglob.sync(path))
+			const paths = fglob.sync(path);
+			if (paths.length === 0)
 				throw Error("'path': File '" + path + "' does not exist.");
 		}
 
