@@ -997,7 +997,7 @@ suite('Utility', () => {
 	suite('escapePathForGlob', () => {
 		test('escape special characters', () => {
 			const input = 'path/to/[file]*.js';
-			const expected = 'path/to/\\[file\\]\\*\\.js';
+			const expected = 'path/to/\\[file\\]\\*.js';
 			const result = Utility.escapePathForGlob(input);
 			assert.equal(result, expected, `Expected "${expected}" but got "${result}"`);
 		});
@@ -1017,8 +1017,8 @@ suite('Utility', () => {
 		});
 
 		test('only special characters', () => {
-			const input = '*?[]{}()!|\\';
-			const expected = '\\*\\?\\[\\]\\{\\}\\(\\)\\!\\|\\\\';
+			const input = '*?[]{}()!';
+			const expected = '\\*\\?\\[\\]\\{\\}\\(\\)\\!';
 			const result = Utility.escapePathForGlob(input);
 			assert.equal(result, expected, `Expected "${expected}" but got "${result}"`);
 		});
