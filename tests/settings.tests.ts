@@ -4,13 +4,9 @@ import { Settings } from '../src/settings/settings';
 
 suite('Settings', () => {
 
-	setup(() => {
-		//
-	});
-
 	suite('CheckSettings', () => {
 
-		test('CheckSettings - remoteType none', () => {
+		test('remoteType none', () => {
 			const cfgEmpty: any = {
 			};
 			Settings.launch = Settings.Init(cfgEmpty);
@@ -28,7 +24,7 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - remoteType=zesarux', () => {
+		test('remoteType=zesarux', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
@@ -41,7 +37,7 @@ suite('Settings', () => {
 
 
 
-		suite('CheckSettings - remoteType=zxnext', () => {
+		suite('remoteType=zxnext', () => {
 
 			test('empty', () => {
 				const cfg: any = {
@@ -116,7 +112,7 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - remoteType=zsim', () => {
+		test('remoteType=zsim', () => {
 			const cfg: any={
 				remoteType: 'zsim',
 				rootFolder: './tests/data',
@@ -128,7 +124,7 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - Default', () => {
+		test('Default', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
@@ -140,7 +136,7 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - No rootFolder', () => {
+		test('No rootFolder', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				sjasmplus: [
@@ -154,7 +150,7 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - listFiles 1', () => {
+		test('listFiles 1', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
@@ -171,7 +167,7 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - listFiles 2', () => {
+		test('listFiles 2', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
@@ -188,7 +184,7 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - load 1', () => {
+		test('load 1', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
@@ -203,7 +199,7 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - load 2', () => {
+		test('load 2', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
@@ -218,7 +214,7 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - load and execAddress', () => {
+		test('load and execAddress', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
@@ -234,7 +230,7 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - loadObj 1', () => {
+		test('loadObj 1', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
@@ -252,7 +248,7 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - loadObj 2', () => {
+		test('loadObj 2', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
@@ -271,7 +267,7 @@ suite('Settings', () => {
 
 
 
-		test('CheckSettings - loadObj start', () => {
+		test('loadObj start', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
@@ -289,5 +285,67 @@ suite('Settings', () => {
 		});
 
 	});
+
+
+	suite('Init', () => {
+		suite('paths escaped for globbing', () => {
+
+			test('sjasmplus', () => {
+				const cfg: any = {
+					rootFolder: 'abc/*_[_]_(_)_!_?_/def',
+					sjasmplus: [
+						{path: "settings/file*.obj"}
+					]
+				};
+				Settings.launch = Settings.Init(cfg);
+				assert.strictEqual(Settings.launch.sjasmplus[0].path, "abc/\\*_\\[_\\]_\\(_\\)_\\!_\\?_/def/settings/file*.obj");
+			});
+
+			test('z80asm', () => {
+				const cfg: any = {
+					rootFolder: 'abc/*_[_]_(_)_!_?_/def',
+					z80asm: [
+						{path: "settings/file*.obj"}
+					]
+				};
+				Settings.launch = Settings.Init(cfg);
+				assert.strictEqual(Settings.launch.z80asm[0].path, "abc/\\*_\\[_\\]_\\(_\\)_\\!_\\?_/def/settings/file*.obj");
+			});
+
+			test('z88dk', () => {
+				const cfg: any = {
+					rootFolder: 'abc/*_[_]_(_)_!_?_/def',
+					z88dk: [
+						{path: "settings/file*.obj"}
+					]
+				};
+				Settings.launch = Settings.Init(cfg);
+				assert.strictEqual(Settings.launch.z88dk[0].path, "abc/\\*_\\[_\\]_\\(_\\)_\\!_\\?_/def/settings/file*.obj");
+			});
+
+			test('z88dkv2', () => {
+				const cfg: any = {
+					rootFolder: 'abc/*_[_]_(_)_!_?_/def',
+					z88dkv2: [
+						{path: "settings/file*.obj"}
+					]
+				};
+				Settings.launch = Settings.Init(cfg);
+				assert.strictEqual(Settings.launch.z88dkv2[0].path, "abc/\\*_\\[_\\]_\\(_\\)_\\!_\\?_/def/settings/file*.obj");
+			});
+
+			test('sjasmplus', () => {
+				const cfg: any = {
+					rootFolder: 'abc/*_[_]_(_)_!_?_/def',
+					revEng: [
+						{path: "settings/file*.obj"}
+					]
+				};
+				Settings.launch = Settings.Init(cfg);
+				assert.strictEqual(Settings.launch.revEng[0].path, "abc/\\*_\\[_\\]_\\(_\\)_\\!_\\?_/def/settings/file*.obj");
+			});
+		});
+	});
+
 });
 

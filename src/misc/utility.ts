@@ -1046,7 +1046,7 @@ export class Utility {
 	 * @returns The escaped file path.
 	 */
 	public static escapePathForGlob(path: string): string {
-		return path.replace(/([*?[\]{}()!|\\])/g, '\\$1');
+		return path.replace(/([*?[\]{}()!])/g, '\\$1');
 	}
 
 
