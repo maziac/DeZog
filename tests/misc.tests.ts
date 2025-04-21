@@ -1,5 +1,6 @@
 
 import * as assert from 'assert';
+import {suite, test} from 'mocha';
 import {Utility} from '../src/misc/utility';
 import {DecodeZesaruxRegisters} from '../src/remotes/zesarux/decodezesaruxdata';
 

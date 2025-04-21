@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test} from 'mocha';
 import {LogEval} from '../src/misc/logeval';
 
 

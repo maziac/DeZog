@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {Zx81BasicVars} from '../src/misc/zx81/zx81basicvars';
 
 

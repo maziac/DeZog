@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup, teardown} from 'mocha';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {MemoryModelAllRam, MemoryModelUnknown} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZX81_1k, MemoryModelZX81_2k, MemoryModelZX81_16k, MemoryModelZX81_32k, MemoryModelZX81_48k, MemoryModelZX81_56k} from '../src/remotes/MemoryModel/zx81memorymodels';

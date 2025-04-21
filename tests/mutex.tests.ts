@@ -1,4 +1,5 @@
 import {Mutex} from '../src/misc/mutex';
+import {suite, test} from 'mocha';
 
 
 suite('Mutex', () => {

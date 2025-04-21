@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {readFileSync} from 'fs';
 import {Format} from '../../src/disassembler/core/format';
 import {AsmNode} from '../../src/disassembler/core/asmnode';

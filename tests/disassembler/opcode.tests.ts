@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {NumberType} from '../../src/disassembler/core/numbertype';
 import {Opcode, OpcodeFlag} from '../../src/disassembler/core/opcode';
 

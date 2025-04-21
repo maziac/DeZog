@@ -1,5 +1,6 @@
 
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {Z80Cpu} from '../src/remotes/zsimulator/z80cpu';
 import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
 import {MemBuffer} from '../src/misc/membuffer';

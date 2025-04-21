@@ -1,5 +1,6 @@
 
 import * as assert from 'assert';
+import {suite, test} from 'mocha';
 import { Settings } from '../src/settings/settings';
 
 suite('Settings', () => {

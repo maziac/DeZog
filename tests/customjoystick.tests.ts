@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
 import {CustomJoyType} from '../src/settings/settings';
 import {CustomJoystick} from '../src/remotes/zsimulator/customjoystick';

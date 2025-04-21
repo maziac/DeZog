@@ -1,5 +1,6 @@
 import { Utility } from './../src/misc/utility';
 import * as assert from 'assert';
+import {suite, test} from 'mocha';
 import {MemBuffer} from '../src/misc/membuffer';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {SimulatedMemory} from '../src/remotes/zsimulator/simulatedmemory';

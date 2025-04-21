@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {LabelsClass} from '../src/labels/labels';
 import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
 

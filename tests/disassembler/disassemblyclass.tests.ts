@@ -1,6 +1,7 @@
-import { Settings } from '../../src/settings/settings';
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {DisassemblyClass} from '../../src/disassembler/disassembly';
+import { Settings } from '../../src/settings/settings';
 
 
 suite('Disassembly - DisassemblyClass', () => {

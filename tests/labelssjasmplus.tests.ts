@@ -1,6 +1,5 @@
-import { CustomMemoryType } from './../src/settings/settingscustommemory';
-
 import * as assert from 'assert';
+import {suite, test, setup, teardown} from 'mocha';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -10,6 +9,7 @@ import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelUnknown} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZx128k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
 import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
+import { CustomMemoryType } from './../src/settings/settingscustommemory';
 
 
 suite('Labels (sjasmplus)', () => {

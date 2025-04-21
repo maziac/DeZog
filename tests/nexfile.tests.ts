@@ -1,5 +1,6 @@
 
 import * as assert from 'assert';
+import {suite, test} from 'mocha';
 import {DzrpRemote} from '../src/remotes/dzrp/dzrpremote';
 import {NexFile} from '../src/remotes/dzrp/nexfile';
 import {Z80_REG} from '../src/remotes/z80registers';

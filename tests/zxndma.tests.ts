@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {ZxnDma} from '../src/remotes/zsimulator/zxndma';
 import * as sinon from 'sinon';
 import {SimulatedMemory} from '../src/remotes/zsimulator/simulatedmemory';

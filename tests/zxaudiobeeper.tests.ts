@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test} from 'mocha';
 import {ZxAudioBeeper} from '../src/remotes/zsimulator/zsimwebview/zxaudiobeeper';
 import {BeeperBuffer} from '../src/remotes/zsimulator/zxbeeper';
 

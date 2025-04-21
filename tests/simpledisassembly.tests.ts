@@ -1,7 +1,8 @@
+import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
+import {SimpleDisassembly} from '../src/disassembler/simpledisassembly';
 import { Format } from '../src/disassembler/core/format';
 import { Opcode } from '../src/disassembler/core/opcode';
-import * as assert from 'assert';
-import {SimpleDisassembly} from '../src/disassembler/simpledisassembly';
 
 
 suite('Disassembly - SimpleDisassembly', () => {

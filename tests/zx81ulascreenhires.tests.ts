@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {SimulatedMemory} from '../src/remotes/zsimulator/simulatedmemory';
 import {Z80Cpu} from '../src/remotes/zsimulator/z80cpu';

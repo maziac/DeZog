@@ -36,7 +36,7 @@
 	"scripts": {
 		"compile": "tsc -p ./",
 		"watch-tsc": "tsc -w -p ./",
-		"test": "mocha -u tdd ./out/tests/ --exit",
+		"test": "mocha -u tdd out/**/*.test{s,}.js --exit",
 		"vscode:prepublish": "npm run esbuild-node -- --minify && npm run esbuild-browser -- --minify",
 		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --external:node-graphviz --external:ms --format=cjs --platform=node",
 		"esbuild-browser": "esbuild ./src/remotes/zsimulator/zsimwebview/main.ts --bundle --outdir=out --outbase=src --platform=browser",

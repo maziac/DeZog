@@ -1,5 +1,6 @@
 
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import { ZesaruxRemote } from '../src/remotes/zesarux/zesaruxremote';
 import { Z80RegistersClass } from '../src/remotes/z80registers';
 import {Settings} from '../src/settings/settings';

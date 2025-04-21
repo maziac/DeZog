@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test} from 'mocha';
 import {CustomCode} from '../src/remotes/zsimulator/customcode';
 
 

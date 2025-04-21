@@ -1,5 +1,6 @@
 
 import * as assert from 'assert';
+import {suite, test} from 'mocha';
 import { Z80RegistersClass } from '../src/remotes/z80registers';
 
 suite('Z80Registers', () => {

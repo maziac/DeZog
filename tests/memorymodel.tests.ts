@@ -1,5 +1,6 @@
 
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {BankType, MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
 import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';

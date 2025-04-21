@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup, teardown} from 'mocha';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';

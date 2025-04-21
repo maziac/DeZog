@@ -1,5 +1,6 @@
 import { AsmNode } from '../../src/disassembler/core/asmnode';
 import * as assert from 'assert';
+import {suite, test} from 'mocha';
 import {Opcode} from '../../src/disassembler/core/opcode';
 
 

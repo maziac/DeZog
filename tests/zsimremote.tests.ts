@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {ZSimRemote} from '../src/remotes/zsimulator/zsimremote';
 import {Settings} from '../src/settings/settings';
 import {Utility} from '../src/misc/utility';

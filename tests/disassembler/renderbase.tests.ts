@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {Opcode} from '../../src/disassembler/core/opcode';
 import {AsmNode} from '../../src/disassembler/core/asmnode';
 import {Utility} from '../../src/misc/utility';

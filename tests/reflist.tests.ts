@@ -1,5 +1,6 @@
 
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {RefList} from '../src/misc/reflist';
 
 suite('RefList', () => {

@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test} from 'mocha';
 import {MAX_MEM_SIZE} from '../../src/disassembler/core/basememory';
 import {Memory} from '../../src/disassembler/core/memory';
 

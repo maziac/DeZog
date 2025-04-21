@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {Utility} from '../../src/misc/utility';
 import {Format} from '../../src/disassembler/core/format';
 import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';

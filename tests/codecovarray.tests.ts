@@ -1,5 +1,6 @@
 
 import * as assert from 'assert';
+import {suite, test} from 'mocha';
 import {CodeCoverageArray} from '../src/remotes/zsimulator/codecovarray';
 
 suite('CodeCoverageArray', () => {

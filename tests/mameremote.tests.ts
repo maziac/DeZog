@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {MameGdbRemote} from '../src/remotes/mame/mamegdbremote';
 import {Z80RegistersMameDecoder} from '../src/remotes/mame/z80registersmamedecoder';
 import {BREAK_REASON_NUMBER} from '../src/remotes/remotebase';

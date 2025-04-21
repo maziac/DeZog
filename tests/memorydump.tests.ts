@@ -1,5 +1,6 @@
 
 import * as assert from 'assert';
+import {suite, test} from 'mocha';
 import {FoundAddresses, MemoryDump} from '../src/misc/memorydump';
 import {MetaBlock} from '../src/misc/metablock';
 

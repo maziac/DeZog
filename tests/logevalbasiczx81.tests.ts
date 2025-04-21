@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import * as sinon from 'sinon';
 import {LogEvalBasicZx81} from '../src/misc/zx81/logevalbasiczx81';
 import {ZSimRemote} from '../src/remotes/zsimulator/zsimremote';

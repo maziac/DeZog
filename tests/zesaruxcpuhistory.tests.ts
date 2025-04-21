@@ -1,7 +1,5 @@
-import { Opcode } from '../src/disassembler/core/opcode';
-import { Format } from '../src/disassembler/core/format';
-
 import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
 import {ZesaruxCpuHistory, DecodeZesaruxHistoryInfo} from '../src/remotes/zesarux/zesaruxcpuhistory';
 import {Z80RegistersClass, Z80Registers} from '../src/remotes/z80registers';
 import {DecodeZesaruxRegistersZx48k, DecodeZesaruxRegistersZxNext} from '../src/remotes/zesarux/decodezesaruxdata';
@@ -14,6 +12,8 @@ import {CpuHistory} from '../src/remotes/cpuhistory';
 import {Labels} from '../src/labels/labels';
 import {MemoryModelUnknown} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
+import { Opcode } from '../src/disassembler/core/opcode';
+import { Format } from '../src/disassembler/core/format';
 
 
 
