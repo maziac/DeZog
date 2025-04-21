@@ -1,7 +1,7 @@
 # Changelog
 
 # 3.6.1
-- Fixed globbing and paths with special characters.
+- Fixed globbing and paths with special characters. (Fixed error when there were special characters like brackets in the folder path.)
 
 # 3.6.0
 - PR140: Basic z88dk c support - Breakpoints and stepping through c files (thanks to vmorilla)
