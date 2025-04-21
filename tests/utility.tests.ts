@@ -993,4 +993,34 @@ suite('Utility', () => {
 			assert.equal(Utility.hjoin(["1", "2", "3"]), '1, 2 and 3');
 		});
 	});
+
+	suite('escapePathForGlob', () => {
+		test('escape special characters', () => {
+			const input = 'path/to/[file]*.js';
+			const expected = 'path/to/\\[file\\]\\*\\.js';
+			const result = Utility.escapePathForGlob(input);
+			assert.equal(result, expected, `Expected "${expected}" but got "${result}"`);
+		});
+
+		test('no special characters', () => {
+			const input = 'path/to/file.js';
+			const expected = 'path/to/file.js';
+			const result = Utility.escapePathForGlob(input);
+			assert.equal(result, expected, `Expected "${expected}" but got "${result}"`);
+		});
+
+		test('empty string', () => {
+			const input = '';
+			const expected = '';
+			const result = Utility.escapePathForGlob(input);
+			assert.equal(result, expected, `Expected "${expected}" but got "${result}"`);
+		});
+
+		test('only special characters', () => {
+			const input = '*?[]{}()!|\\';
+			const expected = '\\*\\?\\[\\]\\{\\}\\(\\)\\!\\|\\\\';
+			const result = Utility.escapePathForGlob(input);
+			assert.equal(result, expected, `Expected "${expected}" but got "${result}"`);
+		});
+	});
 });
