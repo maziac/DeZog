@@ -335,7 +335,7 @@ suite('Settings', () => {
 				assert.strictEqual(Settings.launch.z88dkv2[0].path, "abc/\\*_\\[_\\]_\\(_\\)_\\!_\\?_/def/settings/file*.obj");
 			});
 
-			test('sjasmplus', () => {
+			test('revEng', () => {
 				const cfg: any = {
 					rootFolder: 'abc/*_[_]_(_)_!_?_/def',
 					revEng: [

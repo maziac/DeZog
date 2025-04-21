@@ -201,16 +201,16 @@ suite('LogEval', () => {
 		test('hex16', () => {
 			assert.equal(logEval.formatValue('hex16', 0xABCD), '0xABCD');
 		});
-		test('int8', () => {
+		test('int8 positive', () => {
 			assert.equal(logEval.formatValue('int8', 0xAB56), '86');
 		});
-		test('int8', () => {
+		test('int8 negative', () => {
 			assert.equal(logEval.formatValue('int8', 0xABFE), '-2');
 		});
-		test('int16', () => {
+		test('int16 positive', () => {
 			assert.equal(logEval.formatValue('int16', 0x12345), '9029');
 		});
-		test('int16', () => {
+		test('int16 negative', () => {
 			assert.equal(logEval.formatValue('int16', 0x1FFFE), '-2');
 		});
 		test('uint8', () => {

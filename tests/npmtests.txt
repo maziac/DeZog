@@ -1,0 +1,1048 @@
+6008 undefined:
+6008    RET
+
+      ✔ Self modifying code through bank border
+E100 undefined:
+E100    LD A,(MY_DATA)
+E103    LD HL,MY_DATA
+E106    RET
+
+      ✔ Label names from outside
+
+  Disassembly - DisassemblyClass
+    DisassemblyClass
+      ✔ slotsChanged
+
+  Disassembler - Format
+    getLimitedString
+      ✔ empty
+      ✔ smaller, equal
+      ✔ bigger
+      ✔ smaller than 3
+
+  Disassembler - Memory
+    ✔ Constructor
+    ✔ Set 1 memory area
+    ✔ Set 2 memory areas
+    ✔ Reading bin file
+
+  Disassembler - Opcodes
+    ✔ Check all opcode numbers
+    ✔ Check all CB opcode numbers
+    ✔ Check all DD opcode numbers
+    ✔ Check all ED opcode numbers
+    ✔ Check all FD opcode numbers
+    ✔ Check all DDCB opcode numbers
+    ✔ Check all FDCB opcode numbers
+    ✔ Opcode flags
+    ✔ NumberTypes
+    ✔ length of opcode arrays
+    ✔ length of opcodes
+    ✔ RST n
+
+  Disassembler - RenderBase
+    misc
+      ✔ getDotId
+      ✔ addControls, don't crash
+      ✔ renderLines, don't crash
+    getAllRefAddressesFor
+      ✔ AsmNode
+    adjustSvg
+      ✔ colors
+      ✔ xlink:title
+      ✔ <title>
+
+  Disassembler - RenderCallGraph
+    misc
+      ✔ nodeFormat
+
+  Disassembler - RenderHtml
+    html format functions
+      ✔ emphasizeLabel
+      ✔ emphasizeStartLabel
+      ✔ emphasizeComment
+    html format disassembly
+      ✔ start label, label and references
+      ✔ Note
+
+  Disassembler - RenderText
+    misc
+      ✔ formatAddressLabel
+      ✔ formatAddressInstruction
+      ✔ formatAddressPlusText
+    render data
+      ✔ getDefbComment
+      ✔ getDefbLine
+      ✔ getCompleteDataLine
+      ✔ getAddressLabel
+      printData
+        ✔ no label
+        ✔ 1 label
+        ✔ 1 label, more data
+        ✔ 1 label, offset
+        ✔ 2 labels, distance = 1
+        ✔ 2 labels, distance <= 8
+        ✔ 2 labels, distance > 8
+    render code
+      renderNodes
+        ✔ empty
+        ✔ simple node
+        ✔ 1 branch
+        ✔ label
+        ✔ RST
+        ✔ RST not used
+        ✔ 2 calls, same sub
+        ✔ different order
+        ✔ self modifying label in sub
+        ✔ self modifying label at sub
+        ✔ self modifying label wo sub
+        ✔ referencing data
+        ✔ code and data, no reference
+        ✔ code and data
+        ✔ Hex and label / bank boundaries
+      renderForDepth
+        ✔ recursive
+        ✔ partly the same
+        ✔ self mod in other call
+        ✔ depth = 1, self mod in call
+        ✔ depth = 2, self mod in call
+        depths
+          ✔ depth = 0
+          ✔ depth = 1
+          ✔ depth = 2
+          ✔ depth = 3
+          ✔ depth = 4, (max is 3)
+          ✔ depth = 3, different call order
+      1000 nodes
+        ✔ start at 0x0000 (198ms)
+        ✔ start at 0x8000 (0x0000) (189ms)
+      Boundary: 0xFFFF -> 0x0000
+        ✔ last address RST
+      Strange disassemblies
+        ✔ jump into opcode
+        ✔ jump into opcode 2
+        ✔ jp to unassigned
+        depend on order
+          ✔ RST first
+          ✔ call after RST first
+          ✔ loop
+    Special Commands
+      ✔ SKIP
+      ✔ SKIPWORD
+      ✔ CODE
+    local labels
+      ✔ jr into prev sub
+
+  Labels (WPMEM, ASSERTION, LOGPOINT)
+    ✔ WPMEM
+    ✔ ASSERTION
+    ✔ LOGPOINT
+
+  Labels
+    Files/lines vs list file
+      z80asm
+        ✔ getFileAndLineForAddress
+        ✔ getAddrForFileAndLine
+        ✔ get label values from list file
+        ✔ get labels for a value from list file
+    List files
+      z80asm
+        ✔ z80asm.list
+        ✔ rom.list
+      z88dk
+        ✔ z88dk.lis
+        ✔ z88dk map file (currah)
+    Misc
+      calculateLabelDistances
+        ✔ 64k addresses
+        ✔ long addresses
+    LabelParserBase: checkMappingToTargetMemoryModel
+      ✔ Target: MemoryModelUnknown
+      ✔ Target: MemoryModelAllRam
+      ✔ Target: MemoryModelZX81_1k
+      ✔ Target: MemoryModelZX81_2k
+      ✔ Target: MemoryModelZX81_16k
+      ✔ Target: MemoryModelZX81_32k
+      ✔ Target: MemoryModelZX81_48k
+      ✔ Target: MemoryModelZX81_56k
+      ✔ Target: MemoryModelZx16k
+      ✔ Target: MemoryModelZx48k
+      ✔ Target: MemoryModelZx128k
+      ✔ Target: MemoryModelZxNextOneROM
+      ✔ Target: MemoryModelZxNextTwoRom
+
+  Labels (revEng)
+    ✔ Occurrence of WPMEM, ASSERTION, LOGPOINT
+    Labels
+      ✔ labels equ
+      ✔ labels location
+      ✔ local labels
+      ✔ address -> file/line
+      ✔ file/line -> address
+      ✔ glob path expression: *.list
+    Warnings
+      ✔ expression wrong in equ
+      ✔ line ignored
+      ✔ no warning
+      ✔ same label used twice
+      ✔ same label used twice (local)
+    bank mapping
+      shortName parsing
+        ✔ correct parsing
+        ✔ errors during parsing
+      checkMappingToTargetMemoryModel
+        ✔ Target: MemoryModelUnknown
+        ✔ Target: MemoryModelAll
+        ✔ Target: MemoryModelZx48k
+        ✔ Target: MemoryModelZx128k
+        ✔ Target: MemoryModelZxNextTwoRom
+        ✔ Target: MemoryModelZxNextOneROM
+        ✔ Target: custom MemoryModel
+    Special Commands
+      ✔ upper/lower case
+      ✔ SKIP
+      ✔ SKIPWORD
+      ✔ CODE
+    Comments
+      ✔ multiline comments
+
+  Labels (sjasmplus)
+    ✔ Occurrence of WPMEM, ASSERTION, LOGPOINT
+    Labels
+      ✔ Labels
+      ✔ IF 0 Labels
+      Sources-Mode
+        ✔ Labels location
+        ✔ address -> file/line
+        ✔ file/line -> address
+        ✔ glob path expression: *.sld
+    Self modifying code
+      ✔ Start addresses found
+      ✔ Address ranges (after start address) found
+    checkMappingToTargetMemoryModel
+      sjasmplus: unsupported
+        ✔ sourceMemoryModel
+      sjasmplus: NONE
+        ✔ sourceMemoryModel
+      sjasmplus: NOSLOT64K
+        ✔ sourceMemoryModel
+        ✔ Target: MemoryModelUnknown
+        ✔ Target: MemoryModelAll
+        ✔ Target: MemoryModelZx48k
+        ✔ Target: MemoryModelZx128k
+        ✔ Target: MemoryModelZxNextOneROM
+        ✔ Target: MemoryModelZxNextTwoRom
+        ✔ Target: MemoryModelCustom
+      sjasmplus: ZX48K
+        ✔ sourceMemoryModel
+        ✔ Target: MemoryModelUnknown
+        ✔ Target: MemoryModelAll
+        ✔ Target: MemoryModelZx48k
+        ✔ Target: MemoryModelZx128k
+        ✔ Target: MemoryModelZxNextOneROM
+        ✔ Target: MemoryModelZxNextTwoRom
+        ✔ Target: MemoryModelCustom
+      sjasmplus: ZX128K
+        ✔ sourceMemoryModel
+        ✔ Target: MemoryModelUnknown
+        ✔ Target: MemoryModelAll
+        ✔ Target: MemoryModelZx48k
+        ✔ Target: MemoryModelZx128k
+        ✔ Target: MemoryModelZxNextOneROM
+        ✔ Target: MemoryModelZxNextTwoRom
+        ✔ Target: MemoryModelCustom
+      sjasmplus: ZXNEXT
+        ✔ sourceMemoryModel
+        ✔ Target: MemoryModelUnknown
+        ✔ Target: MemoryModelAll
+        ✔ Target: MemoryModelZx48k
+        ✔ Target: MemoryModelZx128k
+        ✔ Target: MemoryModelZxNextOneROM
+        ✔ Target: MemoryModelZxNextTwoRom
+        ✔ Target: MemoryModelCustom
+
+  Labels (z80asm)
+    Labels
+      ✔ Labels
+      ✔ IF 0 Labels
+      ✔ Occurrence of WPMEM, ASSERTION, LOGPOINT
+      ListFile-Mode
+        ✔ Labels location
+        ✔ address -> file/line
+        ✔ file/line -> address
+      Sources-Mode
+        ✔ Labels location
+        ✔ address -> file/line
+        ✔ file/line -> address
+        ✔ glob path expression: *.list
+      checkMappingToTargetMemoryModel
+        ✔ createLongAddress MemoryModelZxNextOneROM
+        ✔ createLongAddress MemoryModelZxNextTwoRom
+
+  Labels (z88dk)
+    ✔ Occurrence of WPMEM, ASSERTION, LOGPOINT
+    Labels
+      ✔ Labels (with map)
+      ✔ Labels equ
+      ✔ IF 0 Labels
+      ListFile-Mode
+        ✔ Labels location
+        ✔ address -> file/line
+        ✔ file/line -> address
+      Sources-Mode
+        ✔ Labels location
+        ✔ address -> file/line
+        ✔ file/line -> address
+        ✔ glob path expression: *.lis
+    checkMappingToTargetMemoryModel
+      ✔ createLongAddress MemoryModelZxNextOneROM
+      ✔ createLongAddress MemoryModelZxNextTwoRom
+
+  Labels (z88dk v2 format)
+    ✔ Occurrence of WPMEM, ASSERTION, LOGPOINT
+    Labels
+      ✔ Labels (with map)
+      ✔ Labels equ
+      ✔ IF 0 Labels
+      ListFile-Mode
+        ✔ Labels location
+        ✔ address -> file/line
+        ✔ file/line -> address
+        ✔ C-code assembly: Test.c.lis
+      Sources-Mode
+        ✔ Labels location
+        ✔ address -> file/line
+        ✔ file/line -> address
+        ✔ C-code: Test.c.lis
+        ✔ C-code: array of .lis files
+        ✔ C-code: glob path expression for list files (221ms)
+    checkMappingToTargetMemoryModel
+      ✔ createLongAddress MemoryModelZxNextOneROM
+      ✔ createLongAddress MemoryModelZxNextTwoRom
+
+  LogEval
+    ✔ constructor
+    prepareExpression
+      ✔ empty
+      ✔ b@() w@()
+      ✔ without format
+      ✔ format
+      ✔ wrong format
+      replaceLabels
+        ✔ one label
+        ✔ two labels
+      replaceHexNumbers
+        ✔ $F12A
+        ✔ F12Ah
+        ✔ 212Ah
+      replaceRegisters
+        ✔ no reg
+        ✔ all registers
+        ✔ in between
+      replaceAt
+        ✔ b@(...)
+        ✔ w@(...)
+      checkExpressionSyntax
+        correct
+          ✔ empty
+          ✔ getByte/Word
+          ✔ boolean
+        wrong
+          ✔ * * (wrong syntax)
+    formatValue
+      ✔ string
+      ✔ hex8
+      ✔ hex16
+      ✔ int8
+      ✔ int8
+      ✔ int16
+      ✔ int16
+      ✔ uint8
+      ✔ uint16
+      ✔ bits
+    evaluate
+      ✔ without expression
+      ✔ getByte/getWord
+      registers
+        ✔ simple
+        ✔ more complex
+      format
+        ✔ string
+        ✔ boolean
+        ✔ hex8
+
+  LogEvalBasicZx81
+    setLogPoints
+      ✔ BASIC group not yet exists
+      ✔ BASIC group exists
+    evaluate
+      ✔ pc not hit
+      ✔ bp BASIC line hit
+      ✔ bp vars hit
+    evaluateLine
+      ✔ wrong HL
+      ✔ 260 LET N=5
+    extractVarNames
+      ✔ LET N=5
+      ✔ LET N=MAB+1
+      ✔ LET N$=MAB$
+      ✔ LET N(5)=M
+      ✔ REM N=5
+      ✔ quoted, PRINT "SRC";B;"C";D;"E"
+    evaluateVars
+      ✔ undefined
+      ✔ A,B
+
+  MameRemote
+    ✔ checkTmpBreakpoints
+    Z80RegistersMameDecoder
+      ✔ All registers
+    gdbstub
+      ✔ checksum
+      ✔ parseXml
+      ✔ parseStopReplyPacket
+
+  MemoryDump
+    1 block
+      ✔ block creation
+      ✔ 1 block A
+      ✔ 1 block B
+      ✔ 1 block C
+      ✔ 1 block D
+      ✔ 1 block E
+      ✔ 1 block F
+      ✔ 1 block G
+    2 blocks
+      ✔ far away
+      ✔ overlapping
+      ✔ overlapping reverse order
+      ✔ included
+      ✔ blocks right after the other at boundary
+      ✔ blocks right after the other not at boundary
+      ✔ connected blocks with space
+    3 blocks
+      ✔ merge first 2 if inserting as 3rd block
+      ✔ merge all 3 after inserting 3rd block
+    isInRange
+      ✔ range 1 block
+      ✔ range 2 blocks
+    searching
+      parseSearchInput
+        wrong input, exceptions
+          ✔ too big
+          ✔ string problems
+          ✔ multiple items
+        1 item
+          ✔ decimal
+          ✔ hex h
+          ✔ hex $
+          ✔ hex 0x
+          string
+            ✔ Empty
+            ✔ 1 char
+            ✔ multiple char
+            ✔ escaped "
+        multiple items
+          ✔ numbers
+          ✔ strings
+          ✔ strange but allowed
+          ✔ mixed
+      search
+        ✔ wrong input, found addresses undefined
+        ✔ no findings
+        ✔ no input
+        ✔ 1 finding
+        ✔ overlapping findings
+        ✔ 2 findings
+        ✔ 2 blocks, 2 findings
+        ✔ case sensitive/insensitive
+        ✔ zero-terminated
+        ✔ test all byte values
+        ✔ diff, no finding
+        ✔ diff, 2 numbers, not invalid
+        ✔ diff, 1 finding
+        ✔ diff, 2 findings
+      searchDiff
+        ✔ 1 diff value
+        ✔ 2 diff values
+        ✔ 3 diff values
+        ✔ overlapping
+        ✔ max diff value
+      getChangedValues
+        ✔ no change
+        ✔ 1 change
+        ✔ 2 changes
+        ✔ 3 changes
+    clone
+      ✔ metaBlock empty
+      ✔ 1 metaBlock
+      ✔ 2 metaBlocks
+      ✔ metaBlock and data
+    getDiffMemDump
+      ✔ empty
+      ✔ no difference
+      ✔ 1 difference
+      ✔ difference at start
+      ✔ difference at end
+      ✔ more differences
+      ✔ 3 meta blocks
+      ✔ meta blocks borders
+      ✔ criteria 'no check'
+      ✔ criteria number
+
+  MemoryModel
+    createBankName
+      ✔ normal usage
+      ✔ evaluate
+    createBankShortName
+      ✔ normal usage
+      ✔ evaluate
+    slot ranges
+      ✔ empty slot range
+      ✔ 1 slot range
+      ✔ 3 slot ranges
+    slot banks
+      ✔ empty slot range
+      ✔ A few banks
+      ✔ Mixed
+    slot/address association
+      ✔ assigned and unassigned
+    banks
+      ✔ 2 banks
+      ✔ 2 banks, default names
+      ✔ initialBank
+      ✔ bank size
+      ✔ same bank, 2 sizes
+      ✔ same bank, 2 different names
+      ✔ same bank, 2 different short names
+      ✔ short names, unused
+      ✔ different banks, same names
+      ✔ different banks, same short names
+      ✔ bank range
+    errors
+      ✔ Range-start lower or equal than last range-end
+      ✔ Range-end lower than range-start.
+      ✔ No banks specified for range.
+      ✔ Bank index < 0.
+      ✔ Bank index too high.
+      ✔ Bank range: first index bigger than last index.
+    predefined memory models
+      ✔ ZX16K
+      ✔ ZX48K
+      ✔ ZX128K
+      ✔ ZXNEXT (MemoryModelZxNextOneROM)
+      ✔ ZXNEXT (MemoryModelZxNextTwoRom)
+      ✔ COLECOVISION
+    long address and slot calculations
+      ✔ ZX16K
+      ✔ ZX48K
+      ✔ ZX128K
+      ✔ ZXNEXT (MemoryModelZxNextOneROM)
+      ✔ ZXNEXT (MemoryModelZxNextTwoRom)
+    parse
+      ✔ empty slot range
+      ✔ different banks
+      ✔ no switched banks
+      ✔ errors
+
+  Mutex
+    lock/unlock
+      ✔ normal: 1
+      ✔ 2 locks
+      ✔ 2 uses
+    timeout
+      ✔ unlock not called (40ms)
+      ✔ exception in the other lock
+
+  NexFile related
+    ✔ NexFile - all used values
+    ✔ DzrpRemote - loadBinNex
+
+  RefList
+    ✔ no ref
+    ✔ 1 var
+    ✔ 2 vars
+    ✔ clear
+
+  RemoteBase
+    WPMEM, ASSERTION, LOGPOINT
+      ✔ WPMEM
+      ✔ ASSERTION
+      ✔ LOGPOINT
+    calcStepBp
+      ✔ RET
+      ✔ RET cc
+      ✔ Unconditional branches (JP, JR)
+      ✔ Conditional branch JP cc
+      ✔ Conditional branch JR cc
+      ✔ Conditional branch DJNZ
+      ✔ JP (HL)
+      ✔ JP (IX)
+      ✔ JP (IY)
+      ✔ LDIR/LDDR
+      ✔ CPIR/CPDR
+      ✔ HALT
+      stepOver
+        ✔ CALL (cc) and step over
+        ✔ RST (except 08) and step over
+        ✔ RST 08 and step over
+        ✔ Modified RST 08 and step over
+        ✔ Modified RST (except 08) and step over
+      stepInto
+        ✔ CALL (cc) and step into
+        ✔ RST (except 08) and step into
+        ✔ RST 08 and step into
+        ✔ Modified RST 08 and step into
+
+  Settings
+    CheckSettings
+      ✔ remoteType none
+      ✔ remoteType=zesarux
+      ✔ remoteType=zsim
+      ✔ Default
+      ✔ No rootFolder
+      ✔ listFiles 1
+      ✔ listFiles 2
+      ✔ load 1
+      ✔ load 2
+      ✔ load and execAddress
+      ✔ loadObj 1
+      ✔ loadObj 2
+      ✔ loadObj start
+      remoteType=zxnext
+        ✔ empty
+        ✔ serial
+        ✔ hostname obsolete
+        ✔ port obsolete
+        ✔ socketTimeout obsolete
+    Init
+      paths escaped for globbing
+        ✔ sjasmplus
+        ✔ z80asm
+        ✔ z88dk
+        ✔ z88dkv2
+        ✔ revEng
+
+  Disassembly - SimpleDisassembly
+    SimpleDisassembly
+      getDataDissassembly(false)
+        ✔ empty
+        ✔ 1 byte
+        ✔ multiple lines
+        ✔ address overflow lines
+      getDataDissassembly(true)
+        ✔ empty
+        ✔ 1 byte
+        ✔ multiple lines
+      getInstructionDisassembly
+        ✔ empty
+        ✔ 1 line
+        ✔ 2 lines
+
+  SimulatedMemory
+    ✔ serialize/deserialize
+    ✔ writeBlock/readBlock
+    ✔ getMemory
+    rom file
+      ✔ read raw ROM file
+      ✔ readIntelHexFromFile
+      ✔ read bank from ROM file
+      ✔ read bank from ROM file with offset
+    check ioMmu
+      ✔ no ioMmu
+      ✔ correct ioMmu
+      ✔ wrong ioMmu (direct)
+      ✔ wrong ioMmu (inside)
+      ✔ correct indexed slot (64ms)
+    checkSlots
+      ✔ correct bank
+      ✔ wrong bank
+      ✔ wrong bank for slot
+
+  Utility
+    ✔ parseHexWordLE
+    ✔ getHexWordStringLE
+    calculateTabSize
+      ✔ no tabs
+      ✔ 1 tab
+      ✔ tab all formats, size 1
+      ✔ tab all formats, size 2
+      ✔ tab name, label format
+      ✔ start with tab
+      ✔ end with tab
+      ✔ double tab
+    numberFormattedBy
+      formats
+        ✔ formats, size 1
+        ✔ formats, size 2
+        ✔ formats, size 2 negative
+      tabs
+        ✔ no tabs
+        ✔ general
+        ✔ use tab array 1
+        ✔ wrong predefined array
+        ✔ special test 1
+        ✔ special test 2
+    parseValue
+      ✔ decimal
+      ✔ decimal negative
+      ✔ 0x, hex value
+      ✔ 0x0000, hex value
+      ✔ 0x, invalid negative input 1
+      ✔ 0x, invalid negative input 2
+      ✔ $, hex value
+      ✔ h, hex value
+      ✔ H uppercase
+      ✔ b, bit value
+      ✔ _, status flags
+      ✔ invalid input 1
+      ✔ invalid input 2
+      ✔ invalid input 3
+      ✔ invalid input 4
+    exprContainsMainRegisters
+      ✔ standard
+      ✔ upper case
+      ✔ no reg
+      ✔ embedded
+    replaceVarsWithValues
+      ✔ No labels, no registers
+      ✔ Register calculations
+      ✔ Labels
+      no breaks
+        ✔ 3a
+        ✔ boolean
+        ✔ 0x Hex
+        ✔ h Hex
+        ✔ word wo '
+        ✔ word with '
+        ✔ digit
+      Calculations
+        ✔ Addition
+        ✔ Subtraction
+        ✔ Multiplication
+        ✔ Division
+        ✔ mixed
+      Registers
+        ✔ Capital Letters
+        ✔ Lowercase Letters
+    evalExpression
+      ✔ plus
+      ✔ shift <<
+      ✔ shift >>>
+      breakpoints
+        ✔ simple
+        ✔ register SP
+        ✔ All registers
+        ✔ memory (exception)
+    evalLogString
+      ✔ Register
+      ✔ Error
+      ✔ Memory
+      ✔ Register relative memory
+      ✔ Label
+    getUintFromMemory
+      little endian
+        ✔ byte
+        ✔ word
+        ✔ count = 5
+      big endian
+        ✔ byte
+        ✔ word
+        ✔ count = 5
+    convertHexNumber
+      ✔ number
+      ✔ string
+    getRelFilePath
+      unix
+        ✔ rootpath part of file path
+        ✔ ..
+      windows
+        ✔ rootpath part of file path
+        ✔ ..
+        ✔ mixed drive letters
+    hjoin
+      ✔ empty
+      ✔ 1
+      ✔ 1 or 2
+      ✔ 1; 2 or 3
+      ✔ 1; 2; 3 or 4
+      ✔ default
+    escapePathForGlob
+      ✔ escape special characters
+      ✔ no special characters
+      ✔ empty string
+      ✔ only special characters
+
+  Z80Cpu
+    Serialization
+      ✔ serialize/deserialize
+    instructions
+      IN/OUT
+        ✔ INI
+        ✔ IND
+        ✔ OUTI
+        ✔ OUTD
+      Z80N instructions
+        ✔ LDIX
+        ✔ LDWS
+        ✔ LDIRX
+        ✔ LDDX
+        ✔ LDDRX
+        ✔ LDPIRX
+        ✔ OUTINB
+        ✔ MUL D,E
+        ✔ ADD HL,A
+        ✔ ADD DE,A
+        ✔ ADD BC,A
+        ✔ ADD HL,nn
+        ✔ ADD DE,nn
+        ✔ ADD BC,nn
+        ✔ SWAPNIB
+        ✔ MIRROR
+        ✔ PUSH nn
+        ✔ NEXTREG r,n
+        ✔ NEXTREG r,A
+        ✔ PIXELDN
+        ✔ PIXELAD
+        ✔ SETAE
+        ✔ TEST n
+        ✔ BSLA DE,B
+        ✔ BSRA DE,B
+        ✔ BSRL DE,B
+        ✔ BSRF DE,B
+        ✔ BRLC DE,B
+        ✔ JP (C)
+
+  Z80Ports
+    registerGenericOutPortFunction
+      ✔ write to any port
+    registerGenericInPortFunction
+      ✔ read default
+      ✔ read from any port
+      ✔ AND several ports (default 0x00, open collector)
+      ✔ OR several ports (default 0x00, no open collector)
+    registerSpecificOutPortFunction
+      ✔ write specific port
+      ✔ hidden by generic port
+    registerSpecificInPortFunction
+      ✔ read specific port
+      ✔ specific plus generic port
+
+  Z80Registers
+    Conditions & Flags
+      ✔ isCcMetByFlag NZ,Z
+      ✔ isCcMetByFlag NC,C
+      ✔ isCcMetByFlag PO,PE
+      ✔ isCcMetByFlag P,M
+
+  ZesaruxCpuHistory
+    disassemble
+      ✔ getPushedValue
+      ✔ calcDirectSpChanges
+      ✔ getOpcodes
+      ✔ getInstruction 1-4 bytes
+      ✔ getInstruction RST
+      ✔ getInstruction CALL cc
+      ✔ getInstruction RET, RETI, RETN
+      ✔ getInstruction RET cc
+    isCallOpcode
+      ✔ is CALL
+      ✔ is CALL cc
+      ✔ is not CALL
+    isRstOpcode
+      ✔ is RST
+      ✔ is not RST
+    isRetCallRst
+      ✔ isRst
+      isRetAndExecuted
+        ✔ isRetAndExecuted unconditional
+        ✔ isRetAndExecuted NZ,Z
+        ✔ isRetAndExecuted NC,C
+        ✔ isRetAndExecuted PO,PE
+        ✔ isRetAndExecuted P,M
+      isCallAndExecuted
+        ✔ isCallAndExecuted unconditional
+        ✔ isCallAndExecuted NZ,Z
+        ✔ isCallAndExecuted NC,C
+        ✔ isCallAndExecuted PO,PE
+        ✔ isCallAndExecuted P,M
+    handleReverseDebugStackBack
+      ✔ simple step back first history instruction
+      ✔ simple step back inside history
+      ✔ step back PUSH
+      ✔ step back POP
+      ✔ step back CALL
+      ✔ step back RST
+      ✔ step back RET
+      ✔ step back from isr
+      ✔ step back from isr to PUSH instruction
+      ✔ step back from isr to POP instruction
+      ✔ step back from isr to RET instruction
+      ✔ step back into isr
+      ✔ Unallowed RET
+      ✔ LD SP bigger
+      ✔ LD SP smaller
+    handleReverseDebugStackForward
+      ✔ simple step forward inside history
+      ✔ step forward POP
+      ✔ step forward PUSH
+      ✔ step forward RET
+      ✔ step forward CALL
+      ✔ step forward RST
+      ✔ step forward from isr ret
+      ✔ step forward from PUSH to isr
+      ✔ step forward from CALL to isr
+      ✔ step forward from RST to isr
+      ✔ step back from POP to isr
+      ✔ step forward from RET to isr
+      ✔ step forward into isr
+      ✔ LD SP smaller
+      ✔ LD SP bigger
+
+  ZSimRemote
+    48k
+      ✔ Check ROM
+      ✔ ula bank
+    memoryPagingControl, ZX128K
+      ✔ Check ROM 0 / 1
+      ✔ bank switching
+      ✔ ula switching
+      ✔ paging disable
+    tbblue
+      REG_TURBO_MODE
+        ✔ set / get
+        ✔ zxBeeper
+        ✔ T-States
+    tbblueMemoryManagementSlots
+      ✔ bank switching RAM
+      ✔ bank switching ROM
+    COLECOVISION
+      ✔ Check Memory Model
+
+  Zx81BasicVars
+    ✔ getAllVariablesWithValues
+    ✔ getVariableValues
+    parseBasicVars
+      ✔ 0b0110_0000 One letter number
+      ✔ 0b1110_0000 Variable in FOR-NEXT loop
+      ✔ 2 numbers
+      ✔ 0b1010_0000 Multi-character number
+      ✔ 0b1000_0000 Array of numbers
+      ✔ 0b0100_0000 String
+      ✔ 0b1100_0000 Array of chars
+
+  Zx81UlaScreen
+    ✔ constructor
+    ✔ outPort handles NMI generator off
+    ✔ outPort handles NMI generator on
+    ✔ inPort partial decoding
+    ✔ serialize/deserialize
+    ulaM1Read8
+      ✔ returns NOP for addresses above 32k with bit 6 low
+      ✔ returns original value for other addresses
+    execute
+      NMION
+        ✔ IOWR
+        ✔ IORD
+      HSYNC
+        ✔ prevVSYNC
+        ✔ HSYNC change
+        ✔ act on HSYNC change
+      NMI
+        ✔ interrupt called
+        ✔ "wait circuit"
+      VSYNC
+        ✔ reset ulLineCounter
+        ✔ act on VSYNC change
+      noDisplay
+        ✔ not set
+        ✔ set
+    getUlaScreen
+      ✔ getUlaScreen returns no dfile if no display
+      ✔ getUlaScreen returns dfile content if display is available
+    chroma81
+      getUlaScreen
+        ✔ returns no chroma81
+        ✔ returns chroma81
+
+  Zx81UlaScreenHiRes
+    ✔ constructor
+    ✔ resetVideoBuffer
+    ✔ isLineVisible
+    ✔ serialize/deserialize
+    ulaM1Read8
+      ✔ returns NOP for addresses above 32k with bit 6 low
+      ✔ returns original value for other addresses
+      ✔ line invisible
+      ✔ line visible
+      ✔ standard graphics
+      ✔ arx
+      ✔ wrx
+    getUlaScreen
+      ✔ getUlaScreen no display
+      ✔ getUlaScreen return data
+    chroma81
+      getUlaScreen
+        ✔ returns no colorData
+        ✔ returns colorData
+
+  ZxAudioBeeper
+    ✔ constructor
+    writeBeeperSamples
+      ✔ basics
+      ✔ startValue
+
+  ZxBeeper
+    ✔ constructor
+    ✔ setCpuFrequency
+    setLastBeeperValue
+      ✔ Add samples
+      ✔ max buffer size
+    writeBeeper
+      ✔ write samples
+      ✔ different values, same sample
+      ✔ different values, same sample, at start
+    getBeeperBuffer
+      ✔ no value
+      ✔ one value
+      ✔ no remaining samples, max
+      ✔ reset index, set lastBeeperTstates
+
+  ZxnDma
+    general
+      ✔ constructor
+    writeWR0
+      ✔ transferDirectionPortAtoB
+      ✔ full sequence
+      ✔ parts
+    writeWR1
+      ✔ decode
+      ✔ full sequence
+    writeWR2
+      ✔ decode
+      ✔ full sequence
+    writeWR3
+      ✔ DMA Enable
+    writeWR4
+      ✔ mode
+      ✔ full sequence
+      ✔ parts
+    writeWR5
+      ✔ Auto Restart
+    writeWR6
+      ✔ call right methods
+      ✔ set read mask
+    readPort
+      ✔ all
+      ✔ single reads
+      ✔ reinitialize status byte
+      ✔ unallowed bit (mask = 0x80)
+      ✔ mask = 0
+    serialization
+      ✔ serialize - deserialize
+      ✔ store and continue
+
+
+  888 passing (3s)
+
+bob@Mac-mini-M2-2 DeZog %
