@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.6.1
+- Fixed globbing and paths with special characters.
+
 # 3.6.0
 - PR140: Basic z88dk c support - Breakpoints and stepping through c files (thanks to vmorilla)
 - Globbing enabled for all label parsers. I.e. now you could use `"z88dkv2": [{"path": "src/**/*.lis"}]` in launch.json.
