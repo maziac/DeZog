@@ -467,6 +467,9 @@ Your custom code (and the UI) is stimulated the same way as if the Z80 CPU would
 Save states will not work for the custom javascript code.
 I.e. save/restore state will work but no state of the custom code is saved/restored.
 
+Note: When dragging the simulator in vscode to outside so it becomes a floating window, all the UI is re-initialized.
+I.e. it will use it's current state. E.g. if a button was highlighted it is deselected afterwards.
+Otherwise the logic is still functioning.
 
 # Unit tests
 
