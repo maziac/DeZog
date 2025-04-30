@@ -523,6 +523,10 @@ export class ZSimRemote extends DzrpRemote {
 				this.customCode.setTstates(this.passedTstates);
 				this.customCode.writePort(port, value);
 			});
+			// Register on interrupt event
+			this.customCode.on('interrupt', (non_maskable: boolean, data: number) => {
+				this.z80Cpu.interrupt(non_maskable, data);
+			});
 			this.serializeObjects.push(this.customCode);
 		}
 	}
