@@ -99,6 +99,7 @@ export class ZSimRemote extends DzrpRemote {
 
 	// Is set/reset by the ZSimulatorView to request processing time.
 	protected timeoutRequest: boolean;
+	protected breakTimeoutRequest: boolean;	// Similar, but required to overcome dead lock for re-init (floating window) situations
 
 	// ZX Beeper simulation
 	public zxBeeper: ZxBeeper;
@@ -146,6 +147,7 @@ export class ZSimRemote extends DzrpRemote {
 		this.supportsBreakOnInterrupt = true;
 
 		this.timeoutRequest = false;
+		this.breakTimeoutRequest = false;
 		this.previouslyStoredPCHistory = -1;
 		this.tbblueRegisterSelectValue = 0;
 		this.tbblueRegisterWriteHandler = new Map<number, (value: number) => void>();
@@ -172,11 +174,16 @@ export class ZSimRemote extends DzrpRemote {
 	}
 
 
-	/**
-	 * Is set/reset by the ZSimulatorView to request processing time.
+	/** Is set/reset by the ZSimulatorView to request processing time.
 	 */
 	public setTimeoutRequest(on: boolean) {
 		this.timeoutRequest = on;
+	}
+
+	/** Is set by the ZSimulatorView when a (re-)init happened.
+	 */
+	public setBreakTimeoutRequest() {
+		this.breakTimeoutRequest = true;
 	}
 
 
@@ -915,10 +922,12 @@ export class ZSimRemote extends DzrpRemote {
 
 			// Check if additional time is required for the webview.
 			// Mainly required for custom code.
-			while (this.timeoutRequest) {
+			while (this.timeoutRequest && !this.breakTimeoutRequest) {
 				// timeoutRequest will be set by the ZSimulatorView.
 				await Utility.timeout(100);
 			}
+			this.timeoutRequest = false;
+			this.breakTimeoutRequest = false;
 
 			// Check if meanwhile a manual break happened
 			if (this.stopCpu) {
