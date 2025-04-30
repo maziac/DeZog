@@ -231,6 +231,7 @@ export class ZSimulationView extends BaseView {
 					this.resolveLoaded();
 					this.resolveLoaded = undefined as any;
 				}
+				this.simulator.setTimeoutRequest(false);
 				break;
 
 			case 'warning': {
