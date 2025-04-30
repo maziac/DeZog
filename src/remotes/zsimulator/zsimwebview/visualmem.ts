@@ -30,25 +30,27 @@ export class VisualMem {
 	 */
 	public static drawVisualMemory(visualMem: Uint8Array) {
 		// Get canvas drawing context
-		const ctx = this.visualMemCanvas.getContext("2d")!;
-		const len = visualMem.length;
-		const imgData = ctx.createImageData(len, 1);
-		const pixels = imgData.data;
+		if(this.visualMemCanvas) {
+			const ctx = this.visualMemCanvas.getContext("2d")!;
+			const len = visualMem.length;
+			const imgData = ctx.createImageData(len, 1);
+			const pixels = imgData.data;
 
-		let pixelIndex = 0;
-		for (let i = 0; i < len; i++) {
-			const value = visualMem[i];
-			let colorIndex = 4 * value;
-			pixels[pixelIndex++] = this.palette[colorIndex++];	// red
-			pixels[pixelIndex++] = this.palette[colorIndex++];	// green
-			pixels[pixelIndex++] = this.palette[colorIndex++];	// blue
-			pixels[pixelIndex++] = this.palette[colorIndex];	// alpha
+			let pixelIndex = 0;
+			for (let i = 0; i < len; i++) {
+				const value = visualMem[i];
+				let colorIndex = 4 * value;
+				pixels[pixelIndex++] = this.palette[colorIndex++];	// red
+				pixels[pixelIndex++] = this.palette[colorIndex++];	// green
+				pixels[pixelIndex++] = this.palette[colorIndex++];	// blue
+				pixels[pixelIndex++] = this.palette[colorIndex];	// alpha
+			}
+
+			// Write image
+			this.visualMemCanvas.width = len;
+			this.visualMemCanvas.height = 1;
+			ctx.putImageData(imgData, 0, 0);
 		}
-
-		// Write image
-		this.visualMemCanvas.width = len;
-		this.visualMemCanvas.height = 1;
-		ctx.putImageData(imgData, 0, 0);
 	}
 }
 

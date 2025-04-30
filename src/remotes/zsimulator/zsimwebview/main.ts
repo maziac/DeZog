@@ -97,7 +97,7 @@ window.addEventListener('message', event => {// NOSONAR
 		case 'updateScreen':
 			// Update the screen
 			const ulaData = message.ulaData;
-			if (ulaData) {
+			if (ulaData && ulaDraw) {
 				ulaDraw.drawUlaScreen(ulaData);
 			}
 			break;
