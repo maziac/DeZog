@@ -17,7 +17,7 @@ let cpuLoad: HTMLLabelElement
 
 
 // For flow control.
-let countOfProcessedMessages = 0;
+let countOfProcessedMessages: number;
 
 // Message water marks.
 // @ts-ignore
@@ -629,6 +629,10 @@ function keyup(e) {
 
 // Handle initial load.
 window.addEventListener('load', () => {
+	if(countOfProcessedMessages === undefined) {
+		// Initialize here only once so that the value is retained, even if view is restarted.
+		countOfProcessedMessages = 0; 
+	}
 	// Inform vscode that page was loaded.
 	vscode.postMessage({
 		command: 'loaded'

@@ -56,7 +56,7 @@ export class ZSimulationView extends BaseView {
 	// Used to check for changes.
 	protected previousTstates: number;
 
-	// Used to determine when the web view ahs been loaded.
+	// Used to determine when the web view has been loaded.
 	protected resolveLoaded: () => void;
 
 	// To create human readable numbers.
@@ -120,8 +120,7 @@ export class ZSimulationView extends BaseView {
 		this.setHtml();
 		// Wait until it is loaded
 		await this.waitOnViewLoaded();
-		// Send the initialization request.
-		this.sendInit();
+
 		// Inform custom code that UI is ready.
 		this.simulator.customCode?.uiReady();
 
@@ -221,11 +220,17 @@ export class ZSimulationView extends BaseView {
 	 * @param message The message. message.command contains the command as a string. E.g. 'keyChanged'
 	 */
 	protected async webViewMessageReceived(message: any) {
+		//console.log("webViewMessageReceived: " + message.command);
 		switch (message.command) {
 			case 'loaded':
-				// DOM (webpage) has been completely loaded.
-				this.resolveLoaded();
-				this.resolveLoaded = undefined as any;
+				this.sendInit();
+				this.updateScreen();
+				this.updateDisplay();
+				// Inform caller the first time
+				if (this.resolveLoaded) {
+					this.resolveLoaded();
+					this.resolveLoaded = undefined as any;
+				}
 				break;
 
 			case 'warning': {
@@ -287,7 +292,7 @@ export class ZSimulationView extends BaseView {
 				// For balancing the number of processed messages (since last time) is provided.;
 				this.countOfOutstandingMessages -= message.value;
 				Utility.assert(this.countOfOutstandingMessages >= 0);
-				// For balancing: Remove request for procesing time
+				// For balancing: Remove request for processing time
 				if (this.countOfOutstandingMessages <= ZSimulationView.MESSAGE_LOW_WATERMARK) {
 					this.simulator.setTimeoutRequest(false);
 				}

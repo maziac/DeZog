@@ -127,6 +127,9 @@ export class BaseView extends EventEmitter {
 
 		// Create vscode panel view
 		this.vscodePanel = vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true, enableFindWidget: enableGenericFindWidget, retainContextWhenHidden: true});
+		// Note: retainContextWhenHidden: true seems to contribute to the warning:
+		// "Found unexpected service worker controller. Waiting for controllerchange."
+		// But the warning seems harmless.
 
 		// Handle messages from the webview
 		this.vscodePanel.webview.onDidReceiveMessage(async message => {
