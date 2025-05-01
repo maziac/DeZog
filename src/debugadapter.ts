@@ -1860,22 +1860,25 @@ export class DebugSessionClass extends DebugSession {
 				breakReasonString = await Remote.stepOut();
 			}
 
-			// Print break reason
-			if (breakReasonString) {
-				// Output a possible problem (end of log reached)
-				this.debugConsoleIndentedText(breakReasonString);
-				// Show break reason
-				this.decorateBreak(breakReasonString);
-			}
+			// Check remote (The Remote could have been terminated meanwhile)
+			if (Remote) {
+				// Print break reason
+				if (breakReasonString) {
+					// Output a possible problem (end of log reached)
+					this.debugConsoleIndentedText(breakReasonString);
+					// Show break reason
+					this.decorateBreak(breakReasonString);
+				}
 
-			if (!stepBackMode) {
-				// Display info
-				await this.endStepInfo();
-			}
+				if (!stepBackMode) {
+					// Display info
+					await this.endStepInfo();
+				}
 
-			// Check if in unit test mode
-			if (this.state === DbgAdapterState.UNITTEST) {
-				await Z80UnitTestRunner.dbgCheckUnitTest(breakReasonString);
+				// Check if in unit test mode
+				if (this.state === DbgAdapterState.UNITTEST) {
+					await Z80UnitTestRunner.dbgCheckUnitTest(breakReasonString);
+				}
 			}
 
 			// Send event
