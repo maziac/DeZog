@@ -1,7 +1,8 @@
 # Changelog
 
 # 3.6.1
-- Fixed globbing and paths with special characters. (Fixed error when there were special characters like brackets in the folder path.
+- Issue #147: Support for floating window.
+- Fixed globbing and paths with special characters. (Fixed error when there were special characters like brackets in the folder path.)
 - Fixed lost CustomCode generate interrupt functionality.
 - Adjusted key highlighting for zx spectrum keyboard.
 
