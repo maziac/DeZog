@@ -588,13 +588,13 @@ export class ZSimulationView extends BaseView {
 		let zxKeybImg = "48k_kbd.svg";
 		let zxKeybAspectRatio = 1378/538;
 		let zxKeybKeyWidth = 7.4;
-		let zxKeybKeyHeight = 15;
-		let zxKeybKeyMarginRight = 1.8;
+		let zxKeybKeyHeight = 14.5; //15;
+		let zxKeybKeyMarginRight = 1.825;  //1.8;
 		let zxKeybOffY = 9.5;
-		let zxKeybRowVertMargin = 10.5;
+		let zxKeybRowVertMargin = 9.35;  //10.5;
 		let zxKeybRow1OffsX = 1.3;
 		let zxKeybRow2OffsX = 6;
-		let zxKeybRow3OffsX = 8.7;
+		let zxKeybRow3OffsX = 8.825;  //8.7;
 		let zxKeybRow4OffsX = 2;
 		let zxKeybShiftStyle = 'style="width: 9.6%"';
 		let zxKeybSpaceStyle = 'style="width: 11.8%;margin-right: 0"';
@@ -641,7 +641,7 @@ export class ZSimulationView extends BaseView {
 
 			.keyboard {
 				position: relative;
-				width: 100%;
+				width: 90%;
 				aspect-ratio: ${zxKeybAspectRatio};
 				font-size: 0; /* Removes space between 2 spans */
 				background-image: url('html/images/${zxKeybImg}');
