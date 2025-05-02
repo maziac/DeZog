@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.6.2
+- Fixed cpu load and frequency for floating window.
+
 # 3.6.1
 - Issue #147: Support for floating window.
 - Fixed globbing and paths with special characters. (Fixed error when there were special characters like brackets in the folder path.)

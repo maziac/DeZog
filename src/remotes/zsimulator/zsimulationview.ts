@@ -225,7 +225,7 @@ export class ZSimulationView extends BaseView {
 			case 'loaded':
 				this.sendInit();
 				this.updateScreen();
-				this.updateDisplay();
+				this.updateDisplay(true);
 				// Inform caller the first time
 				if (this.resolveLoaded) {
 					this.resolveLoaded();
@@ -491,11 +491,12 @@ export class ZSimulationView extends BaseView {
 
 	/** Updates the webview display.
 	 * Everything but the ULA screen.
+	 * @param forceUpdate If true, the display is updated even if no CPU activity was detected.
 	 */
-	public updateDisplay() {
+	public updateDisplay(forceUpdate = false) {
 		// Check if CPU did something
 		const tStates = this.simulator.getPassedTstates();
-		if (this.previousTstates == tStates)
+		if (!forceUpdate && this.previousTstates === tStates)
 			return;
 		this.previousTstates = tStates;
 		this.restartStopTimer();
@@ -504,7 +505,7 @@ export class ZSimulationView extends BaseView {
 			let cpuFreq, cpuLoad, simulationTooSlow, slots, slotNames, visualMem, audio, zxnDMA;
 
 			// Update frequency
-			if (this.prevCpuFreq !== this.simulator.z80Cpu.cpuFreq) {
+			if (forceUpdate || this.prevCpuFreq !== this.simulator.z80Cpu.cpuFreq) {
 				this.prevCpuFreq = this.simulator.z80Cpu.cpuFreq;
 				cpuFreq = this.numberFormatter.format(this.prevCpuFreq) + 'Hz';
 			}
