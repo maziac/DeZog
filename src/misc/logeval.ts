@@ -33,6 +33,18 @@ export class LogEval {
 	protected regexMain = /\${([^}]*)}/g;
 
 
+	// Static function to compare to LogEval objects.
+	public static compare(a: LogEval | undefined, b: LogEval | undefined): boolean {
+		if (a === b)
+			return true;
+		if (a === undefined || b === undefined)
+			return false;
+		if (a.preparedExpression !== b.preparedExpression)
+			return false;
+		return true;
+	}
+
+
 	/** Constructor. */
 	constructor(expression: string, remote: RemoteBase, z80Registers: Z80RegistersClass, labels: LabelsClass) {
 		this.remote = remote;

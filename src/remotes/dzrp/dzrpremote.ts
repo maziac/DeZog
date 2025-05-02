@@ -708,9 +708,8 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * Note: normally this array contains only one entry.
 	 */
 	protected createTemporaryBreakpoints() {
-		const tmpBps = this.tmpBreakpoints;
 		// Clear
-		tmpBps.clear()
+		this.tmpBreakpoints.clear()
 		// Get all breakpoints from the enabled logpoints
 		const enabledLogPoints = this.getEnabledLogpoints();
 		// Assertion breakpoints
@@ -782,8 +781,10 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				// REMARK: If I would allow 'await evalExpression' I could also allow e.g. memory checks
 				try {
 					const evalCond = Utility.evalExpression(bp.condition, true);
-					if (evalCond != 0)
+					if (evalCond != 0) {
+						// Condition is true
 						return {condition: bp.condition, log: bp.log};
+					}
 				}
 				catch (e) {
 					// Extend message
@@ -959,22 +960,46 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 					// Emit log?
 					if (cond != undefined && log) {
+						// Check hit counter
+						let hit = true;
+						if (bp.hitCount) {
+							bp.hitCounter!++;
+							// Check if enough hits
+							hit = (bp.hitCounter! >= bp.hitCount);
+							if (hit) {
+								// Hit counter reached
+								bp.hitCounter = 0;
+							}
+						}
 						// Convert
-						//const evalLog = await Utility.evalLogString(log);
-						const evaluatedLog = await log.evaluate();
-						// Print
-						if (evaluatedLog) {
-							this.emit('debug_console', "Log: " + evaluatedLog);
+						if (hit) {
+							const evaluatedLog = await log.evaluate();
+							// Print
+							if (evaluatedLog) {
+								this.emit('debug_console', "Log: " + evaluatedLog);
+							}
 						}
 						// Don't eval condition again
 						cond = undefined;
 					}
 
 					if (cond != undefined) {
-						// At least one break condition found
-						condition = cond;
-						correctedBreakNumber = BREAK_REASON_NUMBER.BREAKPOINT_HIT;
-						//break;
+						// Check hit counter
+						let hit = true;
+						if (bp.hitCount) {
+							bp.hitCounter!++;
+							// Check if enough hits
+							hit = (bp.hitCounter! >= bp.hitCount);
+							if (hit) {
+								// Hit counter reached
+								bp.hitCounter = 0;
+							}
+						}
+						if (hit) {
+							// At least one break condition found
+							condition = cond;
+							correctedBreakNumber = BREAK_REASON_NUMBER.BREAKPOINT_HIT;
+						}
 					}
 				}
 

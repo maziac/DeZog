@@ -477,7 +477,7 @@ export class DebugSessionClass extends DebugSession {
 		// Supports log points
 		response.body.supportsLogPoints = true;
 		// Supports hit count breakpoints
-		//response.body.supportsHitConditionalBreakpoints = true;
+		response.body.supportsHitConditionalBreakpoints = true;
 
 		// Handles debug 'Restart'.
 		// If set to false the vscode restart button still occurs and
@@ -857,24 +857,39 @@ export class DebugSessionClass extends DebugSession {
 		const givenBps = args.breakpoints ?? [];
 		const bps = new Array<RemoteBreakpoint>();
 		for (const bp of givenBps) {
-			try {
-				let log;
-				if (bp.logMessage)
+			let log;
+			if (bp.logMessage) {
+				try {
 					log = new LogEval(bp.logMessage, Remote, Z80Registers, Labels);
-				const mbp: RemoteBreakpoint = {
-					bpId: 0,
-					filePath: path,
-					lineNr: this.convertClientLineToDebugger(bp.line),
-					longAddress: -1,	// not known yet
-					condition: (bp.condition) ? bp.condition : '',
-					log
-				};
-				bps.push(mbp);
+				}
+				catch (e) {
+					// Show warning
+					this.showWarning(e.message + ' in "' + bp.logMessage + '"');
+					continue;
+				}
 			}
-			catch (e) {
-				// Show error
-				this.showWarning(e.message + ' in "' + bp.logMessage + '"');
+			let hitCount: number | undefined;
+			if (bp.hitCondition) {
+				// Convert string to number
+				hitCount = Utility.parseValue(bp.hitCondition);
+				if (isNaN(hitCount)) {
+					// Show warning
+					this.showWarning(`Hit count is not a number: "${bp.hitCondition}". Line: ${bp.line}`);
+					continue;
+				}
 			}
+
+			const mbp: RemoteBreakpoint = {
+				bpId: 0,
+				filePath: path,
+				lineNr: this.convertClientLineToDebugger(bp.line),
+				longAddress: -1,	// not known yet
+				condition: (bp.condition) ? bp.condition : '',
+				log,
+				hitCount,
+				hitCounter: (hitCount === undefined) ? undefined : 0,
+			};
+			bps.push(mbp);
 		}
 
 

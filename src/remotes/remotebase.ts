@@ -528,7 +528,7 @@ export class RemoteBase extends EventEmitter {
 		if (isNaN(this.topOfStack))
 			throw Error("Cannot evaluate 'topOfStack' (" + Settings.launch.topOfStack + ").");
 		// "Correct" the value if 0
-		if (this.topOfStack == 0)
+		if (this.topOfStack === 0)
 			this.topOfStack = 0x10000;
 	}
 
@@ -612,7 +612,7 @@ export class RemoteBase extends EventEmitter {
 		let resRegs: Array<string> = [];
 		if (Z80Registers.valid()) {
 			const regs = ["HL", "DE", "IX", "IY", "SP", "BC", "HL'", "DE'", "BC'"];
-			resRegs = regs.filter(reg => value == Z80Registers.getRegValueByName(reg));
+			resRegs = regs.filter(reg => value === Z80Registers.getRegValueByName(reg));
 		}
 		return resRegs;
 	}
@@ -673,8 +673,8 @@ export class RemoteBase extends EventEmitter {
 		let callerAddr;
 		// Check for Call
 		const opc3 = data[0];	// get first of the 3 bytes
-		if (opc3 == 0xCD	// CALL nn
-			|| (opc3 & 0b11000111) == 0b11000100) 	// CALL cc,nn
+		if (opc3 === 0xCD	// CALL nn
+			|| (opc3 & 0b11000111) === 0b11000100) 	// CALL cc,nn
 		{
 			// It was a CALL, get address.
 			calledAddr = (data[2] << 8) + data[1];
@@ -709,7 +709,7 @@ export class RemoteBase extends EventEmitter {
 		}
 
 		// Nothing found?
-		if (calledAddr == undefined) {
+		if (calledAddr === undefined) {
 			return undefined;
 		}
 
@@ -719,7 +719,7 @@ export class RemoteBase extends EventEmitter {
 
 		// Found: get label
 		let labelCalledAddrArr = Labels.getLabelsForLongAddress(calledAddr);
-		if (labelCalledAddrArr.length == 0) {
+		if (labelCalledAddrArr.length === 0) {
 			// check if maybe the disassembly has defined something
 			if (Disassembly) {	// Is undefined in case of Unit tests
 				const label = Disassembly.getLabelForAddr64k(calledAddr & 0xFFFF);
@@ -1144,7 +1144,7 @@ export class RemoteBase extends EventEmitter {
 
 		try {
 			// get all old breakpoints for the path
-			const oldBps = this.breakpoints.filter(bp => bp.filePath == path);
+			const oldBps = this.breakpoints.filter(bp => bp.filePath === path);
 
 			// Create new breakpoints
 			const currentBps = new Array<RemoteBreakpoint>();
@@ -1158,9 +1158,9 @@ export class RemoteBase extends EventEmitter {
 					// Now search last line with that pc
 					const file = this.getFileAndLineForAddress(longAddr);
 					// Check if right file
-					if (path.valueOf() == file.fileName.valueOf()) {
-						// create breakpoint object
-						ebp = {bpId: 0, filePath: file.fileName, lineNr: file.lineNr, longAddress: longAddr, condition: bp.condition, log: bp.log};
+					if (path.valueOf() === file.fileName.valueOf()) {
+						// Create breakpoint object
+						ebp = {bpId: 0, filePath: file.fileName, lineNr: file.lineNr, longAddress: longAddr, condition: bp.condition, log: bp.log, hitCount: bp.hitCount, hitCounter: bp.hitCounter};
 					}
 					else {
 						error = "You cannot set a breakpoint here because the address (" + Utility.getHexString(longAddr & 0xFFFF, 4) + "h) is bound to a different file. Please try to set the breakpoint in: " + file.fileName;
@@ -1180,8 +1180,8 @@ export class RemoteBase extends EventEmitter {
 			});
 
 			// Now check which breakpoints are new or removed (this includes 'changed').
-			const newBps = currentBps.filter(bp => bp.longAddress >= 0 && oldBps.filter(obp => (obp.condition == bp.condition) && (obp.log == bp.log) && (obp.longAddress == bp.longAddress)).length == 0);
-			const removedBps = oldBps.filter(bp => bp.longAddress >= 0 && currentBps.filter(obp => (obp.condition == bp.condition) && (obp.log == bp.log) && (obp.longAddress == bp.longAddress)).length == 0);
+			const newBps = currentBps.filter(bp => bp.longAddress >= 0 && oldBps.filter(obp => (obp.condition === bp.condition) && (obp.hitCount === bp.hitCount) && (LogEval.compare(obp.log, bp.log)) && (obp.longAddress === bp.longAddress)).length === 0);
+			const removedBps = oldBps.filter(bp => bp.longAddress >= 0 && currentBps.filter(obp => (obp.condition === bp.condition) && (obp.hitCount === bp.hitCount) && (LogEval.compare(obp.log, bp.log)) && (obp.longAddress === bp.longAddress)).length === 0);
 
 			// Catch communication problems
 			try {
@@ -1203,7 +1203,7 @@ export class RemoteBase extends EventEmitter {
 			}
 
 			// get all breakpoints for the path
-			//const resultingBps = this.breakpoints.filter(bp => bp.filePath == path);
+			//const resultingBps = this.breakpoints.filter(bp => bp.filePath === path);
 
 			// Return
 			return currentBps;
@@ -1267,7 +1267,7 @@ export class RemoteBase extends EventEmitter {
 		if (addr < 0) {
 			// Check disassembly
 			const absFilePath = DisassemblyClass.getAbsFilePath();
-			if (fileName == absFilePath) {
+			if (fileName === absFilePath) {
 				// Get address from line number
 				addr = Disassembly.getAddressForLine(lineNr);
 			}
@@ -1556,7 +1556,7 @@ export class RemoteBase extends EventEmitter {
 
 		// Special handling for RST 08 (esxdos) as stepInto may not work
 		// if the emulator simulates this.
-		if (opcode.code == 0xCF) {
+		if (opcode.code === 0xCF) {
 			// Note: The opcode length for RST 08 is adjusted by the disassembler.
 			// But with the implementation below, we don't require this.
 			if (stepOver) {
@@ -1614,32 +1614,32 @@ export class RemoteBase extends EventEmitter {
 			// In this category there are also the special branches
 			// like:
 			// JP(HL), JP(IX), JP(IY)
-			if (opcodes[0] == 0xE9) {
+			if (opcodes[0] === 0xE9) {
 				// JP (HL)
 				bpAddr1 = this.getRegisterValue("HL");
 			}
-			else if (opcodes[0] == 0xDD && opcodes[1] == 0xE9) {
+			else if (opcodes[0] === 0xDD && opcodes[1] === 0xE9) {
 				// JP (IX)
 				bpAddr1 = this.getRegisterValue("IX");
 			}
-			else if (opcodes[0] == 0xFD && opcodes[1] == 0xE9) {
+			else if (opcodes[0] === 0xFD && opcodes[1] === 0xE9) {
 				// JP (IY)
 				bpAddr1 = this.getRegisterValue("IY");
 			}
 		}
 		else {
 			// Other special instructions
-			if (opcodes[0] == 0xED) {
-				if (opcodes[1] == 0xB0 || opcodes[1] == 0xB8
-					|| opcodes[1] == 0xB1 || opcodes[1] == 0xB9
-					|| opcodes[1] == 0xB2 || opcodes[1] == 0xBA
-					|| opcodes[1] == 0xB3 || opcodes[1] == 0xBB) {
+			if (opcodes[0] === 0xED) {
+				if (opcodes[1] === 0xB0 || opcodes[1] === 0xB8
+					|| opcodes[1] === 0xB1 || opcodes[1] === 0xB9
+					|| opcodes[1] === 0xB2 || opcodes[1] === 0xBA
+					|| opcodes[1] === 0xB3 || opcodes[1] === 0xBB) {
 					// LDIR/LDDR/CPIR/CPDR/INIR/INDR/OTIR/OTDR
 					if (!stepOver)
 						bpAddr2 = pc;
 				}
 			}
-			else if (opcodes[0] == 0x76) {
+			else if (opcodes[0] === 0x76) {
 				// HALT
 				if (!stepOver)
 					bpAddr2 = pc;

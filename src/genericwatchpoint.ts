@@ -1,7 +1,6 @@
 import {LogEval} from "./misc/logeval";
 
-/**
- * Represents a watchpoint used by the DebugAdapter in a very generic form,
+/** Represents a watchpoint used by the DebugAdapter in a very generic form,
  * i.e. not machine specific.
  * Watchpoints are NOT identified by an ID but instead by the address and size.
  *
@@ -14,8 +13,7 @@ export interface GenericWatchpoint {
 }
 
 
-/**
- * Represents a breakpoint used by DebugAdapter in a very generic form,
+/** Represents a breakpoint used by DebugAdapter in a very generic form,
  * i.e. not machine specific.
  */
 export interface GenericBreakpoint {
@@ -23,6 +21,8 @@ export interface GenericBreakpoint {
 	longAddress: number, ///< The PC (long) address to break on
 	condition?: string,	///< The additional conditions. '' if no condition set.
 	log?: LogEval,	///< If set the log will be printed instead of stopping execution.
+	hitCount?: number,	///< If set the breakpoint dezog will stop only if the hit count is reached.
+	hitCounter?: number,	/// The number of hits reached so far.
 	error?: string	///< An informative error text. E.g. used for additional info if a breakpoint could not be set.
 }
 

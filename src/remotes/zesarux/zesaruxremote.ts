@@ -1165,6 +1165,14 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
 	public async setBreakpoint(bp: RemoteBreakpoint): Promise<number> {
+		// Check for hit count (not supported)
+		if (bp.hitCount) {
+			this.emit('warning', 'ZEsarUX does not support hit counts ("' + bp.hitCount + '"). Line: ' + (bp.filePath ?? 'unknown') + ':' + (bp.lineNr+1));
+			// set to unverified
+			bp.longAddress = -1;
+			return 0;
+		}
+
 		// Check for logpoint (not supported)
 		if (bp.log) {
 			this.emit('warning', 'ZEsarUX does not support logpoints ("' + bp.log + '").');
