@@ -474,6 +474,10 @@ export class DebugSessionClass extends DebugSession {
 
 		// Supports conditional breakpoints
 		response.body.supportsConditionalBreakpoints = true;
+		// Supports log points
+		response.body.supportsLogPoints = true;
+		// Supports hit count breakpoints
+		//response.body.supportsHitConditionalBreakpoints = true;
 
 		// Handles debug 'Restart'.
 		// If set to false the vscode restart button still occurs and
