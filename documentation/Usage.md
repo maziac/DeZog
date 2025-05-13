@@ -624,27 +624,30 @@ Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbs
 The different Remotes have different capabilities in conjunction with DeZog.
 The following table gives an overview.
 
-|                                        | Internal Z80 Simulator | ZEsarUX | ZX Next | CSpect | MAME   |
-| :------------------------------------- | :--------------------- | :------ | :------ | :----- | :----- |
-| State                                  | stable                 | stable  | stable  | stable | stable |
-| Breakpoints                            | yes                    | yes     | yes     | yes    | yes    |
-| Break reason output                    | yes                    | no      | yes     | yes    | yes    |
-| Conditional Breakpoints                | yes                    | yes     | yes 6)  | yes 6) | yes 6) |
-| Breakpoints hit count                  | yes                    | no      | yes     | yes    | yes)   |
-| ASSERTION support                      | yes                    | yes     | yes 6)  | yes 6) | yes 6) |
-| WPMEM (Watchpoints) support            | yes                    | yes 2)  | no      | no     | yes    |
-| LOGPOINT support                       | yes                    | no      | yes 6)  | yes 6) | yes 6) |
-| Long addresses/breakpoints             | yes                    | yes     | yes     | yes    | yes    |
-| Extended callstack                     | no                     | yes     | no      | no     | no     |
-| Code coverage                          | yes                    | yes 1)  | no      | no     | no     |
-| Reverse debugging                      | true                   | true    | lite    | lite   | lite   |
-| ZX Next capable                        | no                     | yes     | yes     | yes    | no     |
-| Save/restore the state                 | yes                    | yes     | no      | no     | no     |
-| Output of T-States                     | yes                    | yes     | no      | no     | no     |
-| Display of sprite attributes/patterns  | yes                    | yes     | no      | yes    | no     |
-| Load .sna/.nex/.obj file through DeZog | yes                    | yes     | yes     | yes    | yes 7) |
-| Load .tap file through DeZog           | no                     | yes     | no      | no     | no     |
-| Run Z80 Unit Tests                     | yes                    | yes     | no 4)   | yes 3) | yes 5) |
+|                                       | Internal Z80 Simulator | ZEsarUX | ZX Next | CSpect | MAME   |
+| :------------------------------------ | :--------------------- | :------ | :------ | :----- | :----- |
+| State                                 | stable                 | stable  | stable  | stable | stable |
+| Breakpoints                           | yes                    | yes     | yes     | yes    | yes    |
+| Break reason output                   | yes                    | no      | yes     | yes    | yes    |
+| Conditional Breakpoints               | yes                    | yes     | yes 6)  | yes 6) | yes 6) |
+| Breakpoints hit count                 | yes                    | no      | yes     | yes    | yes)   |
+| ASSERTION support                     | yes                    | yes     | yes 6)  | yes 6) | yes 6) |
+| WPMEM (Watchpoints) support           | yes                    | yes 2)  | no      | no     | yes    |
+| LOGPOINT support                      | yes                    | no      | yes 6)  | yes 6) | yes 6) |
+| Long addresses/breakpoints            | yes                    | yes     | yes     | yes    | yes    |
+| Extended callstack                    | no                     | yes     | no      | no     | no     |
+| Code coverage                         | yes                    | yes 1)  | no      | no     | no     |
+| Reverse debugging                     | true                   | true    | lite    | lite   | lite   |
+| ZX Next capable                       | no                     | yes     | yes     | yes    | no     |
+| Save/restore the state                | yes                    | yes     | no      | no     | no     |
+| Output of T-States                    | yes                    | yes     | no      | no     | no     |
+| Display of sprite attributes/patterns | yes                    | yes     | no      | yes    | no     |
+| Load .obj file through DeZog          | yes                    | yes     | yes     | yes    | yes 7) |
+| Load .sna file through DeZog          | yes                    | yes     | yes     | yes    | yes 7) |
+| Load .tap file through DeZog          | no                     | yes     | no      | no     | no     |
+| Load .nex file through DeZog          | yes                    | yes     | yes     | yes    | no 7)  |
+| Load .p file through DeZog            | yes                    | yes     | no      | no     | yes    |
+| Run Z80 Unit Tests                    | yes                    | yes     | no 4)   | yes 3) | yes 5) |
 
 Notes:
 - State:
