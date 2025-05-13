@@ -723,6 +723,8 @@ export class DebugSessionClass extends DebugSession {
 							// loadObjs needs labels ('start'), labels require the memory model.
 							// And zesarux might change the memory model on 'load'.
 							Remote.readListFiles(Settings.launch);
+							// Check to show a warning if sna/nex file is too old.
+							this.checkDateSnaNexFile();
 							// Load objs to memory
 							await Remote.loadObjs();
 							// This needs to be done after the labels have been read
@@ -842,6 +844,28 @@ export class DebugSessionClass extends DebugSession {
 				}
 			})();
 		});
+	}
+
+
+	// Check modified date of sna/nex file and compare with sld/list file.
+	protected checkDateSnaNexFile() {
+		const snaNexFile = Settings.launch.load;
+		if (snaNexFile) {
+			const ext = UnifiedPath.extname(snaNexFile).toLowerCase();
+			if (ext === '.sna' || ext === '.nex') {
+				// Compare the modified date of the sna/nex file with the sld/list file.
+				const listFile = Labels.getListFileDate();
+				if (listFile) {
+					const snaNexDate = fs.statSync(snaNexFile).mtimeMs;
+					const inaccuracy = 4 * 1000;	// 4 seconds inaccuracy is allowed
+					if (snaNexDate < listFile.time - inaccuracy) {
+						// The list file is younger than the sna/nex file.
+						// Show warning
+						this.debugConsoleAppendLine(`The list/sld file '${UnifiedPath.basename(listFile.filename)}' is younger than the sna/nex file '${UnifiedPath.basename(snaNexFile)}'. \nPlease check, maybe the sna/nex file has not been built correctly.`);
+					}
+				}
+			}
+		}
 	}
 
 

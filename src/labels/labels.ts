@@ -147,6 +147,9 @@ export class LabelsClass {
 	// Contains the watched files. For reverse engineering auto re-load.
 	protected watchedFiles: Array<string> = [];
 
+	// Date of the list file
+	protected youngestModifiedFile: {filename: string, time: number} | undefined;
+
 
 	/**
 	 * Initializes the lists/arrays.
@@ -169,6 +172,7 @@ export class LabelsClass {
 		this.smallValuesMaximum = smallValuesMaximum;
 		this.errorHappened = undefined;
 		this.watchedFiles.length = 0;
+		this.youngestModifiedFile = undefined;
 	}
 
 
@@ -280,6 +284,13 @@ export class LabelsClass {
 				const pathConfig: ListConfigBase = {...config, path: path};	// complicated, but safe in case structure is extended in the future
 				// Load file
 				parser.loadAsmListFile(pathConfig);
+
+				// Get date of the list file
+				const changed = fs.statSync(path).mtimeMs;
+				// Remember youngest file
+				if(this.youngestModifiedFile === undefined || changed > this.youngestModifiedFile.time) {
+					this.youngestModifiedFile = {filename: path, time: changed};
+				}
 			}
 		}
 		catch (e) {
@@ -289,18 +300,14 @@ export class LabelsClass {
 	}
 
 
-	/**
-	 * Retrieves the file's last modified date and compares it with the given date.
-	 * Whichever date is younger is returned.
-	 * @param date The date to compare with.
-	 * @param path The file's path.
-	 * @returns The youngest date of both.
+	/** Returns the time in milliseconds of the list file (or sld file)
+	 * modification time/date.
+	 * As there could be several list files, the youngest one is returned.
+	 * @returns {filename: string, time: number} The filename and the time of the last modification.
+	 * undefined if no file was found.
 	 */
-	protected youngestDate(date: Date, path: string) {
-		const stats = fs.statSync(path)
-		const fileDate = new Date(stats.mtimeMs);
-		const youngestDate = (date < fileDate) ? fileDate : date;
-		return youngestDate;
+	public getListFileDate(): {filename: string, time: number} | undefined {
+		return this.youngestModifiedFile;
 	}
 
 
