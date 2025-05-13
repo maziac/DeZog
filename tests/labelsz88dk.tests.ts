@@ -9,12 +9,21 @@ import {Z88dkLabelParser} from '../src/labels/z88dklabelparser';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
+import {Utility} from '../src/misc/utility';
+
 
 suite('Labels (z88dk)', () => {
 	let lbls;
 
+	// Onetime setup
 	setup(() => {
 		lbls = new LabelsClass();
+	});
+
+	// Runs before each test in this suite
+	beforeEach(() => {
+		// To work with simpler file names
+		(Utility as any).rootPath = undefined;
 	});
 
 

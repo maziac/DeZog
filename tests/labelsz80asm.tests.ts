@@ -8,15 +8,24 @@ import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import {Z80asmLabelParser} from '../src/labels/z80asmlabelparser';
+import {Utility} from '../src/misc/utility';
 
 
 suite('Labels (z80asm)', () => {
 
 	let lbls;
 
+	// Onetime setup
 	setup(() => {
 		lbls = new LabelsClass();
 	});
+
+	// Runs before each test in this suite
+	beforeEach(() => {
+		// To work with simpler file names
+		(Utility as any).rootPath = undefined;
+	});
+
 
 	suite('Labels', () => {
 

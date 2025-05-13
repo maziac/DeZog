@@ -9,6 +9,7 @@ import {MemoryModelZx128k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zx
 import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {ReverseEngineeringLabelParser} from '../src/labels/reverseengineeringlabelparser';
+import {Utility} from '../src/misc/utility';
 
 
 suite('Labels (revEng)', () => {
@@ -16,12 +17,19 @@ suite('Labels (revEng)', () => {
 	let lbls: LabelsClass;
 	let warnings: string;
 
+	// Onetime setup
 	setup(() => {
 		lbls = new LabelsClass();
 		warnings = '';
 		LabelsClass.addDiagnosticsErrorFunc = (message: string) => {
 			warnings += message + "\n";
 		}
+	});
+
+	// Runs before each test in this suite
+	beforeEach(() => {
+		// To work with simpler file names
+		(Utility as any).rootPath = undefined;
 	});
 
 	suite('Labels', () => {

@@ -10,9 +10,15 @@ import * as os from 'os';
 import * as path from 'path';
 import {LabelParserBase} from '../src/labels/labelparserbase';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
+import {Utility} from '../src/misc/utility';
 
 
 suite('Labels', () => {
+
+	beforeEach(() => {
+		// To work with simpler file names
+		(Utility as any).rootPath = undefined;
+	});
 
 	suite('Files/lines vs list file', () => {
 
@@ -81,7 +87,6 @@ suite('Labels', () => {
 				res = lbls.getFileAndLineForAddress(0x18843);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 5, "Expected line wrong.");
-
 			});
 
 

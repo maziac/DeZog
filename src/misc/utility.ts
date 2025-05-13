@@ -1006,7 +1006,7 @@ export class Utility {
 
 
 	/**
-	 * Sets the root path or absolute and relative file functions.
+	 * Sets the root path for absolute and relative file functions.
 	 * @param rootPath What e.g. vscode.workspace.rootPath would return
 	 */
 	public static setRootPath(rootPath: string) {
