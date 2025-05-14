@@ -630,7 +630,7 @@ The following table gives an overview.
 | Breakpoints                           | yes                    | yes     | yes     | yes    | yes    |
 | Break reason output                   | yes                    | no      | yes     | yes    | yes    |
 | Conditional Breakpoints               | yes                    | yes     | yes 6)  | yes 6) | yes 6) |
-| Breakpoints hit count                 | yes                    | no      | yes     | yes    | yes)   |
+| Breakpoints hit count                 | yes                    | yes 8)  | yes     | yes    | yes    |
 | ASSERTION support                     | yes                    | yes     | yes 6)  | yes 6) | yes 6) |
 | WPMEM (Watchpoints) support           | yes                    | yes 2)  | no      | no     | yes    |
 | LOGPOINT support                      | yes                    | no      | yes 6)  | yes 6) | yes 6) |
@@ -663,6 +663,7 @@ Notes:
 - 5 ) There is nothing preventing you from using unit tests, but for a reverse engineering environment there is little sense in doing unit tests.
 - 6 ) Conditions, ASSERTION and LOGPOINT are evaluated in DeZog, not by the Remote. If used heavily or in a loop this may lead to a slower performance.
 - 7 ) For .sna files only the 48k SNA file loading is supported. Furthermore "loadObjs" is supported. But both do work only if the target memory area is RAM. I.e. you can not overwrite the program in ROM.
+- 8 ) ZEsarUX supports only the check "==" for the breakpoint hit count (pass count in ZEsarUX terminology).
 
 
 ### The Internal Z80 Simulator
@@ -1892,6 +1893,21 @@ Note 1: "&&" has higher priority than "||".
 Note 2: Brackets, "()", are used only for prioritization of the expression. To read the contents of an address use "b@(...)" or "w@(...)". "b@(address)" and "w@(address)" return the byte and word contents at 'address'
 
 Note 3: Some of the operators (like "!=", "||" or "b@(...)" are converted to the ZEsarUX format style (i.e. "=", "OR", "peek(...)") but you can also use the ZEsarUX style directly.
+
+
+__Breakpoint Hit Count:__
+
+You can additionally set breakpoint hit count conditions.
+If a hit count condition is set (right click a breakpoint in vscode) a breakpoint counter is initialized to 0.
+Every time a breakpoint is hit (and the breakpoint condition is true) the breakpoint hit condition is evaluated.
+If true the execution stops.
+Valid breakpoint hit conditions are "==", ">", "%" etc.
+E.g. use:
+- "== 5": The execution will stop when the breakpoint was hit the 5th time.
+- ">= 6": The execution will stop when the breakpoint was hit the 6th time and all hits afterwards.
+- "% 3 == 0": The execution will exvery 3rd time the breakpoint is hit.
+
+Note: ZEsarUX supports only the first case ("==").
 
 
 __Breakpoints in interrupts:__

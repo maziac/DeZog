@@ -849,6 +849,11 @@ export class DebugSessionClass extends DebugSession {
 
 	// Check modified date of sna/nex file and compare with sld/list file.
 	protected checkDateSnaNexFile() {
+		// Don't check if doing reverse engineering
+		if (Settings.launch.revEng !== undefined)
+			return;
+
+		// Check file date itself
 		const snaNexFile = Settings.launch.load;
 		if (snaNexFile) {
 			const ext = UnifiedPath.extname(snaNexFile).toLowerCase();
@@ -857,11 +862,11 @@ export class DebugSessionClass extends DebugSession {
 				const listFile = Labels.getListFileDate();
 				if (listFile) {
 					const snaNexDate = fs.statSync(snaNexFile).mtimeMs;
-					const inaccuracy = 4 * 1000;	// 4 seconds inaccuracy is allowed
+					const inaccuracy = 10 * 1000;	// 10 seconds inaccuracy is allowed
 					if (snaNexDate < listFile.time - inaccuracy) {
 						// The list file is younger than the sna/nex file.
 						// Show warning
-						this.debugConsoleAppendLine(`The list/sld file '${UnifiedPath.basename(listFile.filename)}' is younger than the sna/nex file '${UnifiedPath.basename(snaNexFile)}'. \nPlease check, maybe the sna/nex file has not been built correctly.`);
+						this.debugConsoleAppendLine(`The file '${UnifiedPath.basename(listFile.filename)}' is younger than the file '${UnifiedPath.basename(snaNexFile)}'. \nPlease check, maybe the sna/nex file has not been built correctly.`);
 					}
 				}
 			}
@@ -892,17 +897,35 @@ export class DebugSessionClass extends DebugSession {
 					continue;
 				}
 			}
-			let hitCount: number | undefined;
-			if (bp.hitCondition) {
-				// Convert string to number
-				hitCount = Utility.parseValue(bp.hitCondition);
-				if (isNaN(hitCount)) {
+			// Trim condition
+			let hitCondition = bp.hitCondition;
+			if (hitCondition) {
+				hitCondition = hitCondition.trim();
+				if (hitCondition.length === 0)
+					hitCondition = undefined;
+			}
+			// Check condition
+			let hitCounter: number | undefined;
+			if (hitCondition) {
+				// Check if it starts with a number
+				const char = hitCondition[0];
+				if (char >= '0' && char <= '9') {
+					// Starts with a number, add a '===' to the condition
+					hitCondition = '=== ' + hitCondition;
+				}
+				// Check that hitCondition can be evaluated
+				try {
+					(0, eval)(`1 ${hitCondition}`);
+				}
+				catch {
 					// Show warning
-					this.showWarning(`Hit count is not a number: "${bp.hitCondition}". Line: ${bp.line}`);
+					this.showWarning(`Hit condition is not valid: "${bp.hitCondition}". Line: ${bp.line}`);
 					continue;
 				}
+				hitCounter = 0;
 			}
 
+			// Add breakpoint
 			const mbp: RemoteBreakpoint = {
 				bpId: 0,
 				filePath: path,
@@ -910,8 +933,8 @@ export class DebugSessionClass extends DebugSession {
 				longAddress: -1,	// not known yet
 				condition: (bp.condition) ? bp.condition : '',
 				log,
-				hitCount,
-				hitCounter: (hitCount === undefined) ? undefined : 0,
+				hitCountCondition: hitCondition,
+				hitCounter
 			};
 			bps.push(mbp);
 		}

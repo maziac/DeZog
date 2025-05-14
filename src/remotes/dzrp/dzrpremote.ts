@@ -961,17 +961,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 					// Emit log?
 					if (cond != undefined && log) {
 						// Check hit counter
-						let hit = true;
-						if (bp.hitCount) {
-							bp.hitCounter!++;
-							// Check if enough hits
-							hit = (bp.hitCounter! >= bp.hitCount);
-							if (hit) {
-								// Hit counter reached
-								bp.hitCounter = 0;
-							}
-						}
-						// Convert
+						const hit = this.checkHitCountCondition(bp);
 						if (hit) {
 							const evaluatedLog = await log.evaluate();
 							// Print
@@ -985,16 +975,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 					if (cond != undefined) {
 						// Check hit counter
-						let hit = true;
-						if (bp.hitCount) {
-							bp.hitCounter!++;
-							// Check if enough hits
-							hit = (bp.hitCounter! >= bp.hitCount);
-							if (hit) {
-								// Hit counter reached
-								bp.hitCounter = 0;
-							}
-						}
+						const hit = this.checkHitCountCondition(bp);
 						if (hit) {
 							// At least one break condition found
 							condition = cond;
@@ -1032,6 +1013,22 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		}
 
 		return {condition, correctedBreakNumber};
+	}
+
+
+	/** Checks if the hit count condition is met.
+	 * @param bp The GenericBreakpoint.
+	 * @returns true if the condition is met or there is no condition.
+	 */
+	protected checkHitCountCondition(bp: GenericBreakpoint): boolean {
+		let hit = true;
+		if (bp.hitCountCondition) {
+			bp.hitCounter!++;
+			// Check if enough hits
+			const hitCountCondition = `${bp.hitCounter} ${bp.hitCountCondition}`;
+			hit = (0, eval)(hitCountCondition);	// Indirect cal
+		}
+		return hit;
 	}
 
 

@@ -21,7 +21,7 @@ export interface GenericBreakpoint {
 	longAddress: number, ///< The PC (long) address to break on
 	condition?: string,	///< The additional conditions. '' if no condition set.
 	log?: LogEval,	///< If set the log will be printed instead of stopping execution.
-	hitCount?: number,	///< If set the breakpoint dezog will stop only if the hit count is reached.
+	hitCountCondition?: string,	///< If set the breakpoint dezog will stop only if the hit count condition is true. E.g. '== 5', '% 3' or '>= 6'. The hitCounter is automatically prefixed to the condition.
 	hitCounter?: number,	/// The number of hits reached so far.
 	error?: string	///< An informative error text. E.g. used for additional info if a breakpoint could not be set.
 }

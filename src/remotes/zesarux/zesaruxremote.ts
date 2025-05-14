@@ -1179,16 +1179,45 @@ export class ZesaruxRemote extends RemoteBase {
 		// Check for logpoint (not supported)
 		if (bp.log) {
 			this.emit('warning', 'ZEsarUX does not support logpoints ("' + bp.log + '").');
-			// set to unverified
+			// Set to unverified
 			bp.longAddress = -1;
 			return 0;
 		}
 
+		// Check for hit/pass count
+		let passCount: number | undefined;
+		const hitCond = bp.hitCountCondition;
+		if (hitCond) {
+			let k = 0;
+			if (hitCond.startsWith('=='))
+				k = 2;
+			if (hitCond.startsWith('==='))
+				k = 3;
+			if(k === 0) {
+				this.emit('warning', `ZEsarUX supports only '==' for the breakpoint hit count condition,not '${hitCond}'.`);
+				// Set to unverified
+				bp.longAddress = -1;
+				return 0;
+			}
+			// Extract pass count
+			const passCountString = hitCond.substring(k);
+			try {
+				passCount = (0, eval)(passCountString);
+			}
+			catch {}
+			if (passCount === undefined || isNaN(passCount) || typeof passCount !== 'number') {
+				this.emit('warning', `There is an error in the breakpoint hit condition '${hitCond}'.`);
+				// Set to unverified
+				bp.longAddress = -1;
+				return 0;
+			}
+		}
+
 		// Set breakpoint
-		const bpId = await this.setBreakpointZesarux(bp.longAddress, bp.condition, bp.hitCount);
+		const bpId = await this.setBreakpointZesarux(bp.longAddress, bp.condition, passCount);
 		// Check for error
 		if (bpId <= 0) {
-			// set to unverified
+			// Set to unverified
 			bp.longAddress = -1;
 			return 0
 		}

@@ -1160,7 +1160,7 @@ export class RemoteBase extends EventEmitter {
 					// Check if right file
 					if (path.valueOf() === file.fileName.valueOf()) {
 						// Create breakpoint object
-						ebp = {bpId: 0, filePath: file.fileName, lineNr: file.lineNr, longAddress: longAddr, condition: bp.condition, log: bp.log, hitCount: bp.hitCount, hitCounter: bp.hitCounter};
+						ebp = {bpId: 0, filePath: file.fileName, lineNr: file.lineNr, longAddress: longAddr, condition: bp.condition, log: bp.log, hitCountCondition: bp.hitCountCondition, hitCounter: bp.hitCounter};
 					}
 					else {
 						error = "You cannot set a breakpoint here because the address (" + Utility.getHexString(longAddr & 0xFFFF, 4) + "h) is bound to a different file. Please try to set the breakpoint in: " + file.fileName;
@@ -1180,8 +1180,8 @@ export class RemoteBase extends EventEmitter {
 			});
 
 			// Now check which breakpoints are new or removed (this includes 'changed').
-			const newBps = currentBps.filter(bp => bp.longAddress >= 0 && oldBps.filter(obp => (obp.condition === bp.condition) && (obp.hitCount === bp.hitCount) && (LogEval.compare(obp.log, bp.log)) && (obp.longAddress === bp.longAddress)).length === 0);
-			const removedBps = oldBps.filter(bp => bp.longAddress >= 0 && currentBps.filter(obp => (obp.condition === bp.condition) && (obp.hitCount === bp.hitCount) && (LogEval.compare(obp.log, bp.log)) && (obp.longAddress === bp.longAddress)).length === 0);
+			const newBps = currentBps.filter(bp => bp.longAddress >= 0 && oldBps.filter(obp => (obp.condition === bp.condition) && (obp.hitCountCondition === bp.hitCountCondition) && (LogEval.compare(obp.log, bp.log)) && (obp.longAddress === bp.longAddress)).length === 0);
+			const removedBps = oldBps.filter(bp => bp.longAddress >= 0 && currentBps.filter(obp => (obp.condition === bp.condition) && (obp.hitCountCondition === bp.hitCountCondition) && (LogEval.compare(obp.log, bp.log)) && (obp.longAddress === bp.longAddress)).length === 0);
 
 			// Catch communication problems
 			try {
