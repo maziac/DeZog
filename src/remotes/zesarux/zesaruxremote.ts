@@ -17,9 +17,6 @@ import {MemoryModelColecoVision} from '../MemoryModel/colecovisionmemorymodels';
 import {ErrorWrapper} from '../../misc/errorwrapper';
 
 
-/// Minimum required ZEsarUX version.
-const MIN_ZESARUX_VERSION = '10.3';
-
 
 // Some Zesarux constants.
 class Zesarux {
@@ -37,6 +34,9 @@ class Zesarux {
  * the ZesaruxSocket.
  */
 export class ZesaruxRemote extends RemoteBase {
+	/// Minimum required ZEsarUX version.
+	static MIN_ZESARUX_VERSION = '10.3';
+
 	/// Max count of breakpoints. Note: Number 100 is used for stepOut.
 	static MAX_USED_BREAKPOINTS = Zesarux.MAX_ZESARUX_BREAKPOINTS - 1;
 
@@ -44,7 +44,7 @@ export class ZesaruxRemote extends RemoteBase {
 	static STEP_BREAKPOINT_ID = 100;
 
 	// The associated Promise resolve. Stored here to be called at dispose.
-	protected continueResolve?: PromiseCallbacks<string|undefined>;
+	protected continueResolve?: PromiseCallbacks<string | undefined>;
 
 	/// Array that contains free breakpoint IDs.
 	private freeBreakpointIds = new Array<number>();
@@ -55,6 +55,10 @@ export class ZesaruxRemote extends RemoteBase {
 	/// Set to true after 'terminate()' is called. Errors will not be sent
 	/// when terminating.
 	protected terminating = false;
+
+	/// Version is checked: if greater/equal 12.1 this is set to true.
+	protected bpPassCountSupported = false;
+	static MIN_BP_PASS_COUNT_VERSION = '12.1';
 
 
 	/// Constructor.
@@ -195,7 +199,7 @@ export class ZesaruxRemote extends RemoteBase {
 					await zSocket.sendAwait('about');
 					this.zesaruxVersion = await zSocket.sendAwait('get-version');
 					const version = semver.coerce(this.zesaruxVersion);
-					const min_version = semver.coerce(MIN_ZESARUX_VERSION);
+					const min_version = semver.coerce(ZesaruxRemote.MIN_ZESARUX_VERSION);
 					// Check version. E.g. "7.1-SN", "10.3" or "10.10"
 					if (semver.lt(version, min_version)) {
 						try {
@@ -204,12 +208,15 @@ export class ZesaruxRemote extends RemoteBase {
 						}
 						catch {};
 						try {
-							const err = new Error('Please update ZEsarUX. Need at least version ' + MIN_ZESARUX_VERSION + '.');
+							const err = new Error('Please update ZEsarUX. Need at least version ' + ZesaruxRemote.MIN_ZESARUX_VERSION + '.');
 							this.emit('error', err);
 						}
 						catch {};
 						return;
 					}
+					// Check support of hit count (pass count) in ZEsarUX
+					const minBpPassCountVersion = semver.coerce(ZesaruxRemote.MIN_BP_PASS_COUNT_VERSION);
+					this.bpPassCountSupported = semver.gte(version, minBpPassCountVersion);
 
 					// Allow extensions
 					this.zesaruxConnected();
@@ -1046,9 +1053,18 @@ export class ZesaruxRemote extends RemoteBase {
 	 * I.e. this function can be used by ASSERTIONs as well.
 	 * @param address The (long) address to break on. If address is < 0 then only the condition is used.
 	 * @param bpCondition An additional condition. May also be undefined or ''.
+	 * @param bpPassCount (hit count) The number of times the breakpoint should be hit before it is disabled.
 	 * @returns A breakpoint ID (1-100 for zesarux). Or 0 if an error occurred.
 	 */
-	public async setBreakpointZesarux(address: number, bpCondition?: string): Promise<number> {
+	public async setBreakpointZesarux(address: number, bpCondition?: string, bpPassCount?: number): Promise<number> {
+		// Check pass/hit count
+		if (bpPassCount === undefined)
+			bpPassCount = 0;
+		if(bpPassCount > 0 && !this.bpPassCountSupported) {
+			this.emit('warning', `Breakpoint hit (pass) count not supported by this version of ZEsarUX. You need at least version ${ZesaruxRemote.MIN_BP_PASS_COUNT_VERSION}.`);
+			return 0;
+		}
+
 		// Get condition
 		let zesaruxCondition = this.convertCondition(bpCondition);
 		if (zesaruxCondition == undefined) {
@@ -1110,7 +1126,7 @@ export class ZesaruxRemote extends RemoteBase {
 			condition += zesaruxCondition;
 
 		// Set breakpoint
-		await this.sendSetBreakpoint(bpId, condition);
+		await this.sendSetBreakpoint(bpId, condition, bpPassCount);
 
 		// Return
 		return bpId;
@@ -1127,20 +1143,15 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param bpId The breakpoint id to use.
 	 * @param condition A breakpoint condition.
 	 */
-	protected async sendSetBreakpoint(bpId: number, condition: string) {
-		// For zesarux version 10.1:
-		// Set action first (no action)
-		// await zSocket.sendAwait('set-breakpointaction ' + bpId + ' prints breakpoint ' + bpId);
-		// // Set the breakpoint
-		// await zSocket.sendAwait('set-breakpoint ' + bpId + ' ' + condition);
-		// // Enable the breakpoint
-		// await zSocket.sendAwait('enable-breakpoint ' + bpId);
-
-		// For zesarux version 10.3:
+	protected async sendSetBreakpoint(bpId: number, condition: string, passCount = 0) {
 		// Set action first (no action)
 		await zSocket.sendAwait('set-breakpointaction ' + bpId);	// Since ZEsarUX 10.2 an empty breakpoint action is required.
 		// Set the breakpoint
 		await zSocket.sendAwait('set-breakpoint ' + bpId + ' ' + condition);
+		// Set the pass count (hit count)
+		if (passCount) { // Defined and not 0
+			await zSocket.sendAwait('set-breakpointpasscount ' + bpId + ' ' + passCount);
+		}
 		// Enable the breakpoint
 		await zSocket.sendAwait('enable-breakpoint ' + bpId);
 	}
@@ -1165,14 +1176,6 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
 	public async setBreakpoint(bp: RemoteBreakpoint): Promise<number> {
-		// Check for hit count (not supported)
-		if (bp.hitCount) {
-			this.emit('warning', 'ZEsarUX does not support hit counts ("' + bp.hitCount + '"). Line: ' + (bp.filePath ?? 'unknown') + ':' + (bp.lineNr+1));
-			// set to unverified
-			bp.longAddress = -1;
-			return 0;
-		}
-
 		// Check for logpoint (not supported)
 		if (bp.log) {
 			this.emit('warning', 'ZEsarUX does not support logpoints ("' + bp.log + '").');
@@ -1182,7 +1185,7 @@ export class ZesaruxRemote extends RemoteBase {
 		}
 
 		// Set breakpoint
-		const bpId = await this.setBreakpointZesarux(bp.longAddress, bp.condition);
+		const bpId = await this.setBreakpointZesarux(bp.longAddress, bp.condition, bp.hitCount);
 		// Check for error
 		if (bpId <= 0) {
 			// set to unverified
@@ -1570,4 +1573,3 @@ export class ZesaruxRemote extends RemoteBase {
 		await zSocket.sendAwait('load-binary "' + path + '" ' + address + ' 0');	// 0 = load entire file
 	}
 }
-

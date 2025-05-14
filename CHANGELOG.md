@@ -2,6 +2,8 @@
 
 # 3.6.2
 - Fixed cpu load and frequency for floating window.
+- Warning shown in case the sna or nex file is older than the list/sld file.
+- Breakpoint hit count supported.
 
 # 3.6.1
 - Issue #147: Support for floating window.
