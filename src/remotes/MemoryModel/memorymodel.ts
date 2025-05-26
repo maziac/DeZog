@@ -614,6 +614,8 @@ export class MemoryModel {
 		// Banks
 		txt += "Memory banks:\n";
 		for (const bank of this.banks) {
+			if (!bank)
+				continue;
 			let line = bank.shortName + ": " + bank.name + ", size=" + bank.size;
 			let type;
 			switch (bank.bankType) {
@@ -623,6 +625,8 @@ export class MemoryModel {
 				default: type = "UNKNOWN"; break;
 			}
 			line += ", " + type;
+			if (typeof bank.rom == 'string')
+				line += " (" + bank.rom + ")";
 			// Next line
 			txt += line + "\n";
 		}

@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.6.x
+- Command -memmodel output fixed if not all bank indices are used.
+
 # 3.6.2
 - Fixed cpu load and frequency for floating window.
 - Warning shown in case the sna or nex file is older than the list/sld file.
