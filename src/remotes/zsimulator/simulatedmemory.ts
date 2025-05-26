@@ -757,7 +757,8 @@ export class SimulatedMemory implements Serializable {
 				return this.readHexFromFile(filePath);
 			default: {
 				const romBuffer = fs.readFileSync(filePath);
-				return new Uint8Array(romBuffer.buffer);
+				const romUint8 = Uint8Array.from(romBuffer);
+				return romUint8;
 			}
 		}
 	}

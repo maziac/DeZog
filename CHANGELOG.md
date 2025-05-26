@@ -1,7 +1,8 @@
 # Changelog
 
-# 3.6.x
+# 3.6.3-rc1
 - Command -memmodel output fixed if not all bank indices are used.
+- Fixed reading of 'rom' file for custom memory.
 
 # 3.6.2
 - Fixed cpu load and frequency for floating window.
