@@ -245,6 +245,9 @@ export class RemoteBase extends EventEmitter {
 			await this.loadBin(loadPath);
 		}
 
+		// Load raw obj files.
+		await this.loadObjs();
+
 		// Load registers
 		//await this.getRegistersFromEmulator();
 	}
