@@ -320,6 +320,8 @@ export class Z80UnitTestRunner {
 						try {
 							// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
 							Remote.readListFiles(configuration);
+							// Load objs to memory
+							await Remote.loadObjs();
 							// This needs to be done after the labels have been read
 							await Remote.initWpmemAssertionLogpoints();
 
