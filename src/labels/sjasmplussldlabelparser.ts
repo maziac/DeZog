@@ -7,6 +7,7 @@ import {MemoryModelColecoVision} from '../remotes/MemoryModel/colecovisionmemory
 import {AsmConfigBase, SjasmplusConfig} from '../settings/settings';
 import {LabelParserBase} from './labelparserbase';
 import {SourceFileEntry} from './labels';
+import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 
 
 /**
@@ -444,12 +445,23 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		if (srcMemModel === SjasmplusMemoryModel.NONE)
 			this.throwError("Unsupported sjasmplus memory model (DEVICE).");
 
-		// Check as much as possible in a generic way:
-		// For sjasmplus NOSLOT64K source there is no banking.
-		// For ZX48k there are banks, but no ambiguous ones.
-		// Also for simple destinations like MemoryModelUnknown and
-		// MemoryModelAllRam, all that only have banks within the 64k.
 		const destMemModel = this.memoryModel;
+		// Check for NOSLOT64K and a CUSTOM memory model.
+		// As sjasmplus allows 32 banks in NOSLOT64K the banks are just
+		// passed through. The user has to ensure that the banks are
+		// correctly mapped to the 64k slots in his CUSTOM memory model.
+		if (srcMemModel === SjasmplusMemoryModel.NOSLOT64K
+			&& Object.getPrototypeOf(destMemModel).constructor === MemoryModel /* CUSTOM */) {
+				// sjasmplus was compiled for NOSLOT64K.
+				// Correct banking/memory mapping is up to the user, just pass through.
+				this.funcConvertBank = (_address: number, bank: number) => {
+					return bank;
+				};
+			return;
+		}
+
+		// For sjasmplus NOSLOT64K source as source and a plain
+		// target memory model we use the generic mapping.
 		if (srcMemModel === SjasmplusMemoryModel.NOSLOT64K
 			|| srcMemModel === SjasmplusMemoryModel.ZX48K
 			|| destMemModel instanceof MemoryModelUnknown
@@ -461,7 +473,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			super.checkMappingToTargetMemoryModel();
 			return;
 		}
-
 
 		// Check for sjasmplus ZX128K
 		if (srcMemModel === SjasmplusMemoryModel.ZX128K) {
