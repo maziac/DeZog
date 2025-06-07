@@ -544,10 +544,23 @@ main.asm|12||0|-1|-1|Z|pages.size:65536,pages.count:32,slots.count:1,slots.adr:0
 				assert.equal(parser.createLongAddress(0x2000, 0), 0x12000);
 				assert.equal(parser.createLongAddress(0x4000, 0), 0x14000);
 				assert.equal(parser.createLongAddress(0x6000, 0), 0x16000);
-				assert.equal(parser.createLongAddress(0x8000, 0), 0x68000);
-				assert.equal(parser.createLongAddress(0xA000, 0), 0x6A000);
-				assert.equal(parser.createLongAddress(0xC000, 0), 0x4C000);
-				assert.equal(parser.createLongAddress(0xE000, 0), 0x4E000);
+
+				assert.equal(parser.createLongAddress(0x8000, 5), 0x68000);
+				assert.equal(parser.createLongAddress(0x8000, 6), 0x78000);
+				assert.equal(parser.createLongAddress(0x8000, 7), 0x88000);
+				assert.equal(parser.createLongAddress(0x8000, 8), 0x98000);
+				assert.equal(parser.createLongAddress(0x8000, 9), 0xA8000);
+
+				assert.equal(parser.createLongAddress(0xA000, 5), 0x6A000);
+				assert.equal(parser.createLongAddress(0xA000, 6), 0x7A000);
+				assert.equal(parser.createLongAddress(0xA000, 7), 0x8A000);
+				assert.equal(parser.createLongAddress(0xA000, 8), 0x9A000);
+				assert.equal(parser.createLongAddress(0xA000, 9), 0xAA000);
+
+				assert.equal(parser.createLongAddress(0xC000, 1), 0x2C000);
+				assert.equal(parser.createLongAddress(0xC000, 4), 0x5C000);
+				assert.equal(parser.createLongAddress(0xE000, 1), 0x2E000);
+				assert.equal(parser.createLongAddress(0xE000, 4), 0x5E000);
 			});
 		});
 
