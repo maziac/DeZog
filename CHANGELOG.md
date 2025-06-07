@@ -1,8 +1,10 @@
 # Changelog
 
-# 3.6.3-rc1
+# 3.6.3
 - Command -memmodel output fixed if not all bank indices are used.
 - Fixed reading of 'rom' file for custom memory.
+- Fixed #149: loadObjs not processed when running unittests.
+- Discussion #148: Changed mapping of NOSLOT64k to custom memory. So that it supports banking.
 
 # 3.6.2
 - Fixed cpu load and frequency for floating window.
