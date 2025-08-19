@@ -18,6 +18,7 @@ import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../MemoryMo
 import {MemoryModelZxNextOneROM} from '../MemoryModel/zxnextmemorymodels';
 import {DzrpTransportTest} from './dzrptransporttest';
 import {LogEval} from '../../misc/logeval';
+import {Z80File} from './z80file';
 
 
 
@@ -1452,6 +1453,8 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			const ext = path.extname(filePath).toLowerCase();
 			if (ext === '.sna')
 				await this.loadBinSna(filePath);
+			else if (ext === '.z80')
+				await this.loadBinZ80(filePath);
 			else if (ext === '.nex')
 				await this.loadBinNex(filePath);
 			else if (ext === '.p' || ext === '.81' || ext === '.p81')
@@ -1636,6 +1639,57 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 		// Check if interrupt should be enabled
 		const interrupt_enabled = (snaFile.iff2 & 0b00000100) !== 0;
+		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
+	}
+
+
+	/** Loads a .z80 file.
+	 * See https://worldofspectrum.org/faq/reference/z80format.htm
+	 */
+	protected async loadBinZ80(filePath: string): Promise<void> {
+		// Load and parse file
+		const z80File = new Z80File();
+		z80File.readFile(filePath);
+
+	// TODO: not tested yet
+
+		// Set the border
+		await this.sendDzrpCmdSetBorder(z80File.borderColor);
+
+		// Transfer 16k memory banks
+		for (const memBank of z80File.memBanks) {
+			// As 2x 8k memory banks. I.e. DZRP is for ZX Next only.
+			const bank8 = 2 * memBank.bank;
+			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, MemBank16k.BANK16K_SIZE / 2));
+			await this.sendDzrpCmdWriteBank(bank8 + 1, memBank.data.slice(MemBank16k.BANK16K_SIZE / 2));
+		}
+
+		// Set the default slot/bank association
+		const slotBanks = [254, 255, 10, 11, 4, 5, 0, 1];	// 5, 2, 0
+		for (let slot = 0; slot < 8; slot++) {
+			const bank8 = slotBanks[slot];
+			await this.sendDzrpCmdSetSlot(slot, bank8);
+		}
+
+		// Set the registers
+		await this.sendDzrpCmdSetRegister(Z80_REG.PC, z80File.pc);
+		await this.sendDzrpCmdSetRegister(Z80_REG.SP, z80File.sp);
+		await this.sendDzrpCmdSetRegister(Z80_REG.AF, z80File.af);
+		await this.sendDzrpCmdSetRegister(Z80_REG.BC, z80File.bc);
+		await this.sendDzrpCmdSetRegister(Z80_REG.DE, z80File.de);
+		await this.sendDzrpCmdSetRegister(Z80_REG.HL, z80File.hl);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IX, z80File.ix);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IY, z80File.iy);
+		await this.sendDzrpCmdSetRegister(Z80_REG.AF2, z80File.af2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.BC2, z80File.bc2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.DE2, z80File.de2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.HL2, z80File.hl2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.R, z80File.r);
+		await this.sendDzrpCmdSetRegister(Z80_REG.I, z80File.i);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IM, z80File.im);
+
+		// Check if interrupt should be enabled
+		const interrupt_enabled = (z80File.iff2 & 0b00000100) !== 0;
 		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
 	}
 

@@ -32,6 +32,7 @@ import path = require('path');
 import {ExecuteInterface} from './executeinterface';
 import {Zx81LoadOverlay} from './zx81loadoverlay';
 import {Zx81BasicVars} from '../../misc/zx81/zx81basicvars';
+import {Z80File} from '../dzrp/z80file';
 
 
 
@@ -1016,7 +1017,8 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected deserializeState(data: Uint8Array) {
 		// Create mem buffer for reading
-		const memBuffer = MemBuffer.from(data.buffer);
+		const b = Buffer.from(data);
+		const memBuffer = MemBuffer.from(b.buffer); // TODO: test
 
 		// Deserialize own properties
 		this.deserialize(memBuffer);
@@ -1170,11 +1172,11 @@ export class ZSimRemote extends DzrpRemote {
 
 		// 48K
 		if (this.memoryModel instanceof MemoryModelZx48k) {
-			if (snaFile.is128kSnaFile)
+			if (snaFile.is128kFile)
 				throw Error("A 128K SNA file can't be loaded into a '" + this.memoryModel.name + "' memory model.");
+			const slots = this.memoryModel.initialSlots;
 			for (let i = 0; i < 3; i++) {
 				const addr64k = (i + 1) * 0x4000;
-				const slots = this.memoryModel.initialSlots;
 				const {bank, offset} = this.memory.getBankAndOffsetForAddress(addr64k, slots);
 				const snaMemBank = snaFile.memBanks[i];
 				this.memory.writeMemoryData(bank, offset, snaMemBank.data, 0, snaMemBank.data.length);
@@ -1196,7 +1198,7 @@ export class ZSimRemote extends DzrpRemote {
 				}
 			}
 			catch (e) {
-				const sna128String = (snaFile.is128kSnaFile) ? '128K ' : '';
+				const sna128String = (snaFile.is128kFile) ? '128K ' : '';
 				throw Error("A " + sna128String + "SNA file can't be loaded into a '" + this.memoryModel.name + "' memory model.");
 			}
 		}
@@ -1227,9 +1229,101 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
 
 		// Set ROM1 or ROM0
-		if (snaFile.is128kSnaFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNextTwoRom)) {
+		if (snaFile.is128kFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNextTwoRom)) {
 			// Write port 7FFD
 			const port7ffd = snaFile.port7ffd;
+			this.z80Cpu.ports.write(0x7FFD, port7ffd);
+		}
+	}
+
+	/** Loads a .z80 file.
+	 * Loading is intelligent. I.e. if a z80 file from a ZX128 is loaded into a ZX48 or a ZXNEXT
+	 * it will work,
+	 * as long as no memory is used that is not present in the memory model.
+	 * E.g. as long as only 16k banks 0, 2 and 5 are used in the z80 file it
+	 * is possible to load it onto a ZX48K.
+	 */
+	protected async loadBinZ80(filePath: string): Promise<void> {
+		// Load and parse file
+		const z80File = new Z80File();
+		z80File.readFile(filePath);
+
+		// If ZXNext is used then MemoryModelZxNextTwoROM should be used:
+		Utility.assert(!(this.memoryModel instanceof MemoryModelZxNextOneROM));
+
+		// 16K
+		if (this.memoryModel instanceof MemoryModelZx16k)
+			throw Error("Loading .z80 file not supported for memory model '" + this.memoryModel.name + "'.");
+
+		// 48K
+		if (this.memoryModel instanceof MemoryModelZx48k) {
+			if (z80File.is128kFile)
+				throw Error("A 128K Z80 file can't be loaded into a '" + this.memoryModel.name + "' memory model.");
+			const slots = this.memoryModel.initialSlots;
+			for (let i = 0; i < 3; i++) {
+				const z80MemBank = z80File.memBanks[i];
+				let addr64k;
+				switch (z80MemBank.bank) {
+					case 0: addr64k = 0xC000; break;
+					case 2: addr64k = 0x8000; break;
+					case 5: addr64k = 0x4000; break;
+					default:
+						throw Error("Unsupported .z80 memory bank " + z80MemBank.bank);
+				}
+				const {bank, offset} = this.memory.getBankAndOffsetForAddress(addr64k, slots);
+				this.memory.writeMemoryData(bank, offset, z80MemBank.data, 0, z80MemBank.data.length);
+			}
+		}
+		else if (this.memoryModel instanceof MemoryModelZxNextTwoRom) {
+			// Bank numbers need to be doubled
+			for (const memBank of z80File.memBanks) {
+				const nextBank = 2 * memBank.bank;
+				this.memory.writeMemoryData(nextBank, 0, memBank.data, 0, 0x2000);
+				this.memory.writeMemoryData(nextBank + 1, 0, memBank.data, 0x2000, 0x2000);
+			}
+		}
+		else {
+			// Write banks
+			try {
+				for (const memBank of z80File.memBanks) {
+					this.memory.writeMemoryData(memBank.bank, 0, memBank.data, 0, memBank.data.length);
+				}
+			}
+			catch (e) {
+				const z80128String = (z80File.is128kFile) ? '128K ' : '';
+				throw Error("A " + z80128String + ".z80 file can't be loaded into a '" + this.memoryModel.name + "' memory model.");
+			}
+		}
+
+		// Set the border
+		await this.sendDzrpCmdSetBorder(z80File.borderColor);
+
+		// Set the registers
+		await this.sendDzrpCmdSetRegister(Z80_REG.PC, z80File.pc);
+		await this.sendDzrpCmdSetRegister(Z80_REG.SP, z80File.sp);
+		await this.sendDzrpCmdSetRegister(Z80_REG.AF, z80File.af);
+		await this.sendDzrpCmdSetRegister(Z80_REG.BC, z80File.bc);
+		await this.sendDzrpCmdSetRegister(Z80_REG.DE, z80File.de);
+		await this.sendDzrpCmdSetRegister(Z80_REG.HL, z80File.hl);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IX, z80File.ix);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IY, z80File.iy);
+		await this.sendDzrpCmdSetRegister(Z80_REG.AF2, z80File.af2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.BC2, z80File.bc2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.DE2, z80File.de2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.HL2, z80File.hl2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.R, z80File.r);
+		await this.sendDzrpCmdSetRegister(Z80_REG.I, z80File.i);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IM, z80File.im);
+		await this.sendDzrpCmdSetRegister(Z80_REG.I, z80File.im);
+
+		// Interrupt (IFF2), IFF1 is ignored
+		const interrupt_enabled = (z80File.iff2 & 0b00000100) !== 0;
+		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
+
+		// Set ROM1 or ROM0
+		if (z80File.is128kFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNextTwoRom)) {
+			// Write port 7FFD
+			const port7ffd = z80File.port7ffd!; // Can be undefined for 48K z80 files
 			this.z80Cpu.ports.write(0x7FFD, port7ffd);
 		}
 	}

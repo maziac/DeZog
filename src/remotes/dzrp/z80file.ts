@@ -49,6 +49,9 @@ export class Z80File {
 	// If set: any 48K machine becomes a 16K machine, any 128K machines becomes a +2 and any +3 machine becomes a +2A.
 	protected modifiedHw: boolean;
 
+	// Is true if it is a 128k Z80 file
+	public is128kFile: boolean;
+
 	// The file read into this buffer:
 	protected z80Buffer: Buffer;
 	// The current index into the buffer:
@@ -79,7 +82,16 @@ export class Z80File {
 		if (this.pc !== 0) {
 			// Version 1
 			if (this.compressed) {
-				this.readCompressed48kBlock();
+				// TODO: Remove comment: Path was tested with scramble.z80
+				const buffer48k = this.readCompressed48kBlock();
+				// Split over 3 banks
+				const size16k = MemBank16k.BANK16K_SIZE;
+				for (let i = 0; i < 3; i++) {
+					const memBank = new MemBank16k();
+					memBank.data.set(buffer48k.subarray(i * size16k, (i + 1) * size16k));
+					memBank.bank = MemBank16k.getMemBankPermutation(i);
+					this.memBanks.push(memBank);
+				}
 			}
 			else {
 				// Read uncompressed 48k
@@ -100,19 +112,19 @@ export class Z80File {
 		if (this.isHwMode48k()) {
 			// Z80 file pages 4, 5, and 8 are present
 			for (let i = 0; i < 3; i++) {
-				const memBank = this.read16kBlock();
+				const memBank = this.readCompressed16kBlock();
 				// Fix bank/page from z80 numbering to 48k numbering
 				const z80PageNumber = memBank.bank;
 				let realBank;
 				switch (z80PageNumber) {
 					case 4:
-						realBank = 0;
+						realBank = 5;	// 0x8000
 						break;
 					case 5:
-						realBank = 1;
+						realBank = 0;	// 0xC000
 						break;
 					case 8:
-						realBank = 2;
+						realBank = 5;	// Bank 5 is the normal screen, 0x4000
 						break;
 					default:
 						throw Error(`Unsupported z80 page number ${z80PageNumber} for 48k`);
@@ -124,7 +136,7 @@ export class Z80File {
 		else if (this.isHwMode128k()) {
 			// Z80 file pages 3 to 10 are present
 			for (let i = 0; i < 8; i++) {
-				const memBank = this.read16kBlock();
+				const memBank = this.readCompressed16kBlock();
 				// Fix bank/page from z80 numbering to 48k numbering
 				const z80PageNumber = memBank.bank;
 				if (z80PageNumber < 3 || z80PageNumber > 10) {
@@ -182,16 +194,19 @@ export class Z80File {
 	protected readAdditionalVersion23Header() {
 		this.addHeaderLength = this.readWord();	// After this field
 		this.pc = this.readWord();
-		this.hwMode = this.readWord();
+		this.hwMode = this.readByte();
 		const byte35 = this.readByte();
-		if (this.isHwMode128k()) {
+		this.is128kFile = this.isHwMode128k();
+		if (this.is128kFile) {
 			this.port7ffd = byte35;
 		}
 		this.z80BufferReadindex += 1; // Skip
 		const bitmask37 = this.readByte();
-		this.modifiedHw = (bitmask37 & 0x80) !== 0;
+		this.modifiedHw = (bitmask37 & 0x80) !== 0;	// Unclear if this has any use while loading
 		// The rest of the header is ignored.
-		this.z80BufferReadindex += this.addHeaderLength - 4 - 3;
+		this.z80BufferReadindex += this.addHeaderLength - 4 - 1 - 1;
+
+		assert(this.z80BufferReadindex === 30 + this.addHeaderLength + 2);
 	}
 
 	// Read helper functions

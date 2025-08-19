@@ -39,7 +39,7 @@ export class SnaFile {
 	public trdosrom: number;
 
 	// Is true if it is a 128k SNA file
-	public is128kSnaFile: boolean;
+	public is128kFile: boolean;
 
 
 	/**
@@ -93,7 +93,7 @@ export class SnaFile {
 
 		// Check for 128k
 		if (snaBuffer.length <= index) {
-			this.is128kSnaFile = false;
+			this.is128kFile = false;
 			// 48k, get PC from SP
 			this.pc = Utility.getWord(snaBuffer, HEADER_LENGTH + this.sp - 0x4000);
 			// Increase SP
@@ -103,7 +103,7 @@ export class SnaFile {
 		}
 
 		// Read the rest of the 128k sna file
-		this.is128kSnaFile = true;
+		this.is128kFile = true;
 
 		// Read a few more values
 		this.pc = Utility.getWord(snaBuffer, index);

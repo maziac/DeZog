@@ -849,7 +849,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		snaFile.readFile(filePath);
 
 		// Check that it is a 48k sna file
-		if (snaFile.is128kSnaFile)
+		if (snaFile.is128kFile)
 			throw Error('Loading of 128k .sna files into MAME is not supported. Only 48k .sna files are supported.');
 
 		// Transfer 16k memory banks
