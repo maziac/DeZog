@@ -277,9 +277,9 @@ In launch.json use
     "load": "<filename.ext>"
 ~~~
 
-to either load a .nex, .sna, .p (or .tap) file. On start of the debug session the file is loaded into the emulator.
-.tap is only supported on ZEsarUX.
-On ZEsarUX the .nex, .sna, .p or .tap file is loaded via ZEsarUX's "smartload" command.
+to either load a .nex, .sna, .p (or .tap or *.z80) file. On start of the debug session the file is loaded into the emulator.
+.tap and .z80 is only supported on ZEsarUX.
+On ZEsarUX the .nex, .sna, .p, ..z80 or .tap file is loaded via ZEsarUX's "smartload" command.
 This will give the best emulation for .nex (and .tap) loading as the nex loading can be emulated as well.
 
 For all other remotes (cspect, zsim, mame and zxnext) the .nex, .sna or .p file loading is mainly copying the data into the emulators memory, setting a few registers and starting it.
