@@ -1080,8 +1080,7 @@ export class Utility {
 	}
 
 
-	/**
-	 * Helper method to set a WORD from two successing indices in the
+	/** Helper method to set a WORD from two successing indices in the
 	 * given buffer. (Little endian)
 	 * @param buffer The buffer to use.
 	 * @param index The index into the buffer.
@@ -1093,8 +1092,7 @@ export class Utility {
 	}
 
 
-	/**
-	 * Helper method to return a WORD from two successing indices in the
+	/** Helper method to return a WORD from two succeeding indices in the
 	 * given buffer. (Little endian)
 	 * @param buffer The buffer to use.
 	 * @param index The index into the buffer.
