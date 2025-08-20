@@ -234,7 +234,6 @@ export class Z80File {
 
 	// Reads a block of data.
 	protected read16kBlock(): MemBank16k {
-	// TODO:TEST
 		const memBank = new MemBank16k();
 		memBank.data.set(this.z80Buffer.subarray(this.z80BufferReadIndex, this.z80BufferReadIndex + MemBank16k.BANK16K_SIZE));
 		this.z80BufferReadIndex += MemBank16k.BANK16K_SIZE;
@@ -284,8 +283,6 @@ export class Z80File {
 		// Data
 		if (length === 0xFFFF) {
 			// Data is uncompressed
-			// TODO: TEST
-
 			const memBank = this.read16kBlock();
 			memBank.bank = page;
 			return memBank;

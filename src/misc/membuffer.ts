@@ -135,7 +135,7 @@ export class MemBuffer {
 	public writeString(s: string) {
 		const enc = new TextEncoder();
 		const buffer = enc.encode(s);
-		this.writeArrayBuffer(buffer.buffer); // TODO: test
+		this.writeArrayBuffer(buffer.buffer);
 	}
 
 

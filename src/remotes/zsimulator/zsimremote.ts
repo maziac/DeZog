@@ -1018,7 +1018,7 @@ export class ZSimRemote extends DzrpRemote {
 	protected deserializeState(data: Uint8Array) {
 		// Create mem buffer for reading
 		const b = Buffer.from(data);
-		const memBuffer = MemBuffer.from(b.buffer); // TODO: test
+		const memBuffer = MemBuffer.from(b.buffer);
 
 		// Deserialize own properties
 		this.deserialize(memBuffer);
@@ -1223,7 +1223,7 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
 
-		// Interrupt (IFF2) TODO: Warum IFF2 und nicht IFF1?
+		// Interrupt (IFF2)
 		const interrupt_enabled = (snaFile.iff2 & 0b00000100) !== 0;
 		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
 
