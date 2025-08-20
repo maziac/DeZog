@@ -261,6 +261,7 @@ export class Z80File {
 					const count = this.readByte();
 					// Check for end marker: 00 ED ED 00, simplified check:
 					if (count === 0) {
+						// Note: a 00 byte from the end marker is written at the end of the decompressed buffer -> ignored
 						break;
 					}
 					const value = this.readByte();

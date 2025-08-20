@@ -1602,9 +1602,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		const snaFile = new SnaFile();
 		snaFile.readFile(filePath);
 
-		// Set the border
-		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
-
 		// Transfer 16k memory banks
 		for (const memBank of snaFile.memBanks) {
 			// As 2x 8k memory banks. I.e. DZRP is for ZX Next only.
@@ -1619,6 +1616,9 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			const bank8 = slotBanks[slot];
 			await this.sendDzrpCmdSetSlot(slot, bank8);
 		}
+
+		// Set the border
+		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
 
 		// Set the registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, snaFile.pc);
@@ -1651,11 +1651,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		const z80File = new Z80File();
 		z80File.readFile(filePath);
 
-	// TODO: not tested yet
-
-		// Set the border
-		await this.sendDzrpCmdSetBorder(z80File.borderColor);
-
 		// Transfer 16k memory banks
 		for (const memBank of z80File.memBanks) {
 			// As 2x 8k memory banks. I.e. DZRP is for ZX Next only.
@@ -1670,6 +1665,9 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			const bank8 = slotBanks[slot];
 			await this.sendDzrpCmdSetSlot(slot, bank8);
 		}
+
+		// Set the border
+		await this.sendDzrpCmdSetBorder(z80File.borderColor);
 
 		// Set the registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, z80File.pc);
@@ -1689,7 +1687,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, z80File.im);
 
 		// Check if interrupt should be enabled
-		const interrupt_enabled = (z80File.iff2 & 0b00000100) !== 0;
+		const interrupt_enabled = (z80File.iff1 !== 0);
 		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
 	}
 

@@ -1314,7 +1314,7 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, z80File.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, z80File.im);
 
-		// Interrupt (IFF2), IFF1 is ignored
+		// Check if interrupt should be enabled
 		const interrupt_enabled = (z80File.iff1 !== 0);
 		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
 

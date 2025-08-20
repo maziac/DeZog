@@ -277,13 +277,12 @@ In launch.json use
     "load": "<filename.ext>"
 ~~~
 
-to either load a .nex, .sna, .p (or .tap or *.z80) file. On start of the debug session the file is loaded into the emulator.
+to either load a .nex, .sna, .z80, .p (or .tap or *.z80) file. On start of the debug session the file is loaded into the emulator.
 .tap and .z80 is only supported on ZEsarUX.
-On ZEsarUX the .nex, .sna, .p, ..z80 or .tap file is loaded via ZEsarUX's "smartload" command.
-This will give the best emulation for .nex (and .tap) loading as the nex loading can be emulated as well.
+On ZEsarUX the .nex, .sna, .p, .z80 or .tap file is loaded via ZEsarUX's "smartload" command.
 
-For all other remotes (cspect, zsim, mame and zxnext) the .nex, .sna or .p file loading is mainly copying the data into the emulators memory, setting a few registers and starting it.
-For the .sna file (apart from ZEsarUX) only zsim will set the port 0x7FFD and the IFF2 register (interrupt enabled) correctly.
+For all other remotes (cspect, zsim, mame and zxnext) the .nex, .z80, .sna or .p file loading is mainly copying the data into the emulators memory, setting a few registers and starting it.
+For the .z80 and .sna files (apart from ZEsarUX) only zsim will set the port 0x7FFD and the interrupt enabled flag correctly.
 
 For the .nex file there can be some missing initializations.
 Most important to note are:
@@ -646,6 +645,7 @@ The following table gives an overview.
 | Display of sprite attributes/patterns | yes                    | yes     | no      | yes    | no     |
 | Load .obj file through DeZog          | yes                    | yes     | yes     | yes    | yes 7) |
 | Load .sna file through DeZog          | yes                    | yes     | yes     | yes    | yes 7) |
+| Load .z80 file through DeZog          | yes                    | yes     | yes     | yes    | yes 7) |
 | Load .tap file through DeZog          | no                     | yes     | no      | no     | no     |
 | Load .nex file through DeZog          | yes                    | yes     | yes     | yes    | no 7)  |
 | Load .p file through DeZog            | yes                    | yes     | no      | no     | yes    |
@@ -664,7 +664,7 @@ Notes:
 - 4 ) Basically unit tests do work on the ZX Next. But they are not so convenient to use because you may need to manually stop the ZX Next between tests.
 - 5 ) There is nothing preventing you from using unit tests, but for a reverse engineering environment there is little sense in doing unit tests.
 - 6 ) Conditions, ASSERTION and LOGPOINT are evaluated in DeZog, not by the Remote. If used heavily or in a loop this may lead to a slower performance.
-- 7 ) For .sna files only the 48k SNA file loading is supported. Furthermore "loadObjs" is supported. But both do work only if the target memory area is RAM. I.e. you can not overwrite the program in ROM.
+- 7 ) For .sna or .z80 files only the 48k versions are supported. Furthermore "loadObjs" is supported. But does work only if the target memory area is RAM. I.e. you can not overwrite the program in ROM.
 - 8 ) ZEsarUX supports only the check "==" for the breakpoint hit count (pass count in ZEsarUX terminology).
 
 

@@ -244,5 +244,6 @@ export class CSpectRemote extends DzrpBufferRemote {
 	 */
 	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
 		// NOSONAR
+		//super.sendDzrpCmdInterruptOnOff(enable);
 	}
 }
