@@ -1222,7 +1222,6 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
-		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.im);
 
 		// Interrupt (IFF2)
 		const interrupt_enabled = (snaFile.iff2 & 0b00000100) !== 0;
@@ -1314,7 +1313,6 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdSetRegister(Z80_REG.R, z80File.r);
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, z80File.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, z80File.im);
-		await this.sendDzrpCmdSetRegister(Z80_REG.I, z80File.im);
 
 		// Interrupt (IFF2), IFF1 is ignored
 		const interrupt_enabled = (z80File.iff2 & 0b00000100) !== 0;
