@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.6.4
+- launch.json: Added "load" support for .z80 files.
+
 # 3.6.3
 - Command -memmodel output fixed if not all bank indices are used.
 - Fixed reading of 'rom' file for custom memory.
