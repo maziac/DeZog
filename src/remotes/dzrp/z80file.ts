@@ -46,7 +46,9 @@ export class Z80File {
 	// 48k Spectrum, 128k etc.
 	protected hwMode: number;
 
-	// If set: any 48K machine becomes a 16K machine, any 128K machines becomes a +2 and any +3 machine becomes a +2A.
+	// If set: any 48K machine becomes a 16K machine, any 128K machines becomes a +2 and any +3 machine becomes a +2A, which would change to Amstrad ROM.
+	// As the ZX spectrum is configured in the launch.json, no use.
+	// No use.
 	protected modifiedHw: boolean;
 
 	// Is true if it is a 128k Z80 file
@@ -210,8 +212,7 @@ export class Z80File {
 		}
 		this.z80BufferReadIndex += 1; // Skip
 		const bitmask37 = this.readByte();
-		this.modifiedHw = (bitmask37 & 0x80) !== 0;	// Unclear if this has any use while loading
-		// The rest of the header is ignored.
+		this.modifiedHw = (bitmask37 & 0x80) !== 0;	// probably no use
 		this.z80BufferReadIndex += this.addHeaderLength - 4 - 1 - 1;
 
 		assert(this.z80BufferReadIndex === 30 + this.addHeaderLength + 2);
