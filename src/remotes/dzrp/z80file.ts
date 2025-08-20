@@ -51,6 +51,8 @@ export class Z80File {
 
 	// Is true if it is a 128k Z80 file
 	public is128kFile: boolean;
+	// Is true if it is a 48k Z80 file (both could be false if e.g. (SamRam)
+	public is48kFile: boolean;
 
 	// The file read into this buffer:
 	protected z80Buffer: Buffer;
@@ -109,7 +111,7 @@ export class Z80File {
 		this.readAdditionalVersion23Header();
 
 		// Only supported are HW modes are 48k and 128k (I don't kow how the others are mapped)
-		if (this.isHwMode48k()) {
+		if (this.is48kFile) {
 			// Z80 file pages 4, 5, and 8 are present
 			for (let i = 0; i < 3; i++) {
 				const memBank = this.readCompressed16kBlock();
@@ -133,7 +135,7 @@ export class Z80File {
 				this.memBanks.push(memBank);
 			}
 		}
-		else if (this.isHwMode128k()) {
+		else if (this.is128kFile) {
 			// Z80 file pages 3 to 10 are present
 			for (let i = 0; i < 8; i++) {
 				const memBank = this.readCompressed16kBlock();
@@ -152,13 +154,6 @@ export class Z80File {
 		}
 	}
 
-	// HwMode
-	protected isHwMode48k() {
-		return this.hwMode == 0 || this.hwMode == 1 || this.hwMode == 3;
-	}
-	protected isHwMode128k() {
-		return this.hwMode == 4 || this.hwMode == 5 || this.hwMode == 6;
-	}
 
 	// Reads the version 1 header.
 	protected readVersion1Header() {
@@ -193,10 +188,17 @@ export class Z80File {
 	// Reads the version 2 additional header.
 	protected readAdditionalVersion23Header() {
 		this.addHeaderLength = this.readWord();	// After this field
+		const version = (this.addHeaderLength === 23) ? 2 : 3;
 		this.pc = this.readWord();
 		this.hwMode = this.readByte();
 		const byte35 = this.readByte();
-		this.is128kFile = this.isHwMode128k();
+		this.is48kFile= this.hwMode == 0 || this.hwMode == 1 || this.hwMode == 3;
+		this.is128kFile = this.hwMode == 4 || this.hwMode == 5 || this.hwMode == 6;
+		// Special handling for hwMode==3 in version 2
+		if (this.hwMode === 3 && version === 2) {
+			this.is48kFile = false;
+			this.is128kFile = true;
+		}
 		if (this.is128kFile) {
 			this.port7ffd = byte35;
 		}
