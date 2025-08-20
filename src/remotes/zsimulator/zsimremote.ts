@@ -1223,7 +1223,7 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
 
-		// Interrupt (IFF2)
+		// Interrupt (IFF2) TODO: Warum IFF2 und nicht IFF1?
 		const interrupt_enabled = (snaFile.iff2 & 0b00000100) !== 0;
 		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
 
@@ -1315,7 +1315,7 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, z80File.im);
 
 		// Interrupt (IFF2), IFF1 is ignored
-		const interrupt_enabled = (z80File.iff2 & 0b00000100) !== 0;
+		const interrupt_enabled = (z80File.iff1 !== 0);
 		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
 
 		// Set ROM1 or ROM0
@@ -1323,6 +1323,10 @@ export class ZSimRemote extends DzrpRemote {
 			// Write port 7FFD
 			const port7ffd = z80File.port7ffd!; // Can be undefined for 48K z80 files
 			this.z80Cpu.ports.write(0x7FFD, port7ffd);
+		}
+		// If 48k .z80 file is run in 128K memory model then switch ROM to ROM1
+		if (z80File.is48kFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNextTwoRom)) {
+			this.z80Cpu.ports.write(0x7FFD, 0b00010000);
 		}
 	}
 

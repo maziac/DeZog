@@ -50,14 +50,14 @@ export class Z80File {
 	protected modifiedHw: boolean;
 
 	// Is true if it is a 128k Z80 file
-	public is128kFile: boolean;
+	public is128kFile = false;
 	// Is true if it is a 48k Z80 file (both could be false if e.g. (SamRam)
-	public is48kFile: boolean;
+	public is48kFile = false;
 
 	// The file read into this buffer:
 	protected z80Buffer: Buffer;
 	// The current index into the buffer:
-	protected z80BufferReadindex: number;
+	protected z80BufferReadIndex: number;
 
 	/**
 	 * Constructor.
@@ -74,7 +74,7 @@ export class Z80File {
 	public readFile(path: string) {
 		// Read file
 		this.z80Buffer = fs.readFileSync(path);
-		this.z80BufferReadindex = 0;
+		this.z80BufferReadIndex = 0;
 
 		// Read version header first
 		this.readVersion1Header();
@@ -83,8 +83,8 @@ export class Z80File {
 		// Check for version
 		if (this.pc !== 0) {
 			// Version 1
+			this.is48kFile = true;
 			if (this.compressed) {
-				// TODO: Remove comment: Path was tested with scramble.z80
 				const buffer48k = this.readCompressed48kBlock();
 				// Split over 3 banks
 				const size16k = MemBank16k.BANK16K_SIZE;
@@ -119,14 +119,19 @@ export class Z80File {
 				const z80PageNumber = memBank.bank;
 				let realBank;
 				switch (z80PageNumber) {
+					case 0: // Ignore 48k ROM
+					case 1: // Ignore IF 1
+						break;
 					case 4:
-						realBank = 5;	// 0x8000
+						realBank = 2;	// 0x8000
 						break;
 					case 5:
 						realBank = 0;	// 0xC000
 						break;
 					case 8:
 						realBank = 5;	// Bank 5 is the normal screen, 0x4000
+						break;
+					case 11:	// Ignore Multiface ROM
 						break;
 					default:
 						throw Error(`Unsupported z80 page number ${z80PageNumber} for 48k`);
@@ -141,9 +146,10 @@ export class Z80File {
 				const memBank = this.readCompressed16kBlock();
 				// Fix bank/page from z80 numbering to 48k numbering
 				const z80PageNumber = memBank.bank;
-				if (z80PageNumber < 3 || z80PageNumber > 10) {
-					throw Error(`Unsupported z80 page number ${z80PageNumber} for 128k`);
-				}
+				if (z80PageNumber < 3)
+					continue;	// Ignore ROMs and IF1
+				if (z80PageNumber > 10)
+					continue;	// Ignore Multiface ROM
 				const realBank = z80PageNumber - 3;
 				memBank.bank = realBank;
 				this.memBanks.push(memBank);
@@ -177,12 +183,12 @@ export class Z80File {
 		this.af2 = this.readWordBE();
 		this.iy = this.readWord();
 		this.ix = this.readWord();
-		this.iff1 = this.readByte();	// TODO: DI, EI
+		this.iff1 = this.readByte();
 		this.iff2 = this.readByte();
 		const bitmask29 = this.readByte();
 		this.im = (bitmask29 & 0x03);
 
-		assert(this.z80BufferReadindex === 30);
+		assert(this.z80BufferReadIndex === 30);
 	}
 
 	// Reads the version 2 additional header.
@@ -202,35 +208,36 @@ export class Z80File {
 		if (this.is128kFile) {
 			this.port7ffd = byte35;
 		}
-		this.z80BufferReadindex += 1; // Skip
+		this.z80BufferReadIndex += 1; // Skip
 		const bitmask37 = this.readByte();
 		this.modifiedHw = (bitmask37 & 0x80) !== 0;	// Unclear if this has any use while loading
 		// The rest of the header is ignored.
-		this.z80BufferReadindex += this.addHeaderLength - 4 - 1 - 1;
+		this.z80BufferReadIndex += this.addHeaderLength - 4 - 1 - 1;
 
-		assert(this.z80BufferReadindex === 30 + this.addHeaderLength + 2);
+		assert(this.z80BufferReadIndex === 30 + this.addHeaderLength + 2);
 	}
 
 	// Read helper functions
 	protected readByte() {
-		return this.z80Buffer[this.z80BufferReadindex++];
+		return this.z80Buffer[this.z80BufferReadIndex++];
 	}
 	protected readWord() {
-		const low = this.z80Buffer[this.z80BufferReadindex++];
-		const high = this.z80Buffer[this.z80BufferReadindex++];
+		const low = this.z80Buffer[this.z80BufferReadIndex++];
+		const high = this.z80Buffer[this.z80BufferReadIndex++];
 		return (high << 8) | low;
 	}
 	protected readWordBE() {
-		const high = this.z80Buffer[this.z80BufferReadindex++];
-		const low = this.z80Buffer[this.z80BufferReadindex++];
+		const high = this.z80Buffer[this.z80BufferReadIndex++];
+		const low = this.z80Buffer[this.z80BufferReadIndex++];
 		return (high << 8) | low;
 	}
 
 	// Reads a block of data.
 	protected read16kBlock(): MemBank16k {
+	// TODO:TEST
 		const memBank = new MemBank16k();
-		memBank.data.set(this.z80Buffer.subarray(this.z80BufferReadindex, this.z80BufferReadindex + MemBank16k.BANK16K_SIZE));
-		this.z80BufferReadindex += MemBank16k.BANK16K_SIZE;
+		memBank.data.set(this.z80Buffer.subarray(this.z80BufferReadIndex, this.z80BufferReadIndex + MemBank16k.BANK16K_SIZE));
+		this.z80BufferReadIndex += MemBank16k.BANK16K_SIZE;
 		return memBank;
 	}
 
@@ -240,7 +247,7 @@ export class Z80File {
 		const maxSize = 0xC000;
 		const decompressed = Buffer.alloc(maxSize);
 		let dataIndex = 0;
-		while (dataIndex < maxSize && this.z80BufferReadindex < this.z80Buffer.length) {
+		while (dataIndex < maxSize && this.z80BufferReadIndex < this.z80Buffer.length) {
 			const byte = this.readByte();
 			if (byte !== 0xED) {
 				decompressed[dataIndex++] = byte;
@@ -277,15 +284,19 @@ export class Z80File {
 		// Data
 		if (length === 0xFFFF) {
 			// Data is uncompressed
-			return this.read16kBlock();
+			// TODO: TEST
+
+			const memBank = this.read16kBlock();
+			memBank.bank = page;
+			return memBank;
 		}
 
 		// Data is compressed
 		const maxSize = 0x4000;
 		const decompressed = Buffer.alloc(maxSize);
 		let dataIndex = 0;
-		const endReadIndex = this.z80BufferReadindex + length;
-		while (this.z80BufferReadindex < endReadIndex) {
+		const endReadIndex = this.z80BufferReadIndex + length;
+		while (this.z80BufferReadIndex < endReadIndex) {
 			if (dataIndex >= maxSize)
 				throw Error("Decompressed data exceeds maximum size");
 			const byte = this.readByte();
