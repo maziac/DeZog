@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.6.5
+- New DZRP commands in use for cspect (CMD_INTERRUPT_ON_OFF, CMD_EXEC_ASM, CMD_WRITE_PORT, CMD_READ_PORT)
+- Fixed issue loading sna and .z80 files if interrupt is on and cspect is the target.
+
 # 3.6.4
 - launch.json: Added "load" support for .z80 files.
 

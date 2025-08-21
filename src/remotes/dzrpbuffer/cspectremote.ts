@@ -4,6 +4,7 @@ import {Socket} from 'net';
 import {Settings} from '../../settings/settings';
 import {GenericWatchpoint} from '../../genericwatchpoint';
 import {ErrorWrapper} from '../../misc/errorwrapper';
+import {DZRP} from '../dzrp/dzrpremote';
 
 
 
@@ -213,28 +214,33 @@ export class CSpectRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * Not used/supported.
+	/** In from port.
 	 */
 	protected async sendDzrpCmdReadPort(port: number): Promise<number> {
-		throw Error("'sendDzrpCmdReadPort' is not implemented.");
+		const data = await this.sendDzrpCmd(DZRP.CMD_READ_PORT, [port & 0xFF, port >>> 8]);
+		return data[0];
 	}
 
 
-	/**
-	 * Not used/supported.
+	/** Out to port.
 	 */
 	protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
-		throw Error("'sendDzrpCmdWritePort' is not implemented.");
+		await this.sendDzrpCmd(DZRP.CMD_WRITE_PORT, [port & 0xFF, port >>> 8, value]);
 	}
 
 
-	/**
-	 * Not used/supported.
+	/** Execute assembly code.
 	 */
 	protected async sendDzrpCmdExecAsm(code: Array<number>): Promise<{error: number, a: number, f: number, bc: number, de: number, hl: number}> {
-		throw Error("'sendDzrpCmdExecAsm' is not implemented.");
-		//return {error: 0, f: 0, a: 0, bc: 0, de: 0, hl: 0};
+		const data = await this.sendDzrpCmd(DZRP.CMD_EXEC_ASM, code);
+		return {
+			error: data[0],
+			f: data[1],
+			a: data[2],
+			bc: data[3] + 256 * data[4],
+			de: data[5] + 256 * data[6],
+			hl: data[7] + 256 * data[8]
+		};
 	}
 
 
@@ -244,6 +250,6 @@ export class CSpectRemote extends DzrpBufferRemote {
 	 */
 	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
 		// NOSONAR
-		//super.sendDzrpCmdInterruptOnOff(enable);
+		//super.sendDzrpCmdInterruptOnOff(enable); // TODO: Enable when Cspect is release with dezog plugin v2.3.0
 	}
 }
