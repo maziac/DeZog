@@ -1027,7 +1027,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			bp.hitCounter!++;
 			// Check if enough hits
 			const hitCountCondition = `${bp.hitCounter} ${bp.hitCountCondition}`;
-			hit = (0, eval)(hitCountCondition);	// Indirect cal
+			hit = (0, eval)(hitCountCondition);
 		}
 		return hit;
 	}
