@@ -1450,7 +1450,7 @@ I.e. if you have a "stale" breakpoint in some file it could make problems if thi
 C) As SW breakpoints replace the code at the breakpoint address you cannot place any SW breakpoint inside ROM code.
 
 
-D) You cannot set a breakpoint while the debugged program is running. This is because no communication between deZog and the debugged program takes place while it is running.
+D) You cannot set a breakpoint while the debugged program is running. This is because no communication between DeZog and the debugged program takes place while it is running.
 To set a breakpoint first pause your program by pressing the yellow NMI button. Then set the breakpoint and continue.
 
 

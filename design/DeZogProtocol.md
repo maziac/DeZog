@@ -174,7 +174,7 @@ Removed:
 - Extended SET_REGISTERS by I and R.
 
 ### 0.4.0
-- Extended CMD_CONTINUE to allow optimizes StepOver and StepOut which also overcomes the CSpect stepping problem.
+- Extended CMD_CONTINUE to allow optimized StepOver and StepOut which also overcomes the CSpect stepping problem.
 
 ### 0.3.0
 - CMD_GET_SPRITES_CLIP_WINDOW(_AND_CONTROL) extended to return also the control byte.
@@ -387,6 +387,7 @@ Note 1:
 Normally the remote will simply do a Continue (run) when it receives this command until one of the breakpoints is hit.
 If an 'alternate command' is given the remote might execute the alternate command instead. I.e. in that case the breakpoints are ignored, i.e. not set.
 The alternate commands are optimization to allow to execute the commands more effectively, i.e. faster.
+**At the moment there are no plans to implement 'step-over' or 'step-out' akternate commands. Only 0 is implemented.**
 
 Alternate commands:
 - **1=step-over**: A PC range is given. The remote will carry out a loop of internal step-overs until the PC is not inside the range anymore.
@@ -839,6 +840,5 @@ Notification (Length=6+n):
 | 2     | 1    | 0-255         | Break reason: 0 = no reason (e.g. a step-over), 1 = manual break, 2 = breakpoint hit, 3 = watchpoint hit read access, 4 = watchpoint hit write access, 255 = some other reason: the reason string might have useful information for the user |
 | 3     | 2    | 0-65535       | Breakpoint or watchpoint address.                                                                                                                                                                                                            |
 | *5    | 1    | 0-255         | The bank+1 of the breakpoint or watchpoint address.                                                                                                                                                                                          |
-| 6     | 1-n  | reason string | Null-terminated break reason string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.                                                                                                            |
-If reason string is empty it will contain at least a 0. |
+| 6     | 1-n  | reason string | Null-terminated break reason string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256. If reason string is empty it will contain at least a 0. |
 
