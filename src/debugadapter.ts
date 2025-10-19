@@ -41,6 +41,7 @@ import {MemoryCommands} from './commands/memorycommands';
 import {Run} from './run';
 import {LogEval} from './misc/logeval';
 import {ErrorWrapper} from './misc/errorwrapper';
+import argv from 'string-argv';
 
 
 
@@ -2022,11 +2023,15 @@ export class DebugSessionClass extends DebugSession {
 	 * @returns A Promise<string> with an text to output (e.g. an error).
 	 */
 	protected async evaluateCommand(command: string): Promise<string> {
-		const expression = command.trim().replace(/\s+/g, ' ');
-		const tokens = expression.split(' ');
+		let tokens = argv(command) as string[];
 		const cmd = tokens.shift();
 		if (!cmd)
 			throw Error("No command.");
+
+		console.log('Evaluate command:', command);
+		for(const token of tokens) {
+			console.log('Token: "' + token + '"');
+		}
 
 		// Check for "-view"
 		let viewTitle;
@@ -2103,6 +2108,9 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd === '-state') {
 			output = await this.evalStateSaveRestore(tokens);
 		}
+		else if (cmd === '-sjasmplus.path') {
+			output = await this.evalSjasmPlusPath(tokens);
+		}
 		// Debug commands
 		else if (cmd === '-dbg') {
 			output = await this.evalDebug(tokens);
@@ -2110,7 +2118,7 @@ export class DebugSessionClass extends DebugSession {
 		//
 		else {
 			// Unknown command
-			throw Error("Unknown command: '" + expression + "'");
+			throw Error("Unknown command: '" + cmd + "'");
 		}
 
 		// Check for output target
@@ -3065,8 +3073,47 @@ E.g. use "-help -view" to put the help text in an own view.
 	}
 
 
-	/**
-	 * Debug commands. Not shown publicly.
+	/** Load an sjasmplus sld file dynamically.
+	 * just if it was given in the launch.json in
+     *      "sjasmplus": [
+     *           {
+     *               "path": "myfile.sld"
+     *           }
+     *       ],
+	 */
+	protected async evalSjasmPlusPath(tokens: Array<string>): Promise<string> {
+		if (tokens.length !== 1) {
+			throw new Error("Invalid number of arguments");
+		}
+		let filename = tokens[0];
+		// Strip any quotes, if given
+		if ((filename.startsWith('"'))) {
+			if (!filename.endsWith('"'))
+				throw Error("Mismatched quotes in filename: " + filename);
+			filename = filename.substring(1, filename.length - 1);
+		}
+
+		// Root folder
+		const unifiedRootFolder = UnifiedPath.getUnifiedPath(Utility.getRootPath());
+
+		// Prepare config object
+		const launch = Settings.launch;
+		const cfg = {
+			smallValuesMaximum: launch.smallValuesMaximum,
+			sjasmplus: [{
+				path: unifiedRootFolder + '/' + filename,
+				srcDirs: [],
+				excludeFiles: []
+			}]
+		} as any as SettingsParameters;
+
+		// Load sld file
+		await this.loadLabels(cfg);
+		return 'OK';
+	}
+
+
+	/** Debug commands. Not shown publicly.
 	 * @param tokens The arguments.
 	   * @returns A Promise<string> with a text to print.
 	 */
@@ -3706,26 +3753,32 @@ E.g. use "-help -view" to put the help text in an own view.
 
 	public async reloadLabels(): Promise<void> {
 		try {
-			// Clear diagnostics
-			DiagnosticsHandler.clear();
-
-			// Read list files
-			Remote.readListFiles(Settings.launch);
-			// Re-read the watchpoints etc.
-			await Remote.initWpmemAssertionLogpoints();
-
-			// Reset a few things
-			Decoration.clearAllDecorations();
-			StepHistory.init();	// Is only cleared because coverage is cleared (otherwise it looks inconsistent)
-
-			// Do disassembly anew
-			Disassembly.invalidateDisassembly();
-			this.sendEvent(new StoppedEvent("Labels reloaded", DebugSessionClass.THREAD_ID));
+			this.loadLabels(Settings.launch);
 		}
 		catch (e) {
 			// Some error occurred
 			this.showError("Error: " + e.message + ".\nPlease fix and reload.");
 		}
+	}
+
+
+	/** Used by reloadLabels and by debug commands. */
+	public async loadLabels(settingsLaunch: SettingsParameters): Promise<void> {
+		// Clear diagnostics
+		DiagnosticsHandler.clear();
+
+		// Read list files
+		Remote.readListFiles(settingsLaunch);
+		// Re-read the watchpoints etc.
+		await Remote.initWpmemAssertionLogpoints();
+
+		// Reset a few things
+		Decoration.clearAllDecorations();
+		StepHistory.init();	// Is only cleared because coverage is cleared (otherwise it looks inconsistent)
+
+		// Do disassembly anew
+		Disassembly.invalidateDisassembly();
+		this.sendEvent(new StoppedEvent("Labels reloaded", DebugSessionClass.THREAD_ID));
 	}
 
 
