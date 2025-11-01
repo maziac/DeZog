@@ -126,6 +126,10 @@ window.addEventListener('message', event => {// NOSONAR
 				VisualMem.drawVisualMemory(message.visualMem);
 			}
 
+			if (message.visualMemBlocks) {
+				VisualMem.drawVisualMemBlocks(message.visualMemBlocks);
+			}
+
 			if (zxAudioBeeper) {
 				zxAudioBeeper.resume();
 				if (message.audio) {
@@ -170,12 +174,12 @@ function initSimulation(message) {
 	// Store the cpu_load_id
 	cpuLoad = document.getElementById("cpu_load_id") as HTMLLabelElement;
 
-	// Store the visual mem image source
+	// Get the visual mem image source
 	const visualMemCanvas = document.getElementById("visual_mem_img_id") as HTMLCanvasElement;
-	if (visualMemCanvas) {
-		// Init both
-		VisualMem.initCanvas(visualMemCanvas);
-	}
+	// Get the canvases for the custom visual mem blocks
+	const visualMemBlockCanvases = document.querySelectorAll("[id^=custom_visual_mem_block_img_id_]") as NodeListOf<HTMLCanvasElement>;
+	// Init
+	VisualMem.initCanvas(visualMemCanvas, visualMemBlockCanvases);
 
 	// Slots
 	for (let i = 0; ; i++) {
@@ -631,7 +635,7 @@ function keyup(e) {
 window.addEventListener('load', () => {
 	if(countOfProcessedMessages === undefined) {
 		// Initialize here only once so that the value is retained, even if view is restarted.
-		countOfProcessedMessages = 0; 
+		countOfProcessedMessages = 0;
 	}
 	// Inform vscode that page was loaded.
 	vscode.postMessage({

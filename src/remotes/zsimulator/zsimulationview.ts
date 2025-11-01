@@ -502,7 +502,7 @@ export class ZSimulationView extends BaseView {
 		this.restartStopTimer();
 
 		try {
-			let cpuFreq, cpuLoad, simulationTooSlow, slots, slotNames, visualMem, audio, zxnDMA;
+			let cpuFreq, cpuLoad, simulationTooSlow, slots, slotNames, visualMem, visualMemBlocks, audio, zxnDMA;
 
 			// Update frequency
 			if (forceUpdate || this.prevCpuFreq !== this.simulator.z80Cpu.cpuFreq) {
@@ -526,6 +526,16 @@ export class ZSimulationView extends BaseView {
 				visualMem = this.simulator.memory.getVisualMemory();
 			}
 
+			// Custom Visual Memory Blocks
+			if (this.simulator.zsim.customVisualMemBlocks) {
+				visualMemBlocks = [];
+				// Create array of mem blocks
+				for (const block of this.simulator.zsim.customVisualMemBlocks) {
+					const visualBlock = this.simulator.memory.getVisualMemBlock(block.address, block.size);
+					visualMemBlocks.push(visualBlock);
+				}
+			}
+
 			if (this.simulator.zsim.zxBeeper) {
 				// Audio
 				audio = this.simulator.getZxBeeperBuffer();
@@ -544,6 +554,7 @@ export class ZSimulationView extends BaseView {
 				simulationTooSlow,
 				slotNames,
 				visualMem,
+				visualMemBlocks,
 				audio,
 				zxnDMA
 			};
@@ -716,12 +727,8 @@ export class ZSimulationView extends BaseView {
 			</p>
 			`;
 
-		// Memory Pages / Visual Memory
-		if (zsim.visualMemory) {
-			html += `
-			<!-- Visual Memory (memory activity) -->
-			<!-- Legend, Slots -->
-			<div style="position:relative; width:100%; height:4.5em;">
+		// For visual memory or custom visual memory blocks
+		html += `
 				<style>
 					.border {
 						outline: 1px solid var(--vscode-foreground);
@@ -743,7 +750,14 @@ export class ZSimulationView extends BaseView {
 						background: transparent
 					}
 				</style>
+				`;
 
+		// Memory Pages / Visual Memory
+		if (zsim.visualMemory) {
+			html += `
+			<!-- Visual Memory (memory activity) -->
+			<!-- Legend, Slots -->
+			<div style="position:relative; width:100%; height:4.5em;">
 				<!-- Legend -->
 				<span style="position:absolute; top: 0em; left:0%">
 					<label style="background:blue">&ensp;&ensp;</label><label>&nbsp;PROG &ensp;&ensp;</label>
@@ -819,7 +833,7 @@ export class ZSimulationView extends BaseView {
 
 			html += `
 			<!-- Visual memory image, is mainly transparent and put on top -->
-			<canvas class="slot" width="256" height="1" id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; left:0; width:100%; pointer-events:none; z-index:10; background:transparent;"></canvas>
+			<canvas class="slot" id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; left:0; width:100%; pointer-events:none; z-index:10; background:transparent;"></canvas>
 			`;
 
 			html += `
@@ -828,6 +842,40 @@ export class ZSimulationView extends BaseView {
 			`;
 		}
 
+		// Custom Visual Memory Blocks
+		if (zsim.customVisualMemBlocks) {
+			const blockCount = zsim.customVisualMemBlocks.length;
+			html += `
+			<div style="position:relative; width:100%; height:4.5em;">
+			`;
+			if (!zsim.visualMemory) {
+				// Print legend if not already printed
+				html += `
+				<!-- Legend -->
+				<span style="position:absolute; top: 0em; left:0%">
+					<label style="background:blue">&ensp;&ensp;</label><label>&nbsp;PROG &ensp;&ensp;</label>
+					<label style="background:yellow">&ensp;&ensp;</label><label>&nbsp;READ &ensp;&ensp;</label>
+					<label style="background:red">&ensp;&ensp;</label><label>&nbsp;WRITE</label>
+				</span>
+				`;
+			}
+			for (let b = 0; b < blockCount; b++) {
+				const block = zsim.customVisualMemBlocks[b];
+				html += `
+				<div>
+					<!-- Custom Visual Memory Block ${b} -->
+					<label>Address: 0x${Utility.getHexString(block.address, 4)}, Size: 0x${Utility.getHexString(block.size, 4)} bytes</label><br>
+					<div class="border slot" style="top:1.5em; left:0; width:100%; height: 2em;"></div>
+					<canvas class="slot" id="custom_visual_mem_block_img_id_${b}" style="image-rendering:pixelated; position:absolute; top:1.5em; left:0; width:100%; pointer-events:none; z-index:10; background:transparent;"></canvas>
+				</div>
+			<br><br>
+				`;
+			}
+			html += `
+			</div>
+			<br><br>
+			`;
+		}
 
 		// Add code for the screen (Spectrum or ZX81)
 		if (zsim.ulaScreen) {

@@ -260,6 +260,15 @@ export interface UlaOptions {
 }
 
 
+/// For defining custom blocks of memory to visualize.
+export interface CustomVisualMemBlockType {
+	// The start address of the memory block.
+	address: number;
+
+	// The size of the memory block.
+	size: number;
+}
+
 /// Definitions for the 'zsim' remote type.
 export interface ZSimType {
 	// Defines a preset of settings to simulate a ZX Spectrum or ZX81.
@@ -284,6 +293,9 @@ export interface ZSimType {
 
 	// If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.
 	visualMemory: boolean,
+
+	// Custom memory blocks for visualization.
+	customVisualMemBlocks: Array<CustomVisualMemBlockType>,
 
 	// If enabled it shows the contents of the ZX Spectrum or ZX 81 screen.
 	ulaScreen: 'spectrum' | 'zx81' | 'none',	// "spectrum" or "zx81"
@@ -803,6 +815,20 @@ export class Settings {
 			launchCfg.zsim.customCode.timeStep = Number.MAX_SAFE_INTEGER;
 		}
 
+		// zsim custom visual memory blocks
+		const customVisualBlocks = launchCfg.zsim.customVisualMemBlocks;
+		if (customVisualBlocks !== undefined) {
+			const countBlocks = customVisualBlocks.length;
+			for (let i = 0; i < countBlocks; i++) {
+				const block = customVisualBlocks[i];
+				// Convert from string to number
+				if(typeof block.address === "string")
+					block.address = Utility.parseValue(block.address);
+				if(typeof block.size === "string")
+					block.size = Utility.parseValue(block.size);
+			}
+		}
+
 		// zsim custom memory
 		const custMem = launchCfg.zsim.customMemory;
 		if (custMem !== undefined) {
@@ -1299,6 +1325,20 @@ export class Settings {
 		}
 		if (screenArea.lastX < screenArea.firstX) {
 			throw Error("'ulaOptions': lastX < firstX.");
+		}
+
+
+		// Check zsim custom visual memory blocks
+		const customVisualBlocks = Settings.launch.zsim.customVisualMemBlocks;
+		if (customVisualBlocks !== undefined) {
+			const countBlocks = customVisualBlocks.length;
+			for (let i = 0; i < countBlocks; i++) {
+				const block = customVisualBlocks[i];
+				if (block.size <= 0)
+					throw Error("'customVisualMemBlocks': Block size must be > 0.");
+				if (block.address < 0 || block.address > 0xFFFF)
+					throw Error("'customVisualMemBlocks': Block address must be between 0 and 65535.");
+			}
 		}
 	}
 }

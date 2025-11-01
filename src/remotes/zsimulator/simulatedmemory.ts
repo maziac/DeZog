@@ -73,12 +73,14 @@ export class SimulatedMemory implements Serializable {
 	// The number of bits to shift to get the slot from the address
 	protected shiftCount: number;
 
-	// Visual memory: shows the access as an image.
-	// The image is just 1 pixel high.
-	protected visualMemory: Array<number>;
-
 	// The size of the visual memory.
 	protected VISUAL_MEM_MAX = 256;	// 256 entries
+
+	// Visual memory: shows the access as an image.
+	protected visualMemory: Array<number>;
+
+	// The full 64k address space is mapped into this visual memory.
+	protected visualDetailedMemory: Array<number>;
 
 	// Colors:
 	protected VISUAL_MEM_COL_READ = 1;
@@ -131,6 +133,7 @@ export class SimulatedMemory implements Serializable {
 
 		// Create visual memory
 		this.visualMemory = new Array<number>(this.VISUAL_MEM_MAX + 1);	// E.g. 256 (+1 to avoid issues with rounding)
+		this.visualDetailedMemory = new Array<number>(0x10000);
 		this.clearVisualMemory();
 
 		// Memory is organized in banks.
@@ -477,6 +480,7 @@ export class SimulatedMemory implements Serializable {
 
 		// Visual memory
 		this.visualMemory[Math.floor(addr64k * this.VISUAL_MEM_MAX / 0x10000)] = this.VISUAL_MEM_COL_READ;
+		this.visualDetailedMemory[addr64k] = this.VISUAL_MEM_COL_READ;
 
 		// Read
 		const slotIndex = this.slotAddress64kAssociation[addr64k];
@@ -503,7 +507,7 @@ export class SimulatedMemory implements Serializable {
 
 		// Visual memory
 		this.visualMemory[Math.floor(addr64k * this.VISUAL_MEM_MAX / 0x10000)] = this.VISUAL_MEM_COL_WRITE;
-
+		this.visualDetailedMemory[addr64k] = this.VISUAL_MEM_COL_WRITE;
 
 		// Read
 		const slotIndex = this.slotAddress64kAssociation[addr64k];
@@ -610,6 +614,7 @@ export class SimulatedMemory implements Serializable {
 	public setVisualProg(addr64k: number) {
 		// Visual memory
 		this.visualMemory[Math.floor(addr64k * this.VISUAL_MEM_MAX / 0x10000)] = this.VISUAL_MEM_COL_PROG;
+		this.visualDetailedMemory[addr64k] = this.VISUAL_MEM_COL_PROG;
 	}
 
 
@@ -727,6 +732,7 @@ export class SimulatedMemory implements Serializable {
 	 */
 	public clearVisualMemory() {
 		this.visualMemory.fill(0);
+		this.visualDetailedMemory.fill(0);
 	}
 
 
@@ -734,6 +740,16 @@ export class SimulatedMemory implements Serializable {
 	 */
 	public getVisualMemory(): number[] {
 		return this.visualMemory;
+	}
+
+
+	/** Returns a slice of the visual memory.
+	 * @param addr64k The 64k start address.
+	 * @param size The size of the block.
+	 * @returns The visual detailed memory as a buffer.
+	 */
+	public getVisualMemBlock(addr64k: number, size: number): number[] {
+		return this.visualDetailedMemory.slice(addr64k, addr64k + size);
 	}
 
 
