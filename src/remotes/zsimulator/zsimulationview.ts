@@ -804,22 +804,23 @@ export class ZSimulationView extends BaseView {
 			}
 
 			html += `
-			<!-- Visual memory image, is mainly transparent and put on top -->
-			<canvas class="slot" width="256" height="1" id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; left:0; width:100%;"></canvas>
-
 			<!-- Slots  2nd -->
 			`;
-
 			const slotRanges = this.simulator.memoryModel.slotRanges;
 			const count = slotRanges.length;
 			for (let i = 0; i < count; i++) {
 				const slotRange = slotRanges[i];
 				const pos = slotRange.start * 100 / 0x10000;
 				const width = (slotRange.end + 1 - slotRange.start) * 100 / 0x10000;
-				const add = `<div class="border" id="slot${i}_id" style="top:3.5em; left:${pos}%; width:${width}%; height: 2em;"></div>
+				const add = `<div class="border slot" id="slot${i}_id" style="top:3.5em; left:${pos}%; width:${width}%; height: 2em;"></div>
 			`;
 				html += add;
 			}
+
+			html += `
+			<!-- Visual memory image, is mainly transparent and put on top -->
+			<canvas class="slot" width="256" height="1" id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; left:0; width:100%; pointer-events:none; z-index:10; background:transparent;"></canvas>
+			`;
 
 			html += `
 			</div>

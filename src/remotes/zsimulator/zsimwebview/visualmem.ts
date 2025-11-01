@@ -1,12 +1,11 @@
-/**
- * Represents the ZX 48K ULA screen. (0x4000-0x5AFF)
- * I.e. it takes a bank and converts it to a gif image.
+/** Represets the visaul memory (64k range).
+ * I.e. it takes the memory 0x0000-0xFFFF and converts it to an image.
  */
 export class VisualMem {
 
 	// The palette used.
 	protected static palette = [
-		0x80, 0x80, 0x80, 0x00,	// Gray (background)/Transparent
+		0x00, 0x00, 0x00, 0x00,	// Black (background)/Transparent
 		0xC0, 0xC0, 0x00, 0xFF,	// Yellow: Read access
 		0xC0, 0x00, 0x00, 0xFF,	// Red: Write access
 		0x00, 0x00, 0xC0, 0xFF,	// Blue: Prog access
@@ -46,7 +45,7 @@ export class VisualMem {
 				pixels[pixelIndex++] = this.palette[colorIndex];	// alpha
 			}
 
-			// Write image
+			// Set canvas dimensions and write image
 			this.visualMemCanvas.width = len;
 			this.visualMemCanvas.height = 1;
 			ctx.putImageData(imgData, 0, 0);
