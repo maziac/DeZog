@@ -78,7 +78,7 @@ export class SimulatedMemory implements Serializable {
 	protected visualMemory: Array<number>;
 
 	// The size of the visual memory.
-	protected VISUAL_MEM_SIZE_SHIFT = 8;
+	protected VISUAL_MEM_MAX = 256;	// 256 entries
 
 	// Colors:
 	protected VISUAL_MEM_COL_READ = 1;
@@ -130,7 +130,7 @@ export class SimulatedMemory implements Serializable {
 		this.m1Read8 = this.read8.bind(this);
 
 		// Create visual memory
-		this.visualMemory = new Array<number>(1 << (16 - this.VISUAL_MEM_SIZE_SHIFT));	// E.g. 256
+		this.visualMemory = new Array<number>(this.VISUAL_MEM_MAX + 1);	// E.g. 256 (+1 to avoid issues with rounding)
 		this.clearVisualMemory();
 
 		// Memory is organized in banks.
@@ -371,7 +371,7 @@ export class SimulatedMemory implements Serializable {
 
 		// Store banks
 		for (const bank of this.memoryBanks)
-			memBuffer.writeArrayBuffer(bank);
+			memBuffer.writeArrayBuffer(bank.buffer as ArrayBuffer);
 
 		// Write the bank switching context
 		const contextString = JSON.stringify(this.bankSwitchingContext);
@@ -476,7 +476,7 @@ export class SimulatedMemory implements Serializable {
 		}
 
 		// Visual memory
-		this.visualMemory[addr64k >>> this.VISUAL_MEM_SIZE_SHIFT] = this.VISUAL_MEM_COL_READ;
+		this.visualMemory[Math.floor(addr64k * this.VISUAL_MEM_MAX / 0x10000)] = this.VISUAL_MEM_COL_READ;
 
 		// Read
 		const slotIndex = this.slotAddress64kAssociation[addr64k];
@@ -502,7 +502,7 @@ export class SimulatedMemory implements Serializable {
 		}
 
 		// Visual memory
-		this.visualMemory[addr64k >>> this.VISUAL_MEM_SIZE_SHIFT] = this.VISUAL_MEM_COL_WRITE;
+		this.visualMemory[Math.floor(addr64k * this.VISUAL_MEM_MAX / 0x10000)] = this.VISUAL_MEM_COL_WRITE;
 
 
 		// Read
@@ -607,9 +607,9 @@ export class SimulatedMemory implements Serializable {
 
 
 	// Write 1 byte.
-	public setVisualProg(addr: number) {
+	public setVisualProg(addr64k: number) {
 		// Visual memory
-		this.visualMemory[addr >>> this.VISUAL_MEM_SIZE_SHIFT] = this.VISUAL_MEM_COL_PROG;
+		this.visualMemory[Math.floor(addr64k * this.VISUAL_MEM_MAX / 0x10000)] = this.VISUAL_MEM_COL_PROG;
 	}
 
 
