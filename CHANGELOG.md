@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.6.5
+- launch.json: Added "customVisualMemBlocks".
+
 # 3.6.4
 - launch.json: Added "load" support for .z80 files.
 
