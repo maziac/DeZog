@@ -846,7 +846,7 @@ export class ZSimulationView extends BaseView {
 		if (zsim.customVisualMemBlocks) {
 			const blockCount = zsim.customVisualMemBlocks.length;
 			html += `
-			<div style="position:relative; width:100%; height:4.5em;">
+			<div style="position:relative; width:100%;">
 			`;
 			if (!zsim.visualMemory) {
 				// Print legend if not already printed
@@ -861,19 +861,19 @@ export class ZSimulationView extends BaseView {
 			}
 			for (let b = 0; b < blockCount; b++) {
 				const block = zsim.customVisualMemBlocks[b];
+				const endAddress = block.address + block.size - 1;
 				html += `
-				<div>
+  				<div style="position:relative;">
 					<!-- Custom Visual Memory Block ${b} -->
-					<label>Address: 0x${Utility.getHexString(block.address, 4)}, Size: 0x${Utility.getHexString(block.size, 4)} bytes</label><br>
-					<div class="border slot" style="top:1.5em; left:0; width:100%; height: 2em;"></div>
+					<label>Start: 0x${Utility.getHexString(block.address, 4)}, End: 0x${Utility.getHexString(endAddress, 4)}</label><br>
+					<div class="border slot" style="top:1.5em; left:0; width:100%; height:2em;"></div>
 					<canvas class="slot" id="custom_visual_mem_block_img_id_${b}" style="image-rendering:pixelated; position:absolute; top:1.5em; left:0; width:100%; pointer-events:none; z-index:10; background:transparent;"></canvas>
+  					<br><br><br>
 				</div>
-			<br><br>
 				`;
 			}
 			html += `
 			</div>
-			<br><br>
 			`;
 		}
 

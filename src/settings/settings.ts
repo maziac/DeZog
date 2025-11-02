@@ -1334,6 +1334,14 @@ export class Settings {
 			const countBlocks = customVisualBlocks.length;
 			for (let i = 0; i < countBlocks; i++) {
 				const block = customVisualBlocks[i];
+				if (block.address === undefined)
+					throw Error("'customVisualMemBlocks': Block address is not defined.");
+				if (block.size === undefined)
+					throw Error("'customVisualMemBlocks': Block size is not defined.");
+				if (typeof block.address !== "number")
+					throw Error(`'customVisualMemBlocks': Block address '${block.address}' is not a number.`);
+				if (typeof block.size !== "number")
+					throw Error(`'customVisualMemBlocks': Block size '${block.size}' is not a number.`);
 				if (block.size <= 0)
 					throw Error("'customVisualMemBlocks': Block size must be > 0.");
 				if (block.address < 0 || block.address > 0xFFFF)
