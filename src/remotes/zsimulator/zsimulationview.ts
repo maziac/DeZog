@@ -845,35 +845,38 @@ export class ZSimulationView extends BaseView {
 		// Custom Visual Memory Blocks
 		if (zsim.customVisualMemBlocks) {
 			const blockCount = zsim.customVisualMemBlocks.length;
-			html += `
-			<div style="position:relative; width:100%;">
-			`;
 			if (!zsim.visualMemory) {
 				// Print legend if not already printed
 				html += `
 				<!-- Legend -->
-				<span style="position:absolute; top: 0em; left:0%">
+				<span style="top:0em; left:0%; height:2em;">
 					<label style="background:blue">&ensp;&ensp;</label><label>&nbsp;PROG &ensp;&ensp;</label>
 					<label style="background:yellow">&ensp;&ensp;</label><label>&nbsp;READ &ensp;&ensp;</label>
 					<label style="background:red">&ensp;&ensp;</label><label>&nbsp;WRITE</label>
 				</span>
 				`;
 			}
+			html += `
+			<div style="position:relative; width:100%;">
+			`;
 			for (let b = 0; b < blockCount; b++) {
 				const block = zsim.customVisualMemBlocks[b];
 				const endAddress = block.address + block.size - 1;
 				html += `
-  				<div style="position:relative;">
-					<!-- Custom Visual Memory Block ${b} -->
-					<label>Start: 0x${Utility.getHexString(block.address, 4)}, End: 0x${Utility.getHexString(endAddress, 4)}</label><br>
-					<div class="border slot" style="top:1.5em; left:0; width:100%; height:2em;"></div>
-					<canvas class="slot" id="custom_visual_mem_block_img_id_${b}" style="image-rendering:pixelated; position:absolute; top:1.5em; left:0; width:100%; pointer-events:none; z-index:10; background:transparent;"></canvas>
-  					<br><br><br>
-				</div>
+				<!-- Custom Visual Memory Block ${b} -->
+				<details open="true">
+					<summary>Start: 0x${Utility.getHexString(block.address, 4)}, End: 0x${Utility.getHexString(endAddress, 4)}</summary>
+					<div style="position:relative;">
+						<div class="border slot" style="top:0.5em; left:0; width:100%; height:2em;"></div>
+						<canvas class="slot" id="custom_visual_mem_block_img_id_${b}" style="image-rendering:pixelated; position:absolute; top:0.5em; left:0; width:100%; pointer-events:none; z-index:10; background:transparent;"></canvas>
+						<br><br><br>
+					</div>
+				</details>
 				`;
 			}
 			html += `
 			</div>
+			<br>
 			`;
 		}
 
