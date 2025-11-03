@@ -2516,6 +2516,7 @@ the value correspondents to a label.
 	You can concat several ranges.
 	Example: "-patterns 10-15 20+3 33" will show sprite patterns at index 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 "-rmv": Shows the memory register view. I.e. a dynamic view with the memory contents the registers point to.
+"-sjasmplus.path": Sets the path to an sjasmplus sld file. Can be used to change the sld file (with labels) during runtime. Only one sld file allowed. Replaces any already loaded sld file.
 "-sprites [slot[+count|-endslot] [...]": Shows the tbblue sprite registers beginning at 'slot' until 'endslot' or a number of 'count' slots.
   The values can be omitted. 'slot' defaults to 0 and 'count' to 1. You can concat several ranges.
 	Example: "-sprite 10-15 20+3 33" will show sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
@@ -3096,12 +3097,18 @@ E.g. use "-help -view" to put the help text in an own view.
 		// Root folder
 		const unifiedRootFolder = UnifiedPath.getUnifiedPath(Utility.getRootPath());
 
+		// Check if file exists
+		const absFileName = unifiedRootFolder + '/' + filename;
+		if (!fs.existsSync(absFileName)) {
+			throw new Error("File not found: " + absFileName);
+		}
+
 		// Prepare config object
 		const launch = Settings.launch;
 		const cfg = {
 			smallValuesMaximum: launch.smallValuesMaximum,
 			sjasmplus: [{
-				path: unifiedRootFolder + '/' + filename,
+				path: absFileName,
 				srcDirs: [],
 				excludeFiles: []
 			}]

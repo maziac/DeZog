@@ -1,7 +1,7 @@
 # Changelog
 
 # 3.6.5
-- Debug command sjasmplus.path added for dynamic loading of sld files during runtime (#156).
+- Debug command "-sjasmplus.path" added for dynamic loading of sld files during runtime (#156).
 
 # 3.6.4
 - launch.json: Added "load" support for .z80 files.
