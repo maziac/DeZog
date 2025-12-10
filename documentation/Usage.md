@@ -893,15 +893,15 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
 ![](images/zsim_visual_memory.jpg)
 - "customVisualMemBlocks": You can define memory blocks that are visualized (similar to the visualMemory area). E.g.:
     ![](images/zsim_custom_visual_mem_blocks.jpg)
-    The syntax is:
-    ~~~json
+  The syntax is:
+  ~~~json
         "customVisualMemBlocks": [
             {
                 "address": "0x6000",
                 "size": "0x100",
             }
         ]
-    ~~~
+  ~~~
 - "memoryModel": The used memory model (defaults to "RAM"), i.e.
     - "RAM": One memory area of 64K RAM, no banks.
 	- "ZX16K": ROM and RAM as of the ZX Spectrum 16K.
@@ -2099,11 +2099,11 @@ Use
 Note:
 - The memory views always work in the 64k area. I.e. they don't use 'long addresses' (banks).
 - If you want to launch the register memory view every time you start a debug session then add it to the "commandsAfterLaunch" in the launch.json. E.g.
-    ~~~json
+~~~json
     "commandsAfterLaunch": [
         "-rmv"
     ]
-    ~~~
+~~~
 - The register memory view (-rmv) lacks the search bar, highlighting of changed values and showing previous values when hovering.
 
 
