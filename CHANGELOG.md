@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.6.6
+- New DZRP commands in use for cspect (CMD_INTERRUPT_ON_OFF, CMD_EXEC_ASM, CMD_WRITE_PORT, CMD_READ_PORT). IMPORTANT: You need Cspect >= 3.0.15.2 to be compatible with DeZog.
+- Fixed issue loading .sna and .z80 files if interrupt is on and cspect is the target.
+
+
 # 3.6.5
 - Debug command "-sjasmplus.path" added for dynamic loading of sld files during runtime (#156).
 - launch.json: Added "customVisualMemBlocks" (#157).

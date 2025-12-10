@@ -315,7 +315,7 @@ export class DzrpRemote extends RemoteBase {
 		const cmdArray = cmd.split(' ');
 		const cmd_name = cmdArray.shift();
 		if (cmd_name === "help") {
-			return "Use e.g. 'cmd_init' to send a DZRP command to the ZX Next.";
+			return "Use e.g. 'cmd_init' or 'cmd_read_port' to send a DZRP command.";
 		}
 
 		let response = "";

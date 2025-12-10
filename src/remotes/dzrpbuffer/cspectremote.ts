@@ -4,11 +4,11 @@ import {Socket} from 'net';
 import {Settings} from '../../settings/settings';
 import {GenericWatchpoint} from '../../genericwatchpoint';
 import {ErrorWrapper} from '../../misc/errorwrapper';
+import {DZRP} from '../dzrp/dzrpremote';
 
 
 
-/**
- * The CSpect Remote.
+/** The CSpect Remote.
  * It connects via socket with CSpect.
  * Or better: with the DeZog plugin for CSpect.
  * The CSpect DeZog plugin internally communicates with the
@@ -101,8 +101,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * This will disconnect the socket.
+	/** This will disconnect the socket.
 	 */
 	public async disconnect(): Promise<void> {
 		if (!this.socket)
@@ -139,8 +138,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * Writes the buffer to the socket port.
+	/** Writes the buffer to the socket port.
 	 */
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
 		// Send buffer
@@ -155,8 +153,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * Watchpoints and WPMEM is disabled for CSpect for now.
+	/** Watchpoints and WPMEM is disabled for CSpect for now.
 	 * There is a problem in CSpect: If a read-breakpoint is set it
 	 * can happen that the PC is not incremented anymore or that the
 	 * ISR routine is entered for every instruction. It's not on Mike's priority list, so I disable them here.
@@ -170,8 +167,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * This throws an exception. Used and catched by the unit tests.
+	/** This throws an exception. Used and catched by the unit tests.
 	 * @param wp The watchpoint to set. Will set 'bpId' in the 'watchPoint'.
 	 */
 	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
@@ -179,8 +175,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * State saving is not supported in CSpect.
+	/** State saving is not supported in CSpect.
 	 */
 	public async stateSave(filePath: string): Promise<void> {
 		throw Error("Saving and restoring the state is not supported with CSpect.");
@@ -197,53 +192,53 @@ export class CSpectRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * Not used/supported.
+	/** Not used/supported.
 	 */
 	protected async sendDzrpCmdSetBreakpoints(bpAddresses: Array<number>): Promise<Array<number>> {
 		throw Error("'sendDzrpCmdSetBreakpoints' is not implemented.'");
 	}
 
 
-	/**
-	 * Not used/supported.
+	/** Not used/supported.
 	 */
 	protected async sendDzrpCmdRestoreMem(elems: Array<{address: number, value: number}>): Promise<void> {
 		throw Error("'sendDzrpCmdRestoreMem' is not implemented.");
 	}
 
 
-	/**
-	 * Not used/supported.
+	/** In from port.
 	 */
 	protected async sendDzrpCmdReadPort(port: number): Promise<number> {
-		throw Error("'sendDzrpCmdReadPort' is not implemented.");
+		const data = await this.sendDzrpCmd(DZRP.CMD_READ_PORT, [port & 0xFF, port >>> 8]);
+		return data[0];
 	}
 
 
-	/**
-	 * Not used/supported.
+	/** Out to port.
 	 */
 	protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
-		throw Error("'sendDzrpCmdWritePort' is not implemented.");
+		await this.sendDzrpCmd(DZRP.CMD_WRITE_PORT, [port & 0xFF, port >>> 8, value]);
 	}
 
 
-	/**
-	 * Not used/supported.
+	/** Execute assembly code.
 	 */
 	protected async sendDzrpCmdExecAsm(code: Array<number>): Promise<{error: number, a: number, f: number, bc: number, de: number, hl: number}> {
-		throw Error("'sendDzrpCmdExecAsm' is not implemented.");
-		//return {error: 0, f: 0, a: 0, bc: 0, de: 0, hl: 0};
+		const data = await this.sendDzrpCmd(DZRP.CMD_EXEC_ASM, code);
+		return {
+			error: data[0],
+			f: data[1],
+			a: data[2],
+			bc: data[3] + 256 * data[4],
+			de: data[5] + 256 * data[6],
+			hl: data[7] + 256 * data[8]
+		};
 	}
 
 
-	/**
-	 * Is called by loadBinSna but not supported by the CSpect plugin.
-	 * Therefore it does nothing.
+	/** Is called by loadBinSna.
 	 */
 	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
-		// NOSONAR
-		//super.sendDzrpCmdInterruptOnOff(enable);
+		await super.sendDzrpCmdInterruptOnOff(enable);
 	}
 }

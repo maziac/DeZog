@@ -75,7 +75,7 @@ I.e. different remotes may use a different subset of commands. For one this is b
 [CMD_GET_SPRITE_PATTERNS]: #cmd_get_sprite_patterns19
 [CMD_READ_PORT]: #cmd_read_port20
 [CMD_WRITE_PORT]: #cmd_write_port21
-[CMD_GET_EXEC_ASM]: #cmd_exec_asm22
+[CMD_EXEC_ASM]: #cmd_exec_asm22
 [CMD_INTERRUPT_ON_OFF]: #cmd_interrupt_on_off23
 [CMD_ADD_BREAKPOINT]: #cmd_add_breakpoint40
 [CMD_REMOVE_BREAKPOINT]: #cmd_remove_breakpoint41
@@ -107,10 +107,10 @@ The table below shows which commands are used (X) with what remote:
 | [CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL] | X    | X      | X      | -      |
 | [CMD_GET_SPRITES]                         | X    | X      | -      | -      |
 | [CMD_GET_SPRITE_PATTERNS]                 | X    | X      | -      | -      |
-| [CMD_READ_PORT]                           | -    | -      | *      | -      |
-| [CMD_WRITE_PORT]                          | -    | -      | *      | -      |
-| [CMD_GET_EXEC_ASM]                        | -    | -      | *      | -      |
-| [CMD_INTERRUPT_ON_OFF]                    | X    | -      | X      | -      |
+| [CMD_READ_PORT]                           | -    | *      | *      | -      |
+| [CMD_WRITE_PORT]                          | -    | *      | *      | -      |
+| [CMD_EXEC_ASM]                            | -    | *      | *      | -      |
+| [CMD_INTERRUPT_ON_OFF]                    | X    | X      | X      | -      |
 | [CMD_ADD_BREAKPOINT]                      | X    | X      | -      | X      |
 | [CMD_REMOVE_BREAKPOINT]                   | X    | X      | -      | X      |
 | [CMD_ADD_WATCHPOINT]                      | X    | -      | -      | X      |
@@ -130,7 +130,7 @@ Notes:
 Added:
 - CMD_READ_PORT: Reading a port.
 - CMD_WRITE_PORT: Writing to a port.
-- CMD_GET_EXEC_ASM: Executing a small assembler program.
+- CMD_EXEC_ASM: Executing a small assembler program.
 - CMD_INTERRUPT_ON_OFF: Command to enable disable the interrupts.
 
 
@@ -714,6 +714,9 @@ Response (Length=10):
 
 Note: in the response the register values are returned.
 
+Error codes:
+- 1=length too long
+- 2=debugger not stopped (cspect)
 
 ## CMD_INTERRUPT_ON_OFF=23
 
