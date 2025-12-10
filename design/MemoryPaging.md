@@ -43,7 +43,7 @@ For instance:
 - Slot 2: 0x8000-0xBFFF:  Bank 5
 - Slot 3: 0xC000-0xFFFF:  Bank 0
 
-lot sizes can vary; they don't need to be of equal size. For example, the ZX16K would use:
+slot sizes can vary; they don't need to be of equal size. For example, the ZX16K would use:
 - Slot 0: 0x0000-0x3FFF:  ROM
 - Slot 1: 0x4000-0x7FFF:  RAM
 - Slot 2: 0x8000-0xFFFF:  Unassigned

@@ -241,9 +241,7 @@ Your assembler file:
     - SNA: 0x5D58 (Note/sjasmplus: If you add the RAMTOP to your DEVICE entry then it seems the stack is RAMTOP-3. For both, ZXSPECTRUM48 and ZXSPECTRUM128.)
     - NEX: 0xFFFE
 
-    The "topOfStack" is a string so that you can put a label name inside. But you can also set a number (in parenthesis) directly or even a calculation, e.g. "label-2".
-
-- topOfStack: instead of a label you can also use a fixed number.
+    The "topOfStack" is a string so that you can put a label name inside. But you can also set a number (in hyphens) directly or even a calculation, e.g. "label-2".
 - load: Load of a .nex, .sna (or .tap) file. See [launch.json - load](#launchjson---load)
 Note: you can also omit this. In that case DeZog attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set.
 - loadObjs: Instead of a .nex, .sna or .tap file you can also directly load binary object files. You can load several object files and you have to give path and start address for each file, e.g.:
@@ -497,12 +495,7 @@ Arrays can be viewed by appending the number of elements.
 Notes:
 - C-support only works for "z88dkv2" not for "z88dk"
 - For the "path" you can use globbing
-- Top of stack:
-    In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
-    ~~~json
-    "topOfStack": "__register_sp",
-    ~~~
-
+- Top of stack: In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
 
 **Reverse Engineering configuration**
 
@@ -812,8 +805,9 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
     - the "portMask" and "port": The address is ANDed with "portMask" and afterwards checked for equality with "port". If equal the "bit is set.
     - "bit": The bit to return if the right port address is read. Is a bitmask. E.g. "0x10" would be the 4th bit (i.e. 0b0001_0000).
     - "lowActive": true for a low active bit. I.e. if the button is pressed the "bit" would become low, if not pressed it is high. Vice versa if "lowActive" is false.
+
   Here are a few examples:
-  ~~~json
+    ~~~json
     "customJoy": {
         // Cursor joystick with 0 (fire)
         "left": {   // 5
