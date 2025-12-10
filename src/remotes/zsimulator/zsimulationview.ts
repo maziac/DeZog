@@ -881,7 +881,7 @@ export class ZSimulationView extends BaseView {
 		}
 
 		// Add code for the screen (Spectrum or ZX81)
-		if (zsim.ulaScreen) {
+		if (zsim.ulaScreen !== 'none') {
 			// HTML code. Note: the canvas width and hide is just very preliminary.
 			// It will be set by the UlaDraw classes.
 			html += `

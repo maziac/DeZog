@@ -466,19 +466,21 @@
 										"type": "string",
 										"enum": [
 											"spectrum",
-											"zx81"
+											"zx81",
+											"none"
 										],
-										"description": "The preset of the simulator. It will set the default values for a 56k Spectrum. You can override these settings. If you e.g. set the 'memoryModel' explicitly.",
-										"default": "spectrum"
+										"description": "The preset of the simulator. For a \"spectrum\" it will set the default values for a 48K Spectrum. For \"zx81\" it will set the default values for a 56K ZX81. You can choose a preset and afterwards override individual settings. E.g. with 'memoryModel' you could choose the memory for a ZX 128K.",
+										"default": "none"
 									},
 									"zxKeyboard": {
 										"type": "string",
 										"enum": [
 											"spectrum",
-											"zx81"
+											"zx81",
+											"none"
 										],
 										"description": "Select a keyboard. ZX81 or ZX Spectrum.",
-										"default": "spectrum"
+										"default": "none"
 									},
 									"zxInterface2Joy": {
 										"type": "boolean",
@@ -707,10 +709,11 @@
 										"type": "string",
 										"enum": [
 											"spectrum",
-											"zx81"
+											"zx81",
+											"none"
 										],
 										"description": "If defined it shows the contents of the ZX Spectrum (\"spectrum\") or ZX81 (\"zx81\") screen. It supports also the ZX128K screen switching.",
-										"default": null
+										"default": "none"
 									},
 									"ulaOptions": {
 										"type": "object",

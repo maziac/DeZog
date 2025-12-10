@@ -656,7 +656,7 @@ export class Settings {
 			}
 		}
 		if (launchCfg.zsim.zxKeyboard === undefined)
-			launchCfg.zsim.zxKeyboard = 'spectrum';
+			launchCfg.zsim.zxKeyboard = 'none';
 		if (launchCfg.zsim.zxInterface2Joy === undefined)
 			launchCfg.zsim.zxInterface2Joy = false;
 		if (launchCfg.zsim.kempstonJoy === undefined)
