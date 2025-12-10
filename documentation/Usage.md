@@ -208,7 +208,7 @@ A typical configuration looks like this:
 - name: The (human readable) name of DeZog as it appears in vscode.
 - unitTests: Only required if the configuration contains unit tests. Leave empty if you don't provide unit tests. Only one configuration can have this attribute set to true.
 - remoteType: For DeZog to work it is necessary to connect it to some 'Remote'. This can be an emulator like ZEsarUX, the internal Z80 simulator or real ZX Next HW connected via serial interface.
-    - "zsim": Use the internal simulator. See [Internal Z80 Simulator](#the-internal-z80-simulator).
+    - "zsim": Use the internal simulator. See [Internal Z80 Simulator](#the-internal-z80-simulator---zsim).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
     - "cspect": Use of CSpect emulator with the DeZog plugin. See [CSpect](#cspect).
     - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [ZX Next / Serial Interface](#zx-next--serial-interface).
@@ -369,7 +369,7 @@ E.g. you could start your main.asm with:
 
 or
 ~~~asm
-    DEVICE NOSLOTDEVICE
+    DEVICE NOSLOT64K
     SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
 ~~~
 
@@ -618,31 +618,31 @@ Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbs
 The different Remotes have different capabilities in conjunction with DeZog.
 The following table gives an overview.
 
-|                                       | Internal Z80 Simulator | ZEsarUX | ZX Next | CSpect | MAME   |
-| :------------------------------------ | :--------------------- | :------ | :------ | :----- | :----- |
-| State                                 | stable                 | stable  | stable  | stable | stable |
-| Breakpoints                           | yes                    | yes     | yes     | yes    | yes    |
-| Break reason output                   | yes                    | no      | yes     | yes    | yes    |
-| Conditional Breakpoints               | yes                    | yes     | yes 6)  | yes 6) | yes 6) |
-| Breakpoints hit count                 | yes                    | yes 8)  | yes     | yes    | yes    |
-| ASSERTION support                     | yes                    | yes     | yes 6)  | yes 6) | yes 6) |
-| WPMEM (Watchpoints) support           | yes                    | yes 2)  | no      | no     | yes    |
-| LOGPOINT support                      | yes                    | no      | yes 6)  | yes 6) | yes 6) |
-| Long addresses/breakpoints            | yes                    | yes     | yes     | yes    | yes    |
-| Extended callstack                    | no                     | yes     | no      | no     | no     |
-| Code coverage                         | yes                    | yes 1)  | no      | no     | no     |
-| Reverse debugging                     | true                   | true    | lite    | lite   | lite   |
-| ZX Next capable                       | no                     | yes     | yes     | yes    | no     |
-| Save/restore the state                | yes                    | yes     | no      | no     | no     |
-| Output of T-States                    | yes                    | yes     | no      | no     | no     |
-| Display of sprite attributes/patterns | yes                    | yes     | no      | yes    | no     |
-| Load .obj file through DeZog          | yes                    | yes     | yes     | yes    | yes 7) |
-| Load .sna file through DeZog          | yes                    | yes     | yes     | yes    | yes 7) |
-| Load .z80 file through DeZog          | yes                    | yes     | yes     | yes    | yes 7) |
-| Load .tap file through DeZog          | no                     | yes     | no      | no     | no     |
-| Load .nex file through DeZog          | yes                    | yes     | yes     | yes    | no 7)  |
-| Load .p file through DeZog            | yes                    | yes     | no      | no     | yes    |
-| Run Z80 Unit Tests                    | yes                    | yes     | no 4)   | yes 3) | yes 5) |
+|                                       | zsim   | ZEsarUX | ZX Next | CSpect | MAME   |
+| :------------------------------------ | :----- | :------ | :------ | :----- | :----- |
+| State                                 | stable | stable  | stable  | stable | stable |
+| Breakpoints                           | yes    | yes     | yes     | yes    | yes    |
+| Break reason output                   | yes    | no      | yes     | yes    | yes    |
+| Conditional Breakpoints               | yes    | yes     | yes 6)  | yes 6) | yes 6) |
+| Breakpoints hit count                 | yes    | yes 8)  | yes     | yes    | yes    |
+| ASSERTION support                     | yes    | yes     | yes 6)  | yes 6) | yes 6) |
+| WPMEM (Watchpoints) support           | yes    | yes 2)  | no      | no     | yes    |
+| LOGPOINT support                      | yes    | no      | yes 6)  | yes 6) | yes 6) |
+| Long addresses/breakpoints            | yes    | yes     | yes     | yes    | yes    |
+| Extended callstack                    | no     | yes     | no      | no     | no     |
+| Code coverage                         | yes    | yes 1)  | no      | no     | no     |
+| Reverse debugging                     | true   | true    | lite    | lite   | lite   |
+| ZX Next capable                       | no     | yes     | yes     | yes    | no     |
+| Save/restore the state                | yes    | yes     | no      | no     | no     |
+| Output of T-States                    | yes    | yes     | no      | no     | no     |
+| Display of sprite attributes/patterns | yes    | yes     | no      | yes    | no     |
+| Load .obj file through DeZog          | yes    | yes     | yes     | yes    | yes 7) |
+| Load .sna file through DeZog          | yes    | yes     | yes     | yes    | yes 7) |
+| Load .z80 file through DeZog          | yes    | yes     | yes     | yes    | yes 7) |
+| Load .tap file through DeZog          | no     | yes     | no      | no     | no     |
+| Load .nex file through DeZog          | yes    | yes     | yes     | yes    | no 7)  |
+| Load .p file through DeZog            | yes    | yes     | no      | no     | yes    |
+| Run Z80 Unit Tests                    | yes    | yes     | no 4)   | yes 3) | yes 5) |
 
 Notes:
 - State:
@@ -661,7 +661,7 @@ Notes:
 - 8 ) ZEsarUX supports only the check "==" for the breakpoint hit count (pass count in ZEsarUX terminology).
 
 
-### The Internal Z80 Simulator
+### The Internal Z80 Simulator - zsim
 
 ![](images/zsim_starwarrior.gif)
 
@@ -910,7 +910,7 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
 	- "ZXNEXT": Paged memory as of the ZX Next (8k slots/banks). Banks R0a, R0b, R1a, R1b, 0-223. R0a/b and R1a/b is R0 or R1 but sliced in 8k chunks.
     - "COLECOVISION": Memory map for the Coleco Vision (8k slots, no banking).
     - "CUSTOM": For a custom memory layout. See [customMemory](#custommemory).
-- "ulaScreen": "spectrum" | "zx81". If enabled it shows the contents of the ZX Spectrum screen or that of a ZX81.
+- "ulaScreen": "spectrum", "zx81" or "none" (default). If enabled it shows the contents of the ZX Spectrum screen or that of a ZX81.
 ![](images/zsim_ula_screen_spectrum.jpg)
 ![](images/zsim_ula_screen_zx81.jpg)
 - "ulaOptions":

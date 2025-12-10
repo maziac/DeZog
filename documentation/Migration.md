@@ -287,7 +287,7 @@ E.g. you could start your main.asm with:
 
 or
 ~~~asm
-    DEVICE NOSLOTDEVICE
+    DEVICE NOSLOT64K
     SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
 ~~~
 
