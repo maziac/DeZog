@@ -1,7 +1,7 @@
 # Changelog
 
 # 3.6.6
-- New DZRP commands in use for cspect (CMD_INTERRUPT_ON_OFF, CMD_EXEC_ASM, CMD_WRITE_PORT, CMD_READ_PORT). IMPORTANT: You need Cspect >= 3.0.15.2 to be compatible with DeZog.
+- New DZRP command CMD_INTERRUPT_ON_OFF in use for cspect. IMPORTANT: You need Cspect >= 3.0.15.2 to be compatible with DeZog.
 - Fixed issue loading .sna and .z80 files if interrupt is on and cspect is the target.
 
 
