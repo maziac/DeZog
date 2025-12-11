@@ -303,7 +303,7 @@ suite('SimulatedMemory', () => {
 				ioMmu: [
 					"var disabled;",
 					"if((portAddress | 0x7FFD) == 0x7FFD && !disabled) {",
-					"  slotC000 = port Value & 0x07; // RAM block select",
+					"  slotC000 = port Value & 0x07; // RAM block select", // Error on 'port Value'
 					"  disabled = portValue & 0b0100000; // DIS",
 					"  slotROM = ((portValue & 0b0010000) >>> 4) + 8;",
 					"}"
@@ -367,6 +367,71 @@ suite('SimulatedMemory', () => {
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
 			mem.checkIoMmu();	// Should not throw anything
+			// Check that slots are reset correctly by checkIoMmu
+			assert.equal(mem.slots[0], 0);
+			assert.equal(mem.slots[1], 5);
+		});
+
+
+		test('evaluate indexed slot', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						"range": [0x0000, 0x3FFF],
+						"banks": [{"index": [0, 4]}]
+					},
+					{
+						"range": [0x4000, 0xFFFF],
+						"banks": [{"index": [5, 10]}]
+					},
+
+
+				],
+				ioMmu: [
+					"slots[0] = 3;",
+					"slots[1] = 7;"
+				]
+			});
+			const ports = new Z80Ports(true);
+			Utility.setRootPath('/');	// Does not matter but must be set.
+			const mem = new SimulatedMemory(mm, ports) as any;
+			mem.evaluateIoMmu(mm.ioMmu, 0, 0);
+			// Check that slots are set correctly by evaluateIoMmu
+			assert.equal(mem.slots[0], 3);
+			assert.equal(mem.slots[1], 7);
+		});
+
+
+		test('evaluate named slot', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						"name": "slot0",
+						"range": [0x0000, 0x3FFF],
+						"banks": [{"index": [0, 4]}]
+					},
+					{
+						"name": "slot1",
+						"range": [0x4000, 0xFFFF],
+						"banks": [{"index": [5, 10]}]
+					},
+
+
+				],
+				ioMmu: [
+					"slot0 = 3;",
+					"slot1 = 7;"
+				]
+			});
+			const ports = new Z80Ports(true);
+			Utility.setRootPath('/');	// Does not matter but must be set.
+			const mem = new SimulatedMemory(mm, ports) as any;
+			mem.setSlotsInContext();
+			mem.evaluateIoMmu(mm.ioMmu, 0, 0);
+			mem.getSlotsFromContext();
+			// Check that slots are set correctly by evaluateIoMmu
+			assert.equal(mem.slots[0], 3);
+			assert.equal(mem.slots[1], 7);
 		});
 	});
 

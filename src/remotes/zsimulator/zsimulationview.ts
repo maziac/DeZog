@@ -568,10 +568,12 @@ export class ZSimulationView extends BaseView {
 
 	/** Gets the ULA screen from the simulator and sends it to the webview.
 	 */
-	protected updateScreen() {
+	protected updateScreen() { 
 		try {
 			// The screen data
 			const ulaScreen = this.simulator.zxUlaScreen;
+			if(!ulaScreen)
+				return;
 			const ulaData = ulaScreen.getUlaScreen();
 
 			// Create message to update the webview

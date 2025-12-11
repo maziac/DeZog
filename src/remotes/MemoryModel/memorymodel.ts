@@ -118,9 +118,9 @@ export class MemoryModel {
 	constructor(cfg: CustomMemoryType) {
 		let expectedStart = 0;
 		// Create one string out of ioMmu.
-		if (cfg.ioMmu == undefined)
+		if (cfg.ioMmu === undefined)
 			this.ioMmu = '';
-		else if (typeof cfg.ioMmu == "string")
+		else if (typeof cfg.ioMmu === "string")
 			this.ioMmu = cfg.ioMmu;
 		else
 			this.ioMmu = cfg.ioMmu.join('\n');

@@ -287,6 +287,9 @@ export class SimulatedMemory implements Serializable {
 		if (!ioMmu)
 			return;
 
+		// Save the current slots
+		const prevSlots = [...this.slots];
+
 		try {
 			// Set slots etc.
 			this.setSlotsInContext();
@@ -351,6 +354,10 @@ export class SimulatedMemory implements Serializable {
 			}
 			// Re-throw
 			throw e;
+		}
+		finally {
+			// Restore previous slots
+			this.slots = [...prevSlots];
 		}
 	}
 
