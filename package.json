@@ -411,6 +411,7 @@
 							"zrcp": {
 								"description": "The configuration for the ZEsarUX emulator.",
 								"type": "object",
+								"additionalProperties": false,
 								"properties": {
 									"hostname": {
 										"type": "string",
@@ -442,6 +443,7 @@
 							"cspect": {
 								"description": "The configuration for the CSpect emulator.",
 								"type": "object",
+								"additionalProperties": false,
 								"properties": {
 									"hostname": {
 										"type": "string",
@@ -461,6 +463,7 @@
 							"zsim": {
 								"description": "'The configuration of the internal Z80 simulator.",
 								"type": "object",
+								"additionalProperties": false,
 								"properties": {
 									"preset": {
 										"type": "string",
@@ -494,10 +497,12 @@
 									},
 									"customJoy": {
 										"type": "object",
+										"additionalProperties": false,
 										"description": "Used to define a custom joystick.",
 										"properties": {
 											"fire": {
 												"type": "object",
+												"additionalProperties": false,
 												"properties": {
 													"port": {},
 													"bit": {}
@@ -505,6 +510,7 @@
 											},
 											"fire2": {
 												"type": "object",
+												"additionalProperties": false,
 												"properties": {
 													"port": {},
 													"bit": {}
@@ -512,6 +518,7 @@
 											},
 											"fire3": {
 												"type": "object",
+												"additionalProperties": false,
 												"properties": {
 													"port": {},
 													"bit": {}
@@ -519,6 +526,7 @@
 											},
 											"fire4": {
 												"type": "object",
+												"additionalProperties": false,
 												"properties": {
 													"port": {},
 													"bit": {}
@@ -526,6 +534,7 @@
 											},
 											"left": {
 												"type": "object",
+												"additionalProperties": false,
 												"properties": {
 													"port": {},
 													"bit": {}
@@ -533,6 +542,7 @@
 											},
 											"down": {
 												"type": "object",
+												"additionalProperties": false,
 												"properties": {
 													"port": {},
 													"bit": {}
@@ -540,6 +550,7 @@
 											},
 											"up": {
 												"type": "object",
+												"additionalProperties": false,
 												"properties": {
 													"port": {},
 													"bit": {}
@@ -547,6 +558,7 @@
 											},
 											"right": {
 												"type": "object",
+												"additionalProperties": false,
 												"properties": {
 													"port": {},
 													"bit": {}
@@ -565,6 +577,7 @@
 										"default": [],
 										"items": {
 											"type": "object",
+											"additionalProperties": false,
 											"properties": {
 												"address": {
 													"type": [
@@ -606,12 +619,14 @@
 									"customMemory": {
 										"description": "Only evaluated if 'memoryModel' is set to 'CUSTOM'. Chooses the banks and their memory types. Please refer to the documentation.",
 										"type": "object",
+										"additionalProperties": false,
 										"properties": {
 											"slots": {
 												"type": "array",
 												"description": "An array with the slot definitions.",
 												"items": {
 													"type": "object",
+													"additionalProperties": false,
 													"properties": {
 														"name": {
 															"type": "string",
@@ -635,6 +650,7 @@
 															"default": [],
 															"items": {
 																"type": "object",
+																"additionalProperties": false,
 																"description": "The bank description. You need to describe a bank only once. If it is also used in another slot just assign the bank via the index.",
 																"properties": {
 																	"name": {
@@ -722,6 +738,7 @@
 									},
 									"ulaOptions": {
 										"type": "object",
+										"additionalProperties": false,
 										"properties": {
 											"hires": {
 												"type": "boolean",
@@ -734,6 +751,7 @@
 												"default": [],
 												"items": {
 													"type": "object",
+													"additionalProperties": false,
 													"properties": {
 														"x1": {
 															"type": "string",
@@ -771,6 +789,7 @@
 											},
 											"chroma81": {
 												"type": "object",
+												"additionalProperties": false,
 												"properties": {
 													"available": {
 														"type": "boolean",
@@ -882,6 +901,7 @@
 							"zxnext": {
 								"description": "The configuration for debugging on the ZXNEXT device.",
 								"type": "object",
+								"additionalProperties": false,
 								"properties": {
 									"serial": {
 										"type": "string",
@@ -897,6 +917,7 @@
 							"mame": {
 								"description": "The configuration for debugging with the mame gdbstub.",
 								"type": "object",
+								"additionalProperties": false,
 								"properties": {
 									"hostname": {
 										"type": "string",
@@ -926,6 +947,7 @@
 								"type": "array",
 								"items": {
 									"type": "object",
+									"additionalProperties": false,
 									"required": [
 										"path"
 									],
@@ -954,6 +976,7 @@
 								"type": "array",
 								"items": {
 									"type": "object",
+									"additionalProperties": false,
 									"required": [
 										"path"
 									],
@@ -982,6 +1005,7 @@
 								"type": "array",
 								"items": {
 									"type": "object",
+									"additionalProperties": false,
 									"required": [
 										"path",
 										"mapFile"
@@ -1021,6 +1045,7 @@
 								"type": "array",
 								"items": {
 									"type": "object",
+									"additionalProperties": false,
 									"required": [
 										"path",
 										"mapFile"
@@ -1055,6 +1080,7 @@
 								"type": "array",
 								"items": {
 									"type": "object",
+									"additionalProperties": false,
 									"required": [
 										"path"
 									],
@@ -1076,6 +1102,8 @@
 								"default": 512
 							},
 							"disassemblerArgs": {
+								"type": "object",
+								"additionalProperties": false,
 								"description": "Arguments passed to the disassembler (in the VARIABLES pane).",
 								"properties": {
 									"numberOfLines": {
@@ -1086,6 +1114,8 @@
 								}
 							},
 							"smartDisassemblerArgs": {
+								"type": "object",
+								"additionalProperties": false,
 								"description": "Arguments passed to the smart disassembler used in 'Analyze', i.e. call graph, flow chart and smart (text) disassembler.",
 								"properties": {
 									"lowerCase": {
@@ -1116,6 +1146,7 @@
 								"type": "array",
 								"items": {
 									"type": "object",
+									"additionalProperties": false,
 									"required": [
 										"path"
 									],
@@ -1145,6 +1176,7 @@
 							"history": {
 								"description": "Configures the 'reverse debugging' (time travel).",
 								"type": "object",
+								"additionalProperties": false,
 								"properties": {
 									"reverseDebugInstructionCount": {
 										"type": "number",
@@ -1167,6 +1199,7 @@
 							"formatting": {
 								"description": "Configures the display of values of DeZog. e.g. it is possible to customize how the registers are displayed or what is displayed on hovering.",
 								"type": "object",
+								"additionalProperties": false,
 								"properties": {
 									"registerVar": {
 										"description": "Defines the formatting of the registers when displayed in the VARIABLES area. E.g. as hex value or as integer. Also allows to display labels and various other formats. Use:\n${name} = the name of the register, e.g. HL\n${hex} = value as hex, e.g. A9F5\n${dhex} = value as hex with space between bytes, e.g. A9 F5\n${unsigned} = value as unsigned, e.g. 1234\n$(signed) = value as signed, e.g. -59\n$(bits) = value as bits , e.g. 10011011\n$(flags) = value interpreted as status flags (only useful for F and F'), e.g. ZNC\n${labels} = value as label (or several labels)\n{labelsplus} = value as label (or several labels) plus an index/offset\n${pre:labels:join} = value as label (or several labels). If no label is found nothing is printed. If at least 1 label is found the 'pre' string is printed followed by the label(s). If more than 1 label is found they are concatenated with the 'join' string.\nNote: The ${b@:...} prefix is not allowed in for the VARIABLES section.",
@@ -1207,6 +1240,7 @@
 							"memoryViewer": {
 								"description": "The appearance of the memory viewer can be customized here. E.g. the colors or the hover display.",
 								"type": "object",
+								"additionalProperties": false,
 								"properties": {
 									"addressColor": {
 										"type": "string",
