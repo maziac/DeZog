@@ -6,6 +6,7 @@
 - Fixes in zsim configuration:
   - It is now possible to deselect the ulaScreen
   - zxKeyboard is now disabled by default
+- Fixed setting of banks by index in ioMmu.
 
 # 3.6.5
 - Debug command "-sjasmplus.path" added for dynamic loading of sld files during runtime (#156).

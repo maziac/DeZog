@@ -1043,14 +1043,25 @@ If more than one bank is defined for a slot then the banks are switchable.
         If 'shortName' is omitted then the index number is used instead.
     - "initialBank": The bank that is seen at start of 'zsim'. If not given the first defined bank is used.
 - "ioMmu": A string or an array of strings with javascript code. The code is evaluated on each OUT Z80 instruction and is to be used to switch banks. It is an optional property. In case your memory model does not require any bank switching you don't have to set it.
+
+More about "ioMmu":
 When the code is executed the variables 'portAddress' and 'portValue' are set with the values from the OUT instruction. E.g. for
 ~~~asm
     LD BC,0x1234
     ld A,0xEB
     OUT (C),A
 ~~~
-
 'portAddress' would be 0x1234 and 'portValue' would be 0xEB.
+You can use `slots[<index>]` or the slot name and assign it the new bank value.
+E.g. in the example above with:
+~~~
+    "  slotC000 = 2;"
+~~~
+you would assign bank 2 to `slots[1]` aka 'slotC000'.
+You could as well do:
+~~~
+    "  slots[1] = 2;"
+~~~
 
 
 Notes:

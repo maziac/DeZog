@@ -198,7 +198,7 @@ export class SimulatedMemory implements Serializable {
 			this.setSlotsInContext();
 			// Calculate bank
 			this.evaluateIoMmu(this.memoryModel.ioMmu, port, value);
-			this.getSlotsFromContext();
+			this.getSlotsFromContext(prevSlots);
 			// Check for error
 			try {
 				this.checkSlots();
@@ -218,16 +218,22 @@ export class SimulatedMemory implements Serializable {
 	 */
 	protected setSlotsInContext() {
 		for (const slotName of this.slotNames) {
-			this.bankSwitchingContext[slotName.name] = this.slots[slotName.index];
+			const bank = this.slots[slotName.index];
+			this.bankSwitchingContext[slotName.name] = bank;
 		}
 	}
 
 
 	/** Retrieves the named slots from the 'bankSwitchingContext'.
+	 * @param prevSlots The previous slots, only if value changed the named values are updated.
+	 * Note: this prevents overwriting slots that were changed by index.
 	 */
-	protected getSlotsFromContext() {
+	protected getSlotsFromContext(prevSlots: number[]) {
 		for (const slotName of this.slotNames) {
-			this.slots[slotName.index] = this.bankSwitchingContext[slotName.name];
+			const index = slotName.index;
+			const bank = this.bankSwitchingContext[slotName.name];
+			if(prevSlots[index] !== bank)
+				this.slots[index] = bank;
 		}
 	}
 

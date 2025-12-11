@@ -426,9 +426,10 @@ suite('SimulatedMemory', () => {
 			const ports = new Z80Ports(true);
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
+			const prevSlots = [...mem.slots];
 			mem.setSlotsInContext();
 			mem.evaluateIoMmu(mm.ioMmu, 0, 0);
-			mem.getSlotsFromContext();
+			mem.getSlotsFromContext(prevSlots);
 			// Check that slots are set correctly by evaluateIoMmu
 			assert.equal(mem.slots[0], 3);
 			assert.equal(mem.slots[1], 7);
