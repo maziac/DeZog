@@ -847,15 +847,16 @@ export class Settings {
 				}
 				// Banks
 				for (const bank of slotRange.banks) {
+					// ROM/RAM
+					if (bank.rom === undefined)
+						bank.rom = false;	// RAM by default;
 					// Create abs paths
-					if (bank.rom !== undefined) {
-						if (typeof bank.rom === 'string') {
-							const path = UnifiedPath.getUnifiedPath(bank.rom);
-							bank.rom = Utility.getAbsFilePath(path, rootFolder);
-						}
+					if (bank.filePath) {
+						const path = UnifiedPath.getUnifiedPath(bank.filePath);
+						bank.filePath = Utility.getAbsFilePath(path, rootFolder);
 					}
 					// Convert rom offset from hex-string to number
-					bank.romOffset = Utility.convertHexNumber(bank.romOffset);
+					bank.fileOffset = Utility.convertHexNumber(bank.fileOffset);
 				}
 			}
 		}
@@ -1229,7 +1230,7 @@ export class Settings {
 				throw Error("'path': File '" + path + "' does not exist.");
 		}
 
-		// Custom memory model: The checks are too complex.
+		// Custom memory model: Most checks are too complex.
 		// I.e. they are done when the SimulatedMemory is constructed.
 
 		// Check if customMemory is defined if it was chosen.
@@ -1237,6 +1238,20 @@ export class Settings {
 			const customMemory = Settings.launch.zsim.customMemory;
 			if (customMemory === undefined)
 				throw Error("If 'memoryModel' is set to 'CUSTOM', you need to define 'customMemory'.");
+			// Check if the old meaning of 'rom' or 'romOffset' has been used.
+			for (const slotRange of customMemory.slots) {
+				// Banks
+				for (const bank of slotRange.banks) {
+					// ROM/RAM
+					if (typeof bank.rom === "string")
+						throw Error("'customMemory': Using a path for 'rom' is not allowed anymore. Use 'filePath' instead.");
+					if (typeof bank.rom !== "boolean")
+						throw Error("'customMemory': 'rom' must be a boolean.");
+					// ROM offset
+					if((bank as any).romOffset !== undefined)
+						throw Error("'customMemory': 'romOffset' is not allowed anymore. Use 'fileOffset' instead.");
+				}
+			}
 		}
 
 		// Any special check

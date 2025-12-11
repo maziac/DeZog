@@ -1434,13 +1434,13 @@ export class Utility {
 	 * @returns A number e.g. 65535.
 	 */
 	public static convertHexNumber(hexNumber: HexNumber | undefined): number | undefined {
-		if (hexNumber == undefined)
+		if (hexNumber === undefined)
 			return undefined;
-		if (typeof hexNumber == "string") {
+		if (typeof hexNumber === "string") {
 			// Convert hex into number
 			hexNumber = Utility.parseValue(hexNumber);
 		}
-		Utility.assert(typeof hexNumber == "number");
+		Utility.assert(typeof hexNumber === "number");
 		return hexNumber;
 	}
 

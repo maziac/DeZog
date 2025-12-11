@@ -207,7 +207,7 @@ suite('SimulatedMemory', () => {
 			const ports = new Z80Ports(true);
 			const mem = new SimulatedMemory(mm, ports) as any;
 			const path = './data/48.rom';
-			const data = mem.readRomFile(path);
+			const data = mem.readFile(path);
 			assert.equal(data[0], 243);
 			assert.equal(data[0x3FFF], 60);
 		});
@@ -218,7 +218,7 @@ suite('SimulatedMemory', () => {
 			const ports = new Z80Ports(true);
 			const mem = new SimulatedMemory(mm, ports) as any;
 			const path = './tests/data/intelhex/PLU10.HEX';
-			const data = mem.readRomFile(path);
+			const data = mem.readFile(path);
 			assert.equal(data[16384], 243);
 			assert.equal(data[31100], 205);
 		});
@@ -232,7 +232,8 @@ suite('SimulatedMemory', () => {
 						banks: [
 							{
 								index: 0,
-								rom: "./data/48.rom"
+								rom: true,
+								filePath: "./data/48.rom"
 							}
 						]
 					}
@@ -254,8 +255,9 @@ suite('SimulatedMemory', () => {
 						banks: [
 							{
 								index: 1,
-								rom: "./data/48.rom",
-								romOffset: 0x1000
+								rom: true,
+								filePath: "./data/48.rom",
+								fileOffset: 0x1000
 							}
 						]
 					}

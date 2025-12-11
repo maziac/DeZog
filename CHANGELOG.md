@@ -1,12 +1,17 @@
 # Changelog
 
-# 3.6.6
+# 3.7.0
 - New DZRP command CMD_INTERRUPT_ON_OFF in use for cspect. IMPORTANT: You need Cspect >= 3.0.15.2 to be compatible with DeZog.
 - Fixed issue loading .sna and .z80 files if interrupt is on and cspect is the target.
 - Fixes in zsim configuration:
   - It is now possible to deselect the ulaScreen
   - zxKeyboard is now disabled by default
 - Fixed setting of banks by index in ioMmu.
+- CustomMemoryBank structure re-defined:
+  - 'rom': no path anymore. Only allowed values are true or false.
+  - 'romOffset': removed.
+  - 'filePath': new property for the file path.
+  - 'fileOffset': new property for the offset inside filePath.
 
 # 3.6.5
 - Debug command "-sjasmplus.path" added for dynamic loading of sld files during runtime (#156).

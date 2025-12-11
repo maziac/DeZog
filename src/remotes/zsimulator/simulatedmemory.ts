@@ -150,15 +150,13 @@ export class SimulatedMemory implements Serializable {
 				// Fill memory with default value
 				memBank.fill(bank.defaultFill);
 				// Check for rom
-				let rom = bank.rom;
-				if (rom) {
-					if (typeof rom === 'string') {
-						// Read file
-						const romData = this.readRomFile(rom);	// Note: is already a unified path
-						// Use data
-						const offs = bank.romOffset ?? 0;
-						memBank.set(romData.slice(offs, offs + memBank.length));
-					}
+				let filePath = bank.filePath;
+				if (filePath) {
+					// Read file
+					const romData = this.readFile(filePath);	// Note: is already a unified path
+					// Use data
+					const offs = bank.fileOffset ?? 0;
+					memBank.set(romData.slice(offs, offs + memBank.length));
 				}
 			}
 		}
@@ -780,7 +778,7 @@ export class SimulatedMemory implements Serializable {
 	 * @param filePath Absolute path to the *.hex file or a raw data file.
 	 * @returns An Uint8Array with the data.
 	 */
-	protected readRomFile(filePath: string): Uint8Array {
+	protected readFile(filePath: string): Uint8Array {
 		switch (path.extname(filePath).toLowerCase()) {
 			case ".hex":
 				return this.readHexFromFile(filePath);

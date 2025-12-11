@@ -78,13 +78,15 @@ export class MemoryModelZxNextTwoRom extends MemoryModelZxNextBase {
 							index: 0xFC,
 							name: 'ROM0',
 							shortName: 'R0',
-							rom: Utility.getExtensionPath() + '/data/128.rom' 	// 1
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/128.rom' 	// 1
 						},
 						{
 							index: 0xFE,
 							name: 'ROM1',
 							shortName: 'R1',
-							rom: Utility.getExtensionPath() + '/data/48.rom'
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/48.rom'
 						},
 					]
 				},
@@ -99,15 +101,17 @@ export class MemoryModelZxNextTwoRom extends MemoryModelZxNextBase {
 							index: 0xFD,
 							name: 'ROM0',
 							shortName: 'R0',	// Same name, overwrites mapping
-							rom: Utility.getExtensionPath() + '/data/128.rom',
-							romOffset: 0x2000
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/128.rom',
+							fileOffset: 0x2000
 						},
 						{
 							index: 0xFF,
 							name: 'ROM1',
 							shortName: 'R1',	// Same name, overwrites mapping
-							rom: Utility.getExtensionPath() + '/data/48.rom',
-							romOffset: 0x2000
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/48.rom',
+							fileOffset: 0x2000
 						},
 					]
 				},

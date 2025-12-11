@@ -62,15 +62,15 @@ export interface BankInfo {
 	// The type: ROM, RAM, ...
 	bankType: BankType;
 
-	/** Optional. If specified, set the slot as ROM.
-	 * The path of the ROM content.
+	/** Optional.
+	 * The path of the file content of the bank.
 	 * File content should be in raw format (e.g. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).
 	 */
-	rom?: boolean | string;
+	filePath?: string;
 
-	/** Optional offset of the ROM file/content
+	/** Optional offset of the file content
 	 */
-	romOffset?: number;
+	fileOffset?: number;
 
 	// Optional default byte fill value. If not set; RAM/ROM uses 0, UNUSED uses 0xFF
 	defaultFill: number;
@@ -327,7 +327,7 @@ export class MemoryModel {
 		const bankType = (bank.rom || typeof bank.rom == 'string') ? BankType.ROM : BankType.RAM;
 		const defaultFill = (bank.defaultFill !== undefined) ? bank.defaultFill : 0;	// 0 for ROM/RAM
 		// Check for bank range
-		if (typeof indexOrRange == 'number') {
+		if (typeof indexOrRange === 'number') {
 			// Just one bank
 			indexStart = indexOrRange;
 			if (indexStart >= 256)
@@ -339,8 +339,8 @@ export class MemoryModel {
 				shortName: (assignShortName) ? this.createBankShortName(bank.shortName, indexStart) : '',
 				size,
 				bankType,
-				rom: bank.rom,
-				romOffset: bank.romOffset as number,
+				filePath: bank.filePath,
+				fileOffset: bank.fileOffset as number,
 				defaultFill
 			};
 			this.setBankInfo(indexStart, bankInfo);
@@ -364,8 +364,8 @@ export class MemoryModel {
 					shortName: (assignShortName) ? this.createBankShortName(bank.shortName, index) : '',
 					size,
 					bankType,
-					rom: bank.rom,
-					romOffset: bank.romOffset as number,
+					filePath: bank.filePath,
+					fileOffset: bank.fileOffset as number,
 					defaultFill
 				};
 				this.setBankInfo(index, bankInfo);
@@ -625,8 +625,8 @@ export class MemoryModel {
 				default: type = "UNKNOWN"; break;
 			}
 			line += ", " + type;
-			if (typeof bank.rom == 'string')
-				line += " (" + bank.rom + ")";
+			if (bank.filePath)
+				line += " (" + bank.filePath + ")";	// TODO: Test
 			// Next line
 			txt += line + "\n";
 		}

@@ -45,7 +45,8 @@ export class MemoryModelZX81_1k extends MemoryModel {	// NOSONAR
 						{
 							index: 0,
 							name: 'ROM 0000-1FFF',
-							rom: Utility.getExtensionPath() + '/data/zx81.rom'
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/zx81.rom'
 						}
 					]
 				},
@@ -106,7 +107,8 @@ export class MemoryModelZX81_2k extends MemoryModel {	// NOSONAR
 						{
 							index: 0,
 							name: 'ROM 0000-1FFF',
-							rom: Utility.getExtensionPath() + '/data/zx81.rom'
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/zx81.rom'
 						}
 					]
 				},
@@ -167,7 +169,8 @@ export class MemoryModelZX81_16k extends MemoryModel {	// NOSONAR
 						{
 							index: 0,
 							name: 'ROM 0000-1FFF',
-							rom: Utility.getExtensionPath() + '/data/zx81.rom'
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/zx81.rom'
 						}
 					]
 				},
@@ -228,7 +231,8 @@ export class MemoryModelZX81_32k extends MemoryModel {	// NOSONAR
 						{
 							index: 0,
 							name: 'ROM 0000-1FFF',
-							rom: Utility.getExtensionPath() + '/data/zx81.rom'
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/zx81.rom'
 						}
 					]
 				},
@@ -282,7 +286,8 @@ export class MemoryModelZX81_48k extends MemoryModel {	// NOSONAR
 						{
 							index: 0,
 							name: 'ROM 0000-1FFF',
-							rom: Utility.getExtensionPath() + '/data/zx81.rom'
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/zx81.rom'
 						}
 					]
 				},
@@ -320,7 +325,8 @@ export class MemoryModelZX81_56k extends MemoryModel {	// NOSONAR
 						{
 							index: 0,
 							name: 'ROM',
-							rom: Utility.getExtensionPath() + '/data/zx81.rom'
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/zx81.rom'
 						}
 					]
 				},

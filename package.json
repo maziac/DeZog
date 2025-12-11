@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.6.6-rc1",
+	"version": "3.7.0-rc1",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum/ZX81.",
 	"author": {
@@ -659,16 +659,21 @@
 																		}
 																	},
 																	"rom": {
+																		"type": "boolean",
+																		"description": "Set to `true` if the bank is a ROM bank. Otherwise it is treated as RAM.",
+																		"default": false
+																	},
+																	"filePath": {
 																		"type": "string",
-																		"description": "The path to a rom bin file.\nOptional. File content should be in raw format (i.e. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).",
+																		"description": "The path to a bin file that is used as initial content for the bank.\nFile content should be in raw format (e.g. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extension).",
 																		"default": ""
 																	},
-																	"romOffset": {
+																	"fileOffset": {
 																		"type": [
 																			"number",
 																			"string"
 																		],
-																		"description": "Optional offset of the ROM file/content.\nEither use a decimal number or a hex string.",
+																		"description": "Optional offset of the filePath content.\nEither use a decimal number or a hex string.",
 																		"default": 0
 																	},
 																	"defaultFill": {
@@ -676,7 +681,7 @@
 																			"number",
 																			"string"
 																		],
-																		"description": "Optional default byte fill value. If omitted: RAM/ROM uses 0.",
+																		"description": "Optional default byte fill value. If omitted 0 is used.",
 																		"default": 0
 																	}
 																}

@@ -1041,6 +1041,9 @@ If more than one bank is defined for a slot then the banks are switchable.
         - "name": The name of the bank as seen in the "Memory Banks" section in the VARIABLE's pane.
         - "shortName": The short name of the bank. This is important for Reverse Engineering and used in disassemblies, i.e. in the disasm.list file, to distinguish addresses from different banks.
         If 'shortName' is omitted then the index number is used instead.
+        - 'rom': Boolean. Set to true if bank is ROM. false by default.
+        - 'filePath': Optional path to a file that is loaded into the bank at startup. File content should be in raw format (e.g. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extension).
+        - 'fileOffset': Optional. Offset of the file. A decimal number or a hex string.
     - "initialBank": The bank that is seen at start of 'zsim'. If not given the first defined bank is used.
 - "ioMmu": A string or an array of strings with javascript code. The code is evaluated on each OUT Z80 instruction and is to be used to switch banks. It is an optional property. In case your memory model does not require any bank switching you don't have to set it.
 

@@ -25,7 +25,8 @@ export class MemoryModelZx16k extends MemoryModelZxSpectrumBase {
 						{
 							index: 0,
 							name: 'ROM',
-							rom: Utility.getExtensionPath() + '/data/48.rom'
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/48.rom'
 						}
 					]
 				},
@@ -58,7 +59,8 @@ export class MemoryModelZx48k extends MemoryModelZxSpectrumBase {
 						{
 							index: 0,
 							name: 'ROM',
-							rom: Utility.getExtensionPath() + '/data/48.rom'
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/48.rom'
 						}
 					]
 				},
@@ -95,13 +97,15 @@ export class MemoryModelZx128k extends MemoryModelZxSpectrumBase {
 							index: 8,
 							name: 'ROM0',
 							shortName: 'R0',
-							rom: Utility.getExtensionPath() + '/data/128.rom' 	// 128k editor
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/128.rom' 	// 128k editor
 						},
 						{
 							index: 9,
 							name: 'ROM1',
 							shortName: 'R1',
-							rom: Utility.getExtensionPath() + '/data/48.rom'
+							rom: true,
+							filePath: Utility.getExtensionPath() + '/data/48.rom'
 						}
 					]
 				},

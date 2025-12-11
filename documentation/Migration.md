@@ -1,5 +1,18 @@
 This guide will provide some info what to do to update your projects from an earlier version.
 
+# Migrate from DeZog 3.6 to DeZog 3.7
+
+There are changes to the zsim customMemory configuration:
+
+zsim.customMemory.slots[].banks[]:
+  - 'rom': Changed. No path anymore. Only allowed values are true or false.
+  - 'romOffset': Removed.
+  - 'filePath': Added. New property for the file path to the content of the bank.
+  - 'fileOffset': Added. New property for the offset inside filePath.
+
+Please refer to the [Usage.md - customMemory](Usage.md#custommemory).
+
+
 # Migrate from DeZog 3.5 to DeZog 3.6
 There are changes to the syntax for LOGPOINTs. Please refer to the [Usage.md](Usage.md#logpoint).
 
