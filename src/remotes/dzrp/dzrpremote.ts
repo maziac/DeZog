@@ -1637,6 +1637,13 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
 
+		// Set ROM1 or ROM0
+		if (snaFile.is128kFile) {
+			// Write port 7FFD
+			const port7ffd = snaFile.port7ffd;
+			await this.sendDzrpCmdWritePort(0x7FFD, port7ffd);
+		}
+
 		// Check if interrupt should be enabled
 		const interrupt_enabled = (snaFile.iff2 & 0b00000100) !== 0;
 		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
@@ -1685,6 +1692,13 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		await this.sendDzrpCmdSetRegister(Z80_REG.R, z80File.r);
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, z80File.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, z80File.im);
+
+		// Set ROM1 or ROM0
+		if (z80File.is128kFile) {
+			// Write port 7FFD
+			const port7ffd = z80File.port7ffd!;
+			await this.sendDzrpCmdWritePort(0x7FFD, port7ffd);
+		}
 
 		// Check if interrupt should be enabled
 		const interrupt_enabled = (z80File.iff1 !== 0);

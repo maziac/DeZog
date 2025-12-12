@@ -1223,16 +1223,16 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
 
-		// Interrupt (IFF2)
-		const interrupt_enabled = (snaFile.iff2 & 0b00000100) !== 0;
-		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
-
 		// Set ROM1 or ROM0
 		if (snaFile.is128kFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNextTwoRom)) {
 			// Write port 7FFD
 			const port7ffd = snaFile.port7ffd;
 			this.z80Cpu.ports.write(0x7FFD, port7ffd);
 		}
+
+		// Interrupt (IFF2)
+		const interrupt_enabled = (snaFile.iff2 & 0b00000100) !== 0;
+		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
 	}
 
 	/** Loads a .z80 file.
