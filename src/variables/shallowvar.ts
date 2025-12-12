@@ -371,6 +371,9 @@ export class StackVar extends ShallowVar {
 		// Retrieve memory values, to see if they really have been set.
 		const readData = await Remote.readMemoryDump(address, 2);
 		const memWord = readData[0] + (readData[1] << 8);
+		// Change also stack array
+		const index = (this.stackAddress - address) >>> 1;
+		this.stack[index] = memWord;
 		// Pass formatted string to vscode
 		const formattedString = Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined);
 		return formattedString;

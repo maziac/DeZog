@@ -12,6 +12,7 @@
   - 'romOffset': removed.
   - 'filePath': new property for the file path.
   - 'fileOffset': new property for the offset inside filePath.
+- Fixed #162: Local stack not immediately update if value changed from UI.
 
 # 3.6.5
 - Debug command "-sjasmplus.path" added for dynamic loading of sld files during runtime (#156).
