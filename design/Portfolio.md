@@ -168,18 +168,27 @@ Now that the ZX Next dezogif has become stable it is not required anymore.
 # Related
 
 ## z80-instruction-set
-
 Shows the Z80 opcode when hovering over an instruction.
 
-
 ## asm-code-lens
-
 A vscode language server that enables code lens, references, hover
 
+## sna-file-viewer
+A viewer for .sna files.
 
-## z80-sample-program
+## nex-file-viewer
+A viewer for .nex files.
 
+## Assembler projects
+
+### z80-sample-program
 This is a small Z80 assembler program that just puts some colored lines on the ZX Spectrum's screen. The intention is to use this as a kind of tutorial for DeZog (Z80 debugger).
 
+### zx81-sample-program
+A Z80 assembler program that shows the zsim zx81 capabilities.
 
+### z80-peripherals-sample
+A Z80 assembler project that shows how to simulate hardware with zsim.
 
+### z80-reverse-engineering-sample
+A Z80 assembler project that demonstrates usage of DeZog reverse engineering capabilities.
