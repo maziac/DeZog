@@ -291,17 +291,14 @@ export class LogEval {
 				const result = await this.customEval(expr);
 				// Concatenate
 				evaluatedString += this.preparedExpression.substring(k, i);
-				let retValue: string;
-				if(typeof result === 'string') {
-					retValue = result;
-				}
-				else if (typeof result === 'number') {
+				let retValue: any;
+				if (typeof result === 'number') {
 					// Format
 					retValue = this.formatValue(format, result);
 				}
 				else {
-					// Unknown type
-					throw Error("Expression did not return a number or string.");
+					// string, boolean, ...
+					retValue = result;
 				}
 				evaluatedString += retValue;
 				// Next

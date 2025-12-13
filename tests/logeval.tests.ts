@@ -266,16 +266,16 @@ suite('LogEval', () => {
 				assert.equal(evalString, "1234");
 			});
 
-			test('boolean', async () => {
-				logEval.preparedExpression = "${string:1 == 1}";
-				const evalString = await logEval.evaluate();
-				assert.equal(evalString, "true");
-			});
-
 			test('hex8', async () => {
 				logEval.preparedExpression = "${hex8:10}";
 				const evalString = await logEval.evaluate();
 				assert.equal(evalString, "0x0A");
+			});
+
+			test('boolean', async () => {
+				logEval.preparedExpression = "${string:1 == 1}";
+				const evalString = await logEval.evaluate();
+				assert.equal(evalString, "true");
 			});
 		});
 	});

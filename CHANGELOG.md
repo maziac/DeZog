@@ -14,6 +14,7 @@
   - 'fileOffset': new property for the offset inside filePath.
 - Fixed #162: Local stack not immediately update if value changed from UI.
 - Fixed #106: When loading a 128K .sna or .z80 file the port 7FFD is now set correctly (according file) for CSpect and dezogif (ZXNext).
+- Discussion/Issue #165/#164: New LOGPOINT variables: ${Remote.tStates}, ${Remote.cpuFrequency} and ${Remote.slots}
 
 # 3.6.5
 - Debug command "-sjasmplus.path" added for dynamic loading of sld files during runtime (#156).
