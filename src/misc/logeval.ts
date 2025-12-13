@@ -319,6 +319,8 @@ export class LogEval {
 	protected async getRemoteValue(varName: string): Promise<number> {
 		if (varName === 'Remote.tStates')
 			return this.remote.getTstates();
+		if (varName === 'Remote.cpuFrequency')
+			return this.remote.getCpuFrequency();
 		throw Error("Unknown variable '" + varName + "'.");
 	}
 
