@@ -183,7 +183,15 @@ export class LogEval {
 		function getByte(addr: number): number {return 1;}
 		function getWord(addr: number): number {return 2;}
 		function getRegValue(regName: string): number {return 14;}
-		function getRemoteValue(varName: string): number {return 27;}
+		function getRemoteValue(varName: string): number | string {
+			if (varName === 'Remote.tStates'
+				|| varName === 'Remote.cpuFrequency'
+			)
+				return 27;
+			if(varName === 'Remote.slots')
+				return "slots";
+			throw Error("Unknown variable: ");
+		}
 
 		function checkEval(expr: string): any {
 			const func = new Function('getByte', 'getWord', 'getRegValue', 'getRemoteValue', `return ${expr};`);
@@ -281,10 +289,20 @@ export class LogEval {
 				const format = p1.substring(0, j);
 				const expr = p1.substring(j + 1);
 				const result = await this.customEval(expr);
-				// Format
-				const retValue = this.formatValue(format, result);
 				// Concatenate
 				evaluatedString += this.preparedExpression.substring(k, i);
+				let retValue: string;
+				if(typeof result === 'string') {
+					retValue = result;
+				}
+				else if (typeof result === 'number') {
+					// Format
+					retValue = this.formatValue(format, result);
+				}
+				else {
+					// Unknown type
+					throw Error("Expression did not return a number or string.");
+				}
 				evaluatedString += retValue;
 				// Next
 				k = i + len;
@@ -316,11 +334,24 @@ export class LogEval {
 		return value;
 	}
 
-	protected async getRemoteValue(varName: string): Promise<number> {
+	protected async getRemoteValue(varName: string): Promise<number|string> {
 		if (varName === 'Remote.tStates')
 			return this.remote.getTstates();
 		if (varName === 'Remote.cpuFrequency')
 			return this.remote.getCpuFrequency();
+		if (varName.startsWith('Remote.slots')) {
+			// Get code memory
+			const memoryBanks = this.remote.getMemoryBanks();
+			const count = memoryBanks.length;
+			// Convert array
+			let slotTexts: string[] = [];
+			for (let i = 0; i < count; i++) {
+				const bank = memoryBanks[i];
+				slotTexts.push(`slot[${i}]=${bank.name}`);
+			}
+			const txt = slotTexts.join(', ');
+			return txt;
+		}
 		throw Error("Unknown variable '" + varName + "'.");
 	}
 

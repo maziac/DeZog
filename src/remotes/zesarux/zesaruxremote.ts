@@ -747,14 +747,6 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
-	 * Returns the passed T-states since start of simulation.
-	 */
-	public getTstates(): number {
-		return 0;	// TODO: Implement
-	}
-
-
-	/**
 	 * Returns the current CPU frequency
 	 * @returns The CPU frequency in Hz (e.g. 3500000 for 3.5MHz) or 0 if not supported.
 	 */
@@ -975,10 +967,7 @@ export class ZesaruxRemote extends RemoteBase {
 	}
 
 
-	/**
-	 * Set all log points.
-	 * Called only once.
-	 * Promise is called after the last logpoint is set.
+	/** ZEsarUX does not support logpoints.
 	 * @param logpoints A list of addresses to put a log breakpoint on.
 	 * @param enable Enable or disable the logpoints.
 	 */
@@ -987,7 +976,7 @@ export class ZesaruxRemote extends RemoteBase {
 	}
 
 
-	/**
+	/** ZEsarUX does not support logpoints.
 	 * Enables/disables all logpoints for a given group.
 	 * Promise is called all logpoints are set.
 	 * @param group The group to enable/disable. If undefined: all groups. E.g. "UNITTEST".
