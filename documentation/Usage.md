@@ -1980,9 +1980,8 @@ into the [WATCH](#watches) window. This will display the last 20 values on the g
 
 The debug console prints out useful information and might be used to enter additional commands and communicate with the emulator.
 
-E.g. on every step-over you get an info about the used T-states and time. This can be used to measure the performance of sub routines. (Note: the calculation of the time uses the CPU frequency, if the CPU frequency changes during execution the calculated time will be wrong.)
+E.g. on every step-over you get an info about the used ∆T-States and time. This can be used to measure the performance of sub routines. The ∆T-States are the T-States since last break. (Note: the calculation of the time uses the CPU frequency, if the CPU frequency changes during execution the calculated time will be wrong.)
 ![](images/debug_console_tstates.jpg)
-
 
 You can add commands directly at the debug console. E.g. you can pass commands directly to ZEsarUX or you can enable/disable WPMEM.
 

@@ -1075,7 +1075,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * Resets the T-States counter. Used before stepping to measure the
 	 * time.
 	 */
-	public async resetTstates(): Promise<void> {
+	public async resetDeltaTstates(): Promise<void> {
 		//this.z80Cpu.cpuTstatesCounter = 0;
 		this.prevPassedTstates = this.passedTstates;
 	}
@@ -1085,21 +1085,16 @@ export class ZSimRemote extends DzrpRemote {
 	 * Returns the number of T-States (since last break).
 	 * @returns The number of T-States or 0 if not supported.
 	 */
-	public async getTstates(): Promise<number> {
+	public async getDeltaTstates(): Promise<number> {
 		//return this.z80Cpu.cpuTstatesCounter;
 		return this.passedTstates - this.prevPassedTstates;
 	}
-	// // Same as sync function.
-	// public getTstatesSync(): number {
-	// 	//return this.z80Cpu.cpuTstatesCounter;
-	// 	return this.passedTstates - this.prevPassedTstates;
-	// }
 
 
 	/**
 	 * Returns the passed T-states since start of simulation.
 	 */
-	public getPassedTstates(): number {
+	public getTstates(): number {
 		return this.passedTstates;
 	}
 

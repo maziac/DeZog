@@ -495,7 +495,7 @@ export class ZSimulationView extends BaseView {
 	 */
 	public updateDisplay(forceUpdate = false) {
 		// Check if CPU did something
-		const tStates = this.simulator.getPassedTstates();
+		const tStates = this.simulator.getTstates();
 		if (!forceUpdate && this.previousTstates === tStates)
 			return;
 		this.previousTstates = tStates;
@@ -568,7 +568,7 @@ export class ZSimulationView extends BaseView {
 
 	/** Gets the ULA screen from the simulator and sends it to the webview.
 	 */
-	protected updateScreen() { 
+	protected updateScreen() {
 		try {
 			// The screen data
 			const ulaScreen = this.simulator.zxUlaScreen;

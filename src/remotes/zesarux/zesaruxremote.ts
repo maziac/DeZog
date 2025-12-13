@@ -730,7 +730,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Resets the T-States counter. Used before stepping to measure the
 	 * time.
 	 */
-	public async resetTstates(): Promise<void> {
+	public async resetDeltaTstates(): Promise<void> {
 		await zSocket.sendAwait('reset-tstates-partial');
 	}
 
@@ -739,10 +739,18 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Returns the number of T-States (since last break, last 'reset-tstates-partial').
 	 * @returns The number of T-States or 0 if not supported.
 	 */
-	public async getTstates(): Promise<number> {
+	public async getDeltaTstates(): Promise<number> {
 		const data = await zSocket.sendAwait('get-tstates-partial');
 		const tStates = parseInt(data);
 		return tStates;
+	}
+
+
+	/**
+	 * Returns the passed T-states since start of simulation.
+	 */
+	public getTstates(): number {
+		return 0;	// TODO: Implement
 	}
 
 

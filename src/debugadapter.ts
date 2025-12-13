@@ -1769,7 +1769,7 @@ export class DebugSessionClass extends DebugSession {
 				StepHistory.pushCallStack(callStack);
 			}
 			// Reset t-states counter
-			await Remote.resetTstates();
+			await Remote.resetDeltaTstates();
 		}
 	}
 
@@ -1781,11 +1781,11 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async endStepInfo(): Promise<void> {
 		// Get used T-states
-		const tStates = await Remote.getTstates();
+		const tStates = await Remote.getDeltaTstates();
 		// Display T-states and time
 		let tStatesText;
 		if (tStates) {
-			tStatesText = 'T-States: ' + tStates;
+			tStatesText = '∆T-States: ' + tStates;
 			// Get frequency
 			const cpuFreq = await Remote.getCpuFrequency();
 			if (cpuFreq) {

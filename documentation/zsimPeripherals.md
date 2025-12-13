@@ -48,7 +48,7 @@ The related zsim properties are shown here:
 
 The API contains the ports (in and out) and a time base.
 ~~~js
-// The t-states that have passesd since start of simulation/start of debug session which starts at 0.
+// The t-states that have passed since start of simulation/start of debug session which starts at 0.
 API.tstates: number;
 
 // If the code is run from a unit test it contains the unit test (assembler code) label.

@@ -1371,7 +1371,7 @@ export class RemoteBase extends EventEmitter {
 	 * Resets the T-States counter. Used before stepping to measure the
 	 * time.
 	 */
-	public async resetTstates(): Promise<void> {
+	public async resetDeltaTstates(): Promise<void> {
 		//
 	}
 
@@ -1380,9 +1380,18 @@ export class RemoteBase extends EventEmitter {
 	 * Returns the number of T-States (since last break).
 	 * @returns The number of T-States or 0 if not supported.
 	 */
-	public async getTstates(): Promise<number> {
+	public async getDeltaTstates(): Promise<number> {
 		return 0;
 	}
+
+
+	/**
+	 * Returns the passed T-states since start of simulation.
+	 */
+	public getTstates(): number {
+		return 0;
+	}
+
 
 
 	/**

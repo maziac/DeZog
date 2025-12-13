@@ -89,8 +89,10 @@ export class LogEval {
 		const exprWithFunc = this.replaceAt(expression);
 		// Replace labels
 		const labelsReplaced = this.replaceLabels(exprWithFunc);
+		// Replace fixed variables (tstates)
+		const fixedVarsReplaced = this.replaceRemoteVariables(labelsReplaced);
 		// Replace hex numbers (Note: a label, e.g. ABBAh, would have higher priority)
-		const hexRegex = this.replaceHexNumbers(labelsReplaced);
+		const hexRegex = this.replaceHexNumbers(fixedVarsReplaced);
 		// Replace registers
 		const regsReplaced = this.replaceRegisters(hexRegex);
 
@@ -109,6 +111,19 @@ export class LogEval {
 			const lbl = match;
 			const value = this.labels.getNumberFromString64k(lbl);
 			return (isNaN(value)) ? lbl : value.toString();
+		});
+		return replaced;
+	}
+
+
+	/** Replaces all fixed vars, like 'Remote.tStates'.
+	 * @param expr The expression to replace the variables in.
+	 * @returns The expression with the labels replaced.
+	 */
+	protected replaceRemoteVariables(expr: string): string {
+		const regex = /\bRemote\.\w+\b/g;
+		const replaced = expr.replace(regex, match => {
+			return `await getRemoteValue("${match}")`;
 		});
 		return replaced;
 	}
@@ -168,10 +183,11 @@ export class LogEval {
 		function getByte(addr: number): number {return 1;}
 		function getWord(addr: number): number {return 2;}
 		function getRegValue(regName: string): number {return 14;}
+		function getRemoteValue(varName: string): number {return 27;}
 
 		function checkEval(expr: string): any {
-			const func = new Function('getByte', 'getWord', 'getRegValue', `return ${expr};`);
-			return func(getByte, getWord, getRegValue);
+			const func = new Function('getByte', 'getWord', 'getRegValue', 'getRemoteValue', `return ${expr};`);
+			return func(getByte, getWord, getRegValue, getRemoteValue);
 		}
 
 		// Check syntax
@@ -300,9 +316,15 @@ export class LogEval {
 		return value;
 	}
 
+	protected async getRemoteValue(varName: string): Promise<number> {
+		if (varName === 'Remote.tStates')
+			return this.remote.getTstates();
+		throw Error("Unknown variable '" + varName + "'.");
+	}
+
 	protected async customEval(expr: string): Promise<any> {
-		const func = new Function('getByte', 'getWord', 'getRegValue', `return (async () => { return ${expr}; })();`);
-		const result = func(this.getByteEval.bind(this), this.getWordEval.bind(this), this.getRegValue.bind(this));
+		const func = new Function('getByte', 'getWord', 'getRegValue', 'getRemoteValue', `return (async () => { return ${expr}; })();`);
+		const result = func(this.getByteEval.bind(this), this.getWordEval.bind(this), this.getRegValue.bind(this), this.getRemoteValue.bind(this));
 		return result;
 	}
 }
