@@ -1853,13 +1853,14 @@ with:
   - memory accessors: b@(...) and w@(...) to obtain a byte or a word at the memory position
 - optional formatting: 'string', 'hex8', 'hex16', 'int8', 'int16', 'uint8', 'uint16', 'bits'
 - special expressions: some information of the Remote can be logged:
-  - `${Remote.tStates}` - the number of T-States since beginning of the debug session
-  -  `${Remote.cpuFrequency}` - the frequency in Hz, e.g. 3500000
+  - `${Remote.tStates}` - the number of T-States since beginning of the debug session (only available in 'zsim')
+  -  `${Remote.cpuFrequency}` - the frequency in Hz, e.g. 3500000 (only available in 'zsim')
   -  `${Remote.slots}` - all slot/bank associations as string, e.g. "slot[0]=ROM1, slot[1]=ROM1, slot[2]=BANK10, slot[3]=BANK11, slot[4]=BANK4, slot[5]=BANK5, slot[6]=BANK0, slot[7]=BANK1"
 - examples:
     - `LOGPOINT [SPRITES] Status=${A:hex8}, Counter=${b@(sprite.counter)}`
     - `LOGPOINT Status=${w@(HL)}, ${DE}, ${b@(DE+1)}`
     - `LOGPOINT T-States=${Remote.tStates}`
+    - `LOGPOINT Freq=${Remote.cpuFrequency/1000000}MHz`
     - `LOGPOINT Slots=${Remote.slots}`
 
 In the vscode UI LOGPOINT breakpoints can be turned on or off altogether in the breakpoints pane:
