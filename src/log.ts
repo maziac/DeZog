@@ -15,7 +15,7 @@ const PAUSE_LOG_TIME = 2;
 export class Log {
 
 	/// Output logging to the "OUTPUT" tab in vscode.
-	/// This is of type vscode.OutputChannel. But it can be used as it would imply a
+	/// This is of type vscode.OutputChannel. But the type can't be used as it would imply a
 	/// dependency to vscode. And with a dependency to vscode mocha unit tests are not possible.
 	protected logOutput;
 

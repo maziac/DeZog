@@ -12,8 +12,6 @@ import {Opcode, OpcodeFlag} from '../disassembler/core/opcode';
 import {Disassembly, DisassemblyClass} from '../disassembler/disassembly';
 import {MemoryBank, MemoryModel} from './MemoryModel/memorymodel';
 import {LogEval} from '../misc/logeval';
-import {LogEvalBasicZx81} from '../misc/zx81/logevalbasiczx81';
-
 
 
 /**
@@ -199,14 +197,9 @@ export class RemoteBase extends EventEmitter {
 		// LOGPOINTs
 		const logPointLines = Labels.getLogPointLines();
 		const logPointsMap = this.createLogPoints(logPointLines);
-		// BASIC LOGPOINT
-		let array = logPointsMap.get('BASIC');
-		if (!array) {
-			array = new Array<GenericBreakpoint>();
-			logPointsMap.set('BASIC', array);
-		}
-		const log = new LogEvalBasicZx81(this, Z80Registers, Labels);
-		log.setLogPoints(logPointsMap);
+
+		// Add special logpoints, i.e. the ZX81 BASIC logpoints
+		this.addSpecialLogPoints(logPointsMap);
 
 		this.setLOGPOINTArray(logPointsMap);
 
@@ -217,6 +210,13 @@ export class RemoteBase extends EventEmitter {
 			await this.enableAssertionBreakpoints(true);
 		for (const group of prevEnabledLpGroups)
 			await this.enableLogpointGroup(group, true);
+	}
+
+
+	/** The remote can add special logpoints.
+	 * Used for the zsim ZX81 BASIC logpoints.
+	 */
+	protected addSpecialLogPoints(_logPointsMap: Map<string, GenericBreakpoint[]>) {
 	}
 
 

@@ -826,6 +826,16 @@
 										"description": "Several options for the ZX81 and ZX Spectrum ULA screen.",
 										"default": {}
 									},
+									"zx81LoadOverlay": {
+										"type": "boolean",
+										"description": "Defaults to false. Enabled in the \"zx81\" preset. Enables overriding the load (save) routine of the ZX81 ROM. If enabled the load routine (at 0x0343) of the ZX81 is skipped and the file is loaded directly into the memory. Afterwards execution is continued at 0x0207.",
+										"default": false
+									},
+									"zx81BasicLogging": {
+										"type": "boolean",
+										"description": "Defaults to false. Enabled in the \"zx81\" preset. Enables automatic logpoints for logging of ZX81 BASIC code execution.",
+										"default": true
+									},
 									"zxBeeper": {
 										"type": "boolean",
 										"description": "Enables ZX Spectrum sound through it's beeper.",

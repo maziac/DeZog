@@ -33,6 +33,9 @@ import {ExecuteInterface} from './executeinterface';
 import {Zx81LoadOverlay} from './zx81loadoverlay';
 import {Zx81BasicVars} from '../../misc/zx81/zx81basicvars';
 import {Z80File} from '../dzrp/z80file';
+import {LogEvalBasicZx81} from '../../misc/zx81/logevalbasiczx81';
+import {Labels} from '../../labels/labels';
+
 
 
 
@@ -1011,6 +1014,22 @@ export class ZSimRemote extends DzrpRemote {
 		}
 	*/
 
+
+	/** zsim adds the ZX81 BASIC logpoints here.
+	 */
+	protected addSpecialLogPoints(logPointsMap: Map<string, GenericBreakpoint[]>) {
+		// Check for ZX81 BASIC logging
+		if (this.zsim.zx81BasicLogging) {
+			// BASIC LOGPOINT
+			let array = logPointsMap.get('BASIC');
+			if (!array) {
+				array = new Array<GenericBreakpoint>();
+				logPointsMap.set('BASIC', array);
+			}
+			const log = new LogEvalBasicZx81(this, Z80Registers, Labels);
+			log.setLogPoints(logPointsMap);
+		}
+	}
 
 	/**
 	 * Deserializes the CPU, memory etc. to restore the state.

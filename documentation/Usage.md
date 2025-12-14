@@ -29,8 +29,11 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 [z80-sample-program]: https://github.com/maziac/z80-sample-program
 [zx81-sample-program]: https://github.com/maziac/zx81-sample-program
 [z80-peripherals-sample]: https://github.com/maziac/z80-peripherals-sample
+[z80-custom-memory-model-sample]: https://github.com/maziac/z80-custom-memory-model-sample
+[z80-custom-memory-model-advanced]: https://github.com/maziac/z80-custom-memory-model-advanced
 [dezogif]: https://github.com/maziac/dezogif
 [DZRP]: https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md
+[zx81-zsim]: https://github.com/maziac/DeZog/blob/master/documentation/zx81/zx81-zsim.md
 
 [zesarux]: https://github.com/chernandezba/zesarux
 [cspect]: http://www.cspect.org
@@ -48,7 +51,10 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 - [Z80-Sample-Program]
 - [ZX81-Sample-Program]
 - [Z80-Peripherals-Sample]
+- [Z80-Custom-Memory-Model-Sample]
+- [Z80-Custom-Memory-Model-Advanced]
 - [DeZogIf]
+- [DZRP]
 - [CSpect]
 - [ZEsarUX]
 - [MAME]
@@ -960,6 +966,7 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
       - "colourizationFile": You can enter here the file path of your colourization file. You can get a lot of colourization files [here](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_ColourisationDefinitions.htm).
 - "zx81LoadOverlay": true/false. Simulates loading from tape by loading from a file.
 - "zxBorderWidth": The displayed border width in pixels. If set to 0 then no border is displayed. Works only for ulaScreen equal to "spectrum".
+- "zx81BasicLogging": true/false. Default false. True if preset "zx81" is chosen. Enables logging of the ZX81 BASIC. Logs executed BASIC line numbers. See https://github.com/maziac/DeZog/blob/master/documentation/zx81/zx81-zsim.md#basic-logging
 - "cpuLoad": The Z80 CPU load is calculated by the number of executed HALT tStates vs all tStates. You can disable the display with a 0. 1 will exactly count till the next occurrence of a HALT. Higher numbers will average over more HALT instructions and lead to a more stable display. Practical values are around 10 (the default).
   Additionally the simulation speed is indicated by the color. If the display turns to yellow the simulation speed is not fast enough to cope with the set cpuFrequency. (If you e.g. set a ZX81 or ZX Spectrum to 35Mhz the display will probably turn to yellow.)
 ![](images/zsim_cpu_load.jpg)

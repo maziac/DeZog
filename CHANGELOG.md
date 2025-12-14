@@ -3,16 +3,18 @@
 # 3.7.0
 - New DZRP command CMD_INTERRUPT_ON_OFF in use for cspect. IMPORTANT: You need Cspect >= 3.0.15.2 to be compatible with DeZog.
 - Fixed issue loading .sna and .z80 files if interrupt is on and cspect is the target.
-- Fixes in zsim configuration:
-  - It is now possible to deselect the ulaScreen
-  - zxKeyboard is now disabled by default
-- Fixed setting of banks by index in ioMmu.
-- CustomMemoryBank structure re-defined:
-  - 'rom': no path anymore. Only allowed values are true or false.
-  - 'romOffset': removed.
-  - 'filePath': new property for the file path.
-  - 'fileOffset': new property for the offset inside filePath.
-- Fixed #162: Local stack not immediately update if value changed from UI.
+- zsim:
+  - Fixes in zsim configuration:
+    - It is now possible to deselect the ulaScreen
+    - zxKeyboard is now disabled by default
+    - Fixed setting of banks by index in ioMmu.
+  - CustomMemoryBank structure re-defined:
+    - 'rom': no path anymore. Only allowed values are true or false.
+    - 'romOffset': removed.
+    - 'filePath': new property for the file path.
+    - 'fileOffset': new property for the offset inside filePath.
+  - New property "zx81BasicLogging": Enables/disable ZX81 BASIC line execution.
+- Fixed #162: Local stack not immediately updated if value changed from UI.
 - Fixed #106: When loading a 128K .sna or .z80 file the port 7FFD is now set correctly (according file) for CSpect and dezogif (ZXNext).
 - Discussion/Issue #165/#164: New LOGPOINT variables: ${Remote.tStates}, ${Remote.cpuFrequency} and ${Remote.slots}
 

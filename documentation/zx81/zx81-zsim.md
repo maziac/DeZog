@@ -20,7 +20,7 @@ What it does is to set the following zsim properties:
 ~~~json
 	"memoryModel": "ZX81-56K",
 	"cpuFrequency": 3250000,
-	"defaultPortIn": 0xFF,
+	"defaultPortIn": 255,
 	"zxKeyboard": "zx81",
 	"ulaScreen": "zx81",
 	"ulaOptions": {
@@ -34,7 +34,8 @@ What it does is to set the following zsim properties:
         },
         "debug": false
   	},
-    "zx81LoadOverlay": true
+    "zx81LoadOverlay": true,
+    "zx81BasicLogging": true
 ~~~
 
 If you use the preset you can easily override the defaults, e.g. to define a 16k ZX81 use:
@@ -490,7 +491,7 @@ For "Battlestar Galactica" you could use:
 Please note that "Battlestar Galactica" only uses a partial address decoding.
 
 # BASIC logging
-'zsim' automatically does a logging of the ZX81 BASIC.
+If "zx81BasicLogging" is enabled 'zsim' automatically does a logging of the ZX81 BASIC.
 If LOGPOINT is enabled in the vscode UI:
 ![](images/vscode-logpoint.jpg)
 Then you will find a logging of the BASIC in the "DEBUG CONSOLE". Here is an example:

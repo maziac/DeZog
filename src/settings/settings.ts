@@ -304,9 +304,12 @@ export interface ZSimType {
 	ulaOptions: UlaOptions;
 
 	// Enables overriding the load (save) routine of the ZX81 ROM.
-	// If enabled the load routine (at 0x0343) of the ZX81 is skipped and a file is loaded
+	// If enabled the load routine (at 0x0343) of the ZX81 is skipped and the file is loaded
 	// directly into the memory. Afterwards execution is continued at 0x0207.
 	zx81LoadOverlay: boolean;
+
+	// Enables logging of ZX81 BASIC code execution.
+	zx81BasicLogging: boolean;
 
 	// Enables ZX Spectrum sound through it's beeper.
 	zxBeeper: boolean,
@@ -653,6 +656,8 @@ export class Settings {
 				if (launchCfg.zsim.ulaOptions.chroma81 === undefined) {
 					launchCfg.zsim.ulaOptions.chroma81 = {} as Chroma81Type;
 				}
+				if(launchCfg.zsim.zx81BasicLogging === undefined)
+					launchCfg.zsim.zx81BasicLogging = true;
 			}
 		}
 		if (launchCfg.zsim.zxKeyboard === undefined)
@@ -784,6 +789,8 @@ export class Settings {
 			launchCfg.zsim.Z80N = false;
 		if (launchCfg.zsim.tbblue === undefined)
 			launchCfg.zsim.tbblue = {REG_TURBO_MODE: false} as TBBlueType;
+		if (launchCfg.zsim.zx81BasicLogging === undefined)
+			launchCfg.zsim.zx81BasicLogging = false;
 
 		// Check for DMA
 		if (launchCfg.zsim.zxnDMA === undefined)
