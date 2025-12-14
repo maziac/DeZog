@@ -23,7 +23,7 @@ export class LogEval {
 
 	// The prepared expression: Labels are replaced with their values,
 	// @replaced with getByte/Word and registers with object variables.
-	// The string is still somthing like: "STATUS=${A}, VALUE=${await getByte(getRegByName('HL'))}"
+	// The string is still something like: "STATUS=${A}, VALUE=${await getByte(getRegByName('HL'))}"
 	protected preparedExpression: string;
 
 	// The created evaluation function.
@@ -72,7 +72,7 @@ export class LogEval {
 	 * @param expr The expression to evaluate. May contain math expressions and labels.
 	 * Also evaluates numbers in formats like '$4000', '2FACh', 100111b, 'G'.
 	 * E.g. 2*b@(HL+LABEL):hex8
-	 * Also extracts the format and set this.format accordingly.
+	 * Also extracts the format and set format accordingly.
 	 * @param modulePrefix An optional prefix to use for each label. (sjasmplus)
 	 * @param lastLabel An optional last label to use for local labels. (sjasmplus)
 	 * @returns The prepared expression. E.g. ["hex8", "2*await getByte(HL+12345)]"
@@ -339,11 +339,13 @@ export class LogEval {
 		if (varName.startsWith('Remote.slots')) {
 			// Get code memory
 			const memoryBanks = this.remote.getMemoryBanks();
-			const count = memoryBanks.length;
+			const slots = this.remote.getSlots();
+			const count = slots.length;
 			// Convert array
 			let slotTexts: string[] = [];
 			for (let i = 0; i < count; i++) {
-				const bank = memoryBanks[i];
+				const bankIndex = slots[i];
+				const bank = memoryBanks[bankIndex];
 				slotTexts.push(`slot[${i}]=${bank.name}`);
 			}
 			const txt = slotTexts.join(', ');

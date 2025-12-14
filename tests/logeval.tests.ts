@@ -13,6 +13,26 @@ suite('LogEval', () => {
 			}
 			return data;
 		}
+
+		public getTstates(): number {
+			return 9876543;
+		}
+
+		public async getCpuFrequency(): Promise<number> {
+			return 1234567;
+		}
+
+		public getSlots(): number[] {
+			return [1, 0, 3, 2];
+		}
+		public getMemoryBanks(): any[] {
+			return [
+				{name: 'bank0'},
+				{name: 'bank1'},
+				{name: 'bank2'},
+				{name: 'bank3'},
+			]
+		}
 	}
 
 	class MockZ80RegistersClass {
@@ -121,6 +141,15 @@ suite('LogEval', () => {
 			});
 		});
 
+		suite('replaceRemoteVariables', () => {
+			test('one remote variable', () => {
+				assert.equal(logEval.replaceRemoteVariables('12+b@(HL)+Remote.something-3'), '12+b@(HL)+await getRemoteValue("Remote.something")-3');
+			});
+			test('two remote variables', () => {
+				assert.equal(logEval.replaceRemoteVariables('b@(HL)+Remote.something1-3*w@(Remote.something2)'), 'b@(HL)+await getRemoteValue("Remote.something1")-3*w@(await getRemoteValue("Remote.something2"))');
+			});
+		});
+
 		suite('replaceHexNumbers', () => {
 			test('$F12A', () => {
 				assert.equal(logEval.replaceHexNumbers('$F12A'), '0xF12A');
@@ -178,12 +207,34 @@ suite('LogEval', () => {
 						logEval.checkExpressionSyntax("2 == 2");
 					});
 				});
+				suite('Remote variables', () => {
+					test('Remote.tStates', () => {
+						assert.doesNotThrow(() => {
+							logEval.checkExpressionSyntax("await getRemoteValue('Remote.tStates')");
+						});
+					});
+					test('Remote.cpuFrequency', () => {
+						assert.doesNotThrow(() => {
+							logEval.checkExpressionSyntax("await getRemoteValue('Remote.cpuFrequency')");
+						});
+					});
+					test('Remote.slots', () => {
+						assert.doesNotThrow(() => {
+							logEval.checkExpressionSyntax("await getRemoteValue('Remote.slots')");
+						});
+					});
+				});
 			});
 
 			suite('wrong', () => {
 				test('* * (wrong syntax)', () => {
 					assert.throws(() => {
 						logEval.checkExpressionSyntax("await getByte(9)* *await getWord(8):string");
+					});
+				});
+				test('wrong Remote variable', () => {
+					assert.throws(() => {
+						logEval.checkExpressionSyntax("await getRemoteValue('Remote.notExisting')");
 					});
 				});
 			});
@@ -256,6 +307,24 @@ suite('LogEval', () => {
 				logEval.preparedExpression = '${string:await getByte(getRegValue("HL")+0x234)}';
 				const evalString = await logEval.evaluate();
 				assert.equal(evalString, "52");	// 0x34
+			});
+		});
+
+		suite('Remote variables', () => {
+			test('Remote.tStates', async () => {
+				logEval.preparedExpression = '${string:getRemoteValue("Remote.tStates")}';
+				const evalString = await logEval.evaluate();
+				assert.equal(evalString, "9876543");
+			});
+			test('Remote.cpuFrequency', async () => {
+				logEval.preparedExpression = '${string:getRemoteValue("Remote.cpuFrequency")}';
+				const evalString = await logEval.evaluate();
+				assert.equal(evalString, "1234567");
+			});
+			test('Remote.slots', async () => {
+				logEval.preparedExpression = '${string:getRemoteValue("Remote.slots")}';
+				const evalString = await logEval.evaluate();
+				assert.equal(evalString, "slot[0]=bank1, slot[1]=bank0, slot[2]=bank3, slot[3]=bank2");
 			});
 		});
 
