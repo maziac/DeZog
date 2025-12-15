@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.7.0-rc3",
+	"version": "3.7.0-rc4",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum/ZX81.",
 	"author": {
@@ -108,28 +108,30 @@
 					"default": true
 				},
 				"dezog.log.global": {
-					"description": "Write global logs to an output panel.",
+					"description": "Write global logs to the \"DeZog\" output panel.",
 					"type": "boolean",
 					"scope": "resource",
 					"default": false
 				},
 				"dezog.log.transport": {
-					"description": "Write transport logs (socket, serial, etc.) to an output panel.",
+					"description": "Write transport logs (socket, serial, etc.) to the \"DeZog transport\" output panel.",
 					"type": "boolean",
 					"scope": "resource",
 					"default": false
 				},
-				"dezog.log.zsim.hardware": {
-					"description": "Write logs from simulated hardware, e.g. zxnDMA, to an output panel. For the internal simulator (zsim).",
+				"dezog.log.zsim.enabled": {
 					"type": "boolean",
+					"description": "Write logs regarding custom (js) code or simulated HW (e.g. zxnDMA) to the \"DeZog zsim\" output panel. For the internal simulator (zsim).",
 					"scope": "resource",
 					"default": true
 				},
-				"dezog.log.zsim.customCode": {
-					"description": "Write logs regarding custom (js) code to an output panel. For the internal simulator (zsim).",
-					"type": "boolean",
+				"dezog.log.zsim.cachedLines": {
+					"description": "Number of cached lines for the zsim panel log. The output is collected before written to the log panel. Can be used for performance reasons. If the cache is filled up, additional logs might get lost (in that case you see \"[...missed log entries...]\" in the log). For cached logs the max delay until logs are shown is 100ms. If you set this to 0, all log lines are written immediately. No logs are missed.",
+					"type": "number",
+					"minimum": 0,
+					"maximum": 1000,
 					"scope": "resource",
-					"default": true
+					"default": 0
 				},
 				"dezog.donated": {
 					"description": "If you donated (press the donate button in the help) you can hide the button by setting this parameter.",
@@ -772,16 +774,6 @@
 													}
 												}
 											},
-											"firstLine": {
-												"type": "number",
-												"description": "Used only if \"hires\" is true. The first line that should be displayed. Defaults to 56.",
-												"default": 56
-											},
-											"lastLine": {
-												"type": "number",
-												"description": "Used only if \"hires\" is true. The last line (inclusive) that should be displayed. Defaults to 247.",
-												"default": 247
-											},
 											"showStandardLines": {
 												"type": "boolean",
 												"description": "In some modes (e.g. zx81/hires) this shows some lines over the display for the borders or the start of the HSYNC pulse.",
@@ -821,6 +813,34 @@
 												"type": "boolean",
 												"description": "ZX81 only. If true a gray background is shown for the screen areas without output. Only makes a difference for collapsed dfiles, i.e. only for ZX81 with 1-2k memory. Defaults to false.",
 												"default": false
+											},
+											"screenArea": {
+												"type": "object",
+												"description": "Similar to \"borderSize\" but more fine-grained control. Either use \"borderSize\" or \"screenArea\", not both.",
+												"additionalProperties": false,
+												"properties": {
+													"firstX": {
+														"type": "number",
+														"description": "The leftmost x-position."
+													},
+													"lastX": {
+														"type": "number",
+														"description": "The rightmost x-position."
+													},
+													"firstY": {
+														"type": "number",
+														"description": "The top y-position."
+													},
+													"lastY": {
+														"type": "number",
+														"description": "The bottom y-position."
+													}
+												}
+											},
+											"borderSize": {
+												"type": "number",
+												"description": "The size of the border around the ULA screen in pixels. Alternative for screenArea.",
+												"default": 10
 											}
 										},
 										"description": "Several options for the ZX81 and ZX Spectrum ULA screen.",
@@ -905,6 +925,11 @@
 												"description": "You can set a time step (interval) to call the tick() function. If not set then tick() will not be called (although time/t-states still do advance)."
 											}
 										}
+									},
+									"zxnDMA": {
+										"type": "boolean",
+										"description": "Set to true to simulate the ZX Next DMA controller.",
+										"default": false
 									}
 								}
 							},

@@ -459,8 +459,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// An array with commands that are executed after the program-to-debug is loaded.
 	commandsAfterLaunch: Array<string>;
 
-	/// If enabled code coverage information is analyzed and displayed.
-	/// Useful especially for unit tests but can be enabled also in "normal" launch configurations.
+	/// Configuration regarding code history and coverage.
 	history: {
 		reverseDebugInstructionCount: number;	// Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off.
 		spotCount: number;	// Sets the number of instructions to show in a spot. If you set this e.g. to 5 then the 5 previous and the 5 next instructions related to the current position are shown.

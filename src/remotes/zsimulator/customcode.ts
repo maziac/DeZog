@@ -1,5 +1,5 @@
 import {EventEmitter} from 'events';
-import {LogZsimCustomCode} from '../../log';
+import {LogZsim} from '../../log';
 import {Utility} from '../../misc/utility';
 import {readFileSync} from 'fs';
 import {MemBuffer, Serializable} from '../../misc/membuffer';
@@ -53,7 +53,7 @@ export class CustomCodeAPI extends EventEmitter {
 	 * command.
 	 */
 	public sendToCustomUi(message: any) {
-		LogZsimCustomCode.log('sendToCustomUi: ' + JSON.stringify(message));
+		LogZsim.log('sendToCustomUi: ' + JSON.stringify(message));
 		// Send message
 		this.parent.emit('sendToCustomUi', message);
 	}
@@ -122,7 +122,7 @@ export class CustomCodeAPI extends EventEmitter {
 	 * @param ...args Any arguments.
 	 */
 	public log(...args) {
-		LogZsimCustomCode.log(...args);
+		LogZsim.log(...args);
 	}
 
 }
@@ -266,7 +266,7 @@ API.log('-------------------------------------\\n');`
 	 */
 	public uiReady() {
 		if (this.api) {
-			LogZsimCustomCode.log('API.uiReady() called.');
+			LogZsim.log('API.uiReady() called.');
 			this.api.uiReady();
 		}
 	}
@@ -281,12 +281,12 @@ API.log('-------------------------------------\\n');`
 	 */
 	public readPort(port: number): number | undefined {
 		this.logTstates();
-		LogZsimCustomCode.log('API.readPort(' + Utility.getHexString(port, 4) + 'h)');
+		LogZsim.log('API.readPort(' + Utility.getHexString(port, 4) + 'h)');
 		// Catch probably errors.
 		let value;
 		try {
 			value = this.api.readPort(port);
-			LogZsimCustomCode.log('  Reading value ' + Utility.getHexString(value, 2) + 'h for port ' + Utility.getHexString(port, 4) + 'h');
+			LogZsim.log('  Reading value ' + Utility.getHexString(value, 2) + 'h for port ' + Utility.getHexString(port, 4) + 'h');
 		}
 		catch (e) {
 			this.throwError("Error during executing custom java script in 'readPort': " + e.message);
@@ -303,7 +303,7 @@ API.log('-------------------------------------\\n');`
 	 */
 	public writePort(port: number, value: number) {
 		this.logTstates();
-		LogZsimCustomCode.log('API.writePort(' + Utility.getHexString(port, 4) + 'h, ' + Utility.getHexString(value, 2) + 'h)');
+		LogZsim.log('API.writePort(' + Utility.getHexString(port, 4) + 'h, ' + Utility.getHexString(value, 2) + 'h)');
 		// Catch probably errors.
 		try {
 			this.api.writePort(port, value);
@@ -322,10 +322,10 @@ API.log('-------------------------------------\\n');`
 	 * command.
 	 */
 	public receivedFromCustomUi(message: any) {
-		LogZsimCustomCode.log('API.receivedFromCustomUi: ' + JSON.stringify(message));
+		LogZsim.log('API.receivedFromCustomUi: ' + JSON.stringify(message));
 		if (this.api.receivedFromCustomUi === undefined) {
 			// Log that a message has been received without receiver.
-			LogZsimCustomCode.log("  But no custom 'this.receivedFromCustomUi' defined.");
+			LogZsim.log("  But no custom 'this.receivedFromCustomUi' defined.");
 		}
 		else {
 			// Catch probably errors.
@@ -352,7 +352,7 @@ API.log('-------------------------------------\\n');`
 	 * Logs the t-states.
 	 */
 	public logTstates() {
-		LogZsimCustomCode.log('tick: tstates=' + this.api.tstates);
+		LogZsim.log('tick: tstates=' + this.api.tstates);
 	}
 
 
@@ -381,7 +381,7 @@ API.log('-------------------------------------\\n');`
 	 * @param errorMessage The error text.
 	 */
 	protected throwError(errorMessage: string) {
-		LogZsimCustomCode.log(errorMessage);
+		LogZsim.log(errorMessage);
 		throw Error(errorMessage);
 	}
 

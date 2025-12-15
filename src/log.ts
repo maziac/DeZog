@@ -4,8 +4,7 @@
 const PAUSE_LOG_TIME = 2;
 
 
-/**
- * Class for logging.
+/** Class for logging.
  * This allows to instantiate a new class and log there into an own channel.
  * Or, you can use static methods to log globally.
  * When logging into a channel this is logged by vscode also into a file located
@@ -28,6 +27,7 @@ export class Log {
 
 	// If set then the logs are not written directly to the console but cached.
 	// The cache has only a limited amount of space. Older entries are lost.
+	// If that happens '[...missed log entries...]' is written to the log.
 	protected cache: Array<string>;
 
 	// The used cache length.
@@ -40,8 +40,7 @@ export class Log {
 	protected cacheTime = 100;	// ms
 
 
-	/**
-	 * Logs to console.
+	/** Logs to console.
 	 * Puts the caller name ('class.method'. E.g. "ZesaruxDebugSession.initializeRequest")
 	 * in front of each log.
 	 * @param args The log arguments
@@ -51,8 +50,7 @@ export class Log {
 	}
 
 
-	/**
-	 * Initializes the logging. I.e. enables/disables logging to
+	/** Initializes the logging. I.e. enables/disables logging to
 	 * vscode channel and file.
 	 * @param channelOutput The vscode.OutputChannel.
 	 * @param callerName If true the name of the calling method is shown.
@@ -66,8 +64,7 @@ export class Log {
 	}
 
 
-	/**
-	 * Logs to console.
+	/** Logs to console.
 	 * Can put the caller name ('class.method'. E.g. "ZesaruxDebugSession.initializeRequest")
 	 * in front of each log if uncommented.
 	 * @param args The log arguments
@@ -97,24 +94,21 @@ export class Log {
 	}
 
 
-	/**
-	 * @return true if either logging to file or to channel is enabled.
+	/** @return true if either logging to file or to channel is enabled.
 	 */
 	public isEnabled(): boolean {
 		return (this.logOutput != undefined);
 	}
 
 
-	/**
-	 * Reveals the output channel in the UI.
+	/** Reveals the output channel in the UI.
 	 */
 	public show() {
 		this.logOutput?.show();
 	}
 
 
-	/**
-	 * Writes to console and file.
+	/** Writes to console and file.
 	 * @param format A format string for the args.
 	 * @param args the values to write.
 	 */
@@ -129,8 +123,7 @@ export class Log {
 	}
 
 
-	/**
-	 * Simply outputs text.
+	/** Simply outputs text.
 	 * @param text The text plus a newline is printed.
 	 */
 	public appendLine(text: string) {
@@ -160,8 +153,7 @@ export class Log {
 	}
 
 
-	/**
-	 * Outputs the cache to console.
+	/** Outputs the cache to console.
 	 * Does nothing if no cache is set.
 	 */
 	public outputCache() {
@@ -169,7 +161,7 @@ export class Log {
 			if (this.logOutput) {
 				// Check if data lost
 				if (this.cacheLogsLost) {
-					this.logOutput.appendLine('[...]');
+					this.logOutput.appendLine('[...missed log entries...]');
 				}
 				// Output
 				for (const text of this.cache) {
@@ -183,19 +175,24 @@ export class Log {
 	}
 
 
-	/**
-	 * Sets the cache length.
+	/** Sets the cache length.
 	 * @param length The cache length. If 0 the cache is disabled.
 	 */
 	public setCacheLength(length: number) {
+		this.outputCache();
 		this.cache = (length > 0) ? new Array<string>() : undefined as any;
 		this.cacheLength = length;
 		this.cacheLogsLost = false;
 	}
 
 
-	/**
-	 * Returns the caller name.
+	/** Returns the cache length. */
+	public getCacheLength(): number {
+		return this.cacheLength;
+	}
+
+
+	/** Returns the caller name.
 	 * @returns 'class.method'. E.g. "ZesaruxDebugSession.initializeRequest:"
 	 */
 	protected callerName(): string {
@@ -228,12 +225,8 @@ export class Log {
 /// Global logging is instantiated.
 export const LogGlobal = new Log();
 
-/// Logging for zsim hardware is instantiated.
-export const LogZsimHardware = new Log();
-
 /// Logging for zsim custom code is instantiated.
-export const LogZsimCustomCode = new Log();
-LogZsimCustomCode.setCacheLength(100);
+export const LogZsim = new Log();
 
 /// Socket logging.
 export const LogTransport = new Log();

@@ -12,6 +12,7 @@ zsim.customMemory.slots[].banks[]:
 
 Please refer to the [Usage.md - customMemory](Usage.md#custommemory).
 
+The Panel OUTPUT logging of "DeZog zsim: Custom Code" and "DeZog zsim: Hardware" have been merged. New name is "DeZog zsim".
 
 # Migrate from DeZog 3.5 to DeZog 3.6
 There are changes to the syntax for LOGPOINTs. Please refer to the [Usage.md](Usage.md#logpoint).

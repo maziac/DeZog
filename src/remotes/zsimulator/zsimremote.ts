@@ -35,6 +35,7 @@ import {Zx81BasicVars} from '../../misc/zx81/zx81basicvars';
 import {Z80File} from '../dzrp/z80file';
 import {LogEvalBasicZx81} from '../../misc/zx81/logevalbasiczx81';
 import {Labels} from '../../labels/labels';
+import {LogZsim} from '../../log';
 
 
 
@@ -874,7 +875,8 @@ export class ZSimRemote extends DzrpRemote {
 							const evaluatedLog = await log.evaluate();
 							// Print
 							if (evaluatedLog) {
-								this.emit('debug_console', "Log: " + evaluatedLog);
+								this.emit('debug_console', "LOGPOINT: " + evaluatedLog);
+								LogZsim.log("LOGPOINT: " + evaluatedLog);
 							}
 						}
 					}

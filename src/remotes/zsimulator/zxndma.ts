@@ -1,4 +1,4 @@
-import {LogZsimHardware} from "../../log";
+import {LogZsim} from "../../log";
 import {Serializable, MemBuffer} from "../../misc/membuffer";
 import {ExecuteInterface} from "./executeinterface";
 import {SimulatedMemory} from "./simulatedmemory";
@@ -117,7 +117,7 @@ export class ZxnDma implements Serializable, ExecuteInterface {
 	/** Logs to LogZsimHardware.
 	 */
 	protected log(text: string) {
-		LogZsimHardware.log("zxnDMA: " + text);
+		LogZsim.log("zxnDMA: " + text);
 	}
 
 
