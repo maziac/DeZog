@@ -31,6 +31,7 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 [z80-peripherals-sample]: https://github.com/maziac/z80-peripherals-sample
 [z80-custom-memory-model-sample]: https://github.com/maziac/z80-custom-memory-model-sample
 [z80-custom-memory-model-advanced]: https://github.com/maziac/z80-custom-memory-model-advanced
+[z88dk-zcc-sample-project]: https://github.com/maziac/z88dk-zcc-sample-project
 [dezogif]: https://github.com/maziac/dezogif
 [DZRP]: https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md
 [zx81-zsim]: https://github.com/maziac/DeZog/blob/master/documentation/zx81/zx81-zsim.md
@@ -53,6 +54,7 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 - [Z80-Peripherals-Sample]
 - [Z80-Custom-Memory-Model-Sample]
 - [Z80-Custom-Memory-Model-Advanced]
+- [z88dk-zcc-sample-project]
 - [DeZogIf]
 - [DZRP]
 - [CSpect]
@@ -482,15 +484,14 @@ zcc +zxn -subtype=nex -vn --list -m --c-code-in-asm -clib=sdcc_iy -Cz"--clean" -
 
 Please note: C-support is only working with sdcc, not with sccz80.
 
-## Top of stack
+Top of stack:
 In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
 ~~~json
 "topOfStack": "__register_sp",
 ~~~
 
-
 You can find a sample project that uses the zcc c-compiler here:
-https://github.com/vmorilla/vscode-z88dk-next-sample-project
+[z88dk-zcc-sample-project]
 
 For 'watching' C-variables you need to prefix the variable with a "_".
 E.g. for `my_global_var` in C you would need to enter `_my_global_var` in the WATCH window.
@@ -502,6 +503,8 @@ Notes:
 - C-support only works for "z88dkv2" not for "z88dk"
 - For the "path" you can use globbing
 - Top of stack: In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
+- Although z88dk can create object code for banked memory, the .map and .lis files lack this information. As a consequence, DeZog can not use any banking with z88dk. You will be able to debug such programs, but it may happen that DeZog cannot correctly associate files with program addresses because e.g. the 0xC000 might be used by several banks. This results in wrong display of files when stepping or breakpoints that cannot be set.
+- Not all C-code may have corresponding addresses in assembler code. I.e. for those lines you cannot set breakpoints. Try to set the breakpoint at some other line in the vicinity.
 
 **Reverse Engineering configuration**
 
