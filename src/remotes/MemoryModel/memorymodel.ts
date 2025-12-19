@@ -626,7 +626,7 @@ export class MemoryModel {
 			}
 			line += ", " + type;
 			if (bank.filePath)
-				line += " (" + bank.filePath + ")";	// TODO: Test
+				line += " (" + bank.filePath + ")";
 			// Next line
 			txt += line + "\n";
 		}

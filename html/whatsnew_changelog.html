@@ -1,27 +1,19 @@
 
 <li>
 	<span class="changelog-badge changelog-badge-added">NEW</span><br>
-	Loading of .z80 files supported.
+	zsim: The <code>customMemory.slots[].banks[]</code> configuration has been updated.
+	You can now define custom memory models that emulate bank-switched memory and assemble code using sjasmplus with your <b>own memory layout</b>.
+	Breakpoints and source-level debugging are supported not only for predefined bank scenarios, but also for custom memory bank setups.
+	See this <a href="https://github.com/maziac/z80-custom-memory-model-advanced">example project</a> and the
+	<a href="https://github.com/maziac/DeZog/blob/main/documentation/Migration.md#migrate-from-dezog-36-to-dezog-37">migration guide</a> for details.
 </li>
 
 <li>
 	<span class="changelog-badge changelog-badge-added">NEW</span><br>
-	Breakpoint hit count support added.
+	LOGPOINT: New variables to log T-states, cpu frequency and memory slots (banks).
 </li>
 
 <li>
-	<span class="changelog-badge changelog-badge-added">NEW</span><br>
-	Added C-code debugging support for the Z88DK.
-	Please see this
-	<a href="https://github.com/maziac/z88dk-zcc-sample-project">example project</a>.
-</li>
-
-<li>
-	<span class="changelog-badge changelog-badge-added">NEW</span><br>
-	A LOGPOINT for ZX81 BASIC line logging and a command to print all ZX81 BASIC variables.
-</li>
-
-<li>
-	<span class="changelog-badge changelog-badge-fixed">FIXED</span><br>
-	The zsim simulator window can be detached from the main vscode window.
+	<span class="changelog-badge changelog-badge-changed">CHANGED</span><br>
+	The output logs for "DeZog zsim: Custom Code" and "DeZog zsim: Hardware" have been consolidated into a single log named "DeZog zsim". This change simplifies viewing related logs together.
 </li>

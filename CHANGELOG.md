@@ -7,12 +7,13 @@
   - Fixes in zsim configuration:
     - It is now possible to deselect the ulaScreen
     - zxKeyboard is now disabled by default
-    - Fixed setting of banks by index in ioMmu.
+    - Fixed the setting of banks by index in ioMmu.
   - CustomMemoryBank structure re-defined:
     - 'rom': no path anymore. Only allowed values are true or false.
     - 'romOffset': removed.
     - 'filePath': new property for the file path.
     - 'fileOffset': new property for the offset inside filePath.
+    - allows now for file data in RAM banks. Together this allows for custom multi-bank scenarios with sjasmplus support, see https://github.com/maziac/z80-custom-memory-model-advanced
   - New property "zx81BasicLogging": Enables/disable ZX81 BASIC line execution.
 - Fixed #162: Local stack not immediately updated if value changed from UI.
 - Fixed #106: When loading a 128K .sna or .z80 file the port 7FFD is now set correctly (according file) for CSpect and dezogif (ZXNext).
