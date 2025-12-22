@@ -507,64 +507,80 @@
 												"type": "object",
 												"additionalProperties": false,
 												"properties": {
+													"portMask": {},
 													"port": {},
-													"bit": {}
+													"bit": {},
+													"lowActive": {}
 												}
 											},
 											"fire2": {
 												"type": "object",
 												"additionalProperties": false,
 												"properties": {
+													"portMask": {},
 													"port": {},
-													"bit": {}
+													"bit": {},
+													"lowActive": {}
 												}
 											},
 											"fire3": {
 												"type": "object",
 												"additionalProperties": false,
 												"properties": {
+													"portMask": {},
 													"port": {},
-													"bit": {}
+													"bit": {},
+													"lowActive": {}
 												}
 											},
 											"fire4": {
 												"type": "object",
 												"additionalProperties": false,
 												"properties": {
+													"portMask": {},
 													"port": {},
-													"bit": {}
+													"bit": {},
+													"lowActive": {}
 												}
 											},
 											"left": {
 												"type": "object",
 												"additionalProperties": false,
 												"properties": {
+													"portMask": {},
 													"port": {},
-													"bit": {}
+													"bit": {},
+													"lowActive": {}
 												}
 											},
 											"down": {
 												"type": "object",
 												"additionalProperties": false,
 												"properties": {
+													"portMask": {},
 													"port": {},
-													"bit": {}
+													"bit": {},
+													"lowActive": {}
 												}
 											},
 											"up": {
 												"type": "object",
 												"additionalProperties": false,
 												"properties": {
+													"portMask": {},
 													"port": {},
-													"bit": {}
+													"bit": {},
+													"lowActive": {}
 												}
 											},
 											"right": {
 												"type": "object",
 												"additionalProperties": false,
 												"properties": {
+													"portMask": {},
 													"port": {},
-													"bit": {}
+													"bit": {},
+													"lowActive": {}
 												}
 											}
 										}
