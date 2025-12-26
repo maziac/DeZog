@@ -84,6 +84,10 @@ export class Zx81UlaDraw extends Zx81BaseUlaDraw {
 				dfileIndex++;
 				continue;
 			};
+			if (char === 0xE9 /* jp (hl9) */) {
+				// End of screen
+				break;
+			}
 
 			const inverted = (char & 0x80) !== 0;
 			let charIndex = (char & 0x7f) * 8;
