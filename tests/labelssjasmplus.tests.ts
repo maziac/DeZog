@@ -48,8 +48,9 @@ suite('Labels (sjasmplus)', () => {
 				const label = match[1];
 				const value = parseInt(match[2], 16);
 				// Check
-				const res = lbls.getNumberForLabel(label);
-				assert.equal(value, res!, label);
+				let res = lbls.getNumberForLabel(label)!;
+				res &= 0x0FFFF;	// Mask to 64k
+				assert.equal(value, res, label);
 			}
 		});
 

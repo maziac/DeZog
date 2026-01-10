@@ -11,72 +11,69 @@
 10    8000              main:
 11    8000                  ; Disable interrupts
 12    8000 F3               di
-13    8001 31 0C 81         ld sp,stack_top
+13    8001 31 00 81         ld sp,stack_top
 14    8004 01 FD 7F         ld bc,0x7FFD
 15    8007
 16    8007                  ;jp 0x6000
 17    8007
-18    8007 3E 10            ld a,010000b
-18    8009 ED 79          out (c),a    ; ROM1
-19    800B 3E 00            ld a,000000b
-19    800D ED 79          out (c),a    ; ROM0
-20    800F 3E 10            ld a,010000b
-20    8011 ED 79          out (c),a    ; ROM1
-21    8013
-22    8013 3E 01            ld a,1
-22    8015 ED 79          out (c),a
-23    8017 CD 00 C0         call sub_b1
-24    801A 00               nop
-25    801B
-26    801B
-27    801B 3E 03            ld a,3
-27    801D ED 79          out (c),a
-28    801F CD 00 C0         call sub_b3
-29    8022 00               nop
-30    8023
-31    8023              .loop:
-32    8023                  ; Bank 1
-33    8023 3E 01            ld a,1
-33    8025 ED 79          out (c),a
-34    8027 CD 00 C0         call sub_b1
-35    802A 00               nop
-36    802B 00               nop
-37    802C
-38    802C                  ; Bank 3
-39    802C 3E 03            ld a,3
-39    802E ED 79          out (c),a
-40    8030 CD 00 C0         call sub_b3
-41    8033 00               nop
-42    8034 00               nop
-43    8035
-44    8035                  ; Bank 7
-45    8035 3E 07            ld a,7
-45    8037 ED 79          out (c),a
-46    8039 CD 00 C0         call sub_b7
-47    803C 00               nop
-48    803D 00               nop
-49    803E
-50    803E 00           	nop
-51    803F 00           	nop
-52    8040 18 E1        	jr .loop
-53    8042
-54    8042
-55    8042              ; Stack: this area is reserved for the stack
-56    8042              STACK_SIZE: equ 100    ; in words
-57    8042
-58    8042
-59    8042              ; Reserve stack space
-60    8042 00 00            defw 0  ; WPMEM, 2
-61    8044              stack_bottom:
-62    8044 00 00 00...      defs    STACK_SIZE*2, 0
-63    810C              stack_top:
-64    810C                  ;defw 0
-65    810C 00 00            defw 0  ; WPMEM, 2
-66    810E
-67    810E
-68    810E
-69    810E
-70    810E                  MMU 3, 1, 0xC000
+18    8007                  ;ld a,010000b : out (c),a    ; ROM1
+19    8007                  ;ld a,000000b : out (c),a    ; ROM0
+20    8007                  ;ld a,010000b : out (c),a    ; ROM1
+21    8007
+22    8007 3E 01            ld a,1
+22    8009 ED 79          out (c),a
+23    800B CD 00 C0         call sub_b1
+24    800E 00               nop
+25    800F
+26    800F
+27    800F 3E 03            ld a,3
+27    8011 ED 79          out (c),a
+28    8013 CD 00 C0         call sub_b3
+29    8016 00               nop
+30    8017
+31    8017              .loop:
+32    8017                  ; Bank 1
+33    8017 3E 01            ld a,1
+33    8019 ED 79          out (c),a
+34    801B CD 00 C0         call sub_b1
+35    801E 00               nop
+36    801F 00               nop
+37    8020
+38    8020                  ; Bank 3
+39    8020 3E 03            ld a,3
+39    8022 ED 79          out (c),a
+40    8024 CD 00 C0         call sub_b3
+41    8027 00               nop
+42    8028 00               nop
+43    8029
+44    8029                  ; Bank 7
+45    8029 3E 07            ld a,7
+45    802B ED 79          out (c),a
+46    802D CD 00 C0         call sub_b7
+47    8030 00               nop
+48    8031 00               nop
+49    8032
+50    8032 00           	nop
+51    8033 00           	nop
+52    8034 18 E1        	jr .loop
+53    8036
+54    8036
+55    8036              ; Stack: this area is reserved for the stack
+56    8036              STACK_SIZE: equ 100    ; in words
+57    8036
+58    8036
+59    8036              ; Reserve stack space
+60    8036 00 00            defw 0  ; WPMEM, 2
+61    8038              stack_bottom:
+62    8038 00 00 00...      defs    STACK_SIZE*2, 0
+63    8100              stack_top:
+64    8100                  ;defw 0
+65    8100 00 00            defw 0  ; WPMEM, 2
+66    8102
+67    8102
+68    8102
+69    8102
+70    8102                  MMU 3, 1, 0xC000
 71    C000              sub_b1:
 72    C000 3E 01            ld a,1
 73    C002              .plus1:
