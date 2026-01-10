@@ -41,13 +41,22 @@ label6	nop
 .local
 	nop
 
-
+	defs 0x8200-$
 	ORG 0x8200
 data:
 	defb 1, 2, 3, 4		; WPMEM
 
 
+	defs 0x9000-$
 	ORG 0x9000
 
 	include "filea.asm"
 
+; Testing hovering global labels
+@global_label:
+	nop
+.local:
+	jr @global_label
+	jr global_label
+	jr @global_label.local
+	jr global_label.local

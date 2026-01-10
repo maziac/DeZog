@@ -244,7 +244,7 @@ export class Utility {
 	 * @returns The 'expr' with all labels and registers replaced by numbers.
 	 */
 	public static replaceVarsWithValues(expr: string, evalRegisters = true, modulePrefix?: string, lastLabel?: string): string {
-		const exprLabelled = expr.replace(/(0x[a-fA-F0-9]+\b|\b[a-zA-Z_\.][a-zA-Z0-9_\.]*'?|[\$][0-9a-fA-F]+\b|[a-fA-F0-9]+h\b|[01]+b\b|\d+\b|'[\S ]+')/g, (match, p1) => {	// NOSONAR
+		const exprLabelled = expr.replace(/(0x[a-fA-F0-9]+\b|(?<![\w@])[@a-zA-Z_\.][a-zA-Z0-9_\.]*'?|[\$][0-9a-fA-F]+\b|[a-fA-F0-9]+h\b|[01]+b\b|\d+\b|'[\S ]+')/g, (match, p1) => {	// NOSONAR
 			let res;
 			if (evalRegisters) {
 				// Check if it might be a register name.
@@ -263,6 +263,10 @@ export class Utility {
 			if (isNaN(res)) {
 				// Assume it is a label or number
 				let lbl = p1;
+				// Remove @ if sjasmplus global label
+				if (lbl.startsWith('@')) {
+					lbl = lbl.substring(1);
+				}
 
 				// Local label?
 				if (lastLabel && lbl.startsWith('.')) {

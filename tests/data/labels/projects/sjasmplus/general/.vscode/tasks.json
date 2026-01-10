@@ -8,6 +8,7 @@
             "args": [
                 "--sld=general.sld",
                 "--sym=general.labels",
+                "--raw=main.bin",
                 "--fullpath",
                 "main.asm"
             ],

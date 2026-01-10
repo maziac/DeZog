@@ -15,9 +15,16 @@
             },
             "sjasmplus": [
                 {
-                    "path": "_.sld",
+                    "path": "general.sld",
                 }
             ],
+            "loadObjs": [
+                {
+                    "path": "main.bin",
+                    "start": "0x8000"
+                }
+            ],
+            "execAddress": "0x8000",
             "rootFolder": "${workspaceFolder}",
         }
     ]

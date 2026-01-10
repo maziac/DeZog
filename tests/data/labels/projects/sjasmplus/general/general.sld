@@ -90,3 +90,12 @@ filea.asm|14||0|-1|36875|L|modfilea,,,+endmod
 filea.asm|16||0|0|36875|F|fa_label3
 filea.asm|16||0|0|36875|L|,fa_label3,
 filea.asm|17||0|0|36875|T|
+main.asm|56||0|0|36876|F|global_label
+main.asm|56||0|0|36876|L|,global_label,,+used
+main.asm|57||0|0|36876|T|
+main.asm|58||0|0|36877|F|global_label.local
+main.asm|58||0|0|36877|L|,global_label,local,+used
+main.asm|59||0|0|36877|T|
+main.asm|60||0|0|36879|T|
+main.asm|61||0|0|36881|T|
+main.asm|62||0|0|36883|T|
