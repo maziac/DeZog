@@ -550,16 +550,16 @@ I.e. the disassembly at the current PC is always correct while an older disassem
 
 The following table lists the differences of the different assemblers in respect to the labels:
 
-| Feature                                       | Savannah/z80asm | z88dk/z80asm | sjasmplus                               |
-| :-------------------------------------------- | :-------------- | :----------- | :-------------------------------------- |
-| Local labels                                  | no              | no           | yes                                     |
-| Needs a ':'                                   | yes             | yes          | no                                      |
-| Dots (.) are allowed (also at start of label) | no              | no           | yes                                     |
-| Misc                                          |                 |              | @ for global labels, numbers for labels |
+| Feature              | Savannah/z80asm | z88dk-z80asm       | sjasmplus                               |
+| :------------------- | :-------------- | :----------------- | :-------------------------------------- |
+| Local labels         | no              | yes                | yes                                     |
+| Needs a ':'          | yes             | yes                | no                                      |
+| Dots (.) are allowed | no              | no                 | yes                                     |
+| Misc                 |                 | @ for local labels | @ for global labels, numbers for labels |
 
 sjasmplus:
 
-- local labels: start with a dot. Are prefixed by the previous non-local label.
+- local labels: start with a dot. They are prefixed by the previous non-local label.
 - "global" labels, e.g. @label
 - dot notation, e.g. main.sub.label1
 - "global" labels: @label or @label.sublabel
@@ -567,9 +567,13 @@ sjasmplus:
 - Labels may end with or without ":"
 - temporary labels, e.g. labels that are just called "1" or "2".
 
+z88dk-z80asm:
+- local labels: start with a @.
+
+
 DeZog supports most of them but with some restrictions:
 
-- local labels: when hovering above a (local) label the current program counter is used to dissolve the context. I.e. the shown value is only correct if the PC is lower than the associated previous non-local label and no other non-local label is between the PC and the hover location.
+- local labels: Only sjasmplus local labels are supported. That means: when hovering above a (local) label the current program counter is used to dissolve the context. I.e. the shown value is only correct if the PC is lower than the associated previous non-local label and no other non-local label is between the PC and the hover location.
 - dot-notation: You have to hover over the last part of the dot notation to dissolve the complete label.
 - temporary (number) labels: are not supported.
 - sjasmplus: labels inside macros are not supported.
