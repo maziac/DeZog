@@ -19,13 +19,16 @@ label2:	ld a,5
 
 _locala:	ld b,8
 
-_localb:
+ _localb:
 	nop		; ASSERTION
 
 label3:	;m1
  ;m1
 label4:
  ;	m1
+
+local_label:
+	nop
 
 label4_1:
 	; m1	; LOGPOINT

@@ -127,17 +127,17 @@ suite('Labels (z88dk v2 format)', () => {
 				res = lbls.getLocationOfLabel('fa_label1')!;
 				assert.notEqual(res, undefined);
 				assert.equal(fname, res.file);
-				assert.equal(73 - 1, res.lineNr);	// line number starts at 0
+				assert.equal(76 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('global_label1')!;
 				assert.notEqual(res, undefined);
 				assert.equal(fname, res.file);
-				assert.equal(93 - 1, res.lineNr);	// line number starts at 0
+				assert.equal(96 - 1, res.lineNr);	// line number starts at 0
 
 				res = lbls.getLocationOfLabel('global_label2')!;
 				assert.notEqual(res, undefined);
 				assert.equal(fname, res.file);
-				assert.equal(95 - 1, res.lineNr);	// line number starts at 0
+				assert.equal(98 - 1, res.lineNr);	// line number starts at 0
 			});
 
 			test('address -> file/line', () => {
@@ -306,15 +306,15 @@ suite('Labels (z88dk v2 format)', () => {
 				assert.ok(res.fileName.endsWith('main.asm'));
 				assert.equal(16 - 1, res.lineNr);
 
-				res = lbls.getFileAndLineForAddress(0x1802E);
+				res = lbls.getFileAndLineForAddress(0x1802F);
 				assert.ok(res.fileName.endsWith('filea.asm'));
 				assert.equal(2 - 1, res.lineNr);
 
-				res = lbls.getFileAndLineForAddress(0x18032);
+				res = lbls.getFileAndLineForAddress(0x18033);
 				assert.ok(res.fileName.endsWith('dir/filea b.asm'));
 				assert.equal(7 - 1, res.lineNr);
 
-				res = lbls.getFileAndLineForAddress(0x18036);
+				res = lbls.getFileAndLineForAddress(0x18037);
 				assert.ok(res.fileName.endsWith('filea.asm'));
 				assert.equal(16 - 1, res.lineNr);
 			});
@@ -337,25 +337,25 @@ suite('Labels (z88dk v2 format)', () => {
 				assert.equal(address, 0x18000);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 2 - 1);
-				assert.equal(address, 0x1802E);
-
-				address = lbls.getAddrForFileAndLine('filea.asm', 7 - 1);
 				assert.equal(address, 0x1802F);
 
+				address = lbls.getAddrForFileAndLine('filea.asm', 7 - 1);
+				assert.equal(address, 0x18030);
+
 				address = lbls.getAddrForFileAndLine('dir/filea b.asm', 3 - 1);
-				assert.equal(address, 0x18031);
+				assert.equal(address, 0x18032);
 
 				address = lbls.getAddrForFileAndLine('dir/filea b.asm', 17 - 1);
-				assert.equal(address, 0x18035);
+				assert.equal(address, 0x18036);
 
 				address = lbls.getAddrForFileAndLine('dir/filea b.asm', 16 - 1);
-				assert.equal(address, 0x18035);
+				assert.equal(address, 0x18036);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 15 - 1);
-				assert.equal(address, 0x18036);
+				assert.equal(address, 0x18037);
 
 				address = lbls.getAddrForFileAndLine('filea.asm', 16 - 1);
-				assert.equal(address, 0x18036);
+				assert.equal(address, 0x18037);
 			});
 
 			test('C-code: Test.c.lis', () => {
@@ -482,9 +482,9 @@ suite('Labels (z88dk v2 format)', () => {
 		// Test WPMEM
 		const wpLines = lbls.getWatchPointLines();
 		assert.equal(wpLines.length, 2);
-		assert.equal(wpLines[0].address, 0x1801C);
+		assert.equal(wpLines[0].address, 0x1801D);
 		assert.equal(wpLines[0].line, "WPMEM");
-		assert.equal(wpLines[1].address, 0x18025);
+		assert.equal(wpLines[1].address, 0x18026);
 		assert.equal(wpLines[1].line, "WPMEM");
 
 		// Test ASSERTION
@@ -496,7 +496,7 @@ suite('Labels (z88dk v2 format)', () => {
 		// Test LOGPOINT
 		const lpLines = lbls.getLogPointLines();
 		assert.equal(lpLines.length, 1);
-		assert.equal(lpLines[0].address, 0x18006);
+		assert.equal(lpLines[0].address, 0x18007);
 		assert.equal(lpLines[0].line, "LOGPOINT");
 	});
 

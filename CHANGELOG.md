@@ -2,6 +2,7 @@
 
 # 3.7.1
 - #168: zx81 standard ula display now recognizes "jp (hl)" as end-of-screen
+- Fixed #169: Local label support for z88dk (Stepping problem)
 
 # 3.7.0
 - New DZRP command CMD_INTERRUPT_ON_OFF in use for cspect. IMPORTANT: You need Cspect >= 3.0.15.2 to be compatible with DeZog.
