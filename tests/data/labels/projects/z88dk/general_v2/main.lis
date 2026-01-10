@@ -37,54 +37,67 @@ main.asm:
     36                          	ENDIF
     37                          
     38  0006  00                label6:	nop
-    39                          
-    40                          _local: ; local label not existing
-    41  0007  00                	nop
-    42  0008  3e05              	ld a,5
-    43  000a  211600            	ld hl,22
-    44                          
-    45                          
-    46                          
-    47                          	;ORG 0x8200
-    48                          data:
-    49  000d  0102030405060708  	defb 1, 2, 3, 4, 5, 6, 7, 8, $FA		; WPMEM
+    39  0007  1801              	jr label6@local_label
+    40  0009  00                	nop
+    41                          @local_label:
+    42  000a  00                	nop
+    43                          
+    44                          _local: ; local label not existing
+    45  000b  00                	nop
+    46  000c  3e05              	ld a,5
+    47  000e  211600            	ld hl,22
+    48                          
+    49                          
+    50                          subr1:
+    51  0011  00                	nop
+    52                          @local_label:
+    53  0012  0603              	ld b,3
+    54  0014  18fc              	jr @local_label
+    55  0016  c9                	ret
+    56                          
+    57  0017  cd1200            	call subr1@local_label
+    58  001a  18e4              	jr label1
+    59                          
+    60                          	;ORG 0x8200
+    61                          data:
+    62  001c  0102030405060708  	defb 1, 2, 3, 4, 5, 6, 7, 8, $FA		; WPMEM
               fa                
-    50  0016  fe02030405060708  data2:	defb $FE, 2, 3, 4, 5, 6, 7, 8, 9		; WPMEM
+    63  0025  fe02030405060708  data2:	defb $FE, 2, 3, 4, 5, 6, 7, 8, 9		; WPMEM
               09                
-    51                          
-    52                          	;ORG 0x9000
-    53                          
-    54                          	include "filea.asm"
+    64                          
+    65                          	;ORG 0x9000
+    66                          
+    67                          	include "filea.asm"
 filea.asm:
      1                          
-     2  001f  00                fa_label1:	nop
+     2  002e  00                fa_label1:	nop
      3                          
      4                          
      5                          
      6                          fa_label2:
-     7  0020  00                	nop
+     7  002f  00                	nop
      8                          
-     9  0021  00                fa_label3_mid:	nop
+     9  0030  00                fa_label3_mid:	nop
     10                          
     11                          	include "dir/filea b.asm"
 dir/filea b.asm:
      1                          
      2                          
-     3  0022  00                fab_label1:	nop
+     3  0031  00                fab_label1:	nop
      4                          
      5                          
      6                          
-     7  0023  00                fab_label2:	nop
+     7  0032  00                fab_label2:	nop
      8                          
      9                          
     10                          global_label1:	; All labels are global
-    11  0024  00                	nop
+    11  0033  00                	nop
     12                          global_label2:	; All labels are global
-    13  0025  00                	nop
+    13  0034  00                	nop
     14                          
     15                          
     16                          fab_label3:
-    17  0026  00                	nop
+    17  0035  00                	nop
     18                          
     19                          
     20                          fab_label_equ1:		equ 70
@@ -94,11 +107,11 @@ filea.asm:
     13                          
     14                          
     15                          fa_label3:
-    16  0027  00                	nop
+    16  0036  00                	nop
     17                          
     18                          
 main.asm:
-    55                          
-    56                          
-    57                          
-    58                          
+    68                          
+    69                          
+    70                          
+    71                          

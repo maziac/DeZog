@@ -4,7 +4,7 @@
         {
             "label": "z88dk assembler",
             "type": "shell",
-            "command": "/Volumes/SDDPCIE2TB/Projects/Z80/z88dk/z88dk.bin/bin/z80asm",
+            "command": "/Volumes/SDDPCIE2TB/Projects/Z80/z88dk/z88dk.bin/bin/z88dk-z80asm",
             "args": [
                 "-s", "-l", "-b", "-m",
                 "-m=z80",

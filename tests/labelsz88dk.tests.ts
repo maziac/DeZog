@@ -46,14 +46,12 @@ suite('Labels (z88dk)', () => {
 
 			// Compare all labels
 			for (const labelLine of labelsFile) {
-				if (labelLine == '')
+				if (labelLine === '' || labelLine.startsWith('__'))
 					continue;
 				// A line looks like: "label1                          = $8000 ; addr, local, , main, , main.asm:15"
 				const match = /(\w*)\s+=\s+\$([0-9a-f]+)/i.exec(labelLine)!;
 				assert.notEqual(undefined, match);	// Check that line is parsed correctly
 				const label = match[1];
-				if (label == "__head")
-					break;
 				const value = parseInt(match[2], 16) + 0x10000;
 				// Check
 				const res = lbls.getNumberForLabel(label);

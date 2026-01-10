@@ -36,6 +36,10 @@ label5:	nop
 	ENDIF
 
 label6:	nop
+	jr label6@local_label
+	nop
+@local_label:
+	nop
 
 _local: ; local label not existing
 	nop
@@ -43,6 +47,15 @@ _local: ; local label not existing
 	ld hl,22
 
 
+subr1:
+	nop
+@local_label:
+	ld b,3
+	jr @local_label
+	ret
+
+	call subr1@local_label
+	jr label1
 
 	;ORG 0x8200
 data:

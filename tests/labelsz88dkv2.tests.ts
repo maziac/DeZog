@@ -46,14 +46,12 @@ suite('Labels (z88dk v2 format)', () => {
 
 			// Compare all labels
 			for (const labelLine of labelsFile) {
-				if (labelLine == '')
+				if (labelLine === '' || labelLine.startsWith('__'))
 					continue;
 				// A line looks like: "label1                          = $8000 ; addr, local, , main, , main.asm:15"
 				const match = /(\w*)\s+=\s+\$([0-9a-f]+)/i.exec(labelLine)!;
 				assert.notEqual(undefined, match);	// Check that line is parsed correctly
 				const label = match[1];
-				if (label == "__head")
-					break;
 				const value = parseInt(match[2], 16) + 0x10000;
 				// Check
 				const res = lbls.getNumberForLabel(label);
@@ -512,7 +510,7 @@ suite('Labels (z88dk v2 format)', () => {
 			tmpFile = path.join(os.tmpdir(), 'dezog_labels_z88dk.lis');
 			// Write file.
 			fs.writeFileSync(tmpFile,
-                `
+				`
     15                  label0000:
     16                  label2000:
     17                  label4000:
@@ -525,7 +523,7 @@ suite('Labels (z88dk v2 format)', () => {
 			//Write also map file.
 			tmpMapFile = path.join(os.tmpdir(), 'dezog_labels_z88dk.map');
 			fs.writeFileSync(tmpMapFile,
-`label0000                          = $0000 ; addr, local, , main, , main.asm:15
+				`label0000                          = $0000 ; addr, local, , main, , main.asm:15
 label2000                          = $2000 ; addr, local, , main, , main.asm:16
 label4000                          = $4000 ; addr, local, , main, , main.asm:17
 label6000                          = $6000 ; addr, local, , main, , main.asm:18
@@ -544,7 +542,7 @@ labelE000                          = $E000 ; addr, local, , main, , main.asm:22
 				srcDirs: [],
 				excludeFiles: []
 			};
-			parser = new Z88dkLabelParserV2 (
+			parser = new Z88dkLabelParserV2(
 				mm,
 				new Map<number, SourceFileEntry>(),
 				new Map<string, Array<number>>(),
