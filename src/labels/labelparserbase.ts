@@ -446,7 +446,7 @@ export class LabelParserBase {
 
 			// last address entry wins:
 			for (let i = 0; i < entry.size; i++) {
-				const addr = (i === 0) ? entry.longAddr : (entry.longAddr + i) & 0xFFFF;	// Don't mask entry addr if size is 1, i.e. for sjasmplus sld allow higher addresses
+				const addr = entry.longAddr + i;
 				this.setFileLineNrForAddress(addr, {
 					fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: entry.size
 				});
