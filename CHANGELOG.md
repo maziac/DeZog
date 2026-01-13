@@ -3,6 +3,7 @@
 # 3.7.1
 - #168: zx81 standard ula display now recognizes "jp (hl)" as end-of-screen
 - Fixed #169: Local label support for z88dk (Stepping problem)
+- Fix for #169 z88dk macro stepping problem
 - Fixed hovering over global (@) sjasmplus labels.
 
 # 3.7.0
