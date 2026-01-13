@@ -221,11 +221,11 @@ export class Zx81UlaScreenHiRes extends Zx81UlaScreen {
 	public serialize(memBuffer: MemBuffer) {
 		super.serialize(memBuffer);
 		// Write additional data
-		memBuffer.writeArrayBuffer(this.screenData);
+		memBuffer.writeArrayBuffer(this.screenData.buffer);
 		memBuffer.writeNumber(this.screenDataIndex);
 		memBuffer.writeNumber(this.screenLineLengthIndex);
 		memBuffer.writeNumber(this.colorDataIndex);
-		memBuffer.writeArrayBuffer(this.colorData);
+		memBuffer.writeArrayBuffer(this.colorData.buffer);
 	}
 
 
