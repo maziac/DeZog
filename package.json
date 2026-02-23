@@ -55,7 +55,7 @@
 		"intel-hex": "^0.2.0",
 		"jsonc-parser": "^3.3.1",
 		"leader-line": "^1.0.7",
-		"minimatch": "^10.0.1",
+		"minimatch": "^10.2.1",
 		"node-graphviz": "^0.1.1",
 		"node-gzip": "^1.1.2",
 		"posthtml": "^0.16.6",
