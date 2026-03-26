@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.7.2
+- Switched to es2024
+- Updated packages
+
 # 3.7.1
 - #168: zx81 standard ula display now recognizes "jp (hl)" as end-of-screen
 - Fixed #169: Local label support for z88dk (Stepping problem)
