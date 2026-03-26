@@ -16,7 +16,7 @@ import {Utility} from '../src/misc/utility';
 suite('Labels (sjasmplus)', () => {
 
 	// Runs before each test in this suite
-	beforeEach(() => {
+	setup(() => {
 		// To work with simpler file names
 		(Utility as any).rootPath = undefined;
 	});

@@ -15,7 +15,7 @@ import {Utility} from '../src/misc/utility';
 
 suite('Labels', () => {
 
-	beforeEach(() => {
+	setup(() => {
 		// To work with simpler file names
 		(Utility as any).rootPath = undefined;
 	});
@@ -315,7 +315,7 @@ suite('Labels', () => {
 				labels.distanceForLabelAddress = new Map<number, number>();
 				for (let address of addresses) {
 					// LAbel name does not matter
-					labels.numberForLabel.set("does_not_matter_"+address, address);
+					labels.numberForLabel.set("does_not_matter_" + address, address);
 				}
 				labels.calculateLabelDistances();
 			}

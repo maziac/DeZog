@@ -22,7 +22,7 @@ suite('Labels (z88dk v2 format)', () => {
 	});
 
 	// Runs before each test in this suite
-	beforeEach(() => {
+	setup(() => {
 		// To work with simpler file names
 		(Utility as any).rootPath = undefined;
 	});

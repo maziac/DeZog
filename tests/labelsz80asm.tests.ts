@@ -21,7 +21,7 @@ suite('Labels (z80asm)', () => {
 	});
 
 	// Runs before each test in this suite
-	beforeEach(() => {
+	setup(() => {
 		// To work with simpler file names
 		(Utility as any).rootPath = undefined;
 	});
