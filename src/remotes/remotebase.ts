@@ -169,7 +169,7 @@ export class RemoteBase extends EventEmitter {
 		// Remove any previously set watchpoints (this is for re-load, on start the arrays would anyhow be empty).
 		// Remove WPMEM breakpoints
 		const prevWpmemEnabled = this.wpmemEnabled;
-		if(prevWpmemEnabled)
+		if (prevWpmemEnabled)
 			await this.enableWPMEM(false);
 		// Remove ASSERTION breakpoints
 		const prevAssertionBreakpointsEnabled = this.assertionBreakpointsEnabled;
@@ -1149,7 +1149,7 @@ export class RemoteBase extends EventEmitter {
 			// Create new breakpoints
 			const currentBps = new Array<RemoteBreakpoint>();
 			givenBps.forEach(bp => {
-				let ebp: RemoteBreakpoint|undefined;
+				let ebp: RemoteBreakpoint | undefined;
 				let error;
 				// Get PC value of that line
 				let longAddr = this.getAddrForFileAndLine(path, bp.lineNr);
@@ -1163,7 +1163,15 @@ export class RemoteBase extends EventEmitter {
 						ebp = {bpId: 0, filePath: file.fileName, lineNr: file.lineNr, longAddress: longAddr, condition: bp.condition, log: bp.log, hitCountCondition: bp.hitCountCondition, hitCounter: bp.hitCounter};
 					}
 					else {
-						error = "You cannot set a breakpoint here because the address (" + Utility.getHexString(longAddr & 0xFFFF, 4) + "h) is bound to a different file. Please try to set the breakpoint in: " + file.fileName;
+						const addr64k = longAddr & 0xFFFF;
+						const bank = (longAddr >>> 16) - 1;
+						let addrStr = Utility.getHexString(addr64k, 4) + "h";
+						if (bank >= 0)
+							addrStr += ", bank=" + bank;
+						if (file.fileName)
+							error = "You cannot set a breakpoint here because the address (" + addrStr + ") is bound to a different file. Please try to set the breakpoint in: " + file.fileName;
+						else
+							error = "You cannot set a breakpoint here because the address (" + addrStr + ") is not bound to any file.";
 					}
 				}
 				else {
