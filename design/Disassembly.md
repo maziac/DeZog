@@ -169,20 +169,6 @@ Note: Branching will not only stop on CALLs but also on all other branches like 
 In case of a call graph the graph will simply stop at that point.
 
 
-
-### Grammar
-
-The disassembly list file requires a button. Therefore it requires to have an own language ID ("disassembly").
-This is a different ID then "asm-collection". Therefore "ASM Code Lense" cannot be used for syntax coloring.
-
-So DeZog also adds an own grammar, where it includes the grammar from "ASM Code Lens".
-If "ASM Code Lense" is not installed this is silently ignored and no syntax highlighting is done.
-
-The involved files are:
-- package.json: "grammars"
-- grammar/asm_disassembly.json
-
-
 ## Smart Disassembly - disasm.list
 
 The smart disassembly done via right click and the smart disassembly done for disassembling code areas without source file (disasm.list) use the same concept but the rendering is slightly different.
