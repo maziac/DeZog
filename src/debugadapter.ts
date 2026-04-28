@@ -149,7 +149,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	public static singleton(): DebugSessionClass {
 		if (!this.debugAdapterSingleton) {
-		    new DebugSessionClass();
+			new DebugSessionClass();
 		}
 		return this.debugAdapterSingleton;
 	}
@@ -170,11 +170,11 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	public constructor() {
 		super();
-        DebugSessionClass.debugAdapterSingleton = this;
+		DebugSessionClass.debugAdapterSingleton = this;
 		// Init line numbering
 		this.setDebuggerLinesStartAt1(false);
 		this.setDebuggerColumnsStartAt1(false);
-        this.setRunAsServer(true);
+		this.setRunAsServer(true);
 		vscode.debug.onDidChangeActiveDebugSession(dbgSession => {
 			if (dbgSession?.configuration.type === 'dezog') {
 				if (this.debugConsoleSavedText) {
@@ -431,7 +431,7 @@ export class DebugSessionClass extends DebugSession {
 			this.state = DbgAdapterState.NORMAL;
 			this.running = false;
 		}
-		catch(e) {
+		catch (e) {
 			console.log('exception', e);
 		}
 		//console.log('disconnectAll ended');
@@ -947,7 +947,7 @@ export class DebugSessionClass extends DebugSession {
 		// Now match all given breakpoints with the available.
 		const vscodeBreakpoints = givenBps.map(gbp => {
 			// Search in current list
-			let foundCbp: RemoteBreakpoint|undefined;
+			let foundCbp: RemoteBreakpoint | undefined;
 			const lineNr = gbp.line;
 			for (const cbp of currentBreakpoints) {
 				const cLineNr = this.convertDebuggerLineToClient(cbp.lineNr);
@@ -1060,8 +1060,7 @@ export class DebugSessionClass extends DebugSession {
 
 
 			// Update disasm.list
-			if (disasmUpdated)
-			{
+			if (disasmUpdated) {
 				// Remove all breakpoints temporarily
 				const removeBps = prevBpAddresses.map(sbpAddr => sbpAddr.sbp);
 				// Note: at this point the new disassembly has already taken place. I.e. the line/addr associations are potentially wrong. However, because we remove all breakpoints, the following setBreakpointsRequest anyway does not contain any bp with line number for the disassembly file and will remove all breakpoints for the file.
@@ -1204,7 +1203,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 		Utility.assert(disasmTextDoc);
 		// Set the right language ID, so that editor title menu buttons can be assigned
-//		vscode.languages.setTextDocumentLanguage(disasmTextDoc, 'disassembly');
+		//		vscode.languages.setTextDocumentLanguage(disasmTextDoc, 'disassembly');
 		// Set the path, so that editor title menu buttons can be assigned
 		// Note: For some reason the when clause "resourcePath === dezog.disassembler.disasmPath" in package.json does not work.
 		// But instead "resourcePath in dezog.disassembler.disasmPath" does work.
@@ -1253,12 +1252,12 @@ export class DebugSessionClass extends DebugSession {
 		if (!fileName) {
 			// Check disassembly
 			lineNr = Disassembly.getLineForAddress(addr) as number;
-			if (lineNr!= undefined) {
+			if (lineNr != undefined) {
 				// Found
 				fileName = DisassemblyClass.getAbsFilePath();
 			}
 		}
-		if(fileName) {
+		if (fileName) {
 			// Found in other file
 			uri = vscode.Uri.file(fileName);
 		}
@@ -2029,7 +2028,7 @@ export class DebugSessionClass extends DebugSession {
 			throw Error("No command.");
 
 		console.log('Evaluate command:', command);
-		for(const token of tokens) {
+		for (const token of tokens) {
 			console.log('Token: "' + token + '"');
 		}
 
@@ -2659,7 +2658,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			throw new Error("No arguments are expected.");
 		}
 
-		const txt =Remote.memoryModel.getMemModelInfo();
+		const txt = Remote.memoryModel.getMemModelInfo();
 		return txt;
 	}
 
@@ -3076,11 +3075,11 @@ E.g. use "-help -view" to put the help text in an own view.
 
 	/** Load an sjasmplus sld file dynamically.
 	 * just if it was given in the launch.json in
-     *      "sjasmplus": [
-     *           {
-     *               "path": "myfile.sld"
-     *           }
-     *       ],
+	 *      "sjasmplus": [
+	 *           {
+	 *               "path": "myfile.sld"
+	 *           }
+	 *       ],
 	 */
 	protected async evalSjasmPlusPath(tokens: Array<string>): Promise<string> {
 		if (tokens.length !== 1) {

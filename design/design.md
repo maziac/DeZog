@@ -256,7 +256,7 @@ vscode retrieves the list of variable references through 'getContent', afterward
 
 Unfortunately vscode is not very object oriented at that point. I.e. immediate values are returned
 immediately and not as an object as arrays or structs.
-The complicates the implementation and there are 2 ways to return a response to a request.
+This complicates the implementation and there are 2 ways to return a response to a request.
 (Internally DeZog therefore use the ExpressionVariable which holds either a variable reference or a callback function pointer to retrieve the value.)
 
 **vscode has no way to tell DeZog that a variable reference is not used anymore.
@@ -271,17 +271,12 @@ There are 2 lists involved:
 
 Variable references are used in several places, namely: the VARIABLES, the WATCH and the CALL STACK pane.
 For most of the variables the references are set at the start of a debug session and not changed anymore.
-But a few can be set dynamically, i.e. the 'Expressions' in the VARIABLES pane and the entries in the WATCH pane.
+But the entries in the WATCH pane can be changed dynamically.
 
-For 'Expressions' use '-addexpr/-delexpr' from the debug console.
 For WATCH simple enter the expression in the WATCH pane.
-(Note: Both panes have a similar appearance. The difference is that values of expressions can be modified in the 'Expressions' area but not in the WATCH pane.)
 
 WATCHes re-evaluate expressions on each step. Therefore there is the ExpressionsList which remembers expressions and the associated ShallowVar.
 So, before an expression is evaluated it is checked if it exists already.
-
-
-
 
 
 A variable that has not been requested does exist only as number (ID) with associated shallow object.

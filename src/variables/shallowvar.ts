@@ -279,7 +279,7 @@ export class RegistersMainVar extends ShallowVar {
 
 
 /**
- * The RegistersMainVar class knows how to retrieve the register values from zeasrux.
+ * The RegistersMainVar class knows how to retrieve the register values.
  */
 export class RegistersSecondaryVar extends RegistersMainVar {
 
