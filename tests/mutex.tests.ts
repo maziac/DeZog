@@ -19,14 +19,20 @@ suite('Mutex', () => {
 		test('2 locks', async () => {
 			return new Promise<void>((resolve, reject) => {
 				(async () => {
+					let lockWorking = false;
 					const mtx = new Mutex();
 					await mtx.lock();
 					setTimeout(() => {
 						// Everything fine if we run into a timeout
-						resolve();
+						lockWorking = true;
+						mtx.unlock();
 					}, 10);
-					await mtx.lock();
-					reject();	// Should not reach here
+					await mtx.lock();	// Lock until timeout unlocks
+					mtx.unlock();	// Unlock second lock to clean up
+					if (lockWorking)
+						resolve();
+					else
+						reject(); // Probably even in an error case we will not reach here.
 				})();
 			});
 		});
@@ -53,6 +59,7 @@ suite('Mutex', () => {
 							mtx.unlock();
 							// Lock again (should not lock)
 							await mtx.lock();
+							mtx.unlock(); // To free the timer (cleanup)
 							resolve();
 						})();
 					});
