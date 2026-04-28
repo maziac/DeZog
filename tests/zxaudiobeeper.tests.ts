@@ -55,7 +55,7 @@ class AudioContextMock {
 	constructor(sampleRate: number) {
 		this.sampleRate = sampleRate;
 	}
-	get currentTime () {
+	get currentTime() {
 		return this.currentTimeMock;
 	}
 	protected createGain(): GainNode {
@@ -168,7 +168,7 @@ suite('ZxAudioBeeper', () => {
 
 			// A length bigger than 2 frames
 			beeperBuffer = {
-				totalLength: 2*zxAudio.fixedFrameLength,
+				totalLength: 2 * zxAudio.fixedFrameLength,
 				startValue: true,
 				buffer: new Uint16Array([zxAudio.fixedFrameLength, zxAudio.fixedFrameLength]),
 				bufferLen: 2

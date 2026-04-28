@@ -90,7 +90,7 @@ export class ZxAudioBeeper {
 		this.volume = 0.75;
 		this.ctx = this.createAudioContext(sampleRate);
 		this.sampleRate = this.ctx.sampleRate;
-		this.fixedFrameLength = Math.ceil(this.MIN_LATENCY/4 * this.sampleRate);
+		this.fixedFrameLength = Math.ceil(this.MIN_LATENCY / 4 * this.sampleRate);
 		this.fixedFrameTime = this.fixedFrameLength / this.sampleRate;
 		this.lastEnqueuedAudioSampleValue = 0;
 		this.lastVisualBeeperState = (this.lastEnqueuedAudioSampleValue != 0);
@@ -107,10 +107,12 @@ export class ZxAudioBeeper {
 		this.prepareNextFrame();
 
 		// Visual update
-		this.beeperOutput = beeperOutput;
-		setInterval(() => {
-			this.updateVisualBeeper();
-		}, this.BEEPER_DISPLAY_AGGREGATE_TIME);
+		if (beeperOutput) {	// Note: is not set in unit tests
+			this.beeperOutput = beeperOutput;
+			setInterval(() => {
+				this.updateVisualBeeper();
+			}, this.BEEPER_DISPLAY_AGGREGATE_TIME);
+		}
 	}
 
 
@@ -154,7 +156,7 @@ export class ZxAudioBeeper {
 	 * @param volume [0;1]
 	 */
 	public setVolume(volume: number) {
-	//	this.ctx.resume();
+		//	this.ctx.resume();
 		this.volume = volume;
 		// Use a "ramp" otherwise changing the volume will introduce some noise
 		this.gainNode.gain.value = this.gainNode.gain.value;	// NOSONAR: required, but I don't know why anymore.
@@ -190,7 +192,7 @@ export class ZxAudioBeeper {
 			// Fill with gaps to start with
 			this.lastEnqueuedAudioSampleValue = 0;	// The value to use for filling
 			// At least 2 buffers:
-			while (this.bufferedLength < 2*this.fixedFrameLength) {
+			while (this.bufferedLength < 2 * this.fixedFrameLength) {
 				this.startGapFiller();
 			}
 			// Now use the new value
@@ -258,7 +260,7 @@ export class ZxAudioBeeper {
 			// Check next start frame time for upper limit.
 			// This happens if simulation is too fast.
 			// In this case the start time is reduced ba a few frames is reduced.
-			if (this.bufferedLength < this.MAX_LATENCY*this.sampleRate+2*this.fixedFrameLength) {
+			if (this.bufferedLength < this.MAX_LATENCY * this.sampleRate + 2 * this.fixedFrameLength) {
 				// Latency still OK: Play audio frame
 				this.playNextFrame("new frame");
 			}
