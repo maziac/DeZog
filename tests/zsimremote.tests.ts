@@ -34,6 +34,7 @@ suite('ZSimRemote', () => {
 				}
 			};
 			const launch = Settings.Init(cfg);
+			Settings.launch = launch;
 			Z80RegistersClass.createRegisters(launch);
 			zsim = new ZSimRemote(launch);
 			zsimAny = zsim as any;

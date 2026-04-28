@@ -12,8 +12,8 @@ import {CpuHistory} from '../src/remotes/cpuhistory';
 import {Labels} from '../src/labels/labels';
 import {MemoryModelUnknown} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
-import { Opcode } from '../src/disassembler/core/opcode';
-import { Format } from '../src/disassembler/core/format';
+import {Opcode} from '../src/disassembler/core/opcode';
+import {Format} from '../src/disassembler/core/format';
 
 
 
@@ -38,6 +38,7 @@ suite('ZesaruxCpuHistory', () => {
 			remoteType: 'zrcp'
 		};
 		launch = Settings.Init(cfg);
+		Settings.launch = launch;
 		Z80RegistersClass.createRegisters(launch);
 		Labels.readListFiles(cfg, new MemoryModelUnknown());	// To reset the labels
 		Format.hexFormat = 'h';
@@ -182,7 +183,7 @@ suite('ZesaruxCpuHistory', () => {
 			assert.equal(resultn, 0xe5);
 
 			let result = hist.getInstruction("PC=0039 ... (PC)=cf000000");
-			assert.equal(result, "RST 0008h", );
+			assert.equal(result, "RST 0008h",);
 
 			result = hist.getInstruction("PC=0039 ... (PC)=df000000");
 			assert.equal(result, "RST 0018h");
