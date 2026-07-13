@@ -1,25 +1,37 @@
 import * as fs from 'fs';
-import * as path from 'path'; // Keep for path.resolve, path.dirname, path.isAbsolute, path.extname
-import { LabelParserBase, Issue } from './labelparserbase'; // Added Issue import
-import { SourceFileEntry, ListFileLine } from './labels';
-import { ZmacConfig } from '../settings/settings';
-// import { Utility } from '../misc/utility'; // Commented out if not used
-import { UnifiedPath } from '../misc/unifiedpath'; // Keep for UnifiedPath.getUnifiedPath
-// import { LabelsClass } from './labels'; // Commented out if not used
-import { MemoryModel } from '../remotes/MemoryModel/memorymodel';
+import * as path from 'path';
+import {LabelParserBase, Issue} from './labelparserbase';
+import {SourceFileEntry, ListFileLine} from './labels';
+import {ZmacConfig} from '../settings/settings';
+import {Utility} from '../misc/utility';
+import {UnifiedPath} from '../misc/unifiedpath';
+import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 
 
+/**
+ * Parser for zmac's .bds files ("binary-debuggable-source").
+ *
+ * The .bds file is a text format. After the header line
+ * 'binary-debuggable-source' each line is one record:
+ *   <addr> <addr> f <filename>     - source file switch
+ *   <addr> <addr> s <source line>  - one source line (in file order!)
+ *   <addr> <addr> d <hexbytes>     - bytes emitted for the FOLLOWING 's' record
+ *   <addr> <addr> u <...>          - usage/timing info (ignored)
+ *   <addr> a <symbol>              - symbol table entry (note: single address)
+ *
+ * Key property used here: zmac emits one 's' record per source line, in
+ * order. So the Nth 's' record of a file IS line N of that file - no text
+ * matching needed. 'd' records precede the 's' record they belong to and
+ * define the line's address and byte size.
+ * Note: macro expansions would repeat lines and break the sequential
+ * counting; the test corpus does not use macros. Revisit if needed.
+ */
 export class ZmacLabelParser extends LabelParserBase {
-    private sourceFileContents: Map<string, string[]> = new Map();
-    private currentAsmFilePath: string | undefined;
-    private currentBdsSourceFileName: string | undefined;
     protected config: ZmacConfig;
-    private rootFolder: string; 
+    private rootFolder: string;
 
-    private bdsFileReferences: Map<string, string> = new Map();
-
-    private cmdOffset = 0;
-    private cmdOffsetApplied = false;
+    // Symbols from the 'a' records (zmac's symbol table).
+    private symbols: Array<{addr64k: number, name: string}> = [];
 
     constructor(
         memoryModel: MemoryModel,
@@ -28,13 +40,13 @@ export class ZmacLabelParser extends LabelParserBase {
         labelsForNumber64k: Array<any>,
         labelsForLongAddress: Map<number, Array<string>>,
         numberForLabel: Map<string, number>,
-        labelLocations: Map<string, { file: string, lineNr: number, address: number }>,
-        watchPointLines: Array<{ address: number, line: string }>, 
-        assertionLines: Array<{ address: number, line: string }>, 
-        logPointLines: Array<{ address: number, line: string }>, 
+        labelLocations: Map<string, {file: string, lineNr: number, address: number}>,
+        watchPointLines: Array<{address: number, line: string}>,
+        assertionLines: Array<{address: number, line: string}>,
+        logPointLines: Array<{address: number, line: string}>,
         issueHandler: (issue: Issue) => void,
-        config: ZmacConfig, 
-        rootFolder: string 
+        config: ZmacConfig,
+        rootFolder: string
     ) {
         super(
             memoryModel,
@@ -50,350 +62,218 @@ export class ZmacLabelParser extends LabelParserBase {
             issueHandler
         );
         this.config = config;
-        this.rootFolder = rootFolder; 
+        this.rootFolder = rootFolder;
         this.parserName = "ZMAC";
-        this.sourceFileContents = new Map();
-        this.listFile = []; 
-        this.includeFileStack = []; 
+        this.listFile = [];
+        this.includeFileStack = [];
     }
+
 
     public loadAsmListFile(config: ZmacConfig) {
-        this.config = config; 
-        this.currentLineNr = 0;
+        this.config = config;
         this.listFile = [];
-        this.sourceFileContents.clear();
-        this.bdsFileReferences.clear();
-        this.currentAsmFilePath = undefined;
-        this.currentBdsSourceFileName = undefined;
+        this.symbols = [];
+        this.currentLineNr = 0;
+
+        // Establishes funcConvertBank (64k -> target memory model banks)
+        this.checkMappingToTargetMemoryModel();
 
         this.parseBdsFile(this.config.path);
-        this.sourcesModeFinish(); 
+
+        // Register the symbol table (authoritative, includes EQUs and locals)
+        for (const sym of this.symbols) {
+            const longAddr = this.createLongAddress(sym.addr64k & 0xFFFF, 0);
+            this.addLabelForNumberRaw(longAddr, sym.name);
+        }
+
+        // Build fileLineNrs, lineArrays from this.listFile
+        this.sourcesModeFinish();
+
+        // Label -> source location (now that fileLineNrs is populated)
+        for (const sym of this.symbols) {
+            const longAddr = this.createLongAddress(sym.addr64k & 0xFFFF, 0);
+            const entry = this.fileLineNrs.get(longAddr);
+            if (entry)
+                this.labelLocations.set(sym.name, {file: entry.fileName, lineNr: entry.lineNr, address: longAddr});
+        }
     }
+
 
     private parseBdsFile(filePath: string): void {
-        this.currentLineNr = 0; 
-        const lines = fs.readFileSync(filePath, 'utf-8').split(/\r?\n/);
+        const bdsLines = fs.readFileSync(filePath, 'utf-8').split(/\r?\n/);
 
-        for (const line of lines) {
+        // Per-file 0-based line counters, keyed by the raw name from the 'f'
+        // record so counting stays correct even for unresolvable files.
+        const lineCounters = new Map<string, number>();
+        let currentBdsFileName: string | undefined;
+        let currentFileRel = '';    // '' = source file could not be resolved
+        const sourceFilesRel = new Map<string, string>();   // bds name -> relative path ('' if unresolved)
+
+        // Bytes collected from 'd' records for the next 's' record
+        let pendingAddr64k: number | undefined;
+        let pendingSize = 0;
+
+        this.currentLineNr = 0;
+        for (const bdsLine of bdsLines) {
             this.currentLineNr++;
-            if (line.trim() === '') continue;
+            if (bdsLine.trim() === '' || bdsLine === 'binary-debuggable-source')
+                continue;
 
-            const parts = line.split(/\s+/);
-            const type = parts[0];
-            const addr = parseInt(parts[1], 16);
-            const data = parts.slice(2).join(' ');
+            const parts = bdsLine.split(/\s+/);
 
+            // Symbol record: "<addr> a <name>"
+            if (parts[1] === 'a') {
+                const addr64k = parseInt(parts[0], 16);
+                const name = parts.slice(2).join(' ').trim();
+                if (!isNaN(addr64k) && name)
+                    this.symbols.push({addr64k, name});
+                continue;
+            }
+
+            const addr64k = parseInt(parts[0], 16);
+            const type = parts[2];
             switch (type) {
-                case 'f': 
-                    this.parseFileReference(addr, data);
-                    break;
-                case 's': 
-                    this.parseSourceOrLabel(addr, data);
-                    break;
-                case 'a': 
-                    this.parseAddressLabel(addr, data);
-                    break;
-            }
-        }
-    }
-
-    private parseFileReference(addr: number, bdsFileName: string): void {
-        this.currentBdsSourceFileName = bdsFileName.trim();
-        const resolvedPath = this.resolveSourceFilePath(this.currentBdsSourceFileName);
-
-        if (resolvedPath) {
-            this.currentAsmFilePath = resolvedPath;
-            this.bdsFileReferences.set(this.currentBdsSourceFileName, resolvedPath);
-
-            if (!this.sourceFileContents.has(resolvedPath)) {
-                try {
-                    const content = fs.readFileSync(resolvedPath, 'utf-8');
-                    this.sourceFileContents.set(resolvedPath, content.split(/\r?\n/));
-                } catch (e) {
-                    this.reportIssue(`Could not read source file: ${resolvedPath}`, 'error');
-                    this.currentAsmFilePath = undefined; 
-                    return;
-                }
-            }
-        } else {
-            this.reportIssue(`Could not resolve source file path for: ${bdsFileName}`, 'warning');
-            this.currentAsmFilePath = undefined;
-        }
-    }
-
-    private resolveSourceFilePath(bdsFileName: string): string | undefined {
-        const bdsPath = this.config.path; 
-        const bdsDir = path.dirname(bdsPath);
-
-        if (path.isAbsolute(bdsFileName) && fs.existsSync(bdsFileName)) {
-            return UnifiedPath.getUnifiedPath(bdsFileName);
-        }
-
-        let testPath = path.resolve(bdsDir, bdsFileName);
-        if (fs.existsSync(testPath)) {
-            return UnifiedPath.getUnifiedPath(testPath);
-        }
-
-        if (this.config.srcDirs && this.config.srcDirs.length > 0) {
-            for (const srcDir of this.config.srcDirs) {
-                const fullSrcDir = path.resolve(this.rootFolder, srcDir);
-                testPath = path.resolve(fullSrcDir, bdsFileName);
-                if (fs.existsSync(testPath)) {
-                    return UnifiedPath.getUnifiedPath(testPath);
-                }
-            }
-        }
-
-        testPath = path.resolve(this.rootFolder, bdsFileName);
-        if (fs.existsSync(testPath)) {
-            return UnifiedPath.getUnifiedPath(testPath);
-        }
-        
-        const commonExtensions = ['.asm', '.z80', '.s'];
-        const ext = path.extname(bdsFileName);
-        if (!ext || !commonExtensions.includes(ext.toLowerCase())) {
-            for (const commonExt of commonExtensions) {
-                const nameWithExt = bdsFileName + commonExt;
-                testPath = path.resolve(bdsDir, nameWithExt);
-                if (fs.existsSync(testPath)) {
-                    return UnifiedPath.getUnifiedPath(testPath);
-                }
-                if (this.config.srcDirs && this.config.srcDirs.length > 0) {
-                    for (const srcDir of this.config.srcDirs) {
-                        const fullSrcDir = path.resolve(this.rootFolder, srcDir);
-                        testPath = path.resolve(fullSrcDir, nameWithExt);
-                        if (fs.existsSync(testPath)) {
-                            return UnifiedPath.getUnifiedPath(testPath);
-                        }
+                case 'f': {
+                    const bdsFileName = parts.slice(3).join(' ').trim();
+                    currentBdsFileName = bdsFileName;
+                    if (!lineCounters.has(bdsFileName))
+                        lineCounters.set(bdsFileName, 0);
+                    if (!sourceFilesRel.has(bdsFileName)) {
+                        const resolved = this.resolveSourceFilePath(bdsFileName);
+                        sourceFilesRel.set(bdsFileName, resolved ? Utility.getRelFilePath(resolved) : '');
+                        if (!resolved)
+                            this.reportIssue(`Source file '${bdsFileName}' not found.`, 'warning');
                     }
+                    currentFileRel = sourceFilesRel.get(bdsFileName)!;
+                    pendingAddr64k = undefined;
+                    pendingSize = 0;
+                    break;
                 }
-                testPath = path.resolve(this.rootFolder, nameWithExt);
-                 if (fs.existsSync(testPath)) {
-                    return UnifiedPath.getUnifiedPath(testPath);
+
+                case 'd': {
+                    // Hex byte dump for the following 's' record
+                    const hex = parts[3] || '';
+                    if (pendingAddr64k === undefined)
+                        pendingAddr64k = addr64k;
+                    pendingSize += Math.floor(hex.length / 2);
+                    break;
                 }
+
+                case 's': {
+                    if (currentBdsFileName === undefined)
+                        break;      // No 'f' record seen yet
+                    const lineNr = lineCounters.get(currentBdsFileName)!;
+                    lineCounters.set(currentBdsFileName, lineNr + 1);
+                    if (currentFileRel === '') {
+                        // Unresolved source file: keep counting, register nothing
+                        pendingAddr64k = undefined;
+                        pendingSize = 0;
+                        break;
+                    }
+
+                    const lineText = parts.slice(3).join(' ');
+                    const hasCode = (pendingAddr64k !== undefined);
+                    const lineAddr64k = hasCode ? pendingAddr64k! : addr64k;
+                    // Lines before ORG carry address 0 - don't map those
+                    const longAddr = (hasCode || lineAddr64k !== 0)
+                        ? this.createLongAddress(lineAddr64k & 0xFFFF, 0)
+                        : undefined;
+
+                    const entry: ListFileLine = {
+                        fileName: currentFileRel,
+                        lineNr,     // 0-based
+                        longAddr,
+                        size: hasCode ? pendingSize : 0,
+                        line: lineText
+                    };
+                    this.listFile.push(entry);
+                    this.currentFileEntry = entry;
+                    this.findWpmemAssertionLogpoint(longAddr, lineText);
+
+                    pendingAddr64k = undefined;
+                    pendingSize = 0;
+                    break;
+                }
+
+                // 'u' (usage/timing) and anything unknown: ignore
             }
         }
+    }
 
-        this.reportIssue(`Source file '${bdsFileName}' not found. Searched in ${bdsDir}, srcDirs, and ${this.rootFolder}.`, 'warning');
+
+    /**
+     * Resolves a source file name from the .bds file to an existing file:
+     * relative to the .bds location, the configured srcDirs and the root folder.
+     */
+    private resolveSourceFilePath(bdsFileName: string): string | undefined {
+        if (path.isAbsolute(bdsFileName))
+            return fs.existsSync(bdsFileName) ? UnifiedPath.getUnifiedPath(bdsFileName) : undefined;
+
+        const searchDirs = [
+            path.dirname(this.config.path),
+            ...(this.config.srcDirs || []).map(d => path.resolve(this.rootFolder, d)),
+            this.rootFolder
+        ];
+        for (const dir of searchDirs) {
+            const testPath = path.resolve(dir, bdsFileName);
+            if (fs.existsSync(testPath))
+                return UnifiedPath.getUnifiedPath(testPath);
+        }
         return undefined;
     }
 
-    private parseSourceOrLabel(addr: number, data: string): void {
-        if (!this.currentAsmFilePath || !this.currentBdsSourceFileName) {
-            if (!this.currentBdsSourceFileName && this.config.path) {
-                 this.reportIssue(`No active source file context for 's' record. Ensure .bds has 'f' directive before 's'. Address: 0x${addr.toString(16)}`, 'warning');
-                 return;
-            }
-             if(this.currentBdsSourceFileName && !this.currentAsmFilePath) {
-                this.currentAsmFilePath = this.resolveSourceFilePath(this.currentBdsSourceFileName);
-                if (!this.currentAsmFilePath) {
-                    this.reportIssue(`Cannot process 's' record for '${this.currentBdsSourceFileName}' as it could not be resolved. Address: 0x${addr.toString(16)}`, 'warning');
-                    return;
-                }
-             }
-        }
-        
-        const sourceLines = this.sourceFileContents.get(this.currentAsmFilePath!);
-        if (!sourceLines) {
-            this.reportIssue(`Source content not loaded for ${this.currentAsmFilePath}. Address: 0x${addr.toString(16)}`, 'error');
-            return;
-        }
 
-        const originalLineText = data.trim();
-        let originalLineNr = -1;
-
-        for (let i = 0; i < sourceLines.length; i++) {
-            if (sourceLines[i].trim() === originalLineText) {
-                originalLineNr = i + 1; 
-                break;
-            }
-        }
-
-        if (originalLineNr === -1) {
-            const trimmedDataLower = originalLineText.toLowerCase();
-            for (let i = 0; i < sourceLines.length; i++) {
-                const trimmedSourceLower = sourceLines[i].trim().toLowerCase();
-                if (trimmedSourceLower === trimmedDataLower) {
-                    originalLineNr = i + 1; 
-                    break;
-                }
-                if (trimmedSourceLower.endsWith(':') && trimmedSourceLower.slice(0, -1) === trimmedDataLower) {
-                     originalLineNr = i + 1; 
-                    break;
-                }
-                 if (trimmedDataLower.endsWith(':') && trimmedDataLower.slice(0, -1) === trimmedSourceLower) {
-                     originalLineNr = i + 1; 
-                    break;
-                }
-            }
-        }
-
-        if (originalLineNr === -1) {
-            this.reportIssue(`Could not find line "${originalLineText}" in ${this.currentAsmFilePath}. Address: 0x${addr.toString(16)}`, 'warning');
-            return;
-        }
-
-        const instructionSize = this.estimateInstructionSize(originalLineText); 
-        let label: string | undefined = undefined;
-        const labelMatch = originalLineText.match(/^([a-zA-Z_@][a-zA-Z0-9_@]*):?/);
-        if (labelMatch) {
-            label = labelMatch[1];
-            this.addLabel(label, addr, this.currentAsmFilePath!, originalLineNr);
-        }
-
-        const fileEntry: ListFileLine = {
-            fileName: this.currentAsmFilePath!, 
-            lineNr: originalLineNr, 
-            longAddr: addr,
-            size: instructionSize,
-            line: originalLineText, 
-        };
-        this.listFile.push(fileEntry);
-        this.findWpmemAssertionLogpoint(addr, originalLineText); 
-    }
-
-    private estimateInstructionSize(text: string): number {
-        const upperText = text.toUpperCase().trim();
-        if (upperText.includes('EQU') || upperText.includes('.SET') || upperText.startsWith('.') || upperText.endsWith(':')) {
-            if (upperText.endsWith(':') && !upperText.substring(0, upperText.length -1).trim().includes(" ")) return 0; 
-        }
-        return 1; 
-    }
-
-    private parseAddressLabel(addr: number, data: string): void {
-        const label = data.trim();
-        // For 'a' lines, we don't have direct source text from BDS to find the exact line.
-        // We can add the label to the symbol table.
-        // Finding the original line for labelLocations would require searching all source files.
-        this.addLabel(label, addr); // Call without file/line, or try to find it if critical
-    }
-
-    private addLabel(label: string, value: number, filePath?: string, lineNr?: number): void {
-        if (!this.labelsForLongAddress.has(value)) {
-            this.labelsForLongAddress.set(value, []);
-        }
-        this.labelsForLongAddress.get(value)!.push(label);
-        this.numberForLabel.set(label, value);
-
-        if (filePath && lineNr) {
-            this.labelLocations.set(label, { file: filePath, lineNr: lineNr, address: value });
-        }
-    }
-
-    private reportIssue(message: string, severity: 'error' | 'warning', filePath?: string, lineNr?: number): void {
+    private reportIssue(message: string, severity: 'error' | 'warning'): void {
         if (this.issueHandler) {
             this.issueHandler({
                 parser: this.parserName,
-                filepath: filePath || this.config.path, 
-                lineNr: lineNr || this.currentLineNr, 
-                severity: severity,
-                message: message,
+                filepath: this.config.path,
+                lineNr: this.currentLineNr,
+                severity,
+                message
             });
-        } else {
-            // Fallback to console if no handler (e.g. during unit tests not focused on UI)
-            const logSource = filePath ? UnifiedPath.getUnifiedPath(filePath) : 'ZmacParser';
-            const logLineNr = lineNr || this.currentLineNr;
-            console.warn(`${this.parserName} [${severity}] ${logSource}:${logLineNr}: ${message}`);
+        }
+        else {
+            console.warn(`${this.parserName} [${severity}] ${this.config.path}:${this.currentLineNr}: ${message}`);
         }
     }
 
+
     protected parseAllFilesAndLineNumbers(): void {
-        // No-op 
+        // No-op: parseBdsFile does everything in one pass
     }
 
     protected parseLabelAndAddress(line: string): void {
-        // No-op 
+        // No-op: parseBdsFile does everything in one pass
     }
 
+
     /**
-     * Integrates CMD file data. This is a placeholder and needs to be implemented
-     * if ZMAC BDS files need to be correlated with CMD load data for a complete memory map.
-     * @param cmdMappings Map of load addresses to CMD file data.
+     * Called by the TRS-80 remote after the .cmd file has been loaded.
+     * The .bds file already contains absolute addresses, so no relocation is
+     * needed - this only cross-checks that the loaded .cmd covers the same
+     * address range as the debug info (a mismatch means .cmd and .bds are
+     * from different assembler runs).
      */
     public enableCmdIntegration(cmdMappings: Map<number, {data: Uint8Array, size: number, entryPoint?: number}>): void {
-        if (this.cmdOffsetApplied) {
-             console.log('[ZmacLabelParser] enableCmdIntegration: Offset already marked as applied. Skipping.');
-             return;
-        }
-
-        if (cmdMappings.size === 0) {
-            console.log('[ZmacLabelParser] enableCmdIntegration called with empty cmdMappings. No offset will be applied.');
-            this.cmdOffsetApplied = true; // Mark as "applied" to prevent re-processing.
+        if (cmdMappings.size === 0)
             return;
-        }
-
-        // Assumption: The first load address encountered in cmdMappings is the base for the main program block.
-        // This might need refinement for complex CMD files with multiple, disjoint load segments.
-        const firstLoadAddress = cmdMappings.keys().next().value;
-
-        // Critical Assumption: BDS addresses for the main code block are 0-relative.
-        // If BDS files can have a different base, this logic would need that base as input.
-        const assumedBdsBaseAddress = 0;
-        this.cmdOffset = firstLoadAddress - assumedBdsBaseAddress;
-
-        if (this.cmdOffset === 0) {
-            console.log('[ZmacLabelParser] CMD offset is 0. No label address adjustments needed.');
-            this.cmdOffsetApplied = true;
-            return;
-        }
-
-        console.log(`[ZmacLabelParser] Applying CMD offset: 0x${this.cmdOffset.toString(16)} (LoadAddr: 0x${firstLoadAddress.toString(16)}, AssumedBdsBase: 0x${assumedBdsBaseAddress.toString(16)})`);
-
-        // Adjust labelsForLongAddress: Map<number, Array<string>>
-        const newLabelsForLongAddress = new Map<number, Array<string>>();
-        for (const [addr, labels] of this.labelsForLongAddress) {
-            newLabelsForLongAddress.set(addr + this.cmdOffset, labels);
-        }
-        this.labelsForLongAddress = newLabelsForLongAddress;
-
-        // Adjust numberForLabel: Map<string, number>
-        const newNumberForLabel = new Map<string, number>();
-        for (const [label, addr] of this.numberForLabel) {
-            newNumberForLabel.set(label, addr + this.cmdOffset);
-        }
-        this.numberForLabel = newNumberForLabel;
-
-        // Adjust labelLocations: Map<string, { file: string, lineNr: number, address: number }>
-        const newLabelLocations = new Map<string, { file: string, lineNr: number, address: number }>();
-        for (const [label, loc] of this.labelLocations) {
-            newLabelLocations.set(label, { ...loc, address: loc.address + this.cmdOffset });
-        }
-        this.labelLocations = newLabelLocations;
-
-        // Adjust fileLineNrs: Map<number, SourceFileEntry> (key is address)
-        const newFileLineNrs = new Map<number, SourceFileEntry>();
-        for (const [addr, entry] of this.fileLineNrs) {
-            newFileLineNrs.set(addr + this.cmdOffset, entry);
-        }
-        this.fileLineNrs = newFileLineNrs;
-
-        // Adjust listFile: Array<ListFileLine>
-        this.listFile.forEach(entry => {
-            if (entry.longAddr !== undefined) {
-                entry.longAddr += this.cmdOffset;
-            }
-        });
-
-        // Adjust watchPointLines, assertionLines, logPointLines: Array<{ address: number, line: string }>
-        this.watchPointLines.forEach(entry => entry.address += this.cmdOffset);
-        this.assertionLines.forEach(entry => entry.address += this.cmdOffset);
-        this.logPointLines.forEach(entry => entry.address += this.cmdOffset);
-
-        // Adjust labelsForNumber64k: Array<string[] | undefined> (index is 64k address)
-        const newLabelsForNumber64k = new Array<string[] | undefined>(0x10000); // Max 64k entries
-        for (let i = 0; i < this.labelsForNumber64k.length; i++) { // Iterate up to old length
-            if (this.labelsForNumber64k[i]) {
-                const newAddr = i + this.cmdOffset;
-                if (newAddr >= 0 && newAddr < 0x10000) { // Check bounds for 64k array
-                    newLabelsForNumber64k[newAddr] = this.labelsForNumber64k[i];
-                } else {
-                    this.reportIssue(`Address 0x${i.toString(16)} with offset 0x${this.cmdOffset.toString(16)} (new: 0x${newAddr.toString(16)}) is out of 64k bounds. Label ignored for labelsForNumber64k map.`, 'warning');
-                }
+        // Find the code range known from the .bds
+        let bdsMin = 0x10000, bdsMax = -1;
+        for (const entry of this.listFile) {
+            if (entry.longAddr !== undefined && entry.size > 0) {
+                const a = entry.longAddr & 0xFFFF;
+                bdsMin = Math.min(bdsMin, a);
+                bdsMax = Math.max(bdsMax, a + entry.size - 1);
             }
         }
-        this.labelsForNumber64k = newLabelsForNumber64k;
-
-        this.cmdOffsetApplied = true;
-        console.log('[ZmacLabelParser] CMD offset successfully applied to label structures.');
+        if (bdsMax < 0)
+            return;
+        for (const [address, block] of cmdMappings) {
+            const end = address + block.size - 1;
+            if (end < bdsMin || address > bdsMax) {
+                this.reportIssue(`CMD block 0x${address.toString(16)}-0x${end.toString(16)} lies outside the .bds code range 0x${bdsMin.toString(16)}-0x${bdsMax.toString(16)}. .cmd and .bds may be from different assembler runs.`, 'warning');
+            }
+        }
     }
 }

@@ -388,16 +388,10 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
         
         // Log warnings if illegal bytes were found
         if (illegalChars.length > 0) {
-            console.log(`[${timestamp}] [trs80gp] WARNING: ${illegalChars.length} illegal bytes found in received data, filtered`);
             this.emit('debug_console', `[${timestamp}] WARNING: ${illegalChars.length} illegal bytes found in received data, filtered`);
-            
             for (const illegal of illegalChars) {
-                console.log(`[${timestamp}] [trs80gp] Removed illegal byte at position ${illegal.position}: 0x${illegal.hex} (${illegal.byte})`);
-                this.emit('debug_console', `[${timestamp}] Removed illegal byte at position ${illegal.position}: 0x${illegal.hex} (${illegal.byte})`);
+                LogTransport.log(`TRS-80: Removed illegal byte at position ${illegal.position}: 0x${illegal.hex} (${illegal.byte})`);
             }
-            
-            console.log(`[${timestamp}] [trs80gp] Original buffer length: ${buffer.length}, cleaned string length: ${cleanedStr.length}`);
-            this.emit('debug_console', `[${timestamp}] Original buffer length: ${buffer.length}, cleaned string length: ${cleanedStr.length}`);
         }
         
         return cleanedStr;
@@ -415,17 +409,10 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
         // Log to conversation file for protocol debugging
         this.logToConversationFile(data, 'RECV');
         
-        // Create compact hex dump for debug console
-        const compactHexDump = this.createCompactHexDump(data, 'RECV');
-        
-        // Console output with full hex dump for development
-        console.log(`[${timestamp}] [trs80gp] RECEIVED (${data.length} bytes):`);
-        console.log(this.createHexDump(data, '    '));
-        
-        // VS Code debug console output with compact hex dump
-        this.emit('debug_console', `[${timestamp}] RECEIVED (${data.length} bytes):`);
-        this.emit('debug_console', compactHexDump);
-        
+        // Wire-level logging goes to the transport log only (enable via
+        // launch.json "log": {"transport": ...}), not to the debug console.
+        LogTransport.log(`TRS-80 RECV (${data.length} bytes): ${dataString.trimEnd()}`);
+
         this.dataBuffer += dataString;
         
         // Process complete JSON-RPC messages (newline-delimited)
@@ -447,7 +434,7 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
                     // pending request does not hang until timeout.
                     const repaired = this.tryRepairJsonLine(messageStr);
                     if (repaired) {
-                        this.emit('debug_console', `[${timestamp}] Repaired malformed JSON-RPC line from server.`);
+                        LogTransport.log(`TRS-80: Repaired malformed JSON-RPC line from server.`);
                         this.handleJsonRpcMessage(repaired);
                     }
                     else {
@@ -458,16 +445,12 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
                             // Resolve with an empty result: the payload of e.g. the
                             // setBreakpoints response is not used by the client.
                             this.pendingRequests.delete(id!);
-                            this.emit('debug_console', `[${timestamp}] Unparseable JSON-RPC response (id ${id}), resolved without payload: ${messageStr.substring(0, 120)}`);
+                            LogTransport.log(`TRS-80: Unparseable JSON-RPC response (id ${id}), resolved without payload: ${messageStr.substring(0, 120)}`);
                             pendingReq.resolve({});
                         }
                         else {
-                            console.log(`[${timestamp}] [trs80gp] JSON PARSE ERROR: ${err.message}`);
-                            console.log(`[${timestamp}] [trs80gp] RAW MESSAGE: ${JSON.stringify(messageStr)}`);
                             this.emit('debug_console', `[${timestamp}] Failed to parse JSON-RPC message: ${messageStr}`);
-                            // Create visual error display for JSON parse errors
-                            const errorDisplay = this.createJsonParseErrorDisplay(messageStr, err);
-                            console.log(errorDisplay);
+                            LogTransport.log(this.createJsonParseErrorDisplay(messageStr, err));
                         }
                     }
                 }
@@ -480,33 +463,24 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
      */
     private handleJsonRpcMessage(message: JsonRpcMessage): void {
         const timestamp = getTimestamp();
-        console.log(`[${timestamp}] [trs80gp] PARSED JSON-RPC: ${JSON.stringify(message)}`);
-        this.emit('debug_console', `[${timestamp}] PARSED JSON-RPC: ${message.method || 'response'} (id: ${message.id})`);
-        
         if (message.id !== undefined) {
             // This is a response to a request we sent
             const pending = this.pendingRequests.get(message.id as number);
             if (pending) {
-                console.log(`[${timestamp}] [trs80gp] Found pending request for id: ${message.id}`);
                 this.pendingRequests.delete(message.id as number);
-                
                 if (message.error) {
-                    console.log(`[${timestamp}] [trs80gp] Error response: ${JSON.stringify(message.error)}`);
-                    this.emit('debug_console', `[${timestamp}] Error response: ${JSON.stringify(message.error)}`);
+                    LogTransport.log(`TRS-80: Error response (id ${message.id}): ${JSON.stringify(message.error)}`);
                     pending.reject(new Error(`JSON-RPC error ${message.error.code}: ${message.error.message}`));
                 } else {
-                    console.log(`[${timestamp}] [trs80gp] Success response: ${JSON.stringify(message.result)}`);
-                    this.emit('debug_console', `[${timestamp}] Success response: ${JSON.stringify(message.result)}`);
+                    LogTransport.log(`TRS-80: Response (id ${message.id}): ${JSON.stringify(message.result)}`);
                     pending.resolve(message.result);
                 }
             } else {
-                console.log(`[${timestamp}] [trs80gp] No pending request found for id: ${message.id}`);
                 this.emit('debug_console', `[${timestamp}] No pending request found for id: ${message.id}`);
             }
         } else if (message.method) {
             // This is a notification/event from the emulator
-            console.log(`[${timestamp}] [trs80gp] Handling notification: ${message.method}`);
-            this.emit('debug_console', `[${timestamp}] Handling notification: ${message.method}`);
+            LogTransport.log(`TRS-80: Notification: ${message.method}`);
             this.handleTrs80GpNotification(message.method, message.params);
         }
     }
@@ -616,26 +590,16 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
 
             const messageStr = JSON.stringify(message) + '\n';
             const messageBuffer = Buffer.from(messageStr, 'utf8');
-            
+
             const timestamp = getTimestamp();
-            
+
             // Log to conversation file for protocol debugging
             this.logToConversationFile(messageBuffer, 'SEND');
-            
-            // Create clean hex dump for detailed console output
-            const hexDump = this.createHexDump(messageBuffer, '    ');
-            
-            // Create compact hex dump for debug console
-            const compactHexDump = this.createCompactHexDump(messageBuffer, 'SENT');
-            
-            // Console output with full hex dump for development
-            console.log(`[${timestamp}] [trs80gp] SENDING (${messageBuffer.length} bytes):`);
-            console.log(hexDump);
-            
-            // VS Code debug console output with compact hex dump
-            this.emit('debug_console', `[${timestamp}] SENDING (${messageBuffer.length} bytes):`);
-            this.emit('debug_console', compactHexDump);
-            
+
+            // Wire-level logging goes to the transport log only, not to the
+            // debug console.
+            LogTransport.log(`TRS-80 SEND: ${messageStr.trimEnd()}`);
+
             this.pendingRequests.set(id, {resolve, reject});
             this.socket.write(messageBuffer);
 
@@ -809,46 +773,27 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
      * @emits this.emit('initialized') or this.emit('error', Error(...))
      */
     protected async onConnect(): Promise<void> {
-        console.log('[trs80gp] Starting onConnect() - sending init command');
-        this.emit('debug_console', 'Sending initialization command to trs80gp...');
-        
         try {
             // Send the init command using the JSON-RPC protocol
             const result = await this.sendDzrpCmdInit();
-            
-            console.log('[trs80gp] Init command result:', JSON.stringify(result));
-            this.emit('debug_console', `Init command result: ${JSON.stringify(result)}`);
-            
+            LogTransport.log(`TRS-80: Init command result: ${JSON.stringify(result)}`);
             if (result.error) {
-                console.log('[trs80gp] Init failed with error:', result.error);
                 throw new Error(result.error);
             }
 
             // Initialize the Z80 registers decoder for TRS-80
-            console.log('[trs80gp] Initializing Z80 registers decoder');
             Z80Registers.decoder = this.createZ80RegistersDecoder();
-            this.emit('debug_console', 'Z80 registers decoder initialized for TRS-80');
 
             // Initialize the memory model based on machine type
-            console.log('[trs80gp] Initializing memory model for machine type:', result.machineType);
             this.createAndInitializeMemoryModel(result.machineType);
-            this.emit('debug_console', 'Memory model initialized for TRS-80');
 
             // Load the binary file (CMD file for TRS-80) if specified
-            console.log('[trs80gp] Calling load() to load binary file...');
-            this.emit('debug_console', 'Loading binary file...');
             await this.load();
-            console.log('[trs80gp] Binary file loaded successfully');
-            this.emit('debug_console', 'Binary file loaded successfully');
 
             // Emit 'initialized' event which the system is waiting for
-            const message = `${result.programName} initialized`;
-            console.log(`[trs80gp] Emitting 'initialized' event with message: ${message}`);
-            this.emit('debug_console', `Emitting initialized event: ${message}`);
-            this.emit('initialized', message);
-            
+            this.emit('initialized', `${result.programName} initialized`);
+
         } catch (err) {
-            console.log(`[trs80gp] onConnect() failed: ${err.message}`);
             this.emit('debug_console', `Connection initialization failed: ${err.message}`);
             this.emit('error', err);
         }
@@ -954,23 +899,14 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
      */
     public async sendDzrpCmdGetRegisters(): Promise<Uint16Array> {
         try {
-            console.log('TRS-80 GP: sendDzrpCmdGetRegisters() calling sendTrs80GpJsonRpcRequest');
             const result = await this.sendTrs80GpJsonRpcRequest('getRegisters');
-            console.log('TRS-80 GP: Got raw result from getRegisters:', JSON.stringify(result));
-            
             if (result) {
-                console.log('TRS-80 GP: Converting registers to DeZog format...');
                 const regData = this.convertTrs80GpRegistersToDeZog(result);
-                console.log('TRS-80 GP: Converted regData:', regData);
-                console.log('TRS-80 GP: regData type:', typeof regData, 'length:', regData?.length);
-                
                 this.emitTrs80GpRegisterData(result);
                 return regData;
             }
-            console.log('TRS-80 GP: No result, returning empty Uint16Array');
-            return new Uint16Array(20);
+            return this.convertTrs80GpRegistersToDeZog(undefined);
         } catch (err) {
-            console.error('TRS-80 GP: sendDzrpCmdGetRegisters() error:', err);
             throw new Error(`Failed to get registers from trs80gp: ${err.message}`);
         }
     }
@@ -984,12 +920,18 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
      * 2. When only 8-bit registers are present, constructing 16-bit values from 8-bit components
      */
     protected convertTrs80GpRegistersToDeZog(registers: any): Uint16Array {
-        const regData = new Uint16Array(16); // Z80_REG.IM(13) + 1 + slotCount(1) + slots(1) = 16
-        
+        // Z80_REG.IM(13) + 1 + slotCount(1) + slots
+        // The slots MUST match the memory model's initialSlots: the label
+        // parser computes long addresses via initialSlots, and the decoder
+        // computes them from these slot values - both must agree or no
+        // address would ever match a source line.
+        const initialSlots = this.memoryModel?.initialSlots || [0];
+        const regData = new Uint16Array(15 + initialSlots.length);
+        regData[14] = initialSlots.length;
+        for (let i = 0; i < initialSlots.length; i++)
+            regData[15 + i] = initialSlots[i];
+
         if (!registers) {
-            // Even with no register data, set up slot information for TRS-80
-            regData[14] = 1;  // Slot count
-            regData[15] = 0;  // Single slot with bank 0
             return regData;
         }
 
@@ -1066,11 +1008,7 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
         // IM register
         regData[13] = parseRegisterValue(registers.IM);
         
-        // Add slots data for TRS-80 (simple non-banking system)
-        // TRS-80 systems don't use memory banking, so we use a single slot covering full 64K
-        regData[14] = 1;  // Slot count
-        regData[15] = 0;  // Single slot with bank 0
-        
+        // Slot data was already set from the memory model's initialSlots above.
         return regData;
     }
 
@@ -1156,6 +1094,12 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
         const addresses = new Set<number>(this.permanentBps.values());
         for (const addr of this.tmpStepBps)
             addresses.add(addr);
+        // Server bug (verified live): 'setBreakpoints' with an EMPTY list is
+        // ignored - the old breakpoints stay armed. Replacing with a
+        // non-empty list works correctly. So clearing is done by replacing
+        // with a single dummy breakpoint at 0xFFFF (never executed).
+        if (addresses.size === 0)
+            addresses.add(0xFFFF);
         const breakpoints = [...addresses].map(address => ({address: '0x' + address.toString(16)}));
         await this.sendTrs80GpJsonRpcRequest('setBreakpoints', {breakpoints});
     }
@@ -1589,26 +1533,50 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
      * - Both are needed for complete breakpoint verification
      */
     protected async loadBinCmd(filePath: string): Promise<void> {
-        console.log(`[trs80gp] Loading TRS-80 CMD file: ${filePath}`);
         this.emit('debug_console', `Loading TRS-80 CMD file: ${filePath}`);
 
-        // Let the emulator load the .cmd natively via 'launch'. Loading
-        // client-side through writeMemory cannot work with the current
-        // server: setRegister is broken, so the entry PC could never be set.
+        // Parse the .cmd locally (best effort): provides the entry address
+        // for stop-at-entry and feeds the Labels/breakpoint verification.
+        let cmdFile: CmdFile | undefined;
+        try {
+            cmdFile = new CmdFile();
+            cmdFile.readFile(filePath);
+        } catch (err) {
+            cmdFile = undefined;
+            LogTransport.log(`TRS-80: .cmd parse failed: ${err.message}`);
+        }
+
+        // The session should start halted (matching the debugger UI).
+        // Halting via 'pause' after 'launch' makes the emulator's frame
+        // scheduler lose sync (CPU runs in extreme slow motion afterwards,
+        // see design/Trs80GpServerTodo.md). A breakpoint at the entry
+        // address set BEFORE 'launch' stops reliably instead. The next
+        // syncBreakpoints() replaces it, so it does not linger.
+        const entry = cmdFile?.transferAddress;
+        const stopAtEntry = !Settings.launch.startAutomatically;
+        if (stopAtEntry && entry) {
+            await this.sendTrs80GpJsonRpcRequest('setBreakpoints', {
+                breakpoints: [{address: '0x' + entry.toString(16)}]
+            });
+        }
+
+        // Let the emulator load and start the .cmd natively via 'launch'.
+        // Loading client-side through writeMemory cannot work with the
+        // current server: setRegister is broken, so the entry PC could
+        // never be set.
         await this.sendTrs80GpJsonRpcRequest('launch', {program: filePath});
 
-        // 'launch' starts the program running. Halt it so the session starts
-        // paused, matching the debugger UI state (Continue resumes it).
-        await this.sendDzrpCmdPause();
+        if (stopAtEntry && !entry) {
+            // No entry address known - halt via 'pause' as a fallback,
+            // accepting the frame scheduler risk.
+            await this.sendDzrpCmdPause();
+        }
 
-        // Best effort from here on: parse the .cmd locally only to feed the
-        // Labels/breakpoint verification. A parse failure must not abort the
-        // session - the program is already loaded by the emulator.
+        // Label integration, best effort - a failure must not abort the
+        // session, the program is already loaded by the emulator.
         try {
-            const cmdFile = new CmdFile();
-            cmdFile.readFile(filePath);
-
-            console.log(`[trs80gp] CMD file parsed: ${cmdFile.dataBlocks.length} data blocks, transfer address: 0x${cmdFile.transferAddress.toString(16)}`);
+            if (!cmdFile)
+                throw new Error('.cmd not parseable');
 
             // Integrate CMD data with Labels system for breakpoint verification
             // Create CMD memory mappings for the ZmacLabelParser integration
