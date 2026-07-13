@@ -8,7 +8,15 @@ import {Z80Registers} from '../z80registers';
 import {MemoryModelTrs80Model1, MemoryModelTrs80Model3} from '../MemoryModel/trs80memorymodels';
 import {CmdFile} from './cmdfile';
 import {Labels} from '../../labels/labels';
+import {BREAK_REASON_NUMBER} from '../remotebase';
+import {GenericBreakpoint} from '../../genericwatchpoint';
+import {Trs80EmulatorLauncher} from './trs80emlauncher';
+import {Trs80MockServerLauncher} from './trs80mockserverlauncher';
+import {LogTransport} from '../../log';
+import {Utility} from '../../misc/utility';
 import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
 /**
  * Gets a timestamp string for logging.
@@ -62,7 +70,21 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
     // Conversation log file handle for protocol debugging
     private conversationLogFile: number | undefined;
     private conversationLogPath: string | undefined;
-    
+
+    // Launchers for the real emulator or the mock server.
+    protected emulatorLauncher: Trs80EmulatorLauncher | undefined;
+    protected mockServerLauncher: Trs80MockServerLauncher | undefined;
+    protected useMockServer = false;
+
+    // Breakpoint bookkeeping: the trs80gp protocol only supports setting the
+    // complete breakpoint list at once ('setBreakpoints'). DeZog's DzrpRemote
+    // adds/removes breakpoints individually, so the current set is kept here
+    // and re-sent as a whole on every change.
+    protected bpIdCounter = 0;
+    protected permanentBps = new Map<number, number>();	// bpId -> 64k address
+    protected tmpStepBps: number[] = [];	// Temporary breakpoints for step-over/step-out
+
+
     /**
      * Creates a clean, professional hex dump with proper formatting and ASCII representation.
      * Features:
@@ -219,9 +241,10 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
      */
     private initConversationLog(): void {
         try {
-            // Create log filename with timestamp
+            // Create log filename with timestamp.
+            // Note: written to the OS temp dir, NOT the workspace (would pollute the user's project).
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            this.conversationLogPath = `trs80gp-conversation-${timestamp}.log`;
+            this.conversationLogPath = path.join(os.tmpdir(), `trs80gp-conversation-${timestamp}.log`);
             
             // Create the log file
             this.conversationLogFile = fs.openSync(this.conversationLogPath, 'w');
@@ -409,14 +432,37 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
                     const message: JsonRpcMessage = JSON.parse(messageStr);
                     this.handleJsonRpcMessage(message);
                 } catch (err) {
-                    console.log(`[${timestamp}] [trs80gp] JSON PARSE ERROR: ${err.message}`);
-                    console.log(`[${timestamp}] [trs80gp] RAW MESSAGE: ${JSON.stringify(messageStr)}`);
-                    this.emit('debug_console', `[${timestamp}] Failed to parse JSON-RPC message: ${messageStr}`);
-                    this.emit('debug_console', `[${timestamp}] Parse error: ${err.message}`);
-                    
-                    // Create visual error display for JSON parse errors
-                    const errorDisplay = this.createJsonParseErrorDisplay(messageStr, err);
-                    console.log(errorDisplay);
+                    // The real trs80gp server (development build) sends some
+                    // malformed JSON lines (verified live):
+                    // - The 'stopped' notification misses the final '}'.
+                    // - The setBreakpoints response for >1 breakpoints is garbled.
+                    // Try to repair; otherwise salvage the request id so the
+                    // pending request does not hang until timeout.
+                    const repaired = this.tryRepairJsonLine(messageStr);
+                    if (repaired) {
+                        this.emit('debug_console', `[${timestamp}] Repaired malformed JSON-RPC line from server.`);
+                        this.handleJsonRpcMessage(repaired);
+                    }
+                    else {
+                        const idMatch = messageStr.match(/"id"\s*:\s*(\d+)/);
+                        const id = idMatch ? parseInt(idMatch[1]) : undefined;
+                        const pendingReq = (id !== undefined) ? this.pendingRequests.get(id) : undefined;
+                        if (pendingReq) {
+                            // Resolve with an empty result: the payload of e.g. the
+                            // setBreakpoints response is not used by the client.
+                            this.pendingRequests.delete(id!);
+                            this.emit('debug_console', `[${timestamp}] Unparseable JSON-RPC response (id ${id}), resolved without payload: ${messageStr.substring(0, 120)}`);
+                            pendingReq.resolve({});
+                        }
+                        else {
+                            console.log(`[${timestamp}] [trs80gp] JSON PARSE ERROR: ${err.message}`);
+                            console.log(`[${timestamp}] [trs80gp] RAW MESSAGE: ${JSON.stringify(messageStr)}`);
+                            this.emit('debug_console', `[${timestamp}] Failed to parse JSON-RPC message: ${messageStr}`);
+                            // Create visual error display for JSON parse errors
+                            const errorDisplay = this.createJsonParseErrorDisplay(messageStr, err);
+                            console.log(errorDisplay);
+                        }
+                    }
                 }
             }
         }
@@ -459,21 +505,92 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
     }
 
     /**
+     * Tries to repair a malformed JSON line from the server by appending
+     * missing closing braces/brackets (the known server bug truncates the
+     * final '}' of the 'stopped' notification).
+     * @returns The parsed message or undefined if unrepairable.
+     */
+    protected tryRepairJsonLine(line: string): JsonRpcMessage | undefined {
+        let attempt = line;
+        for (let i = 0; i < 3; i++) {
+            attempt += '}';
+            try {
+                return JSON.parse(attempt);
+            } catch {
+                // Try with one more brace
+            }
+        }
+        return undefined;
+    }
+
+
+    /**
      * Handle notifications from the trs80gp emulator.
      * Subclasses can override this method to handle model-specific notifications.
      */
     protected handleTrs80GpNotification(method: string, params: any): void {
         switch (method) {
+            case 'stopped':
+                // The real trs80gp server sends:
+                // {"method":"stopped","params":{"reason":"breakpoint","address":...}}
+                this.handleStoppedNotification(params);
+                break;
             case 'paused':
-                this.emit('debug_console', 'trs80gp emulator paused');
-                // Handle pause event
+                this.handleStoppedNotification({...params, reason: params?.reason ?? 'pause'});
                 break;
             case 'breakpoint':
-                this.emit('debug_console', `trs80gp breakpoint hit at ${params?.address}`);
-                // Handle breakpoint
+                this.handleStoppedNotification({...params, reason: 'breakpoint'});
                 break;
             default:
                 this.emit('debug_console', `Unknown trs80gp notification: ${method}`);
+        }
+    }
+
+
+    /**
+     * Handles a stop of the emulated CPU (breakpoint hit, pause, ...) and
+     * feeds it into DeZog's continue/step machinery (funcContinueResolve).
+     */
+    protected handleStoppedNotification(params: any): void {
+        // Parse address (may arrive as number or as "0x..." string)
+        let addr64k = params?.address;
+        if (typeof addr64k === 'string')
+            addr64k = parseInt(addr64k, addr64k.startsWith('0x') ? 16 : 10);
+        if (typeof addr64k !== 'number' || isNaN(addr64k))
+            addr64k = undefined;
+
+        // Map the reason:
+        // - Stop at a temporary step breakpoint -> NO_REASON. DeZog's
+        //   evalBpConditionAndLog then treats it as "temporary breakpoint hit"
+        //   and breaks (a BREAKPOINT_HIT at an address without a registered
+        //   breakpoint would silently continue instead).
+        // - Stop at a real breakpoint -> BREAKPOINT_HIT (conditions/logpoints get evaluated).
+        // - Everything else (pause etc.) -> MANUAL_BREAK.
+        const reason = params?.reason;
+        let reasonNumber = BREAK_REASON_NUMBER.MANUAL_BREAK;
+        if (reason === 'breakpoint' && addr64k !== undefined) {
+            const isTmpStepBp = this.tmpStepBps.includes(addr64k & 0xFFFF);
+            const isPermanentBp = [...this.permanentBps.values()].includes(addr64k & 0xFFFF);
+            reasonNumber = (isTmpStepBp && !isPermanentBp)
+                ? BREAK_REASON_NUMBER.NO_REASON
+                : BREAK_REASON_NUMBER.BREAKPOINT_HIT;
+        }
+
+        // The temporary step breakpoints are consumed by this stop
+        this.tmpStepBps = [];
+
+        const longAddr = (addr64k !== undefined) ? Z80Registers.createLongAddress(addr64k & 0xFFFF) : 0;
+
+        // Hand over to the pending continue/step promise
+        if (this.funcContinueResolve) {
+            const continueHandler = this.funcContinueResolve;
+            this.funcContinueResolve = undefined;
+            (async () => {
+                await continueHandler({reasonNumber, longAddr, reasonString: undefined as any});
+            })();
+        }
+        else {
+            this.emit('debug_console', `trs80gp stopped (${reason ?? 'unknown'}) without pending continue`);
         }
     }
 
@@ -530,61 +647,54 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
     /**
      * Connect to trs80gp emulator with intelligent port allocation.
      */
-    public async connectSocket(): Promise<void> {
+    /**
+     * Connects to the trs80gp emulator (or mock server) at the given port.
+     * The emulator/mock must already be listening there. Retries until
+     * 'socketTimeout' expires because the emulator needs a moment to open
+     * its remote-debug port after being launched.
+     */
+    public async connectSocket(port: number): Promise<void> {
         const hostname = Settings.launch.trs80?.hostname || 'localhost';
-        const timestamp = getTimestamp();
-        
-        console.log(`[${timestamp}] [trs80gp] Starting connection to ${hostname}`);
-        
-        // Use configured port if available, otherwise find an available port
-        let port: number;
-        const configuredPort = Settings.launch.trs80?.port;
-        
-        if (configuredPort) {
-            // Check if the configured port is available
-            const isAvailable = await PortManager.isPortAvailable(configuredPort);
-            if (isAvailable) {
-                port = configuredPort;
-                console.log(`[${timestamp}] [trs80gp] Using configured port: ${port}`);
-                this.emit('debug_console', `[${timestamp}] Using configured port: ${port}`);
-            } else {
-                console.log(`[${timestamp}] [trs80gp] Configured port ${configuredPort} is busy, searching for alternative...`);
-                this.emit('warning', `[${timestamp}] Configured port ${configuredPort} is busy, searching for alternative...`);
-                port = await PortManager.findAvailablePort(configuredPort);
-                console.log(`[${timestamp}] [trs80gp] Using alternative port: ${port}`);
-                this.emit('debug_console', `[${timestamp}] Using alternative port: ${port}`);
+        const timeoutSecs = Settings.launch.trs80?.socketTimeout || 5;
+        const endTime = Date.now() + timeoutSecs * 1000;
+        let lastError: Error | undefined;
+        for (;;) {
+            try {
+                await this.tryConnect(hostname, port);
+                LogTransport.log(`TRS-80: Connected to ${hostname}:${port}`);
+                return;
             }
-        } else {
-            // Find an available port starting from the default
-            port = await PortManager.findAvailablePort();
-            console.log(`[${timestamp}] [trs80gp] Auto-allocated port: ${port}`);
-            this.emit('debug_console', `[${timestamp}] Auto-allocated port: ${port}`);
+            catch (err) {
+                lastError = err;
+                if (Date.now() >= endTime)
+                    break;
+                // Wait a little and retry
+                await new Promise(resolve => setTimeout(resolve, 250));
+            }
         }
-        
-        this.allocatedPort = port;
+        throw new Error(`Could not connect to trs80gp at ${hostname}:${port} within ${timeoutSecs}s: ${lastError?.message}`);
+    }
 
+
+    /**
+     * A single connect attempt. Creates a fresh socket (a failed connect
+     * leaves the old socket unusable) and installs the protocol handlers.
+     */
+    protected tryConnect(hostname: string, port: number): Promise<void> {
         return new Promise((resolve, reject) => {
-            const connectTimestamp = getTimestamp();
-            console.log(`[${connectTimestamp}] [trs80gp] Attempting to connect to ${hostname}:${port}`);
-            
-            const timeout = setTimeout(() => {
-                const timeoutTimestamp = getTimestamp();
-                console.log(`[${timeoutTimestamp}] [trs80gp] Connection timeout to ${hostname}:${port}`);
-                reject(new Error(`Connection timeout to trs80gp at ${hostname}:${port}`));
-            }, 5000);
-
-            this.socket.connect(port, hostname, () => {
-                clearTimeout(timeout);
-                const successTimestamp = getTimestamp();
-                console.log(`[${successTimestamp}] [trs80gp] Successfully connected to ${hostname}:${port}`);
-                resolve();
-            });
-
-            this.socket.on('error', (err) => {
-                clearTimeout(timeout);
-                const errorTimestamp = getTimestamp();
-                console.log(`[${errorTimestamp}] [trs80gp] Connection error: ${err.message}`);
+            const socket = new Socket();
+            const onError = (err: Error) => {
+                socket.destroy();
                 reject(err);
+            };
+            socket.once('error', onError);
+            socket.connect(port, hostname, () => {
+                // Success: keep this socket, remove the temporary error handler
+                // and install the permanent protocol handlers.
+                socket.removeListener('error', onError);
+                this.socket = socket;
+                this.setupSocketHandlers();
+                resolve();
             });
         });
     }
@@ -597,28 +707,91 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
      * by 'doInitialization' after a successful connect.
      */
     public async doInitialization(): Promise<void> {
-        console.log('[trs80gp] Starting Trs80GpRemote.doInitialization()');
-        this.emit('debug_console', 'Starting trs80gp remote initialization');
-        
         try {
-            // Connect to trs80gp
-            console.log('[trs80gp] Attempting to connect socket...');
-            this.emit('debug_console', 'Connecting to trs80gp emulator...');
-            await this.connectSocket();
-            
-            console.log('[trs80gp] Socket connected, calling onConnect()');
-            this.emit('debug_console', 'Socket connected, initializing protocol...');
-            
+            // Decide whether to use the real emulator or the mock server
+            this.useMockServer = this.determineUseMockServer();
+
+            // Determine the port. If we launch the emulator/mock ourselves the
+            // configured port must still be free - otherwise pick another one
+            // BEFORE launching, so that launcher and socket use the same port.
+            const trs80Cfg = Settings.launch.trs80;
+            let port = trs80Cfg?.port || 49152;
+            const autoStart = this.useMockServer || (trs80Cfg?.emulator?.autoStart !== false);
+            if (autoStart) {
+                const isFree = await PortManager.isPortAvailable(port);
+                if (!isFree) {
+                    const altPort = await PortManager.findAvailablePort(port);
+                    this.emit('warning', `trs80gp: Port ${port} is busy, using ${altPort} instead.`);
+                    port = altPort;
+                    if (trs80Cfg)
+                        trs80Cfg.port = port;	// The launcher reads the port from the settings
+                }
+            }
+            this.allocatedPort = port;
+
+            // Launch the emulator or the mock server
+            if (this.useMockServer) {
+                this.mockServerLauncher = new Trs80MockServerLauncher(port);
+                await this.mockServerLauncher.start();
+                LogTransport.log(`TRS-80: Mock server started on port ${port}`);
+            }
+            else {
+                this.emulatorLauncher = new Trs80EmulatorLauncher();
+                await this.emulatorLauncher.launchEmulator();	// No-op if autoStart is false
+            }
+
+            // Connect to the emulator/mock (retries internally until timeout)
+            await this.connectSocket(port);
+
             // Initialize the remote (sends init command and emits 'initialized' on success)
             await this.onConnect();
-            
-            console.log('[trs80gp] Trs80GpRemote.doInitialization() completed successfully');
-            this.emit('debug_console', 'trs80gp remote initialization completed');
         } catch (err) {
-            console.log(`[trs80gp] doInitialization() failed: ${err.message}`);
             this.emit('debug_console', `trs80gp initialization failed: ${err.message}`);
             this.emit('error', err);
         }
+    }
+
+
+    /**
+     * Decides whether to use the mock server or the real trs80gp emulator:
+     * - trs80.useMock === true: always the mock server.
+     * - An existing emulator executable (toolsPaths.trs80gp or trs80.emulator.path): the real emulator.
+     * - useMock === false without a valid emulator: error.
+     * - Otherwise: fall back to the mock server.
+     * Side effect: writes the resolved absolute emulator path back into the settings
+     * so that the launcher uses the same path.
+     */
+    protected determineUseMockServer(): boolean {
+        const trs80Cfg = Settings.launch.trs80;
+        if (trs80Cfg?.useMock === true) {
+            LogTransport.log('TRS-80: Using mock server (useMock=true)');
+            return true;
+        }
+
+        // Resolve the emulator path. toolsPaths.trs80gp takes precedence.
+        const toolsPaths = (Settings.launch as any).toolsPaths;
+        const configuredPath = toolsPaths?.trs80gp || trs80Cfg?.emulator?.path;
+        if (configuredPath) {
+            const absPath = Utility.getAbsFilePath(configuredPath, Settings.launch.rootFolder);
+            if (fs.existsSync(absPath)) {
+                // Write the absolute path back so the launcher uses it
+                if (trs80Cfg) {
+                    if (trs80Cfg.emulator)
+                        trs80Cfg.emulator.path = absPath;
+                    else
+                        trs80Cfg.emulator = {path: absPath, model: 1};
+                }
+                LogTransport.log(`TRS-80: Using real emulator: ${absPath}`);
+                return false;
+            }
+            LogTransport.log(`TRS-80: Emulator not found at: ${absPath}`);
+        }
+
+        if (trs80Cfg?.useMock === false)
+            throw new Error("useMock=false but no valid emulator found. Check 'toolsPaths.trs80gp' or 'trs80.emulator.path' in launch.json.");
+
+        LogTransport.log('TRS-80: Using mock server (no emulator path configured/found)');
+        return true;
     }
 
     //---- DZRP Protocol Implementation ----
@@ -725,6 +898,15 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
         }
         // Close conversation log file
         this.closeConversationLog();
+        // Terminate emulator / stop mock server if we launched it
+        if (this.emulatorLauncher) {
+            await this.emulatorLauncher.terminateEmulator();
+            this.emulatorLauncher = undefined;
+        }
+        if (this.mockServerLauncher) {
+            this.mockServerLauncher.stop();
+            this.mockServerLauncher = undefined;
+        }
     }
 
     /**
@@ -897,13 +1079,17 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
      * Set a CPU register (common Z80 functionality).
      */
     public async sendDzrpCmdSetRegister(regIndex: number, value: number): Promise<void> {
+        // Note: the current trs80gp build (development build) announces
+        // supportssetRegisterRequest but rejects every parameter format tried
+        // so far with {"error":"something wrong"} (verified live 2026-07-13,
+        // see design/Trs80GpProtocol.md). Try anyway, but give a clear message.
         try {
             await this.sendTrs80GpJsonRpcRequest('setRegister', {
                 register: this.getTrs80GpRegisterName(regIndex),
-                value: value
+                value: '0x' + value.toString(16)
             });
         } catch (err) {
-            throw new Error(`Failed to set register in trs80gp: ${err.message}`);
+            throw new Error(`Setting registers is not supported by this trs80gp build (server said: ${err.message})`);
         }
     }
 
@@ -931,22 +1117,85 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
     }
 
     /**
-     * Continue execution (common Z80 functionality).
+     * Continue execution.
+     * bp1Addr64k/bp2Addr64k are the temporary breakpoints DeZog uses to
+     * implement step-over/step-out (see DzrpRemote.calcStepBp). The trs80gp
+     * server has no native step-over, so they are realized as ordinary
+     * breakpoints that are added for this run only.
      */
-    public async sendDzrpCmdContinue(): Promise<void> {
+    public async sendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
         try {
+            // Set the temporary step breakpoints (replaces previous ones)
+            this.tmpStepBps = [];
+            if (bp1Addr64k !== undefined && bp1Addr64k >= 0)
+                this.tmpStepBps.push(bp1Addr64k & 0xFFFF);
+            if (bp2Addr64k !== undefined && bp2Addr64k >= 0)
+                this.tmpStepBps.push(bp2Addr64k & 0xFFFF);
+            await this.syncBreakpoints();
             await this.sendTrs80GpJsonRpcRequest('continue');
         } catch (err) {
             throw new Error(`Failed to continue execution in trs80gp: ${err.message}`);
         }
     }
 
+
     /**
-     * Pause execution (common Z80 functionality).
+     * Sends the complete current breakpoint list (permanent + temporary step
+     * breakpoints) to the emulator. The trs80gp protocol only supports
+     * replacing the whole list ('setBreakpoints'), not adding/removing
+     * individual breakpoints.
+     */
+    protected async syncBreakpoints(): Promise<void> {
+        const addresses = new Set<number>(this.permanentBps.values());
+        for (const addr of this.tmpStepBps)
+            addresses.add(addr);
+        const breakpoints = [...addresses].map(address => ({address: '0x' + address.toString(16)}));
+        await this.sendTrs80GpJsonRpcRequest('setBreakpoints', {breakpoints});
+    }
+
+
+    /**
+     * Adds a single breakpoint (DeZog/DZRP semantics) by re-sending the whole list.
+     * Sets bp.bpId (0 would mean 'unverified').
+     */
+    protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
+        const addr64k = bp.longAddress & 0xFFFF;
+        bp.bpId = ++this.bpIdCounter;
+        this.permanentBps.set(bp.bpId, addr64k);
+        try {
+            await this.syncBreakpoints();
+        } catch (err) {
+            // Roll back and mark as unverified
+            this.permanentBps.delete(bp.bpId);
+            bp.bpId = 0;
+            throw new Error(`Failed to set breakpoint in trs80gp: ${err.message}`);
+        }
+    }
+
+
+    /**
+     * Removes a single breakpoint by re-sending the whole list.
+     */
+    protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
+        if (bp.bpId && this.permanentBps.delete(bp.bpId)) {
+            await this.syncBreakpoints();
+        }
+    }
+
+    /**
+     * Pause execution.
+     * Note: the real trs80gp server answers with {"status":"paused"} but does
+     * NOT send a 'stopped' notification (verified live). DeZog's continue
+     * promise is resolved via funcContinueResolve, so the stop is synthesized
+     * here after the successful response.
      */
     public async sendDzrpCmdPause(): Promise<void> {
         try {
             await this.sendTrs80GpJsonRpcRequest('pause');
+            // Synthesize the missing stop notification. Harmless if a real
+            // 'stopped' notification arrives too: the first call consumes
+            // funcContinueResolve, the second finds none.
+            this.handleStoppedNotification({reason: 'pause'});
         } catch (err) {
             throw new Error(`Failed to pause execution in trs80gp: ${err.message}`);
         }
@@ -963,16 +1212,10 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
         }
     }
 
-    /**
-     * Step over (common Z80 functionality).
-     */
-    public async sendDzrpCmdStepOver(): Promise<void> {
-        try {
-            await this.sendTrs80GpJsonRpcRequest('stepOver');
-        } catch (err) {
-            throw new Error(`Failed to step over in trs80gp: ${err.message}`);
-        }
-    }
+    // Note: there is deliberately no sendDzrpCmdStepOver. The real trs80gp
+    // server does not implement the 'stepOver' JSON-RPC method (only the mock
+    // does). Step-over is realized client-side by DzrpRemote.stepOver() via
+    // temporary breakpoints passed to sendDzrpCmdContinue(bp1, bp2).
 
     /**
      * Read memory block.
@@ -980,11 +1223,13 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
      */
     public async sendDzrpCmdReadMem(address: number, size: number): Promise<Uint8Array> {
         try {
+            // Note: the real trs80gp server expects 'length' (with 'size' it
+            // silently returns only 1 byte) and addresses as hex strings.
             const result = await this.sendTrs80GpJsonRpcRequest('readMemory', {
-                address: address,
-                size: size
+                address: '0x' + address.toString(16),
+                length: size
             });
-            
+
             if (result && result.data) {
                 // Convert hex string to Uint8Array
                 const data = new Uint8Array(Buffer.from(result.data, 'hex'));

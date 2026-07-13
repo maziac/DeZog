@@ -5,7 +5,7 @@ import {Utility} from '../misc/utility';
 import {ZesaruxRemote} from './zesarux/zesaruxremote';
 import {ZxNextSerialRemote} from './dzrpbuffer/zxnextserialremote';
 import {MameGdbRemote} from './mame/mamegdbremote';
-import {Trs80Remote} from './trs80/trs80remote';
+import {Trs80RemoteFactory} from './trs80/trs80remote';
 import {Settings} from '../settings/settings';
 
 
@@ -36,7 +36,7 @@ export class RemoteFactory {
 				RemoteFactory.setGlobalRemote(new MameGdbRemote());
 				break;
 			case 'trs80gp':	// trs80gp emulator (supports multiple TRS-80 models)
-				RemoteFactory.setGlobalRemote(new Trs80Remote());
+				RemoteFactory.setGlobalRemote(Trs80RemoteFactory.createRemote());
 				break;
 			default:
 				Utility.assert(false);
