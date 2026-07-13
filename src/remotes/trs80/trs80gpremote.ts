@@ -233,6 +233,13 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
         this.socket = new Socket();
         this.setupSocketHandlers();
         this.initConversationLog();
+        // ASSERTIONs and LOGPOINTs are realized client-side via ordinary PC
+        // breakpoints (like CSpect) and therefore work with this server.
+        // WPMEM needs memory watchpoints which the trs80gp server does not
+        // offer (yet) - see design/Trs80GpServerTodo.md.
+        this.supportsASSERTION = true;
+        this.supportsLOGPOINT = true;
+        this.supportsWPMEM = false;
     }
 
     /**
