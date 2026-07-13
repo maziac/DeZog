@@ -1589,24 +1589,27 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
      * - Both are needed for complete breakpoint verification
      */
     protected async loadBinCmd(filePath: string): Promise<void> {
+        console.log(`[trs80gp] Loading TRS-80 CMD file: ${filePath}`);
+        this.emit('debug_console', `Loading TRS-80 CMD file: ${filePath}`);
+
+        // Let the emulator load the .cmd natively via 'launch'. Loading
+        // client-side through writeMemory cannot work with the current
+        // server: setRegister is broken, so the entry PC could never be set.
+        await this.sendTrs80GpJsonRpcRequest('launch', {program: filePath});
+
+        // 'launch' starts the program running. Halt it so the session starts
+        // paused, matching the debugger UI state (Continue resumes it).
+        await this.sendDzrpCmdPause();
+
+        // Best effort from here on: parse the .cmd locally only to feed the
+        // Labels/breakpoint verification. A parse failure must not abort the
+        // session - the program is already loaded by the emulator.
         try {
-            console.log(`[trs80gp] Loading TRS-80 CMD file: ${filePath}`);
-            this.emit('debug_console', `Loading TRS-80 CMD file: ${filePath}`);
-            
-            // Parse the CMD file to extract blocks and metadata
             const cmdFile = new CmdFile();
             cmdFile.readFile(filePath);
-            
+
             console.log(`[trs80gp] CMD file parsed: ${cmdFile.dataBlocks.length} data blocks, transfer address: 0x${cmdFile.transferAddress.toString(16)}`);
-            
-            // Load each data block into memory using JSON-RPC writeMemoryRequest
-            for (const block of cmdFile.dataBlocks) {
-                if (block.data.length > 0) {
-                    console.log(`[trs80gp] Loading ${block.data.length} bytes at address 0x${block.address.toString(16)}`);
-                    await this.sendDzrpCmdWriteMem(block.address, block.data);
-                }
-            }
-            
+
             // Integrate CMD data with Labels system for breakpoint verification
             // Create CMD memory mappings for the ZmacLabelParser integration
             const cmdMappings = new Map<number, {data: Uint8Array, size: number, entryPoint?: number}>();
@@ -1644,9 +1647,9 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
             }
             
         } catch (err) {
-            console.log(`[trs80gp] Failed to load CMD file: ${err.message}`);
-            this.emit('debug_console', `Failed to load CMD file: ${err.message}`);
-            throw new Error(`Failed to load CMD file: ${err.message}`);
+            // Non-fatal: the emulator has already loaded the program.
+            console.log(`[trs80gp] CMD label integration skipped: ${err.message}`);
+            this.emit('debug_console', `CMD label integration skipped: ${err.message}`);
         }
     }
 }

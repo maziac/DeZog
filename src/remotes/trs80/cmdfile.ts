@@ -29,6 +29,11 @@ export class CmdDataBlock {
  * - Block Length (1 byte) - number of data bytes following
  * - Load Address (2 bytes, little-endian) - for type 01 records
  * - Data (variable length)
+ *
+ * Type 01 length quirk: the length byte counts the 2 address bytes PLUS the
+ * data bytes, modulo 256. So 0x03..0xFF mean 1..253 data bytes and the small
+ * values wrap around: 0x00 -> 254, 0x01 -> 255, 0x02 -> 256 data bytes.
+ * (zmac emits full 256-byte blocks as length 0x02.)
  */
 export class CmdFile {
     /** All data blocks to be loaded into memory */
@@ -66,34 +71,48 @@ export class CmdFile {
 
             // Read record header
             const recordType = cmdBuffer[index++];
-            const blockLength = cmdBuffer[index++];
+            const lengthByte = cmdBuffer[index++];
+
+            // Determine the real payload length. For load blocks (type 01) the
+            // length byte includes the 2 address bytes and wraps modulo 256:
+            // 0x00 -> 254, 0x01 -> 255, 0x02 -> 256 data bytes.
+            let payloadLength: number;
+            if (recordType === 0x01) {
+                let dataLength = (lengthByte - 2) & 0xFF;
+                if (dataLength === 0)
+                    dataLength = 256;
+                payloadLength = dataLength + 2;
+            }
+            else {
+                payloadLength = lengthByte;
+            }
 
             // Check if we have enough data for this record
-            if (index + blockLength > cmdBuffer.length) {
-                throw new Error(`CMD file truncated: record at offset ${index - 2} claims ${blockLength} bytes but only ${cmdBuffer.length - index} available`);
+            if (index + payloadLength > cmdBuffer.length) {
+                throw new Error(`CMD file truncated: record at offset ${index - 2} claims ${payloadLength} bytes but only ${cmdBuffer.length - index} available`);
             }
 
             switch (recordType) {
                 case 0x01: // Object Code/Load Block
-                    this.parseLoadBlock(cmdBuffer, index, blockLength);
+                    this.parseLoadBlock(cmdBuffer, index, payloadLength);
                     break;
 
                 case 0x02: // Transfer Address
-                    this.parseTransferAddress(cmdBuffer, index, blockLength);
+                    this.parseTransferAddress(cmdBuffer, index, payloadLength);
                     break;
 
                 case 0x05: // Filename
-                    this.parseFilename(cmdBuffer, index, blockLength);
+                    this.parseFilename(cmdBuffer, index, payloadLength);
                     break;
 
                 default:
                     // Unknown record type - skip it
-                    console.warn(`Unknown CMD record type 0x${recordType.toString(16).padStart(2, '0')} at offset ${index - 2}, skipping ${blockLength} bytes`);
+                    console.warn(`Unknown CMD record type 0x${recordType.toString(16).padStart(2, '0')} at offset ${index - 2}, skipping ${payloadLength} bytes`);
                     break;
             }
 
             // Move to next record
-            index += blockLength;
+            index += payloadLength;
         }
 
         // Validate that we have at least one data block
