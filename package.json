@@ -1,11 +1,11 @@
 {
 	"name": "dezog",
-	"displayName": "DeZog",
-	"version": "3.7.4-rc1",
-	"publisher": "maziac",
-	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum/ZX81.",
+	"displayName": "DeZog - TRS-80 Edition",
+	"version": "3.7.4-rc1-trs80.1",
+	"publisher": "TechPrototyper",
+	"description": "Visual Studio Code Debugger for the Z80, ZX Spectrum/ZX81 and TRS-80 (trs80gp).",
 	"author": {
-		"name": "Thomas Busse"
+		"name": "Tim Walter"
 	},
 	"license": "MIT",
 	"keywords": [
@@ -15,7 +15,9 @@
 		"zx81",
 		"zx next",
 		"mame",
-		"cspect"
+		"cspect",
+		"trs80",
+		"trs80gp"
 	],
 	"engines": {
 		"vscode": ">=1.96.0",
@@ -28,7 +30,7 @@
 	"private": true,
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/maziac/DeZog"
+		"url": "https://github.com/TechPrototyper/trszog"
 	},
 	"sponsor": {
 		"url": "https://github.com/sponsors/maziac"
@@ -39,7 +41,7 @@
 		"watch-tsc": "tsc -w -p ./",
 		"test": "mocha -u tdd \"out/**/*.test{s,}.js\"",
 		"vscode:prepublish": "npm run esbuild-node -- --minify && npm run esbuild-browser -- --minify",
-		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --external:node-graphviz --external:ms --format=cjs --platform=node",
+		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --external:node-graphviz --external:ms --format=cjs --platform=node --keep-names --tree-shaking=false",
 		"esbuild-browser": "esbuild ./src/remotes/zsimulator/zsimwebview/main.ts --bundle --outdir=out --outbase=src --platform=browser",
 		"watch-node": "npm run esbuild-node -- --sourcemap --watch",
 		"watch-browser": "npm run esbuild-browser -- --sourcemap --watch",
@@ -416,7 +418,8 @@
 									"cspect",
 									"zsim",
 									"zxnext",
-									"mame"
+									"mame",
+									"trs80gp"
 								],
 								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'zxnext' or 'zsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
 								"default": "zsim"
@@ -996,6 +999,91 @@
 									}
 								}
 							},
+							"trs80": {
+								"description": "The configuration for debugging with the trs80gp emulator.",
+								"type": "object",
+								"properties": {
+									"hostname": {
+										"type": "string",
+										"description": "The hostname/IP address of the trs80gp socket.",
+										"default": "localhost"
+									},
+									"port": {
+										"type": "number",
+										"description": "The port of the trs80gp socket.",
+										"default": 49152
+									},
+									"socketTimeout": {
+										"type": "number",
+										"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds.",
+										"default": 5
+									},
+									"emulator": {
+										"description": "trs80gp emulator launch configuration.",
+										"type": "object",
+										"properties": {
+											"path": {
+												"type": "string",
+												"description": "Path to the trs80gp executable."
+											},
+											"model": {
+												"type": "number",
+												"enum": [1, 3, 4],
+												"description": "TRS-80 model to emulate. 1 = Model I, 3 = Model III, 4 = Model 4.",
+												"default": 1
+											},
+											"memorySize": {
+												"type": "number",
+												"description": "Memory size in KB. Model I: 4, 16, 48; Model III: 16, 48; Model 4: 64, 128.",
+												"default": 48
+											},
+											"diskImages": {
+												"type": "object",
+												"description": "Disk images to mount in the emulator.",
+												"properties": {
+													"drive0": {
+														"type": "string",
+														"description": "Path to disk image for drive 0."
+													},
+													"drive1": {
+														"type": "string",
+														"description": "Path to disk image for drive 1."
+													}
+												}
+											},
+											"cassetteImage": {
+												"type": "string",
+												"description": "Path to cassette tape image to load."
+											},
+											"symbolsFile": {
+												"type": "string",
+												"description": "Path to symbols file to load for debugging."
+											},
+											"enableSerial": {
+												"type": "boolean",
+												"description": "Enable serial/JSON-RPC interface for debugging.",
+												"default": true
+											},
+											"additionalArgs": {
+												"type": "array",
+												"items": {
+													"type": "string"
+												},
+												"description": "Additional command line arguments for the emulator."
+											},
+											"workingDirectory": {
+												"type": "string",
+												"description": "Working directory for the emulator process."
+											},
+											"autoStart": {
+												"type": "boolean",
+												"description": "Automatically start the emulator when debugging begins.",
+												"default": true
+											}
+										}
+									}
+								}
+							},
 							"unitTests": {
 								"description": "Whether the configuration contains the unit tests or not. Default: false.",
 								"type": "boolean"
@@ -1133,6 +1221,34 @@
 											"type": "string",
 											"description": "The map file is required to correctly parse the label values and to get correct file/line to address associations.",
 											"default": 0
+										}
+									}
+								}
+							},
+							"zmac": {
+								"description": "All zmac .bds files. (Typically only one, but it's possible to add more here.)",
+								"type": "array",
+								"items": {
+									"type": "object",
+									"required": [
+										"path"
+									],
+									"properties": {
+										"path": {
+											"type": "string",
+											"description": "Path to the zmac .bds (Binary Debuggable Source) file."
+										},
+										"srcDirs": {
+											"type": "array",
+											"description": "If defined the files referenced in the .bds file will be used for stepping otherwise the .bds file itself will be used. The source directories are given here as an array of strings. All dirs are relative to the 'rootFolder'.",
+											"default": [
+												""
+											]
+										},
+										"excludeFiles": {
+											"type": "array",
+											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
+											"default": []
 										}
 									}
 								}
@@ -1367,6 +1483,20 @@
 							"unitTestTimeout": {
 								"type": "number",
 								"description": "(Optional) The timeout for unit tests. If a test lasts longer it is assumed as failed. In secs. Default = 5s."
+							},
+							"toolsPaths": {
+								"description": "Configuration for external tool paths (trs80gp, zmac, etc.). If not specified, tools are assumed to be in the system PATH.",
+								"type": "object",
+								"properties": {
+									"trs80gp": {
+										"type": "string",
+										"description": "Path to trs80gp emulator executable. If not specified, assumes trs80gp is in the system PATH."
+									},
+									"zmac": {
+										"type": "string",
+										"description": "Path to zmac assembler executable. If not specified, assumes zmac is in the system PATH."
+									}
+								}
 							}
 						}
 					}
@@ -1593,6 +1723,41 @@
 							"startAutomatically": false,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${3:.nex or .sna file to load}",
+							"topOfStack": "${4: Top of stack / label name}"
+						}
+					},
+					{
+						"label": "DeZog: trs80gp",
+						"description": "Configuration for DeZog to use the trs80gp emulator.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "trs80gp",
+							"remoteType": "trs80gp",
+							"trs80": {
+								"port": 49152,
+								"emulator": {
+									"path": "${1:Path to trs80gp executable}",
+									"model": 1,
+									"memorySize": 48,
+									"enableSerial": true,
+									"autoStart": true
+								}
+							},
+							"zmac": [
+								{
+									"path": "${2:Zmac .bds file}"
+								}
+							],
+							"commandsAfterLaunch": [],
+							"history": {
+								"reverseDebugInstructionCount": 10000,
+								"spotCount": 5,
+								"codeCoverageEnabled": true
+							},
+							"startAutomatically": false,
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
+							"load": "${3:.cmd file to load}",
 							"topOfStack": "${4: Top of stack / label name}"
 						}
 					},

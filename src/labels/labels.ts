@@ -1,4 +1,4 @@
-import {ListConfigBase} from './../settings/settings';
+import {ListConfigBase, ZmacConfig} from './../settings/settings';
 import {Utility} from '../misc/utility';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {Remote} from '../remotes/remotebase';
@@ -6,6 +6,7 @@ import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
 import {Z88dkLabelParserV2} from './z88dklabelparserv2';
+import {ZmacLabelParser} from './zmaclabelparser';
 import {ReverseEngineeringLabelParser} from './reverseengineeringlabelparser';
 import {SettingsParameters} from '../settings/settings';
 import {Issue, LabelParserBase} from './labelparserbase';
@@ -150,6 +151,10 @@ export class LabelsClass {
 	// Date of the list file
 	protected youngestModifiedFile: {filename: string, time: number} | undefined;
 
+	/// Reference to the ZmacLabelParser for CMD integration (TRS-80).
+	/// Enables the TRS-80 remote to pass CMD file data to the zmac parser.
+	protected zmacLabelParser: ZmacLabelParser | undefined;
+
 
 	/**
 	 * Initializes the lists/arrays.
@@ -241,6 +246,16 @@ export class LabelsClass {
 			}
 		}
 
+		// zmac (TRS-80)
+		if (mainConfig.zmac && mainConfig.zmac.length > 0) {
+			const parser = new ZmacLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, issueHandler, mainConfig.zmac[0], mainConfig.rootFolder);
+			this.zmacLabelParser = parser;
+			for (const config of mainConfig.zmac) {
+				const zmacConfig: ZmacConfig = {...config, srcDirs: config.srcDirs || [], excludeFiles: config.excludeFiles || []};
+				this.loadAsmListFile(parser, zmacConfig);
+			}
+		}
+
 		// Reverse Engineering List File
 		if (mainConfig.revEng) {
 			const parser = new ReverseEngineeringLabelParser(memoryModel, this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines, this.skipAddresses, this.codeAddresses, issueHandler);
@@ -297,6 +312,20 @@ export class LabelsClass {
 			// Just remember that an exception happened
 			this.errorHappened = e.message;
 		}
+	}
+
+
+	/**
+	 * Enables CMD file integration for TRS-80 systems.
+	 * Allows the Labels system to integrate CMD file data with BDS debug information.
+	 * @param cmdMappings Map of load addresses to CMD file data
+	 * @returns true if integration was successful, false if no zmac parser is available
+	 */
+	public enableCmdIntegration(cmdMappings: Map<number, {data: Uint8Array, size: number, entryPoint?: number}>): boolean {
+		if (!this.zmacLabelParser)
+			return false;
+		this.zmacLabelParser.enableCmdIntegration(cmdMappings);
+		return true;
 	}
 
 

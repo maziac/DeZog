@@ -5,6 +5,7 @@ import {Utility} from '../misc/utility';
 import {ZesaruxRemote} from './zesarux/zesaruxremote';
 import {ZxNextSerialRemote} from './dzrpbuffer/zxnextserialremote';
 import {MameGdbRemote} from './mame/mamegdbremote';
+import {Trs80Remote} from './trs80/trs80remote';
 import {Settings} from '../settings/settings';
 
 
@@ -15,7 +16,7 @@ import {Settings} from '../settings/settings';
 export class RemoteFactory {
 	/**
 	 * Factory method to create an emulator.
-	 * @param remoteType 'zrcp', 'cspect', 'zxnext' or 'zsim'.
+	 * @param remoteType 'zrcp', 'cspect', 'zxnext', 'zsim', 'mame', or 'trs80gp'.
 	 */
 	public static createRemote(remoteType: string) {
 		switch (remoteType) {
@@ -33,6 +34,9 @@ export class RemoteFactory {
 				break;
 			case 'mame':
 				RemoteFactory.setGlobalRemote(new MameGdbRemote());
+				break;
+			case 'trs80gp':	// trs80gp emulator (supports multiple TRS-80 models)
+				RemoteFactory.setGlobalRemote(new Trs80Remote());
 				break;
 			default:
 				Utility.assert(false);

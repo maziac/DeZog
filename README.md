@@ -37,7 +37,47 @@ If you like DeZog please consider supporting it.
 [zxnext]: https://www.specnext.com
 
 
-# DeZog - The Z80 Debugger
+# DeZog - The Z80 Debugger (TRS-80 Edition)
+
+This fork ([TechPrototyper/trszog](https://github.com/TechPrototyper/trszog)) extends DeZog with support for the **TRS-80 Model I/III** via the [trs80gp](http://48k.ca/trs80gp.html) emulator and the **zmac** assembler (.bds debug files, .cmd executables). See [TRS-80 Quickstart](#trs-80-quickstart) below. All other DeZog features and remotes are unchanged — full credit to [maziac/DeZog](https://github.com/maziac/DeZog).
+
+
+## TRS-80 Quickstart
+
+Requirements:
+- A trs80gp build with the JSON-RPC remote debug interface (started internally with `-remote @PORT`).
+- Sources assembled with [zmac](http://48k.ca/zmac.html): `zmac -j ...` produces the `.bds` debug file, the `.cmd` is the executable.
+
+Example `launch.json` configuration:
+
+```json
+{
+    "type": "dezog",
+    "request": "launch",
+    "name": "TRS-80 Space Invaders",
+    "remoteType": "trs80gp",
+    "trs80": {
+        "port": 49152,
+        "emulator": {
+            "path": "/path/to/trs80gp.app/Contents/MacOS/trs80gp",
+            "model": 3,
+            "autoStart": true
+        }
+    },
+    "zmac": [
+        {
+            "path": "zout/space_invaders.bds"
+        }
+    ],
+    "load": "zout/space_invaders.cmd",
+    "rootFolder": "${workspaceFolder}",
+    "startAutomatically": false
+}
+```
+
+On launch, DeZog starts the emulator, connects via JSON-RPC, loads the `.cmd` program and the `.bds` symbols. Breakpoints, stepping, register/memory views and watches then work as with the other remotes. A mock server for development without the real emulator is included (`trs80.useMock: true`).
+
+---
 
 ![](documentation/images/main.gif)
 

@@ -7,6 +7,9 @@ tsconfig.json
 **/*.tests.*
 tests/
 src/
+!src/remotes/trs80/mock-server/
+src/remotes/trs80/mock-server/node_modules/**
+src/remotes/trs80/mock-server/server.log
 out/tests/
 **/*.js.map
 data/listings/
