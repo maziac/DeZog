@@ -10,6 +10,7 @@ import {GenericBreakpoint} from '../../genericwatchpoint';
 import {MemoryModelTrs80Model1, MemoryModelTrs80Model3} from '../MemoryModel/trs80memorymodels';
 import {CmdFile} from './cmdfile';
 import {Trs80, Trs80Screen, Keyboard, CassettePlayer, SilentSoundPlayer, Config, ModelType, BasicLevel, RamSize} from 'trs80-emulator';
+import {Hal} from 'z80-emulator';
 
 
 /** The base Trs80Screen throws "Must be implemented" in setConfig()/writeChar().
@@ -45,6 +46,50 @@ export class HeadlessScreen extends Trs80Screen {
 	public setAlternateCharacters(alternate: boolean) {
 		super.setAlternateCharacters(alternate);
 		this.dirty = true;
+	}
+}
+
+
+/** Wraps the emulator's hardware abstraction layer (the Trs80 machine
+ * itself) to observe every CPU bus access for memory watchpoints (WPMEM).
+ * The wrapper is installed on the public z80.hal property after machine
+ * creation — the emulator core stays unpatched.
+ */
+class WatchpointHal implements Hal {
+	constructor(protected inner: Hal, protected remote: Trs80SimRemote) {
+	}
+
+	get tStateCount(): number {
+		return this.inner.tStateCount;
+	}
+	set tStateCount(value: number) {
+		this.inner.tStateCount = value;
+	}
+
+	public readMemory(address: number): number {
+		this.remote.checkWatchpoint(address, 'r');
+		return this.inner.readMemory(address);
+	}
+
+	public writeMemory(address: number, value: number): void {
+		this.remote.checkWatchpoint(address, 'w');
+		this.inner.writeMemory(address, value);
+	}
+
+	public contendMemory(address: number): void {
+		this.inner.contendMemory(address);
+	}
+
+	public readPort(address: number): number {
+		return this.inner.readPort(address);
+	}
+
+	public writePort(address: number, value: number): void {
+		this.inner.writePort(address, value);
+	}
+
+	public contendPort(address: number): void {
+		this.inner.contendPort(address);
 	}
 }
 
@@ -85,6 +130,15 @@ export class Trs80SimRemote extends DzrpRemote {
 	// Used to calculate the passed instruction time (t-states since last step).
 	protected prevTstates: number;
 
+	// Watchpoint flags per 64k address: bit 0 = break on read, bit 1 = break on write.
+	protected wpFlags: Uint8Array;
+
+	// The address of the last watchpoint hit, or -1.
+	protected wpHitAddress: number;
+
+	// The access type ('r' or 'w') of the last watchpoint hit.
+	protected wpHitAccess: string;
+
 
 	/// Constructor.
 	constructor(launchArguments: SettingsParameters) {
@@ -94,12 +148,15 @@ export class Trs80SimRemote extends DzrpRemote {
 		this.supportsASSERTION = true;
 		this.supportsLOGPOINT = true;
 		this.supportsBreakOnInterrupt = true;
-		this.supportsWPMEM = false;	// M3: watchpoints via HAL wrapper
+		this.supportsWPMEM = true;	// Via HAL wrapper (WatchpointHal)
 
 		this.stopCpu = true;
 		this.lastBpId = 0;
 		this.breakOnInterrupt = false;
 		this.prevTstates = 0;
+		this.wpFlags = new Uint8Array(0x10000);
+		this.wpHitAddress = -1;
+		this.wpHitAccess = '';
 		// Set decoder
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 	}
@@ -127,6 +184,9 @@ export class Trs80SimRemote extends DzrpRemote {
 		this.screen = new HeadlessScreen();
 		this.keyboard = new Keyboard();
 		this.trs80 = new Trs80(config, this.screen, this.keyboard, new CassettePlayer(), new SilentSoundPlayer());
+		// Observe all CPU bus accesses for watchpoints (WPMEM). The Trs80
+		// machine is the CPU's HAL; the wrapper delegates to it unchanged.
+		this.trs80.z80.hal = new WatchpointHal(this.trs80.z80.hal, this);
 		this.trs80.reset();
 	}
 
@@ -353,6 +413,16 @@ export class Trs80SimRemote extends DzrpRemote {
 						}
 					}
 
+					// Check if a watchpoint was hit during the last instruction
+					if (this.wpHitAddress >= 0) {
+						breakNumber = (this.wpHitAccess === 'r')
+							? BREAK_REASON_NUMBER.WATCHPOINT_READ
+							: BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
+						longBreakAddress = Z80Registers.createLongAddress(this.wpHitAddress, slots);
+						break_happened = true;
+						break;
+					}
+
 					// Check if given breakpoints are hit (64k address compare, not long addresses)
 					if (pc === bp1 || pc === bp2) {
 						longBreakAddress = pcLong;
@@ -533,6 +603,23 @@ export class Trs80SimRemote extends DzrpRemote {
 	}
 
 
+	/** Called by the WatchpointHal on every CPU bus access.
+	 * Records the first watchpoint hit; the run loop checks it after each
+	 * instruction and stops with WATCHPOINT_READ/WRITE.
+	 * @param address The 64k address of the access.
+	 * @param access 'r' or 'w'.
+	 */
+	public checkWatchpoint(address: number, access: string) {
+		if (this.wpHitAddress >= 0)
+			return;	// Already a hit pending
+		const flags = this.wpFlags[address & 0xFFFF];
+		if ((access === 'r' && (flags & 0b01)) || (access === 'w' && (flags & 0b10))) {
+			this.wpHitAddress = address & 0xFFFF;
+			this.wpHitAccess = access;
+		}
+	}
+
+
 	/** Injects a key event into the emulated keyboard (used by the screen
 	 * webview). The next IN instruction reads the new state.
 	 * @param key A JS KeyboardEvent.key string, e.g. "a", "Enter", "ArrowLeft".
@@ -593,6 +680,9 @@ export class Trs80SimRemote extends DzrpRemote {
 	public async sendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
 		if (bp1Addr64k == undefined) bp1Addr64k = -1;	// unreachable
 		if (bp2Addr64k == undefined) bp2Addr64k = -1;	// unreachable
+		// Clear any old watchpoint hit
+		this.wpHitAddress = -1;
+		this.wpHitAccess = '';
 		// Run the CPU in a loop
 		this.stopCpu = false;
 		await this.trs80CpuContinue(bp1Addr64k, bp2Addr64k);
@@ -627,6 +717,42 @@ export class Trs80SimRemote extends DzrpRemote {
 	 */
 	public async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
 		//
+	}
+
+
+	/**
+	 * Sends the command to add a watchpoint.
+	 * @param address The watchpoint long address.
+	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 * @param access 'r', 'w' or 'rw'.
+	 */
+	public async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string): Promise<void> {
+		let flags = 0;
+		if (access.includes('r'))
+			flags |= 0b01;
+		if (access.includes('w'))
+			flags |= 0b10;
+		const start = address & 0xFFFF;
+		for (let i = 0; i < size; i++)
+			this.wpFlags[(start + i) & 0xFFFF] |= flags;
+	}
+
+
+	/**
+	 * Sends the command to remove a watchpoint for an address range.
+	 * @param address The watchpoint long address.
+	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 * @param access 'r', 'w' or 'rw'.
+	 */
+	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number, access: string): Promise<void> {
+		let flags = 0;
+		if (access.includes('r'))
+			flags |= 0b01;
+		if (access.includes('w'))
+			flags |= 0b10;
+		const start = address & 0xFFFF;
+		for (let i = 0; i < size; i++)
+			this.wpFlags[(start + i) & 0xFFFF] &= ~flags;
 	}
 
 

@@ -238,6 +238,47 @@ suite('Trs80SimRemote', () => {
 	});
 
 
+	test('write watchpoint stops the run at the accessing instruction', async () => {
+		// 4000: 3E 42     LD A,0x42
+		// 4002: 32 00 70  LD (0x7000),A
+		// 4005: C3 05 40  JP 0x4005
+		remote.trs80.writeMemoryBlock(0x4000, Uint8Array.from([0x3E, 0x42, 0x32, 0x00, 0x70, 0xC3, 0x05, 0x40]));
+		remote.trs80.z80.regs.pc = 0x4000;
+		await remote.sendDzrpCmdAddWatchpoint(0x7000, 1, 'w');
+
+		const breakInfo = await continueUntilBreak();
+
+		assert.equal(breakInfo.reasonNumber, BREAK_REASON_NUMBER.WATCHPOINT_WRITE);
+		const expectedLong = Z80Registers.createLongAddress(0x7000, remote.memoryModel.initialSlots);
+		assert.equal(breakInfo.longAddr, expectedLong);
+		// Stopped right after the writing instruction.
+		assert.equal(remote.trs80.z80.regs.pc, 0x4005);
+		assert.equal(remote.trs80.readMemory(0x7000), 0x42);
+	});
+
+
+	test('read watchpoint stops the run; removed watchpoint does not fire', async () => {
+		// 4000: 3A 00 70  LD A,(0x7000)
+		// 4003: C3 03 40  JP 0x4003
+		remote.trs80.writeMemoryBlock(0x4000, Uint8Array.from([0x3A, 0x00, 0x70, 0xC3, 0x03, 0x40]));
+		remote.trs80.z80.regs.pc = 0x4000;
+		await remote.sendDzrpCmdAddWatchpoint(0x7000, 1, 'r');
+
+		const breakInfo = await continueUntilBreak();
+		assert.equal(breakInfo.reasonNumber, BREAK_REASON_NUMBER.WATCHPOINT_READ);
+		assert.equal(remote.trs80.z80.regs.pc, 0x4003);
+
+		// Remove the watchpoint: now the program spins in JP until paused.
+		await (remote as any).sendDzrpCmdRemoveWatchpoint(0x7000, 1, 'r');
+		remote.trs80.z80.regs.pc = 0x4000;
+		const breakPromise = continueUntilBreak();
+		await Utility.timeout(20);
+		await remote.sendDzrpCmdPause();
+		const breakInfo2 = await breakPromise;
+		assert.equal(breakInfo2.reasonNumber, BREAK_REASON_NUMBER.MANUAL_BREAK);
+	});
+
+
 	test('keyEvent reaches the memory-mapped keyboard matrix (0x3801)', async () => {
 		// Key presses are queued and applied during step().
 		remote.keyEvent('a', true);
