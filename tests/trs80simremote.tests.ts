@@ -297,4 +297,41 @@ suite('Trs80SimRemote', () => {
 		}
 		assert.equal(remote.trs80.readMemory(0x3801), 0x00, 'key released again');
 	});
+
+
+	suite('Model III', () => {
+
+		setup(() => {
+			const cfg: any = {
+				remoteType: 'trs80sim',
+				trs80sim: {
+					model: 3
+				},
+				history: {
+					reverseDebugInstructionCount: 0,
+					spotCount: 0,
+					codeCoverageEnabled: false
+				}
+			};
+			const launch = Settings.Init(cfg);
+			Settings.launch = launch;
+			Z80RegistersClass.createRegisters(launch);
+			remote = new Trs80SimRemote(launch);
+			remoteAny = remote as any;
+			remote.configureMachine();
+		});
+
+		test('machine configured as Model III (memory model, ROM, 2.03 MHz)', async () => {
+			assert.equal(remote.memoryModel.name, 'TRS80_MODEL3');
+			assert.equal(remote.trs80.readMemory(0x0000), 0xF3);	// DI
+			assert.equal(await remote.getCpuFrequency(), 2027520);
+		});
+
+		test('continue stops at guard breakpoint, instruction-precise', async () => {
+			loadTestProgram();
+			await continueUntilBreak(BP_ADDR);
+			assert.equal(remote.trs80.z80.regs.pc, BP_ADDR);
+			assert.equal(remote.trs80.z80.regs.a, 2);
+		});
+	});
 });
