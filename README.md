@@ -36,7 +36,7 @@ The fork also ships a **second** TRS-80 remote that runs entirely inside VS Code
 | Step into / over / out, continue, pause — instruction-precise | ✅ works |
 | Register view & **edit**, memory view & **edit** | ✅ works |
 | Callstack, watches, hover, disassembly | ✅ works (inherited from DeZog) |
-| Inline TRS-80 screen in a VS Code panel + keyboard input | 🚧 next milestone |
+| Inline TRS-80 screen in a VS Code panel + keyboard input | 🧪 implemented (authentic Kesteloot canvas renderer), final in-editor verification pending |
 | Memory watchpoints (DeZog `WPMEM`) | 🚧 planned |
 | Model III (config exists, Model I is the verified default) | 🚧 planned |
 

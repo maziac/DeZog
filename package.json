@@ -42,7 +42,7 @@
 		"test": "mocha -u tdd \"out/**/*.test{s,}.js\"",
 		"vscode:prepublish": "npm run esbuild-node -- --minify && npm run esbuild-browser -- --minify",
 		"esbuild-node": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --external:@serialport --external:jsonc-parser --external:node-graphviz --external:ms --format=cjs --platform=node --keep-names --tree-shaking=false",
-		"esbuild-browser": "esbuild ./src/remotes/zsimulator/zsimwebview/main.ts --bundle --outdir=out --outbase=src --platform=browser",
+		"esbuild-browser": "esbuild ./src/remotes/zsimulator/zsimwebview/main.ts ./src/remotes/trs80/trs80simwebview/main.ts --bundle --outdir=out --outbase=src --platform=browser",
 		"watch-node": "npm run esbuild-node -- --sourcemap --watch",
 		"watch-browser": "npm run esbuild-browser -- --sourcemap --watch",
 		"package": "vsce package",
@@ -1106,6 +1106,11 @@
 										],
 										"description": "TRS-80 model to emulate. 1 = Model I (default), 3 = Model III.",
 										"default": 1
+									},
+									"screen": {
+										"type": "boolean",
+										"description": "If true (default) a webview panel with the TRS-80 screen is shown. Keyboard input in the panel goes to the emulated TRS-80.",
+										"default": true
 									}
 								}
 							},

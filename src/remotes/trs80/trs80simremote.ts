@@ -13,16 +13,38 @@ import {Trs80, Trs80Screen, Keyboard, CassettePlayer, SilentSoundPlayer, Config,
 
 
 /** The base Trs80Screen throws "Must be implemented" in setConfig()/writeChar().
- * This no-op subclass makes the emulator constructible headless.
- * Nothing is lost: the video RAM still lives in the Trs80 memory at 0x3C00
- * and can be read from there (used by the webview screen in M2).
+ * This subclass makes the emulator constructible headless and buffers the
+ * screen contents: the emulator pushes every VRAM write through writeChar(),
+ * so the buffer is always current and a view only needs to poll the dirty
+ * flag (no memory polling required).
  */
 export class HeadlessScreen extends Trs80Screen {
+	// The screen characters, 64x16, index 0 = VRAM 0x3C00 (upper-left).
+	public chars = new Uint8Array(1024);
+
+	// Set on every change; a view resets it after reading.
+	public dirty = true;
+
 	public setConfig(_config: Config) {
 		// no-op
 	}
-	public writeChar(_address: number, _value: number) {
-		// no-op
+
+	public writeChar(address: number, value: number) {
+		const i = address - 0x3C00;
+		if (i >= 0 && i < 1024 && this.chars[i] !== value) {
+			this.chars[i] = value;
+			this.dirty = true;
+		}
+	}
+
+	public setExpandedCharacters(expanded: boolean) {
+		super.setExpandedCharacters(expanded);
+		this.dirty = true;
+	}
+
+	public setAlternateCharacters(alternate: boolean) {
+		super.setAlternateCharacters(alternate);
+		this.dirty = true;
 	}
 }
 
@@ -44,6 +66,12 @@ export class Trs80SimRemote extends DzrpRemote {
 
 	// The Kesteloot emulator instance.
 	public trs80: Trs80;
+
+	// The buffering screen (also passed to the Trs80 instance).
+	public screen: HeadlessScreen;
+
+	// The emulated keyboard (Trs80 keeps it private, so hold our own reference).
+	protected keyboard: Keyboard;
 
 	// The last used breakpoint ID.
 	protected lastBpId: number;
@@ -96,7 +124,9 @@ export class Trs80SimRemote extends DzrpRemote {
 			.withModelType((model === 3) ? ModelType.MODEL3 : ModelType.MODEL1)
 			.withBasicLevel(BasicLevel.LEVEL2)
 			.withRamSize(RamSize.RAM_48_KB);
-		this.trs80 = new Trs80(config, new HeadlessScreen(), new Keyboard(), new CassettePlayer(), new SilentSoundPlayer());
+		this.screen = new HeadlessScreen();
+		this.keyboard = new Keyboard();
+		this.trs80 = new Trs80(config, this.screen, this.keyboard, new CassettePlayer(), new SilentSoundPlayer());
 		this.trs80.reset();
 	}
 
@@ -500,6 +530,16 @@ export class Trs80SimRemote extends DzrpRemote {
 	 */
 	public async getCpuFrequency(): Promise<number> {
 		return this.trs80.clockHz;
+	}
+
+
+	/** Injects a key event into the emulated keyboard (used by the screen
+	 * webview). The next IN instruction reads the new state.
+	 * @param key A JS KeyboardEvent.key string, e.g. "a", "Enter", "ArrowLeft".
+	 * @param isPressed true on keydown, false on keyup.
+	 */
+	public keyEvent(key: string, isPressed: boolean) {
+		this.keyboard.keyEvent(key, isPressed);
 	}
 
 

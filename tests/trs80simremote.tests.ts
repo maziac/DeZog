@@ -201,4 +201,59 @@ suite('Trs80SimRemote', () => {
 	test('loadBin rejects non-.cmd files', async () => {
 		await assert.rejects(remote.loadBin('/tmp/does-not-matter.sna'), /not supported/);
 	});
+
+
+	/** Renders the screen buffer as text (Model I bit-6 folding). */
+	function renderScreenText(chars: Uint8Array): string {
+		let out = '';
+		for (let row = 0; row < 16; row++) {
+			for (let col = 0; col < 64; col++) {
+				const c = chars[row * 64 + col] & 0x3F;
+				out += String.fromCharCode((c < 0x20) ? c + 0x40 : c);
+			}
+			out += '\n';
+		}
+		return out;
+	}
+
+	test('screen buffer: coherent with VRAM, VRAM writes land in the buffer', async () => {
+		// Coherence with VRAM (initial state).
+		for (let i = 0; i < 1024; i++) {
+			assert.equal(remote.screen.chars[i], remote.trs80.readMemory(0x3C00 + i),
+				'screen buffer diverges from VRAM at index ' + i);
+		}
+
+		// A memory write to VRAM (e.g. from the debugger or the program) must
+		// flow through the emulator into the buffering screen.
+		remote.screen.dirty = false;
+		// "HELLO" in Model I screen codes (bit-6 folded: 'H'=0x48 -> 0x08 etc.)
+		const hello = Uint8Array.from([0x08, 0x05, 0x0C, 0x0C, 0x0F]);
+		await remote.sendDzrpCmdWriteMem(0x3C00 + 2 * 64, hello);	// row 2
+
+		assert.equal(remote.screen.dirty, true, 'VRAM write must set the dirty flag');
+		for (let i = 0; i < hello.length; i++)
+			assert.equal(remote.screen.chars[2 * 64 + i], hello[i]);
+		const text = renderScreenText(remote.screen.chars);
+		assert.ok(text.includes('HELLO'), 'expected HELLO on screen, got:\n' + text);
+	});
+
+
+	test('keyEvent reaches the memory-mapped keyboard matrix (0x3801)', async () => {
+		// Key presses are queued and applied during step().
+		remote.keyEvent('a', true);
+		let steps = 0;
+		while (steps < 100000 && remote.trs80.readMemory(0x3801) === 0) {
+			remote.trs80.step();
+			steps++;
+		}
+		assert.equal(remote.trs80.readMemory(0x3801), 0x02, "bit 1 = key 'A' in row 0x3801");
+
+		remote.keyEvent('a', false);
+		steps = 0;
+		while (steps < 200000 && remote.trs80.readMemory(0x3801) !== 0) {
+			remote.trs80.step();
+			steps++;
+		}
+		assert.equal(remote.trs80.readMemory(0x3801), 0x00, 'key released again');
+	});
 });

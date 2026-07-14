@@ -239,6 +239,9 @@ export interface Trs80EmulatorConfig {
 export interface Trs80SimType {
 	// TRS-80 model to emulate: 1 = Model I (default). 3 = Model III (planned, M4).
 	model: number;
+
+	// If true (default) a webview panel with the TRS-80 screen is shown.
+	screen: boolean;
 }
 
 
@@ -755,6 +758,8 @@ export class Settings {
 			launchCfg.trs80sim = {} as Trs80SimType;
 		if (launchCfg.trs80sim.model === undefined)
 			launchCfg.trs80sim.model = 1;	// Model I default
+		if (launchCfg.trs80sim.screen === undefined)
+			launchCfg.trs80sim.screen = true;
 
 		// zsim
 		if (!launchCfg.zsim)

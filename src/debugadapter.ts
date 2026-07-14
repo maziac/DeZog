@@ -25,6 +25,8 @@ import {StepHistoryClass} from './remotes/stephistory';
 import {Z80RegisterHoverFormat, Z80Registers, Z80RegistersClass} from './remotes/z80registers';
 import {ZSimRemote} from './remotes/zsimulator/zsimremote';
 import {ZSimulationView} from './remotes/zsimulator/zsimulationview';
+import {Trs80SimRemote} from './remotes/trs80/trs80simremote';
+import {Trs80SimulationView} from './remotes/trs80/trs80simulationview';
 import {Settings, SettingsParameters} from './settings/settings';
 import {DisassemblyVar, ImmediateMemoryValue, MemDumpVar, MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, ShallowVar, StackVar, StructVar} from './variables/shallowvar';
 import {BaseView} from './views/baseview';
@@ -790,6 +792,12 @@ export class DebugSessionClass extends DebugSession {
 								// Adds a window that displays the ZX screen.
 								const zsimView = new ZSimulationView(zsim);
 								await zsimView.waitOnInitView();
+							}
+
+							// Same for the internal TRS-80 simulator: open the screen window.
+							if (Remote instanceof Trs80SimRemote && Settings.launch.trs80sim.screen) {
+								const trs80SimView = new Trs80SimulationView(Remote);
+								await trs80SimView.waitOnInitView();
 							}
 						}
 						catch (e) {
