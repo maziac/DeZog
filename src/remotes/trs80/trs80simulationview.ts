@@ -178,6 +178,13 @@ export class Trs80SimulationView extends BaseView {
 				justify-content: center;
 				margin-top: 0.5em;
 			}
+			/* Fit the TRS-80 canvas to the panel (keep aspect ratio), so the
+			   screen is never cut off regardless of the panel size. */
+			#trs80_screen_container canvas {
+				max-width: 100%;
+				height: auto !important;
+				image-rendering: pixelated;
+			}
 			.hint {
 				opacity: 0.6;
 				font-size: 0.8em;

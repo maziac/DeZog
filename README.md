@@ -4,41 +4,41 @@
 
 `trszog` ([TechPrototyper/trszog](https://github.com/TechPrototyper/trszog)) is a fork of [maziac/DeZog](https://github.com/maziac/DeZog) that adds first-class **TRS-80** support — via the [trs80gp](http://48k.ca/trs80gp.html) emulator, via a **built-in in-process TRS-80 simulator** (`remoteType: "trs80sim"`, based on [Lawrence Kesteloot's](https://github.com/lkesteloot/trs80) open-source TypeScript emulator), and with the [zmac](http://48k.ca/zmac.html) assembler — while leaving every existing DeZog remote (ZEsarUX, CSpect, MAME, internal simulator) fully intact. Full credit for the underlying debugger goes to Thomas Busse (maziac); see [Acknowledgements](#acknowledgements).
 
-## ⚠️ Status: Work in Progress
+## Status: Release Candidate
 
-The TRS-80 integration **works end-to-end today** — but it is a preview, not a production release.
+**You can debug TRS-80 assembly in VS Code today — with zero external tools.** The built-in `trs80sim` simulator ships inside the extension: install, press F5, and you are stepping through your Z80 source with breakpoints, watchpoints, live registers and the TRS-80 screen right next to your code.
 
-**What works, verified live against a development build of the emulator:**
+![trszog — rendered live by the built-in TRS-80 simulator](documentation/images/trs80sim/banner.png)
 
-| Capability | Status |
-|---|---|
-| Launch the emulator, load a `.cmd` program natively | ✅ works |
-| Source-mapped breakpoints from zmac `.bds` files | ✅ works |
-| Step into / over / out, continue, pause | ✅ works |
-| Register view, memory view & **edit** | ✅ works |
-| Callstack, watches, hover, disassembly | ✅ works (inherited from DeZog) |
-| Register **edit** from VS Code | ⏳ blocked by an issue in the debug interface |
-| Memory watchpoints (DeZog `WPMEM`) | ⏳ needs debug-interface support |
+*Every TRS-80 screen in this README is real: produced by the built-in simulator running actual Z80 code through the actual Level II ROM, rendered with the authentic TRS-80 character set — right down to the 2×3 block graphics of the border above.*
 
-**Two things it still needs to become production-ready:**
+There are **two TRS-80 debugging paths** in this fork, both driving the identical DeZog workflow:
 
-1. **A debug-capable emulator.** TRS-80 debugging via `trs80gp` relies on a debug interface (JSON-RPC over TCP) that today exists only in a **development version** of the trs80gp emulator. That version is **not yet released, not currently authorized for distribution, and not generally available.** A few rough edges in this early interface are, for now, absorbed transparently by client-side workarounds, so the integration already works end-to-end wherever the interface is present. **Until then, the built-in `trs80sim` remote (below) debugs TRS-80 programs with no external tooling at all.**
-2. **The road past emulation → FPGA (see below).**
+1. **`trs80sim` — the built-in simulator.** Available now, works out of the box. Based on Lawrence Kesteloot's superb open-source TypeScript TRS-80 emulator (details below).
+2. **`trs80gp` — the reference emulator.** George Phillips' [trs80gp](http://48k.ca/trs80gp.html) is *the* gold standard of TRS-80 emulation, and this fork speaks to a debug interface (JSON-RPC over TCP) that George is building into it. It already works end-to-end against a development build; the interface is not yet part of a public trs80gp release, so this path lights up for everyone the day it ships. Until then it is a preview for those with access — and the built-in simulator means nobody has to wait.
 
-### Built-in TRS-80 simulator (`trs80sim`) — no external emulator needed
+### Built-in TRS-80 simulator (`trs80sim`) — works out of the box
 
-The fork also ships a **second** TRS-80 remote that runs entirely inside VS Code: `remoteType: "trs80sim"` embeds [Lawrence Kesteloot's TypeScript TRS-80 emulator](https://github.com/lkesteloot/trs80) (MIT) in-process in the extension host — the same architecture as DeZog's internal `zsim` simulator. No install, no socket, no external process.
+`remoteType: "trs80sim"` embeds [Lawrence Kesteloot's TypeScript TRS-80 emulator](https://github.com/lkesteloot/trs80) (MIT) in-process in the extension host — the same architecture as DeZog's internal `zsim` simulator. No install, no socket, no external process, no ROM hunting: everything needed is inside the extension.
 
 | Capability | Status |
 |---|---|
 | Load a `.cmd` program natively (deterministic: ROM boot pre-run, then direct load) | ✅ works |
-| Source-mapped breakpoints from zmac `.bds` files, conditional + logpoints | ✅ works |
+| Source-mapped breakpoints from zmac `.bds` files, conditional + logpoints + assertions | ✅ works |
 | Step into / over / out, continue, pause — instruction-precise | ✅ works |
 | Register view & **edit**, memory view & **edit** | ✅ works |
 | Callstack, watches, hover, disassembly | ✅ works (inherited from DeZog) |
-| Inline TRS-80 screen in a VS Code panel + keyboard input | 🧪 implemented (authentic Kesteloot canvas renderer), final in-editor verification pending |
+| Inline TRS-80 screen in a VS Code panel + keyboard input | ✅ works (authentic Kesteloot canvas renderer) |
 | Memory watchpoints (DeZog `WPMEM`, read & write) | ✅ works — a first for the TRS-80 remotes |
 | Model III (`"trs80sim": {"model": 3}`) | ✅ works (2.03 MHz, own ROM) |
+
+<p>
+<img src="documentation/images/trs80sim/boot-model1.png" width="32%" alt="Model I Level II boot: MEMORY SIZE? / READY">
+<img src="documentation/images/trs80sim/hello-world.png" width="32%" alt="hello.cmd after two step-overs: HELLO, TRS-80 WORLD!">
+<img src="documentation/images/trs80sim/boot-model3.png" width="32%" alt="Model III boot: Cass?">
+</p>
+
+*Left to right: Model I Level II booting to READY; the debug tutorial program after two step-overs (the ROM print routine just ran under the debugger); Model III with its own ROM and lowercase support.*
 
 Example `launch.json` configuration:
 
@@ -64,6 +64,22 @@ Example `launch.json` configuration:
 ```
 
 On launch the simulator boots the Level II ROM briefly (so system vectors exist, mirroring what a real machine would have done), loads the `.cmd` blocks directly into memory, sets PC to the transfer address and SP from `topOfStack`, and stops at the entry point.
+
+### The trs80gp path — the reference emulator (preview)
+
+For cycle-exact, hardware-grade emulation across the whole TRS-80 family, the target is George Phillips' [trs80gp](http://48k.ca/trs80gp.html). Everything below has been verified live against a development build that carries the new debug interface:
+
+| Capability | Status |
+|---|---|
+| Launch the emulator, load a `.cmd` program natively | ✅ works |
+| Source-mapped breakpoints from zmac `.bds` files | ✅ works |
+| Step into / over / out, continue, pause | ✅ works |
+| Register view, memory view & **edit** | ✅ works |
+| Callstack, watches, hover, disassembly | ✅ works (inherited from DeZog) |
+| Register **edit** from VS Code | ⏳ blocked by an issue in the debug interface |
+| Memory watchpoints (DeZog `WPMEM`) | ⏳ needs debug-interface support |
+
+The debug interface exists today only in that **development version** — it is **not yet released, not currently authorized for distribution, and not generally available.** A few rough edges in this early interface are absorbed transparently by client-side workarounds, so the integration already works end-to-end wherever the interface is present. This is no longer a blocker for using trszog — the built-in simulator covers the daily workflow — but it remains the exciting next stage: the same `launch.json`, pointed at the most faithful TRS-80 emulation there is.
 
 ### Roadmap: a virtual TRS-80 on FPGA
 
@@ -112,9 +128,19 @@ If you like DeZog please consider supporting it.
 
 # TRS-80 Quickstart
 
-Requirements:
-- A development version of the trs80gp emulator that provides the debug interface. **This version is not yet released and not currently available** (see the status note above).
-- Sources assembled with [zmac](http://48k.ca/zmac.html): `zmac -j ...` produces the `.bds` debug file, the `.cmd` is the executable.
+## Quickstart 1: built-in simulator (`trs80sim`) — nothing to install
+
+The only tool you need besides this extension is George Phillips' [zmac](http://48k.ca/zmac.html) assembler: `zmac -j myprog.asm` produces both the executable (`zout/myprog.cmd`) and the debug file with source mapping (`zout/myprog.bds`).
+
+1. Assemble: `zmac -j myprog.asm`
+2. Add a `launch.json` configuration (see the [trs80sim example above](#built-in-trs-80-simulator-trs80sim--works-out-of-the-box)) pointing `zmac` at the `.bds` and `load` at the `.cmd`.
+3. Set breakpoints in your `.asm`, press **F5**. The debugger stops at your entry point, and the "TRS-80 Model I" panel opens next to your code — click it and your keystrokes go to the emulated machine.
+
+Tip: with a `preLaunchTask` that runs `zmac -j ${file}` and `${fileBasenameNoExtension}` in the `zmac`/`load` paths, F5 on whatever `.asm` file is open becomes the complete edit–assemble–debug cycle.
+
+## Quickstart 2: trs80gp (requires the debug-enabled build)
+
+Same workflow, different `remoteType` — pointed at a running/auto-started trs80gp with the debug interface (see the status note above for availability).
 
 Example `launch.json` configuration:
 
@@ -246,7 +272,7 @@ Note: DeZog itself does not include any support for building from assembler sour
 
 In order to use DeZog you need at least vscode (Linux, macOS or Windows).
 
-If you are writing pure Z80 programs, simple ZX Spectrum or ZX81 programs this might already be sufficient as you can use the [internal Z80 Simulator](documentation/Usage.md#the-internal-z80-simulator).
+If you are writing pure Z80 programs, simple ZX Spectrum or ZX81 programs this might already be sufficient as you can use the [internal Z80 Simulator](documentation/Usage.md#the-internal-z80-simulator). **For TRS-80 programs the same is true out of the box: the built-in `trs80sim` simulator needs nothing but this extension and the [zmac](http://48k.ca/zmac.html) assembler.**
 
 For more demanding projects you have the choice to install a real emulator.
 
@@ -309,11 +335,24 @@ If you would like to contact me beforehand you can create a new issue in github 
 - ZX81 ROM Copyright © 1981 Nine Tiles - Included with the permission of Nine Tiles
 - ZX Spectrum ROM, "Amstrad have kindly given their permission for the redistribution of their copyrighted material but retain that copyright". See [Amstrad ROM permissions](documentation/amstrad-rom-permissions.txt).
 - [Z80.js](https://bitbucket.org/DrGoldfire/z80.js/src/master/) (Z80 CPU simulator), Molly Howell, MIT license.
+- [lkesteloot/trs80](https://github.com/lkesteloot/trs80) (`trs80-emulator`, `z80-emulator`, `z80-base`, `trs80-base` — the TRS-80 emulator powering the built-in `trs80sim` remote, including the TRS-80 ROMs it ships), Lawrence Kesteloot, MIT license.
 - [vscode-whats-new](https://github.com/alefragnani/vscode-whats-new), Alessandro Fragnani aka [alefragni](https://github.com/alefragnani), MIT license.
 - For the other included SW see the 'dependencies' section in [package.json](https://github.com/maziac/DeZog/blob/main/package.json)
 
 
 ## Acknowledgements
+
+### Standing on the shoulders of three giants (TRS-80 Edition)
+
+This fork exists because three people built extraordinary things and shared them:
+
+- **[Thomas Busse (maziac)](https://github.com/maziac)** created **DeZog** — and it cannot be overstated what that means for anyone writing Z80 assembly. Source-level stepping that lands on the exact instruction; conditional breakpoints, logpoints and `ASSERTION`s; memory watchpoints; live register and memory views you can *edit* while stopped; call stacks reconstructed from raw stack memory; hover evaluation; smart disassembly; flow charts and call graphs at the cursor; a unit-test framework for assembler, of all things. This is IDE-grade tooling of a quality the 8-bit world simply did not have — and every bit of it now works for TRS-80 programmers, unchanged, because DeZog's architecture made "just add another remote" possible. Thomas: we hope seeing Tandy machines join the ZX family in your debugger is as delightful for you as building on your work was for us.
+- **[George Phillips](http://48k.ca)** is the author of **trs80gp**, the reference emulator of the TRS-80 world — cycle-exact, covering the entire model line, and the standard against which everything else (including our simulator path) is measured — and of **zmac**, the assembler whose `.bds` output provides the source mapping this whole debugging experience hangs on. Every breakpoint you set in a `.asm` line resolves through George's toolchain. The upcoming trs80gp debug interface, built in collaboration for this project, will bring DeZog's full workflow to the most faithful TRS-80 emulation there is.
+- **[Lawrence Kesteloot](https://github.com/lkesteloot)** wrote the **TypeScript TRS-80 emulator** ([lkesteloot/trs80](https://github.com/lkesteloot/trs80)) that powers the built-in `trs80sim` remote — a beautifully engineered, MIT-licensed machine: clean HAL architecture, inline ROMs, an instruction-precise CPU core, and the authentic screen renderer you see in the screenshots above. We embedded it **without changing a single line of its code** — the highest compliment an architecture can receive. If you enjoy the zero-setup debugging in this fork, you are enjoying Lawrence's emulator.
+
+Two of these names — George and Lawrence — are among the most important in the TRS-80 preservation and retro scene. This fork is meant as a tribute to their work, not a replacement for it: go use trs80gp, go explore [trs80.dev](https://www.trs80.dev), and if trszog brings a few more people to Tandy assembly programming, it has done its job.
+
+### From the upstream DeZog README
 
 I would like to express my gratitude to the following individuals for their invaluable support:
 
