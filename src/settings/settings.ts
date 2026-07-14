@@ -234,6 +234,14 @@ export interface Trs80EmulatorConfig {
 }
 
 
+// Definitions for the 'trs80sim' remote type (in-process TRS-80 simulator,
+// based on Lawrence Kesteloot's TypeScript emulator).
+export interface Trs80SimType {
+	// TRS-80 model to emulate: 1 = Model I (default). 3 = Model III (planned, M4).
+	model: number;
+}
+
+
 // Subtype for the custom javascript code.
 export interface CustomCodeType {
 	// If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).
@@ -467,7 +475,7 @@ export interface SmartDisassemblerArgs {
  */
 export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments {
 	/// The remote type: zesarux or zxnext.
-	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame' | 'trs80gp';
+	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame' | 'trs80gp' | 'trs80sim';
 
 	// The special settings for zrcp (ZEsarux).
 	zrcp: ZrcpType;
@@ -480,6 +488,9 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	// The special settings for TRS-80 (trs80gp).
 	trs80: Trs80Type;
+
+	// The special settings for the internal TRS-80 simulator (trs80sim).
+	trs80sim: Trs80SimType;
 
 	// The special settings for the internal Z80 simulator.
 	zsim: ZSimType;
@@ -600,6 +611,7 @@ export class Settings {
 				zsim: <any>undefined,
 				zxnext: <any>undefined,
 				trs80: <any>undefined,
+				trs80sim: <any>undefined,
 				unitTests: <any>undefined,
 				rootFolder: <any>undefined,
 				sjasmplus: <any>undefined,
@@ -737,6 +749,12 @@ export class Settings {
 			if (!launchCfg.trs80.emulator.additionalArgs)
 				launchCfg.trs80.emulator.additionalArgs = [];
 		}
+
+		// trs80sim (in-process TRS-80 simulator)
+		if (!launchCfg.trs80sim)
+			launchCfg.trs80sim = {} as Trs80SimType;
+		if (launchCfg.trs80sim.model === undefined)
+			launchCfg.trs80sim.model = 1;	// Model I default
 
 		// zsim
 		if (!launchCfg.zsim)
@@ -1363,7 +1381,7 @@ export class Settings {
 
 		// Check remote type
 		const rType = Settings.launch.remoteType;
-		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame', 'trs80gp'];
+		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame', 'trs80gp', 'trs80sim'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("'remoteType': Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
@@ -1379,6 +1397,13 @@ export class Settings {
 			if (oldZxnext.port !== undefined || oldZxnext.hostname !== undefined || oldZxnext.socketTimeout !== undefined) {
 				throw Error("For 'zxnext' the properties 'port', 'hostname' and 'socketTimeout' are not used anymore. Use 'serial' instead.");
 			}
+		}
+
+		// Check the model if 'trs80sim' was selected
+		if (rType === 'trs80sim') {
+			const model = Settings.launch.trs80sim.model;
+			if (model !== 1 && model !== 3)
+				throw Error("'trs80sim.model': Model '" + model + "' does not exist. Allowed are 1 and 3.");
 		}
 
 		// List files (=Assembler configurations)

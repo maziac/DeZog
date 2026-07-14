@@ -2,7 +2,7 @@
 
 > **A source-level Z80 debugger for the TRS-80 Model I/III, inside Visual Studio Code.**
 
-`trszog` ([TechPrototyper/trszog](https://github.com/TechPrototyper/trszog)) is a fork of [maziac/DeZog](https://github.com/maziac/DeZog) that adds first-class **TRS-80** support via the [trs80gp](http://48k.ca/trs80gp.html) emulator and the [zmac](http://48k.ca/zmac.html) assembler — while leaving every existing DeZog remote (ZEsarUX, CSpect, MAME, internal simulator) fully intact. Full credit for the underlying debugger goes to Thomas Busse (maziac); see [Acknowledgements](#acknowledgements).
+`trszog` ([TechPrototyper/trszog](https://github.com/TechPrototyper/trszog)) is a fork of [maziac/DeZog](https://github.com/maziac/DeZog) that adds first-class **TRS-80** support — via the [trs80gp](http://48k.ca/trs80gp.html) emulator, via a **built-in in-process TRS-80 simulator** (`remoteType: "trs80sim"`, based on [Lawrence Kesteloot's](https://github.com/lkesteloot/trs80) open-source TypeScript emulator), and with the [zmac](http://48k.ca/zmac.html) assembler — while leaving every existing DeZog remote (ZEsarUX, CSpect, MAME, internal simulator) fully intact. Full credit for the underlying debugger goes to Thomas Busse (maziac); see [Acknowledgements](#acknowledgements).
 
 ## ⚠️ Status: Work in Progress
 
@@ -22,8 +22,48 @@ The TRS-80 integration **works end-to-end today** — but it is a preview, not a
 
 **Two things it still needs to become production-ready:**
 
-1. **A debug-capable emulator.** TRS-80 debugging relies on a debug interface (JSON-RPC over TCP) that today exists only in a **development version** of the trs80gp emulator. That version is **not yet released, not currently authorized for distribution, and not generally available.** A few rough edges in this early interface are, for now, absorbed transparently by client-side workarounds, so the integration already works end-to-end wherever the interface is present.
+1. **A debug-capable emulator.** TRS-80 debugging via `trs80gp` relies on a debug interface (JSON-RPC over TCP) that today exists only in a **development version** of the trs80gp emulator. That version is **not yet released, not currently authorized for distribution, and not generally available.** A few rough edges in this early interface are, for now, absorbed transparently by client-side workarounds, so the integration already works end-to-end wherever the interface is present. **Until then, the built-in `trs80sim` remote (below) debugs TRS-80 programs with no external tooling at all.**
 2. **The road past emulation → FPGA (see below).**
+
+### Built-in TRS-80 simulator (`trs80sim`) — no external emulator needed
+
+The fork also ships a **second** TRS-80 remote that runs entirely inside VS Code: `remoteType: "trs80sim"` embeds [Lawrence Kesteloot's TypeScript TRS-80 emulator](https://github.com/lkesteloot/trs80) (MIT) in-process in the extension host — the same architecture as DeZog's internal `zsim` simulator. No install, no socket, no external process.
+
+| Capability | Status |
+|---|---|
+| Load a `.cmd` program natively (deterministic: ROM boot pre-run, then direct load) | ✅ works |
+| Source-mapped breakpoints from zmac `.bds` files, conditional + logpoints | ✅ works |
+| Step into / over / out, continue, pause — instruction-precise | ✅ works |
+| Register view & **edit**, memory view & **edit** | ✅ works |
+| Callstack, watches, hover, disassembly | ✅ works (inherited from DeZog) |
+| Inline TRS-80 screen in a VS Code panel + keyboard input | 🚧 next milestone |
+| Memory watchpoints (DeZog `WPMEM`) | 🚧 planned |
+| Model III (config exists, Model I is the verified default) | 🚧 planned |
+
+Example `launch.json` configuration:
+
+```json
+{
+    "type": "dezog",
+    "request": "launch",
+    "name": "TRS-80 (built-in simulator)",
+    "remoteType": "trs80sim",
+    "trs80sim": {
+        "model": 1
+    },
+    "zmac": [
+        {
+            "path": "zout/hello.bds"
+        }
+    ],
+    "load": "zout/hello.cmd",
+    "topOfStack": "0x8000",
+    "rootFolder": "${workspaceFolder}",
+    "startAutomatically": false
+}
+```
+
+On launch the simulator boots the Level II ROM briefly (so system vectors exist, mirroring what a real machine would have done), loads the `.cmd` blocks directly into memory, sets PC to the transfer address and SP from `topOfStack`, and stops at the entry point.
 
 ### Roadmap: a virtual TRS-80 on FPGA
 

@@ -68,7 +68,11 @@
 		"serialport": "^13.0.0",
 		"showdown": "^2.1.0",
 		"string-argv": "^0.3.2",
-		"xml2js": "^0.6.2"
+		"trs80-base": "2.3.1",
+		"trs80-emulator": "2.3.1",
+		"xml2js": "^0.6.2",
+		"z80-base": "2.0.1",
+		"z80-emulator": "2.3.0"
 	},
 	"devDependencies": {
 		"@types/mocha": "10.0.10",
@@ -419,9 +423,10 @@
 									"zsim",
 									"zxnext",
 									"mame",
-									"trs80gp"
+									"trs80gp",
+									"trs80sim"
 								],
-								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'zxnext' or 'zsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
+								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'zxnext', 'zsim' (internal Z80 simulator) or 'trs80sim' (internal TRS-80 simulator). Note: Certain features or properties are not available in all types.",
 								"default": "zsim"
 							},
 							"zrcp": {
@@ -1028,7 +1033,11 @@
 											},
 											"model": {
 												"type": "number",
-												"enum": [1, 3, 4],
+												"enum": [
+													1,
+													3,
+													4
+												],
 												"description": "TRS-80 model to emulate. 1 = Model I, 3 = Model III, 4 = Model 4.",
 												"default": 1
 											},
@@ -1081,6 +1090,22 @@
 												"default": true
 											}
 										}
+									}
+								}
+							},
+							"trs80sim": {
+								"description": "The configuration of the internal TRS-80 simulator (in-process, based on Lawrence Kesteloot's TypeScript emulator).",
+								"type": "object",
+								"additionalProperties": false,
+								"properties": {
+									"model": {
+										"type": "number",
+										"enum": [
+											1,
+											3
+										],
+										"description": "TRS-80 model to emulate. 1 = Model I (default), 3 = Model III.",
+										"default": 1
 									}
 								}
 							},

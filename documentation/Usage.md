@@ -220,6 +220,8 @@ A typical configuration looks like this:
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
     - "cspect": Use of CSpect emulator with the DeZog plugin. See [CSpect](#cspect).
     - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [ZX Next / Serial Interface](#zx-next--serial-interface).
+    - "trs80gp": Use the external trs80gp TRS-80 emulator via its JSON-RPC debug interface.
+    - "trs80sim": Use the internal TRS-80 simulator (in-process, no external emulator needed).
 - [sjasmplus] (or z80asm or z88dk): The assembled configuration. An array of list files. (Or in case of sjasmplus: sld files.) Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Assembler Configuration](#assembler-configuration) section.
@@ -613,6 +615,8 @@ They are distinguished via the "remoteType":
 - "cspect": CSpect emulator
 - "zxnext": ZX Next connected via serial cable.
 - "mame": MAME emulator.
+- "trs80gp": trs80gp TRS-80 emulator (external, via JSON-RPC socket).
+- "trs80sim": Internal TRS-80 simulator (in-process, based on Lawrence Kesteloot's TypeScript emulator). Configured via the "trs80sim" property ("model": 1 or 3). Loads ".cmd" executables; see the README's TRS-80 sections.
 
 
 ### What is a 'Remote'?

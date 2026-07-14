@@ -6,6 +6,7 @@ import {ZesaruxRemote} from './zesarux/zesaruxremote';
 import {ZxNextSerialRemote} from './dzrpbuffer/zxnextserialremote';
 import {MameGdbRemote} from './mame/mamegdbremote';
 import {Trs80RemoteFactory} from './trs80/trs80remote';
+import {Trs80SimRemote} from './trs80/trs80simremote';
 import {Settings} from '../settings/settings';
 
 
@@ -16,7 +17,7 @@ import {Settings} from '../settings/settings';
 export class RemoteFactory {
 	/**
 	 * Factory method to create an emulator.
-	 * @param remoteType 'zrcp', 'cspect', 'zxnext', 'zsim', 'mame', or 'trs80gp'.
+	 * @param remoteType 'zrcp', 'cspect', 'zxnext', 'zsim', 'mame', 'trs80gp' or 'trs80sim'.
 	 */
 	public static createRemote(remoteType: string) {
 		switch (remoteType) {
@@ -37,6 +38,9 @@ export class RemoteFactory {
 				break;
 			case 'trs80gp':	// trs80gp emulator (supports multiple TRS-80 models)
 				RemoteFactory.setGlobalRemote(Trs80RemoteFactory.createRemote());
+				break;
+			case 'trs80sim':	// Internal TRS-80 simulator (in-process, Kesteloot emulator)
+				RemoteFactory.setGlobalRemote(new Trs80SimRemote(Settings.launch));
 				break;
 			default:
 				Utility.assert(false);
