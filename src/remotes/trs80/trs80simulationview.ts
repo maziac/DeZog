@@ -173,23 +173,41 @@ export class Trs80SimulationView extends BaseView {
 			<html>
 
 			<style>
-			#trs80_screen_container {
-				display: flex;
-				justify-content: center;
-				margin-top: 0.5em;
+			/* Fill the whole panel, screen area above, hint pinned below. */
+			html, body {
+				height: 100%;
+				margin: 0;
 			}
-			/* Fit the TRS-80 canvas to the panel (keep aspect ratio), so the
-			   screen is never cut off regardless of the panel size. */
+			body {
+				display: flex;
+				flex-direction: column;
+			}
+			#trs80_screen_container {
+				flex: 1 1 auto;
+				min-height: 0;       /* allow the flex child to shrink */
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 8px;
+				box-sizing: border-box;
+			}
+			/* Scale the TRS-80 canvas to the largest size that fits the panel in
+			   BOTH dimensions while keeping the aspect ratio — automatically
+			   optimal whether the panel is wide, tall, or resized live. */
 			#trs80_screen_container canvas {
 				max-width: 100%;
-				height: auto !important;
+				max-height: 100%;
+				width: auto;
+				height: auto;
+				object-fit: contain;
 				image-rendering: pixelated;
 			}
 			.hint {
+				flex: 0 0 auto;
 				opacity: 0.6;
 				font-size: 0.8em;
 				text-align: center;
-				margin-top: 0.5em;
+				padding: 0.4em 0;
 			}
 			</style>
 

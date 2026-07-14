@@ -8,9 +8,9 @@
 
 **You can debug TRS-80 assembly in VS Code today — with zero external tools.** The built-in `trs80sim` simulator ships inside the extension: install, press F5, and you are stepping through your Z80 source with breakpoints, watchpoints, live registers and the TRS-80 screen right next to your code.
 
-![trszog — rendered live by the built-in TRS-80 simulator](documentation/images/trs80sim/banner.png)
+![Debugging TRS-80 Space Invaders in trszog — halted at a source breakpoint with the live game screen, full Z80 registers and call stack](documentation/images/trs80sim/debug-session.png)
 
-*Every TRS-80 screen in this README is real: produced by the built-in simulator running actual Z80 code through the actual Level II ROM, rendered with the authentic TRS-80 character set — right down to the 2×3 block graphics of the border above.*
+*A real trszog session: a homebrew TRS-80 **Space Invaders** halted at a source-level breakpoint in its main loop (`CALL UpdateFormation`), with the full Z80 register set — label-resolved, e.g. `IX = CUR_TMPL`, `PC = MainLoop+6` — the call stack, and the running game on the built-in TRS-80 screen at right. No external emulator, no socket: everything you see is inside the extension. Every TRS-80 screen in this README is real, rendered with the authentic TRS-80 character set.*
 
 There are **two TRS-80 debugging paths** in this fork, both driving the identical DeZog workflow:
 
@@ -33,12 +33,11 @@ There are **two TRS-80 debugging paths** in this fork, both driving the identica
 | Model III (`"trs80sim": {"model": 3}`) | ✅ works (2.03 MHz, own ROM) |
 
 <p>
-<img src="documentation/images/trs80sim/boot-model1.png" width="32%" alt="Model I Level II boot: MEMORY SIZE? / READY">
-<img src="documentation/images/trs80sim/hello-world.png" width="32%" alt="hello.cmd after two step-overs: HELLO, TRS-80 WORLD!">
-<img src="documentation/images/trs80sim/boot-model3.png" width="32%" alt="Model III boot: Cass?">
+<img src="documentation/images/trs80sim/space-invaders.png" width="49%" alt="Space Invaders formation running in the built-in TRS-80 simulator">
+<img src="documentation/images/trs80sim/space-invaders-splash.png" width="49%" alt="Space Invaders splash screen running under the debugger">
 </p>
 
-*Left to right: Model I Level II booting to READY; the debug tutorial program after two step-overs (the ROM print routine just ran under the debugger); Model III with its own ROM and lowercase support.*
+*The TRS-80 screen panel next to your code: a homebrew Space Invaders running in the built-in simulator — full invader formation, bunkers, player cannon (left), and its title screen (right). Both are live in a VS Code debug session; click the panel and your keystrokes go straight to the emulated machine.*
 
 Example `launch.json` configuration:
 
