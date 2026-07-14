@@ -8,21 +8,21 @@
 
 The TRS-80 integration **works end-to-end today** — but it is a preview, not a production release.
 
-**What works, verified live against a real trs80gp build:**
+**What works, verified live against a development build of the emulator:**
 
 | Capability | Status |
 |---|---|
-| Launch trs80gp, load a `.cmd` program natively | ✅ works |
+| Launch the emulator, load a `.cmd` program natively | ✅ works |
 | Source-mapped breakpoints from zmac `.bds` files | ✅ works |
 | Step into / over / out, continue, pause | ✅ works |
 | Register view, memory view & **edit** | ✅ works |
 | Callstack, watches, hover, disassembly | ✅ works (inherited from DeZog) |
-| Register **edit** from VS Code | ⏳ blocked by a server-side bug |
-| Memory watchpoints (DeZog `WPMEM`) | ⏳ needs server support |
+| Register **edit** from VS Code | ⏳ blocked by an issue in the debug interface |
+| Memory watchpoints (DeZog `WPMEM`) | ⏳ needs debug-interface support |
 
 **Two things it still needs to become production-ready:**
 
-1. **Emulator input.** It depends on a *custom* trs80gp build (v2.5.5) that exposes a JSON-RPC debug server (`-remote @PORT`), from the emulator's author. A handful of server-side wire-format issues are currently absorbed by client-side workarounds; every one of them is documented, with a fixed-server-needs-zero-client-change note, in [`design/Trs80GpServerTodo.md`](design/Trs80GpServerTodo.md). The protocol as observed live is written up in [`design/Trs80GpProtocol.md`](design/Trs80GpProtocol.md).
+1. **A debug-capable emulator.** TRS-80 debugging relies on a debug interface (JSON-RPC over TCP) that today exists only in a **development version** of the trs80gp emulator. That version is **not yet released, not currently authorized for distribution, and not generally available.** A few rough edges in this early interface are, for now, absorbed transparently by client-side workarounds, so the integration already works end-to-end wherever the interface is present.
 2. **The road past emulation → FPGA (see below).**
 
 ### Roadmap: a virtual TRS-80 on FPGA
@@ -73,7 +73,7 @@ If you like DeZog please consider supporting it.
 # TRS-80 Quickstart
 
 Requirements:
-- A trs80gp build with the JSON-RPC remote debug interface (started internally with `-remote @PORT`).
+- A development version of the trs80gp emulator that provides the debug interface. **This version is not yet released and not currently available** (see the status note above).
 - Sources assembled with [zmac](http://48k.ca/zmac.html): `zmac -j ...` produces the `.bds` debug file, the `.cmd` is the executable.
 
 Example `launch.json` configuration:
@@ -114,7 +114,7 @@ Here is what an actual session against the game looks like — this is the workf
 3. **Trigger it.** The title screen waits for the SPACE key; the game starts, and the moment the alien formation advances, the breakpoint fires. VS Code shows the halted PC on the exact source line, the full Z80 register set, the callstack, and any watches.
 4. **Inspect and step.** Hover `HL` to see the pointer and its label; open a memory view over the sprite buffer; single-step (`stepInto` / `stepOver`) instruction-by-instruction and watch the R register increment and registers change in real time. Poke a value with the memory editor and continue.
 
-Everything above is exercised end-to-end in this repo's test material — see the raw JSON-RPC transcripts (`trs80gp-conversation-*.log`) captured against the real emulator, and the protocol write-up in [`design/Trs80GpProtocol.md`](design/Trs80GpProtocol.md).
+Everything above is exercised end-to-end against the development build of the emulator over its debug interface.
 
 ---
 

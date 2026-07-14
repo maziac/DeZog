@@ -235,8 +235,8 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
         this.initConversationLog();
         // ASSERTIONs and LOGPOINTs are realized client-side via ordinary PC
         // breakpoints (like CSpect) and therefore work with this server.
-        // WPMEM needs memory watchpoints which the trs80gp server does not
-        // offer (yet) - see design/Trs80GpServerTodo.md.
+        // WPMEM needs memory watchpoints which the trs80gp debug server does
+        // not offer (yet).
         this.supportsASSERTION = true;
         this.supportsLOGPOINT = true;
         this.supportsWPMEM = false;
@@ -426,7 +426,7 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
                     const message: JsonRpcMessage = JSON.parse(messageStr);
                     this.handleJsonRpcMessage(message);
                 } catch (err) {
-                    // The real trs80gp server (development build) sends some
+                    // The trs80gp development debug server sends some
                     // malformed JSON lines (verified live):
                     // - The 'stopped' notification misses the final '}'.
                     // - The setBreakpoints response for >1 breakpoints is garbled.
@@ -1024,10 +1024,10 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
      * Set a CPU register (common Z80 functionality).
      */
     public async sendDzrpCmdSetRegister(regIndex: number, value: number): Promise<void> {
-        // Note: the current trs80gp build (development build) announces
+        // Note: the current trs80gp development build announces
         // supportssetRegisterRequest but rejects every parameter format tried
-        // so far with {"error":"something wrong"} (verified live 2026-07-13,
-        // see design/Trs80GpProtocol.md). Try anyway, but give a clear message.
+        // so far with {"error":"something wrong"} (verified live 2026-07-13).
+        // Try anyway, but give a clear message.
         try {
             await this.sendTrs80GpJsonRpcRequest('setRegister', {
                 register: this.getTrs80GpRegisterName(regIndex),
@@ -1548,8 +1548,8 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
 
         // The session should start halted (matching the debugger UI).
         // Halting via 'pause' after 'launch' makes the emulator's frame
-        // scheduler lose sync (CPU runs in extreme slow motion afterwards,
-        // see design/Trs80GpServerTodo.md). A breakpoint at the entry
+        // scheduler lose sync (CPU runs in extreme slow motion afterwards).
+        // A breakpoint at the entry
         // address set BEFORE 'launch' stops reliably instead. The next
         // syncBreakpoints() replaces it, so it does not linger.
         const entry = cmdFile?.transferAddress;
