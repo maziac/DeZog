@@ -1471,12 +1471,15 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			else if (ext === '.p' || ext === '.81' || ext === '.p81')
 				await this.loadBinZx81(filePath);
 			else if (ext === '.cmd') {
-				// CMD files are only supported by TRS-80 Model 1 and Model 3 remotes
-				if (Settings.launch.remoteType === 'trs80gp') {
+				// .cmd is a TRS-80 format. trs80sim has its own loadBin() and
+				// never reaches here; this generic path serves the remotes
+				// that share the JSON-RPC loadCmd of Trs80Model1/3Remote: the
+				// trs80gp emulator and the revz FPGA machine / dongle.
+				if (Settings.launch.remoteType === 'trs80gp' || Settings.launch.remoteType === 'revz') {
 					// Delegate to the model-specific implementation which uses JSON-RPC loadCmd
 					await (this as any).sendDzrpCmdLoadObj(filePath);
 				} else {
-					throw Error("CMD files are only supported with remoteType:'trs80gp' (Model 1 and Model 3).");
+					throw Error("CMD files are a TRS-80 format — use remoteType 'revz' (FPGA/dongle), 'trs80gp' (emulator), or 'trs80sim' (internal simulator).");
 				}
 			}
 			else {
