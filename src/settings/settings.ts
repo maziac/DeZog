@@ -193,6 +193,44 @@ export interface Trs80Type {
 }
 
 
+// Definitions for the "revz" remote type: the TRS-80 Rev Z FPGA machine,
+// or a real TRS-80 behind a hardware dongle. Not an emulator. See
+// docs/decisions/0007-trszog-integration.md.
+export interface RevzType {
+	// The machine being debugged.
+	target?: 'fpga' | 'physical';
+
+	// What hosts the debug core.
+	dongle?: 'fpga' | 'physical';
+
+	// Where the dongle attaches on a physical target (only when target='physical').
+	attachTo?: 'expansionInterface' | 'mainboard';
+
+	// Socket timeout in seconds when connecting to the debug server.
+	socketTimeout?: number;
+
+	// How the host reaches the debug core.
+	transport: RevzTransport;
+}
+
+// How the debugger reaches the debug core.
+export interface RevzTransport {
+	// python: local bridge over serial. esp32: network to the on-board
+	// debug server. serial: reserved for a future direct binary client.
+	kind: 'python' | 'esp32' | 'serial';
+
+	// Host/port of the debug server (JSON-RPC). Defaults: localhost:49152.
+	host?: string;
+	port?: number;
+
+	// kind='python' only: start the bridge if nothing is already listening.
+	autoStart?: boolean;              // default true
+	bridge?: string;                  // path to tools/trszog_bridge.py (trs80-rev-z repo)
+	serial?: string;                  // the dongle's serial device
+	baud?: number;                    // default 460800
+}
+
+
 // trs80gp emulator launch configuration
 export interface Trs80EmulatorConfig {
 	// Path to trs80gp executable
@@ -478,7 +516,7 @@ export interface SmartDisassemblerArgs {
  */
 export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments {
 	/// The remote type: zesarux or zxnext.
-	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame' | 'trs80gp' | 'trs80sim';
+	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame' | 'trs80gp' | 'trs80sim' | 'revz';
 
 	// The special settings for zrcp (ZEsarux).
 	zrcp: ZrcpType;
@@ -494,6 +532,9 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	// The special settings for the internal TRS-80 simulator (trs80sim).
 	trs80sim: Trs80SimType;
+
+	// The special settings for the TRS-80 Rev Z FPGA machine / dongle (revz).
+	revz: RevzType;
 
 	// The special settings for the internal Z80 simulator.
 	zsim: ZSimType;
@@ -615,6 +656,7 @@ export class Settings {
 				zxnext: <any>undefined,
 				trs80: <any>undefined,
 				trs80sim: <any>undefined,
+				revz: <any>undefined,
 				unitTests: <any>undefined,
 				rootFolder: <any>undefined,
 				sjasmplus: <any>undefined,
@@ -712,6 +754,40 @@ export class Settings {
 			launchCfg.trs80.registerFormat = 'hex';
 		if (!launchCfg.trs80.socketTimeout)
 			launchCfg.trs80.socketTimeout = 5;	// 5 secs
+
+		// revz (FPGA machine / dongle). Defaults, absolute bridge path, and
+		// a mirror of the connection details into launchCfg.trs80 so the
+		// inherited trs80gp connect/socket logic works unchanged.
+		if (launchCfg.remoteType === 'revz') {
+			if (!launchCfg.revz)
+				launchCfg.revz = {} as RevzType;
+			if (!launchCfg.revz.target)
+				launchCfg.revz.target = 'fpga';
+			if (!launchCfg.revz.dongle)
+				launchCfg.revz.dongle = 'fpga';
+			if (!launchCfg.revz.transport)
+				launchCfg.revz.transport = {kind: 'python'} as RevzTransport;
+			const tr = launchCfg.revz.transport;
+			if (tr.port === undefined)
+				tr.port = 49152;
+			if (tr.host === undefined)
+				tr.host = 'localhost';
+			if (tr.kind === 'python') {
+				if (tr.autoStart === undefined)
+					tr.autoStart = true;
+				if (tr.baud === undefined)
+					tr.baud = 460800;
+				if (tr.bridge)
+					tr.bridge = Utility.getAbsFilePath(UnifiedPath.getUnifiedPath(tr.bridge), rootFolder);
+			}
+			// Mirror into trs80 so connectSocket()/onConnect() (inherited)
+			// find hostname/port/timeout without knowing about revz.
+			launchCfg.trs80.hostname = tr.host;
+			launchCfg.trs80.port = tr.port;
+			launchCfg.trs80.useMock = false;
+			if (launchCfg.revz.socketTimeout)
+				launchCfg.trs80.socketTimeout = launchCfg.revz.socketTimeout;
+		}
 
 		// trs80 emulator config
 		if (launchCfg.trs80.emulator) {
@@ -1386,7 +1462,7 @@ export class Settings {
 
 		// Check remote type
 		const rType = Settings.launch.remoteType;
-		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame', 'trs80gp', 'trs80sim'];
+		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame', 'trs80gp', 'trs80sim', 'revz'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("'remoteType': Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");

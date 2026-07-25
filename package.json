@@ -426,7 +426,8 @@
 									"zxnext",
 									"mame",
 									"trs80gp",
-									"trs80sim"
+									"trs80sim",
+									"revz"
 								],
 								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'zxnext', 'zsim' (internal Z80 simulator) or 'trs80sim' (internal TRS-80 simulator). Note: Certain features or properties are not available in all types.",
 								"default": "zsim"
@@ -1115,6 +1116,77 @@
 										"default": true
 									}
 								}
+							},
+							"revz": {
+								"description": "The configuration for the TRS-80 Rev Z FPGA machine, or a real TRS-80 behind a hardware dongle. Not an emulator; speaks the same debug protocol via a bridge or the on-board ESP32 debug server.",
+								"type": "object",
+								"additionalProperties": false,
+								"properties": {
+									"target": {
+										"type": "string",
+										"enum": ["fpga", "physical"],
+										"description": "The machine being debugged. 'fpga' = the RTL machine on the ULX3S (default). 'physical' = a real TRS-80 behind a dongle.",
+										"default": "fpga"
+									},
+									"dongle": {
+										"type": "string",
+										"enum": ["fpga", "physical"],
+										"description": "What hosts the debug core. 'fpga' = the debug core in the ULX3S (default). 'physical' = a dedicated dongle board.",
+										"default": "fpga"
+									},
+									"attachTo": {
+										"type": "string",
+										"enum": ["expansionInterface", "mainboard"],
+										"description": "Where the dongle attaches on a physical target (only when target='physical')."
+									},
+									"socketTimeout": {
+										"type": "number",
+										"description": "Seconds to wait for the debug server to accept a connection. Default 5."
+									},
+									"transport": {
+										"type": "object",
+										"additionalProperties": false,
+										"description": "How the debugger reaches the debug core.",
+										"properties": {
+											"kind": {
+												"type": "string",
+												"enum": ["python", "esp32", "serial"],
+												"description": "'python' = a local bridge (tools/trszog_bridge.py) over serial; started for you when autoStart is on. 'esp32' = connect over the network to the on-board debug server. 'serial' = reserved for a future direct client.",
+												"default": "python"
+											},
+											"host": {
+												"type": "string",
+												"description": "Host of the debug server. Default localhost.",
+												"default": "localhost"
+											},
+											"port": {
+												"type": "number",
+												"description": "Port of the debug server. Default 49152.",
+												"default": 49152
+											},
+											"autoStart": {
+												"type": "boolean",
+												"description": "kind='python' only: start the bridge if nothing is already listening on the port. A bridge you started yourself is left alone. Default true.",
+												"default": true
+											},
+											"bridge": {
+												"type": "string",
+												"description": "kind='python' only: path to tools/trszog_bridge.py in your trs80-rev-z checkout (required when autoStart is on)."
+											},
+											"serial": {
+												"type": "string",
+												"description": "kind='python' only: the dongle's serial device, e.g. /dev/cu.usbserial-XXXX."
+											},
+											"baud": {
+												"type": "number",
+												"description": "kind='python' only: serial baud rate. Default 460800.",
+												"default": 460800
+											}
+										},
+										"required": ["kind"]
+									}
+								},
+								"required": ["transport"]
 							},
 							"unitTests": {
 								"description": "Whether the configuration contains the unit tests or not. Default: false.",
