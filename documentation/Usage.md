@@ -222,6 +222,7 @@ A typical configuration looks like this:
     - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [ZX Next / Serial Interface](#zx-next--serial-interface).
     - "trs80gp": Use the external trs80gp TRS-80 emulator via its JSON-RPC debug interface.
     - "trs80sim": Use the internal TRS-80 simulator (in-process, no external emulator needed).
+    - "revz": Debug the **TRS-80 Rev Z FPGA machine** (or a real TRS-80 behind a hardware dongle) — real hardware, not an emulator. See [TRS-80 remotes](#trs-80-remotes-revz-trs80gp-trs80sim).
 - [sjasmplus] (or z80asm or z88dk): The assembled configuration. An array of list files. (Or in case of sjasmplus: sld files.) Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Assembler Configuration](#assembler-configuration) section.
@@ -617,6 +618,62 @@ They are distinguished via the "remoteType":
 - "mame": MAME emulator.
 - "trs80gp": trs80gp TRS-80 emulator (external, via JSON-RPC socket).
 - "trs80sim": Internal TRS-80 simulator (in-process, based on Lawrence Kesteloot's TypeScript emulator). Configured via the "trs80sim" property ("model": 1 or 3). Loads ".cmd" executables; see the README's TRS-80 sections.
+- "revz": The TRS-80 Rev Z FPGA machine, or a real TRS-80 behind a hardware dongle. Real hardware, not an emulator. Configured via the "revz" property (see below).
+
+
+### TRS-80 remotes (revz, trs80gp, trs80sim)
+
+Three remotes target the TRS-80, and they differ in *what* runs the code:
+
+| remoteType | Runs the code | Needs |
+| :--------- | :------------ | :---- |
+| `trs80sim` | an emulator inside DeZog | nothing external |
+| `trs80gp`  | the external trs80gp emulator | the trs80gp app |
+| `revz`     | a **real machine** — the Rev Z FPGA (or a real TRS-80 via a dongle) | the hardware + a transport |
+
+All three speak the same debug protocol, so breakpoints, stepping,
+registers, memory and the call stack work identically. `revz` is the only
+one that debugs actual silicon.
+
+#### revz — debugging real hardware
+
+`revz` reaches the machine's debug core through a *transport*. It does **not**
+launch an emulator and never falls back to a mock. Minimal config:
+
+```jsonc
+"remoteType": "revz",
+"revz": {
+    "target": "fpga",          // fpga (the RTL machine) | physical (a real TRS-80)
+    "dongle": "fpga",          // fpga (debug core in the FPGA) | physical (a dongle board)
+    "transport": {
+        "kind": "python",                     // python | esp32 | serial
+        "serial": "/dev/cu.usbserial-XXXX",   // the board's FTDI serial device
+        "bridge": "/path/to/trs80-rev-z/tools/trszog_bridge.py",
+        "autoStart": true                     // start the bridge if none is running
+    }
+}
+```
+
+Transports:
+
+- **`python`** (default): a small bridge (`tools/trszog_bridge.py`, shipped in
+  the trs80-rev-z repository) translates DeZog's JSON-RPC to the debug core's
+  binary protocol over the board's serial port. With `autoStart: true`, the
+  remote **starts the bridge for you** — but only if nothing is already
+  listening on the port; a bridge you started by hand is left alone and simply
+  connected to, and only a bridge the remote started is stopped at the end.
+  Requires `bridge` (path to the script) and `serial` (the device); `baud`
+  defaults to 460800.
+- **`esp32`**: connect over the network to the on-board ESP32 debug server —
+  set `host` and `port`; nothing is spawned.
+- **`serial`**: reserved for a future client that speaks the binary protocol
+  directly.
+
+Optional keys: `attachTo` (`expansionInterface` | `mainboard`, only when
+`target: physical`), `host`/`port` (default `localhost:49152`), `socketTimeout`
+(default 5 s). The debug protocol itself — both the JSON-RPC layer and the
+binary wire protocol — is documented in `docs/DEBUG-PROTOCOL.md` in the
+trs80-rev-z repository, so you can also drive the core with a different client.
 
 
 ### What is a 'Remote'?
