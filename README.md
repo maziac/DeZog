@@ -2,7 +2,7 @@
 
 > **A source-level Z80 debugger for the TRS-80 Model I/III, inside Visual Studio Code.**
 
-`trszog` ([TechPrototyper/trszog](https://github.com/TechPrototyper/trszog)) is a fork of [maziac/DeZog](https://github.com/maziac/DeZog) that adds first-class **TRS-80** support — via the [trs80gp](http://48k.ca/trs80gp.html) emulator, via a **built-in in-process TRS-80 simulator** (`remoteType: "trs80sim"`, based on [Lawrence Kesteloot's](https://github.com/lkesteloot/trs80) open-source TypeScript emulator), and with the [zmac](http://48k.ca/zmac.html) assembler — while leaving every existing DeZog remote (ZEsarUX, CSpect, MAME, internal simulator) fully intact. Full credit for the underlying debugger goes to Thomas Busse (maziac); see [Acknowledgements](#acknowledgements).
+`trszog` ([TechPrototyper/trszog](https://github.com/TechPrototyper/trszog)) is a fork of [maziac/DeZog](https://github.com/maziac/DeZog) that adds first-class **TRS-80** support — a **built-in in-process TRS-80 simulator** (`remoteType: "trs80sim"`, based on [Lawrence Kesteloot's](https://github.com/lkesteloot/trs80) open-source TypeScript emulator) and the [zmac](http://48k.ca/zmac.html) assembler, with a [trs80gp](http://48k.ca/trs80gp.html) emulator path in preparation — while leaving every existing DeZog remote (ZEsarUX, CSpect, MAME, internal simulator) fully intact. Full credit for the underlying debugger goes to Thomas Busse (maziac); see [Acknowledgements](#acknowledgements).
 
 ## Status: Release Candidate
 
@@ -12,10 +12,11 @@
 
 *A real trszog session: a homebrew TRS-80 **Space Invaders** halted at a source-level breakpoint in its main loop (`CALL UpdateFormation`), with the full Z80 register set — label-resolved, e.g. `IX = CUR_TMPL`, `PC = MainLoop+6` — the call stack, and the running game on the built-in TRS-80 screen at right. No external emulator, no socket: everything you see is inside the extension. Every TRS-80 screen in this README is real, rendered with the authentic TRS-80 character set.*
 
-There are **two TRS-80 debugging paths** in this fork, both driving the identical DeZog workflow:
+The debugging path that works today:
 
-1. **`trs80sim` — the built-in simulator.** Available now, works out of the box. Based on Lawrence Kesteloot's superb open-source TypeScript TRS-80 emulator (details below).
-2. **`trs80gp` — the reference emulator.** George Phillips' [trs80gp](http://48k.ca/trs80gp.html) is *the* gold standard of TRS-80 emulation, and this fork speaks to a debug interface (JSON-RPC over TCP) that George is building into it. It already works end-to-end against a development build; the interface is not yet part of a public trs80gp release, so this path lights up for everyone the day it ships. Until then it is a preview for those with access — and the built-in simulator means nobody has to wait.
+- **`trs80sim` — the built-in simulator.** Available now, works out of the box. Based on Lawrence Kesteloot's superb open-source TypeScript TRS-80 emulator (details below).
+
+A second path — **`trs80gp`**, George Phillips' [trs80gp](http://48k.ca/trs80gp.html), the gold standard of TRS-80 emulation — is **in preparation** via a JSON-RPC debug interface, and will light up when that interface ships. Until then the built-in simulator means nobody has to wait.
 
 ### Built-in TRS-80 simulator (`trs80sim`) — works out of the box
 
