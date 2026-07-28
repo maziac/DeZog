@@ -135,9 +135,41 @@ The only tool you need besides this extension is George Phillips' [zmac](http://
 
 Tip: with a `preLaunchTask` that runs `zmac -j ${file}` and `${fileBasenameNoExtension}` in the `zmac`/`load` paths, F5 on whatever `.asm` file is open becomes the complete edit–assemble–debug cycle.
 
-## Quickstart: `trs80gp` (Experimental)
+## Quickstart 2: Real Hardware FPGA Debugging (`remoteType: "revz"`) — coming soon
 
-*Note: Experimental protocol support for [trs80gp](http://48k.ca/trs80gp.html) is included in `trszog` for research, but is not currently available in public releases of `trs80gp`. For daily debugging, please use the built-in `trs80sim` simulator (`remoteType: "trs80sim"`), which works out of the box with zero setup.*
+When debugging on actual FPGA hardware (such as the upcoming [TRS-80 Rev Z](https://github.com/TechPrototyper/trs80-rev-z) on the ULX3S), `trszog` uses `remoteType: "revz"`. It connects directly to the virtual debug dongle running in the FPGA via a serial bridge or network transport.
+
+Example `launch.json` configuration for FPGA hardware debugging:
+
+```json
+{
+    "type": "dezog",
+    "request": "launch",
+    "name": "TRS-80 Rev Z (FPGA Hardware)",
+    "remoteType": "revz",
+    "revz": {
+        "target": "fpga",
+        "dongle": "fpga",
+        "transport": {
+            "kind": "python",
+            "serial": "/dev/cu.usbserial-1420",
+            "bridge": "${workspaceFolder}/tools/trszog_bridge.py",
+            "autoStart": true
+        }
+    },
+    "zmac": [
+        {
+            "path": "zout/hello.bds"
+        }
+    ],
+    "load": "zout/hello.cmd",
+    "topOfStack": "0x8000",
+    "rootFolder": "${workspaceFolder}",
+    "startAutomatically": false
+}
+```
+
+On launch, `trszog` automatically brings up the debug transport bridge, connects to the debug co-core in the FPGA, loads the `.cmd` executable and `.bds` symbols, and halts the live Z80 CPU at your entry point — allowing hardware breakpoints, live register edits, and single-stepping directly on real silicon!
 
 ### A real debugging session: [TRS-80 Space Invaders](https://github.com/TechPrototyper/trs80-space-invaders)
 
