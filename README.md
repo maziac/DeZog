@@ -2,7 +2,7 @@
 
 > **A source-level Z80 debugger for the TRS-80 Model I/III, inside Visual Studio Code.**
 
-`trszog` ([TechPrototyper/trszog](https://github.com/TechPrototyper/trszog)) is a fork of [maziac/DeZog](https://github.com/maziac/DeZog) that adds first-class **TRS-80** support — a **built-in in-process TRS-80 simulator** (`remoteType: "trs80sim"`, based on [Lawrence Kesteloot's](https://github.com/lkesteloot/trs80) open-source TypeScript emulator) and the [zmac](http://48k.ca/zmac.html) assembler, with a [trs80gp](http://48k.ca/trs80gp.html) emulator path in preparation — while leaving every existing DeZog remote (ZEsarUX, CSpect, MAME, internal simulator) fully intact. Full credit for the underlying debugger goes to Thomas Busse (maziac); see [Acknowledgements](#acknowledgements).
+`trszog` ([TechPrototyper/trszog](https://github.com/TechPrototyper/trszog)) is a fork of [maziac/DeZog](https://github.com/maziac/DeZog) that adds first-class **TRS-80** support — a **built-in in-process TRS-80 simulator** (`remoteType: "trs80sim"`, based on [Lawrence Kesteloot's](https://github.com/lkesteloot/trs80) open-source TypeScript emulator) and the [zmac](http://48k.ca/zmac.html) assembler, with experimental [trs80gp](http://48k.ca/trs80gp.html) support and upcoming FPGA hardware debugging — while leaving every existing DeZog remote (ZEsarUX, CSpect, MAME, internal simulator) fully intact. Full credit for the underlying debugger goes to Thomas Busse (maziac); see [Acknowledgements](#acknowledgements).
 
 ## Status: Release Candidate
 
@@ -10,13 +10,13 @@
 
 ![Debugging TRS-80 Space Invaders in trszog — halted at a source breakpoint with the live game screen, full Z80 registers and call stack](documentation/images/trs80sim/debug-session.png)
 
-*A real trszog session: a homebrew TRS-80 **Space Invaders** halted at a source-level breakpoint in its main loop (`CALL UpdateFormation`), with the full Z80 register set — label-resolved, e.g. `IX = CUR_TMPL`, `PC = MainLoop+6` — the call stack, and the running game on the built-in TRS-80 screen at right. No external emulator, no socket: everything you see is inside the extension. Every TRS-80 screen in this README is real, rendered with the authentic TRS-80 character set.*
+*A real trszog session: a homebrew [TRS-80 Space Invaders](https://github.com/TechPrototyper/trs80-space-invaders) halted at a source-level breakpoint in its main loop (`CALL UpdateFormation`), with the full Z80 register set — label-resolved, e.g. `IX = CUR_TMPL`, `PC = MainLoop+6` — the call stack, and the running game on the built-in TRS-80 screen at right. No external emulator, no socket: everything you see is inside the extension. Every TRS-80 screen in this README is real, rendered with the authentic TRS-80 character set.*
 
-The debugging path that works today:
+The debugging paths:
 
 - **`trs80sim` — the built-in simulator.** Available now, works out of the box. Based on Lawrence Kesteloot's superb open-source TypeScript TRS-80 emulator (details below).
-
-A second path — **`trs80gp`**, George Phillips' [trs80gp](http://48k.ca/trs80gp.html), the gold standard of TRS-80 emulation — is **in preparation** via a JSON-RPC debug interface, and will light up when that interface ships. Until then the built-in simulator means nobody has to wait.
+- **Real Hardware FPGA Debugging (`trs80-rev-z`).** Hardware debugging via a dedicated virtual debug dongle core in FPGA, enabling live Z80 debugging on physical silicon directly from VS Code (coming soon).
+- **`trs80gp` (Experimental).** George Phillips' [trs80gp](http://48k.ca/trs80gp.html) is the gold standard of TRS-80 emulation; experimental protocol support is included in `trszog`.
 
 ### Built-in TRS-80 simulator (`trs80sim`) — works out of the box
 
@@ -38,7 +38,7 @@ A second path — **`trs80gp`**, George Phillips' [trs80gp](http://48k.ca/trs80g
 <img src="documentation/images/trs80sim/space-invaders-splash.png" width="49%" alt="Space Invaders splash screen running under the debugger">
 </p>
 
-*The TRS-80 screen panel next to your code: a homebrew Space Invaders running in the built-in simulator — full invader formation, bunkers, player cannon (left), and its title screen (right). Both are live in a VS Code debug session; click the panel and your keystrokes go straight to the emulated machine.*
+*The TRS-80 screen panel next to your code: a homebrew [TRS-80 Space Invaders](https://github.com/TechPrototyper/trs80-space-invaders) running in the built-in simulator — full invader formation, bunkers, player cannon (left), and its title screen (right). Both are live in a VS Code debug session; click the panel and your keystrokes go straight to the emulated machine.*
 
 Example `launch.json` configuration:
 
@@ -65,25 +65,22 @@ Example `launch.json` configuration:
 
 On launch the simulator boots the Level II ROM briefly (so system vectors exist, mirroring what a real machine would have done), loads the `.cmd` blocks directly into memory, sets PC to the transfer address and SP from `topOfStack`, and stops at the entry point.
 
-### The trs80gp path — the reference emulator (preview)
+### Reference Emulator: `trs80gp` (Experimental)
 
-For cycle-exact, hardware-grade emulation across the whole TRS-80 family, the target is George Phillips' [trs80gp](http://48k.ca/trs80gp.html). Everything below has been verified live against a development build that carries the new debug interface:
+George Phillips' [trs80gp](http://48k.ca/trs80gp.html) is universally recognized as the gold standard of TRS-80 emulation — cycle-exact, covering the entire model family. An experimental protocol for remote debugging `trs80gp` is included in `trszog`, yet this has not been released by George and perhaps won't be. As the whole idea of a modern toolchain sprang from integrating VS Code with zmac and trs80gp, this reference is mandatory; however, possibly not available for users for the time being.
 
-| Capability | Status |
-|---|---|
-| Launch the emulator, load a `.cmd` program natively | ✅ works |
-| Source-mapped breakpoints from zmac `.bds` files | ✅ works |
-| Step into / over / out, continue, pause | ✅ works |
-| Register view, memory view & **edit** | ✅ works |
-| Callstack, watches, hover, disassembly | ✅ works (inherited from DeZog) |
-| Register **edit** from VS Code | ⏳ blocked by an issue in the debug interface |
-| Memory watchpoints (DeZog `WPMEM`) | ⏳ needs debug-interface support |
+### Real Hardware Debugging: TRS-80 Rev Z (FPGA) — Teaser & Coming Soon!
 
-The debug interface exists today only in that **development version** — it is **not yet released, not currently authorized for distribution, and not generally available.** A few rough edges in this early interface are absorbed transparently by client-side workarounds, so the integration already works end-to-end wherever the interface is present. This is no longer a blocker for using trszog — the built-in simulator covers the daily workflow — but it remains the exciting next stage: the same `launch.json`, pointed at the most faithful TRS-80 emulation there is.
+Beyond software emulation, `trszog` provides first-class support for **debugging on real FPGA hardware**.
 
-### Roadmap: a virtual TRS-80 on FPGA
+Coming soon, an FPGA-based TRS-80 Model 1 [TRS-80 Rev Z](https://github.com/TechPrototyper/trs80-rev-z) (Cat. No. 26-2026 — *"The last revision of the Model 1. The one Tandy never built"*) brings an open, fully expanded TRS-80 Model I rebuild to the FPGA, starting with the [ULX3S](https://radiona.org/ulx3s/) based on the Lattice ECP5 and and the Open Source Toolchain which became possible through Project Trellis.
 
-Beyond emulation, a hardware-accurate **virtual TRS-80 on FPGA** is in preparation — targeting the [ULX3S](https://radiona.org/ulx3s/) (Lattice ECP5) board first, with [MiSTer](https://github.com/MiSTer-devel/Main_MiSTer/wiki) and possibly further platforms to follow. It is intended to ship with a **compatible debug adapter** so that the *exact same* DeZog workflow — source-mapped breakpoints, stepping, register and memory inspection — drives real FPGA silicon over the same debug protocol. In DeZog terms an FPGA target is simply another "remote", which is precisely why this fork stays additive on top of upstream rather than diverging from it.
+**What's coming soon:**
+- **Full Setup Real Hardware**: An authentic Model I architecture featuring 48 KB RAM, Level II BASIC 1.3, Expansion Interface, and a dual-controller (WD1771/1791) FDC supporting mixed-density floppy disk drives — booting TRSDOS 2.3 and NEWDOS/80 2.0 directly from SD card with HDMI output and USB keyboard support.
+- **Virtual Debug Co-Core / Dongle**: Incorporates a RISC-V softcore running alongside the Z80 CPU as a dedicated virtual debug co-processor. This co-core acts as an embedded hardware debug adapter, providing hardware breakpoints, single-stepping, memory/register inspection without halting the target system, and cycle-exact bus tracing.
+- **Direct `trszog` Integration**: Press **F5 in Visual Studio Code** to halt, single-step, and inspect your Z80 assembly code directly on physical FPGA silicon!
+
+In `trszog`, an FPGA target is seamlessly handled as another remote type, keeping the developer experience identical between local in-process simulation and real FPGA hardware.
 
 ---
 
@@ -138,9 +135,9 @@ The only tool you need besides this extension is George Phillips' [zmac](http://
 
 Tip: with a `preLaunchTask` that runs `zmac -j ${file}` and `${fileBasenameNoExtension}` in the `zmac`/`load` paths, F5 on whatever `.asm` file is open becomes the complete edit–assemble–debug cycle.
 
-## Quickstart 2: trs80gp (requires the debug-enabled build)
+## Quickstart 2: `trs80gp` (Experimental)
 
-Same workflow, different `remoteType` — pointed at a running/auto-started trs80gp with the debug interface (see the status note above for availability).
+For experimental setups with `trs80gp`, `trszog` includes configuration support to connect via JSON-RPC:
 
 Example `launch.json` configuration:
 
@@ -148,7 +145,7 @@ Example `launch.json` configuration:
 {
     "type": "dezog",
     "request": "launch",
-    "name": "TRS-80 Space Invaders",
+    "name": "TRS-80 (trs80gp)",
     "remoteType": "trs80gp",
     "trs80": {
         "port": 49152,
@@ -169,18 +166,16 @@ Example `launch.json` configuration:
 }
 ```
 
-On launch, DeZog starts the emulator, connects via JSON-RPC, loads the `.cmd` program and the `.bds` symbols. Breakpoints, stepping, register/memory views and watches then work as with the other remotes. A mock server for development without the real emulator is included (`trs80.useMock: true`).
+A mock server for development without an external process is included (`trs80.useMock: true`).
 
-### A real debugging session: TRS-80 Space Invaders
+### A real debugging session: [TRS-80 Space Invaders](https://github.com/TechPrototyper/trs80-space-invaders)
 
-Here is what an actual session against the game looks like — this is the workflow the fork was validated with (concrete addresses vary from build to build, since zmac re-lays-out the binary on each assembly; the point is the *mechanism*):
+Here is what an actual session against the game looks like using source-mapped debugging in `trszog` (concrete addresses vary from build to build, since zmac re-lays-out the binary on each assembly; the point is the *mechanism*):
 
-1. **Stop at the entry point.** DeZog reads the transfer/entry address out of the `.cmd` file (e.g. `0x5200`) and arms a breakpoint there *before* the program is launched. The CPU halts on the first instruction of your code, and VS Code opens `space_invaders.asm` at that line — not a raw disassembly. Source mapping is live from instruction zero.
-2. **Set a source breakpoint.** Click the gutter next to, say, the formation-update routine (`UpdateFormation`). DeZog resolves the label through the zmac `.bds` file to its long address and arms it on the emulator. Press **Continue**; the game boots into its title screen.
+1. **Stop at the entry point.** `trszog` reads the transfer/entry address out of the `.cmd` file (e.g. `0x5200`) and arms a breakpoint there *before* the program is launched. The CPU halts on the first instruction of your code, and VS Code opens `space_invaders.asm` at that line — not a raw disassembly. Source mapping is live from instruction zero.
+2. **Set a source breakpoint.** Click the gutter next to, say, the formation-update routine (`UpdateFormation`). `trszog` resolves the label through the zmac `.bds` file to its long address and arms it. Press **Continue**; the game boots into its title screen.
 3. **Trigger it.** The title screen waits for the SPACE key; the game starts, and the moment the alien formation advances, the breakpoint fires. VS Code shows the halted PC on the exact source line, the full Z80 register set, the callstack, and any watches.
 4. **Inspect and step.** Hover `HL` to see the pointer and its label; open a memory view over the sprite buffer; single-step (`stepInto` / `stepOver`) instruction-by-instruction and watch the R register increment and registers change in real time. Poke a value with the memory editor and continue.
-
-Everything above is exercised end-to-end against the development build of the emulator over its debug interface.
 
 ---
 
@@ -201,7 +196,8 @@ DeZog facilitates the debugging of Z80 assembler programs using Visual Studio Co
 
 DeZog needs a "[Remote](documentation/Usage.md#remote-types)" to  execute the Z80 binaries. You can either use the built-in Z80/ZX simulator or connect to [ZEsarUX], [CSpect] or [MAME] via a socket connection for more advanced projects.
 
-Note: DeZog itself does not include any support for building from assembler sources. For this you need a build task and an assembler. For an example look into one of the 2 example projects:
+Note: DeZog itself does not include any support for building from assembler sources. For this you need a build task and an assembler. For example projects, see:
+- [trs80-space-invaders](https://github.com/TechPrototyper/trs80-space-invaders) (TRS-80 Model I/III Z80 assembly)
 - [z80-sample-program] (ZXSpectrum)
 - [zx81-sample-program]
 
@@ -347,7 +343,7 @@ If you would like to contact me beforehand you can create a new issue in github 
 This fork exists because three people built extraordinary things and shared them:
 
 - **[Thomas Busse (maziac)](https://github.com/maziac)** created **DeZog** — and it cannot be overstated what that means for anyone writing Z80 assembly. Source-level stepping that lands on the exact instruction; conditional breakpoints, logpoints and `ASSERTION`s; memory watchpoints; live register and memory views you can *edit* while stopped; call stacks reconstructed from raw stack memory; hover evaluation; smart disassembly; flow charts and call graphs at the cursor; a unit-test framework for assembler, of all things. This is IDE-grade tooling of a quality the 8-bit world simply did not have — and every bit of it now works for TRS-80 programmers, unchanged, because DeZog's architecture made "just add another remote" possible. Thomas: we hope seeing Tandy machines join the ZX family in your debugger is as delightful for you as building on your work was for us.
-- **[George Phillips](http://48k.ca)** is the author of **trs80gp**, the reference emulator of the TRS-80 world — cycle-exact, covering the entire model line, and the standard against which everything else (including our simulator path) is measured — and of **zmac**, the assembler whose `.bds` output provides the source mapping this whole debugging experience hangs on. Every breakpoint you set in a `.asm` line resolves through George's toolchain. The upcoming trs80gp debug interface, built in collaboration for this project, will bring DeZog's full workflow to the most faithful TRS-80 emulation there is.
+- **[George Phillips](http://48k.ca)** is the author of **trs80gp**, the reference emulator of the TRS-80 world — cycle-exact, covering the entire model line, and the standard against which everything else (including our simulator path) is measured — and of **zmac**, the assembler whose `.bds` output provides the source mapping this whole debugging experience hangs on. Every breakpoint you set in a `.asm` line resolves through George's toolchain. We are deeply grateful for his contributions and toolchain excellence.
 - **[Lawrence Kesteloot](https://github.com/lkesteloot)** wrote the **TypeScript TRS-80 emulator** ([lkesteloot/trs80](https://github.com/lkesteloot/trs80)) that powers the built-in `trs80sim` remote — a beautifully engineered, MIT-licensed machine: clean HAL architecture, inline ROMs, an instruction-precise CPU core, and the authentic screen renderer you see in the screenshots above. We embedded it **without changing a single line of its code** — the highest compliment an architecture can receive. If you enjoy the zero-setup debugging in this fork, you are enjoying Lawrence's emulator.
 
 Two of these names — George and Lawrence — are among the most important in the TRS-80 preservation and retro scene. This fork is meant as a tribute to their work, not a replacement for it: go use trs80gp, go explore [trs80.dev](https://www.trs80.dev), and if trszog brings a few more people to Tandy assembly programming, it has done its job.
