@@ -2,7 +2,7 @@
 
 > **A source-level Z80 debugger for the TRS-80 Model I/III, inside Visual Studio Code.**
 
-`trszog` ([TechPrototyper/trszog](https://github.com/TechPrototyper/trszog)) is a fork of [maziac/DeZog](https://github.com/maziac/DeZog) that adds first-class **TRS-80** support — a **built-in in-process TRS-80 simulator** (`remoteType: "trs80sim"`, based on [Lawrence Kesteloot's](https://github.com/lkesteloot/trs80) open-source TypeScript emulator) and the [zmac](http://48k.ca/zmac.html) assembler, with experimental [trs80gp](http://48k.ca/trs80gp.html) support and upcoming FPGA hardware debugging — while leaving every existing DeZog remote (ZEsarUX, CSpect, MAME, internal simulator) fully intact. Full credit for the underlying debugger goes to Thomas Busse (maziac); see [Acknowledgements](#acknowledgements).
+`trszog` ([TechPrototyper/trszog](https://github.com/TechPrototyper/trszog)) is a fork of [maziac/DeZog](https://github.com/maziac/DeZog) that adds first-class **TRS-80** support — a **built-in in-process TRS-80 simulator** (`remoteType: "trs80sim"`, based on [Lawrence Kesteloot's](https://github.com/lkesteloot/trs80) open-source TypeScript emulator) and the [zmac](http://48k.ca/zmac.html) assembler, with upcoming FPGA hardware debugging and experimental [trs80gp](http://48k.ca/trs80gp.html) support — while leaving every existing DeZog remote (ZEsarUX, CSpect, MAME, internal simulator) fully intact. Full credit for the underlying debugger goes to Thomas Busse (maziac); see [Acknowledgements](#acknowledgements).
 
 ## Status: Release Candidate
 
@@ -15,7 +15,7 @@
 The debugging paths:
 
 - **`trs80sim` — the built-in simulator.** Available now, works out of the box. Based on Lawrence Kesteloot's superb open-source TypeScript TRS-80 emulator (details below).
-- **Real Hardware FPGA Debugging (`trs80-rev-z`).** Hardware debugging via a dedicated virtual debug dongle core in FPGA, enabling live Z80 debugging on physical silicon directly from VS Code (coming soon).
+- **Real Hardware FPGA Debugging (`trs80-rev-z`) — coming very soon!** Hardware debugging via a dedicated virtual debug dongle core in FPGA, enabling live Z80 source-level debugging on physical silicon directly from VS Code (read below for full details on what's coming).
 - **`trs80gp` (Experimental).** George Phillips' [trs80gp](http://48k.ca/trs80gp.html) is the gold standard of TRS-80 emulation; experimental protocol support is included in `trszog`.
 
 ### Built-in TRS-80 simulator (`trs80sim`) — works out of the box
@@ -65,15 +65,11 @@ Example `launch.json` configuration:
 
 On launch the simulator boots the Level II ROM briefly (so system vectors exist, mirroring what a real machine would have done), loads the `.cmd` blocks directly into memory, sets PC to the transfer address and SP from `topOfStack`, and stops at the entry point.
 
-### Reference Emulator: `trs80gp` (Experimental)
-
-George Phillips' [trs80gp](http://48k.ca/trs80gp.html) is universally recognized as the gold standard of TRS-80 emulation — cycle-exact, covering the entire model family. An experimental protocol for remote debugging `trs80gp` is included in `trszog`, yet this has not been released by George and perhaps won't be. As the whole idea of a modern toolchain sprang from integrating VS Code with zmac and trs80gp, this reference is mandatory; however, possibly not available for users for the time being.
-
 ### Real Hardware Debugging: TRS-80 Rev Z (FPGA) — Teaser & Coming Soon!
 
 Beyond software emulation, `trszog` provides first-class support for **debugging on real FPGA hardware**.
 
-Coming soon, an FPGA-based TRS-80 Model 1 [TRS-80 Rev Z](https://github.com/TechPrototyper/trs80-rev-z) (Cat. No. 26-2026 — *"The last revision of the Model 1. The one Tandy never built"*) brings an open, fully expanded TRS-80 Model I rebuild to the FPGA, starting with the [ULX3S](https://radiona.org/ulx3s/) based on the Lattice ECP5 and and the Open Source Toolchain which became possible through Project Trellis.
+Coming soon, an FPGA-based TRS-80 Model 1 [TRS-80 Rev Z](https://github.com/TechPrototyper/trs80-rev-z) (Cat. No. 26-2026 — *"The last revision of the Model 1. The one Tandy never built"*) brings an open, fully expanded TRS-80 Model I rebuild to the FPGA, starting with the [ULX3S](https://radiona.org/ulx3s/) based on the Lattice ECP5 and the Open Source Toolchain which became possible through Project Trellis.
 
 **What's coming soon:**
 - **Full Setup Real Hardware**: An authentic Model I architecture featuring 48 KB RAM, Level II BASIC 1.3, Expansion Interface, and a dual-controller (WD1771/1791) FDC supporting mixed-density floppy disk drives — booting TRSDOS 2.3 and NEWDOS/80 2.0 directly from SD card with HDMI output and USB keyboard support.
@@ -81,6 +77,10 @@ Coming soon, an FPGA-based TRS-80 Model 1 [TRS-80 Rev Z](https://github.com/Tech
 - **Direct `trszog` Integration**: Press **F5 in Visual Studio Code** to halt, single-step, and inspect your Z80 assembly code directly on physical FPGA silicon!
 
 In `trszog`, an FPGA target is seamlessly handled as another remote type, keeping the developer experience identical between local in-process simulation and real FPGA hardware.
+
+### Reference Emulator: `trs80gp` (Experimental)
+
+George Phillips' [trs80gp](http://48k.ca/trs80gp.html) is universally recognized as the gold standard of TRS-80 emulation — cycle-exact, covering the entire model family. An experimental protocol for remote debugging `trs80gp` is included in `trszog`, yet this has not been released by George and perhaps won't be. As the whole idea of a modern toolchain sprang from integrating VS Code with zmac and trs80gp, this reference is mandatory; however, possibly not available for users for the time being.
 
 ---
 
