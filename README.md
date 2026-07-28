@@ -135,38 +135,9 @@ The only tool you need besides this extension is George Phillips' [zmac](http://
 
 Tip: with a `preLaunchTask` that runs `zmac -j ${file}` and `${fileBasenameNoExtension}` in the `zmac`/`load` paths, F5 on whatever `.asm` file is open becomes the complete edit–assemble–debug cycle.
 
-## Quickstart 2: `trs80gp` (Experimental)
+## Quickstart: `trs80gp` (Experimental)
 
-For experimental setups with `trs80gp`, `trszog` includes configuration support to connect via JSON-RPC:
-
-Example `launch.json` configuration:
-
-```json
-{
-    "type": "dezog",
-    "request": "launch",
-    "name": "TRS-80 (trs80gp)",
-    "remoteType": "trs80gp",
-    "trs80": {
-        "port": 49152,
-        "emulator": {
-            "path": "/path/to/trs80gp.app/Contents/MacOS/trs80gp",
-            "model": 3,
-            "autoStart": true
-        }
-    },
-    "zmac": [
-        {
-            "path": "zout/space_invaders.bds"
-        }
-    ],
-    "load": "zout/space_invaders.cmd",
-    "rootFolder": "${workspaceFolder}",
-    "startAutomatically": false
-}
-```
-
-A mock server for development without an external process is included (`trs80.useMock: true`).
+*Note: Experimental protocol support for [trs80gp](http://48k.ca/trs80gp.html) is included in `trszog` for research, but is not currently available in public releases of `trs80gp`. For daily debugging, please use the built-in `trs80sim` simulator (`remoteType: "trs80sim"`), which works out of the box with zero setup.*
 
 ### A real debugging session: [TRS-80 Space Invaders](https://github.com/TechPrototyper/trs80-space-invaders)
 
