@@ -1,4 +1,4 @@
-> Thomas: Let's talk about altering README to include the three (two plus one in the pipe) TRS-80 Targets
+> Thomas: Let's talk about altering README to include the three (two plus one in the pipe) TRS-80 Targets. (See our proposed README layout in the [TechPrototyper/trszog README](https://github.com/TechPrototyper/trszog#readme)).
 
 # Support
 
