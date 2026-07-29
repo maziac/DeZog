@@ -281,7 +281,7 @@ These are the options:
 - the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable is version 12.1. Versions older than 10.3 are not compatible.)
 - [MAME](https://www.mamedev.org/release.html) (known to be interoperable is version 0.242)
 
-Note: The version numbers given here are versions that I have used myself. Newer versions probably also work.
+Note: The version numbers given here are versions tested upstream by Thomas Busse. Newer versions probably also work.
 
 The different DeZog/emulator configurations have different advantages.
 But which one you choose mainly depends on your personal preference.
@@ -321,10 +321,7 @@ Shouldn't be to hard.
 [S0urceror has done so for OpenMSX](https://www.youtube.com/watch?v=cf4nPzoosAw&feature=youtu.be), so it is doable.
 
 
-You can create a pull request so I can add your sources to the official release. Most probably I will first move them to a new feature branch for testing.
-Please note that all your contributions/sources should be under MIT license.
-
-If you would like to contact me beforehand you can create a new issue in github and we can discuss.
+Contributions are welcome! Feel free to create a pull request or open an issue on GitHub to discuss proposed features. Please note that all contributions should be provided under the MIT license.
 
 
 ## Licenses
@@ -351,7 +348,7 @@ This fork exists because three people built extraordinary things and shared them
 
 Two of these names — George and Lawrence — are among the most important in the TRS-80 preservation and retro scene. This fork is meant as a tribute to their work, not a replacement for it: go use trs80gp, go explore [trs80.dev](https://www.trs80.dev), and if trszog brings a few more people to Tandy assembly programming, it has done its job.
 
-### From the upstream DeZog README
+### Upstream DeZog Acknowledgements (by Thomas Busse)
 
 I would like to express my gratitude to the following individuals for their invaluable support:
 
@@ -372,9 +369,9 @@ I would like to express my gratitude to the following individuals for their inva
 Please note that the tutorials listed here are normally not updated when a new DeZog version arrives.
 Especially for changes in the 'launch.json' it might happen that some properties (names) have changed/removed/added.
 
-If you are writing a tutorial please let me know, I'm happy to list it here. **Any contributions are very welcome.**
+If you have written a tutorial, please open an issue on GitHub to have it listed here. **Any contributions are very welcome.**
 
-The tutorials that I'm aware of are listed here by date.
+The known community tutorials are listed below by date:
 
 ## A Man in his Techno Shed
 
