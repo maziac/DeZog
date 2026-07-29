@@ -1,3 +1,5 @@
+> Thomas: Let's talk about altering README to include the three (two plus one in the pipe) TRS-80 Targets. (See our proposed README layout in the [TechPrototyper/trszog README](https://github.com/TechPrototyper/trszog#readme)).
+
 # Support
 
 If you like DeZog please consider supporting it.
@@ -190,6 +192,7 @@ If you would like to contact me beforehand you can create a new issue in github 
 - ZX81 ROM Copyright © 1981 Nine Tiles - Included with the permission of Nine Tiles
 - ZX Spectrum ROM, "Amstrad have kindly given their permission for the redistribution of their copyrighted material but retain that copyright". See [Amstrad ROM permissions](documentation/amstrad-rom-permissions.txt).
 - [Z80.js](https://bitbucket.org/DrGoldfire/z80.js/src/master/) (Z80 CPU simulator), Molly Howell, MIT license.
+- **[lkesteloot/trs80](https://github.com/lkesteloot/trs80)** — [TypeScript TRS-80 Emulator](https://github.com/lkesteloot/trs80/tree/main/packages/trs80-emulator) (`trs80-emulator`, `z80-emulator`, `z80-base`, `trs80-base`), **Copyright © Lawrence Kesteloot**, MIT License. Powers the built-in `trs80sim` remote, including the TRS-80 ROMs it ships.
 - [vscode-whats-new](https://github.com/alefragnani/vscode-whats-new), Alessandro Fragnani aka [alefragni](https://github.com/alefragnani), MIT license.
 - For the other included SW see the 'dependencies' section in [package.json](https://github.com/maziac/DeZog/blob/main/package.json)
 

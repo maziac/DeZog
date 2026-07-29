@@ -2,6 +2,7 @@
 node_modules/
 out/
 dist/
+!src/remotes/trs80/mock-server/dist/
 npm-debug.log
 /*.vsix
 /*.vsix.zip
@@ -11,3 +12,5 @@ notes.md
 **/.tmp/
 comments.json
 *.cpuprofile
+.DS_Store
+trs80gp-conversation-*.log

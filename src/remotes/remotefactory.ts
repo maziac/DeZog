@@ -5,6 +5,9 @@ import {Utility} from '../misc/utility';
 import {ZesaruxRemote} from './zesarux/zesaruxremote';
 import {ZxNextSerialRemote} from './dzrpbuffer/zxnextserialremote';
 import {MameGdbRemote} from './mame/mamegdbremote';
+import {Trs80RemoteFactory} from './trs80/trs80remote';
+import {Trs80SimRemote} from './trs80/trs80simremote';
+import {RevzRemote} from './trs80/revzremote';
 import {Settings} from '../settings/settings';
 
 
@@ -15,7 +18,7 @@ import {Settings} from '../settings/settings';
 export class RemoteFactory {
 	/**
 	 * Factory method to create an emulator.
-	 * @param remoteType 'zrcp', 'cspect', 'zxnext' or 'zsim'.
+	 * @param remoteType 'zrcp', 'cspect', 'zxnext', 'zsim', 'mame', 'trs80gp' or 'trs80sim'.
 	 */
 	public static createRemote(remoteType: string) {
 		switch (remoteType) {
@@ -33,6 +36,15 @@ export class RemoteFactory {
 				break;
 			case 'mame':
 				RemoteFactory.setGlobalRemote(new MameGdbRemote());
+				break;
+			case 'trs80gp':	// trs80gp emulator (supports multiple TRS-80 models)
+				RemoteFactory.setGlobalRemote(Trs80RemoteFactory.createRemote());
+				break;
+			case 'trs80sim':	// Internal TRS-80 simulator (in-process, Kesteloot emulator)
+				RemoteFactory.setGlobalRemote(new Trs80SimRemote(Settings.launch));
+				break;
+			case 'revz':	// TRS-80 Rev Z FPGA machine (or a real TRS-80 via dongle) — not an emulator
+				RemoteFactory.setGlobalRemote(new RevzRemote());
 				break;
 			default:
 				Utility.assert(false);

@@ -16,6 +16,7 @@ import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {PromiseCallbacks} from '../../misc/promisecallbacks';
 import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../MemoryModel/zxspectrummemorymodels';
 import {MemoryModelZxNextOneROM} from '../MemoryModel/zxnextmemorymodels';
+import {MemoryModelTrs80Model1, MemoryModelTrs80Model3} from '../MemoryModel/trs80memorymodels';
 import {DzrpTransportTest} from './dzrptransporttest';
 import {LogEval} from '../../misc/logeval';
 import {Z80File} from './z80file';
@@ -99,6 +100,8 @@ export enum DzrpMachineType {
 	ZX48K = 2,
 	ZX128K = 3,
 	ZXNEXT = 4,
+	TRS80_MODEL1 = 5,
+	TRS80_MODEL3 = 6,
 }
 
 /** This interface is passed after a break occurs and contains
@@ -255,6 +258,14 @@ export class DzrpRemote extends RemoteBase {
 				case DzrpMachineType.ZXNEXT:
 					// ZxNext: 8x8k banks
 					this.memoryModel = new MemoryModelZxNextOneROM();
+					break;
+				case DzrpMachineType.TRS80_MODEL1:
+					// TRS-80 Model 1: 12KB ROM + Video RAM + 48KB RAM (same layout as Model 3)
+					this.memoryModel = new MemoryModelTrs80Model1();
+					break;
+				case DzrpMachineType.TRS80_MODEL3:
+					// TRS-80 Model 3: 12KB ROM + Video RAM + 48KB RAM
+					this.memoryModel = new MemoryModelTrs80Model3();
 					break;
 				default:
 					// Error: Unknown type
@@ -1445,7 +1456,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/** Loads .nex, .sna or .p files.
+	/** Loads .nex, .sna, .p or .cmd files.
 	 */
 	public async loadBin(filePath: string): Promise<void> {
 		try {
@@ -1459,6 +1470,18 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				await this.loadBinNex(filePath);
 			else if (ext === '.p' || ext === '.81' || ext === '.p81')
 				await this.loadBinZx81(filePath);
+			else if (ext === '.cmd') {
+				// .cmd is a TRS-80 format. trs80sim has its own loadBin() and
+				// never reaches here; this generic path serves the remotes
+				// that share the JSON-RPC loadCmd of Trs80Model1/3Remote: the
+				// trs80gp emulator and the revz FPGA machine / dongle.
+				if (Settings.launch.remoteType === 'trs80gp' || Settings.launch.remoteType === 'revz') {
+					// Delegate to the model-specific implementation which uses JSON-RPC loadCmd
+					await (this as any).sendDzrpCmdLoadObj(filePath);
+				} else {
+					throw Error("CMD files are a TRS-80 format — use remoteType 'revz' (FPGA/dongle), 'trs80gp' (emulator), or 'trs80sim' (internal simulator).");
+				}
+			}
 			else {
 				// Error: unsupported file
 				throw Error("File extension in '" + filePath + "' not supported with remoteType:'" + Settings.launch.remoteType + "'.");
