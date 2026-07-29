@@ -2,11 +2,16 @@
 	"name": "dezog",
 	"displayName": "DeZog - TRS-80 Edition",
 	"version": "3.7.4-rc1-trs80.1",
-	"publisher": "TechPrototyper",
+	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80, ZX Spectrum/ZX81 and TRS-80 — with a built-in TRS-80 simulator (trs80sim) and trs80gp support.",
 	"author": {
-		"name": "Tim Walter"
+		"name": "Thomas Busse"
 	},
+	"contributors": [
+		{
+			"name": "Tim Walter"
+		}
+	],
 	"license": "MIT",
 	"keywords": [
 		"z80",
