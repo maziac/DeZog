@@ -2,7 +2,11 @@
 
 > **A source-level Z80 debugger for the TRS-80 Model I/III, inside Visual Studio Code.**
 
-`trszog` ([TechPrototyper/trszog](https://github.com/TechPrototyper/trszog)) is a fork of [maziac/DeZog](https://github.com/maziac/DeZog) that adds first-class **TRS-80** support — a **built-in in-process TRS-80 simulator** (`remoteType: "trs80sim"`, based on [Lawrence Kesteloot's](https://github.com/lkesteloot/trs80) open-source TypeScript emulator) and the [zmac](http://48k.ca/zmac.html) assembler, **real FPGA hardware debugging** (`remoteType: "revz"`, targeting [trs80-rev-z](https://github.com/TechPrototyper/trs80-rev-z)), and experimental [trs80gp](http://48k.ca/trs80gp.html) support — while leaving every existing DeZog remote (ZEsarUX, CSpect, MAME, internal simulator) fully intact. Full credit for the underlying debugger goes to Thomas Busse (maziac); see [Acknowledgements](#acknowledgements).
+`trszog` ([TechPrototyper/trszog](https://github.com/TechPrototyper/trszog)) is a fork of [maziac/DeZog](https://github.com/maziac/DeZog) by Thomas Busse. It adds first-class **TRS-80** support — a **built-in in-process TRS-80 simulator** (`remoteType: "trs80sim"`, based on [Lawrence Kesteloot's](https://github.com/lkesteloot/trs80) open-source TypeScript emulator) and the [zmac](http://48k.ca/zmac.html) assembler, **real FPGA hardware debugging** (`remoteType: "revz"`, targeting [trs80-rev-z](https://github.com/TechPrototyper/trs80-rev-z)), and experimental [trs80gp](http://48k.ca/trs80gp.html) support — while leaving every existing DeZog remote (ZEsarUX, CSpect, MAME, internal simulator) fully intact. Full credit for the underlying debugger goes to Thomas Busse (maziac); see [Acknowledgements](#acknowledgements--credits-trs-80-edition) below.
+
+> 📌 **Note**: `trszog` sits on top of the original DeZog. For full documentation on upstream features (ZX Spectrum, ZX81, ZX Next, CSpect, ZEsarUX, MAME, unit testing), see the [Original Upstream DeZog README](#dezog--original-upstream-readme-by-thomas-busse) section below.
+
+---
 
 ## Status: Release Candidate
 
@@ -84,45 +88,6 @@ George Phillips' [trs80gp](http://48k.ca/trs80gp.html) is universally recognized
 
 ---
 
-# Support
-
-If you like DeZog please consider supporting it.
-
-<a href="https://github.com/sponsors/maziac" title="Github sponsor">
-	<img src="assets/button_donate_sp.png" />
-</a>
-&nbsp;&nbsp;
-<a href="https://www.paypal.com/donate/?hosted_button_id=K6NNLZCTN3UV4&locale.x=en_DE&Z3JncnB0=" title="PayPal">
-	<img src="assets/button_donate_pp.png" />
-</a>
-
-<!-- References -->
-
-[ASM Code Lens]: https://github.com/maziac/asm-code-lens
-[Z80 Instruction Set]: https://github.com/maziac/z80-instruction-set
-[Hex Hover Converter]: https://github.com/maziac/hex-hover-converter
-[ZX SNA File Viewer]: https://github.com/maziac/sna-fileviewer
-[ZX NEX File Viewer]: https://github.com/maziac/nex-fileviewer
-[ZX81 BASIC to P-File Converter and P-File Viewer]: https://github.com/maziac/zx81-bastop
-
-[z80-sample-program]: https://github.com/maziac/z80-sample-program
-[zx81-sample-program]: https://github.com/maziac/zx81-sample-program
-[z80-peripherals-sample]: https://github.com/maziac/z80-peripherals-sample
-[dezogif]: https://github.com/maziac/dezogif
-[DZRP]: https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md
-
-[zesarux]: https://github.com/chernandezba/zesarux
-[cspect]: http://www.cspect.org
-[mame]: https://www.mamedev.org
-[sjasmplus]: https://github.com/z00m128/sjasmplus
-[savannah-z80asm]: https://savannah.nongnu.org/projects/z80asm/
-[z88dk-z80asm]: https://github.com/z88dk/z88dk
-[NEX File Format]: https://wiki.specnext.dev/NEX_file_format
-[ZX Spectrum Next]: https://www.specnext.com
-[zx next]: https://www.specnext.com
-[zxnext]: https://www.specnext.com
-
-
 # TRS-80 Quickstart
 
 ## Quickstart 1: built-in simulator (`trs80sim`) — built-in emulator
@@ -182,6 +147,25 @@ Here is what an actual session against the game looks like using source-mapped d
 
 ---
 
+# Acknowledgements & Credits (TRS-80 Edition)
+
+### Standing on the shoulders of three giants
+
+This fork exists because three people built extraordinary things and shared them:
+
+- **[Thomas Busse (maziac)](https://github.com/maziac)** created **DeZog** — and it cannot be overstated what that means for anyone writing Z80 assembly. Source-level stepping that lands on the exact instruction; conditional breakpoints, logpoints and `ASSERTION`s; memory watchpoints; live register and memory views you can *edit* while stopped; call stacks reconstructed from raw stack memory; hover evaluation; smart disassembly; flow charts and call graphs at the cursor; a unit-test framework for assembler, of all things. This is IDE-grade tooling of a quality the 8-bit world simply did not have — and every bit of it now works for TRS-80 programmers, unchanged, because DeZog's architecture made "just add another remote" possible. Thomas: we hope seeing Tandy machines join the ZX family in your debugger is as delightful for you as building on your work was for us.
+- **[George Phillips](http://48k.ca)** is the author of **trs80gp**, the reference emulator of the TRS-80 world — cycle-exact, covering the entire model line, and the standard against which everything else (including our simulator path) is measured — and of **zmac**, the assembler whose `.bds` output provides the source mapping this whole debugging experience hangs on. Every breakpoint you set in a `.asm` line resolves through George's toolchain. We are deeply grateful for his contributions and toolchain excellence.
+- **[Lawrence Kesteloot](https://github.com/lkesteloot)** wrote the **TypeScript TRS-80 emulator** ([lkesteloot/trs80](https://github.com/lkesteloot/trs80)) that powers the built-in `trs80sim` remote — a beautifully engineered, MIT-licensed machine: clean HAL architecture, inline ROMs, an instruction-precise CPU core, and the authentic screen renderer you see in the screenshots above. We embedded it **without changing a single line of its code** — the highest compliment an architecture can receive. If you enjoy the zero-setup debugging in this fork, you are enjoying Lawrence's emulator.
+
+Two of these names — George and Lawrence — are among the most important in the TRS-80 preservation and retro scene. This fork is meant as a tribute to their work, not a replacement for it: go use trs80gp, go explore [trs80.dev](https://www.trs80.dev), and if trszog brings a few more people to Tandy assembly programming, it has done its job.
+
+---
+---
+
+# DeZog — Original Upstream README (by Thomas Busse)
+
+> *Below is the original README from [maziac/DeZog](https://github.com/maziac/DeZog), preserved intact for users of DeZog's upstream remotes (ZX Spectrum, ZX81, ZX Next, CSpect, ZEsarUX, MAME).*
+
 ![](documentation/images/main.gif)
 
 The objective of this project is to provide a development environment for Z80 assembler programs that offers similar features to those found in high-level programming languages, such as Eclipse, Visual Studio, or XCode.
@@ -197,7 +181,7 @@ Additionally it offers some ZX Next specific capabilities like displaying sprite
 
 DeZog facilitates the debugging of Z80 assembler programs using Visual Studio Code (vscode) as the development environment. This tool can be used to build programs, step through sources, use labels, watches, memory views, and other useful features. Additionally, it can be used to reverse engineer old Z80 programs, such as ZX Spectrum, ZX81 or MAME arcade games, by debugging and creating commented list files of the program.
 
-DeZog needs a "[Remote](documentation/Usage.md#remote-types)" to  execute the Z80 binaries. You can either use the built-in Z80/ZX simulator or connect to [ZEsarUX], [CSpect] or [MAME] via a socket connection for more advanced projects.
+DeZog needs a "[Remote](documentation/Usage.md#remote-types)" to execute the Z80 binaries. You can either use the built-in Z80/ZX simulator or connect to [ZEsarUX], [CSpect] or [MAME] via a socket connection for more advanced projects.
 
 Note: DeZog itself does not include any support for building from assembler sources. For this you need a build task and an assembler. For example projects, see:
 - [trs80-space-invaders](https://github.com/TechPrototyper/trs80-space-invaders) (TRS-80 Model I/III Z80 assembly)
@@ -271,7 +255,7 @@ Note: DeZog itself does not include any support for building from assembler sour
 
 In order to use DeZog you need at least vscode (Linux, macOS or Windows).
 
-If you are writing pure Z80 programs, simple ZX Spectrum or ZX81 programs this might already be sufficient as you can use the [internal Z80 Simulator](documentation/Usage.md#the-internal-z80-simulator). **For TRS-80 programs the same is true out of the box: the built-in `trs80sim` simulator needs nothing but this extension and the [zmac](http://48k.ca/zmac.html) assembler.**
+If you are writing pure Z80 programs, simple ZX Spectrum or ZX81 programs this might already be sufficient as you can use the [internal Z80 Simulator](documentation/Usage.md#the-internal-z80-simulator).
 
 For more demanding projects you have the choice to install a real emulator.
 
@@ -332,23 +316,11 @@ Contributions are welcome! Feel free to create a pull request or open an issue o
 - ZX Spectrum ROM, "Amstrad have kindly given their permission for the redistribution of their copyrighted material but retain that copyright". See [Amstrad ROM permissions](documentation/amstrad-rom-permissions.txt).
 - [Z80.js](https://bitbucket.org/DrGoldfire/z80.js/src/master/) (Z80 CPU simulator), Molly Howell, MIT license.
 - [lkesteloot/trs80](https://github.com/lkesteloot/trs80) (`trs80-emulator`, `z80-emulator`, `z80-base`, `trs80-base` — the TRS-80 emulator powering the built-in `trs80sim` remote, including the TRS-80 ROMs it ships), Lawrence Kesteloot, MIT license.
-- [vscode-whats-new](https://github.com/alefragnani/vscode-whats-new), Alessandro Fragnani aka [alefragni](https://github.com/alefragnani), MIT license.
+- [vscode-whats-new](https://github.com/alefragnani/vscode-whats-new), Alessandro Fragnani aka [alefragni](https://github.com/alefragni), MIT license.
 - For the other included SW see the 'dependencies' section in [package.json](https://github.com/maziac/DeZog/blob/main/package.json)
 
 
-## Acknowledgements
-
-### Standing on the shoulders of three giants (TRS-80 Edition)
-
-This fork exists because three people built extraordinary things and shared them:
-
-- **[Thomas Busse (maziac)](https://github.com/maziac)** created **DeZog** — and it cannot be overstated what that means for anyone writing Z80 assembly. Source-level stepping that lands on the exact instruction; conditional breakpoints, logpoints and `ASSERTION`s; memory watchpoints; live register and memory views you can *edit* while stopped; call stacks reconstructed from raw stack memory; hover evaluation; smart disassembly; flow charts and call graphs at the cursor; a unit-test framework for assembler, of all things. This is IDE-grade tooling of a quality the 8-bit world simply did not have — and every bit of it now works for TRS-80 programmers, unchanged, because DeZog's architecture made "just add another remote" possible. Thomas: we hope seeing Tandy machines join the ZX family in your debugger is as delightful for you as building on your work was for us.
-- **[George Phillips](http://48k.ca)** is the author of **trs80gp**, the reference emulator of the TRS-80 world — cycle-exact, covering the entire model line, and the standard against which everything else (including our simulator path) is measured — and of **zmac**, the assembler whose `.bds` output provides the source mapping this whole debugging experience hangs on. Every breakpoint you set in a `.asm` line resolves through George's toolchain. We are deeply grateful for his contributions and toolchain excellence.
-- **[Lawrence Kesteloot](https://github.com/lkesteloot)** wrote the **TypeScript TRS-80 emulator** ([lkesteloot/trs80](https://github.com/lkesteloot/trs80)) that powers the built-in `trs80sim` remote — a beautifully engineered, MIT-licensed machine: clean HAL architecture, inline ROMs, an instruction-precise CPU core, and the authentic screen renderer you see in the screenshots above. We embedded it **without changing a single line of its code** — the highest compliment an architecture can receive. If you enjoy the zero-setup debugging in this fork, you are enjoying Lawrence's emulator.
-
-Two of these names — George and Lawrence — are among the most important in the TRS-80 preservation and retro scene. This fork is meant as a tribute to their work, not a replacement for it: go use trs80gp, go explore [trs80.dev](https://www.trs80.dev), and if trszog brings a few more people to Tandy assembly programming, it has done its job.
-
-### Upstream DeZog Acknowledgements (by Thomas Busse)
+## Upstream DeZog Acknowledgements (by Thomas Busse)
 
 I would like to express my gratitude to the following individuals for their invaluable support:
 
@@ -364,7 +336,7 @@ I would like to express my gratitude to the following individuals for their inva
 - [Víctor Morilla](https://github.com/vmorilla) for the z88dk addition to label parsing, enabling setting of breakpoints and stepping through C source code.
 
 
-# Tutorials
+# Upstream Tutorials
 
 Please note that the tutorials listed here are normally not updated when a new DeZog version arrives.
 Especially for changes in the 'launch.json' it might happen that some properties (names) have changed/removed/added.
@@ -446,3 +418,43 @@ But please note: this only **runs** the binary, all debugging features like brea
 
 The feature can be used by other extensions.
 For example the [ZX81 BASIC to P-File Converter and P-File Viewer] starts a ZX81 BASIC program inside DeZog's simulator.
+
+---
+
+# Upstream Support
+
+If you like DeZog please consider supporting Thomas Busse's upstream project:
+
+<a href="https://github.com/sponsors/maziac" title="Github sponsor">
+	<img src="assets/button_donate_sp.png" />
+</a>
+&nbsp;&nbsp;
+<a href="https://www.paypal.com/donate/?hosted_button_id=K6NNLZCTN3UV4&locale.x=en_DE&Z3JncnB0=" title="PayPal">
+	<img src="assets/button_donate_pp.png" />
+</a>
+
+<!-- References -->
+
+[ASM Code Lens]: https://github.com/maziac/asm-code-lens
+[Z80 Instruction Set]: https://github.com/maziac/z80-instruction-set
+[Hex Hover Converter]: https://github.com/maziac/hex-hover-converter
+[ZX SNA File Viewer]: https://github.com/maziac/sna-fileviewer
+[ZX NEX File Viewer]: https://github.com/maziac/nex-fileviewer
+[ZX81 BASIC to P-File Converter and P-File Viewer]: https://github.com/maziac/zx81-bastop
+
+[z80-sample-program]: https://github.com/maziac/z80-sample-program
+[zx81-sample-program]: https://github.com/maziac/zx81-sample-program
+[z80-peripherals-sample]: https://github.com/maziac/z80-peripherals-sample
+[dezogif]: https://github.com/maziac/dezogif
+[DZRP]: https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md
+
+[zesarux]: https://github.com/chernandezba/zesarux
+[cspect]: http://www.cspect.org
+[mame]: https://www.mamedev.org
+[sjasmplus]: https://github.com/z00m128/sjasmplus
+[savannah-z80asm]: https://savannah.nongnu.org/projects/z80asm/
+[z88dk-z80asm]: https://github.com/z88dk/z88dk
+[NEX File Format]: https://wiki.specnext.dev/NEX_file_format
+[ZX Spectrum Next]: https://www.specnext.com
+[zx next]: https://www.specnext.com
+[zxnext]: https://www.specnext.com
