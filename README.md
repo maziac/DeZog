@@ -184,7 +184,7 @@ DeZog facilitates the debugging of Z80 assembler programs using Visual Studio Co
 DeZog needs a "[Remote](documentation/Usage.md#remote-types)" to execute the Z80 binaries. You can either use the built-in Z80/ZX simulator or connect to [ZEsarUX], [CSpect] or [MAME] via a socket connection for more advanced projects.
 
 Note: DeZog itself does not include any support for building from assembler sources. For this you need a build task and an assembler. For example projects, see:
-- [trs80-space-invaders](https://github.com/TechPrototyper/trs80-space-invaders) (TRS-80 Model I/III Z80 assembly)
+- [trs80-space-invaders](https://github.com/TechPrototyper/trs80-space-invaders) *(added in trszog fork for TRS-80 Model I/III)*
 - [z80-sample-program] (ZXSpectrum)
 - [zx81-sample-program]
 
