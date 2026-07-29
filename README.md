@@ -6,7 +6,7 @@
 
 ## Status: Release Candidate
 
-**You can debug TRS-80 assembly in VS Code today — with zero external tools.** The built-in `trs80sim` simulator ships inside the extension: install, press F5, and you are stepping through your Z80 source with breakpoints, watchpoints, live registers and the TRS-80 screen right next to your code.
+**You can debug TRS-80 assembly in VS Code today — no external emulator required.** The built-in `trs80sim` simulator ships inside the extension: install, press F5, and you are stepping through your Z80 source with breakpoints, watchpoints, live registers and the TRS-80 screen right next to your code. *(Note: As with any Z80 project, you need George Phillips' [zmac](http://48k.ca/zmac.html) macro assembler to build your `.asm` source into `.cmd` and `.bds` debug files).*
 
 ![Debugging TRS-80 Space Invaders in trszog — halted at a source breakpoint with the live game screen, full Z80 registers and call stack](documentation/images/trs80sim/debug-session.png)
 
@@ -20,7 +20,7 @@ The debugging paths:
 
 ### Built-in TRS-80 simulator (`trs80sim`) — works out of the box
 
-`remoteType: "trs80sim"` embeds [Lawrence Kesteloot's TypeScript TRS-80 emulator](https://github.com/lkesteloot/trs80) (MIT) in-process in the extension host — the same architecture as DeZog's internal `zsim` simulator. No install, no socket, no external process, no ROM hunting: everything needed is inside the extension.
+`remoteType: "trs80sim"` embeds [Lawrence Kesteloot's TypeScript TRS-80 emulator](https://github.com/lkesteloot/trs80) (MIT) in-process in the extension host — the same architecture as DeZog's internal `zsim` simulator. No external emulator, no socket, no ROM hunting required (note: you need George Phillips' [zmac](http://48k.ca/zmac.html) macro assembler to assemble your source code into `.cmd` and `.bds` symbol files).
 
 | Capability | Status |
 |---|---|
@@ -125,7 +125,7 @@ If you like DeZog please consider supporting it.
 
 # TRS-80 Quickstart
 
-## Quickstart 1: built-in simulator (`trs80sim`) — nothing to install
+## Quickstart 1: built-in simulator (`trs80sim`) — built-in emulator
 
 The only tool you need besides this extension is George Phillips' [zmac](http://48k.ca/zmac.html) assembler: `zmac -j myprog.asm` produces both the executable (`zout/myprog.cmd`) and the debug file with source mapping (`zout/myprog.bds`).
 

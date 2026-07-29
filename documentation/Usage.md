@@ -627,7 +627,7 @@ Three remotes target the TRS-80, and they differ in *what* runs the code:
 
 | remoteType | Runs the code | Needs |
 | :--------- | :------------ | :---- |
-| `trs80sim` | an emulator inside DeZog | nothing external |
+| `trs80sim` | an emulator inside DeZog | zmac assembler (no external emulator) |
 | `trs80gp`  | the external trs80gp emulator | the trs80gp app |
 | `revz`     | a **real machine** — the Rev Z FPGA (or a real TRS-80 via a dongle) | the hardware + a transport |
 
