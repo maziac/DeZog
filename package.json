@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.7.4-rc1",
+	"version": "3.7.4",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum/ZX81.",
 	"author": {
@@ -46,7 +46,7 @@
 		"package": "vsce package",
 		"package:small": "file=$npm_package_name-$npm_package_version.vsix ; vsce package --ignoreFile .vscodeignore_small --out $file ; zip $file.zip $file",
 		"check-env": "node -e 'console.log(process.env)' | grep npm",
-		"npm audit --omit=dev": "npm audit --omit=dev"
+		"npm audit --omit=dev": "env -u npm_config_allow_scripts -u NPM_CONFIG_ALLOW_SCRIPTS npm audit --omit=dev"
 	},
 	"dependencies": {
 		"@vscode/debugadapter": "^1.68.0",
