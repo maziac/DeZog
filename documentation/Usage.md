@@ -33,6 +33,7 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 [z80-custom-memory-model-advanced]: https://github.com/maziac/z80-custom-memory-model-advanced
 [z88dk-zcc-sample-project]: https://github.com/maziac/z88dk-zcc-sample-project
 [dezogif]: https://github.com/maziac/dezogif
+[dezogif_ng]: https://github.com/jorgegv/dezogif_ng
 [DZRP]: https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md
 [zx81-zsim]: https://github.com/maziac/DeZog/blob/master/documentation/zx81/zx81-zsim.md
 
@@ -1334,7 +1335,9 @@ Instead of the serial cable the ZX Next can be reached through a socket, e.g. vi
 
 The port defaults to 11000 and can be changed with "port". Use either "serial" or "hostname", not both. The "timeout" is used for both.
 
-Everything above the transport is the same, i.e. the same 'dezogif' program runs on the ZX Next. There is one difference: through a socket DeZog does not refuse the pause command, see [Pausing the Debugged Program](#pausing-the-debugged-program).
+This needs a program on the ZX Next that serves DZRP through the WiFi module. [dezogif] itself is serial only; [dezogif_ng] is a fork of it that adds a WiFi build beside the serial one, and that is what the socket connection was developed against.
+
+Everything above the transport is the same, i.e. the same DZRP commands and the same breakpoint handling. There is one difference: through a socket DeZog does not refuse the pause command, see [Pausing the Debugged Program](#pausing-the-debugged-program).
 
 #### Setup
 
