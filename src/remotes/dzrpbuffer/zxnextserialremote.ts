@@ -59,6 +59,10 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	// Value to catch the MESSAGE_START_BYTE if received data was 1 byte only.
 	protected msgStartByteFound: boolean;
 
+	// True if the transport prefixes each message with the MESSAGE_START_BYTE.
+	// Only the serial connection does, see 'dataReceived'.
+	protected usesMessageStartByte = true;
+
 
 	// The time the last CMD_CONTINUE was sent. Is used to suppress the "No response received message" from the remote if a request is sent from vscode right after a CMD_CONTINUE.
 	protected lastCmdContinueTime = 0;	// ms
@@ -229,7 +233,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	protected dataReceived(data: Buffer) {
 		let nData = data;
 
-		if (this.receivedData.length == 0 && !this.msgStartByteFound) {
+		if (this.usesMessageStartByte && this.receivedData.length == 0 && !this.msgStartByteFound) {
 			// Swallow everything (zeroes) up to the first 0xA5 found
 			const len = data.length;
 			let i;

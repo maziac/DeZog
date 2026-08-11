@@ -155,9 +155,17 @@ export interface MameType {
 
 // Definitions for ZX Next remote type.
 export interface ZxNextSerialType {
-	// The serial usb device.
+	// The serial usb device. Use either 'serial' or 'hostname'.
 	serial: string;	// E.g. "/dev/cu.usbserial-AQ007PCD" on macOS
-	/// The serial timeout in seconds.
+
+	// The hostname/IP address of the ZX Next, if connected via socket
+	// (e.g. the ESP8266 WiFi module). Use either 'serial' or 'hostname'.
+	hostname: string;
+
+	// The port of the ZX Next socket.
+	port: number;
+
+	/// The timeout in seconds.
 	timeout: number;
 }
 
@@ -870,10 +878,13 @@ export class Settings {
 		// zxnext
 		if (!launchCfg.zxnext) {
 			launchCfg.zxnext = {} as ZxNextSerialType;
-			// Note: if 'serial' is undefined and type is 'zxnext', this will create an error
+			// Note: if neither 'serial' nor 'hostname' is defined and type is 'zxnext', this will create an error
 		}
 		if (launchCfg.zxnext.timeout === undefined) {
 			launchCfg.zxnext.timeout = 5;	// Seconds
+		}
+		if (launchCfg.zxnext.port === undefined) {
+			launchCfg.zxnext.port = 11000;
 		}
 
 		// sjasmplus
@@ -1212,15 +1223,20 @@ export class Settings {
 			throw Error("'remoteType': Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
 		}
 
-		// Check 'serial' if 'zxnext' was selected
+		// Check 'serial'/'hostname' if 'zxnext' was selected
 		if (rType === 'zxnext') {
-			if (Settings.launch.zxnext.serial === undefined) {
-				throw Error("For remoteType 'zxnext' you need to set the 'zxnext.serial' property for the serial interface.");
+			const serial = Settings.launch.zxnext.serial;
+			const hostname = Settings.launch.zxnext.hostname;
+			if (serial === undefined && hostname === undefined) {
+				throw Error("For remoteType 'zxnext' you need to set either the 'zxnext.serial' property for the serial interface or the 'zxnext.hostname' property for a socket connection.");
 			}
-			// Check that the old properties are not used
+			if (serial !== undefined && hostname !== undefined) {
+				throw Error("For remoteType 'zxnext' you can use either 'zxnext.serial' or 'zxnext.hostname', but not both.");
+			}
+			// Check that the old property is not used
 			const oldZxnext = Settings.launch.zxnext as any;
-			if (oldZxnext.port !== undefined || oldZxnext.hostname !== undefined || oldZxnext.socketTimeout !== undefined) {
-				throw Error("For 'zxnext' the properties 'port', 'hostname' and 'socketTimeout' are not used anymore. Use 'serial' instead.");
+			if (oldZxnext.socketTimeout !== undefined) {
+				throw Error("For 'zxnext' the property 'socketTimeout' is not used anymore. Use 'timeout' instead.");
 			}
 		}
 

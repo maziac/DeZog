@@ -1322,6 +1322,20 @@ E.g.
     }
 ~~~
 
+#### Socket Connection
+
+Instead of the serial cable the ZX Next can be reached through a socket, e.g. via its ESP8266 WiFi module. Use "hostname" instead of "serial":
+~~~json
+    "remoteType": "zxnext",
+    "zxnext": {
+        "hostname": "192.168.1.42"
+    }
+~~~
+
+The port defaults to 11000 and can be changed with "port". Use either "serial" or "hostname", not both. The "timeout" is used for both.
+
+Everything above the transport is the same, i.e. the same 'dezogif' program runs on the ZX Next. There is one difference: through a socket DeZog does not refuse the pause command, see [Pausing the Debugged Program](#pausing-the-debugged-program).
+
 #### Setup
 
 Prerequisites:
@@ -1363,6 +1377,9 @@ Note: If one of the 2 joystick ports is used to connect the UART it is still pos
 While the debugged program is running there is no communication between DeZog and the ZX Next.
 I.e. it is also not possible to pause the program through the serial cable.
 For pausing your program you need to press the yellow M1 button at the left side of your ZX Next.
+
+The reason is the serial cable: when the program is continued the joy ports are given back to it, which re-points the UART's receive line away from the joy port pin. So the ZX Next cannot receive anything while the program runs.
+This does not apply to a [socket connection](#socket-connection), where the UART stays connected and a byte from DeZog can arrive at any time. DeZog therefore does not refuse the pause command there. Whether the pause takes effect depends on the program on the ZX Next: it has to notice the byte while the debugged program is running.
 
 
 #### HW

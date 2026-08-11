@@ -65,7 +65,21 @@ suite('Settings', () => {
 				}, "Should not fail with remoteType=zxnext.");
 			});
 
-			test('hostname obsolete', () => {
+			test('hostname', () => {
+				const cfg: any = {
+					remoteType: 'zxnext',
+					zxnext: {
+						hostname: 'hname'
+					},
+					rootFolder: './tests/data',
+				};
+				Settings.launch = Settings.Init(cfg);
+				assert.doesNotThrow(() => {
+					Settings.CheckSettings();
+				}, "Should not fail with remoteType=zxnext and a hostname.");
+			});
+
+			test('serial and hostname are exclusive', () => {
 				const cfg: any = {
 					remoteType: 'zxnext',
 					zxnext: {
@@ -77,22 +91,7 @@ suite('Settings', () => {
 				Settings.launch = Settings.Init(cfg);
 				assert.throws(() => {
 					Settings.CheckSettings();
-				}, "Should fail with remoteType=zxnext and old parameters used.");
-			});
-
-			test('port obsolete', () => {
-				const cfg: any = {
-					remoteType: 'zxnext',
-					zxnext: {
-						serial: 'COM8',
-						port: 'port'
-					},
-					rootFolder: './tests/data',
-				};
-				Settings.launch = Settings.Init(cfg);
-				assert.throws(() => {
-					Settings.CheckSettings();
-				}, "Should fail with remoteType=zxnext and old parameters used.");
+				}, "Should fail with remoteType=zxnext and both serial and hostname set.");
 			});
 
 			test('socketTimeout obsolete', () => {
