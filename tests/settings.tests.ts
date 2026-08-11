@@ -94,6 +94,21 @@ suite('Settings', () => {
 				}, "Should fail with remoteType=zxnext and both serial and hostname set.");
 			});
 
+			test('port needs hostname', () => {
+				const cfg: any = {
+					remoteType: 'zxnext',
+					zxnext: {
+						serial: 'COM8',
+						port: 11000
+					},
+					rootFolder: './tests/data',
+				};
+				Settings.launch = Settings.Init(cfg);
+				assert.throws(() => {
+					Settings.CheckSettings();
+				}, "Should fail with remoteType=zxnext and a port next to a serial.");
+			});
+
 			test('socketTimeout obsolete', () => {
 				const cfg: any = {
 					remoteType: 'zxnext',

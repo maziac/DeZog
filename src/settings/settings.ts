@@ -883,7 +883,9 @@ export class Settings {
 		if (launchCfg.zxnext.timeout === undefined) {
 			launchCfg.zxnext.timeout = 5;	// Seconds
 		}
-		if (launchCfg.zxnext.port === undefined) {
+		// Note: the port is defaulted only for a socket connection, so that a
+		// leftover 'port' next to a 'serial' can still be recognized below.
+		if (launchCfg.zxnext.hostname !== undefined && launchCfg.zxnext.port === undefined) {
 			launchCfg.zxnext.port = 11000;
 		}
 
@@ -1233,10 +1235,13 @@ export class Settings {
 			if (serial !== undefined && hostname !== undefined) {
 				throw Error("For remoteType 'zxnext' you can use either 'zxnext.serial' or 'zxnext.hostname', but not both.");
 			}
-			// Check that the old property is not used
+			// Check that the old properties are not used
 			const oldZxnext = Settings.launch.zxnext as any;
 			if (oldZxnext.socketTimeout !== undefined) {
 				throw Error("For 'zxnext' the property 'socketTimeout' is not used anymore. Use 'timeout' instead.");
+			}
+			if (serial !== undefined && Settings.launch.zxnext.port !== undefined) {
+				throw Error("For 'zxnext' the property 'port' is only used together with 'hostname'.");
 			}
 		}
 
