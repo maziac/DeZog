@@ -27,10 +27,11 @@ export class RemoteFactory {
 				RemoteFactory.setGlobalRemote(new CSpectRemote());
 				break;
 			case 'zxnext':	// The ZX Next USB/serial or socket connection
-				if (Settings.launch.zxnext.hostname !== undefined)
-					RemoteFactory.setGlobalRemote(new ZxNextSocketRemote());
-				else
+				// 'serial' selects the serial connection, otherwise a socket is used.
+				if (Settings.launch.zxnext.serial !== undefined)
 					RemoteFactory.setGlobalRemote(new ZxNextSerialRemote());
+				else
+					RemoteFactory.setGlobalRemote(new ZxNextSocketRemote());
 				break;
 			case 'zsim':	// Simulator
 				RemoteFactory.setGlobalRemote(new ZSimRemote(Settings.launch));

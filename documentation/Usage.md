@@ -1325,7 +1325,7 @@ E.g.
 
 #### Socket Connection
 
-Instead of the serial cable the ZX Next can be reached through a socket, e.g. via its ESP8266 WiFi module. Use "hostname" instead of "serial":
+Instead of the serial cable the ZX Next can be reached through a socket, e.g. via its ESP8266 WiFi module. The transport is chosen by "serial": if it is present the serial connection is used, if not the socket connection is used. I.e. omit "serial" and give "hostname":
 ~~~json
     "remoteType": "zxnext",
     "zxnext": {
@@ -1333,9 +1333,7 @@ Instead of the serial cable the ZX Next can be reached through a socket, e.g. vi
     }
 ~~~
 
-The port defaults to 11000 and can be changed with "port". Use either "serial" or "hostname", not both. The "timeout" is used for both.
-
-Note that "hostname" has no default, because its presence is what selects a socket rather than a serial device. It therefore has to be given even for a local connection: use "localhost" when the ZX Next side is on the same PC as DeZog, which is the case if the stub is running inside an emulator that exposes the WiFi module's port on the host.
+"hostname" defaults to "localhost" and "port" to 11000, so both can be omitted if the ZX Next side is on the same PC as DeZog, which is the case if the stub is running inside an emulator that exposes the WiFi module's port on the host. "hostname" and "port" are not used together with "serial". The "timeout" is used for both transports.
 
 This needs a program on the ZX Next that serves DZRP through the WiFi module. [dezogif] itself is serial only; [dezogif_ng] is a fork of it that adds a WiFi build beside the serial one, and that is what the socket connection was developed against.
 

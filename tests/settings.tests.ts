@@ -46,9 +46,12 @@ suite('Settings', () => {
 					rootFolder: './tests/data',
 				};
 				Settings.launch = Settings.Init(cfg);
-				assert.throws(() => {
+				assert.doesNotThrow(() => {
 					Settings.CheckSettings();
-				}, "Should fail with remoteType=zxnext and serial not set.");
+				}, "Should not fail with remoteType=zxnext and serial not set.");
+				// Without a 'serial' a socket connection is used
+				assert.strictEqual(Settings.launch.zxnext.hostname, 'localhost');
+				assert.strictEqual(Settings.launch.zxnext.port, 11000);
 			});
 
 			test('serial', () => {
@@ -79,7 +82,7 @@ suite('Settings', () => {
 				}, "Should not fail with remoteType=zxnext and a hostname.");
 			});
 
-			test('serial and hostname are exclusive', () => {
+			test('hostname not used with serial', () => {
 				const cfg: any = {
 					remoteType: 'zxnext',
 					zxnext: {
@@ -94,7 +97,7 @@ suite('Settings', () => {
 				}, "Should fail with remoteType=zxnext and both serial and hostname set.");
 			});
 
-			test('port needs hostname', () => {
+			test('port not used with serial', () => {
 				const cfg: any = {
 					remoteType: 'zxnext',
 					zxnext: {

@@ -967,16 +967,16 @@
 								"properties": {
 									"serial": {
 										"type": "string",
-										"description": "The name of the serial port interface, on macOS e.g. \"/dev/tty.usbserial-AQ\", on Windows e.g. \"COM8\". Use either 'serial' or 'hostname'.",
+										"description": "The name of the serial port interface, on macOS e.g. \"/dev/tty.usbserial-AQ\", on Windows e.g. \"COM8\". Its presence selects the serial connection, otherwise a socket connection is used.",
 										"default": ""
 									},
 									"hostname": {
 										"type": "string",
-										"description": "The hostname/IP address of the ZX Next if it is connected via a socket, e.g. through the ESP8266 WiFi module. Use either 'serial' or 'hostname'."
+										"description": "The hostname/IP address of the ZX Next if it is connected via a socket, e.g. through the ESP8266 WiFi module. Defaults to 'localhost'. Not used together with 'serial'."
 									},
 									"port": {
 										"type": "number",
-										"description": "The port of the ZX Next socket. Defaults to 11000. Only used together with 'hostname'."
+										"description": "The port of the ZX Next socket. Defaults to 11000. Not used together with 'serial'."
 									},
 									"timeout": {
 										"type": "number",

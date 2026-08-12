@@ -155,14 +155,15 @@ export interface MameType {
 
 // Definitions for ZX Next remote type.
 export interface ZxNextSerialType {
-	// The serial usb device. Use either 'serial' or 'hostname'.
+	// The serial usb device. Its presence selects the serial connection,
+	// otherwise a socket connection is used.
 	serial: string;	// E.g. "/dev/cu.usbserial-AQ007PCD" on macOS
 
 	// The hostname/IP address of the ZX Next, if connected via socket
-	// (e.g. the ESP8266 WiFi module). Use either 'serial' or 'hostname'.
+	// (e.g. the ESP8266 WiFi module). Not used together with 'serial'.
 	hostname: string;
 
-	// The port of the ZX Next socket.
+	// The port of the ZX Next socket. Not used together with 'serial'.
 	port: number;
 
 	/// The timeout in seconds.
@@ -878,15 +879,20 @@ export class Settings {
 		// zxnext
 		if (!launchCfg.zxnext) {
 			launchCfg.zxnext = {} as ZxNextSerialType;
-			// Note: if neither 'serial' nor 'hostname' is defined and type is 'zxnext', this will create an error
 		}
 		if (launchCfg.zxnext.timeout === undefined) {
 			launchCfg.zxnext.timeout = 5;	// Seconds
 		}
-		// Note: the port is defaulted only for a socket connection, so that a
-		// leftover 'port' next to a 'serial' can still be recognized below.
-		if (launchCfg.zxnext.hostname !== undefined && launchCfg.zxnext.port === undefined) {
-			launchCfg.zxnext.port = 11000;
+		// The presence of 'serial' selects the serial connection, otherwise a
+		// socket connection is used.
+		// Note: 'hostname' and 'port' are defaulted only for the socket
+		// connection, so that they can still be recognized below if they were
+		// given next to a 'serial'.
+		if (launchCfg.zxnext.serial === undefined) {
+			if (launchCfg.zxnext.hostname === undefined)
+				launchCfg.zxnext.hostname = 'localhost';
+			if (launchCfg.zxnext.port === undefined)
+				launchCfg.zxnext.port = 11000;
 		}
 
 		// sjasmplus
@@ -1225,23 +1231,18 @@ export class Settings {
 			throw Error("'remoteType': Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
 		}
 
-		// Check 'serial'/'hostname' if 'zxnext' was selected
+		// Check the transport properties if 'zxnext' was selected
 		if (rType === 'zxnext') {
-			const serial = Settings.launch.zxnext.serial;
-			const hostname = Settings.launch.zxnext.hostname;
-			if (serial === undefined && hostname === undefined) {
-				throw Error("For remoteType 'zxnext' you need to set either the 'zxnext.serial' property for the serial interface or the 'zxnext.hostname' property for a socket connection.");
-			}
-			if (serial !== undefined && hostname !== undefined) {
-				throw Error("For remoteType 'zxnext' you can use either 'zxnext.serial' or 'zxnext.hostname', but not both.");
-			}
 			// Check that the old properties are not used
 			const oldZxnext = Settings.launch.zxnext as any;
 			if (oldZxnext.socketTimeout !== undefined) {
 				throw Error("For 'zxnext' the property 'socketTimeout' is not used anymore. Use 'timeout' instead.");
 			}
-			if (serial !== undefined && Settings.launch.zxnext.port !== undefined) {
-				throw Error("For 'zxnext' the property 'port' is only used together with 'hostname'.");
+			// 'serial' selects the serial connection, so 'hostname' and 'port'
+			// are meaningless next to it.
+			if (Settings.launch.zxnext.serial !== undefined
+				&& (Settings.launch.zxnext.hostname !== undefined || Settings.launch.zxnext.port !== undefined)) {
+				throw Error("For 'zxnext' the properties 'hostname' and 'port' are used for a socket connection only, i.e. without 'serial'.");
 			}
 		}
 
