@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
 import {suite, test} from 'mocha';
-import { Settings } from '../src/settings/settings';
+import {Settings} from '../src/settings/settings';
 
 suite('Settings', () => {
 
@@ -46,9 +46,9 @@ suite('Settings', () => {
 					rootFolder: './tests/data',
 				};
 				Settings.launch = Settings.Init(cfg);
-				assert.throws(() => {
+				assert.doesNotThrow(() => {
 					Settings.CheckSettings();
-				}, "Should fail with remoteType=zxnext and serial not set.");
+				}, "Should fail with remoteType=zxnext and otherwise empty settings.");
 			});
 
 			test('serial', () => {
@@ -65,56 +65,58 @@ suite('Settings', () => {
 				}, "Should not fail with remoteType=zxnext.");
 			});
 
-			test('hostname obsolete', () => {
+			test('hostname', () => {
 				const cfg: any = {
 					remoteType: 'zxnext',
 					zxnext: {
-						serial: 'COM8',
 						hostname: 'hname'
 					},
 					rootFolder: './tests/data',
 				};
 				Settings.launch = Settings.Init(cfg);
-				assert.throws(() => {
+				assert.doesNotThrow(() => {
 					Settings.CheckSettings();
-				}, "Should fail with remoteType=zxnext and old parameters used.");
+				}, "Should not fail with remoteType=zxnext and a hostname.");
 			});
 
-			test('port obsolete', () => {
+			test('hostname not used with serial', () => {
+				const cfg: any = {
+					remoteType: 'zxnext',
+					zxnext: {
+						remoteType: 'zxnext',
+						zxnext: {
+							serial: 'COM8',
+							hostname: 'hname'
+						},
+						rootFolder: './tests/data',
+					}
+				};
+				Settings.launch = Settings.Init(cfg);
+				assert.throws(() => {
+					Settings.CheckSettings();
+				}, "Should fail with remoteType=zxnext and both serial and hostname set.");
+			});
+
+			test('port not used with serial', () => {
 				const cfg: any = {
 					remoteType: 'zxnext',
 					zxnext: {
 						serial: 'COM8',
-						port: 'port'
+						port: 13000
 					},
 					rootFolder: './tests/data',
 				};
 				Settings.launch = Settings.Init(cfg);
 				assert.throws(() => {
 					Settings.CheckSettings();
-				}, "Should fail with remoteType=zxnext and old parameters used.");
-			});
-
-			test('socketTimeout obsolete', () => {
-				const cfg: any = {
-					remoteType: 'zxnext',
-					zxnext: {
-						serial: 'COM8',
-						socketTimeout: 500
-					},
-					rootFolder: './tests/data',
-				};
-				Settings.launch = Settings.Init(cfg);
-				assert.throws(() => {
-					Settings.CheckSettings();
-				}, "Should fail with remoteType=zxnext and old parameters used.");
+				}, "Should fail with remoteType=zxnext and a port next to a serial.");
 			});
 
 		});
 
 
 		test('remoteType=zsim', () => {
-			const cfg: any={
+			const cfg: any = {
 				remoteType: 'zsim',
 				rootFolder: './tests/data',
 			};
@@ -156,7 +158,7 @@ suite('Settings', () => {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
 				sjasmplus: [
-					{ path: "./settings/filenotexists.list" }
+					{path: "./settings/filenotexists.list"}
 				]
 			};
 
@@ -173,7 +175,7 @@ suite('Settings', () => {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
 				sjasmplus: [
-					{ path: "./settings/file.list" }
+					{path: "./settings/file.list"}
 				]
 			};
 
@@ -236,8 +238,8 @@ suite('Settings', () => {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
 				loadObjs: [
-					{ path: "./settings/file1.obj", start: "1234" },
-					{ path: "./settings/file2notexists.obj", start: "1234" }
+					{path: "./settings/file1.obj", start: "1234"},
+					{path: "./settings/file2notexists.obj", start: "1234"}
 				]
 			};
 
@@ -254,8 +256,8 @@ suite('Settings', () => {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
 				loadObjs: [
-					{ path: "./settings/file1.obj", start: "1234" },
-					{ path: "./settings/file2.obj", start: "1234" }
+					{path: "./settings/file1.obj", start: "1234"},
+					{path: "./settings/file2.obj", start: "1234"}
 				]
 			};
 
@@ -273,8 +275,8 @@ suite('Settings', () => {
 				remoteType: 'zrcp',
 				rootFolder: './tests/data',
 				loadObjs: [
-					{ path: "./settings/file1.obj", start: "1234" },
-					{ path: "./settings/file2.obj" }
+					{path: "./settings/file1.obj", start: "1234"},
+					{path: "./settings/file2.obj"}
 				]
 			};
 

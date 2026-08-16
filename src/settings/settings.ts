@@ -126,6 +126,7 @@ export interface ZrcpType {
 	socketTimeout: number;
 }
 
+// The base interface for remotes with socket connection.
 export interface SocketType {
 	// The hostname/IP address of the CSpect socket.
 	hostname: string;
@@ -865,10 +866,17 @@ export class Settings {
 		// zxnext
 		if (!launchCfg.zxnext) {
 			launchCfg.zxnext = {} as ZxNextSerialType;
-			// Note: if 'serial' is undefined and type is 'zxnext', this will create an error
 		}
 		if (launchCfg.zxnext.timeout === undefined) {
 			launchCfg.zxnext.timeout = 5;	// Seconds
+		}
+		// The presence of 'serial' selects the serial connection, otherwise a
+		// socket connection is used.
+		if (launchCfg.zxnext.serial === undefined) {
+			if (launchCfg.zxnext.hostname === undefined)
+				launchCfg.zxnext.hostname = 'localhost';
+			if (launchCfg.zxnext.port === undefined)
+				launchCfg.zxnext.port = 13000;
 		}
 
 		// sjasmplus
@@ -1209,13 +1217,10 @@ export class Settings {
 
 		// Check 'serial' if 'zxnext' was selected
 		if (rType === 'zxnext') {
-			if (Settings.launch.zxnext.serial === undefined) {
-				throw Error("For remoteType 'zxnext' you need to set the 'zxnext.serial' property for the serial interface.");
-			}
-			// Check that the old properties are not used
-			const oldZxnext = Settings.launch.zxnext as any;
-			if (oldZxnext.port !== undefined || oldZxnext.hostname !== undefined || oldZxnext.socketTimeout !== undefined) {
-				throw Error("For 'zxnext' the properties 'port', 'hostname' and 'socketTimeout' are not used anymore. Use 'serial' instead.");
+			// are meaningless next to it.
+			if (Settings.launch.zxnext.serial !== undefined
+				&& (Settings.launch.zxnext.hostname !== undefined || Settings.launch.zxnext.port !== undefined)) {
+				throw Error("For remoteType 'zxnext' you need to set either 'serial' or 'hostname'/'port'. You cannot set both together. If 'serial' is given a serial connection is setup and if 'hostname' and/or 'port' is given a socket connection is created.");
 			}
 		}
 
