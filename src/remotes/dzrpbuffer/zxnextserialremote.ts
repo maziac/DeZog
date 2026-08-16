@@ -1,4 +1,4 @@
-import { BreakInfo, DZRP } from './../dzrp/dzrpremote';
+import {BreakInfo, DZRP} from './../dzrp/dzrpremote';
 import {LogTransport} from '../../log';
 import {DzrpBufferRemote} from './dzrpbufferremote';
 import {Settings} from '../../settings/settings';
@@ -590,55 +590,12 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	}
 
 
-
-	/**
-	 * Sends the command to read from a port.
-	 * @param port The port address.
-	 * @returns The value read from the port.
-	 */
-	protected async sendDzrpCmdReadPort(port: number): Promise<number> {
-		const data = await this.sendDzrpCmd(DZRP.CMD_READ_PORT, [port & 0xFF, port >>> 8]);
-		return data[0];
-	}
-
-
-	/**
-	 * Override.
-	 * Sends the command to write to a port.
-	 * @param port The port address.
-	 * @param value the value to write.
-	 */
-	protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
-		await this.sendDzrpCmd(DZRP.CMD_WRITE_PORT, [port & 0xFF, port >>> 8, value]);
-	}
-
-
-	/**
-	 * Sends Z80 to execute in the remote.
-	 * The code needs no trailing RET.
-	 * Returns registers AF, BC, DE, HL.
-	 * @param code A buffer with the code to send.
-	 * @returns An error code (0=no error). The registers AF, BC, DE, HL.
-	 */
-	protected async sendDzrpCmdExecAsm(code: Array<number>): Promise<{error: number, a: number, f: number, bc: number, de: number, hl: number}> {
-		const data = await this.sendDzrpCmd(DZRP.CMD_EXEC_ASM, code);
-		return {
-			error: data[0],
-			f: data[1],
-			a: data[2],
-			bc: data[3] + 256 * data[4],
-			de: data[5] + 256 * data[6],
-			hl: data[7] + 256 * data[8]
-		};
-	}
-
-
 	/**
 	 * This command is not used. Use the NMI button instead.
 	 */
-	protected async sendDzrpCmdPause(): Promise<void> {
-		throw Error("To pause execution use the yellow NMI button of the ZX Next.");
-	}
+	// protected async sendDzrpCmdPause(): Promise<void> {
+	// 	throw Error("To pause execution use the yellow NMI button of the ZX Next.");
+	// }
 
 
 	/**

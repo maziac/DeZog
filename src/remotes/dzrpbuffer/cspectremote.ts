@@ -204,41 +204,4 @@ export class CSpectRemote extends DzrpBufferRemote {
 	protected async sendDzrpCmdRestoreMem(elems: Array<{address: number, value: number}>): Promise<void> {
 		throw Error("'sendDzrpCmdRestoreMem' is not implemented.");
 	}
-
-
-	/** In from port.
-	 */
-	protected async sendDzrpCmdReadPort(port: number): Promise<number> {
-		const data = await this.sendDzrpCmd(DZRP.CMD_READ_PORT, [port & 0xFF, port >>> 8]);
-		return data[0];
-	}
-
-
-	/** Out to port.
-	 */
-	protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
-		await this.sendDzrpCmd(DZRP.CMD_WRITE_PORT, [port & 0xFF, port >>> 8, value]);
-	}
-
-
-	/** Execute assembly code.
-	 */
-	protected async sendDzrpCmdExecAsm(code: Array<number>): Promise<{error: number, a: number, f: number, bc: number, de: number, hl: number}> {
-		const data = await this.sendDzrpCmd(DZRP.CMD_EXEC_ASM, code);
-		return {
-			error: data[0],
-			f: data[1],
-			a: data[2],
-			bc: data[3] + 256 * data[4],
-			de: data[5] + 256 * data[6],
-			hl: data[7] + 256 * data[8]
-		};
-	}
-
-
-	/** Is called by loadBinSna.
-	 */
-	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
-		await super.sendDzrpCmdInterruptOnOff(enable);
-	}
 }
