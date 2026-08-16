@@ -1,6 +1,5 @@
-import {BreakInfo, DZRP} from './../dzrp/dzrpremote';
+import {BreakInfo} from './../dzrp/dzrpremote';
 import {LogTransport} from '../../log';
-import {DzrpBufferRemote} from './dzrpbufferremote';
 import {Settings} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
@@ -11,6 +10,7 @@ import {SerialPort} from 'serialport';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {Z80RegistersZxNextDecoder} from './z80registerszxnextdecoder';
 import {ErrorWrapper} from '../../misc/errorwrapper';
+import {DzrpDezogIfRemote} from './dzrpdezogifremote';
 
 
 // Each sent message has to start with this byte.
@@ -37,7 +37,7 @@ interface RestorableBreakpoint {
  * A ZX Next remote that is connected via the serial interface.
  * The serial interface itself is a USB device.
  */
-export class ZxNextSerialRemote extends DzrpBufferRemote {
+export class ZxNextSerialRemote extends DzrpDezogIfRemote {
 
 	// The serial port instance.
 	protected serialPort: SerialPort | undefined;

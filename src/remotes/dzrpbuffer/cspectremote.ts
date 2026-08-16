@@ -4,7 +4,6 @@ import {Socket} from 'net';
 import {Settings} from '../../settings/settings';
 import {GenericWatchpoint} from '../../genericwatchpoint';
 import {ErrorWrapper} from '../../misc/errorwrapper';
-import {DZRP} from '../dzrp/dzrpremote';
 
 
 
