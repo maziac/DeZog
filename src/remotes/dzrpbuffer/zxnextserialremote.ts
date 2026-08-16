@@ -1,16 +1,6 @@
 import {LogTransport} from '../../log';
 import {DzrpDezogIfRemote} from './dzrpdezogifremote';
-import {ErrorWrapper} from '../../misc/errorwrapper';
-import {Settings} from '../../settings/settings';
-import {SerialPort} from 'serialport';
-
-
-// Each sent message has to start with this byte.
-// The ZX Next transmit a lot of zeroes if the joy port is not configured.
-// Therefore this byte is required to recognize when a message starts.
-const MESSAGE_START_BYTE = 0xA5;
-
-// Timeout until when a response on a command should have been received.
+import {WithSerial} from './transportserialmixin';
 
 
 
@@ -18,103 +8,65 @@ const MESSAGE_START_BYTE = 0xA5;
  * A ZX Next remote that is connected via the serial interface.
  * The serial interface itself is a USB device.
  */
-export class ZxNextSerialRemote extends DzrpDezogIfRemote {
-	// The serial port instance.
-	protected serialPort: SerialPort | undefined;
+export class ZxNextSerialRemote extends WithSerial(DzrpDezogIfRemote) {
+	// Each sent message has to start with this byte.
+	// The ZX Next transmit a lot of zeroes if the joy port is not configured.
+	// Therefore this byte is required to recognize when a message starts.
+	public static readonly MESSAGE_START_BYTE = 0xA5;
 
-	/// Initializes the machine.
-	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
-	/// The successful emit takes place in 'onConnect' which should be called
-	/// by 'doInitialization' after a successful connect.
-	public async doInitialization(): Promise<void> {
-		// Set timeouts
-		this.cmdRespTimeoutTime = Settings.launch.zxnext.timeout * 1000;
-		this.chunkTimeout = this.cmdRespTimeoutTime;
-		// Open the serial port
-		const serialPath = Settings.launch.zxnext.serial;
-		this.serialPort = new SerialPort({
-			path: serialPath,
-			baudRate: 921600,
-			autoOpen: false
-		});
+	// The time the last CMD_CONTINUE was sent. Is used to suppress the "No response received message" from the remote if a request is sent from vscode right after a CMD_CONTINUE.
+	protected lastCmdContinueTime = 0;	// ms
+	protected cmdContinueNoResponseErrorTime = 1000;	// ms
 
-		// React on-open
-		this.serialPort.on('open', () => {
-			(async () => {
-				LogTransport.log('ZxNextSerialRemote: Connected to ZX Next!');
 
-				this.receivedData = Buffer.alloc(0);
-				this.msgStartByteFound = false;
-				this.expectedLength = 4;	// for length
-				this.receivingHeader = true;
-				this.stopChunkTimeout();
-
-				this.longBreakedAddress = undefined;
-				//this.restorableBreakpoints = new Map<number, RestorableBreakpoint>();
-				this.breakpointIdLastIndex = 0;
-				await this.onConnect();
-			})();
-		});
-
-		// Handle errors
-		this.serialPort.on('error', err => {
-			ErrorWrapper.wrap(err);
-			LogTransport.log('ZxNextSerialRemote: ' + err);
-			// Error
-			try {
-				this.emit('error', err);
-			}
-			catch {};
-		});
-
-		// Receive data
-		this.serialPort.on('data', data => {
-			this.dataReceived(data);
-		});
-
-		// Start serial connection
-		//console.log('serialPort.open();');
-		this.serialPort.open();
+	// Constructor.
+	constructor() {
+		super();
+		this.msgStartByteFound = false;
 	}
 
 
-	/**
-	 * Closes the serial port.
+
+	/** Called when data has been received.
+	 * If not configured for UART the ZX Next emits zeros through the serial cable.
+	 * Therefore we wait until the first indication of a message is received.
+	 * I.e. all received messages start with 0xA5.
 	 */
-	public async closeSerialPort(): Promise<void> {
-		return new Promise<void>(resolve => {
-			(async () => {
-				if (this.serialPort) {
-					//console.log('serialPort.close();');
-					const serialPort = this.serialPort;
-					this.serialPort = undefined;
-					serialPort.close(() => {
-						//console.log('  serialPort.close() -> done');
-						resolve();
-					});
-					return;
+	protected dataReceived(data: Buffer) {
+		let nData = data;
+
+		if (this.receivedData.length == 0 && !this.msgStartByteFound) {
+			// Swallow everything (zeroes) up to the first 0xA5 found
+			const len = data.length;
+			let i;
+			for (i = 0; i < len; i++) {
+				if (data[i] == ZxNextSerialRemote.MESSAGE_START_BYTE) {
+					// Start of message found
+					if (len == 1) {
+						this.msgStartByteFound = true;
+						return;
+					}
+					break;
 				}
-				// If no serialPort exists immediately return
-				resolve();
-			})();
-		});
-	}
-
-
-	/**
-	 * This will disconnect the serial.
-	 */
-	public async disconnect(): Promise<void> {
-		this.disconnect = async () => {};	// Prohibit that disconnect is executed twice.
-		if (!this.serialPort) {
-			return;
+			}
+			// Check if start of message found
+			if (i + 1 >= len)
+				return;	// Not found
+			// Start of message found, skip up to 0xA5
+			nData = data.subarray(i + 1);
 		}
-		await super.disconnect();
-		// Close serial port
-		await this.closeSerialPort();
+		// Call super
+		this.msgStartByteFound = false;
+		super.dataReceived(nData);
 	}
 
 
+	// Calls the super implementation. Is required because ZxNextSerialRemote need to get a timestamp
+	// for the last CMD_CONTINUE command.
+	protected async superSendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
+		this.lastCmdContinueTime = Date.now();
+		await super.superSendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
+	}
 
 	/**
 	 * TODO: This is not fully true anymore for the "async break" with copper. Rewrite documentation and handle it somehow.
@@ -157,68 +109,6 @@ export class ZxNextSerialRemote extends DzrpDezogIfRemote {
 				msg.reject(err);
 			})();
 		}, respTimeoutTime);
-	}
-
-
-	/** Called when data has been received.
-	 * If not configured for UART the ZX Next emits zeros through the serial cable.
-	 * Therefore we wait until the first indication of a message is received.
-	 * I.e. all received messages start with 0xA5.
-	 */
-	protected dataReceived(data: Buffer) {
-		let nData = data;
-
-		if (this.receivedData.length == 0 && !this.msgStartByteFound) {
-			// Swallow everything (zeroes) up to the first 0xA5 found
-			const len = data.length;
-			let i;
-			for (i = 0; i < len; i++) {
-				if (data[i] == MESSAGE_START_BYTE) {
-					// Start of message found
-					if (len == 1) {
-						this.msgStartByteFound = true;
-						return;
-					}
-					break;
-				}
-			}
-			// Check if start of message found
-			if (i + 1 >= len)
-				return;	// Not found
-			// Start of message found, skip up to 0xA5
-			nData = data.subarray(i + 1);
-		}
-		// Call super
-		this.msgStartByteFound = false;
-		super.dataReceived(nData);
-	}
-
-
-	/**
-	 * Writes the buffer to the serial port.
-	 */
-	protected async sendBuffer(buffer: Buffer): Promise<void> {
-		// Send buffer
-		return new Promise<void>((resolve, reject) => {
-			// Send data
-			const txt = this.dzrpCmdBufferToString(buffer);
-			LogTransport.log('>>> ZxNextSerialRemote: Sending ' + txt);
-			let outerError;
-			try {
-				this.serialPort?.write(buffer, (error) => {
-					if (!outerError) {
-						if (error)
-							throw error;
-						resolve();
-					}
-				});
-			}
-			catch (e) {
-				outerError = e;
-				const msg = (e?.msg) ? e.msg : "Serial port write error!";
-				reject(new Error(msg));
-			}
-		});
 	}
 
 

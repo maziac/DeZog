@@ -6,7 +6,7 @@ import {ZxNextSerialRemote} from './zxnextserialremote';
 /** A minimal ZX Next remote with it sole purpose being testing the connection via loopback commands.
  */
 export class ZxNextSerialLoopback extends ZxNextSerialRemote {
-	// Will be set if an error occurred, so that the sedning loop is left
+	// Will be set if an error occurred, so that the sending loop is left
 	protected errorOccurred = false;
 
 	/** Runs the loopback test.

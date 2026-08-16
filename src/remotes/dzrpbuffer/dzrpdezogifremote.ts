@@ -46,11 +46,6 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 	protected msgStartByteFound: boolean;
 
 
-	// The time the last CMD_CONTINUE was sent. Is used to suppress the "No response received message" from the remote if a request is sent from vscode right after a CMD_CONTINUE.
-	protected lastCmdContinueTime = 0;	// ms
-	protected cmdContinueNoResponseErrorTime = 1000;	// ms
-
-
 	/// Constructor.
 	constructor() {
 		super();
@@ -62,6 +57,8 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 		// Overwrite minimal required version
 		this.DZRP_VERSION = [2, 1, 0];
 		//console.log('ZxNextSerialRemote: constructor()');
+		this.longBreakedAddress = undefined;
+		this.breakpointIdLastIndex = 0;
 	}
 
 
@@ -226,8 +223,7 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 			// Catch resolve method to store the breakpoint ID.
 			Utility.assert(this.funcContinueResolve);
 			this.funcContinueResolve = resolveWithBp;
-			this.lastCmdContinueTime = Date.now();
-			await super.sendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
+			await this.superSendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
 		}
 		else {
 			// Continuing from a breakpoint.
@@ -255,8 +251,7 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 					// Restore the breakpoint (the other breakpoints are already set)
 					oldOpcode = await this.sendDzrpCmdSetBreakpoints([oldBreakedAddress]);
 					// Continue
-					this.lastCmdContinueTime = Date.now();
-					await super.sendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
+					await this.superSendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
 				}
 			};
 
@@ -264,9 +259,14 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 			let [, tmpBp1Addr, tmpBp2Addr] = await this.calcStepBp(false /*step-into*/);
 
 			// Step
-			this.lastCmdContinueTime = Date.now();
-			await super.sendDzrpCmdContinue(tmpBp1Addr, tmpBp2Addr);
+			await this.superSendDzrpCmdContinue(tmpBp1Addr, tmpBp2Addr);
 		}
+	}
+
+	// Calls the super implementation. Is required because ZxNextSerialRemote need to get a timestamp
+	// for the last CMD_CONTINUE command.
+	protected async superSendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
+		await super.sendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
 	}
 
 

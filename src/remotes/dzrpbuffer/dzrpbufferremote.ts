@@ -6,9 +6,6 @@ import {GenericBreakpoint} from '../../genericwatchpoint';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 
 
-/// Timeouts.
-export const CONNECTION_TIMEOUT = 1000;	// 1 sec
-
 
 /**
  * A structure used to serialize the sent messages.
@@ -50,6 +47,8 @@ class MessageBuffer {
  * This class does not implement any complex flow/state handling.
  */
 export class DzrpBufferRemote extends DzrpQueuedRemote {
+	/// Timeouts.
+	protected static readonly CONNECTION_TIMEOUT = 1000;	// 1 sec
 
 	// Sequence Number 1-255. Used for sending.
 	protected sequenceNumber: number;

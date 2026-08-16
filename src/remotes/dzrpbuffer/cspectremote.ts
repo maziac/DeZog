@@ -1,5 +1,5 @@
 import {LogTransport} from '../../log';
-import {DzrpBufferRemote, CONNECTION_TIMEOUT} from './dzrpbufferremote';
+import {DzrpBufferRemote} from './dzrpbufferremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings/settings';
 import {GenericWatchpoint} from '../../genericwatchpoint';
@@ -93,7 +93,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 		});
 
 		// Start socket connection
-		this.socket.setTimeout(CONNECTION_TIMEOUT);
+		this.socket.setTimeout(DzrpBufferRemote.CONNECTION_TIMEOUT);
 		const port = Settings.launch.cspect.port;
 		const hostname = Settings.launch.cspect.hostname;
 		this.socket.connect(port, hostname);

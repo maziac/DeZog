@@ -17,9 +17,6 @@ import {Z80File} from '../dzrp/z80file';
 
 
 
-/// Timeouts.
-const CONNECTION_TIMEOUT = 1000;	// 1 sec
-
 // The "break" character.
 const CTRL_C = '\x03';
 
@@ -28,6 +25,8 @@ const CTRL_C = '\x03';
  * Can handle the MAME gdbstub but only for Z80.
  */
 export class MameGdbRemote extends DzrpQueuedRemote {
+	/// Timeout.
+	protected static readonly CONNECTION_TIMEOUT = 1000;	// 1 sec
 
 	// The socket connection.
 	public socket: Socket;
@@ -105,7 +104,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		});
 
 		// Start socket connection
-		this.socket.setTimeout(CONNECTION_TIMEOUT);
+		this.socket.setTimeout(MameGdbRemote.CONNECTION_TIMEOUT);
 		const port = Settings.launch.mame.port;
 		const hostname = Settings.launch.mame.hostname;
 		this.socket.connect(port, hostname);

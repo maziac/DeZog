@@ -4,6 +4,7 @@ import {CSpectRemote} from './dzrpbuffer/cspectremote';
 import {Utility} from '../misc/utility';
 import {ZesaruxRemote} from './zesarux/zesaruxremote';
 import {ZxNextSerialRemote} from './dzrpbuffer/zxnextserialremote';
+import {ZxNextSocketRemote} from './dzrpbuffer/zxnextsocketremote';
 import {MameGdbRemote} from './mame/mamegdbremote';
 import {Settings} from '../settings/settings';
 
@@ -25,8 +26,12 @@ export class RemoteFactory {
 			case 'cspect':	// CSpect socket
 				RemoteFactory.setGlobalRemote(new CSpectRemote());
 				break;
-			case 'zxnext':	// The ZX Next USB/serial connection
-				RemoteFactory.setGlobalRemote(new ZxNextSerialRemote());
+			case 'zxnext':	// The ZX Next USB/serial or socket connection
+				// 'serial' selects the serial connection, otherwise a socket is used.
+				if (Settings.launch.zxnext.serial === undefined)
+					RemoteFactory.setGlobalRemote(new ZxNextSocketRemote());
+				else
+					RemoteFactory.setGlobalRemote(new ZxNextSerialRemote());
 				break;
 			case 'zsim':	// Simulator
 				RemoteFactory.setGlobalRemote(new ZSimRemote(Settings.launch));

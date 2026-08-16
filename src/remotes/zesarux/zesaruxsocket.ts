@@ -1,6 +1,6 @@
-import { Log, LogTransport } from '../../log';
-import { Socket } from 'net';
-import { Settings } from '../../settings/settings';
+import {Log, LogTransport} from '../../log';
+import {Socket} from 'net';
+import {Settings} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {Mutex} from '../../misc/mutex';
 import {ErrorWrapper} from '../../misc/errorwrapper';
@@ -129,20 +129,14 @@ zxevo-get-nvram               Get ZX-Evo NVRAM value at index
 
 
 
-
-/// Timeouts.
-const CONNECTION_TIMEOUT = 1000;	// 1 sec
-export const NO_TIMEOUT = 0;	// Can be used as timeout value and has the special meaning: Don't use any timeout
-
-
 /** A command send to Zesarux debugger as it is being put in the queue.
  */
 class CommandEntry {
-	public command: string|undefined;	///< The command string
+	public command: string | undefined;	///< The command string
 	public handler: (data: string) => void;	///< The handler being executed after receiving data.
 	public suppressErrorHandling: boolean; ///< Normally a warning is output to the UI if a return value (from ZEsarUx) starts with the text "error". If suppressErrorHandling is true this is not signalled to the user.
 	public timeout: number;		///< The timeout until a response is expected.
-	constructor(command: string|undefined, handler: (data: string) => void, suppressErrorHandling: boolean, timeout: number) {
+	constructor(command: string | undefined, handler: (data: string) => void, suppressErrorHandling: boolean, timeout: number) {
 		this.command = command;
 		this.handler = handler;
 		this.suppressErrorHandling = suppressErrorHandling;
@@ -168,6 +162,10 @@ enum SocketState {
  * Defines a queue that guarantees that each command is send one-by-one.
  */
 export class ZesaruxSocket extends Socket {
+	/// Timeouts.
+	public static readonly CONNECTION_TIMEOUT = 1000;	// 1 sec
+	public static readonly NO_TIMEOUT = 0;	// Can be used as timeout value and has the special meaning: Don't use any timeout
+
 
 	// The mutex used for disconnecting.
 	protected quitMutex: Mutex;
@@ -176,7 +174,7 @@ export class ZesaruxSocket extends Socket {
 
 	private queue: Array<CommandEntry>;
 
-	private lastCallQueue: Array<()=>void>;
+	private lastCallQueue: Array<() => void>;
 
 	public zesaruxState: string;
 
@@ -184,7 +182,7 @@ export class ZesaruxSocket extends Socket {
 	private receivedDataChunk: string;
 
 	/// A special long lasting command like 'run' that can be interrupted by other commands.
-	private interruptableRunCmd: CommandEntry|undefined;
+	private interruptableRunCmd: CommandEntry | undefined;
 
 	/// Is true as long as "Running until" has not been received after a 'run'.
 	/// Other commands are not allowed to interrupt during this short phase.
@@ -219,11 +217,11 @@ export class ZesaruxSocket extends Socket {
 		this.myRemoveAllListeners();
 
 		// Init
-		this.MSG_TIMEOUT = Settings.launch.zrcp.socketTimeout*1000;
+		this.MSG_TIMEOUT = Settings.launch.zrcp.socketTimeout * 1000;
 		this.receivedDataChunk = '';
 		this.state = SocketState.UNCONNECTED;
 		this.queue = new Array<CommandEntry>();
-		this.lastCallQueue = new Array<()=>void>();
+		this.lastCallQueue = new Array<() => void>();
 		this.zesaruxState = 'unknown';
 		this.interruptableRunCmd = undefined;
 		this.quitMutex = new Mutex();
@@ -263,39 +261,39 @@ export class ZesaruxSocket extends Socket {
 		});
 
 		this.on('timeout', () => {
-			switch(this.state) {
+			switch (this.state) {
 				case SocketState.CONNECTING:
-				{
-					const err = new Error('Connection timeout!');
-					LogTransport.log('Socket timeout: ' + err);
-					try {
-						this.emit('error', err);
+					{
+						const err = new Error('Connection timeout!');
+						LogTransport.log('Socket timeout: ' + err);
+						try {
+							this.emit('error', err);
+						}
+						catch {};
 					}
-					catch {};
-				}
-				break;
+					break;
 
 				case SocketState.CONNECTED_WAITING_ON_WELCOME_MSG:
-				{
-					const err = new Error('Connected ZEsarUX, but ZEsarUX does not communicate!');
-					LogTransport.log('ZEsarUX does not communicate: ' + err);
-					try {
-						this.emit('error', err);
+					{
+						const err = new Error('Connected ZEsarUX, but ZEsarUX does not communicate!');
+						LogTransport.log('ZEsarUX does not communicate: ' + err);
+						try {
+							this.emit('error', err);
+						}
+						catch {};
 					}
-					catch {};
-				}
-				break;
+					break;
 
 				case SocketState.CONNECTED:
-				{
-					const err = new Error('ZEsarUX did not answer in time!');
-					LogTransport.log('ZEsarUX did not answer in time: ' + err);
-					try {
-						this.emit('error', err);
+					{
+						const err = new Error('ZEsarUX did not answer in time!');
+						LogTransport.log('ZEsarUX did not answer in time: ' + err);
+						try {
+							this.emit('error', err);
+						}
+						catch {};
 					}
-					catch {};
-				}
-				break;
+					break;
 			}
 		});
 
@@ -304,18 +302,18 @@ export class ZesaruxSocket extends Socket {
 			LogTransport.log('Socket end: disconnected from server');
 		});
 
-		this.setTimeout(CONNECTION_TIMEOUT);
+		this.setTimeout(ZesaruxSocket.CONNECTION_TIMEOUT);
 		const port = Settings.launch.zrcp.port;
 		const hostname = Settings.launch.zrcp.hostname;
 		this.connect(port, hostname, () => {
 			// set timeout to receive the welcome message
 			this.setTimeout(this.MSG_TIMEOUT);
-			this.interruptableRunCmdCriticalPhase=false;
+			this.interruptableRunCmdCriticalPhase = false;
 			// almost connected
 			this.state = SocketState.CONNECTED_WAITING_ON_WELCOME_MSG;
 			//this.setKeepAlive(true, 1000);	I would have to enable keep-alive to get notified if the connection closes, but I was not able to change the default interval (2hrs). The package 'net-keepalive' could not be used.
-  			// Set TCP_KEEPINTVL for this specific socket
-  			//keepAlive.setKeepAliveInterval(this, 3000);	// ms
+			// Set TCP_KEEPINTVL for this specific socket
+			//keepAlive.setKeepAliveInterval(this, 3000);	// ms
 			// and TCP_KEEPCNT
 			//keepAlive.setKeepAliveProbes(this, 1);
 
@@ -330,11 +328,11 @@ export class ZesaruxSocket extends Socket {
 	 */
 	private checkLastCommandCompleted() {
 		// Call the handler(s)
-		while(true) {
-			if(this.queue.length != 0)
+		while (true) {
+			if (this.queue.length != 0)
 				return; // Still commands in the queue (need to be here as the queue can be filled during the for-loop)
 			const handler = this.lastCallQueue.shift();
-			if(!handler)
+			if (!handler)
 				break;
 			handler();
 		}
@@ -347,7 +345,7 @@ export class ZesaruxSocket extends Socket {
 	 * @param handler The method to execute.
 	 */
 	public async executeWhenQueueIsEmpty(): Promise<void> {
-		if(this.queue.length > 0) {
+		if (this.queue.length > 0) {
 			// queue the call
 			return new Promise<void>(resolve => {
 				this.lastCallQueue.push(resolve);
@@ -376,10 +374,10 @@ export class ZesaruxSocket extends Socket {
 		this.emitQueueChanged();
 		// check if command can be sent right away
 		if (!this.interruptableRunCmdCriticalPhase) {
-			if (this.queue.length==1) {
+			if (this.queue.length == 1) {
 				if (this.interruptableRunCmd) {
 					// Interrupt the command: create an interrupt cmd
-					const cBreak=new CommandEntry('', () => {}, false, this.MSG_TIMEOUT);	// NOSONAR
+					const cBreak = new CommandEntry('', () => {}, false, this.MSG_TIMEOUT);	// NOSONAR
 					// Insert as first command
 					this.queue.unshift(cBreak);
 					this.emitQueueChanged();
@@ -398,8 +396,8 @@ export class ZesaruxSocket extends Socket {
 		return new Promise<any>(resolve => {
 			//console.timeLog("send-disable-breakpoint");
 			this.send(command, data => {
-			//	console.timeLog("send-disable-breakpoint");
-			//	console.log("-");
+				//	console.timeLog("send-disable-breakpoint");
+				//	console.log("-");
 				resolve(data);
 			}, suppressErrorHandling);
 		});
@@ -419,9 +417,9 @@ export class ZesaruxSocket extends Socket {
 	public sendInterruptableRunCmd(handler: (data) => void) {
 		Utility.assert(this.interruptableRunCmd == undefined);	// Only one interruptable
 		// Create command entry
-		this.interruptableRunCmd = new CommandEntry('run', handler, false, NO_TIMEOUT);
+		this.interruptableRunCmd = new CommandEntry('run', handler, false, ZesaruxSocket.NO_TIMEOUT);
 		// check if command can be sent right away
-		if(this.queue.length == 0) {
+		if (this.queue.length == 0) {
 			this.sendSocketCmd(this.interruptableRunCmd);
 		}
 	}
@@ -433,22 +431,22 @@ export class ZesaruxSocket extends Socket {
 	 */
 	private sendSocketCmd(cmd: CommandEntry) {
 		// check if connected
-		if(this.state != SocketState.CONNECTED)
+		if (this.state != SocketState.CONNECTED)
 			return;
 		// Send command
-		if(cmd == undefined)
+		if (cmd == undefined)
 			return;
 		// normal processing
 		let command = cmd.command + '\n';
-		this.log('=>', "'"+cmd.command+"'");
+		this.log('=>', "'" + cmd.command + "'");
 
 		// Set timeout
 		this.setTimeout(cmd.timeout);
 
 		// If 'run' was sent it is not allowed to interrupt it until "Running until" is received.
 		// Otherwise Dezog will hang.
-		if (cmd==this.interruptableRunCmd) {
-			this.interruptableRunCmdCriticalPhase=true;
+		if (cmd == this.interruptableRunCmd) {
+			this.interruptableRunCmdCriticalPhase = true;
 		}
 
 		// Send
@@ -461,10 +459,10 @@ export class ZesaruxSocket extends Socket {
 	 */
 	private sendSocket() {
 		// check if connected
-		if(this.state != SocketState.CONNECTED)
+		if (this.state != SocketState.CONNECTED)
 			return;
 		// Check if any command in the queue
-		if(this.queue.length == 0)
+		if (this.queue.length == 0)
 			return;
 
 		// Send oldest command
@@ -478,7 +476,7 @@ export class ZesaruxSocket extends Socket {
 	 */
 	public sendBlank() {
 		// check if connected
-		if(this.state != SocketState.CONNECTED)
+		if (this.state != SocketState.CONNECTED)
 			return;
 		// Send just a newline
 		this.log('=>', '\n');
@@ -491,7 +489,7 @@ export class ZesaruxSocket extends Socket {
 	 */
 	private receiveSocket(data: Buffer) {
 		const sData = data.toString();
-		if(!sData) {
+		if (!sData) {
 			LogTransport.log('Error: Received ' + data.length + ' bytes of undefined data!');
 			return;
 		}
@@ -503,47 +501,47 @@ export class ZesaruxSocket extends Socket {
 		let p = 0;
 		let k;
 		const lenLog = 5;	// 5 chars: 'log> '
-		while((k = this.receivedDataChunk.indexOf('log> ', p)) >= 0) {
+		while ((k = this.receivedDataChunk.indexOf('log> ', p)) >= 0) {
 			p = k;
-			if(k > 0 && this.receivedDataChunk.charAt(k-1) != '\n') {
+			if (k > 0 && this.receivedDataChunk.charAt(k - 1) != '\n') {
 				p += lenLog;
 				continue;
 			}
 			// Now search for the end
 			k = this.receivedDataChunk.indexOf('\n', p)
-			if(k < 0) {
+			if (k < 0) {
 				p += lenLog;
 				continue;
 			}
 			// Log found -> forward log
-			const log = this.receivedDataChunk.substring(p+lenLog, k);	// Without '\n'
+			const log = this.receivedDataChunk.substring(p + lenLog, k);	// Without '\n'
 			this.emit('log', log);
 			// Remove log from string
-			this.receivedDataChunk = this.receivedDataChunk.substring(0,p) + this.receivedDataChunk.substring(k+1);	// With '\n'
+			this.receivedDataChunk = this.receivedDataChunk.substring(0, p) + this.receivedDataChunk.substring(k + 1);	// With '\n'
 			// Next
 		}
 
 		// Split multiline data
-		const splitData=this.receivedDataChunk.split('\n');
+		const splitData = this.receivedDataChunk.split('\n');
 		// Check if at least a full ine has been received (ending with '\n')
-		if (splitData.length<2)
+		if (splitData.length < 2)
 			return;
 
 		// Check for response to 'run' command
 		if (this.interruptableRunCmdCriticalPhase) {
 			// If data has been received ("Running until"...)
 			// then the critical phase is over.
-			this.interruptableRunCmdCriticalPhase=false;
+			this.interruptableRunCmdCriticalPhase = false;
 			// Check if only one line received or multiple
-			const lineCount=splitData.length;
+			const lineCount = splitData.length;
 			Utility.assert(splitData[0].startsWith("Running until"));
-			if (lineCount>2) {
+			if (lineCount > 2) {
 				// Remove first line and work on the rest normally
 				splitData.shift();
 			}
 			else {
 				// Check if command is in the queue
-				if (this.queue.length>0) {
+				if (this.queue.length > 0) {
 					// Interrupt the command: create an interrupt cmd
 					const cBreak = new CommandEntry('', () => {}, false, this.MSG_TIMEOUT);	// NOSONAR
 					// Insert as first command
@@ -552,23 +550,23 @@ export class ZesaruxSocket extends Socket {
 					// Send command
 					this.sendSocket();
 				}
-				Utility.assert(lineCount==2);
-				this.receivedDataChunk=splitData[1];
+				Utility.assert(lineCount == 2);
+				this.receivedDataChunk = splitData[1];
 				return;
 			}
 		}
 
 		// Check for last line
-		const lastLine=splitData[splitData.length-1];
+		const lastLine = splitData[splitData.length - 1];
 		const bCommand1 = lastLine.startsWith('command');
 		const bCommand2 = lastLine.endsWith('> ');
-		if(bCommand1 && bCommand2) {
+		if (bCommand1 && bCommand2) {
 			// clear timer
 			this.setTimeout(0);
 			// clear receive buffer
 			this.receivedDataChunk = '';
 			// remove last line
-			splitData.splice(splitData.length-1,1);
+			splitData.splice(splitData.length - 1, 1);
 			let concData = splitData.join('\n');
 			// Remember state
 			this.zesaruxState = lastLine.substring(8);
@@ -579,8 +577,8 @@ export class ZesaruxSocket extends Socket {
 
 			// Check if we waited for the interruptable command
 			const iCmd = this.interruptableRunCmd;
-			if(iCmd) {
-				if(cEntry == undefined || sData.indexOf('point hit at') >= 0) {
+			if (iCmd) {
+				if (cEntry == undefined || sData.indexOf('point hit at') >= 0) {
 					// Watchpoint or breakpoint hit.
 					// It was not interrupted by another command.
 					// It returned by itself (e.g. 'run' hit a breakpoint).
@@ -607,10 +605,10 @@ export class ZesaruxSocket extends Socket {
 
 			// Check on error from zesarux
 			if (concData.substring(0, 5).toLowerCase() == 'error') {
-				if(!cEntry?.suppressErrorHandling) {
+				if (!cEntry?.suppressErrorHandling) {
 					// send message through to UI
 					let msg = '';
-					if(cEntry)
+					if (cEntry)
 						msg = cEntry.command + ' => ';
 					msg += concData;
 					this.emit('warning', msg);
@@ -618,14 +616,14 @@ export class ZesaruxSocket extends Socket {
 			}
 
 			// Execute handler
-			if(cEntry != undefined)
+			if (cEntry != undefined)
 				cEntry.handler(concData);
 
 			// Check if last command is completed (if queue is empty)
 			this.checkLastCommandCompleted();
 
 			// Check if interruptable command needs to be restarted.
-			if(this.queue.length == 0
+			if (this.queue.length == 0
 				&& interCmd) {
 				// Restart
 				this.sendSocketCmd(interCmd);
@@ -743,8 +741,8 @@ export class ZesaruxSocket extends Socket {
 	 * @param prefix Use either '=>' for sending or '<=' for receiving.
 	 * @param text The text to log. Can contain newlines.
 	 */
-	protected log(prefix: string, text: string|undefined) {
-		if(!LogTransport.isEnabled())
+	protected log(prefix: string, text: string | undefined) {
+		if (!LogTransport.isEnabled())
 			return;
 
 		// Prefixes
@@ -753,17 +751,17 @@ export class ZesaruxSocket extends Socket {
 		const nextPrefix = ' '.repeat(prefixLen);
 
 		// Log
-		if(text == undefined)
+		if (text == undefined)
 			text = "(undefined)";
 		const arr = text.split('\n');
-		for(const line of arr) {
+		for (const line of arr) {
 			LogTransport.log(prefix + line);
 			prefix = nextPrefix;
 		}
 
 		// Log also globally, first line only
 		let globLine = prefix + arr[0];
-		if(arr.length > 1)
+		if (arr.length > 1)
 			globLine += ' ...';
 		Log.log(globLine);
 	}
