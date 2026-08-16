@@ -1,4 +1,4 @@
-import { BreakInfo } from '../dzrp/dzrpremote';
+import {BreakInfo} from '../dzrp/dzrpremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {LogTransport} from '../../log';
 import {Socket} from 'net';
@@ -57,7 +57,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		// Init socket
 		this.socket = new Socket();
 		this.socket.unref();
-		this.cmdRespTimeoutTime = Settings.launch.mame.socketTimeout * 1000;
+		this.cmdRespTimeoutTime = Settings.launch.mame.timeout * 1000;
 
 		// React on-open
 		this.socket.on('connect', () => {
@@ -323,7 +323,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	/** A response has been received.
 	 * If there are still messages in the queue the next message is sent.
 	 */
-		// The function to hold the Promise's resolve function for a continue request.
+	// The function to hold the Promise's resolve function for a continue request.
 	protected receivedMsg(packetData?: string) {
 		// Check if it is a Stop Reply Packet
 		if (packetData?.startsWith('T')) {

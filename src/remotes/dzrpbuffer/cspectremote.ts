@@ -41,7 +41,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 		this.socket.unref();
 
 		// Set timeouts
-		this.cmdRespTimeoutTime = Settings.launch.cspect.socketTimeout * 1000;
+		this.cmdRespTimeoutTime = Settings.launch.cspect.timeout * 1000;
 		this.chunkTimeout = this.cmdRespTimeoutTime;
 
 		// React on-open

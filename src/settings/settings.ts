@@ -126,9 +126,7 @@ export interface ZrcpType {
 	socketTimeout: number;
 }
 
-
-// Definitions for CSpect remote type.
-export interface CSpectType {
+export interface SocketType {
 	// The hostname/IP address of the CSpect socket.
 	hostname: string;
 
@@ -136,29 +134,26 @@ export interface CSpectType {
 	port: number;
 
 	/// The socket timeout in seconds.
-	socketTimeout: number;
+	timeout: number;
+}
+
+// Definitions for CSpect remote type.
+export interface CSpectType extends SocketType {
 }
 
 
 // Definitions for the MAME remote type.
-export interface MameType {
-	// The hostname/IP address of the MAME gdbstub socket.
-	hostname: string;
-
-	// The port of the MAME gdbstub socket.
-	port: number;
-
-	/// The socket timeout in seconds.
-	socketTimeout: number;
+export interface MameType extends SocketType {
 }
 
 
 // Definitions for ZX Next remote type.
-export interface ZxNextSerialType {
+export interface ZxNextSerialType extends SocketType {
 	// The serial usb device.
+	// User can choose either hostname/port or serial, not both.
+	// If neither is set the default is to use the socket.
+	// timeout is used for socket and serial.
 	serial: string;	// E.g. "/dev/cu.usbserial-AQ007PCD" on macOS
-	/// The serial timeout in seconds.
-	timeout: number;
 }
 
 
@@ -593,8 +588,8 @@ export class Settings {
 			launchCfg.cspect.hostname = 'localhost';
 		if (launchCfg.cspect.port === undefined)
 			launchCfg.cspect.port = 11000;
-		if (!launchCfg.cspect.socketTimeout)
-			launchCfg.cspect.socketTimeout = 5;	// 5 secs
+		if (!launchCfg.cspect.timeout)
+			launchCfg.cspect.timeout = 5;	// 5 secs
 
 		// mame
 		if (!launchCfg.mame)
@@ -603,8 +598,8 @@ export class Settings {
 			launchCfg.mame.hostname = 'localhost';
 		if (launchCfg.mame.port === undefined)
 			launchCfg.mame.port = 12000;
-		if (!launchCfg.mame.socketTimeout)
-			launchCfg.mame.socketTimeout = 5;	// 5 secs
+		if (!launchCfg.mame.timeout)
+			launchCfg.mame.timeout = 5;	// 5 secs
 
 		// zsim
 		if (!launchCfg.zsim)
@@ -622,15 +617,15 @@ export class Settings {
 					launchCfg.zsim.zxInterface2Joy = true;
 				if (launchCfg.zsim.memoryModel === undefined)
 					launchCfg.zsim.memoryModel = "ZX48K";
-				if(launchCfg.zsim.visualMemory === undefined)
+				if (launchCfg.zsim.visualMemory === undefined)
 					launchCfg.zsim.visualMemory = true;
-				if(launchCfg.zsim.ulaScreen === undefined)
+				if (launchCfg.zsim.ulaScreen === undefined)
 					launchCfg.zsim.ulaScreen = 'spectrum';
 				if (launchCfg.zsim.zxBeeper === undefined)
 					launchCfg.zsim.zxBeeper = true;
-				if(launchCfg.zsim.cpuFrequency === undefined)
+				if (launchCfg.zsim.cpuFrequency === undefined)
 					launchCfg.zsim.cpuFrequency = 3500000.0;	// 3.5Mhz
-				if(launchCfg.zsim.defaultPortIn === undefined)
+				if (launchCfg.zsim.defaultPortIn === undefined)
 					launchCfg.zsim.defaultPortIn = 0xFF;
 			}
 			// ZX81
@@ -655,7 +650,7 @@ export class Settings {
 				if (launchCfg.zsim.ulaOptions.chroma81 === undefined) {
 					launchCfg.zsim.ulaOptions.chroma81 = {} as Chroma81Type;
 				}
-				if(launchCfg.zsim.zx81BasicLogging === undefined)
+				if (launchCfg.zsim.zx81BasicLogging === undefined)
 					launchCfg.zsim.zx81BasicLogging = true;
 			}
 		}
@@ -668,7 +663,7 @@ export class Settings {
 		if (launchCfg.zsim.customJoy !== undefined) {
 			const customJoy = launchCfg.zsim.customJoy;
 			// Loop over all defined properties
-			for(const prop in customJoy) {
+			for (const prop in customJoy) {
 				const button = customJoy[prop];
 				button.portMask = (button.portMask === undefined) ? 0xFFFF : parseInt(button.portMask);
 				if (button.port !== undefined)
@@ -828,9 +823,9 @@ export class Settings {
 			for (let i = 0; i < countBlocks; i++) {
 				const block = customVisualBlocks[i];
 				// Convert from string to number
-				if(typeof block.address === "string")
+				if (typeof block.address === "string")
 					block.address = Utility.parseValue(block.address);
-				if(typeof block.size === "string")
+				if (typeof block.size === "string")
 					block.size = Utility.parseValue(block.size);
 			}
 		}
@@ -1254,7 +1249,7 @@ export class Settings {
 					if (typeof bank.rom !== "boolean")
 						throw Error("'customMemory': 'rom' must be a boolean.");
 					// ROM offset
-					if((bank as any).romOffset !== undefined)
+					if ((bank as any).romOffset !== undefined)
 						throw Error("'customMemory': 'romOffset' is not allowed anymore. Use 'fileOffset' instead.");
 				}
 			}
@@ -1296,7 +1291,7 @@ export class Settings {
 		}
 
 		// Rev-Eng: Check that glob pattern at least finds one file.
-		if(Settings.launch.revEng) {
+		if (Settings.launch.revEng) {
 			// Check that file exists
 			for (const config of Settings.launch.revEng) {
 				const paths = fglob.sync([config.path]);
