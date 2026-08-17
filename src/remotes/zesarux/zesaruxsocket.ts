@@ -214,7 +214,7 @@ export class ZesaruxSocket extends Socket {
 		this.myRemoveAllListeners();
 
 		// Init
-		this.MSG_TIMEOUT = Settings.launch.zrcp.socketTimeout * 1000;
+		this.MSG_TIMEOUT = Settings.launch.zrcp.timeout * 1000;
 		this.receivedDataChunk = '';
 		this.state = SocketState.UNCONNECTED;
 		this.queue = new Array<CommandEntry>();

@@ -1,5 +1,13 @@
 This guide will provide some info what to do to update your projects from an earlier version.
 
+# Migrate from DeZog 3.7 to DeZog 3.8
+
+There are changes to the DZRP and therefore to the remotes and the remote configuration.
+- the property `socketTimeout`has been renamed to `timeout` for `zrcp`, `cspect` and `mame`.
+- there is a new additional transport layer available for remote `zxnext`.
+- the remote `zxnext` not only supports a serial interface but also a socket interface. The socket interface can be used for debugging the ZXNext through the WiFi interface. You will need to use `dezogif_ng` to use it (thanks @jorgegv).
+
+
 # Migrate from DeZog 3.6 to DeZog 3.7
 
 There are changes to the zsim customMemory configuration:

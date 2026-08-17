@@ -104,28 +104,6 @@ export interface LoadObj {
 	start: string;
 }
 
-
-/// Definitions for the 'zrcp' remote type.
-export interface ZrcpType {
-	/// The Zesarux ZRCP telnet host name/IP address
-	hostname: string;
-
-	/// The Zesarux ZRCP telnet port
-	port: number;
-
-	/// If enabled zesarux does not break on manual break in interrupts.
-	skipInterrupt: boolean;
-
-	// The delay before loading the Z80 program via smartload.
-	loadDelay: number;
-
-	/// Resets the cpu (on ZEsarUX) after starting the debugger.
-	resetOnLaunch: boolean;
-
-	/// The socket timeout in seconds.
-	socketTimeout: number;
-}
-
 // The base interface for remotes with socket connection.
 export interface SocketType {
 	// The hostname/IP address of the CSpect socket.
@@ -136,6 +114,18 @@ export interface SocketType {
 
 	/// The socket timeout in seconds.
 	timeout: number;
+}
+
+/// Definitions for the 'zrcp' remote type.
+export interface ZrcpType extends SocketType {
+	/// If enabled zesarux does not break on manual break in interrupts.
+	skipInterrupt: boolean;
+
+	// The delay before loading the Z80 program via smartload.
+	loadDelay: number;
+
+	/// Resets the cpu (on ZEsarUX) after starting the debugger.
+	resetOnLaunch: boolean;
 }
 
 // Definitions for CSpect remote type.
@@ -579,8 +569,8 @@ export class Settings {
 		}
 		if (launchCfg.zrcp.resetOnLaunch === undefined)
 			launchCfg.zrcp.resetOnLaunch = true;
-		if (!launchCfg.zrcp.socketTimeout)
-			launchCfg.zrcp.socketTimeout = 5;	// 5 secs
+		if (!launchCfg.zrcp.timeout)
+			launchCfg.zrcp.timeout = 5;	// 5 secs
 
 		// cspect
 		if (!launchCfg.cspect)
