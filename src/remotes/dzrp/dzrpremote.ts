@@ -211,6 +211,81 @@ export class DzrpRemote extends RemoteBase {
 	}
 
 
+	/** This functions replaces the implementations of the sendDzrpCmd...
+	 * function with a function that does nothing and just prints a log message.
+	 * The idea is that a dzrp remote can tell what functions it supports.
+	 * DeZog will then not call these unsupported functions.
+	 * @param supportedCommands A string with the supported commands, e.g. "all" or "1,2,4" (the cmd ids) or a binary number with the bits set
+	 * for the supported commands.
+	 */
+	protected stripUnsupportedCommands(supportedCommands: string): void {
+		const unsupported = Array<boolean>(256).fill(true);
+		const separated = supportedCommands.split(',').map(s => s.trim());
+
+		// Parse: Loop the list
+		for (const valCmd of separated) {
+			if (valCmd === 'all') {
+				// All commands are allowed
+				unsupported.fill(false);
+				break;
+			}
+			if (valCmd.startsWith('0b')) {
+				// A binary, bit-wise selection
+				let bits = valCmd.substring(2);
+				let i = 0;
+				while (bits) {
+					if (i >= 256)
+						throw Error('Too many bits (> 256) while parsing a binary number in the "supportedCommands" string.');
+					const bit = bits.at(-1);
+					if (bit === '1')
+						unsupported[i] = false;
+					if (bit !== '0')
+						throw Error('Unexpected digit while parsing a binary number in the "supportedCommands" string.');
+					// Next
+					i++;
+					bits = bits.substring(0, bits.length - 1);
+				}
+			}
+			else {
+				// Should be a number
+				const cmdId = parseInt(valCmd);
+				// Check
+				if (cmdId < 0 || cmdId > 255)
+					throw Error(`Command id out of range (${valCmd}) in the "supportedCommands" string.`);
+				unsupported[cmdId] = false;
+			}
+		}
+
+		// Now exchange the unsupported commands
+		const commandEntries = Object.entries(DZRP);
+		for (const entry of commandEntries) {
+			const cmdId = parseInt(entry[0]);
+			if (unsupported[cmdId]) {
+				// Command unsupported, exchange function
+				const cmdName = entry[1] as string;
+				const methodName = 'sendDzrp' + this.toPascalCase(cmdName);
+				// Safety check that function exists at all
+				if (typeof (this as any)[methodName] !== 'function') {
+					throw new Error(`Methode ${methodName} does not exist.`);
+				}
+				// Override function with function that throws an exception
+				(this as any)[methodName] = () => {
+					throw new Error(`DZRP command '${cmdName} (${cmdId})' is not supported by the remote.`);
+				};
+			}
+		}
+	}
+
+	// Returns e.g. "CmdInit" for "CMD_INIT"
+	protected toPascalCase(s: string): string {
+		return s
+			.toLowerCase()
+			.split('_')
+			.map(part => part.charAt(0).toUpperCase() + part.slice(1))
+			.join('');
+	}
+
+
 	/** Override.
 	 * Initializes the machine.
 	 * When ready it emits this.emit('initialized') or this.emit('error', Error(...)).
@@ -240,10 +315,11 @@ export class DzrpRemote extends RemoteBase {
 			if (resp.error)
 				throw Error(resp.error);
 			// Get supported commands. If not set manually, try to get it from the remote.
-			let supportedCommands = this.settingsDzrpType.supportedCommands;
+			let supportedCommands = this.settingsDzrpType.supportedCommands || 'all';
 			if (!supportedCommands) {
 				supportedCommands = await this.sendDzrpCmdGetSupportedCommands();
 			}
+			this.stripUnsupportedCommands(supportedCommands);
 
 			// Load executable
 			await this.load();
@@ -436,7 +512,7 @@ export class DzrpRemote extends RemoteBase {
 				response += Utility.getHexString(p, 3) + " ";
 		}
 		else if (cmd_name === "cmd_get_sprites_clip_window_and_control") {
-			const clip = await this.sendDzrpCmdGetSpritesClipWindow();
+			const clip = await this.sendDzrpCmdGetSpritesClipWindowAndControl();
 			response += "xl=" + clip.xl + ", xr=" + clip.xr + ", yt=" + clip.yt + ", yb=" + clip.yb + ", control=" + Utility.getBitsString(clip.control, 8);
 		}
 		else if (cmd_name === "cmd_set_breakpoints") {
@@ -1813,7 +1889,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * @returns A Promise that returns the clipping dimensions and the control byte(xl, xr, yt, yb, control).
 	 */
 	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
-		const clip = await this.sendDzrpCmdGetSpritesClipWindow();
+		const clip = await this.sendDzrpCmdGetSpritesClipWindowAndControl();
 		return clip;
 	}
 
@@ -1838,8 +1914,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		const patterns = await this.sendDzrpCmdGetSpritePatterns(index, count);
 		return patterns;
 	}
-
-
 
 
 
@@ -2059,7 +2133,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	/** Sends the command to get the sprites clipping window.
 	 * @returns A Promise that returns the clipping dimensions and the control byte (xl, xr, yt, yb, control).
 	  */
-	public async sendDzrpCmdGetSpritesClipWindow(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
+	public async sendDzrpCmdGetSpritesClipWindowAndControl(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
 		throw Error("Get sprites clip window not supported!");
 		//return {xl: 0, xr: 0, yt: 0, yb: 0, control: 0};
 	}
