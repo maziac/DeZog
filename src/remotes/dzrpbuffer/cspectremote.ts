@@ -1,9 +1,6 @@
-import {LogTransport} from '../../log';
 import {DzrpBufferRemote} from './dzrpbufferremote';
-import {Socket} from 'net';
 import {CSpectType, Settings} from '../../settings/settings';
 import {GenericWatchpoint} from '../../genericwatchpoint';
-import {ErrorWrapper} from '../../misc/errorwrapper';
 import {WithSocket} from './transportsocketmixin';
 
 
@@ -28,77 +25,20 @@ export class CSpectRemote extends WithSocket(DzrpBufferRemote) {
 	}
 
 
-	/// Override.
-	/// Initializes the machine.
-	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
-	/// The successful emit takes place in 'onConnect' which should be called
-	/// by 'doInitialization' after a successful connect.
-	public async doInitialization(): Promise<void> {
-		// Init socket
-		this.socket = new Socket();
-		this.socket.unref();
-
-		// Set timeouts
-		this.cmdRespTimeoutTime = Settings.launch.cspect.timeout * 1000;
-		this.chunkTimeout = this.cmdRespTimeoutTime;
-
-		// React on-open
-		this.socket.on('connect', () => {
-			(async () => {
-				LogTransport.log(this.logName + ': Connected to server!');
-
-				this.receivedData = Buffer.alloc(0);
-				this.expectedLength = 4;	// for length
-				this.receivingHeader = true;
-				this.stopChunkTimeout();
-
-				// Check for unsupported settings
-				if (Settings.launch.history.codeCoverageEnabled) {
-					this.emit('warning', "launch.json: codeCoverageEnabled==true: CSpect does not support code coverage.");
-				}
-
-				await this.onConnect();
-			})();
-		});
-
-		// Handle disconnect
-		this.socket.on('close', hadError => {
-			LogTransport.log(this.logName + ': closed connection: ' + hadError);
-			//console.log('Close.');
-			// Error
-			const err = new Error('CSpect plugin terminated the connection!');
-			try {
-				this.emit('error', err);
-			}
-			catch {};
-		});
-
-		// Handle errors
-		this.socket.on('error', err => {
-			ErrorWrapper.wrap(err);
-			LogTransport.log(this.logName + ': Error: ' + err);
-			//console.log('Error: ', err.message);
-			// Error
-			try {
-				this.emit('error', err);
-			}
-			catch {};
-		});
-
-		// Receive data
-		this.socket.on('data', data => {
-			this.dataReceived(data);
-		});
-
-		// Start socket connection
-		this.socket.setTimeout(DzrpBufferRemote.CONNECTION_TIMEOUT);
-		const port = Settings.launch.cspect.port!;
-		const hostname = Settings.launch.cspect.hostname!;
-		this.socket.connect(port, hostname);
+	/** Call this from 'doInitialization' when a successful connection
+	 * has been opened to the Remote.
+	 * @emits this.emit('initialized') or this.emit('error', Error(...))
+	 */
+	protected async onConnect(): Promise<void> {
+		// Check for unsupported settings
+		if (Settings.launch.history.codeCoverageEnabled) {
+			this.emit('warning', "launch.json: codeCoverageEnabled==true: CSpect does not support code coverage.");
+		}
+		await super.onConnect();
 	}
 
 
-	/** This will disconnect the socket.
+	/** Overrides the parent to send the additional pause command.
 	 */
 	public async disconnect(): Promise<void> {
 		if (!this.socket)
@@ -134,21 +74,6 @@ export class CSpectRemote extends WithSocket(DzrpBufferRemote) {
 				}
 			});
 			this.socket = undefined as any;
-		});
-	}
-
-
-	/** Writes the buffer to the socket port.
-	 */
-	protected async sendBuffer(buffer: Buffer): Promise<void> {
-		// Send buffer
-		return new Promise<void>(resolve => {
-			// Send data
-			const txt = this.dzrpCmdBufferToString(buffer);
-			LogTransport.log('>>> CSpectRemote: Sending ' + txt);
-			this.socket.write(buffer, () => {
-				resolve();
-			});
 		});
 	}
 
