@@ -1,4 +1,5 @@
 import {LogTransport} from '../../log';
+import {ZxNextType} from '../../settings/settings';
 import {DzrpDezogIfRemote} from './dzrpdezogifremote';
 import {WithSerial} from './transportserialmixin';
 
@@ -14,6 +15,8 @@ import {WithSerial} from './transportserialmixin';
  * each message. This is used to recognize the start of a message.
  */
 export class ZxNextSerialRemote extends WithSerial(DzrpDezogIfRemote) {
+	protected override logName = 'ZxNextSerialRemote';
+
 	// Each sent message has to start with this byte.
 	// The ZX Next transmit a lot of zeroes if the joy port is not configured.
 	// Therefore this byte is required to recognize when a message starts.
@@ -25,8 +28,8 @@ export class ZxNextSerialRemote extends WithSerial(DzrpDezogIfRemote) {
 
 
 	// Constructor.
-	constructor() {
-		super();
+	constructor(settingsDzrpType: ZxNextType) {
+		super(settingsDzrpType);
 		this.msgStartByteFound = false;
 	}
 
@@ -100,7 +103,7 @@ export class ZxNextSerialRemote extends WithSerial(DzrpDezogIfRemote) {
 			this.stopCmdRespTimeout();
 			const err = new Error('No response received from remote.');
 			// Log
-			LogTransport.log('Warning: ' + err.message);
+			LogTransport.log(this.logName + ': Warning: ' + err.message);
 			// Show warning (only if a few moments have gone after the last CMD_CONTINUE)
 			const timeSpan = (Date.now() - this.lastCmdContinueTime);	// In ms
 			if (timeSpan > this.cmdContinueNoResponseErrorTime)

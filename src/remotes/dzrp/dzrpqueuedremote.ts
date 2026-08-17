@@ -1,6 +1,7 @@
 import {LogTransport} from '../../log';
 import {DzrpRemote} from './dzrpremote';
 import {Utility} from '../../misc/utility';
+import {DzrpType} from '../../settings/settings';
 
 
 
@@ -47,8 +48,8 @@ export class DzrpQueuedRemote extends DzrpRemote {
 
 
 	/// Constructor.
-	constructor() {
-		super();
+	constructor(settingsDzrpType: DzrpType) {
+		super(settingsDzrpType);
 		// Instantiate the message queue
 		this.messageQueue = new Array<MessageBuffer>();
 	}
@@ -60,7 +61,7 @@ export class DzrpQueuedRemote extends DzrpRemote {
 	 * Called e.g. when vscode sends a disconnectRequest.
 	 */
 	public async disconnect(): Promise<void> {
-	//	this.messageQueue.length = 0; Can lead to a seqno problem if done when a cmd has been sent but no response received yet.
+		//	this.messageQueue.length = 0; Can lead to a seqno problem if done when a cmd has been sent but no response received yet.
 		await super.disconnect();
 		try {
 			//console.log("disconnect: started");
@@ -168,9 +169,9 @@ export class DzrpQueuedRemote extends DzrpRemote {
 			//console.log("SENT ERROR.");
 			msg.reject(error);
 			// Error will be reported by emit. Treat normally:
-		//	msg.resolve([]);
+			//	msg.resolve([]);
 			// Emit
-		//	this.emit('error', error);
+			//	this.emit('error', error);
 		}
 	}
 

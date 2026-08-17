@@ -300,8 +300,8 @@ export class ZesaruxSocket extends Socket {
 		});
 
 		this.setTimeout(ZesaruxSocket.CONNECTION_TIMEOUT);
-		const port = Settings.launch.zrcp.port;
-		const hostname = Settings.launch.zrcp.hostname;
+		const port = Settings.launch.zrcp.port!;
+		const hostname = Settings.launch.zrcp.hostname!;
 		this.connect(port, hostname, () => {
 			// set timeout to receive the welcome message
 			this.setTimeout(this.MSG_TIMEOUT);

@@ -142,7 +142,7 @@ export class ZSimRemote extends DzrpRemote {
 
 	/// Constructor.
 	constructor(launchArguments: SettingsParameters) {
-		super();
+		super(launchArguments.zsim);
 		// Init
 		this.zsim = launchArguments.zsim;
 		this.simulationTooSlow = false;
@@ -435,7 +435,7 @@ export class ZSimRemote extends DzrpRemote {
 
 		// Check if ULA screen is enabled
 		const zxUlaScreen = zsim.ulaScreen;
-		switch(zxUlaScreen) {
+		switch (zxUlaScreen) {
 			case 'spectrum':
 				this.zxUlaScreen = new SpectrumUlaScreen(this.z80Cpu);
 				break;

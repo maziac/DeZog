@@ -5,7 +5,7 @@ import {Z80RegistersClass, Z80_REG, Z80Registers} from '../z80registers';
 import {MemBank16k} from './membank16k';
 import {SnaFile} from './snafile';
 import {NexFile} from './nexfile';
-import {Settings} from '../../settings/settings';
+import {DzrpType, Settings} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import * as path from 'path';
 import {Labels} from '../../labels/labels';
@@ -136,6 +136,9 @@ export class DzrpRemote extends RemoteBase {
 	// Remotes may overwrite this.
 	protected DZRP_VERSION = [2, 0, 0];
 
+	// The settings configuration for the DZRP remote.
+	protected settingsDzrpType: DzrpType;
+
 	// The function to hold the Promise's resolve function for a continue request.
 	// Note:  The 'any' type is chosen here so that other Remotes (like MAME)
 	// can extend the parameter list.
@@ -177,8 +180,9 @@ export class DzrpRemote extends RemoteBase {
 
 	/// Constructor.
 	/// Override this.
-	constructor() {
+	constructor(settingsDzrpType: DzrpType) {
 		super();
+		this.settingsDzrpType = settingsDzrpType;
 	}
 
 
@@ -235,7 +239,11 @@ export class DzrpRemote extends RemoteBase {
 			const resp = await this.sendDzrpCmdInit();
 			if (resp.error)
 				throw Error(resp.error);
-			const supportedCommands = await this.sendDzrpCmdGetSupportedCommands();
+			// Get supported commands. If not set manually, try to get it from the remote.
+			let supportedCommands = this.settingsDzrpType.supportedCommands;
+			if (!supportedCommands) {
+				supportedCommands = await this.sendDzrpCmdGetSupportedCommands();
+			}
 
 			// Load executable
 			await this.load();
@@ -2139,9 +2147,9 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * Each array entry correspondents to a command id and tells if
 	 * command is supported (true) or not (false).
 	 */
-	protected async sendDzrpCmdGetSupportedCommands(): Promise<boolean[]> {
+	protected async sendDzrpCmdGetSupportedCommands(): Promise<string> {
 		Utility.assert(false);
-		return [];
+		return '';
 	}
 }
 

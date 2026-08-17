@@ -34,6 +34,8 @@ class Zesarux {
  * the ZesaruxSocket.
  */
 export class ZesaruxRemote extends RemoteBase {
+	protected override logName = 'ZesaruxRemote';
+
 	/// Minimum required ZEsarUX version.
 	static MIN_ZESARUX_VERSION = '10.3';
 
@@ -1057,7 +1059,7 @@ export class ZesaruxRemote extends RemoteBase {
 		// Check pass/hit count
 		if (bpPassCount === undefined)
 			bpPassCount = 0;
-		if(bpPassCount > 0 && !this.bpPassCountSupported) {
+		if (bpPassCount > 0 && !this.bpPassCountSupported) {
 			this.emit('warning', `Breakpoint hit (pass) count not supported by this version of ZEsarUX. You need at least version ${ZesaruxRemote.MIN_BP_PASS_COUNT_VERSION}.`);
 			return 0;
 		}
@@ -1190,7 +1192,7 @@ export class ZesaruxRemote extends RemoteBase {
 				k = 2;
 			if (hitCond.startsWith('==='))
 				k = 3;
-			if(k === 0) {
+			if (k === 0) {
 				this.emit('warning', `ZEsarUX supports only '==' for the breakpoint hit count condition,not '${hitCond}'.`);
 				// Set to unverified
 				bp.longAddress = -1;

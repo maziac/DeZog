@@ -1,7 +1,6 @@
 import {LogTransport} from '../../log';
 import {DzrpBufferRemote} from './dzrpbufferremote';
 import {ErrorWrapper} from '../../misc/errorwrapper';
-import {Settings} from '../../settings/settings';
 import {SerialPort} from 'serialport';
 
 
@@ -28,10 +27,10 @@ export function WithSerial<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 		/// by 'doInitialization' after a successful connect.
 		public async doInitialization(): Promise<void> {
 			// Set timeouts
-			this.cmdRespTimeoutTime = Settings.launch.zxnext.timeout * 1000;
+			this.cmdRespTimeoutTime = this.settingsDzrpType.timeout * 1000;
 			this.chunkTimeout = this.cmdRespTimeoutTime;
 			// Open the serial port
-			const serialPath = Settings.launch.zxnext.serial;
+			const serialPath = this.settingsDzrpType.serial!;
 			this.serialPort = new SerialPort({
 				path: serialPath,
 				baudRate: 921600,
@@ -41,7 +40,7 @@ export function WithSerial<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 			// React on-open
 			this.serialPort.on('open', () => {
 				(async () => {
-					LogTransport.log('ZxNextSerialRemote: Connected to ZX Next!');
+					LogTransport.log(this.logName + ': Connected to ZX Next!');
 
 					this.receivedData = Buffer.alloc(0);
 					this.expectedLength = 4;	// for length
@@ -54,7 +53,7 @@ export function WithSerial<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 			// Handle errors
 			this.serialPort.on('error', err => {
 				ErrorWrapper.wrap(err);
-				LogTransport.log('ZxNextSerialRemote: ' + err);
+				LogTransport.log(this.logName + ': ' + err);
 				// Error
 				try {
 					this.emit('error', err);
@@ -118,7 +117,7 @@ export function WithSerial<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 			return new Promise<void>((resolve, reject) => {
 				// Send data
 				const txt = this.dzrpCmdBufferToString(buffer);
-				LogTransport.log('>>> ZxNextSerialRemote: Sending ' + txt);
+				LogTransport.log('>>> ' + this.logName + ': Sending ' + txt);
 				let outerError;
 				try {
 					this.serialPort?.write(buffer, (error) => {

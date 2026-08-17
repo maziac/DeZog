@@ -8,7 +8,7 @@ import {DiagnosticsHandler} from './diagnosticshandler';
 import {GlobalStorage} from './globalstorage';
 import {HelpProvider} from './help/helpprovider';
 import {LogGlobal, LogZsim, LogTransport} from './log';
-import { UnifiedPath } from './misc/unifiedpath';
+import {UnifiedPath} from './misc/unifiedpath';
 import {Utility} from './misc/utility';
 import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
@@ -69,7 +69,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const items = list.map(item => item.path);
 			const selection = await vscode.window.showInformationMessage('Serial ports (click to copy):', ...items);
 			// Copy selected item to clipboard.
-			if(selection)
+			if (selection)
 				await vscode.env.clipboard.writeText(selection);
 		}
 		else {
@@ -109,14 +109,14 @@ export function activate(context: vscode.ExtensionContext) {
 		//console.log('Selected option:', selectedPortPath);
 
 		// Start loopback test
-		const zxnextLoopback = new ZxNextSerialLoopback();
+		const zxnextLoopback = new ZxNextSerialLoopback({serial: selectedPortPath.value, timeout: 5, supportedCommands: ''});
 		zxnextLoopback.on('info', async msg => {
 			await vscode.window.showInformationMessage(msg);
 		});
 		zxnextLoopback.on('error', async msg => {
 			await vscode.window.showErrorMessage(msg);
 		});
-		await zxnextLoopback.runLoopbackTest(selectedPortPath.value, 1000, 10);
+		await zxnextLoopback.runLoopbackTest(1000, 10);
 		// zxnextLoopback will close itself when the loopback test is finished.
 	}));
 
@@ -464,7 +464,7 @@ function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 			LogZsim.setCacheLength(cachedLines);
 		}
 		const logToPanel = configuration.get<boolean>('log.zsim.enabled', false);
-		if (LogZsim.isEnabled() !== logToPanel ) {
+		if (LogZsim.isEnabled() !== logToPanel) {
 			// State has changed
 			const channelOut = logToPanel ? vscode.window.createOutputChannel("DeZog zsim") : undefined;
 			// Enable or dispose

@@ -24,20 +24,20 @@ export class RemoteFactory {
 				RemoteFactory.setGlobalRemote(new ZesaruxRemote());
 				break;
 			case 'cspect':	// CSpect socket
-				RemoteFactory.setGlobalRemote(new CSpectRemote());
+				RemoteFactory.setGlobalRemote(new CSpectRemote(Settings.launch.cspect));
 				break;
 			case 'zxnext':	// The ZX Next USB/serial or socket connection
 				// 'serial' selects the serial connection, otherwise a socket is used.
 				if (Settings.launch.zxnext.serial === undefined)
-					RemoteFactory.setGlobalRemote(new ZxNextSocketRemote());
+					RemoteFactory.setGlobalRemote(new ZxNextSocketRemote(Settings.launch.zxnext));
 				else
-					RemoteFactory.setGlobalRemote(new ZxNextSerialRemote());
+					RemoteFactory.setGlobalRemote(new ZxNextSerialRemote(Settings.launch.zxnext));
 				break;
 			case 'zsim':	// Simulator
 				RemoteFactory.setGlobalRemote(new ZSimRemote(Settings.launch));
 				break;
 			case 'mame':
-				RemoteFactory.setGlobalRemote(new MameGdbRemote());
+				RemoteFactory.setGlobalRemote(new MameGdbRemote(Settings.launch.mame));
 				break;
 			default:
 				Utility.assert(false);

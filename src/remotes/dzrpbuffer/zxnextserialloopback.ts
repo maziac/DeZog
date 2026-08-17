@@ -6,20 +6,22 @@ import {ZxNextSerialRemote} from './zxnextserialremote';
 /** A minimal ZX Next remote with it sole purpose being testing the connection via loopback commands.
  */
 export class ZxNextSerialLoopback extends ZxNextSerialRemote {
+	protected override logName = 'ZxNextSerialLoopback';
+
 	// Will be set if an error occurred, so that the sending loop is left
 	protected errorOccurred = false;
 
 	/** Runs the loopback test.
-	 * @param serialPath The path to the port
 	 * @param packetSize The size of the packets for loopback
 	 * @param time How long the test should last [seconds]
 	 * @param respTimeout The response timeout [seconds]
 	 */
-	public async runLoopbackTest(serialPath: string, packetSize: number, time = 10, respTimeout = 4): Promise<void> {
+	public async runLoopbackTest(packetSize: number, time = 10, respTimeout = 4): Promise<void> {
 		// Set timeouts
 		this.cmdRespTimeoutTime = respTimeout * 1000;
 		this.chunkTimeout = this.cmdRespTimeoutTime;
 		// Open the serial port
+		const serialPath = this.settingsDzrpType.serial!;
 		this.serialPort = new SerialPort({
 			path: serialPath,
 			baudRate: 921600,

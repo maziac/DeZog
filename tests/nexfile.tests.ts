@@ -56,7 +56,7 @@ suite('NexFile related', () => {
 			}
 		}
 
-		const remote = new MockDzrpRemote() as any;
+		const remote = new MockDzrpRemote({supportedCommands: ''}) as any;
 		await remote.loadBinNex('./tests/data/nexfiles/project/main.nex');
 
 		assert.equal(remote.outSlotBanks[0], 255);

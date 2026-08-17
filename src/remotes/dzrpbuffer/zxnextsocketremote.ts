@@ -17,4 +17,5 @@ import {WithSocket} from './transportsocketmixin';
  * developed against.
  */
 export class ZxNextSocketRemote extends WithSocket(DzrpDezogIfRemote) {
+	protected override logName = 'ZxNextSocketRemote';
 }

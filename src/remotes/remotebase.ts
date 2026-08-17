@@ -77,6 +77,10 @@ export class RemoteBase extends EventEmitter {
 	// Maximum stack items to handle.
 	static MAX_STACK_ITEMS = 100;
 
+	// Name used for Logging. (Only the leaf's will get names, e.g. ZxNextRemote, CSpectRemote, etc.)
+	protected logName = '';
+
+
 	/// The top of the stack. Used to limit the call stack.
 	/// 64k address.
 	public topOfStack: number;

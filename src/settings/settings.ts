@@ -104,8 +104,8 @@ export interface LoadObj {
 	start: string;
 }
 
-// The base interface for remotes with socket connection.
-export interface SocketType {
+/// Definitions for the 'zrcp' remote type.
+export interface ZrcpType extends DzrpTransportType {
 	// The hostname/IP address of the CSpect socket.
 	hostname: string;
 
@@ -114,10 +114,7 @@ export interface SocketType {
 
 	/// The socket timeout in seconds.
 	timeout: number;
-}
 
-/// Definitions for the 'zrcp' remote type.
-export interface ZrcpType extends SocketType {
 	/// If enabled zesarux does not break on manual break in interrupts.
 	skipInterrupt: boolean;
 
@@ -128,23 +125,41 @@ export interface ZrcpType extends SocketType {
 	resetOnLaunch: boolean;
 }
 
-// Definitions for CSpect remote type.
-export interface CSpectType extends SocketType {
+/// Definitions for the 'dzrp' remote (socket) type.
+export interface DzrpType {
+	supportedCommands: string;	// The supported commands of the remote. Either "all" or a comma separated list of command ids. Can also be a binary number, then it is interpreted as bit mask. E.g. "1,2,3" or "0b111". In total 255 commands could be supported. TODO: Status = experimental.
 }
 
+// The base interface for remotes with socket connection.
+// User can choose either hostname/port or serial, not both.
+// If neither is set the default is to use the socket.
+// timeout is used for socket and serial.
+// Not all derived classes support both. The package.json will allow
+// either of them or both. But the structure optionally contains both.
+export interface DzrpTransportType extends DzrpType {
+	// The hostname/IP address of the CSpect socket.
+	hostname?: string;
+
+	// The port of the CSpect socket.
+	port?: number;
+
+	// The serial usb device.
+	serial?: string;	// E.g. "/dev/cu.usbserial-AQ007PCD" on macOS
+
+	/// The socket timeout in seconds.
+	timeout: number;
+}
+
+// Definitions for CSpect remote type.
+export interface CSpectType extends DzrpTransportType {
+}
 
 // Definitions for the MAME remote type.
-export interface MameType extends SocketType {
+export interface MameType extends DzrpTransportType {
 }
 
-
 // Definitions for ZX Next remote type.
-export interface ZxNextSerialType extends SocketType {
-	// The serial usb device.
-	// User can choose either hostname/port or serial, not both.
-	// If neither is set the default is to use the socket.
-	// timeout is used for socket and serial.
-	serial: string;	// E.g. "/dev/cu.usbserial-AQ007PCD" on macOS
+export interface ZxNextType extends DzrpTransportType {
 }
 
 
@@ -256,7 +271,7 @@ export interface CustomVisualMemBlockType {
 }
 
 /// Definitions for the 'zsim' remote type.
-export interface ZSimType {
+export interface ZSimType extends DzrpType {
 	// Defines a preset of settings to simulate a ZX Spectrum or ZX81.
 	// I.e. for a Spectrum it defines zxKeyboard, zxInterface2Joy, visualMemory, 48K, ulaScreen, zxBeeper, cpuFrequency, defaultPortIn.
 	// For a ZX81 it defines zxKeyboard, visualMemory, 16K, ulaScreen, cpuFrequency, defaultPortIn.
@@ -396,7 +411,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	zsim: ZSimType;
 
 	// The special settings for the serial connection.
-	zxnext: ZxNextSerialType;
+	zxnext: ZxNextType;
 
 	/// true if the configuration is for unit tests.
 	unitTests: false;
@@ -855,7 +870,7 @@ export class Settings {
 
 		// zxnext
 		if (!launchCfg.zxnext) {
-			launchCfg.zxnext = {} as ZxNextSerialType;
+			launchCfg.zxnext = {} as ZxNextType;
 		}
 		if (launchCfg.zxnext.timeout === undefined) {
 			launchCfg.zxnext.timeout = 5;	// Seconds

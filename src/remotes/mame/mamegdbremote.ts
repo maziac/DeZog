@@ -3,7 +3,7 @@ import {GenericBreakpoint} from '../../genericwatchpoint';
 import {LogTransport} from '../../log';
 import {Socket} from 'net';
 import {Utility} from '../../misc/utility';
-import {Settings} from '../../settings/settings';
+import {MameType, Settings} from '../../settings/settings';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';
@@ -25,6 +25,8 @@ const CTRL_C = '\x03';
  * Can handle the MAME gdbstub but only for Z80.
  */
 export class MameGdbRemote extends DzrpQueuedRemote {
+	protected override logName = 'MameGdbRemote';
+
 	/// Timeout.
 	protected static readonly CONNECTION_TIMEOUT = 1000;	// 1 sec
 
@@ -36,8 +38,8 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 
 	/// Constructor.
-	constructor() {
-		super();
+	constructor(settingsDzrpType: MameType) {
+		super(settingsDzrpType);
 		// Init
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = true;
@@ -61,7 +63,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		// React on-open
 		this.socket.on('connect', () => {
 			(async () => {
-				LogTransport.log('MameRemote: Connected to server!');
+				LogTransport.log(this.logName + ': Connected to server!');
 
 				this.receivedData = '';
 
@@ -77,9 +79,9 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		// Handle disconnect
 		this.socket.on('close', hadError => {
 			//console.log('Close.');
-			LogTransport.log('MameRemote: MAME terminated the connection: ' + hadError);
+			LogTransport.log(this.logName + ': MAME terminated the connection: ' + hadError);
 			// Error
-			const err = new Error('MameRemote: MAME terminated the connection!');
+			const err = new Error(this.logName + ': MAME terminated the connection!');
 			try {
 				this.emit('error', err);
 			}
@@ -90,7 +92,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		this.socket.on('error', err => {
 			ErrorWrapper.wrap(err);
 			//console.log('Error: ', err);
-			LogTransport.log('MameRemote: Error: ' + err);
+			LogTransport.log(this.logName + ': Error: ' + err);
 			// Error
 			try {
 				this.emit('error', err);
@@ -104,9 +106,9 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		});
 
 		// Start socket connection
-		this.socket.setTimeout(MameGdbRemote.CONNECTION_TIMEOUT);
-		const port = Settings.launch.mame.port;
-		const hostname = Settings.launch.mame.hostname;
+		this.socket.setTimeout(MameGdbRemote.CONNECTION_TIMEOUT); // TODO: use settings timeout
+		const port = Settings.launch.mame.port!;
+		const hostname = Settings.launch.mame.hostname!;
 		this.socket.connect(port, hostname);
 	}
 
@@ -255,7 +257,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * 'receivedData'.
 	 */
 	protected dataReceived(data: string) {
-		LogTransport.log('dataReceived: ' + Utility.maxString(data, 50) + ', count=' + data.length);
+		LogTransport.log(this.logName + ': dataReceived: ' + Utility.maxString(data, 50) + ', count=' + data.length);
 
 		try {
 			// Add data to existing buffer
@@ -445,7 +447,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 				const checkSum = this.checksum(packetData);
 				// Construct packet
 				let packet = '$' + packetData + '#' + checkSum;
-				LogTransport.log('>>> MameRemote: Sending ' + (withCtrlC ? 'CTRL-C, ' : '') + packet);
+				LogTransport.log('>>> ' + this.logName + ': Sending ' + (withCtrlC ? 'CTRL-C, ' : '') + packet);
 				if (withCtrlC)
 					packet = CTRL_C + packet;
 

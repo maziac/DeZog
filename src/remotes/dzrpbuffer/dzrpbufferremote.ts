@@ -4,6 +4,7 @@ import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
+import {DzrpTransportType} from '../../settings/settings';
 
 
 
@@ -49,7 +50,9 @@ class MessageBuffer {
  */
 export class DzrpBufferRemote extends DzrpQueuedRemote {
 	/// Timeouts.
-	protected static readonly CONNECTION_TIMEOUT = 1000;	// 1 sec
+	protected static readonly CONNECTION_TIMEOUT = 1000;	// 1 sec // TODO: exchange the static TIMEOUTS with the one from the Settings.
+
+	protected declare settingsDzrpType: DzrpTransportType;
 
 	// Sequence Number 1-15. Used for sending.
 	protected sequenceNumber: number;
@@ -66,8 +69,8 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 
 
 	/// Constructor.
-	constructor() {
-		super();
+	constructor(settingsDzrpType: DzrpTransportType) {
+		super(settingsDzrpType);
 		this.sequenceNumber = 0;
 		// Instantiate the message queue
 		this.messageQueue = new Array<MessageBuffer>();

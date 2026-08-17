@@ -1,9 +1,10 @@
 import {LogTransport} from '../../log';
 import {DzrpBufferRemote} from './dzrpbufferremote';
 import {Socket} from 'net';
-import {Settings} from '../../settings/settings';
+import {CSpectType, Settings} from '../../settings/settings';
 import {GenericWatchpoint} from '../../genericwatchpoint';
 import {ErrorWrapper} from '../../misc/errorwrapper';
+import {WithSocket} from './transportsocketmixin';
 
 
 
@@ -13,15 +14,12 @@ import {ErrorWrapper} from '../../misc/errorwrapper';
  * The CSpect DeZog plugin internally communicates with the
  * CSpect debugger.
  */
-export class CSpectRemote extends DzrpBufferRemote {
-
-	// The socket connection.
-	public socket: Socket;
-
+export class CSpectRemote extends WithSocket(DzrpBufferRemote) {
+	protected override logName = 'CSpectRemote';
 
 	/// Constructor.
-	constructor() {
-		super();
+	constructor(settingsDzrpType: CSpectType) {
+		super(settingsDzrpType);
 		// Init
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = false;
@@ -47,7 +45,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 		// React on-open
 		this.socket.on('connect', () => {
 			(async () => {
-				LogTransport.log('CSpectRemote: Connected to server!');
+				LogTransport.log(this.logName + ': Connected to server!');
 
 				this.receivedData = Buffer.alloc(0);
 				this.expectedLength = 4;	// for length
@@ -65,7 +63,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 
 		// Handle disconnect
 		this.socket.on('close', hadError => {
-			LogTransport.log('CSpectRemote: closed connection: ' + hadError);
+			LogTransport.log(this.logName + ': closed connection: ' + hadError);
 			//console.log('Close.');
 			// Error
 			const err = new Error('CSpect plugin terminated the connection!');
@@ -78,7 +76,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 		// Handle errors
 		this.socket.on('error', err => {
 			ErrorWrapper.wrap(err);
-			LogTransport.log('CSpectRemote: Error: ' + err);
+			LogTransport.log(this.logName + ': Error: ' + err);
 			//console.log('Error: ', err.message);
 			// Error
 			try {
@@ -94,8 +92,8 @@ export class CSpectRemote extends DzrpBufferRemote {
 
 		// Start socket connection
 		this.socket.setTimeout(DzrpBufferRemote.CONNECTION_TIMEOUT);
-		const port = Settings.launch.cspect.port;
-		const hostname = Settings.launch.cspect.hostname;
+		const port = Settings.launch.cspect.port!;
+		const hostname = Settings.launch.cspect.hostname!;
 		this.socket.connect(port, hostname);
 	}
 

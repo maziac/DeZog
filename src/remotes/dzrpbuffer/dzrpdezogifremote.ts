@@ -7,7 +7,7 @@ import {Opcode, OpcodeFlag} from '../../disassembler/core/opcode';
 import {Z80Registers, Z80RegistersClass} from '../z80registers';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {Z80RegistersZxNextDecoder} from './z80registerszxnextdecoder';
-import {Settings} from '../../settings/settings';
+import {DzrpTransportType, Settings} from '../../settings/settings';
 
 
 /** Structure to hold the opcode to restore and the address of
@@ -33,7 +33,7 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 
 
 	// Returned breakpoint index.
-	protected breakpointIdLastIndex
+	protected breakpointIdLastIndex: number;
 
 	// Array is created temporarily during Continue.
 	// It holds the breakpoints and their prior values.
@@ -45,8 +45,8 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 
 
 	/// Constructor.
-	constructor() {
-		super();
+	constructor(settingsDzrpType: DzrpTransportType) {
+		super(settingsDzrpType);
 		// Init
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = false;
@@ -54,7 +54,6 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 		this.supportsBreakOnInterrupt = false;
 		// Overwrite minimal required version
 		this.DZRP_VERSION = [2, 1, 0];
-		//console.log('ZxNextSerialRemote: constructor()');
 		this.longBreakedAddress = undefined;
 		this.breakpointIdLastIndex = 0;
 	}

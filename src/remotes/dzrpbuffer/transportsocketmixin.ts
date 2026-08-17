@@ -1,6 +1,5 @@
 import {Socket} from "net";
 import {DzrpBufferRemote} from "./dzrpbufferremote";
-import {Settings} from "../../settings/settings";
 import {LogTransport} from "../../log";
 import {ErrorWrapper} from "../../misc/errorwrapper";
 
@@ -30,13 +29,13 @@ export function WithSocket<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 			this.socket.unref();
 
 			// Set timeouts
-			this.cmdRespTimeoutTime = Settings.launch.zxnext.timeout * 1000;
+			this.cmdRespTimeoutTime = this.settingsDzrpType.timeout * 1000;
 			this.chunkTimeout = this.cmdRespTimeoutTime;
 
 			// React on-open
 			this.socket.on('connect', () => {
 				(async () => {
-					LogTransport.log('ZxNextSocketRemote: Connected to ZX Next!');
+					LogTransport.log(this.logName + ': Connected to ZX Next!');
 
 					this.receivedData = Buffer.alloc(0);
 					this.expectedLength = 4;	// for length
@@ -48,7 +47,7 @@ export function WithSocket<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 
 			// Handle disconnect
 			this.socket.on('close', hadError => {
-				LogTransport.log('ZxNextSocketRemote: closed connection: ' + hadError);
+				LogTransport.log(this.logName + ': closed connection: ' + hadError);
 				// Error
 				const err = new Error('ZX Next terminated the connection!');
 				try {
@@ -60,7 +59,7 @@ export function WithSocket<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 			// Handle errors
 			this.socket.on('error', err => {
 				ErrorWrapper.wrap(err);
-				LogTransport.log('ZxNextSocketRemote: Error: ' + err);
+				LogTransport.log(this.logName + ': Error: ' + err);
 				// Error
 				try {
 					this.emit('error', err);
@@ -74,9 +73,9 @@ export function WithSocket<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 			});
 
 			// Start socket connection
-			this.socket.setTimeout(DzrpBufferRemote.CONNECTION_TIMEOUT);
-			const port = Settings.launch.zxnext.port;
-			const hostname = Settings.launch.zxnext.hostname;
+			this.socket.setTimeout(DzrpBufferRemote.CONNECTION_TIMEOUT); // TODO: use settingsDzrpType.timeout * 1000 instead of hardcoded value
+			const port = this.settingsDzrpType.port!;
+			const hostname = this.settingsDzrpType.hostname!;
 			this.socket.connect(port, hostname);
 		}
 
@@ -122,7 +121,7 @@ export function WithSocket<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 			return new Promise<void>(resolve => {
 				// Send data
 				const txt = this.dzrpCmdBufferToString(buffer);
-				LogTransport.log('>>> ZxNextSocketRemote: Sending ' + txt);
+				LogTransport.log('>>> ' + this.logName + ': Sending ' + txt);
 				this.socket.write(buffer, () => {
 					resolve();
 				});
