@@ -4,9 +4,14 @@ import {WithSerial} from './transportserialmixin';
 
 
 
-/**
- * A ZX Next remote that is connected via the serial interface.
+/** A ZX Next remote that is connected via the serial interface.
  * The serial interface itself is a USB device.
+ * As the serial interface shares the ZXNext UART port with the
+ * joystick ports the receiving line might not always be connected
+ * to the serial device connected to the host's USB port.
+ * This results in a series of received zeroes. Therefore the
+ * dezogif uart software on the ZXNext adds a leading 0xA5 byte to
+ * each message. This is used to recognize the start of a message.
  */
 export class ZxNextSerialRemote extends WithSerial(DzrpDezogIfRemote) {
 	// Each sent message has to start with this byte.

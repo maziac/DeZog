@@ -3,8 +3,7 @@ import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 
 
 
-/**
- * The 'zxnext' remote does not allow to obtain the IM value.
+/** The 'zxnext' remote does not allow to obtain the IM value.
  */
 export class Z80RegistersZxNextDecoder extends Z80RegistersStandardDecoder {
 

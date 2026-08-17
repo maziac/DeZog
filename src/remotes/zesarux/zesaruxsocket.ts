@@ -123,7 +123,6 @@ write-memory-raw              Writes a sequence of bytes starting at desired add
 write-port                    Writes value at port
 zeng-is-master                Tells if ZENG is configured as master or not
 zxevo-get-nvram               Get ZX-Evo NVRAM value at index
-
 */
 
 
@@ -145,8 +144,7 @@ class CommandEntry {
 }
 
 
-/**
- * The socket state.
+/** The socket state.
  */
 enum SocketState {
 	UNCONNECTED,
@@ -157,8 +155,7 @@ enum SocketState {
 }
 
 
-/**
- * A socket to communicate with the Zesarux debugger.
+/** A socket to communicate with the Zesarux debugger.
  * Defines a queue that guarantees that each command is send one-by-one.
  */
 export class ZesaruxSocket extends Socket {

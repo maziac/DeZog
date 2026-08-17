@@ -10,8 +10,7 @@ import {Z80RegistersZxNextDecoder} from './z80registerszxnextdecoder';
 import {Settings} from '../../settings/settings';
 
 
-/**
- * Structure to hold the opcode to restore and the address of
+/** Structure to hold the opcode to restore and the address of
  * the breakpoint.
  */
 interface RestorableBreakpoint {
@@ -22,8 +21,7 @@ interface RestorableBreakpoint {
 }
 
 
-/**
- * This is the parent class for the zxnext remotes that use the dezogif
+/** This is the parent class for the zxnext remotes that use the dezogif
  * software.
  * The dezogif comes in two flavors: with a serial or a socket interface.
  */

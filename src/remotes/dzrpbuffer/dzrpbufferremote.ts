@@ -7,8 +7,7 @@ import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 
 
 
-/**
- * A structure used to serialize the sent messages.
+/** A structure used to serialize the sent messages.
  */
 class MessageBuffer {
 	// The response timeout time
@@ -25,8 +24,7 @@ class MessageBuffer {
 }
 
 
-/**
- * Conversion of SendDzrpCmd... functions as buffer and parsing of received messages.
+/** Conversion of SendDzrpCmd... functions as buffer and parsing of received messages.
  *
  * All sendDzrpCmd... methods are implemented. I.e. all commands
  * create a buffer to send. The buffer sending itself (sendBuffer) is
@@ -45,6 +43,9 @@ class MessageBuffer {
  * The class also sets up a message queue for the commands to send.
  *
  * This class does not implement any complex flow/state handling.
+ *
+ * IF YOU IMPLEMEMENT A REMOTE THAT USES A PHYSICAL TRANSPORT AND
+ * USES THE DZRP PROTOCOL, YOU SHOULD DERIVE FROM THIS CLASS.
  */
 export class DzrpBufferRemote extends DzrpQueuedRemote {
 	/// Timeouts.

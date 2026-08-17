@@ -2,8 +2,7 @@ import {DzrpDezogIfRemote} from './dzrpdezogifremote';
 import {WithSocket} from './transportsocketmixin';
 
 
-/**
- * A ZX Next remote that is connected via a socket instead of the serial
+/** A ZX Next remote that is connected via a socket instead of the serial
  * interface, e.g. through the ZX Next's ESP8266 WiFi module.
  *
  * Everything above the transport is identical to the serial connection:

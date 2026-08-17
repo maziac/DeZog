@@ -5,6 +5,16 @@ import {Settings} from '../../settings/settings';
 import {SerialPort} from 'serialport';
 
 
+/** A mixture that handles the serial port.
+ * Open, close, sending and receiving.
+ * It only handles the bare serial port.
+ * It is agnostic of the used protocol. I.e. it does not know about the DZRP protocol.
+ *
+ * Use e.g. as:
+ * class ZxNextSerialRemote extends WithSerial(DzrpDezogIfRemote) {...}
+ */
+
+
 type Constructor<T = {}> = new (...args: any[]) => T;
 
 export function WithSerial<TBase extends Constructor<DzrpBufferRemote>>(Base: TBase) {
