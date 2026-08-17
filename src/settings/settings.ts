@@ -105,11 +105,11 @@ export interface LoadObj {
 }
 
 /// Definitions for the 'zrcp' remote type.
-export interface ZrcpType extends DzrpTransportType {
-	// The hostname/IP address of the CSpect socket.
+export interface ZrcpType {
+	// The hostname/IP address of the socket.
 	hostname: string;
 
-	// The port of the CSpect socket.
+	// The port of the socket.
 	port: number;
 
 	/// The socket timeout in seconds.
@@ -137,10 +137,10 @@ export interface DzrpType {
 // Not all derived classes support both. The package.json will allow
 // either of them or both. But the structure optionally contains both.
 export interface DzrpTransportType extends DzrpType {
-	// The hostname/IP address of the CSpect socket.
+	// The hostname/IP address of the socket.
 	hostname?: string;
 
-	// The port of the CSpect socket.
+	// The port of the socket.
 	port?: number;
 
 	// The serial usb device.
@@ -596,6 +596,8 @@ export class Settings {
 			launchCfg.cspect.port = 11000;
 		if (!launchCfg.cspect.timeout)
 			launchCfg.cspect.timeout = 5;	// 5 secs
+		if (!launchCfg.cspect.supportedCommands)
+			launchCfg.cspect.supportedCommands = '0b00000011_00000000_00000001_11111111_00011111_11111110';	// For dzrp < 2.2
 
 		// mame
 		if (!launchCfg.mame)

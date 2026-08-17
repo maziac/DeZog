@@ -238,11 +238,12 @@ export class DzrpRemote extends RemoteBase {
 						throw Error('Too many bits (> 256) while parsing a binary number in the "supportedCommands" string.');
 					const bit = bits.at(-1);
 					if (bit === '1')
-						unsupported[i] = false;
-					if (bit !== '0')
+						unsupported[i++] = false;
+					else if (bit === '0')
+						i++;
+					else if (bit !== '_')	// Skip separator
 						throw Error('Unexpected digit while parsing a binary number in the "supportedCommands" string.');
 					// Next
-					i++;
 					bits = bits.substring(0, bits.length - 1);
 				}
 			}
@@ -260,6 +261,8 @@ export class DzrpRemote extends RemoteBase {
 		const commandEntries = Object.entries(DZRP);
 		for (const entry of commandEntries) {
 			const cmdId = parseInt(entry[0]);
+			if (isNaN(cmdId))
+				break;
 			if (unsupported[cmdId]) {
 				// Command unsupported, exchange function
 				const cmdName = entry[1] as string;
@@ -272,6 +275,9 @@ export class DzrpRemote extends RemoteBase {
 				(this as any)[methodName] = () => {
 					throw new Error(`DZRP command '${cmdName} (${cmdId})' is not supported by the remote.`);
 				};
+			}
+			else {
+				console.log(`Unsupported command: ${entry[1]} (${cmdId})`);
 			}
 		}
 	}

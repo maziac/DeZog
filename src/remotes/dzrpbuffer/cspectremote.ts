@@ -18,6 +18,7 @@ export class CSpectRemote extends WithSocket(DzrpBufferRemote) {
 	constructor(settingsDzrpType: CSpectType) {
 		super(settingsDzrpType);
 		// Init
+		// TODO: Set according DZRP GET_SUPPORTED_COMMANDS. Check if it is early enough.
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = false;
 		this.supportsLOGPOINT = true;

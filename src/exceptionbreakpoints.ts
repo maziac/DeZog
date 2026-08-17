@@ -27,20 +27,20 @@ export interface ExceptionBreakpointInfo {
 }
 
 
-/**
- * Beginning with DeZog 3.0 the enabling/disabling of the breakpoints used for assertions (ASSERT),
+/** Beginning with DeZog 3.0 the enabling/disabling of the breakpoints used for assertions (ASSERT),
  * memory guards (WPMEM) ad logpoints (LOGPOINT) are now handled through the vscode UI and the debug adapter
  * protocol.
  * The creation of these breakpoints is not changed, i.e. they are still inserted through the asm source code.
- * However, additionally to the WPMEM watchpoint there is also a data breakpoint which.
+ * However, additionally to the WPMEM watchpoint there is also a data breakpoint.
  * The data breakpoint is not handled here.
  *
  * Functionality:
  * In order to use exception breakpoints in vscode the breakpoints are configured in vscode in initRequest
  * through 'response.body.exceptionBreakpointFilters'.
  * These breakpoints are shown in the BREAKPOINTS pane and cannot be changed anymore.
- * But it is possible through the vscode UI to enable/disable them. Additionally for the LOGPOINTs the user can
- * add a string that consists of the logpoint groups that should be enabled.
+ * But it is possible through the vscode UI to enable/disable them.
+ * Additionally for the LOGPOINTs the user can add a string that
+ * consists of the logpoint groups that should be enabled.
  * If one of the breakpoints gets selected/deselected vscode calls the 'setExceptionBreakPointsRequest' with all
  * selected breakpoints.
  * The ExceptionBreakpoints class then checks which state has changed (i.e. which breakpoint has been
