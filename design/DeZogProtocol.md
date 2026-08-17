@@ -84,46 +84,61 @@ I.e. different remotes may use a different subset of commands. For one this is b
 [CMD_READ_STATE]: #cmd_read_state50
 [CMD_WRITE_STATE]: #cmd_write_state51
 
+[NTF_PAUSE]: #ntf_pause1
+
 The table below shows which commands are used (X) with what remote:
 
-| Command                                   | zsim | CSpect | ZXNext | MAME** |
-| ----------------------------------------- | ---- | ------ | ------ | ------ |
-| [CMD_INIT]                                | -    | X      | X      | -      |
-| [CMD_CLOSE]                               | -    | X      | X      | X      |
-| [CMD_GET_REGISTERS]                       | X    | X      | X      | -      |
-| [CMD_SET_REGISTER]                        | X    | X      | X      | X      |
-| [CMD_WRITE_BANK]                          | X    | X      | X      | -      |
-| [CMD_CONTINUE]                            | X    | X      | X      | X      |
-| [CMD_PAUSE]                               | X    | X      | -      | X      |
-| [CMD_READ_MEM]                            | X    | X      | X      | X      |
-| [CMD_WRITE_MEM]                           | X    | X      | X      | X      |
-| [CMD_SET_SLOT]                            | X    | X      | X      | -      |
-| [CMD_GET_TBBLUE_REG]                      | X    | X      | X      | -      |
-| [CMD_SET_BORDER]                          | X    | X      | X      | -      |
-| [CMD_SET_BREAKPOINTS]                     | -    | -      | X      | -      |
-| [CMD_RESTORE_MEM]                         | -    | -      | X      | -      |
-| [CMD_LOOPBACK]                            | -    | -      | X      | -      |
-| [CMD_GET_SPRITES_PALETTE]                 | X    | X      | X      | -      |
-| [CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL] | X    | X      | X      | -      |
-| [CMD_GET_SPRITES]                         | X    | X      | -      | -      |
-| [CMD_GET_SPRITE_PATTERNS]                 | X    | X      | -      | -      |
-| [CMD_READ_PORT]                           | -    | *      | *      | -      |
-| [CMD_WRITE_PORT]                          | -    | *      | *      | -      |
-| [CMD_EXEC_ASM]                            | -    | *      | *      | -      |
-| [CMD_INTERRUPT_ON_OFF]                    | X    | X      | X      | -      |
-| [CMD_ADD_BREAKPOINT]                      | X    | X      | -      | X      |
-| [CMD_REMOVE_BREAKPOINT]                   | X    | X      | -      | X      |
-| [CMD_ADD_WATCHPOINT]                      | X    | -      | -      | X      |
-| [CMD_REMOVE_WATCHPOINT]                   | X    | -      | -      | X      |
-| [CMD_READ_STATE]                          | X    | -      | -      | -      |
-| [CMD_WRITE_STATE]                         | X    | -      | -      | -      |
+| Command/Notification                           | zsim* | CSpect | ZXNext | MAME* |
+| ---------------------------------------------- | ----- | ------ | ------ | ----- |
+| [CMD_INIT] (1)                                 | -     | X      | X      | -     |
+| [CMD_CLOSE]   (2)                              | -     | X      | X      | X     |
+| [CMD_GET_REGISTERS] (3)                        | X     | X      | X      | -     |
+| [CMD_SET_REGISTER] (4)                         | X     | X      | X      | X     |
+| [CMD_WRITE_BANK] (5)                           | X     | X      | X      | -     |
+| [CMD_CONTINUE] (6)                             | X     | X      | X      | X     |
+| [CMD_PAUSE] (7)                                | X     | X      | X**    | X     |
+| [CMD_READ_MEM] (8)                             | X     | X      | X      | X     |
+| [CMD_WRITE_MEM] (9)                            | X     | X      | X      | X     |
+| [CMD_SET_SLOT] (10)                            | X     | X      | X      | -     |
+| [CMD_GET_TBBLUE_REG] (11)                      | X     | X      | X      | -     |
+| [CMD_SET_BORDER] (12)                          | X     | X      | X      | -     |
+| [CMD_SET_BREAKPOINTS] (13)                     | -     | -      | X      | -     |
+| [CMD_RESTORE_MEM] (14)                         | -     | -      | X      | -     |
+| [CMD_LOOPBACK] (15)                            | -     | -      | X      | -     |
+| [CMD_GET_SPRITES_PALETTE] (16)                 | X     | X      | X      | -     |
+| [CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL] (17) | X     | X      | X      | -     |
+| [CMD_GET_SPRITES] (18)                         | X     | X      | -      | -     |
+| [CMD_GET_SPRITE_PATTERNS] (19)                 | X     | X      | -      | -     |
+| [CMD_READ_PORT] (20)                           | -     | x      | x      | -     |
+| [CMD_WRITE_PORT] (21)                          | -     | x      | x      | -     |
+| [CMD_EXEC_ASM] (22)                            | -     | x      | x      | -     |
+| [CMD_INTERRUPT_ON_OFF] (23)                    | X     | X      | X      | -     |
+| [CMD_GET_SUPPORTED_COMMANDS] (24)              | X     | X      | X      | -     |
+| [CMD_ADD_BREAKPOINT] (40)                      | X     | X      | -      | X     |
+| [CMD_REMOVE_BREAKPOINT] (41)                   | X     | X      | -      | X     |
+| [CMD_ADD_WATCHPOINT] (42)                      | X     | -      | -      | X     |
+| [CMD_REMOVE_WATCHPOINT] (43)                   | X     | -      | -      | X     |
+| [CMD_READ_STATE] (50)                          | X     | -      | -      | -     |
+| [CMD_WRITE_STATE] (51)                         | X     | -      | -      | -     |
+| [NTF_PAUSE] (1)                                | X     | X      | X      | X     |
 
 Notes:
 - DeZog knows with which remote it communicates and chooses the right subset.
-- \* the command is implemented in the remote but not used by DeZog.
-- \** MAME is just a "fake" DZRP implementation. It translates DZRP into gdb commands on the transport channel.
+- x (in contrast to upper case X) - the command is implemented in the remote but not used by DeZog.
+- \* - MAME and zsim work on a higher abstraction layer. I.e. they use DZRP functionality but do not implement it as physical transport layer.
+- \** - The support depends on the state/mode. If asynchronous break is turned off in dezogif, the command should not be used.CMD_GET_SUPPORTED_COMMANDS will dynamically report availability.
 
 ## History
+
+## 2.2.0
+
+Added:
+- NAK added as response to not implemented commands.
+- CMD_GET_SUPPORTED_COMMANDS added which returns the supported commands.
+
+Changed:
+- Sequence number range changed from 1-255 to 1-15 to free a bit for the NAK.
+
 
 ### 2.1.0
 
@@ -194,44 +209,53 @@ And then the payload follows.
 
 Length is the length of all bytes following the command ID (i.e. the payload).
 
-Command:
+**Command**:
 
-| Index | Size | Description                                         |
-| ----- | ---- | --------------------------------------------------- |
-| 0     | 4    | Length of the payload data. (little endian)         |
-| 4     | 1    | Sequence number, 1-255. Increased with each command |
-| 5     | 1    | Command ID                                          |
-| 6     | 1    | Payload: Data[0]                                    |
-| ...   | ...  | Data[...]                                           |
-| 6+n-1 | 1    | Data[n-1]                                           |
+| Index | Size | Description                                        |
+| ----- | ---- | -------------------------------------------------- |
+| 0     | 4    | Length of the payload data. (little endian)        |
+| 4     | 1    | Sequence number, 1-15. Increased with each command |
+| 5     | 1    | Command ID                                         |
+| 6     | 1    | Payload: Data\[0\]                                 |
+| ...   | ...  | Data\[...\]                                        |
+| 6+n-1 | 1    | Data\[n-1\]                                        |
 
 
-Response:
+**Response**:
 
 | Index | Size | Description                                                                      |
 | ----- | ---- | -------------------------------------------------------------------------------- |
 | 0     | 4    | Length of the following data beginning with the sequence number. (little endian) |
-| 4     | 1    | Sequence number, same as command.                                                |
-| 5     | 1    | Payload: Data[0]                                                                 |
-| ...   | ...  | Data[...]                                                                        |
-| 5+n-1 | 1    | Data[n-1]                                                                        |
+| 4     | 1    | Bit 7: 0 = ACK. Bits 4-6: unused. Bits 0-3: Sequence number, same as command.    |
+| 5     | 1    | Payload: Data\[0\]                                                               |
+| ...   | ...  | Data\[...\]                                                                      |
+| 5+n-1 | 1    | Data\[n-1\]                                                                      |
 
 The numbering for Commands starts at 1. (0 is reserved, i.e. not used).
-The numbering for notifications starts at 255 (counting down).
-So in total there are 255 possible commands.
+If the remote implements the requested command it answers with ACK bit set to 0.
+If the command is not implemented only a 1 (NAK) is returned (**NAK-response**):
 
-There is one notification defined which uses the sequence number 0.
+| Index | Size | Description                                                                           |
+| ----- | ---- | ------------------------------------------------------------------------------------- |
+| 0     | 4    | Length of the following data (=1) beginning with the sequence number. (little endian) |
+| 4     | 1    | Bit 7: 1 = NAK. Bits 4-6: unused. Bits 0-3: Sequence number, same as command.         |
 
-Notification:
+
+
+**Notifications**:
+Notifications use sequence number = 0.
+Currently only one notification is defined.
 
 | Index | Size | Description                                                                      |
 | ----- | ---- | -------------------------------------------------------------------------------- |
 | 0     | 4    | Length of the following data beginning with the sequence number. (little endian) |
 | 4     | 1    | Sequence number = 0.                                                             |
-| 5     | 1    | Payload: Data[0]                                                                 |
-| ...   | ...  | Data[...]                                                                        |
-| 5+n-1 | 1    | Data[n-1]                                                                        |
+| 5     | 1    | Notification ID                                                                  |
+| 5     | 1    | Payload: Data\[0\]                                                               |
+| ...   | ...  | Data\[...\]                                                                      |
+| 5+n-1 | 1    | Data\[n-1\]                                                                      |
 
+Note: The sequence number is only the lower 4 bits. So the bits 4-7 are "free". At the moment these are not used and 0.
 
 # Long addresses
 
@@ -259,7 +283,7 @@ Command (Length=4+n):
 Response (Length=7+n):
 | Index | Size | Value               | Description                                                                                                                                     |
 | ----- | ---- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | 1    | 1-255               | Same seq no                                                                                                                                     |
+| 0     | 1    | 1-15                | Same seq no                                                                                                                                     |
 | 1     | 1    | 0/1-255             | Error: 0=no error, 1=general (unknown) error.                                                                                                   |
 | 2     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch                                                                       |
 | *5    | 1    | 0-255               | Machine type (memory model): 0 = UNKNOWN, 1 = ZX16K, 2 = ZX48K, 3 = ZX128K, 4 = ZXNEXT. Note: CSpect and the ZX Next will always return ZXNEXT. |
@@ -282,7 +306,7 @@ Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
 | 0     | 4    | 1     | Length      |
-| 4     | 1    | 1-255 | Same seq no |
+| 4     | 1    | 1-15  | Same seq no |
 
 
 ## CMD_GET_REGISTERS=3
@@ -294,29 +318,29 @@ Command (Length=0):
 
 
 Response (Length=30+Nslots):
-| Index      | Size           | Value    | Description                                   |
-| ---------- | -------------- | -------- | --------------------------------------------- |
-| 0          | 1              |          | Sequence number                               |
-| 1          | 2              | PC       | All little endian                             |
-| 3          | 2              | SP       |                                               |
-| 5          | 2              | AF       |                                               |
-| 7          | 2              | BC       |                                               |
-| 9          | 2              | DE       |                                               |
-| 11         | 2              | HL       |                                               |
-| 13         | 2              | IX       |                                               |
-| 15         | 2              | IY       |                                               |
-| 17         | 2              | AF2      |                                               |
-| 19         | 2              | BC2      |                                               |
-| 21         | 2              | DE2      |                                               |
-| 23         | 2              | HL2      |                                               |
-| 25         | 1              | R        |                                               |
-| 26         | 1              | I        |                                               |
-| 27         | 1              | IM       |                                               |
-| 28         | 1              | reserved |                                               |
-| 29         | 1              | 1-255    | Nslots. The number of slots that will follow. |
-| *30        | slot[0]        | 0-255    | The slot contents, i.e. the bank number       |
-| ...        | ...            | ...      | "                                             |
-| *29+Nslots | slot[Nslots-1] | 0-255    | "                                             |
+| Index      | Size            | Value    | Description                                   |
+| ---------- | --------------- | -------- | --------------------------------------------- |
+| 0          | 1               |          | Sequence number                               |
+| 1          | 2               | PC       | All little endian                             |
+| 3          | 2               | SP       |                                               |
+| 5          | 2               | AF       |                                               |
+| 7          | 2               | BC       |                                               |
+| 9          | 2               | DE       |                                               |
+| 11         | 2               | HL       |                                               |
+| 13         | 2               | IX       |                                               |
+| 15         | 2               | IY       |                                               |
+| 17         | 2               | AF2      |                                               |
+| 19         | 2               | BC2      |                                               |
+| 21         | 2               | DE2      |                                               |
+| 23         | 2               | HL2      |                                               |
+| 25         | 1               | R        |                                               |
+| 26         | 1               | I        |                                               |
+| 27         | 1               | IM       |                                               |
+| 28         | 1               | reserved |                                               |
+| 29         | 1               | 1-255    | Nslots. The number of slots that will follow. |
+| *30        | slot\[0]        | 0-255    | The slot contents, i.e. the bank number       |
+| ...        | ...             | ...      | "                                             |
+| *29+Nslots | slot\[Nslots-1] | 0-255    | "                                             |
 
 
 ## CMD_SET_REGISTER=4
@@ -331,33 +355,33 @@ Command (Length=3):
 Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
-| 0     | 1    | 1-255 | Same seq no |
+| 0     | 1    | 1-15  | Same seq no |
 
 
 ## CMD_WRITE_BANK=5
 
 Command (Length=1+N):
-| Index | Size | Value | Description                |
-| ----- | ---- | ----- | -------------------------- |
-| 0     | 1    | 0-255 | Bank number                |
-| 1     | 1    | [0]   | First byte of memory block |
-| ..    | ..   | ...   | ...                        |
-| *N    | 1    | [N-1] | Last byte of memory block  |
+| Index | Size | Value  | Description                |
+| ----- | ---- | ------ | -------------------------- |
+| 0     | 1    | 0-255  | Bank number                |
+| 1     | 1    | \[0]   | First byte of memory block |
+| ..    | ..   | ...    | ...                        |
+| *N    | 1    | \[N-1] | Last byte of memory block  |
 
 
 Example for ZXNext with 8K memory banks:
-| Index | Size | Value    | Description                |
-| ----- | ---- | -------- | -------------------------- |
-| 0     | 1    | 0-223    | 8k bank number             |
-| 1     | 1    | [0]      | First byte of memory block |
-| ..    | ..   | ...      | ...                        |
-| 8191  | 1    | [0x1FFF] | Last byte of memory block  |
+| Index | Size | Value     | Description                |
+| ----- | ---- | --------- | -------------------------- |
+| 0     | 1    | 0-223     | 8k bank number             |
+| 1     | 1    | \[0]      | First byte of memory block |
+| ..    | ..   | ...       | ...                        |
+| 8191  | 1    | \[0x1FFF] | Last byte of memory block  |
 
 
 Response (Length=2+n):
 | Index | Size | Value               | Description                                                                                                       |
 | ----- | ---- | ------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 0     | 1    | 1-255               | Same seq no                                                                                                       |
+| 0     | 1    | 1-15                | Same seq no                                                                                                       |
 | *1    | 1    | 0-255               | Error: 0=no error, 1 = error.                                                                                     |
 | *2    | 1-n  | 0-terminated string | Either 0 or a string which explains the error. E.g. one could have tried to overwrite ROM or the DezogIf program. |
 
@@ -380,14 +404,14 @@ Command (Length=11):
 Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
-| 0     | 1    | 1-255 | Same seq no |
+| 0     | 1    | 1-15  | Same seq no |
 
 
 Note 1:
 Normally the remote will simply do a Continue (run) when it receives this command until one of the breakpoints is hit.
 If an 'alternate command' is given the remote might execute the alternate command instead. I.e. in that case the breakpoints are ignored, i.e. not set.
 The alternate commands are optimization to allow to execute the commands more effectively, i.e. faster.
-**At the moment there are no plans to implement 'step-over' or 'step-out' akternate commands. Only 0 is implemented.**
+**At the moment there are no plans to implement 'step-over' or 'step-out' alternate commands. Only 0 is implemented.**
 
 Alternate commands:
 - **1=step-over**: A PC range is given. The remote will carry out a loop of internal step-overs until the PC is not inside the range anymore.
@@ -412,7 +436,7 @@ Command (Length=0):
 Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
-| 0     | 1    | 1-255 | Same seq no |
+| 0     | 1    | 1-15  | Same seq no |
 
 
 
@@ -427,30 +451,30 @@ Command (Length=7):
 
 
 Response (Length=N+1):
-| Index | Size | Value     | Description                |
-| ----- | ---- | --------- | -------------------------- |
-| 0     | 1    | 1-255     | Same seq no                |
-| 1     | 1    | addr[0]   | First byte of memory block |
-| ..    | ..   | ...       | ...                        |
-| 1+n-1 | 1    | addr[n-1] | Last byte of memory block  |
+| Index | Size | Value      | Description                |
+| ----- | ---- | ---------- | -------------------------- |
+| 0     | 1    | 1-15       | Same seq no                |
+| 1     | 1    | addr\[0]   | First byte of memory block |
+| ..    | ..   | ...        | ...                        |
+| 1+n-1 | 1    | addr\[n-1] | Last byte of memory block  |
 
 
 ## CMD_WRITE_MEM=9
 
 Command (Length=4+N):
-| Index | Size | Value     | Description                |
-| ----- | ---- | --------- | -------------------------- |
-| 0     | 1    | 0         | reserved                   |
-| 1     | 2    | addr      | Start of the memory block  |
-| 3     | 1    | addr[0]   | First byte of memory block |
-| ...   | ...  | ...       | ...                        |
-| 3+n-1 | 1    | addr[n-1] | Last byte of memory block  |
+| Index | Size | Value      | Description                |
+| ----- | ---- | ---------- | -------------------------- |
+| 0     | 1    | 0          | reserved                   |
+| 1     | 2    | addr       | Start of the memory block  |
+| 3     | 1    | addr\[0]   | First byte of memory block |
+| ...   | ...  | ...        | ...                        |
+| 3+n-1 | 1    | addr\[n-1] | Last byte of memory block  |
 
 
 Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
-| 0     | 1    | 1-255 | Same seq no |
+| 0     | 1    | 1-15  | Same seq no |
 
 
 ## CMD_SET_SLOT=10
@@ -477,7 +501,7 @@ Upto DeZog 2.7.x 0xFE was used. Later only 0xFF was sent.
 Response (Length=2):
 | Index | Size | Value | Description                                                                                  |
 | ----- | ---- | ----- | -------------------------------------------------------------------------------------------- |
-| 0     | 1    | 1-255 | Same seq no                                                                                  |
+| 0     | 1    | 1-15  | Same seq no                                                                                  |
 | 1     | 1    | 0/1   | Error code. 0 = No error. 1 = could not set slot. At the moment this should return always 0. |
 
 
@@ -491,7 +515,7 @@ Command (Length=1):
 Response (Length=2):
 | Index | Size | Value | Description           |
 | ----- | ---- | ----- | --------------------- |
-| 0     | 1    | 1-255 | Same seq no           |
+| 0     | 1    | 1-15  | Same seq no           |
 | 1     | 1    | 0-255 | Value of the register |
 
 
@@ -506,31 +530,31 @@ Command (Length=1):
 Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
-| 4     | 1    | 1-255 | Same seq no |
+| 4     | 1    | 1-15  | Same seq no |
 
 
 ## CMD_SET_BREAKPOINTS=13
 
 Command (Length=3*N):
-| Index     | Size | Value   | Description             |
-| --------- | ---- | ------- | ----------------------- |
-| 0         | 2    | 0-65535 | Breakpoint[0].address   |
-| *2        | 1    | 0-255   | Breakpoint[0].bank+1    |
-| 3         | 2    | 0-65535 | Breakpoint[1].address   |
-| 5         | 1    | 0-255   | Breakpoint[1].bank+1    |
-| ...       | ...  | ...     | ...                     |
-| 3*(N-1)   | 2    | 0-65535 | Breakpoint[N-1].address |
-| 2+3*(N-1) | 1    | 0-255   | Breakpoint[N-1].bank+1  |
+| Index     | Size | Value   | Description              |
+| --------- | ---- | ------- | ------------------------ |
+| 0         | 2    | 0-65535 | Breakpoint\[0].address   |
+| *2        | 1    | 0-255   | Breakpoint\[0].bank+1    |
+| 3         | 2    | 0-65535 | Breakpoint\[1].address   |
+| 5         | 1    | 0-255   | Breakpoint\[1].bank+1    |
+| ...       | ...  | ...     | ...                      |
+| 3*(N-1)   | 2    | 0-65535 | Breakpoint\[N-1].address |
+| 2+3*(N-1) | 1    | 0-255   | Breakpoint\[N-1].bank+1  |
 
 
 Response (Length=1+N):
-| Index | Size | Value | Description                       |
-| ----- | ---- | ----- | --------------------------------- |
-| 0     | 1    | 1-255 | Same seq no                       |
-| 1     | 1    | 0-255 | Memory at breakpoint address[0]   |
-| 2     | 1    | 0-255 | Memory at breakpoint address[1]   |
-| ...   | ...  | ...   | ...                               |
-| N     | 1    | 0-255 | Memory at breakpoint address[N-1] |
+| Index | Size | Value | Description                        |
+| ----- | ---- | ----- | ---------------------------------- |
+| 0     | 1    | 1-15  | Same seq no                        |
+| 1     | 1    | 0-255 | Memory at breakpoint address\[0]   |
+| 2     | 1    | 0-255 | Memory at breakpoint address\[1]   |
+| ...   | ...  | ...   | ...                                |
+| N     | 1    | 0-255 | Memory at breakpoint address\[N-1] |
 
 Notes:
 - This command is only used by the ZX Next, not by the emulators.
@@ -545,22 +569,22 @@ Restores the memory previously overwritten by CMD_SET_BREAKPOINTS.
 Command (Length=4*N):
 | Index     | Size | Value   | Description      |
 | --------- | ---- | ------- | ---------------- |
-| 0         | 2    | 0-65535 | [0].address      |
-| *2        | 1    | 0-255   | [0].bank+1       |
+| 0         | 2    | 0-65535 | \[0].address     |
+| *2        | 1    | 0-255   | \[0].bank+1      |
 | 3         | 1    | 0-255   | Value to restore |
-| 4         | 2    | 0-65535 | [1].address      |
-| 6         | 1    | 0-255   | [1].bank+1       |
+| 4         | 2    | 0-65535 | \[1].address     |
+| 6         | 1    | 0-255   | \[1].bank+1      |
 | 7         | 1    | 0-255   | Value to restore |
 | ...       | ...  | ...     | ...              |
-| 4*(N-1)   | 2    | 0-65535 | [N-1].address    |
-| 1+4*(M-1) | 1    | 0-255   | [N-1].bank+1     |
+| 4*(N-1)   | 2    | 0-65535 | \[N-1].address   |
+| 1+4*(M-1) | 1    | 0-255   | \[N-1].bank+1    |
 | 2+4*(N-1) | 1    | 0-255   | Value to restore |
 
 
 Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
-| 0     | 1    | 1-255 | Same seq no |
+| 0     | 1    | 1-15  | Same seq no |
 
 Notes:
 - This command is only used by the ZX Next, not by the emulators.
@@ -573,17 +597,17 @@ Notes:
 Command (Length=N):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
-| 0     | 1    | 0-255 | Data[0]     |
+| 0     | 1    | 0-255 | Data\[0]    |
 | ...   | ...  | ...   | ...         |
-| N-1   | 1    | 0-255 | Data[N-1]   |
+| N-1   | 1    | 0-255 | Data\[N-1]  |
 
 Response (Length=N+1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
-| 0     | 1    | 1-255 | Same seq no |
-| 1     | 1    | 0-255 | Data[0]     |
+| 0     | 1    | 1-15  | Same seq no |
+| 1     | 1    | 0-255 | Data\[0]    |
 | ...   | ...  | ...   | ...         |
-| N     | 1    | 0-255 | Data[N-1]   |
+| N     | 1    | 0-255 | Data\[N-1]  |
 
 N is max. 8192.
 
@@ -600,7 +624,7 @@ Command (Length=1):
 Response (Length=513):
 | Index | Size | Value | Description                                                                                                                                |
 | ----- | ---- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 0     | 1    | 1-255 | Same seq no                                                                                                                                |
+| 0     | 1    | 1-15  | Same seq no                                                                                                                                |
 | 1     | 512  | 0-255 | The 256 palette values, 9bit values, little endian, the 2nd byte bit 0 contains the lowest bit of the blue 3-bit color. RRRGGGBB, 0000000B |
 
 
@@ -615,7 +639,7 @@ Command (Length=0):
 Response (Length=6):
 | Index | Size | Value | Description                       |
 | ----- | ---- | ----- | --------------------------------- |
-| 0     | 1    | 1-255 | Same seq no                       |
+| 0     | 1    | 1-15  | Same seq no                       |
 | 1     | 1    | 0-255 | x-left                            |
 | 2     | 1    | 0-255 | x-right                           |
 | 3     | 1    | 0-255 | y-top                             |
@@ -635,7 +659,7 @@ Command (Length=2):
 Response (Length=1+5*N):
 | Index | Size | Value | Description                                 |
 | ----- | ---- | ----- | ------------------------------------------- |
-| 0     | 1    | 1-255 | Same seq no                                 |
+| 0     | 1    | 1-15  | Same seq no                                 |
 | 1     | 5*N  | 0-255 | 5 bytes per sprite: Attribute 0, 1, 2, 3, 4 |
 
 
@@ -652,7 +676,7 @@ Note: It is not possible to read just a 128 byte pattern, instead always 256 pat
 Response (Length=1+256*N):
 | Index | Size  | Value | Description          |
 | ----- | ----- | ----- | -------------------- |
-| 0     | 1     | 1-255 | Same seq no          |
+| 0     | 1     | 1-15  | Same seq no          |
 | 2     | N*256 | 0-255 | Pattern memory data. |
 
 Note: 512 = 16x16x2.
@@ -669,7 +693,7 @@ Command (Length=2):
 Response (Length=2):
 | Index | Size | Value | Description          |
 | ----- | ---- | ----- | -------------------- |
-| 0     | 1    | 1-255 | Same seq no          |
+| 0     | 1    | 1-15  | Same seq no          |
 | 2     | 1    | 0-255 | The read port value. |
 
 
@@ -685,7 +709,7 @@ Command (Length=3):
 Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
-| 0     | 1    | 1-255 | Same seq no |
+| 0     | 1    | 1-15  | Same seq no |
 
 
 ## CMD_EXEC_ASM=22
@@ -705,7 +729,7 @@ A RET is inserted automatically at the end.
 Response (Length=10):
 | Index | Size | Value   | Description                                                           |
 | ----- | ---- | ------- | --------------------------------------------------------------------- |
-| 0     | 1    | 1-255   | Same seq no                                                           |
+| 0     | 1    | 1-15    | Same seq no                                                           |
 | 1     | 1    | 0-255   | Error codes: 0=no error, 1=length too long (receive buffer too short) |
 | 2     | 2    | 0-65535 | AF                                                                    |
 | 4     | 2    | 0-65535 | BC                                                                    |
@@ -718,6 +742,7 @@ Error codes:
 - 1=length too long
 - 2=debugger not stopped (cspect)
 
+
 ## CMD_INTERRUPT_ON_OFF=23
 
 Command (Length=1):
@@ -729,8 +754,26 @@ Command (Length=1):
 Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
-| 0     | 1    | 1-255 | Same seq no |
+| 0     | 1    | 1-15  | Same seq no |
 
+
+## CMD_GET_SUPPORTED_COMMANDS=24
+
+Command (Length=0):
+| Index | Size | Value | Description |
+| ----- | ---- | ----- | ----------- |
+| -     | -    | -     | -           |
+
+
+Response (Length=1):
+| Index | Size | Value | Descripion                                                                                    |
+| :---- | ---- | ----- | --------------------------------------------------------------------------------------------- |
+| 0     | 1    | 1-15  | Same seq no                                                                                   |
+| 1     | 32   | -     | Bitfield. Each bit position correspondents to the command ID. Bit 0 is unused. Little endian. |
+
+Examples:
+- CMD_INIT(1) is represented by bit 1 at index 1.
+- CMD_INTERRUT_ON_OFF(23) is represented by bit 23, i.e. bit 7 at index 3
 
 
 ## CMD_ADD_BREAKPOINT=40
@@ -746,7 +789,7 @@ Command (Length=3+n):
 Response (Length=3):
 | Index | Size | Value     | Description                                                 |
 | ----- | ---- | --------- | ----------------------------------------------------------- |
-| 0     | 1    | 1-255     | Same seq no                                                 |
+| 0     | 1    | 1-15      | Same seq no                                                 |
 | 1     | 2    | 1-65535/0 | Breakpoint ID. 0 is returned if no BP is available anymore. |
 
 
@@ -763,7 +806,7 @@ Command (Length=2):
 Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
-| 4     | 1    | 1-255 | Same seq no |
+| 4     | 1    | 1-15  | Same seq no |
 
 
 ## CMD_ADD_WATCHPOINT=42
@@ -780,7 +823,7 @@ Command (Length=6):
 Response (Length=2):
 | Index | Size | Value | Description                                           |
 | ----- | ---- | ----- | ----------------------------------------------------- |
-| 0     | 1    | 1-255 | Same seq no                                           |
+| 0     | 1    | 1-15  | Same seq no                                           |
 | 1     | 1    | 0/1   | 0=success, other=error, e.g. no watchpoints available |
 
 Note: long addresses (with bank info) are passed, bank=0: 64k address
@@ -799,7 +842,7 @@ Command (Length=6):
 Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
-| 4     | 1    | 1-255 | Same seq no |
+| 4     | 1    | 1-15  | Same seq no |
 
 
 ## CMD_READ_STATE=50
@@ -813,7 +856,7 @@ Command (Length=0):
 Response (Length=1+N):
 | Index | Size | Value | Description                                     |
 | ----- | ---- | ----- | ----------------------------------------------- |
-| 4     | 1    | 1-255 | Same seq no                                     |
+| 4     | 1    | 1-15  | Same seq no                                     |
 | 5     | N    |       | Arbitrary data. The format is up to the remote. |
 
 Returning a zero length means that it was not possible to obtain the state.
@@ -823,25 +866,23 @@ Returning a zero length means that it was not possible to obtain the state.
 Command (Length=N):
 | Index | Size | Value | Description                                                                         |
 | ----- | ---- | ----- | ----------------------------------------------------------------------------------- |
-| 6     | N    |       | Arbitrary data. This is data that has previously been retrieved via CMD_READ_STATE. |
+| 0     | N    |       | Arbitrary data. This is data that has previously been retrieved via CMD_READ_STATE. |
 
 Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
-| 4     | 1    | 1-255 | Same seq no |
+| 4     | 1    | 1-15  | Same seq no |
 
 
 # Notifications
 
-## NTF_PAUSE
+## NTF_PAUSE=1
 
 Notification (Length=6+n):
-| Index | Size | Value         | Description                                                                                                                                                                                                                                  |
-| ----- | ---- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | 1    | 0             | Instead of Seq No.                                                                                                                                                                                                                           |
-| 1     | 1    | 1             | NTF_PAUSE                                                                                                                                                                                                                                    |
-| 2     | 1    | 0-255         | Break reason: 0 = no reason (e.g. a step-over), 1 = manual break, 2 = breakpoint hit, 3 = watchpoint hit read access, 4 = watchpoint hit write access, 255 = some other reason: the reason string might have useful information for the user |
-| 3     | 2    | 0-65535       | Breakpoint or watchpoint address.                                                                                                                                                                                                            |
-| *5    | 1    | 0-255         | The bank+1 of the breakpoint or watchpoint address.                                                                                                                                                                                          |
-| 6     | 1-n  | reason string | Null-terminated break reason string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256. If reason string is empty it will contain at least a 0. |
+| Index     | Size | Value         | Description                                                                                                                                                                                                                                  |
+| --------- | ---- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0         | 1    | 0-255         | Break reason: 0 = no reason (e.g. a step-over), 1 = manual break, 2 = breakpoint hit, 3 = watchpoint hit read access, 4 = watchpoint hit write access, 255 = some other reason: the reason string might have useful information for the user |
+| 1         | 2    | 0-65535       | Breakpoint or watchpoint address.                                                                                                                                                                                                            |
+| *5        | 1    | 0-255         | The bank+1 of the breakpoint or watchpoint address.                                                                                                                                                                                          |
+| 3+5*(n-1) | 1-n  | reason string | Null-terminated break reason string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256. If reason string is empty it will contain at least a 0.                                                    |
 

@@ -51,7 +51,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	/// Timeouts.
 	protected static readonly CONNECTION_TIMEOUT = 1000;	// 1 sec
 
-	// Sequence Number 1-255. Used for sending.
+	// Sequence Number 1-15. Used for sending.
 	protected sequenceNumber: number;
 
 	// To collect received chunks.
@@ -89,7 +89,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	 */
 	public getNextSeqNo(): number {
 		this.sequenceNumber++;
-		if (this.sequenceNumber > 255)
+		if (this.sequenceNumber > 15)
 			this.sequenceNumber = 1;
 		return this.sequenceNumber;
 	}
