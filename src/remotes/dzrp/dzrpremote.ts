@@ -315,8 +315,9 @@ export class DzrpRemote extends RemoteBase {
 			if (resp.error)
 				throw Error(resp.error);
 			// Get supported commands. If not set manually, try to get it from the remote.
-			let supportedCommands = this.settingsDzrpType.supportedCommands || 'all';
-			if (!supportedCommands) {
+			let supportedCommands = this.settingsDzrpType.supportedCommands || 'all';;  // Default
+			if (resp.dzrpVersion[0] > 2 || resp.dzrpVersion[1] >= 2) {
+				// DZRP version > = 2.2
 				supportedCommands = await this.sendDzrpCmdGetSupportedCommands();
 			}
 			this.stripUnsupportedCommands(supportedCommands);
@@ -1925,9 +1926,9 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * error is 0 on success. 0xFF if version numbers not match.
 	 * Other numbers indicate an error on remote side.
 	 */
-	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
+	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: number[], machineType: DzrpMachineType}> {
 		Utility.assert(false);
-		return {error: undefined, dzrpVersion: "", programName: "", machineType: DzrpMachineType.ZX48K};
+		return {error: undefined, dzrpVersion: [], programName: "", machineType: DzrpMachineType.ZX48K};
 	}
 
 

@@ -377,7 +377,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	 * error is 0 on success. 0xFF if version numbers not match.
 	 * Other numbers indicate an error on remote side.
 	 */
-	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
+	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: number[], machineType: DzrpMachineType}> {
 		const nameBuffer = Utility.getBufferFromString(DZRP_PROGRAM_NAME);
 		const resp = await this.sendDzrpCmd(DZRP.CMD_INIT, [...this.DZRP_VERSION, ...nameBuffer], this.initCloseRespTimeoutTime);
 		// Error
@@ -385,7 +385,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		if (resp[0] != 0)
 			error = "Remote returned an error code: " + resp[0];
 		// DZRP Version
-		const dzrp_version = "" + resp[1] + "." + resp[2] + "." + resp[3];
+		const dzrp_version = [resp[1], resp[2], resp[3]];
 		// Get machine type
 		const machineType = resp[4];
 		// Program name

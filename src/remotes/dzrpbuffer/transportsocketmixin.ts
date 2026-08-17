@@ -2,9 +2,10 @@ import {Socket} from "net";
 import {DzrpBufferRemote} from "./dzrpbufferremote";
 import {LogTransport} from "../../log";
 import {ErrorWrapper} from "../../misc/errorwrapper";
+import {Settings} from "../../settings/settings";
 
 
-/** A mixture that handles the serial port.
+/** A mixin that handles the serial port.
  * Open, close, sending and receiving.
  * It only handles the bare serial port.
  * It is agnostic of the used protocol. I.e. it does not know about the DZRP protocol.
@@ -49,7 +50,8 @@ export function WithSocket<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 			this.socket.on('close', hadError => {
 				LogTransport.log(this.logName + ': closed connection: ' + hadError);
 				// Error
-				const err = new Error('ZX Next terminated the connection!');
+				const connName = Settings.launch.remoteType;
+				const err = new Error(`'${connName}' terminated the connection!`);
 				try {
 					this.emit('error', err);
 				}
@@ -79,8 +81,7 @@ export function WithSocket<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 			this.socket.connect(port, hostname);
 		}
 
-		/**
-		 * This will disconnect the socket.
+		/** This will disconnect the socket.
 		 */
 		public async disconnect(): Promise<void> {
 			if (!this.socket)
@@ -113,8 +114,7 @@ export function WithSocket<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 		}
 
 
-		/**
-		 * Writes the buffer to the socket port.
+		/** Writes the buffer to the socket port.
 		 */
 		protected async sendBuffer(buffer: Buffer): Promise<void> {
 			// Send buffer

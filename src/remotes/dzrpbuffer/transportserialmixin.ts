@@ -4,7 +4,7 @@ import {ErrorWrapper} from '../../misc/errorwrapper';
 import {SerialPort} from 'serialport';
 
 
-/** A mixture that handles the serial port.
+/** A mixin that handles the serial port.
  * Open, close, sending and receiving.
  * It only handles the bare serial port.
  * It is agnostic of the used protocol. I.e. it does not know about the DZRP protocol.
