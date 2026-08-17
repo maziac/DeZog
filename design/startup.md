@@ -104,6 +104,7 @@ else cspect
 	group dzrpremote
 		remote -> remote: onConnect
 		remote -> remote: sendDzrpCmdInit
+		remote -> remote: sendDzrpCmdGetSupportedCommands
 		remote -> remote: load
 		remote -> remote: createZ80RegistersDecoder
 		note over remote: create memory model\n and init

@@ -59,6 +59,8 @@ export enum DZRP {
 	CMD_EXEC_ASM = 22,
 	CMD_INTERRUPT_ON_OFF = 23,
 
+	CMD_GET_SUPPORTED_COMMANDS = 24,
+
 	// Breakpoint
 	CMD_ADD_BREAKPOINT = 40,
 	CMD_REMOVE_BREAKPOINT = 41,
@@ -169,7 +171,7 @@ export class DzrpRemote extends RemoteBase {
 	// address or that they overlap(they have size).
 	protected addedWatchpoints = new Set<GenericWatchpoint>();
 
-	// Used for testing the tranport mechanism, i.e. the serial transport.
+	// Used for testing the transport mechanism, i.e. the serial transport.
 	protected dzrpTransportTest: DzrpTransportTest | undefined;
 
 
@@ -233,6 +235,7 @@ export class DzrpRemote extends RemoteBase {
 			const resp = await this.sendDzrpCmdInit();
 			if (resp.error)
 				throw Error(resp.error);
+			const supportedCommands = await this.sendDzrpCmdGetSupportedCommands();
 
 			// Load executable
 			await this.load();
@@ -697,7 +700,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	protected getBreakpointsByAddress(bpAddress: number): Array<GenericBreakpoint> {
 		let foundBps = this.tmpBreakpoints.get(bpAddress);
 		if (!foundBps) // Try 64k address
-			foundBps = this.tmpBreakpoints.get(bpAddress&0xFFFF) ?? [];
+			foundBps = this.tmpBreakpoints.get(bpAddress & 0xFFFF) ?? [];
 		// Nothing found
 		return foundBps;
 	}
@@ -1728,8 +1731,8 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 		// Set the default slot/bank association.
 		// Note: slot 0 and 1 is set to ROM. It is not set which ROM, 0 or 1.
-		const  entryBank8 = 2 * nexFile.entryBank;	// Convert 16k bank into 8k
-		const slotBanks = [255, 255, 10, 11, 4, 5, entryBank8, entryBank8+1];	// ROM, 5, 2, custom
+		const entryBank8 = 2 * nexFile.entryBank;	// Convert 16k bank into 8k
+		const slotBanks = [255, 255, 10, 11, 4, 5, entryBank8, entryBank8 + 1];	// ROM, 5, 2, custom
 		for (let slot = 0; slot < 8; slot++) {
 			const bank8 = slotBanks[slot];
 			await this.sendDzrpCmdSetSlot(slot, bank8);
@@ -2126,6 +2129,19 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 */
 	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
 		Utility.assert(false);
+	}
+
+
+	/** Override.
+	 * Sends the command to enable or disable the interrupts.
+	 * @param enable true to enable, false to disable interrupts.
+	 * @returns a boolean array (size=256) with the supported commands.
+	 * Each array entry correspondents to a command id and tells if
+	 * command is supported (true) or not (false).
+	 */
+	protected async sendDzrpCmdGetSupportedCommands(): Promise<boolean[]> {
+		Utility.assert(false);
+		return [];
 	}
 }
 

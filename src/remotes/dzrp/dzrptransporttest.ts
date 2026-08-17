@@ -149,6 +149,7 @@ export class DzrpTransportTest extends EventEmitter {
 		}
 	];
 
+
 	/** Constructor.
 	 * Creates an object that is able to send commands and receive responses.
 	 * @param remote A pointer to the remote to use for sending the commands.

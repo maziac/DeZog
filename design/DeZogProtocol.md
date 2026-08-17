@@ -775,6 +775,10 @@ Examples:
 - CMD_INIT(1) is represented by bit 1 at index 1.
 - CMD_INTERRUT_ON_OFF(23) is represented by bit 23, i.e. bit 7 at index 3
 
+Note:
+Some of the commands need to be supported always by every remote like e.g. CMD_INIT.
+Nevertheless those are reported here as well.
+
 
 ## CMD_ADD_BREAKPOINT=40
 
