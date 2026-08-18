@@ -220,7 +220,7 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 			// Catch resolve method to store the breakpoint ID.
 			Utility.assert(this.funcContinueResolve);
 			this.funcContinueResolve = resolveWithBp;
-			await this.superSendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
+			await this.sendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
 		}
 		else {
 			// Continuing from a breakpoint.
@@ -248,7 +248,7 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 					// Restore the breakpoint (the other breakpoints are already set)
 					oldOpcode = await this.sendDzrpCmdSetBreakpoints([oldBreakedAddress]);
 					// Continue
-					await this.superSendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
+					await this.sendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
 				}
 			};
 
@@ -256,15 +256,10 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 			let [, tmpBp1Addr, tmpBp2Addr] = await this.calcStepBp(false /*step-into*/);
 
 			// Step
-			await this.superSendDzrpCmdContinue(tmpBp1Addr, tmpBp2Addr);
+			await this.sendDzrpCmdContinue(tmpBp1Addr, tmpBp2Addr);
 		}
 	}
 
-	// Calls the super implementation. Is required because ZxNextSerialRemote need to get a timestamp
-	// for the last CMD_CONTINUE command.
-	protected async superSendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
-		await super.sendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
-	}
 
 
 	/**

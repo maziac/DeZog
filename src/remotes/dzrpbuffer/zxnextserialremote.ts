@@ -69,12 +69,12 @@ export class ZxNextSerialRemote extends WithSerial(DzrpDezogIfRemote) {
 	}
 
 
-	// Calls the super implementation. Is required because ZxNextSerialRemote need to get a timestamp
-	// for the last CMD_CONTINUE command.
-	protected async superSendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
+	// Override to record the timestamp of the last CMD_CONTINUE command.
+	protected async dzrpContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
 		this.lastCmdContinueTime = Date.now();
-		await super.superSendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
+		await super.dzrpContinue(bp1Addr64k, bp2Addr64k);
 	}
+
 
 	/**
 	 * TODO: This is not fully true anymore for the "async break" with copper. Rewrite documentation and handle it somehow.
