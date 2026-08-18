@@ -416,7 +416,8 @@
 									"cspect",
 									"zsim",
 									"zxnext",
-									"mame"
+									"mame",
+									"dzrp"
 								],
 								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'zxnext' or 'zsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
 								"default": "zsim"
@@ -978,6 +979,31 @@
 									"port": {
 										"type": "number",
 										"description": "The port of the ZX Next socket. Defaults to 13000. Not to be used together with 'serial'."
+									},
+									"timeout": {
+										"type": "number",
+										"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
+									}
+								}
+							},
+							"dzrp": {
+								"description": "The generic DZRP protocol. Use this if you have a DZRP host (e.g. an emulator) that is not one of the natively supported remotes.",
+								"type": "object",
+								"additionalProperties": false,
+								"properties": {
+									"serial": {
+										"type": "string",
+										"description": "The name of the serial port interface, on macOS e.g. \"/dev/tty.usbserial-AQ\", on Windows e.g. \"COM8\". Its presence selects the serial connection, otherwise a socket connection is used.",
+										"default": ""
+									},
+									"hostname": {
+										"type": "string",
+										"description": "The hostname/IP address of the DZRP device if it is connected via a socket. Defaults to 'localhost'. Not to be used together with 'serial'.",
+										"default": "localhost"
+									},
+									"port": {
+										"type": "number",
+										"description": "The port of the DZRP socket. Defaults to 14000. Not to be used together with 'serial'."
 									},
 									"timeout": {
 										"type": "number",

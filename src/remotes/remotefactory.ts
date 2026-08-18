@@ -6,7 +6,7 @@ import {ZesaruxRemote} from './zesarux/zesaruxremote';
 import {ZxNextSerialRemote} from './dzrpbuffer/zxnextserialremote';
 import {ZxNextSocketRemote} from './dzrpbuffer/zxnextsocketremote';
 import {MameGdbRemote} from './mame/mamegdbremote';
-import {Settings, SettingsParameters} from '../settings/settings';
+import {SettingsParameters} from '../settings/settings';
 import {DzrpGenericSocketRemote, DzrpGenericSerialRemote} from './dzrpbuffer/dzrpgenericremote';
 
 
@@ -30,7 +30,7 @@ export class RemoteFactory {
 				break;
 			case 'zxnext':	// The ZX Next. USB/serial or socket connection.
 				// 'serial' selects the serial connection, otherwise a socket is used.
-				if (Settings.launch.zxnext.serial === undefined)
+				if (launch.zxnext.serial === undefined)
 					remote = new ZxNextSocketRemote(launch.zxnext);
 				else
 					remote = new ZxNextSerialRemote(launch.zxnext);
@@ -43,7 +43,7 @@ export class RemoteFactory {
 				break;
 			case 'dzrp':	// Generic dzrp. USB/serial or socket connection.
 				// 'serial' selects the serial connection, otherwise a socket is used.
-				if (Settings.launch.zxnext.serial === undefined)
+				if (launch.dzrp.serial === undefined)
 					remote = new DzrpGenericSocketRemote(launch.dzrp);
 				else
 					remote = new DzrpGenericSerialRemote(launch.dzrp);

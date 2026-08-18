@@ -1,5 +1,6 @@
 import {DzrpBufferRemote} from './dzrpbufferremote';
 import {WithSocket} from './transportsocketmixin';
+import {WithSerial} from './transportserialmixin';
 import {DZRP} from '../dzrp/dzrpremote';
 
 
@@ -21,6 +22,6 @@ export class DzrpGenericSocketRemote extends WithSocket(DzrpGenericRemote) {
 	protected override logName = 'DzrpGenericSocketRemote';
 }
 
-export class DzrpGenericSerialRemote extends WithSocket(DzrpGenericRemote) {
+export class DzrpGenericSerialRemote extends WithSerial(DzrpGenericRemote) {
 	protected override logName = 'DzrpGenericSerialRemote';
 }

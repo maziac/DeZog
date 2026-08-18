@@ -63,6 +63,8 @@ export function WithSerial<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 
 			// Receive data
 			this.serialPort.on('data', data => {
+				if (data[0] === 0xA5)
+					data = data.subarray(1);
 				this.dataReceived(data);
 			});
 

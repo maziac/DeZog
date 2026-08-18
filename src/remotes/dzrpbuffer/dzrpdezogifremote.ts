@@ -77,8 +77,7 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * The implementation of the SW breakpoints as Z80 instruction (RST) requires a modification
+	/** The implementation of the SW breakpoints as Z80 instruction (RST) requires a modification
 	 * in the calcStep algorithm.
 	 * It is for the pathologic case that a calculated breakpoint would be at the
 	 * same location as the current PC. E.g. for this code examples
@@ -137,8 +136,7 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * When connected to a ZX Next this method must take
+	/** When connected to a ZX Next this method must take
 	 * over functionality from the remote.
 	 * 2 states are distinguished:
 	 * - enteredBreakpointState=false: The normal one, calls the super class.
@@ -273,8 +271,7 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 
 
 
-	/**
-	 * Stores the breakpoints in a list.
+	/** Stores the breakpoints in a list.
 	 * This includes the breakpoints set for ASSERTIONs and LOGPOINTs.
 	 * The breakpoints are later sent all at once with CMD_SET_BREAKPOINTS.
 	 * @param bp The breakpoint. dzrpAddBreakpoint will set bp.bpId with the breakpoint
@@ -306,8 +303,7 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * Removes a breakpoint from the list.
+	/** Removes a breakpoint from the list.
 	 * @param bp The breakpoint to remove.
 	 */
 	protected async dzrpRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
@@ -336,8 +332,7 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * Returns all breakpoint addresses without the this.breakedAddress.
+	/** Returns all breakpoint addresses without the this.breakedAddress.
 	 * @returns Array with breakpoint address.
 	 */
 	protected getBreakpointAddresses(): Array<number> {
@@ -351,8 +346,7 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 	}
 
 
-	/**
-	 * Checks for an allowed breakpoint address.
+	/** Checks for an allowed breakpoint address.
 	 * @param longAddr Log address or undefined.
 	 * @returns If allowed: undefined
 	 * If not allowed: a string with the address range that can be used for
