@@ -5,7 +5,7 @@ import {CallStackFrame} from '../callstackframe';
 import {EventEmitter} from 'events';
 import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
 import {Labels, SourceFileEntry} from '../labels/labels';
-import {Settings/*, ListFile*/} from '../settings/settings';
+import {Settings} from '../settings/settings';
 import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/core/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/core/opcode';
@@ -80,6 +80,8 @@ export class RemoteBase extends EventEmitter {
 	// Name used for Logging. (Only the leaf's will get names, e.g. ZxNextRemote, CSpectRemote, etc.)
 	protected logName = '';
 
+	// The remote type name, e.g. "cspect", "zsim", "zxnext", "zrcp", etc.
+	public remoteType = '';
 
 	/// The top of the stack. Used to limit the call stack.
 	/// 64k address.
@@ -144,6 +146,7 @@ export class RemoteBase extends EventEmitter {
 	/// Override this.
 	constructor() {
 		super();
+		this.remoteType = Settings.launch.remoteType;
 	}
 
 

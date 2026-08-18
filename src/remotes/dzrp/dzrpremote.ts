@@ -212,13 +212,18 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/** This functions replaces the implementations of the sendDzrpCmd...
-	 * function with a function that does nothing and just prints a log message.
-	 * The idea is that a dzrp remote can tell what functions it supports.
-	 * DeZog will then not call these unsupported functions.
+	 * function with a function that does nothing and just throws an error.
+	 * The idea is that all DzrpRemote derived classes use mainly this
+	 * configure function and only need minimal additional modifications.
+	 * This also sets the 'supportsASSERTION', 'supportsWPMEM' and
+	 * 'supportsLOGPOINT' flags according to the supported commands.
+	 * Additionally some plausibility checks are done that may throw an error.
 	 * @param supportedCommands A string with the supported commands, e.g. "all" or "1,2,4" (the cmd ids) or a binary number with the bits set
 	 * for the supported commands.
+	 * @throws Error if some inconsistency is found (e.g. CMD_ADD_BREAKPOINT
+	 * is supported but CMD_REMOVE_BREAKPOINT is not).
 	 */
-	protected stripUnsupportedCommands(supportedCommands: string): void {
+	protected configureFromCommands(supportedCommands: string): void {
 		const unsupported = Array<boolean>(256).fill(true);
 		const separated = supportedCommands.split(',').map(s => s.trim());
 
@@ -272,8 +277,8 @@ export class DzrpRemote extends RemoteBase {
 					throw Error(`Methode ${methodName} does not exist.`);
 				}
 				// Override function with function that throws an exception
-				(this as any)[methodName] = () => {
-					throw Error(`Feature is not supported by the remote "${Settings.launch.remoteType}". Details: DZRP command '${cmdName} (${cmdId})' is not supported.`);
+				(this as any)[methodName] = async () => {
+					throw Error(`Feature is not supported by the remote "${this.remoteType}". Details: DZRP command '${cmdName} (${cmdId})' is not supported.`);
 				};
 			}
 			else {
@@ -288,6 +293,18 @@ export class DzrpRemote extends RemoteBase {
 		this.supportsASSERTION = (!unsupported[DZRP.CMD_SET_BREAKPOINTS]) || (!unsupported[DZRP.CMD_ADD_BREAKPOINT]);
 		this.supportsLOGPOINT = this.supportsASSERTION;
 
+		// Enable/disable state save/restore
+		if (unsupported[DZRP.CMD_WRITE_STATE]) {
+			this.stateSave = async () => {
+				throw Error(`Feature is not supported by the remote "${this.remoteType}". Details: DZRP command CMD_WRITE_STATE is not supported.`);
+			};
+		}
+		if (unsupported[DZRP.CMD_READ_STATE]) {
+			this.stateRestore = async () => {
+				throw Error(`Feature is not supported by the remote "${this.remoteType}". Details: DZRP command CMD_READ_STATE is not supported.`);
+			};
+		}
+
 		// Do some plausibility checks.
 		if (!unsupported[DZRP.CMD_ADD_WATCHPOINT] && unsupported[DZRP.CMD_REMOVE_WATCHPOINT])
 			throw Error(`Inconsistency found in remote "${Settings.launch.remoteType}". Details: DZRP command 'CMD_ADD_WATCHPOINT' supported but corresponding CMD_REMOVE_WATCHPOINT is not.`);
@@ -295,6 +312,8 @@ export class DzrpRemote extends RemoteBase {
 			throw Error(`Inconsistency found in remote "${Settings.launch.remoteType}". Details: DZRP command 'CMD_SET_BREAKPOINTS' supported but corresponding CMD_RESTORE_MEM is not.`);
 		if (!unsupported[DZRP.CMD_ADD_BREAKPOINT] && unsupported[DZRP.CMD_REMOVE_BREAKPOINT])
 			throw Error(`Inconsistency found in remote "${Settings.launch.remoteType}". Details: DZRP command 'CMD_ADD_BREAKPOINT' supported but corresponding CMD_REMOVE_BREAKPOINT is not.`);
+		if (!unsupported[DZRP.CMD_READ_STATE] && unsupported[DZRP.CMD_WRITE_STATE])
+			throw Error(`Inconsistency found in remote "${Settings.launch.remoteType}". Details: DZRP command 'CMD_READ_STATE' supported but corresponding CMD_WRITE_STATE is not.`);
 	}
 
 	// Returns e.g. "CmdInit" for "CMD_INIT"
@@ -304,6 +323,15 @@ export class DzrpRemote extends RemoteBase {
 			.split('_')
 			.map(part => part.charAt(0).toUpperCase() + part.slice(1))
 			.join('');
+	}
+
+
+	/** init() calls doInitialization() but does some common initialization before. */
+	public async init(): Promise<void> {
+		// Get supported commands to configure the Remote.
+		const supportedCommands = this.settingsDzrpType.supportedCommands || 'all';;  // Default, TODO: Do i need 'all
+		this.configureFromCommands(supportedCommands);
+		return super.init();
 	}
 
 
@@ -335,13 +363,6 @@ export class DzrpRemote extends RemoteBase {
 			const resp = await this.sendDzrpCmdInit();
 			if (resp.error)
 				throw Error(resp.error);
-			// Get supported commands. If not set manually, try to get it from the remote.
-			let supportedCommands = this.settingsDzrpType.supportedCommands || 'all';;  // Default
-			if (resp.dzrpVersion[0] > 2 || resp.dzrpVersion[1] >= 2) {
-				// DZRP version > = 2.2
-				supportedCommands = await this.sendDzrpCmdGetSupportedCommands();
-			}
-			this.stripUnsupportedCommands(supportedCommands);
 
 			// Load executable
 			await this.load();
@@ -2287,6 +2308,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * Each array entry correspondents to a command id and tells if
 	 * command is supported (true) or not (false).
 	 */
+	// TODO: Remove
 	protected async sendDzrpCmdGetSupportedCommands(): Promise<string> {
 		Utility.assert(false);
 		return '';

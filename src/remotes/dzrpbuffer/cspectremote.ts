@@ -1,6 +1,5 @@
 import {DzrpBufferRemote} from './dzrpbufferremote';
 import {CSpectType, Settings} from '../../settings/settings';
-import {GenericWatchpoint} from '../../genericwatchpoint';
 import {WithSocket} from './transportsocketmixin';
 
 
@@ -90,24 +89,6 @@ export class CSpectRemote extends WithSocket(DzrpBufferRemote) {
 			// Only if watchpoints exist
 			throw Error("There is no support for watchpoints for CSpect.");
 		}
-	}
-
-
-	/** This throws an exception. Used and catched by the unit tests.
-	 * @param wp The watchpoint to set. Will set 'bpId' in the 'watchPoint'.
-	 */
-	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
-		throw Error("Watchpoints not supported for CSpect.");
-	}
-
-
-	/** State saving is not supported in CSpect.
-	 */
-	public async stateSave(filePath: string): Promise<void> {
-		throw Error("Saving and restoring the state is not supported with CSpect.");
-	}
-	public async stateRestore(filePath: string): Promise<void> {
-		throw Error("Saving and restoring the state is not supported with CSpect.");
 	}
 
 
