@@ -645,7 +645,7 @@ export class DebugSessionClass extends DebugSession {
 		CpuHistoryClass.setCpuHistory(undefined);
 
 		// Create the Remote
-		RemoteFactory.createRemote(Settings.launch.remoteType);
+		RemoteFactory.createRemote(Settings.launch);
 
 		Remote.on('warning', message => {
 			// Some problem occurred

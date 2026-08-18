@@ -85,9 +85,9 @@ suite('Utility', () => {
 			const cfg: any = {
 				remoteType: 'zrcp'
 			};
-			const launch = Settings.Init(cfg);
-			Z80RegistersClass.createRegisters(launch);
-			RemoteFactory.createRemote(cfg.remoteType);
+			Settings.launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(Settings.launch);
+			RemoteFactory.createRemote(Settings.launch);
 			Z80Registers.setCache("PC=6005 SP=6094 AF=cf8c BC=0100 HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
 		});
 
@@ -313,9 +313,9 @@ suite('Utility', () => {
 			const cfg: any = {
 				remoteType: 'zrcp'
 			};
-			const launch = Settings.Init(cfg);
-			Z80RegistersClass.createRegisters(launch);
-			RemoteFactory.createRemote(cfg.remoteType);
+			Settings.launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(Settings.launch);
+			RemoteFactory.createRemote(Settings.launch);
 			Z80Registers.setCache("PC=1110 SP=2120 AF=3130 BC=4140 HL=5150 DE=6160 IX=A1A0 IY=B1B0 AF'=3332 BC'=4342 HL'=5352 DE'=6362 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
 			Z80Registers.decoder = new DecodeZesaruxRegisters(8);
 		});
@@ -529,9 +529,9 @@ suite('Utility', () => {
 	suite('evalExpression', () => {
 
 		setup(() => {
-			const launch = Settings.Init({remoteType: 'zrcp'} as any);
-			Z80RegistersClass.createRegisters(launch);
-			Z80Registers.decoder = new DecodeZesaruxRegistersZx128k()
+			Settings.launch = Settings.Init({remoteType: 'zrcp'} as any);
+			Z80RegistersClass.createRegisters(Settings.launch);
+			Z80Registers.decoder = new DecodeZesaruxRegistersZx128k();
 			const mm = new MemoryModelZxNextTwoRom();
 			mm.init();
 		});
@@ -589,12 +589,12 @@ suite('Utility', () => {
 		suite('breakpoints', () => {
 			setup(() => {
 				const cfg = {remoteType: 'zrcp'} as any;
-				const launch = Settings.Init(cfg);
-				Z80RegistersClass.createRegisters(launch);
+				Settings.launch = Settings.Init(cfg);
+				Z80RegistersClass.createRegisters(Settings.launch);
 				Z80Registers.decoder = new DecodeZesaruxRegistersZx128k()
 				const mm = new MemoryModelZxNextOneROM();
 				mm.init();
-				RemoteFactory.createRemote(cfg.remoteType);
+				RemoteFactory.createRemote(Settings.launch);
 			});
 
 			test('simple', () => {
@@ -684,7 +684,7 @@ suite('Utility', () => {
 			} as any;
 			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters(Settings.launch);
-			RemoteFactory.createRemote(cfg.remoteType);
+			RemoteFactory.createRemote(cfg);
 			(Remote as any).configureMachine(Settings.launch.zsim);
 		});
 

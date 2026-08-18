@@ -303,7 +303,7 @@ export class Z80UnitTestRunner {
 		Z80RegistersClass.createRegisters(Settings.launch);
 
 		// Start emulator.
-		RemoteFactory.createRemote(configuration.remoteType);
+		RemoteFactory.createRemote(Settings.launch);
 
 		// Check if a cpu history object has been created. (Note: this is only required for debug but done for both)
 		if (!(CpuHistory as any)) {

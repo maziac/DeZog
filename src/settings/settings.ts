@@ -125,10 +125,6 @@ export interface ZrcpType {
 	resetOnLaunch: boolean;
 }
 
-/// Definitions for the 'dzrp' remote (socket) type.
-export interface DzrpType {
-	supportedCommands: string;	// The supported commands of the remote. Either "all" or a comma separated list of command ids. Can also be a binary number, then it is interpreted as bit mask. E.g. "1,2,3" or "0b111". In total 255 commands could be supported. TODO: Status = experimental.
-}
 
 // The base interface for remotes with socket connection.
 // User can choose either hostname/port or serial, not both.
@@ -136,7 +132,9 @@ export interface DzrpType {
 // timeout is used for socket and serial.
 // Not all derived classes support both. The package.json will allow
 // either of them or both. But the structure optionally contains both.
-export interface DzrpTransportType extends DzrpType {
+export interface DzrpTransportType {
+	supportedCommands: string;	// The supported commands of the remote. Either "all" or a comma separated list of command ids. Can also be a binary number, then it is interpreted as bit mask. E.g. "1,2,3" or "0b111". In total 255 commands could be supported. TODO: Status = experimental.
+
 	// The hostname/IP address of the socket.
 	hostname?: string;
 
@@ -271,7 +269,7 @@ export interface CustomVisualMemBlockType {
 }
 
 /// Definitions for the 'zsim' remote type.
-export interface ZSimType extends DzrpType {
+export interface ZSimType {
 	// Defines a preset of settings to simulate a ZX Spectrum or ZX81.
 	// I.e. for a Spectrum it defines zxKeyboard, zxInterface2Joy, visualMemory, 48K, ulaScreen, zxBeeper, cpuFrequency, defaultPortIn.
 	// For a ZX81 it defines zxKeyboard, visualMemory, 16K, ulaScreen, cpuFrequency, defaultPortIn.
@@ -396,7 +394,7 @@ export interface SmartDisassemblerArgs {
  */
 export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments {
 	/// The remote type: zesarux or zxnext.
-	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame';
+	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame' | 'dzrp';
 
 	// The special settings for zrcp (ZEsarux).
 	zrcp: ZrcpType;
@@ -412,6 +410,9 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	// The special settings for the serial connection.
 	zxnext: ZxNextType;
+
+	// A generic DZRP remote.
+	dzrp: DzrpTransportType;
 
 	/// true if the configuration is for unit tests.
 	unitTests: false;
@@ -524,6 +525,7 @@ export class Settings {
 				mame: <any>undefined,
 				zsim: <any>undefined,
 				zxnext: <any>undefined,
+				dzrp: <any>undefined,
 				unitTests: <any>undefined,
 				rootFolder: <any>undefined,
 				sjasmplus: <any>undefined,
@@ -884,6 +886,22 @@ export class Settings {
 				launchCfg.zxnext.port = 13000;
 		}
 
+		// Generic DZRP remote
+		if (!launchCfg.dzrp) {
+			launchCfg.dzrp = {} as DzrpTransportType;
+		}
+		if (launchCfg.dzrp.timeout === undefined) {
+			launchCfg.dzrp.timeout = 5;	// Seconds
+		}
+		// The presence of 'serial' selects the serial connection, otherwise a
+		// socket connection is used.
+		if (launchCfg.dzrp.serial === undefined) {
+			if (launchCfg.dzrp.hostname === undefined)
+				launchCfg.dzrp.hostname = 'localhost';
+			if (launchCfg.dzrp.port === undefined)
+				launchCfg.dzrp.port = 14000;
+		}
+
 		// sjasmplus
 		if (launchCfg.sjasmplus) {
 			launchCfg.sjasmplus = launchCfg.sjasmplus.map(fp => {
@@ -1214,7 +1232,7 @@ export class Settings {
 
 		// Check remote type
 		const rType = Settings.launch.remoteType;
-		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame'];
+		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame', 'dzrp'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("'remoteType': Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
