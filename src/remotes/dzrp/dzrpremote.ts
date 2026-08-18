@@ -421,7 +421,7 @@ export class DzrpRemote extends RemoteBase {
 			await this.sendDzrpCmdClose();
 		}
 		else if (cmd_name === "cmd_continue") {
-			await this.sendDzrpCmdContinue();
+			await this.dzrpContinue();
 		}
 		else if (cmd_name === "cmd_pause") {
 			await this.sendDzrpCmdPause();
@@ -1150,7 +1150,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 						if (condition === undefined) {
 							// Continue
 							this.funcContinueResolve = funcContinueResolve;
-							await this.sendDzrpCmdContinue();
+							await this.dzrpContinue();
 						}
 						else {
 							// Construct break reason string to report
@@ -1175,7 +1175,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 				// Send 'run' command
 				this.funcContinueResolve = funcContinueResolve;
-				await this.sendDzrpCmdContinue();
+				await this.dzrpContinue();
 			})();
 		});
 	}
@@ -1221,7 +1221,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 						// Note: we need to use the original bp addresses
 						// Continue
 						this.funcContinueResolve = funcContinueResolve;
-						await this.sendDzrpCmdContinue(bp1, bp2);
+						await this.dzrpContinue(bp1, bp2);
 					}
 					else {
 						// Construct break reason string to report
@@ -1240,7 +1240,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				// Send 'run' command
 				this.funcContinueResolve = funcContinueResolve;
 				// Send command to 'continue'
-				await this.sendDzrpCmdContinue(bp1, bp2);
+				await this.dzrpContinue(bp1, bp2);
 			})();
 		});
 	}
@@ -1310,7 +1310,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 							// Continue
 							this.funcContinueResolve = funcContinueResolve;
 							prevPc = Z80Registers.getPC();
-							await this.sendDzrpCmdContinue(sobp1, sobp2);
+							await this.dzrpContinue(sobp1, sobp2);
 						}
 						else {
 							// Construct break reason string to report
@@ -1336,7 +1336,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				// Send 'run' command
 				this.funcContinueResolve = funcContinueResolve;
 				prevPc = Z80Registers.getPC();
-				await this.sendDzrpCmdContinue(bp1, bp2);
+				await this.dzrpContinue(bp1, bp2);
 			})();
 		});
 	}
@@ -1968,12 +1968,27 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 
 	/** Override.
-	 * Sends the command to continue ('run') the program.
+	 * Sends the command to continue ('run') the program over the physical transport.
+	 * This is the low-level transport method. Override dzrpContinue instead when you need
+	 * to add higher-level logic around the continue operation.
 	 * @param bp1Addr64k The 64k address (not long address) of breakpoint 1 or undefined if not used.
 	 * @param bp2Addr64k The 64k address (not long address) of breakpoint 2 or undefined if not used.
 	 */
 	protected async sendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
 		Utility.assert(false);
+	}
+
+
+	/** Executes the continue ('run') operation.
+	 * This is the method called from continue(), stepOver(), stepOut() etc.
+	 * Override this (instead of sendDzrpCmdContinue) when you need to wrap the continue
+	 * operation with higher-level logic such as setting/restoring breakpoints.
+	 * The base implementation simply delegates to sendDzrpCmdContinue.
+	 * @param bp1Addr64k The 64k address (not long address) of breakpoint 1 or undefined if not used.
+	 * @param bp2Addr64k The 64k address (not long address) of breakpoint 2 or undefined if not used.
+	 */
+	protected async dzrpContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
+		await this.sendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
 	}
 
 

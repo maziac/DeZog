@@ -637,11 +637,13 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/** Sends the command to continue ('run') the program.
+	/** Executes the continue ('run') operation.
+	 * Sets temporary GDB breakpoints, sends the continue packet, and intercepts
+	 * funcContinueResolve to clean up the temporary breakpoints on break.
 	 * @param bp1Addr64k The 64k address of breakpoint 1 or undefined if not used.
 	 * @param bp2Addr64k The 64k address of breakpoint 2 or undefined if not used.
 	 */
-	public async sendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
+	public async dzrpContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
 		try {
 			// Set temporary breakpoints
 			if (bp1Addr64k != undefined) {

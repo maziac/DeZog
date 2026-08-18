@@ -134,11 +134,11 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 	 * - enteredBreakpointState=true: A breakpoint has been hit before.
 	 * On continue it is necessary to restore the opcode first.
 	 *
-	 * Sends the command to continue ('run') the program.
+	 * Executes the continue ('run') operation.
 	 * @param bp1Addr64k The 64k address of breakpoint 1 or undefined if not used.
 	 * @param bp2Addr64k The 64k address of breakpoint 2 or undefined if not used.
 	 */
-	protected async sendDzrpCmdContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
+	protected async dzrpContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
 		// Get long addresses
 		let longBp1Address = bp1Addr64k;
 		let longBp2Address = bp2Addr64k;
