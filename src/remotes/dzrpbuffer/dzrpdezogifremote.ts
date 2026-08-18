@@ -266,10 +266,10 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 	 * Stores the breakpoints in a list.
 	 * This includes the breakpoints set for ASSERTIONs and LOGPOINTs.
 	 * The breakpoints are later sent all at once with CMD_SET_BREAKPOINTS.
-	 * @param bp The breakpoint. sendDzrpCmdAddBreakpoint will set bp.bpId with the breakpoint
+	 * @param bp The breakpoint. dzrpAddBreakpoint will set bp.bpId with the breakpoint
 	 * ID. If the breakpoint could not be set it is set to 0.
 	 */
-	protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
+	protected async dzrpAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
 		const bpAddress = bp.longAddress;
 		// Check breakpoint address.
 		const errText = this.checkBreakpoint(bpAddress);
@@ -299,7 +299,7 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 	 * Removes a breakpoint from the list.
 	 * @param bp The breakpoint to remove.
 	 */
-	protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
+	protected async dzrpRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
 		// Check if breaked address is removed.
 		const bpAddress = bp.longAddress;
 		if (this.longBreakedAddress == bpAddress)

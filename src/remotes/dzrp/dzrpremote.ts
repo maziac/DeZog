@@ -614,7 +614,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			const bp: GenericBreakpoint = {
 				longAddress: longAddress
 			};
-			await this.sendDzrpCmdAddBreakpoint(bp);
+			await this.dzrpAddBreakpoint(bp);
 			response += '\n Breakpoint ID: ' + bp.bpId;
 		}
 		else if (cmd_name === "cmd_remove_breakpoint") {
@@ -628,7 +628,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				bpId: Utility.parseValue(cmdArray[0])
 			};
 			// Create data to send
-			await this.sendDzrpCmdRemoveBreakpoint(bp);
+			await this.dzrpRemoveBreakpoint(bp);
 		}
 		else if (cmd_name === "test") {
 			// "test start 0 100" or "test end"
@@ -1404,12 +1404,12 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			if (enable) {
 				// Set breakpoint
 				if (!abp.bpId) {
-					await this.sendDzrpCmdAddBreakpoint(abp);	// Sets sbp.bpId
+					await this.dzrpAddBreakpoint(abp);	// Sets sbp.bpId
 				}
 			}
 			// Remove breakpoint
 			else if (abp.bpId) {
-				await this.sendDzrpCmdRemoveBreakpoint(abp);
+				await this.dzrpRemoveBreakpoint(abp);
 				abp.bpId = undefined;
 			}
 		}
@@ -1432,7 +1432,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			if (enable) {
 				// Set breakpoint
 				if (!lp.bpId) {
-					await this.sendDzrpCmdAddBreakpoint(lp);
+					await this.dzrpAddBreakpoint(lp);
 					// If running then add also to temporary list
 					if (this.funcContinueResolve) {
 						this.addTmpBreakpoint(lp);
@@ -1441,7 +1441,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			}
 			// Remove breakpoint
 			else if (lp.bpId) {
-				await this.sendDzrpCmdRemoveBreakpoint(lp);
+				await this.dzrpRemoveBreakpoint(lp);
 				// If running then remove from temporary list
 				if (this.funcContinueResolve) {
 					this.removeTmpBreakpoint(lp);
@@ -1468,7 +1468,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		}
 
 		// Set breakpoint
-		await this.sendDzrpCmdAddBreakpoint(bp);
+		await this.dzrpAddBreakpoint(bp);
 		if (bp.bpId === 0)
 			bp.longAddress = -1;
 
@@ -1499,7 +1499,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		}
 
 		// Remove
-		await this.sendDzrpCmdRemoveBreakpoint(bp);
+		await this.dzrpRemoveBreakpoint(bp);
 	}
 
 
@@ -2001,7 +2001,9 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 
 	/** Override.
-	 * Sends the command to add a breakpoint.
+	 * Sends the command to add a breakpoint over the physical transport.
+	 * This is the low-level transport method. Override dzrpAddBreakpoint instead when you
+	 * need to add higher-level logic around the add-breakpoint operation.
 	 * @param bp The breakpoint. sendDzrpCmdAddBreakpoint will set bp.bpId with the breakpoint
 	 * ID. If the breakpoint could not be set it is set to 0.
 	 */
@@ -2010,12 +2012,39 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
+	/** Adds a breakpoint.
+	 * This is the method called from setBreakpoint(), enableAssertionBreakpoints() etc.
+	 * Override this (instead of sendDzrpCmdAddBreakpoint) when you need to wrap the operation
+	 * with higher-level logic.
+	 * The base implementation simply delegates to sendDzrpCmdAddBreakpoint.
+	 * @param bp The breakpoint. dzrpAddBreakpoint will set bp.bpId with the breakpoint
+	 * ID. If the breakpoint could not be set it is set to 0.
+	 */
+	protected async dzrpAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
+		await this.sendDzrpCmdAddBreakpoint(bp);
+	}
+
+
 	/** Override.
-	 * Removes a breakpoint from the list.
+	 * Removes a breakpoint from the list over the physical transport.
+	 * This is the low-level transport method. Override dzrpRemoveBreakpoint instead when you
+	 * need to add higher-level logic around the remove-breakpoint operation.
 	 * @param bp The breakpoint to remove.
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
 		Utility.assert(false);
+	}
+
+
+	/** Removes a breakpoint.
+	 * This is the method called from removeBreakpoint(), enableAssertionBreakpoints() etc.
+	 * Override this (instead of sendDzrpCmdRemoveBreakpoint) when you need to wrap the operation
+	 * with higher-level logic.
+	 * The base implementation simply delegates to sendDzrpCmdRemoveBreakpoint.
+	 * @param bp The breakpoint to remove.
+	 */
+	protected async dzrpRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
+		await this.sendDzrpCmdRemoveBreakpoint(bp);
 	}
 
 
