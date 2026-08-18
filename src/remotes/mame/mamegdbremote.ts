@@ -53,7 +53,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * The successful emit takes place in 'onConnect' which should be called
 	 * by 'doInitialization' after a successful connect.
 	 */
-	public async doInitialization(): Promise<void> {
+	protected async doInitialization(): Promise<void> {
 
 		// Init socket
 		this.socket = new Socket();

@@ -1,6 +1,7 @@
 import {DzrpBufferRemote} from './dzrpbufferremote';
 import {CSpectType, Settings} from '../../settings/settings';
 import {WithSocket} from './transportsocketmixin';
+import {DZRP} from '../dzrp/dzrpremote';
 
 
 
@@ -22,6 +23,15 @@ export class CSpectRemote extends WithSocket(DzrpBufferRemote) {
 		// this.supportsASSERTION = true;
 		// this.supportsWPMEM = false;
 		// this.supportsLOGPOINT = true;
+	}
+
+
+	/** Returns the default unsupported commands for the CSpect remote.
+	 */
+	protected getDefaultUnsupportedCommands(): number[] {
+		return [
+			DZRP.CMD_SET_BREAKPOINTS, DZRP.CMD_RESTORE_MEM, DZRP.CMD_LOOPBACK, DZRP.CMD_ADD_WATCHPOINT, DZRP.CMD_REMOVE_WATCHPOINT, DZRP.CMD_READ_STATE, DZRP.CMD_WRITE_STATE
+		];
 	}
 
 

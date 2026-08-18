@@ -93,7 +93,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/// Initializes the machine.
-	public async doInitialization(): Promise<void> {
+	protected async doInitialization(): Promise<void> {
 		// Create the socket for communication (not connected yet)
 		this.setupSocket();
 

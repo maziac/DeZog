@@ -83,30 +83,36 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		this.sequenceNumber = 0;
 		// Instantiate the message queue
 		this.messageQueue = new Array<MessageBuffer>();
+
+		// Disable unsupported commands.
+		let unsupportedCmds: number[] = [];
+		if (this.settingsDzrpTransportType.supportedCommands) {
+			// Use the configuration from the Settings (launch.json)
+			unsupportedCmds = this.getUnsupportedCommands(this.settingsDzrpTransportType.supportedCommands);
+		}
+		else {
+			// Use defaults unsupported commands
+			unsupportedCmds = this.getDefaultUnsupportedCommands();
+		}
+		this.disableUnsupportedCommands(unsupportedCmds);
+		this.setAssertionWpmemLogpointSupport(unsupportedCmds);
 	}
 
 
-	/** This functions replaces the implementations of the sendDzrpCmd...
-	 * function with a function that does nothing and just throws an error.
-	 * The idea is that all DzrpRemote derived classes use mainly this
-	 * configure function and only need minimal additional modifications.
-	 * This also sets the 'supportsASSERTION', 'supportsWPMEM' and
-	 * 'supportsLOGPOINT' flags according to the supported commands.
-	 * Additionally some plausibility checks are done that may throw an error.
+	/** Returns an array with command ids of those commands which
+	 * are not in the supportedCommands string.
 	 * @param supportedCommands A string with the supported commands, e.g. "all" or "1,2,4" (the cmd ids) or a binary number with the bits set
 	 * for the supported commands.
-	 * @throws Error if some inconsistency is found (e.g. CMD_ADD_BREAKPOINT
-	 * is supported but CMD_REMOVE_BREAKPOINT is not).
 	 */
-	protected configureFromCommands(supportedCommands: string): void {
-		const unsupported = Array<boolean>(256).fill(true);
+	protected getUnsupportedCommands(supportedCommands: string): number[] {
+		const cmdDisabled = Array<boolean>(256).fill(true);
 		const separated = supportedCommands.split(',').map(s => s.trim());
 
 		// Parse: Loop the list
 		for (const valCmd of separated) {
 			if (valCmd === 'all') {
 				// All commands are allowed
-				unsupported.fill(false);
+				cmdDisabled.fill(false);
 				break;
 			}
 			if (valCmd.startsWith('0b')) {
@@ -118,7 +124,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 						throw Error('Too many bits (> 256) while parsing a binary number in the "supportedCommands" string.');
 					const bit = bits.at(-1);
 					if (bit === '1')
-						unsupported[i++] = false;
+						cmdDisabled[i++] = false;
 					else if (bit === '0')
 						i++;
 					else if (bit !== '_')	// Skip separator
@@ -133,63 +139,86 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 				// Check
 				if (cmdId < 0 || cmdId > 255)
 					throw Error(`Command id out of range (${valCmd}) in the "supportedCommands" string.`);
-				unsupported[cmdId] = false;
+				cmdDisabled[cmdId] = false;
 			}
 		}
 
 		// Now exchange the unsupported commands
+		const unsupportedCommands: number[] = [];
 		const commandEntries = Object.entries(DZRP);
 		for (const entry of commandEntries) {
 			const cmdId = parseInt(entry[0]);
 			if (isNaN(cmdId))
 				break;
-			if (unsupported[cmdId]) {
-				// Command unsupported, exchange function
-				const cmdName = entry[1] as string;
-				const methodName = 'sendDzrp' + this.toPascalCase(cmdName);
-				// Safety check that function exists at all
-				if (typeof (this as any)[methodName] !== 'function') {
-					throw Error(`Methode ${methodName} does not exist.`);
-				}
-				// Override function with function that throws an exception
-				(this as any)[methodName] = async () => {
-					throw Error(`Feature is not supported by the remote "${this.remoteType}". Details: DZRP command '${cmdName} (${cmdId})' is not supported.`);
-				};
-			}
-			else {
+			if (cmdDisabled[cmdId]) {
+				unsupportedCommands.push(cmdId);
 				console.log(`Unsupported command: ${entry[1]} (${cmdId})`);
 			}
 		}
+		return unsupportedCommands;
+	}
+
+
+	/** Disables the given commands.
+	 * The corresponding function is set to a function that throws an error.
+	 */
+	protected disableUnsupportedCommands(unsupportedCommands: number[]): void {
+		// Loop all disabled commands
+		for (const cmdId of unsupportedCommands) {
+			// Get name of command
+			const cmdName = DZRP[cmdId] as string;
+			const methodName = 'sendDzrp' + this.toPascalCase(cmdName);
+			// Safety check that function exists at all
+			if (typeof (this as any)[methodName] !== 'function') {
+				throw Error(`Methode ${methodName} does not exist.`);
+			}
+			// Override function with function that throws an exception
+			(this as any)[methodName] = async () => {
+				throw Error(`Feature is not supported by the remote "${this.remoteType}". Details: DZRP command '${cmdName} (${cmdId})' is not supported.`);
+			};
+		}
+	}
+
+
+	/** Sets the ASSERTION, WPMEM and LOGPOINT support flags based
+	 * on the given unsupported commands.
+	 * Same for save/restore state.
+	 * Also does some consistency checks.
+	 * @throws Error if some inconsistency is found (e.g. CMD_ADD_BREAKPOINT
+	 * is supported but CMD_REMOVE_BREAKPOINT is not).
+	 */
+	protected setAssertionWpmemLogpointSupport(unsupportedCommands: number[]): void {
 
 		// Enable/disable ASSERTIONs, WPMEM and LOGPOINTs according supported commands:
 		// Watchpoints/WPMEM:
-		this.supportsWPMEM = !unsupported[DZRP.CMD_ADD_WATCHPOINT];
+		this.supportsWPMEM = !unsupportedCommands.includes(DZRP.CMD_ADD_WATCHPOINT);
 		// ASSERTIONs/LOGPOINTs depend on normal breakpoints:
-		this.supportsASSERTION = (!unsupported[DZRP.CMD_SET_BREAKPOINTS]) || (!unsupported[DZRP.CMD_ADD_BREAKPOINT]);
+		this.supportsASSERTION = (!unsupportedCommands.includes(DZRP.CMD_SET_BREAKPOINTS)) || (!unsupportedCommands.includes(DZRP.CMD_ADD_BREAKPOINT));
 		this.supportsLOGPOINT = this.supportsASSERTION;
 
 		// Enable/disable state save/restore
-		if (unsupported[DZRP.CMD_WRITE_STATE]) {
+		if (unsupportedCommands.includes(DZRP.CMD_WRITE_STATE)) {
 			this.stateSave = async () => {
 				throw Error(`Feature is not supported by the remote "${this.remoteType}". Details: DZRP command CMD_WRITE_STATE is not supported.`);
 			};
 		}
-		if (unsupported[DZRP.CMD_READ_STATE]) {
+		if (unsupportedCommands.includes(DZRP.CMD_READ_STATE)) {
 			this.stateRestore = async () => {
 				throw Error(`Feature is not supported by the remote "${this.remoteType}". Details: DZRP command CMD_READ_STATE is not supported.`);
 			};
 		}
 
 		// Do some plausibility checks.
-		if (!unsupported[DZRP.CMD_ADD_WATCHPOINT] && unsupported[DZRP.CMD_REMOVE_WATCHPOINT])
+		if (!unsupportedCommands.includes(DZRP.CMD_ADD_WATCHPOINT) && unsupportedCommands.includes(DZRP.CMD_REMOVE_WATCHPOINT))
 			throw Error(`Inconsistency found in remote "${this.remoteType}". Details: DZRP command 'CMD_ADD_WATCHPOINT' supported but corresponding CMD_REMOVE_WATCHPOINT is not.`);
-		if (!unsupported[DZRP.CMD_SET_BREAKPOINTS] && unsupported[DZRP.CMD_RESTORE_MEM])
+		if (!unsupportedCommands.includes(DZRP.CMD_SET_BREAKPOINTS) && unsupportedCommands.includes(DZRP.CMD_RESTORE_MEM))
 			throw Error(`Inconsistency found in remote "${this.remoteType}". Details: DZRP command 'CMD_SET_BREAKPOINTS' supported but corresponding CMD_RESTORE_MEM is not.`);
-		if (!unsupported[DZRP.CMD_ADD_BREAKPOINT] && unsupported[DZRP.CMD_REMOVE_BREAKPOINT])
+		if (!unsupportedCommands.includes(DZRP.CMD_ADD_BREAKPOINT) && unsupportedCommands.includes(DZRP.CMD_REMOVE_BREAKPOINT))
 			throw Error(`Inconsistency found in remote "${this.remoteType}". Details: DZRP command 'CMD_ADD_BREAKPOINT' supported but corresponding CMD_REMOVE_BREAKPOINT is not.`);
-		if (!unsupported[DZRP.CMD_READ_STATE] && unsupported[DZRP.CMD_WRITE_STATE])
+		if (!unsupportedCommands.includes(DZRP.CMD_READ_STATE) && unsupportedCommands.includes(DZRP.CMD_WRITE_STATE))
 			throw Error(`Inconsistency found in remote "${this.remoteType}". Details: DZRP command 'CMD_READ_STATE' supported but corresponding CMD_WRITE_STATE is not.`);
 	}
+
 
 	// Returns e.g. "CmdInit" for "CMD_INIT"
 	protected toPascalCase(s: string): string {
@@ -201,12 +230,11 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	}
 
 
-	/** init() calls doInitialization() but does some common initialization before. */
-	public async init(): Promise<void> {
-		// Get supported commands to configure the Remote.
-		const supportedCommands = this.settingsDzrpTransportType.supportedCommands || 'all';;  // Default, TODO: Do i need 'all
-		this.configureFromCommands(supportedCommands);
-		return super.init();
+	/** Returns the default unsupported commands.
+	 * Per default all commands are supported.
+	 */
+	protected getDefaultUnsupportedCommands(): number[] {
+		return [];
 	}
 
 
@@ -215,7 +243,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
-	public async doInitialization(): Promise<void> {
+	protected async doInitialization(): Promise<void> {
 		// Override this
 	}
 

@@ -206,10 +206,18 @@ export class DzrpRemote extends RemoteBase {
 	 * The successful emit takes place in 'onConnect' which should be called
 	 * by 'doInitialization' after a successful connect.
 	 */
-	public async doInitialization(): Promise<void> {
+	protected async doInitialization(): Promise<void> {
 		//
 	}
 
+	public async init(): Promise<void> {
+		this.sendDzrpCmdWritePort = this.sendDzrpCmdUnimplemented;
+		await super.init();
+	}
+
+	protected async sendDzrpCmdUnimplemented(): Promise<void> {
+		throw Error("DZRP command not implemented in this remote.");
+	}
 
 	/** Override to create another decoder.
 	 */
@@ -608,7 +616,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		}
 		*/
 		else {
-			throw Error("Error: not supported.");
+			return `'${cmd_name}' is not supported.`;
 		}
 
 		// Return string

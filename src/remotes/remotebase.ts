@@ -236,7 +236,7 @@ export class RemoteBase extends EventEmitter {
 	 * Take care to implement the emits otherwise the system will hang on a start.
 	 * Please override.
 	 */
-	public async doInitialization(): Promise<void> {
+	protected async doInitialization(): Promise<void> {
 		//
 	}
 
@@ -1298,7 +1298,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise in remote (emulator) dependend format.
 	 */
 	public async dbgExec(cmd: string): Promise<string> {
-		return "Error: not supported.";
+		return `-e is not supported on '${this.remoteType}'.`;
 	}
 
 

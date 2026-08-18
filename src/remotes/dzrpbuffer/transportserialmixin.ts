@@ -25,7 +25,7 @@ export function WithSerial<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 		/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 		/// The successful emit takes place in 'onConnect' which should be called
 		/// by 'doInitialization' after a successful connect.
-		public async doInitialization(): Promise<void> {
+		protected async doInitialization(): Promise<void> {
 			// Set timeouts
 			this.cmdRespTimeoutTime = this.settingsDzrpTransportType.timeout * 1000;
 			this.chunkTimeout = this.cmdRespTimeoutTime;

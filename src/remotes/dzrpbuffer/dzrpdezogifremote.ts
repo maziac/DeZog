@@ -1,5 +1,5 @@
 import {DzrpBufferRemote} from './dzrpbufferremote';
-import {BreakInfo} from './../dzrp/dzrpremote';
+import {BreakInfo, DZRP} from './../dzrp/dzrpremote';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {GenericBreakpoint} from '../../genericwatchpoint';
@@ -59,6 +59,16 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 		this.breakpointIdLastIndex = 0;
 	}
 
+
+	/** Returns the default unsupported commands for a dezogif
+	 * (zxnext) remote.
+	 */
+	protected getDefaultUnsupportedCommands(): number[] {
+		return [
+			DZRP.CMD_GET_SPRITES, DZRP.CMD_GET_SPRITE_PATTERNS, DZRP.CMD_ADD_BREAKPOINT, DZRP.CMD_REMOVE_BREAKPOINT, DZRP.CMD_ADD_WATCHPOINT, DZRP.CMD_REMOVE_WATCHPOINT,
+			DZRP.CMD_READ_STATE, DZRP.CMD_WRITE_STATE
+		];
+	}
 
 	/** Override to create another decoder.
 	 */

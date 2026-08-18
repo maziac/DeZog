@@ -596,8 +596,6 @@ export class Settings {
 			launchCfg.cspect.port = 11000;
 		if (!launchCfg.cspect.timeout)
 			launchCfg.cspect.timeout = 5;	// 5 secs
-		if (!launchCfg.cspect.supportedCommands)
-			launchCfg.cspect.supportedCommands = '0b00000011_00000000_00000001_11111111_00011111_11111110';	// For dzrp < 2.2
 
 		// mame
 		if (!launchCfg.mame)
@@ -877,8 +875,6 @@ export class Settings {
 		if (launchCfg.zxnext.timeout === undefined) {
 			launchCfg.zxnext.timeout = 5;	// Seconds
 		}
-		if (!launchCfg.zxnext.supportedCommands)
-			launchCfg.zxnext.supportedCommands = '0b0001_11110011_11111111_11111110';	// For dzrp < 2.2
 		// The presence of 'serial' selects the serial connection, otherwise a
 		// socket connection is used.
 		if (launchCfg.zxnext.serial === undefined) {
