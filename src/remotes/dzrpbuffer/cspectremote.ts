@@ -18,11 +18,11 @@ export class CSpectRemote extends WithSocket(DzrpBufferRemote) {
 	constructor(settingsDzrpType: CSpectType) {
 		super(settingsDzrpType);
 		// Init
-		// TODO: Set according DZRP GET_SUPPORTED_COMMANDS. Check if it is early enough.
-		this.supportsASSERTION = true;
-		this.supportsWPMEM = false;
-		this.supportsLOGPOINT = true;
 		this.supportsBreakOnInterrupt = false;
+		// Set automatically though supportedCommands:
+		// this.supportsASSERTION = true;
+		// this.supportsWPMEM = false;
+		// this.supportsLOGPOINT = true;
 	}
 
 
@@ -115,19 +115,5 @@ export class CSpectRemote extends WithSocket(DzrpBufferRemote) {
 	 */
 	protected async loadBinZx81(filePath: string): Promise<void> {
 		throw Error("File extension in '" + filePath + "' not supported with remoteType:'" + Settings.launch.remoteType + "'.");
-	}
-
-
-	/** Not used/supported.
-	 */
-	protected async sendDzrpCmdSetBreakpoints(bpAddresses: Array<number>): Promise<Array<number>> {
-		throw Error("'sendDzrpCmdSetBreakpoints' is not implemented.'");
-	}
-
-
-	/** Not used/supported.
-	 */
-	protected async sendDzrpCmdRestoreMem(elems: Array<{address: number, value: number}>): Promise<void> {
-		throw Error("'sendDzrpCmdRestoreMem' is not implemented.");
 	}
 }

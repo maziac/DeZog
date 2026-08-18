@@ -48,10 +48,11 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 	constructor(settingsDzrpType: DzrpTransportType) {
 		super(settingsDzrpType);
 		// Init
-		this.supportsASSERTION = true;
-		this.supportsWPMEM = false;
-		this.supportsLOGPOINT = true;
 		this.supportsBreakOnInterrupt = false;
+		// Set automatically though supportedCommands:
+		// this.supportsASSERTION = true;
+		// this.supportsWPMEM = false;
+		// this.supportsLOGPOINT = true;
 		// Overwrite minimal required version
 		this.DZRP_VERSION = [2, 1, 0];
 		this.longBreakedAddress = undefined;
@@ -365,26 +366,6 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 
 
 	/**
-	 * Not supported.
-	 * The ZX Next can't read the sprite attributes.
-	 * Throws an exception.
-	  */
-	public async sendDzrpCmdGetSprites(index: number, count: number): Promise<Array<Uint8Array>> {
-		throw Error("The sprite attributes can't be read on a ZX Next unfortunately.");
-	}
-
-
-	/**
-	* Not supported.
-	* The ZX Next can't read the sprite patterns.
-	* Throws an exception.
-	*/
-	protected async sendDzrpCmdGetSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
-		throw Error("The sprite patterns can't be read on a ZX Next unfortunately.");
-	}
-
-
-	/**
 	 * State saving is not supported with ZX Next.
 	 */
 	public async stateSave(filePath: string): Promise<void> {
@@ -413,16 +394,6 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 	}
 	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
 		throw Error("Watchpoints not supported with the ZX Next.");
-	}
-
-	/**
-	 * Unsupported DRZP commands.
-	 */
-	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string): Promise<void> {
-		throw Error("Watchpoints are not supported with the ZX Next.");
-	}
-	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number, access: string): Promise<void> {
-		throw Error("Watchpoints are not supported with the ZX Next.");
 	}
 }
 

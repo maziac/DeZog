@@ -269,17 +269,32 @@ export class DzrpRemote extends RemoteBase {
 				const methodName = 'sendDzrp' + this.toPascalCase(cmdName);
 				// Safety check that function exists at all
 				if (typeof (this as any)[methodName] !== 'function') {
-					throw new Error(`Methode ${methodName} does not exist.`);
+					throw Error(`Methode ${methodName} does not exist.`);
 				}
 				// Override function with function that throws an exception
 				(this as any)[methodName] = () => {
-					throw new Error(`Feature is not supported by the remote "${Settings.launch.remoteType}". Details: DZRP command '${cmdName} (${cmdId})' is not supported.`);
+					throw Error(`Feature is not supported by the remote "${Settings.launch.remoteType}". Details: DZRP command '${cmdName} (${cmdId})' is not supported.`);
 				};
 			}
 			else {
 				console.log(`Unsupported command: ${entry[1]} (${cmdId})`);
 			}
 		}
+
+		// Enable/disable ASSERTIONs, WPMEM and LOGPOINTs according supported commands:
+		// Watchpoints/WPMEM:
+		this.supportsWPMEM = !unsupported[DZRP.CMD_ADD_WATCHPOINT];
+		// ASSERTIONs/LOGPOINTs depend on normal breakpoints:
+		this.supportsASSERTION = (!unsupported[DZRP.CMD_SET_BREAKPOINTS]) || (!unsupported[DZRP.CMD_ADD_BREAKPOINT]);
+		this.supportsLOGPOINT = this.supportsASSERTION;
+
+		// Do some plausibility checks.
+		if (!unsupported[DZRP.CMD_ADD_WATCHPOINT] && unsupported[DZRP.CMD_REMOVE_WATCHPOINT])
+			throw Error(`Inconsistency found in remote "${Settings.launch.remoteType}". Details: DZRP command 'CMD_ADD_WATCHPOINT' supported but corresponding CMD_REMOVE_WATCHPOINT is not.`);
+		if (!unsupported[DZRP.CMD_SET_BREAKPOINTS] && unsupported[DZRP.CMD_RESTORE_MEM])
+			throw Error(`Inconsistency found in remote "${Settings.launch.remoteType}". Details: DZRP command 'CMD_SET_BREAKPOINTS' supported but corresponding CMD_RESTORE_MEM is not.`);
+		if (!unsupported[DZRP.CMD_ADD_BREAKPOINT] && unsupported[DZRP.CMD_REMOVE_BREAKPOINT])
+			throw Error(`Inconsistency found in remote "${Settings.launch.remoteType}". Details: DZRP command 'CMD_ADD_BREAKPOINT' supported but corresponding CMD_REMOVE_BREAKPOINT is not.`);
 	}
 
 	// Returns e.g. "CmdInit" for "CMD_INIT"
