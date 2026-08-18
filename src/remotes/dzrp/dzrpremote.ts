@@ -273,7 +273,7 @@ export class DzrpRemote extends RemoteBase {
 				}
 				// Override function with function that throws an exception
 				(this as any)[methodName] = () => {
-					throw new Error(`DZRP command '${cmdName} (${cmdId})' is not supported by the remote.`);
+					throw new Error(`Feature is not supported by the remote "${Settings.launch.remoteType}". Details: DZRP command '${cmdName} (${cmdId})' is not supported.`);
 				};
 			}
 			else {

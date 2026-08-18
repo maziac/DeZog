@@ -877,6 +877,8 @@ export class Settings {
 		if (launchCfg.zxnext.timeout === undefined) {
 			launchCfg.zxnext.timeout = 5;	// Seconds
 		}
+		if (!launchCfg.zxnext.supportedCommands)
+			launchCfg.zxnext.supportedCommands = '0b0001_11110011_11111111_11111110';	// For dzrp < 2.2
 		// The presence of 'serial' selects the serial connection, otherwise a
 		// socket connection is used.
 		if (launchCfg.zxnext.serial === undefined) {
