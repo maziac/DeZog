@@ -37,7 +37,7 @@ export class RemoteFactory {
 				RemoteFactory.setGlobalRemote(new ZSimRemote(Settings.launch));
 				break;
 			case 'mame':
-				RemoteFactory.setGlobalRemote(new MameGdbRemote(Settings.launch.mame));
+				RemoteFactory.setGlobalRemote(new MameGdbRemote());
 				break;
 			default:
 				Utility.assert(false);

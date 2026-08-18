@@ -27,10 +27,10 @@ export function WithSerial<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 		/// by 'doInitialization' after a successful connect.
 		public async doInitialization(): Promise<void> {
 			// Set timeouts
-			this.cmdRespTimeoutTime = this.settingsDzrpType.timeout * 1000;
+			this.cmdRespTimeoutTime = this.settingsDzrpTransportType.timeout * 1000;
 			this.chunkTimeout = this.cmdRespTimeoutTime;
 			// Open the serial port
-			const serialPath = this.settingsDzrpType.serial!;
+			const serialPath = this.settingsDzrpTransportType.serial!;
 			this.serialPort = new SerialPort({
 				path: serialPath,
 				baudRate: 921600,

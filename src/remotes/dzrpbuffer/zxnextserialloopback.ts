@@ -21,7 +21,7 @@ export class ZxNextSerialLoopback extends ZxNextSerialRemote {
 		this.cmdRespTimeoutTime = respTimeout * 1000;
 		this.chunkTimeout = this.cmdRespTimeoutTime;
 		// Open the serial port
-		const serialPath = this.settingsDzrpType.serial!;
+		const serialPath = this.settingsDzrpTransportType.serial!;
 		this.serialPort = new SerialPort({
 			path: serialPath,
 			baudRate: 921600,

@@ -30,7 +30,7 @@ export function WithSocket<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 			this.socket.unref();
 
 			// Set timeouts
-			this.cmdRespTimeoutTime = this.settingsDzrpType.timeout * 1000;
+			this.cmdRespTimeoutTime = this.settingsDzrpTransportType.timeout * 1000;
 			this.chunkTimeout = this.cmdRespTimeoutTime;
 
 			// React on-open
@@ -76,8 +76,8 @@ export function WithSocket<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 
 			// Start socket connection
 			this.socket.setTimeout(DzrpBufferRemote.CONNECTION_TIMEOUT); // TODO: use settingsDzrpType.timeout * 1000 instead of hardcoded value
-			const port = this.settingsDzrpType.port!;
-			const hostname = this.settingsDzrpType.hostname!;
+			const port = this.settingsDzrpTransportType.port!;
+			const hostname = this.settingsDzrpTransportType.hostname!;
 			this.socket.connect(port, hostname);
 		}
 

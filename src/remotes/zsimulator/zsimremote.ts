@@ -142,7 +142,7 @@ export class ZSimRemote extends DzrpRemote {
 
 	/// Constructor.
 	constructor(launchArguments: SettingsParameters) {
-		super(launchArguments.zsim);
+		super();
 		// Init
 		this.zsim = launchArguments.zsim;
 		this.simulationTooSlow = false;

@@ -3,7 +3,7 @@ import {GenericBreakpoint} from '../../genericwatchpoint';
 import {LogTransport} from '../../log';
 import {Socket} from 'net';
 import {Utility} from '../../misc/utility';
-import {MameType, Settings} from '../../settings/settings';
+import {Settings} from '../../settings/settings';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';
@@ -38,8 +38,8 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 
 	/// Constructor.
-	constructor(settingsDzrpType: MameType) {
-		super(settingsDzrpType);
+	constructor() {
+		super();
 		// Init
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = true;

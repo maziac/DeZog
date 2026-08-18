@@ -1,8 +1,6 @@
 import {LogTransport} from '../../log';
 import {DzrpRemote} from './dzrpremote';
 import {Utility} from '../../misc/utility';
-import {DzrpType} from '../../settings/settings';
-
 
 
 
@@ -48,8 +46,8 @@ export class DzrpQueuedRemote extends DzrpRemote {
 
 
 	/// Constructor.
-	constructor(settingsDzrpType: DzrpType) {
-		super(settingsDzrpType);
+	constructor() {
+		super();
 		// Instantiate the message queue
 		this.messageQueue = new Array<MessageBuffer>();
 	}
