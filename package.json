@@ -419,7 +419,7 @@
 									"mame",
 									"dzrp"
 								],
-								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'zxnext' or 'zsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
+								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'cspect', 'mame', 'zrcp' (ZEsarUX), 'zxnext' or 'zsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
 								"default": "zsim"
 							},
 							"zrcp": {
