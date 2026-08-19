@@ -331,6 +331,14 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 					respTimeoutTime = this.cmdRespTimeoutTime;
 				this.putIntoQueue(buffer, respTimeoutTime, resolve, reject);
 
+				// If command is CMD_CLOSE then prohibit any further commands to be sent.
+				if (cmd == DZRP.CMD_CLOSE) {
+					// Prohibit any further commands to be sent.
+					// Any further calls will not put anything in the
+					// messageQueue.
+					this.putIntoQueue = () => {return undefined as any;};
+				}
+
 				// Try to send immediately
 				if (this.messageQueue.length == 1)
 					await this.sendNextMessage();

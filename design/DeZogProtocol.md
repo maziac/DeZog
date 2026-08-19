@@ -428,6 +428,9 @@ Note 2:
 
 
 ## CMD_PAUSE=7
+CMD_PAUSE will stop a running program.
+Normally it is send only while the program is running.
+If for some reason the program is not running when received, nothing happens.
 
 Command (Length=0):
 | Index | Size | Value | Description |

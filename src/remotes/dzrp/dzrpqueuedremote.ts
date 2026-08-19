@@ -62,9 +62,7 @@ export class DzrpQueuedRemote extends DzrpRemote {
 		//	this.messageQueue.length = 0; Can lead to a seqno problem if done when a cmd has been sent but no response received yet.
 		await super.disconnect();
 		try {
-			//console.log("disconnect: started");
 			await this.sendDzrpCmdClose();
-			//console.log("disconnect: finished");
 		}
 		catch (e) {
 			console.error("disconnect: Failed to close debug session: " + e);
