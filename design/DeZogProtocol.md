@@ -139,6 +139,7 @@ Added:
 
 Changed:
 - Sequence number range changed from 1-255 to 1-15 to free a bit for the NAK.
+- Explanation for "normal" and "simple" mode added.
 
 
 ### 2.1.0
@@ -891,3 +892,19 @@ Notification (Length=6+n):
 | *5        | 1    | 0-255         | The bank+1 of the breakpoint or watchpoint address.                                                                                                                                                                                          |
 | 3+5*(n-1) | 1-n  | reason string | Null-terminated break reason string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256. If reason string is empty it will contain at least a 0.                                                    |
 
+# Modes
+Modes are more about the remotes using DZRP than the protocol itself.
+There are 2 modes.
+
+**Simple Mode:**
+If the remote runs on the Z80 and cannot handle breakpoint lists on its own, e.g. because of complexity or available memory, DeZog can help.
+It is the so-called "simple" mode in which DeZog uses `CMD_SET_BREAKPOINTS` to send a list of breakpoint addresses that are exchanged by the remote with `RST 0` instructions.
+Then a `CMD_CONTINUE` is sent and afterwards the memory locations are restored by DeZog with a `CMD_RESTORE_MEM` command.
+The remote does not need to take care of breeakpoint lists by itself.
+
+**NORMAL_MODE:**
+The normal mode does not use `CMD_SET_BREAKPOINTS` or `CMD_RESTORE_MEM` but instead uses `CMD_ADD_BREAKPOINT` and `CMD_REMOVE_BREAKPOINT` (and `CMD_CONTINUE`) and is meant for use with a real emulator that already has own breakpoint handling implemented.
+Here the Z80 memory is left untouched.
+
+Normally a remote would support either way not both.
+If a remote supports both, DeZog may choose one of them but will not mix the commands within one session.

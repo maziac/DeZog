@@ -5,6 +5,7 @@ import {Utility} from '../../misc/utility';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 import {DzrpTransportType} from '../../settings/settings';
+import {createDzrpSimpleMode} from './dzrpsimplemode';
 
 
 
@@ -95,7 +96,40 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 			unsupportedCmds = this.getDefaultUnsupportedCommands();
 		}
 		this.disableUnsupportedCommands(unsupportedCmds);
+		this.selectMode(unsupportedCmds);
 		this.setAssertionWpmemLogpointSupport(unsupportedCmds);
+	}
+
+
+	/** Depending on (un)supported commands this method selects the
+	 * appropriate mode.
+	 * If CMD_ADD_BREAKPOINT is not supported, the 'simple mode' is used.
+	 * Otherwise, nothing is done, which defaults to normal mode.
+	 */
+	protected selectMode(unsupportedCommands: number[]) {
+		if (unsupportedCommands.includes(DZRP.CMD_ADD_BREAKPOINT)) {
+			this.useSimpleMode();
+		}
+	}
+
+
+	/** Takes care to use the DZRP 'simple mode' (CMD_SET_BREAKPOINTS)
+	 * instead of the normal mode (CMD_ADD_BREAKPOINT).
+	 * See {@link createDzrpSimpleMode} for more information.
+	 */
+	protected useSimpleMode() {
+		// Change implementation to use the special CMD_SET_BREAKPOINTS and CMD_RESTORE_MEM commands.
+		const currentClass = Object.getPrototypeOf(this).constructor;
+		const VariantBClass = createDzrpSimpleMode(currentClass);
+
+		// Change prototype to VariantBClass so that methods from VariantBClass are found
+		Object.setPrototypeOf(this, VariantBClass.prototype);
+
+		// Instance properties that would normally be set by the constructor,
+		// manually set here (constructor is NOT called when using setPrototypeOf!)
+		(this as any).longBreakedAddress = undefined;
+		(this as any).breakpointIdLastIndex = 0;
+		(this as any).breakpointsAndOpcodes = undefined;
 	}
 
 
@@ -308,7 +342,7 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 	/** Called when data has been received.
 	 */
 	protected dataReceived(data: Buffer) {
-		//LogSocket.log('dataReceived, count='+data.length);
+		//LogTransport.log('dataReceived, count=' + data.length);
 
 		// Add data to existing buffer
 		this.receivedData = Buffer.concat([this.receivedData, data]);

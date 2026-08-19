@@ -34,7 +34,6 @@ export class ZxNextSerialRemote extends WithSerial(DzrpDezogIfRemote) {
 	}
 
 
-
 	/** Called when data has been received.
 	 * If not configured for UART the ZX Next emits zeros through the serial cable.
 	 * Therefore we wait until the first indication of a message is received.

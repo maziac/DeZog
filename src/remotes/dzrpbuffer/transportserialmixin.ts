@@ -63,8 +63,6 @@ export function WithSerial<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 
 			// Receive data
 			this.serialPort.on('data', data => {
-				if (data[0] === 0xA5)
-					data = data.subarray(1);
 				this.dataReceived(data);
 			});
 
@@ -74,8 +72,7 @@ export function WithSerial<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 		}
 
 
-		/**
-		 * Closes the serial port.
+		/** Closes the serial port.
 		 */
 		public async closeSerialPort(): Promise<void> {
 			return new Promise<void>(resolve => {
@@ -97,8 +94,7 @@ export function WithSerial<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 		}
 
 
-		/**
-		 * This will disconnect the serial.
+		/** This will disconnect the serial.
 		 */
 		public async disconnect(): Promise<void> {
 			this.disconnect = async () => {};	// Prohibit that disconnect is executed twice.
@@ -111,8 +107,7 @@ export function WithSerial<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 		}
 
 
-		/**
-		 * Writes the buffer to the serial port.
+		/** Writes the buffer to the serial port.
 		 */
 		protected async sendBuffer(buffer: Buffer): Promise<void> {
 			// Send buffer
