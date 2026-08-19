@@ -374,5 +374,27 @@ export class DzrpDezogIfRemote extends DzrpBufferRemote {
 	protected async loadBinZx81(filePath: string): Promise<void> {
 		throw Error("File extension in '" + filePath + "' not supported with remoteType:'" + Settings.launch.remoteType + "'.");
 	}
+
+
+	/** In the ZXNext dezogif implementation it can happen that
+	 * the ZXNext is not able to receive the pause command. Therefore the
+	 * timeout is reduced to 200ms to give a fast response to the UI.
+	 */
+	protected async sendDzrpCmdPause(): Promise<void> {
+		// Reduce the timeout
+		const prevTimeout = this.cmdRespTimeoutTime;
+		this.cmdRespTimeoutTime = 200; // ms
+		try {
+			await super.sendDzrpCmdPause();
+		}
+		catch (e) {
+			throw e;
+		}
+		finally {
+			// Restore the previous timeout
+			this.cmdRespTimeoutTime = prevTimeout;
+		}
+
+	}
 }
 
