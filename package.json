@@ -1879,6 +1879,41 @@
 						}
 					},
 					{
+						"label": "DeZog: TRS-80 Rev Z",
+						"description": "Configuration for DeZog to debug the TRS-80 Rev Z machine (FPGA board or the Verilator emulator) via the debug bridge.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "revz",
+							"remoteType": "revz",
+							"revz": {
+								"target": "fpga",
+								"dongle": "fpga",
+								"transport": {
+									"kind": "python",
+									"serial": "${1:/dev/cu.usbserial-XXXX or tcp:5555 for the emulator}",
+									"bridge": "${2:Path to trs80-rev-z/tools/trszog_bridge.py}",
+									"autoStart": true
+								}
+							},
+							"zmac": [
+								{
+									"path": "${3:Zmac .bds file}"
+								}
+							],
+							"commandsAfterLaunch": [],
+							"history": {
+								"reverseDebugInstructionCount": 10000,
+								"spotCount": 5,
+								"codeCoverageEnabled": true
+							},
+							"startAutomatically": false,
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
+							"load": "${4:.cmd file to load}",
+							"topOfStack": "${5: Top of stack / label name}"
+						}
+					},
+					{
 						"label": "DeZog: Unit Tests",
 						"description": "Configuration for DeZog to use the internal simulator for unit tests.",
 						"body": {
