@@ -159,13 +159,27 @@ export class RevzRemote extends Trs80Model1Remote {
 		if (!t.serial)
 			throw new Error("revz: transport.python needs transport.serial — the dongle's serial device (e.g. /dev/cu.usbserial-XXXX), or tcp:<port> for the emulator's --debug-tcp.");
 		const baud = t.baud ?? 460800;
+		const python = t.python ?? 'python3';
 		const args = [t.bridge, '--serial', t.serial, '--baud', String(baud), '--port', String(port)];
 
 		return new Promise<void>((resolve, reject) => {
-			LogTransport.log(`revz: starting bridge: python3 ${args.join(' ')}`);
-			const proc = spawn('python3', args, {stdio: ['ignore', 'pipe', 'pipe']});
+			LogTransport.log(`revz: starting bridge: ${python} ${args.join(' ')}`);
+			const proc = spawn(python, args, {stdio: ['ignore', 'pipe', 'pipe']});
 			this.bridgeProcess = proc;
 			this.bridgeOwned = true;
+
+			// Keep the bridge's last output lines: when it dies before
+			// listening, THIS is the actual reason (missing pyserial, port
+			// in use, wrong device, ...) — show it instead of guessing.
+			const lastOutput: string[] = [];
+			const remember = (d: Buffer) => {
+				for (const line of d.toString().split('\n')) {
+					const s = line.trim();
+					if (s) lastOutput.push(s);
+				}
+				while (lastOutput.length > 6)
+					lastOutput.shift();
+			};
 
 			let settled = false;
 			const ready = () => {
@@ -188,11 +202,22 @@ export class RevzRemote extends Trs80Model1Remote {
 			proc.stdout?.on('data', (d: Buffer) => {
 				const s = d.toString();
 				LogTransport.log(`[revz bridge] ${s.trim()}`);
+				remember(d);
 				if (s.includes('listening on')) ready();
 			});
-			proc.stderr?.on('data', (d: Buffer) => LogTransport.log(`[revz bridge] ${d.toString().trim()}`));
-			proc.on('error', (e) => fail(`revz: could not start bridge (python3 on PATH? pyserial installed?): ${e.message}`));
-			proc.on('exit', (code) => fail(`revz: bridge exited before listening (code ${code}) — check the serial device and pyserial.`));
+			proc.stderr?.on('data', (d: Buffer) => {
+				LogTransport.log(`[revz bridge] ${d.toString().trim()}`);
+				remember(d);
+			});
+			proc.on('error', (e) => fail(`revz: could not start '${python}' (not on VS Code's PATH? Set revz.transport.python to a full interpreter path): ${e.message}`));
+			proc.on('exit', (code) => {
+				let msg = `revz: bridge exited before listening (code ${code}).`;
+				if (lastOutput.length)
+					msg += ` Bridge said: ${lastOutput.join(' | ')}`;
+				if (lastOutput.some(l => l.includes("No module named 'serial'")))
+					msg += ` — '${python}' has no pyserial. Either 'pip3 install pyserial' for that interpreter, or set revz.transport.python to one that has it (VS Code started from the Dock has a minimal PATH, so 'python3' may not be the one from your shell).`;
+				fail(msg);
+			});
 
 			// Fallback readiness: poll the port in case the bridge's banner
 			// differs from the expected line.

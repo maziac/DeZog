@@ -663,7 +663,11 @@ Transports:
   listening on the port; a bridge you started by hand is left alone and simply
   connected to, and only a bridge the remote started is stopped at the end.
   Requires `bridge` (path to the script) and `serial` (the device); `baud`
-  defaults to 460800.
+  defaults to 460800. The interpreter defaults to `python3` and can be pinned
+  with `python` — useful because VS Code launched from the Dock has a minimal
+  PATH, so `python3` may resolve to a system Python without pyserial; either
+  `pip3 install pyserial` there, or set `python` to the interpreter that has
+  it (e.g. a pyenv path).
 - **`esp32`**: connect over the network to the on-board ESP32 debug server —
   set `host` and `port`; nothing is spawned.
 - **`serial`**: reserved for a future client that speaks the binary protocol

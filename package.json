@@ -1194,6 +1194,11 @@
 												"type": "number",
 												"description": "kind='python' only: serial baud rate. Default 460800.",
 												"default": 460800
+											},
+											"python": {
+												"type": "string",
+												"description": "kind='python' only: the Python interpreter used to start the bridge (needs pyserial). Default 'python3'. VS Code launched from the Dock has a minimal PATH, so give a full path (e.g. a pyenv interpreter) if the default resolves to a Python without pyserial.",
+												"default": "python3"
 											}
 										},
 										"required": ["kind"]
