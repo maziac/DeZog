@@ -27,6 +27,8 @@ import {ZSimRemote} from './remotes/zsimulator/zsimremote';
 import {ZSimulationView} from './remotes/zsimulator/zsimulationview';
 import {Trs80SimRemote} from './remotes/trs80/trs80simremote';
 import {Trs80SimulationView} from './remotes/trs80/trs80simulationview';
+import {RevzRemote} from './remotes/trs80/revzremote';
+import {RevzScreenView} from './remotes/trs80/revzscreenview';
 import {Settings, SettingsParameters} from './settings/settings';
 import {DisassemblyVar, ImmediateMemoryValue, MemDumpVar, MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, ShallowVar, StackVar, StructVar} from './variables/shallowvar';
 import {BaseView} from './views/baseview';
@@ -798,6 +800,15 @@ export class DebugSessionClass extends DebugSession {
 							if (Remote instanceof Trs80SimRemote && Settings.launch.trs80sim.screen) {
 								const trs80SimView = new Trs80SimulationView(Remote);
 								await trs80SimView.waitOnInitView();
+							}
+
+							// The rev-z machine has no window of its own (the FPGA
+							// machine none at all, the Verilator emulator may run
+							// --hidden): show its screen by polling the text VRAM
+							// over the debug link.
+							if (Remote instanceof RevzRemote && Settings.launch.revz.screen) {
+								const revzView = new RevzScreenView(Remote);
+								await revzView.waitOnInitView();
 							}
 						}
 						catch (e) {

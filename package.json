@@ -1151,6 +1151,11 @@
 										"type": "number",
 										"description": "Seconds to wait for the debug server to accept a connection. Default 5."
 									},
+									"screen": {
+										"type": "boolean",
+										"description": "If true (default) a webview panel with the machine's screen is shown, fed by polling the text VRAM over the debug link. Keyboard input in the panel goes to the machine when the backend supports key injection.",
+										"default": true
+									},
 									"transport": {
 										"type": "object",
 										"additionalProperties": false,

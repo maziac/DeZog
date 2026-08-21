@@ -209,6 +209,12 @@ export interface RevzType {
 	// Socket timeout in seconds when connecting to the debug server.
 	socketTimeout?: number;
 
+	// If true (default) a webview panel with the machine's screen is
+	// shown, fed by polling the text VRAM over the debug link. Keyboard
+	// input in the panel goes to the machine when the backend supports
+	// key injection.
+	screen?: boolean;
+
 	// How the host reaches the debug core.
 	transport: RevzTransport;
 }
@@ -767,6 +773,8 @@ export class Settings {
 				launchCfg.revz.dongle = 'fpga';
 			if (!launchCfg.revz.transport)
 				launchCfg.revz.transport = {kind: 'python'} as RevzTransport;
+			if (launchCfg.revz.screen === undefined)
+				launchCfg.revz.screen = true;
 			const tr = launchCfg.revz.transport;
 			if (tr.port === undefined)
 				tr.port = 49152;

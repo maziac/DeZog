@@ -73,6 +73,12 @@ function sendKey(event: KeyboardEvent, on: boolean) {
 window.addEventListener('keydown', event => sendKey(event, true));
 window.addEventListener('keyup', event => sendKey(event, false));
 
+// When the panel loses focus the keyup events are lost — tell the
+// extension to release everything so no key sticks pressed.
+window.addEventListener('blur', () => {
+	vscode.postMessage({command: 'allKeysUp'});
+});
+
 
 //---- Handshake: inform the extension that the DOM is ready ----
 window.addEventListener('load', () => {
