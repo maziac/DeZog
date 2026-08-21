@@ -61,19 +61,26 @@ export class PortManager {
     public static async isPortAvailable(port: number): Promise<boolean> {
         return new Promise((resolve) => {
             const server = net.createServer();
-            
+
             const timeout = setTimeout(() => {
                 server.close();
                 resolve(false);
             }, this.PORT_CHECK_TIMEOUT);
-            
-            server.listen(port, 'localhost', () => {
+
+            // Bind 127.0.0.1 explicitly, not 'localhost': on macOS
+            // 'localhost' resolves to ::1 first, so an IPv4 listener
+            // (the rev-z bridge, trs80gp) on 127.0.0.1 would not be seen
+            // and the port would look free forever. An exact-address bind
+            // collides reliably with IPv4 and dual-stack listeners
+            // (SO_REUSEADDR does not allow two live listeners on the same
+            // exact address).
+            server.listen(port, '127.0.0.1', () => {
                 clearTimeout(timeout);
                 server.close(() => {
                     resolve(true);
                 });
             });
-            
+
             server.on('error', () => {
                 clearTimeout(timeout);
                 resolve(false);

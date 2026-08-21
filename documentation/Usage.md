@@ -671,9 +671,33 @@ Transports:
 
 Optional keys: `attachTo` (`expansionInterface` | `mainboard`, only when
 `target: physical`), `host`/`port` (default `localhost:49152`), `socketTimeout`
-(default 5 s). The debug protocol itself — both the JSON-RPC layer and the
-binary wire protocol — is documented in `docs/DEBUG-PROTOCOL.md` in the
-trs80-rev-z repository, so you can also drive the core with a different client.
+(default 5 s), `screen` (default true, see below). The debug protocol itself —
+both the JSON-RPC layer and the binary wire protocol — is documented in
+`docs/DEBUG-PROTOCOL.md` in the trs80-rev-z repository, so you can also drive
+the core with a different client.
+
+**Debugging the Verilator emulator:** the trs80-rev-z repository's own
+cycle-true emulator exposes the identical debug core on a local TCP port
+(`sim/emu/run.sh --hidden --debug-tcp=5555`). Point the bridge at it with
+`"serial": "tcp:5555"` — everything else stays the same, so the launch config
+is a one-line switch between the emulator and the board.
+
+**Capabilities are taken from the machine, not assumed:** the backend's
+`initialize` response advertises what the debug core can really do. With the
+current core that is 7 hardware breakpoints, 4 hardware data watchpoints
+(these enable **WPMEM**), working `setRegister`, native step-over and —
+where the backend supports it — keyboard injection.
+
+**Screen view:** since the machine has no window (the FPGA machine none at
+all, the emulator may run `--hidden`), the `revz` session opens a webview
+panel with the machine's screen, rendered with the same authentic renderer
+the internal simulator uses. It is fed by polling the 1 KB text VRAM
+(0x3C00–0x3FFF) over the ordinary debug link — ~10 Hz while the CPU runs, a
+single consistent frame on every step or stop. Click the panel and type:
+keys are injected into the machine's keyboard matrix (if the debug core
+supports the KEYS extension; older cores simply report the capability as
+absent and the view stays display-only). Disable the panel with
+`"revz": {"screen": false}`.
 
 
 ### What is a 'Remote'?

@@ -560,14 +560,29 @@ export abstract class Trs80GpRemote extends DzrpQueuedRemote {
         // The temporary step breakpoints are consumed by this stop
         this.tmpStepBps = [];
 
-        const longAddr = (addr64k !== undefined) ? Z80Registers.createLongAddress(addr64k & 0xFFFF) : 0;
+        // createLongAddress needs the slots from the register cache — on
+        // the very first stop of a session (e.g. an immediate pause) the
+        // cache may not be primed yet; fall back to the memory model's
+        // initial slots then.
+        let longAddr = 0;
+        if (addr64k !== undefined) {
+            const slots = Z80Registers.valid() ? undefined : this.memoryModel?.initialSlots;
+            longAddr = Z80Registers.createLongAddress(addr64k & 0xFFFF, slots);
+        }
+
+        // A human-readable reason where the plain number would hide it
+        // (the rev-z backend reports 'watchpoint' stops and annotates
+        // target resets with a text).
+        let reasonString: string | undefined = params?.text;
+        if (!reasonString && reason === 'watchpoint')
+            reasonString = 'Watchpoint hit';
 
         // Hand over to the pending continue/step promise
         if (this.funcContinueResolve) {
             const continueHandler = this.funcContinueResolve;
             this.funcContinueResolve = undefined;
             (async () => {
-                await continueHandler({reasonNumber, longAddr, reasonString: undefined as any});
+                await continueHandler({reasonNumber, longAddr, reasonString: reasonString as any});
             })();
         }
         else {
