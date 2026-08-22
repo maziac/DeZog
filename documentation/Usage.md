@@ -689,15 +689,22 @@ is a one-line switch between the emulator and the board.
 **Capabilities are taken from the machine, not assumed:** the backend's
 `initialize` response advertises what the debug core can really do. With the
 current core that is 7 hardware breakpoints, 4 hardware data watchpoints
-(these enable **WPMEM**), working `setRegister`, native step-over and —
-where the backend supports it — keyboard injection.
+(these enable **WPMEM**), working `setRegister`, native step-over, and —
+where the backend supports it — keyboard injection and **non-intrusive
+memory reads**: on cores whose memory is FPGA block RAM (the Rev Z machine,
+and therefore the Verilator emulator) `readMemory` is served from second
+BRAM ports even while the machine runs, stealing zero CPU cycles. On a real
+TRS-80 behind the dongle the baseline remains the transparent
+halt/peek/run of a classic ICE — reported honestly, chosen automatically.
 
 **Screen view:** since the machine has no window (the FPGA machine none at
 all, the emulator may run `--hidden`), the `revz` session opens a webview
 panel with the machine's screen, rendered with the same authentic renderer
 the internal simulator uses. It is fed by polling the 1 KB text VRAM
 (0x3C00–0x3FFF) over the ordinary debug link — ~10 Hz while the CPU runs, a
-single consistent frame on every step or stop. Click the panel and type:
+single consistent frame on every step or stop. On backends with
+non-intrusive reads (see above) this polling does not touch the machine at
+all; on baseline backends each poll is a brief transparent halt/peek/run. Click the panel and type:
 keys are injected into the machine's keyboard matrix (if the debug core
 supports the KEYS extension; older cores simply report the capability as
 absent and the view stays display-only). Disable the panel with
