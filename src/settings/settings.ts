@@ -291,6 +291,11 @@ export interface Trs80SimType {
 
 	// If true (default) a webview panel with the TRS-80 screen is shown.
 	screen: boolean;
+
+	// Emulation speed relative to a real TRS-80 (1.77 MHz). 1.0 (default)
+	// runs at original speed; 0 or negative = unlimited (as fast as the
+	// host allows).
+	speed: number;
 }
 
 
@@ -851,6 +856,8 @@ export class Settings {
 			launchCfg.trs80sim.model = 1;	// Model I default
 		if (launchCfg.trs80sim.screen === undefined)
 			launchCfg.trs80sim.screen = true;
+		if (launchCfg.trs80sim.speed === undefined)
+			launchCfg.trs80sim.speed = 1.0;
 
 		// zsim
 		if (!launchCfg.zsim)

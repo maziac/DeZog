@@ -351,17 +351,42 @@ export class Trs80SimRemote extends DzrpRemote {
 	protected async trs80CpuContinue(bp1: number, bp2: number): Promise<void> {
 		// The slots are static (no banking).
 		const slots = this.memoryModel.initialSlots;
-		// Leave the inner loop after ~2000 instructions to yield to the event loop.
-		const CHUNK_SIZE = 2000;
+
+		// Pace emulation to real time: per outer iteration run only as many
+		// T-states as wall clock has granted (clockHz * elapsed * speed).
+		// speed 1.0 = a real TRS-80; 0 (or negative) = unlimited, the old
+		// free-running behavior. A hard cap per chunk keeps the event loop
+		// responsive either way, and if the host falls behind by more than
+		// half a second of machine time the anchors are reset so the sim
+		// does not fast-forward to catch up after a stall.
+		const speed = Settings.launch.trs80sim?.speed ?? 1.0;
+		const unlimited = !(speed > 0);
+		const HARD_CAP = 100000;      // instructions per chunk, safety bound
+		const MAX_BACKLOG_MS = 500;
+		let anchorWall = Date.now();
+		let anchorTstates = this.trs80.tStateCount;
+		const tstatesPerMs = this.trs80.clockHz / 1000 * (unlimited ? 1 : speed);
 
 		while (true) {
 			let breakNumber = BREAK_REASON_NUMBER.NO_REASON;
 			let breakReasonString = '';
 			let longBreakAddress;
 			let break_happened = false;
+
+			let targetTstates = Number.MAX_SAFE_INTEGER;
+			if (!unlimited) {
+				const elapsed = Date.now() - anchorWall;
+				if (this.trs80.tStateCount < anchorTstates + (elapsed - MAX_BACKLOG_MS) * tstatesPerMs) {
+					// Host stalled — re-anchor instead of sprinting to catch up.
+					anchorWall = Date.now();
+					anchorTstates = this.trs80.tStateCount;
+				}
+				targetTstates = anchorTstates + (Date.now() - anchorWall + 1) * tstatesPerMs;
+			}
+
 			try {
 				// Run the emulator in a chunk
-				for (let i = 0; i < CHUNK_SIZE; i++) {
+				for (let i = 0; i < HARD_CAP && this.trs80.tStateCount < targetTstates; i++) {
 					const prevIff1 = this.trs80.z80.regs.iff1;
 
 					// Execute one instruction (+ hardware housekeeping)

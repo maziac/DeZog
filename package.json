@@ -1,9 +1,9 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.7.4-rc1-trs80.1",
+	"version": "3.7.4-rc1-trs80.4",
 	"publisher": "maziac",
-	"description": "Visual Studio Code Debugger for the Z80, ZX Spectrum/ZX81 and TRS-80 — with a built-in TRS-80 simulator (trs80sim).",
+	"description": "Visual Studio Code Debugger for the Z80, ZX Spectrum/ZX81 and TRS-80 \u2014 with a built-in TRS-80 simulator (trs80sim).",
 	"author": {
 		"name": "Thomas Busse"
 	},
@@ -1122,6 +1122,11 @@
 										"type": "boolean",
 										"description": "If true (default) a webview panel with the TRS-80 screen is shown. Keyboard input in the panel goes to the emulated TRS-80.",
 										"default": true
+									},
+									"speed": {
+										"type": "number",
+										"description": "Emulation speed relative to a real TRS-80 (1.77 MHz). 1.0 (default) = original speed; 0 or negative = unlimited (previous free-running behavior).",
+										"default": 1.0
 									}
 								}
 							},
@@ -1132,19 +1137,28 @@
 								"properties": {
 									"target": {
 										"type": "string",
-										"enum": ["fpga", "physical"],
+										"enum": [
+											"fpga",
+											"physical"
+										],
 										"description": "The machine being debugged. 'fpga' = the RTL machine on the ULX3S (default). 'physical' = a real TRS-80 behind a dongle.",
 										"default": "fpga"
 									},
 									"dongle": {
 										"type": "string",
-										"enum": ["fpga", "physical"],
+										"enum": [
+											"fpga",
+											"physical"
+										],
 										"description": "What hosts the debug core. 'fpga' = the debug core in the ULX3S (default). 'physical' = a dedicated dongle board.",
 										"default": "fpga"
 									},
 									"attachTo": {
 										"type": "string",
-										"enum": ["expansionInterface", "mainboard"],
+										"enum": [
+											"expansionInterface",
+											"mainboard"
+										],
 										"description": "Where the dongle attaches on a physical target (only when target='physical')."
 									},
 									"socketTimeout": {
@@ -1163,7 +1177,11 @@
 										"properties": {
 											"kind": {
 												"type": "string",
-												"enum": ["python", "esp32", "serial"],
+												"enum": [
+													"python",
+													"esp32",
+													"serial"
+												],
 												"description": "'python' = a local bridge (tools/trszog_bridge.py) over serial; started for you when autoStart is on. 'esp32' = connect over the network to the on-board debug server. 'serial' = reserved for a future direct client.",
 												"default": "python"
 											},
@@ -1201,10 +1219,14 @@
 												"default": "python3"
 											}
 										},
-										"required": ["kind"]
+										"required": [
+											"kind"
+										]
 									}
 								},
-								"required": ["transport"]
+								"required": [
+									"transport"
+								]
 							},
 							"unitTests": {
 								"description": "Whether the configuration contains the unit tests or not. Default: false.",
