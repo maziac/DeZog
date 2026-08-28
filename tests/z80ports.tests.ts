@@ -49,6 +49,17 @@ suite('Z80Ports', () => {
 			z80Ports.registerGenericInPortFunction(mockFunc2);
 			assert.equal(z80Ports.read(0x1234), 0xF0 | 0xA5);
 		});
+		test('SINGLE read', () => {
+			z80Ports = new Z80Ports('SINGLE', 0x55);
+			assert.equal(z80Ports.read(0x1234), 0x55);
+			const mockFunc1 = (port: number) => 0xA5;
+			z80Ports.registerGenericInPortFunction(mockFunc1);
+			assert.equal(z80Ports.read(0x1234), 0xA5);
+			const mockFunc2 = (port: number) => 0xF0;
+			z80Ports.registerGenericInPortFunction(mockFunc2);
+			// Last has highest priority
+			assert.equal(z80Ports.read(0x1234), 0xF0);
+		});
 	});
 
 	suite('registerSpecificOutPortFunction', () => {
