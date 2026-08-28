@@ -48,7 +48,7 @@ suite('Z80Cpu', () => {
 			let writeSize;
 			{
 				const memModel = new MemoryModelAllRam();
-				const ports = new Z80Ports(true);
+				const ports = new Z80Ports('AND', 0xFF);
 				const memory = new SimulatedMemory(memModel, ports);
 				const zsim: any = {
 					cpuFrequency: 3500000
@@ -86,7 +86,7 @@ suite('Z80Cpu', () => {
 
 			// Create a new object
 			const memModel = new MemoryModelAllRam();
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			const zsim: any = {
 				cpuFrequency: 3500000
 			};
@@ -132,7 +132,7 @@ suite('Z80Cpu', () => {
 			setup(() => {
 				Settings.launch = Settings.Init({} as any);
 				const memModel = new MemoryModelAllRam();
-				const ports = new Z80Ports(true);
+				const ports = new Z80Ports('AND', 0xFF);
 				const zsim: any = {
 					cpuFrequency: 3500000
 				};
@@ -292,7 +292,7 @@ suite('Z80Cpu', () => {
 
 			setup(() => {
 				const memModel = new MemoryModelAllRam();
-				const ports = new Z80Ports(true);
+				const ports = new Z80Ports('AND', 0xFF);
 				const zsim: any = {
 					cpuFrequency: 3500000,
 					Z80N: true

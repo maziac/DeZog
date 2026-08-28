@@ -18,13 +18,13 @@ suite('Zx81UlaScreenHiRes', () => {
 			remoteType: 'zsim'
 		};
 		Settings.launch = Settings.Init(cfg);
-		const ports = new Z80Ports(true);
+		const ports = new Z80Ports('AND', 0xFF);
 		const memory = new SimulatedMemory(new MemoryModelAllRam, ports);
 		const zsim: any = {
 			cpuFrequency: 3500000
 		};
 		z80Cpu = new Z80Cpu(memory, ports, zsim);
-		const screenArea = { firstX: 0, lastX: 383, firstY: 100, lastY: 200} ;
+		const screenArea = {firstX: 0, lastX: 383, firstY: 100, lastY: 200};
 		zx81UlaScreen = new Zx81UlaScreenHiRes(z80Cpu, screenArea);
 	});
 
@@ -293,7 +293,7 @@ suite('Zx81UlaScreenHiRes', () => {
 		// Create a new object and deserialize
 		{
 			const memModel = new MemoryModelAllRam();
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			const zsim: any = {
 				cpuFrequency: 3500000
 			};

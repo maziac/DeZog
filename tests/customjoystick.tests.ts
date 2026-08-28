@@ -10,7 +10,7 @@ suite('CustomJoystick', () => {
 	let customJoystick: any;
 
 	setup(() => {
-		ports = new Z80Ports(true);
+		ports = new Z80Ports('AND', 0xFF);
 		customJoy = {
 			fire: {port: 0x01, portMask: 0xFF, bit: 0x01, lowActive: true},
 			fire2: {port: 0x02, portMask: 0xFF, bit: 0x02, lowActive: false},
@@ -46,7 +46,7 @@ suite('CustomJoystick', () => {
 		assert.equal(portValue & 0x01, 0);
 		// High active
 		customJoystick.setButton('customJoy.joy1.fire2', true);
-		 portValue = customJoystick.readPort(0x02);
+		portValue = customJoystick.readPort(0x02);
 		assert.equal(portValue & 0x02, 0x02);
 	});
 

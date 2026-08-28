@@ -6,7 +6,7 @@ suite('Z80Ports', () => {
 	let z80Ports: Z80Ports;
 
 	setup(() => {
-		z80Ports = new Z80Ports(true);
+		z80Ports = new Z80Ports('AND', 0xFF);
 	});
 
 	suite('registerGenericOutPortFunction', () => {
@@ -41,7 +41,7 @@ suite('Z80Ports', () => {
 			assert.equal(z80Ports.read(0x1234), 0xF0 & 0xA5);
 		});
 		test('OR several ports (default 0x00, no open collector)', () => {
-			z80Ports = new Z80Ports(false);
+			z80Ports = new Z80Ports('OR', 0x00);
 			assert.equal(z80Ports.read(0x1234), 0x00);
 			const mockFunc1 = (port: number) => 0xA5;
 			z80Ports.registerGenericInPortFunction(mockFunc1);

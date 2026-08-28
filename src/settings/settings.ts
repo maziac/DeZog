@@ -268,6 +268,11 @@ export interface CustomVisualMemBlockType {
 	size: number;
 }
 
+
+// Mode how devices for the same port are handled.
+export type PortInModeType = "AND" | "OR" | "SINGLE";
+
+
 /// Definitions for the 'zsim' remote type.
 export interface ZSimType {
 	// Defines a preset of settings to simulate a ZX Spectrum or ZX81.
@@ -351,12 +356,22 @@ export interface ZSimType {
 	updateFrequency: number,
 
 	// Default value that is returned for the ports (if no "HW" is configured).
-	// Usually 0xFF = Open Collector. Aöö in ports are ANDed.
-	// 0x00 = All in ports are ORed.
-	defaultPortIn: 0xFF | 0x00;
+	// Defaults to 0xFF.
+	defaultPortIn: number,
+
+	// How the in-ports are treated:
+	// - AND: If there are several devices that are addressed by the same port address
+	// the output of all devices and the 'defaultPortIn' are ANDed (i.e. Open Collector, e.g. ZX Spectrum).
+	// - OR: If there are several devices that are addressed by the same port address
+	// the output of all devices and the 'defaultPortIn' are ORed.
+	// - SINGLE: The output is not ANDed or ORed. Instead it is checked if one device is
+	// addressed and if so it's value is returned. Custom ports are tested first.
+	// Use this if you want to override existing ports, e.g. to write unit tests that return
+	// specific values for reads.
+	portInMode: PortInModeType,
 
 	// Settings to execute custom javascript code inside the zsim simulator.
-	customCode: CustomCodeType;
+	customCode: CustomCodeType,
 
 	// If enabled the Z80N extended instructions are supported.
 	Z80N: boolean,
@@ -635,6 +650,8 @@ export class Settings {
 					launchCfg.zsim.cpuFrequency = 3500000.0;	// 3.5Mhz
 				if (launchCfg.zsim.defaultPortIn === undefined)
 					launchCfg.zsim.defaultPortIn = 0xFF;
+				if (launchCfg.zsim.portInMode === undefined)
+					launchCfg.zsim.portInMode = 'AND';
 			}
 			// ZX81
 			else if (preset === 'zx81') {
@@ -652,6 +669,8 @@ export class Settings {
 					launchCfg.zsim.cpuFrequency = 3250000.0;	// 3.25Mhz
 				if (launchCfg.zsim.defaultPortIn === undefined)
 					launchCfg.zsim.defaultPortIn = 0xFF;
+				if (launchCfg.zsim.portInMode === undefined)
+					launchCfg.zsim.portInMode = 'AND';
 				if (launchCfg.zsim.ulaOptions === undefined) {
 					launchCfg.zsim.ulaOptions = {} as UlaOptions;
 				}
@@ -787,6 +806,8 @@ export class Settings {
 			launchCfg.zsim.updateFrequency = 10.0;
 		if (launchCfg.zsim.defaultPortIn === undefined)
 			launchCfg.zsim.defaultPortIn = 0xFF;
+		if (launchCfg.zsim.portInMode === undefined)
+			launchCfg.zsim.portInMode = 'AND';
 		if (launchCfg.zsim.Z80N === undefined)
 			launchCfg.zsim.Z80N = false;
 		if (launchCfg.zsim.tbblue === undefined)
@@ -1342,9 +1363,13 @@ export class Settings {
 		}
 
 		// Check defaultPortIn
-		if (Settings.launch.zsim.defaultPortIn !== 0xFF
-			&& Settings.launch.zsim.defaultPortIn !== 0x00) {
-			throw Error("'defaultPortIn': Allowed values are only 255 or 0.");
+		if (Settings.launch.zsim.defaultPortIn < 0
+			&& Settings.launch.zsim.defaultPortIn > 255) {
+			throw Error("'defaultPortIn' must be in range [0..255].");
+		}
+		// Check portInMode
+		if (!['AND', 'OR', 'SINGLE'].includes(Settings.launch.zsim.portInMode)) {
+			throw Error("'portInMode': Allowed values are 'AND','OR' and 'SINGLE'");
 		}
 
 		// Check preset

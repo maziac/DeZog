@@ -19,7 +19,7 @@ suite('Zx81UlaScreen', () => {
 			remoteType: 'zsim'
 		};
 		Settings.launch = Settings.Init(cfg);
-		const ports = new Z80Ports(true);
+		const ports = new Z80Ports('AND', 0xFF);
 		const memory = new SimulatedMemory(new MemoryModelAllRam, ports);
 		const zsim: any = {
 			cpuFrequency: 3500000
@@ -454,7 +454,7 @@ suite('Zx81UlaScreen', () => {
 		// Create a new object and deserialize
 		{
 			const memModel = new MemoryModelAllRam();
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			const zsim: any = {
 				cpuFrequency: 3500000
 			};

@@ -1,11 +1,11 @@
-import { Utility } from './../src/misc/utility';
+import {Utility} from './../src/misc/utility';
 import * as assert from 'assert';
 import {suite, test} from 'mocha';
 import {MemBuffer} from '../src/misc/membuffer';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {SimulatedMemory} from '../src/remotes/zsimulator/simulatedmemory';
 import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
-import { CustomMemorySlot} from '../src/settings/settingscustommemory';
+import {CustomMemorySlot} from '../src/settings/settingscustommemory';
 
 // Simply publicly expose protected members
 class MemBufferInt extends MemBuffer {
@@ -37,7 +37,7 @@ class PagedMemory extends SimulatedMemory {
 		const memModel = new MemoryModel({
 			slots: slotRanges,
 		});
-		const ports = new Z80Ports(true);
+		const ports = new Z80Ports('AND', 0xFF);
 		super(memModel, ports);
 	}
 }
@@ -172,9 +172,9 @@ suite('SimulatedMemory', () => {
 		result = mem.getMemory32(0x0000);
 		assert.equal(result, 0x56781234);
 
-		mem.memoryBanks[7*32][0x1FFF] = 0x9A;	// 0xFFFF
-		mem.memoryBanks[7*32][0x1FFE] = 0xBC;	// 0xFFFE
-		mem.memoryBanks[7*32][0x1FFD] = 0xDE;	// 0xFFFD
+		mem.memoryBanks[7 * 32][0x1FFF] = 0x9A;	// 0xFFFF
+		mem.memoryBanks[7 * 32][0x1FFE] = 0xBC;	// 0xFFFE
+		mem.memoryBanks[7 * 32][0x1FFD] = 0xDE;	// 0xFFFD
 
 		result = mem.getMemory16(0xFFFF);
 		assert.equal(result, 0x349A);
@@ -190,12 +190,12 @@ suite('SimulatedMemory', () => {
 
 		const offs = 0x2000;
 		mem.memoryBanks[0][offs - 1] = 0xC1;
-		mem.memoryBanks[1*32][0] = 0xD2;
+		mem.memoryBanks[1 * 32][0] = 0xD2;
 		result = mem.getMemory16(offs - 1);
 		assert.equal(result, 0xD2C1);
 
 		mem.memoryBanks[0][offs - 2] = 0xB0;
-		mem.memoryBanks[1*32][1] = 0xE3;
+		mem.memoryBanks[1 * 32][1] = 0xE3;
 		result = mem.getMemory32(offs - 2);
 		assert.equal(result, 0xE3D2C1B0);
 	});
@@ -204,7 +204,7 @@ suite('SimulatedMemory', () => {
 	suite('rom file', () => {
 		test('read raw ROM file', () => {
 			const mm = new MemoryModel({slots: []});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			const mem = new SimulatedMemory(mm, ports) as any;
 			const path = './data/48.rom';
 			const data = mem.readFile(path);
@@ -215,7 +215,7 @@ suite('SimulatedMemory', () => {
 
 		test('readIntelHexFromFile', () => {
 			const mm = new MemoryModel({slots: []});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			const mem = new SimulatedMemory(mm, ports) as any;
 			const path = './tests/data/intelhex/PLU10.HEX';
 			const data = mem.readFile(path);
@@ -239,7 +239,7 @@ suite('SimulatedMemory', () => {
 					}
 				]
 			});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			const mem = new SimulatedMemory(mm, ports) as any;
 			const data = mem.memoryBanks[0];
 			assert.equal(data[0], 243);
@@ -263,7 +263,7 @@ suite('SimulatedMemory', () => {
 					}
 				]
 			});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			const mem = new SimulatedMemory(mm, ports) as any;
 			const data = mem.memoryBanks[1];
 			assert.equal(data[0], 109);
@@ -276,7 +276,7 @@ suite('SimulatedMemory', () => {
 	suite('check ioMmu', () => {
 		test('no ioMmu', () => {
 			const mm = new MemoryModel({slots: []});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			new SimulatedMemory(mm, ports) as any;	// Should not throw anything
 		});
@@ -293,7 +293,7 @@ suite('SimulatedMemory', () => {
 					"}"
 				]
 			});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			new SimulatedMemory(mm, ports) as any;	// Should not throw anything
 		});
@@ -311,7 +311,7 @@ suite('SimulatedMemory', () => {
 					"}"
 				]
 			});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			try {
 				new SimulatedMemory(mm, ports) as any;	// Should throw
@@ -333,7 +333,7 @@ suite('SimulatedMemory', () => {
 					"}"
 				]
 			});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			try {
 				new SimulatedMemory(mm, ports) as any;	// Should throw
@@ -365,7 +365,7 @@ suite('SimulatedMemory', () => {
 					"slots[1] = 7;"
 				]
 			});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
 			mem.checkIoMmu();	// Should not throw anything
@@ -394,7 +394,7 @@ suite('SimulatedMemory', () => {
 					"slots[1] = 7;"
 				]
 			});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
 			mem.evaluateIoMmu(mm.ioMmu, 0, 0);
@@ -425,7 +425,7 @@ suite('SimulatedMemory', () => {
 					"slot1 = 7;"
 				]
 			});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
 			const prevSlots = [...mem.slots];
@@ -456,7 +456,7 @@ suite('SimulatedMemory', () => {
 
 				]
 			});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
 
@@ -482,7 +482,7 @@ suite('SimulatedMemory', () => {
 
 				]
 			});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
 
@@ -509,7 +509,7 @@ suite('SimulatedMemory', () => {
 
 				]
 			});
-			const ports = new Z80Ports(true);
+			const ports = new Z80Ports('AND', 0xFF);
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
 

@@ -13,7 +13,7 @@ suite('ZxnDma', function () {
 	let dma;
 
 	setup(() => {
-		const ports = new Z80Ports(true);
+		const ports = new Z80Ports('AND', 0xFF);
 		const memory = new SimulatedMemory(new MemoryModelAllRam(), ports);
 		dma = new ZxnDma(memory, ports) as any;
 	});
@@ -638,7 +638,7 @@ suite('ZxnDma', function () {
 			dma.serialize(mem);
 
 			// Continue with different dma instance
-			const ports2 = new Z80Ports(true);
+			const ports2 = new Z80Ports('AND', 0xFF);
 			const memory2 = new SimulatedMemory(new MemoryModelAllRam(), ports2);
 			const dma2 = new ZxnDma(memory2, ports2) as any;
 			dma2.deserialize(mem);

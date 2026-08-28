@@ -5,6 +5,9 @@ This guide will provide some info what to do to update your projects from an ear
 There are changes to the DZRP and therefore to the remotes and the remote configuration.
 - the property `socketTimeout`has been renamed to `timeout` for `zrcp`, `cspect` and `mame`.
 - the remote `zxnext` not only supports a serial interface but additionally also a socket interface. The socket interface can be used for debugging the ZXNext through the WiFi interface. You will need to use `dezogif_ng` to use it (thanks @jorgegv). Confugre it with `socket` and `port`.
+- "zsim":
+  - "defaultPortIn": Changed to allow all values 0..255.
+  - "portInMode": This new property allows to define how a port read is treated if there are more than one device addressed by the read port. Useful especially for custom code.
 
 
 # Migrate from DeZog 3.6 to DeZog 3.7

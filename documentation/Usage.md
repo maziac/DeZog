@@ -977,7 +977,11 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
 - "cpuLoad": The Z80 CPU load is calculated by the number of executed HALT tStates vs all tStates. You can disable the display with a 0. 1 will exactly count till the next occurrence of a HALT. Higher numbers will average over more HALT instructions and lead to a more stable display. Practical values are around 10 (the default).
   Additionally the simulation speed is indicated by the color. If the display turns to yellow the simulation speed is not fast enough to cope with the set cpuFrequency. (If you e.g. set a ZX81 or ZX Spectrum to 35Mhz the display will probably turn to yellow.)
 ![](images/zsim_cpu_load.jpg)
-- "defaultPortIn": The default value that is read if the read port is unused. Allowed is 255 or 0. 255 also sets the port as 'Open Collector', all triggered ports would be ANDed. Default to 0xFF.
+- "defaultPortIn": The default value that is read if the read port is unused. Allowed values are 0..255.
+- "portInMode": The mode for handling port reads if there are more than 1 device addressed by the port.
+  - "AND": the port read devices are ANDed (default)
+  - "OR": the port read devices are ORed,
+  - "SINGLE": the first found device port read is returned (useful if devices should be 'overwritten' in custom code, custom code has highest priority).
 - "zxBeeper": true/false. Defaults to false. If enabled the ZX Beeper audio output is simulated. The generated audio has a noticeable delay. The output is visualized with a "0" or "1":
 ![](images/zxbeeper_on.jpg)
 If the output keeps changing you'll see this:

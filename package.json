@@ -916,8 +916,18 @@
 									},
 									"defaultPortIn": {
 										"type": "number",
-										"description": "The default value that is read if the read port is unused. Allowed is 255 or 0. 255 also sets the port as 'Open Collector', all triggered ports would be ANDed. Default to 0xFF.",
+										"description": "The default value that is read if the read port is unused. Allowed values are 0..255. Defaults to 0xFF.",
 										"default": 255
+									},
+									"portInMode": {
+										"type": "string",
+										"enum": [
+											"AND",
+											"OR",
+											"SINGLE"
+										],
+										"description": "The mode for handling port reads. 'AND': the port read devices are ANDed (default), 'OR': the port read devices are ORed, 'SINGLE': the first found device port read is returned (useful if devices should be 'overwritten' in custom code).",
+										"default": "SINGLE"
 									},
 									"Z80N": {
 										"type": "boolean",

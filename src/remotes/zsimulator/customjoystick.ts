@@ -5,7 +5,7 @@ import {Z80Ports} from "./z80ports";
 
 /** Extends the joystick setup by a 'pressed' variable.
  */
-interface JoyConfig extends JoyBitPort{
+interface JoyConfig extends JoyBitPort {
 	// Additionally: if button is pressed or not
 	pressed: boolean;
 }
@@ -34,23 +34,23 @@ export class CustomJoystick {
 	protected keyboardMatrix = new Uint8Array([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
 
 	// The default value returned if no peripheral is attached.
-	protected defaultPortIn: 0xFF | 0x00;
+	protected defaultPortIn: number;
 
 	/** Constructor.
 	 */
 	constructor(ports: Z80Ports, customJoy: CustomJoyType) {
 		// Copy default port value
-		this.defaultPortIn= ports.defaultPortIn;
+		this.defaultPortIn = ports.defaultPortIn;
 		// Copy the configuration
 		this.config = [
-			customJoy.fire ?	{...customJoy.fire, pressed: false} : undefined,
+			customJoy.fire ? {...customJoy.fire, pressed: false} : undefined,
 			customJoy.fire2 ? {...customJoy.fire2, pressed: false} : undefined,
 			customJoy.fire3 ? {...customJoy.fire3, pressed: false} : undefined,
 			customJoy.fire4 ? {...customJoy.fire4, pressed: false} : undefined,
-			customJoy.up ? 		{...customJoy.up, pressed: false} : undefined,
-			customJoy.left ? 	{...customJoy.left, pressed: false} : undefined,
-			customJoy.right ? 	{...customJoy.right, pressed: false} : undefined,
-			customJoy.down ? 	{...customJoy.down, pressed: false} : undefined,
+			customJoy.up ? {...customJoy.up, pressed: false} : undefined,
+			customJoy.left ? {...customJoy.left, pressed: false} : undefined,
+			customJoy.right ? {...customJoy.right, pressed: false} : undefined,
+			customJoy.down ? {...customJoy.down, pressed: false} : undefined,
 		];
 		// Register the port
 		ports.registerGenericInPortFunction((port: number) => this.readPort(port));
@@ -62,7 +62,7 @@ export class CustomJoystick {
 	 */
 	protected readPort(port: number): number {
 		let value;
-		for(const button of this.config) {
+		for (const button of this.config) {
 			if (button) {
 				// Check address
 				if ((port & button.portMask) === button.port) {
@@ -89,7 +89,7 @@ export class CustomJoystick {
 	public setButton(id: string, pressed: boolean) {
 		let button;
 		switch (id) {
-			case 'customJoy.joy1.fire':	button = this.config![JoyButton.FIRE]; break;
+			case 'customJoy.joy1.fire': button = this.config![JoyButton.FIRE]; break;
 			case 'customJoy.joy1.fire2': button = this.config![JoyButton.FIRE2]; break;
 			case 'customJoy.joy1.fire3': button = this.config![JoyButton.FIRE3]; break;
 			case 'customJoy.joy1.fire4': button = this.config![JoyButton.FIRE4]; break;

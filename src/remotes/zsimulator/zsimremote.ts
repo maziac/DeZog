@@ -329,7 +329,7 @@ export class ZSimRemote extends DzrpRemote {
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();	// Required for the memory model.
 
 		// Create ports for paging
-		this.ports = new Z80Ports(zsim.defaultPortIn === 0xFF);
+		this.ports = new Z80Ports(zsim.portInMode, zsim.defaultPortIn);
 
 		// Check for beeper and border (both use the same port)
 		const zxBeeperEnabled = zsim.zxBeeper;

@@ -1,3 +1,4 @@
+import {PortInModeType} from "../../settings/settings";
 
 
 /**
@@ -5,14 +6,14 @@
  */
 export class Z80Ports {
 
-	// If the port is openCollector, every 0 on a port pulls it to zero. Correspondents to defaultPortIn = 0xFF.
-	protected openCollector: boolean;
+	// How to hand in-port devices: 'AND', 'OR', 'SINGLE'
+	protected portInMode: PortInModeType;
 
 	// The default value returned if no peripheral is attached.
-	public defaultPortIn: 0xFF | 0x00;
+	public defaultPortIn: number;	// 0-255
 
 	protected genericOutPortFuncs: Array<(port: number, value: number) => void>;
-	protected genericInPortFuncs: Array<(port: number) => (number|undefined)>;
+	protected genericInPortFuncs: Array<(port: number) => (number | undefined)>;
 
 	// It is possible to add behavior when writing to a specific port.
 	// This map maps port addresses to functions that are executed on a port write.
@@ -26,13 +27,12 @@ export class Z80Ports {
 
 	/**
 	 *  Constructor.
-	 * @param defaultPortIn The default value that is read if the read port is unused.
-	 * 0xFF = Open Collector. Every 0 on a port pulls it to zero.
-	 * Effectively all ports that get active will be ANDed.
+	 * @param portInMode 'AND', 'OR' or 'SINGLE'
+	 * @param defaultPortIn 0-255
 	 */
-	constructor(openCollector: boolean) {
-		this.openCollector = openCollector;
-		this.defaultPortIn = openCollector ? 0xFF : 0x00;
+	constructor(portInMode: PortInModeType, defaultPortIn: number) {
+		this.portInMode = portInMode;
+		this.defaultPortIn = defaultPortIn;
 		this.genericOutPortFuncs = [];
 		this.genericInPortFuncs = [];
 		this.outPortMap = new Map<number, (port: number, value: number) => void>();
@@ -45,9 +45,10 @@ export class Z80Ports {
 	 * and no specific port function is registered.
 	 * @param func The function to execute if the port is written. If undefined the
 	 * current function is deregistered.
+	 * 'func' is added to the beginning of the list. I.e. last added comes first.
 	 */
 	public registerGenericOutPortFunction(func: (port: number, value: number) => void) {
-		this.genericOutPortFuncs.push(func);
+		this.genericOutPortFuncs.unshift(func);
 	}
 
 
@@ -56,9 +57,10 @@ export class Z80Ports {
 	 * and no specific port function is registered.
 	 * @param func The function to execute if the port is read. If undefined the
 	 * current function is deregistered.
+	 * 'func' is added to the beginning of the list. I.e. last added comes first.
 	 */
-	public registerGenericInPortFunction(func: (port: number) => (number|undefined)) {
-		this.genericInPortFuncs.push(func);
+	public registerGenericInPortFunction(func: (port: number) => (number | undefined)) {
+		this.genericInPortFuncs.unshift(func);
 	}
 
 
@@ -67,7 +69,7 @@ export class Z80Ports {
 	 * @param port The port address
 	 * @param func The function to execute if the port is written.
 	 */
-	public registerSpecificOutPortFunction(port: number, func: ((port: number, value: number) => void)|undefined) {
+	public registerSpecificOutPortFunction(port: number, func: ((port: number, value: number) => void) | undefined) {
 		if (func)
 			this.outPortMap.set(port, func);
 		else
@@ -80,7 +82,7 @@ export class Z80Ports {
 	 * @param port The port address
 	 * @param func The function to execute if the port is read.
 	 */
-	public registerSpecificInPortFunction(port: number, func: ((port: number) => number)|undefined) {
+	public registerSpecificInPortFunction(port: number, func: ((port: number) => number) | undefined) {
 		if (func)
 			this.inPortMap.set(port, func);
 		else
@@ -92,17 +94,25 @@ export class Z80Ports {
 	 *  Read 1 byte. Used by the CPU when doing a 'in a,(c)'.
 	 */
 	public read(port: number): number {
+		// Handle 'AND', 'OR' or 'SINGLE' mode
 		let allValue: number = this.defaultPortIn;
 
 		// Check for general read function.
-		// Is done at first, so it can "override" other functions
+		// Is done at first, so it can "override" other functions.
+		// Custom code is also found here.
 		for (const func of this.genericInPortFuncs) {
 			const value = func(port);
 			if (value !== undefined) {
-				if(this.openCollector)
-					allValue &= value;
-				else
-					allValue |= value;
+				switch (this.portInMode) {
+					case 'AND':
+						allValue &= value;
+						break;
+					case 'OR':
+						allValue |= value;
+						break;
+					case 'SINGLE':
+						return value;
+				}
 			}
 		}
 
@@ -111,10 +121,16 @@ export class Z80Ports {
 		if (func) {
 			const value = func(port);
 			if (value !== undefined) {
-				if (this.openCollector)
-					allValue &= value;
-				else
-					allValue |= value;
+				switch (this.portInMode) {
+					case 'AND':
+						allValue &= value;
+						break;
+					case 'OR':
+						allValue |= value;
+						break;
+					case 'SINGLE':
+						return value;
+				}
 			}
 		}
 
