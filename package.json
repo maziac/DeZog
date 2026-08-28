@@ -927,7 +927,7 @@
 											"SINGLE"
 										],
 										"description": "The mode for handling port reads. 'AND': the port read devices are ANDed (default), 'OR': the port read devices are ORed, 'SINGLE': the first found device port read is returned (useful if devices should be 'overwritten' in custom code).",
-										"default": "SINGLE"
+										"default": "AND"
 									},
 									"Z80N": {
 										"type": "boolean",
