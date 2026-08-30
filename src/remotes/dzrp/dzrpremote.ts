@@ -2175,13 +2175,11 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 
 	/** Override.
-	 * Sends the command to enable or disable the interrupts.
-	 * @param enable true to enable, false to disable interrupts.
+	 * Sends the command to get the supported commands of the remote.
 	 * @returns a boolean array (size=256) with the supported commands.
 	 * Each array entry correspondents to a command id and tells if
 	 * command is supported (true) or not (false).
 	 */
-	// TODO: Remove
 	protected async sendDzrpCmdGetSupportedCommands(): Promise<string> {
 		Utility.assert(false);
 		return '';

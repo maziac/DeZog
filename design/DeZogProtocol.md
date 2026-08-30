@@ -134,11 +134,10 @@ Notes:
 ## 2.2.0
 
 Added:
-- NAK added as response to not implemented commands.
 - CMD_GET_SUPPORTED_COMMANDS added which returns the supported commands.
 
 Changed:
-- Sequence number range changed from 1-255 to 1-15 to free a bit for the NAK.
+- Sequence number range changed from 1-255 to 1-15.
 - Explanation for "normal" and "simple" mode added.
 
 
@@ -228,19 +227,17 @@ Length is the length of all bytes following the command ID (i.e. the payload).
 | Index | Size | Description                                                                      |
 | ----- | ---- | -------------------------------------------------------------------------------- |
 | 0     | 4    | Length of the following data beginning with the sequence number. (little endian) |
-| 4     | 1    | Bit 7: 0 = ACK. Bits 4-6: unused. Bits 0-3: Sequence number, same as command.    |
+| 4     | 1    | Bits 4-7: unused. Bits 0-3: Sequence number, same as command.                    |
 | 5     | 1    | Payload: Data\[0\]                                                               |
 | ...   | ...  | Data\[...\]                                                                      |
 | 5+n-1 | 1    | Data\[n-1\]                                                                      |
 
 The numbering for Commands starts at 1. (0 is reserved, i.e. not used).
-If the remote implements the requested command it answers with ACK bit set to 0.
-If the command is not implemented only a 1 (NAK) is returned (**NAK-response**):
 
 | Index | Size | Description                                                                           |
 | ----- | ---- | ------------------------------------------------------------------------------------- |
 | 0     | 4    | Length of the following data (=1) beginning with the sequence number. (little endian) |
-| 4     | 1    | Bit 7: 1 = NAK. Bits 4-6: unused. Bits 0-3: Sequence number, same as command.         |
+| 4     | 1    | Bits 4-7: unused. Bits 0-3: Sequence number, same as command.                         |
 
 
 
@@ -257,7 +254,7 @@ Currently only one notification is defined.
 | ...   | ...  | Data\[...\]                                                                      |
 | 5+n-1 | 1    | Data\[n-1\]                                                                      |
 
-Note: The sequence number is only the lower 4 bits. So the bits 4-7 are "free". At the moment these are not used and 0.
+Note: The sequence number consists of only the lower 4 bits. So the bits 4-7 are "free". At the moment these are not used and 0.
 
 # Long addresses
 
@@ -770,18 +767,20 @@ Command (Length=0):
 | -     | -    | -     | -           |
 
 
-Response (Length=1):
+Response (Length=2-33):
 | Index | Size | Value | Descripion                                                                                    |
 | :---- | ---- | ----- | --------------------------------------------------------------------------------------------- |
 | 0     | 1    | 1-15  | Same seq no                                                                                   |
-| 1     | 32   | -     | Bitfield. Each bit position correspondents to the command ID. Bit 0 is unused. Little endian. |
+| 1     | 1-32 | -     | Bitfield. Each bit position correspondents to the command ID. Bit 0 is unused. Little endian. |
 
 Examples:
 - CMD_INIT(1) is represented by bit 1 at index 1.
 - CMD_INTERRUT_ON_OFF(23) is represented by bit 23, i.e. bit 7 at index 3
 
 Note:
-Some of the commands need to be supported always by every remote like e.g. CMD_INIT.
+- The length of the Command may vary. I.e. a unused upper bits/bytes (command IDs) do not need to be sent. The receiver of the response will interpret them as unsupported.
+If, for example, the remote only supports commands up to ID 24, the remote need to report only 4 byte.
+- Some of the commands need to be supported always by every remote like e.g. CMD_INIT.
 Nevertheless those are reported here as well.
 
 
