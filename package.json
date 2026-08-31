@@ -145,27 +145,22 @@
 		},
 		"languages": [
 			{
-				"id": "asm-collection",
+				"id": "asm-z80-sjasmplus",
 				"extensions": [
-					".a80",
-					".z80",
 					".asm",
 					".inc",
 					".s"
 				],
-				"aliases": [
-					"Assembler file"
-				]
+				"aliases": []
 			},
 			{
-				"id": "asm-list-file",
+				"id": "asm-z80-sjasmplus-list",
 				"extensions": [
 					".list",
-					".lis"
+					".lis",
+					".lst"
 				],
-				"aliases": [
-					"Assembler list file"
-				]
+				"aliases": []
 			}
 		],
 		"breakpoints": [
@@ -177,12 +172,6 @@
 			},
 			{
 				"language": "asm-z80-sjasmplus-list"
-			},
-			{
-				"language": "asm-collection"
-			},
-			{
-				"language": "asm-list-file"
 			},
 			{
 				"language": "z80-macroasm"
@@ -340,17 +329,17 @@
 			],
 			"editor/context": [
 				{
-					"when": "inDebugMode && (resourceLangId == plaintext || resourceLangId == asm-z80-sjasmplus || resourceLangId == asm-z80-sjasmplus-list || resourceLangId == z80-macroasm || resourceLangId == z80-asm || resourceLangId == zeus-asm || resourceLangId == gbz80 || resourceLangId == pasmo || resourceLangId == asm-collection || resourceLangId == asm-list-file)",
+					"when": "inDebugMode && (resourceLangId == plaintext || resourceLangId == asm-z80-sjasmplus || resourceLangId == asm-z80-sjasmplus-list || resourceLangId == z80-macroasm || resourceLangId == z80-asm || resourceLangId == zeus-asm || resourceLangId == gbz80 || resourceLangId == pasmo || resourceLangId == asm-list-file)",
 					"command": "dezog.movePCtoCursor",
 					"group": "debug"
 				},
 				{
-					"when": "inDebugMode && (resourceLangId == plaintext || resourceLangId == asm-z80-sjasmplus || resourceLangId == asm-z80-sjasmplus-list || resourceLangId == z80-macroasm || resourceLangId == z80-asm || resourceLangId == zeus-asm || resourceLangId == gbz80 || resourceLangId == pasmo || resourceLangId == asm-collection || resourceLangId == asm-list-file)",
+					"when": "inDebugMode && (resourceLangId == plaintext || resourceLangId == asm-z80-sjasmplus || resourceLangId == asm-z80-sjasmplus-list || resourceLangId == z80-macroasm || resourceLangId == z80-asm || resourceLangId == zeus-asm || resourceLangId == gbz80 || resourceLangId == pasmo || resourceLangId == asm-list-file)",
 					"submenu": "dezog.disassemblyAtCursor",
 					"group": "debug"
 				},
 				{
-					"when": "inDebugMode && (resourceLangId == plaintext || resourceLangId == asm-z80-sjasmplus || resourceLangId == asm-z80-sjasmplus-list || resourceLangId == z80-macroasm || resourceLangId == z80-asm || resourceLangId == zeus-asm || resourceLangId == gbz80 || resourceLangId == pasmo || resourceLangId == asm-collection || resourceLangId == asm-list-file)",
+					"when": "inDebugMode && (resourceLangId == plaintext || resourceLangId == asm-z80-sjasmplus || resourceLangId == asm-z80-sjasmplus-list || resourceLangId == z80-macroasm || resourceLangId == z80-asm || resourceLangId == zeus-asm || resourceLangId == gbz80 || resourceLangId == pasmo || resourceLangId == asm-list-file)",
 					"submenu": "dezog.analyzeAtCursor",
 					"group": "debug"
 				}
