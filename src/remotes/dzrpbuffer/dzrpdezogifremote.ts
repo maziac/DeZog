@@ -2,7 +2,6 @@ import {DzrpTransportRemote} from './dzrptransportremote';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {Z80RegistersZxNextDecoder} from './z80registerszxnextdecoder';
 import {DzrpTransportType, Settings} from '../../settings/settings';
-import {DZRP} from '../dzrp/dzrpremote';
 
 
 
@@ -20,21 +19,8 @@ export class DzrpDezogIfRemote extends DzrpTransportRemote {
 		super(settingsDzrpType);
 		// Init
 		this.supportsBreakOnInterrupt = false;
-		// Set automatically though supportedCommands:
-		// this.supportsASSERTION = true;
-		// this.supportsWPMEM = false;
-		// this.supportsLOGPOINT = true;
 	}
 
-	/** Returns the default unsupported commands for a dezogif
-	 * (zxnext) remote.
-	 */
-	protected getDefaultUnsupportedCommands(): number[] {
-		return [
-			DZRP.CMD_GET_SPRITES, DZRP.CMD_GET_SPRITE_PATTERNS, DZRP.CMD_ADD_BREAKPOINT, DZRP.CMD_REMOVE_BREAKPOINT, DZRP.CMD_ADD_WATCHPOINT, DZRP.CMD_REMOVE_WATCHPOINT,
-			DZRP.CMD_READ_STATE, DZRP.CMD_WRITE_STATE
-		];
-	}
 
 	/** Override to create another decoder.
 	 */

@@ -32,12 +32,6 @@ class MessageBuffer {
  * create a buffer to send. The buffer sending itself (sendBuffer) is
  * not implemented. Therefore the class needs to be derived.
  *
- * If some commands are not implemented in the derived remote, the derived remote should
- * not override the sendDzrpCmd... methods.
- * Instead it should use the supportedCommands property to indicate supported commands.
- * The configureFromCommands() will then manipulate the unused command
- * methods to throw errors.
- *
  * It receives the requests from the DebugSessionClass and
  * creates complete DZRP messages in a buffer.
  * At the end calls 'sendBuffer' which is not implemented.
@@ -52,7 +46,11 @@ class MessageBuffer {
  *
  * This class does not implement any complex flow/state handling.
  *
- * IF YOU IMPLEMEMENT A REMOTE THAT USES A PHYSICAL TRANSPORT AND
+ *  The DzrpTransportRemote basically is configured through the
+ * DZRP CMF_GET_SUPPORTED_COMMANDS command.
+ * I.e. the remote needs to support >= DZRP 2.2, implementing the CMD_GET_SUPPORTED_COMMANDS.
+ *
+ * IF YOU IMPLEMENT A REMOTE THAT USES A PHYSICAL TRANSPORT AND
  * USES THE DZRP PROTOCOL, YOU SHOULD DERIVE FROM THIS CLASS.
  */
 export class DzrpTransportRemote extends DzrpQueuedRemote {

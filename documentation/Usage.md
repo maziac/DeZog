@@ -220,6 +220,8 @@ A typical configuration looks like this:
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
     - "cspect": Use of CSpect emulator with the DeZog plugin. See [CSpect](#cspect).
     - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [ZX Next / Serial Interface](#zx-next--serial-interface).
+    - "dzrp": A generic dzrp connection. Experimental. Use to connect new DZRP remotes.
+    - "mame": Use to connect MAME through a socket connection. See [MAME](#mame---multiple-machine-arcade-emulatormame).
 - [sjasmplus] (or z80asm or z88dk): The assembled configuration. An array of list files. (Or in case of sjasmplus: sld files.) Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Assembler Configuration](#assembler-configuration) section.
@@ -613,6 +615,7 @@ They are distinguished via the "remoteType":
 - "cspect": CSpect emulator
 - "zxnext": ZX Next connected via serial cable.
 - "mame": MAME emulator.
+- "dzrp": A generic dzrp connection. Experimental. Use to connect new DZRP remotes.
 
 
 ### What is a 'Remote'?
@@ -1364,9 +1367,11 @@ Note: If one of the 2 joystick ports is used to connect the UART it is still pos
 
 #### Pausing the Debugged Program
 
-While the debugged program is running there is no communication between DeZog and the ZX Next.
-I.e. it is also not possible to pause the program through the serial cable.
-For pausing your program you need to press the yellow M1 button at the left side of your ZX Next.
+If you have "Async-Break" enabled in dezogif's UI you can break your program on the ZX Next by pressing "Pause" in DeZog.
+However if you have disabled it you can only pause by pressing the yellow M1/NMI button at the left side of your ZX Next.
+The "Async.Break" feature makes use of the Copper functionality. If you don't use Copper you don't have to do anything.
+Pausing will just work.
+If you use the Copper please check the documentation [here](https://github.com/maziac/dezogif/blob/main/documentation/AsynchronousBreak.md) to pause from DeZog.
 
 
 #### HW
@@ -1430,8 +1435,8 @@ You can solder it directly or use the socket that is already available on the bo
 
 ##### Joystick ports
 
-As the joystick ports are shared by the joysticks and by the UART/serial cable the communication with DeZog can happen only when the debugged program is being paused.
-E.g. you can't set a breakpoint while your program is running. You need to pause it first, set a new breakpoint and then continue the program.
+If "Async-Break" is on and joystick port 1 or 2 is used the additional MD joystick functionality, e.g. the START button, is not available.
+Normal joystick functionality will still work.
 
 
 ##### Memory banks
@@ -1506,7 +1511,47 @@ However, you can still use "read-only paging" in your program, you just shouldn'
 ##### NMI
 
 Note: The dezogif (enNextMf.rom) uses core 03.01.10 which supports the "stackless NMI".
-I.e. interrupting the debugged program (by pressing the yellow NMI button) cannot corrupt the stack of the debugged program.
+I.e. interrupting the debugged program (e.g. by pressing the yellow NMI button) cannot corrupt the stack of the debugged program.
+
+
+#### Socket connection / WiFi
+
+The "zxnext" does support a socket connection, too.
+This is experimental at the moment.
+You can use it to connect to a ZXNext via WiFi. Therefore you have to use `dezogif_ng`.
+It is an alternate `enNextMF.rom` which allows to debug a ZX Next program via WiFi:
+[dezogif_ng](https://github.com/jorgegv/dezogif_ng) by [jorgegv](https://github.com/jorgegv).
+
+To use it you need to configure the port instead of the serial interface:
+~~~json
+    "zxnext": {
+        "port": 14000
+    }
+~~~
+
+
+### Generic DZRP
+
+At the moment this is an experimental feature only.
+It works very similar to "zxnext" and allows for a DZRP (DZRP version >= 2.2.0) connection via socket or serial.
+
+The launch.json for DeZog is:
+~~~json
+    "remoteType": "dzrp",
+    "dzrp": {
+        "port": 14000
+    }
+~~~
+
+for a socket connection or
+~~~json
+    "remoteType": "dzrp",
+    "dzrp": {
+        "serial": "/dev/tty.usbserial-AQ"
+    }
+~~~
+
+for a serial connection.
 
 
 ### MAME - Multiple Machine Arcade Emulator

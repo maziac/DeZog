@@ -133,7 +133,7 @@ For more demanding projects you have the choice to install a real emulator.
 
 These are the options:
 
-- the [CSpect](http://www.cspect.org) emulator (known to be interoperable is version 3.0.15.2)
+- the [CSpect](http://www.cspect.org) emulator (known to be interoperable is version ???. Versions older than ??? are not compatible.) TODO: Update version numbers.
 - the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable is version 12.1. Versions older than 10.3 are not compatible.)
 - [MAME](https://www.mamedev.org/release.html) (known to be interoperable is version 0.242)
 
@@ -208,6 +208,7 @@ I would like to express my gratitude to the following individuals for their inva
 - [Sebastien Andrivet](https://github.com/andrivet) for help with the ZX81 simulator and the ZX81 and ZX Spectrum keyboard svg files. Great work. Both are included under the [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/?ref=chooser-v1) license.
 - [Paul Farrow](http://www.fruitcake.plus.com/) for the help on the ZX81 graphics modes.
 - [Víctor Morilla](https://github.com/vmorilla) for the z88dk addition to label parsing, enabling setting of breakpoints and stepping through C source code.
+- [Jorge Gonzalez](https://github.com/jorgegv) for finding and correcting bugs in `dezogif` and for his implementation of the "Async-Break". Please also have a look at his fantastic ZX Next emulator [JNext](https://www.jnext.es/) and his [dezogif_ng](https://github.com/jorgegv/dezogif_ng) to allow debugging through WiFi.
 
 
 # Tutorials
@@ -223,7 +224,7 @@ The tutorials that I'm aware of are listed here by date.
 
 Date: Apr-2022, DeZog 2.7, ZX Next
 
-The most recent and only tutorial[tutorial](https://amaninhistechnoshed.com/a-man-in-his-technoshed/coding) for DeZog 2.x, by [A MAN IN HIS TECHNO SHED](https://amaninhistechnoshed.com/a-man-in-his-technoshed/).
+The most recent and only [tutorial](https://amaninhistechnoshed.com/a-man-in-his-technoshed/coding) for DeZog 2.x, by [A MAN IN HIS TECHNO SHED](https://amaninhistechnoshed.com/a-man-in-his-technoshed/).
 It shows debugging with a ZX Next and DeZog.
 
 

@@ -1,7 +1,9 @@
 # Changelog
 
 # 3.8.0
+- Uses and requires DZRP >= 2.2.0. Evaluates the CMD_GET_SUPPORTED_COMMANDS.
 - SNA file format. Now also file extension *.snx is supported.
+- A generic "dzrp" remote has been implemented which can connect via serial or socket connection.
 
 # 3.7.4
 - PR #193: Fixed bug where pressing 'stop' would sometimes take 5 seconds to disconnect. (mame)
