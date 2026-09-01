@@ -1,4 +1,4 @@
-import {DzrpBufferRemote} from './dzrpbufferremote';
+import {DzrpTransportRemote} from './dzrptransportremote';
 import {CSpectType, Settings} from '../../settings/settings';
 import {WithSocket} from './transportsocketmixin';
 import {DZRP} from '../dzrp/dzrpremote';
@@ -11,7 +11,7 @@ import {DZRP} from '../dzrp/dzrpremote';
  * The CSpect DeZog plugin internally communicates with the
  * CSpect debugger.
  */
-export class CSpectRemote extends WithSocket(DzrpBufferRemote) {
+export class CSpectRemote extends WithSocket(DzrpTransportRemote) {
 	protected override logName = 'CSpectRemote';
 
 	/// Constructor.

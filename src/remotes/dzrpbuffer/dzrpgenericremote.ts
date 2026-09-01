@@ -1,4 +1,4 @@
-import {DzrpBufferRemote} from './dzrpbufferremote';
+import {DzrpTransportRemote as DzrpTransportRemote} from './dzrptransportremote';
 import {WithSocket} from './transportsocketmixin';
 import {WithSerial} from './transportserialmixin';
 import {DZRP} from '../dzrp/dzrpremote';
@@ -12,7 +12,7 @@ import {DZRP} from '../dzrp/dzrpremote';
  * Per default only the dezogif specific commands are disabled.
  * I.e. CMD_SET_BREAKPOINTS and CMD_RESTORE_MEM.
  */
-class DzrpGenericRemote extends DzrpBufferRemote {
+class DzrpGenericRemote extends DzrpTransportRemote {
 	protected defaultUnsupportedCommands = [
 		DZRP.CMD_SET_BREAKPOINTS, DZRP.CMD_RESTORE_MEM
 	];

@@ -14,9 +14,15 @@ In DeZog, a Remote class is derived from RemoteBase and represents the emulator 
 For the simulator zsim, both terms are synonymous, and the capital "Remote" is used.
 
 
-# Derive from DzrpQueuedRemote
+# What to derive from?
 
-To introduce a new Remote, it is advisable to inherit from the DzrpQueuedRemote class. The Dzrp... classes exhibit a similar behavior among derived Remotes, making maintenance and the addition of new features more straightforward. This approach eliminates the need to modify all Remotes for new features but only the base classes.
+To introduce a new Remote that connects to a device external to DeZog, inherit from the DzrpQueuedRemote class.
+Even if on the physical layer the DZRP messages are not used (an example is the MameRemote).
+If you use DZRP messages on the physical layer derive from DzrpTransportRemote or one of its subclasses.
+
+TODO: Explain how to derive once the class hierarchy has settled!!!!
+
+The Dzrp... classes exhibit a similar behavior among derived Remotes, making maintenance and the addition of new features more straightforward. This approach eliminates the need to modify all Remotes for new features but only the base classes.
 
 DzrpQueuedRemote (or better DzrpRemote) establishes a well-defined set of messages sent to the external remote. In your custom implementation, your primary task is to create a transport layer (e.g. socket) for transmitting these messages to the remote device.
 For guidance, consult examples such as ZXNextRemote or CSpectRemote.
@@ -32,61 +38,50 @@ I recommend avoiding the derivation of new Remotes from the ZEsarUX Remote or th
 Only consider deriving from RemoteBase if you encounter specific issues that cannot be addressed through the former approach.
 
 ~~~
-                                       ┌─────────────────────────────┐
-                                       │            Dezog            │
-                                       │      DebugSessionClass      │
-                                       └─────────────────────────────┘
-                                                      ▲
-                                                      │
-                                                      ▼
-                                          ┌──────────────────────┐
-                                          │                      │
-                                          │      RemoteBase      │
-                                          │                      │
-                                          └──────────────────────┘
-                                                      △
-           ┌──────────────────────────────────────────┴───────┐
-           │                                                  │
-           │                                       ┌────────────────────┐
-┌────────────────────┐                             │                    │
-│                    │                             │     DzrpRemote     │◆───────────────────────────────┬────────────┬────────────┐
-│   ZesaruxRemote    │                             │                    │                                │            │            │
-│                    │                             └────────────────────┘                           ┌─────────┐  ┌─────────┐  ┌─────────┐
-└────────────────────┘                                        △                                     │ NexFile │  │ SnaFile │  │   Obj   │
-           ▲                                                  │                                     └─────────┘  └─────────┘  └─────────┘
-           │                               ┌──────────────────┴──────────────────────────┐
-           ▼                               │                                             │
-   ┌───────────────┐                       │                                             │
-   │ ZesaruxSocket │                       │                                             │
-   └───────────────┘          ┌─────────────────────────┐                     ┌────────────────────┐
-           ▲                  │                         │                     │                    │
-           │                  │       ZSimRemote        │                     │  DzrpQueuedRemote  │
-           ▼                  │                         │                     │                    │
-   ┌──────────────┐           └─────────────────────────┘                     └────────────────────┘
-   │    socket    │                      ◆                                               △
-   └──────────────┘                      │                                               │
-                                         │                                               ├─────────────────────────────────────────┐
-                                  ┌─────────────┐                                        │                                         │
-                                  │   Z80Cpu    │                                        │                                         │
-                                  └─────────────┘                             ┌────────────────────┐                    ┌────────────────────┐
-                                         ◆                                    │                    │                    │                    │
-                              ┌──────────┴──────┐                             │  DzrpBufferRemote  │                    │     MameRemote     │
-                              │                 │                             │                    │                    │                    │
-                     ┌─────────────────┐  ┌──────────┐                        └────────────────────┘                    └────────────────────┘
-                     │ SimulatedMemory │  │ Z80Ports │                                   △                                         ▲
-                     └─────────────────┘  └──────────┘                     ┌─────────────┴────────────────┐                        │
-                                                                           │                              │                        │
-                                                                ┌─────────────────────┐        ┌────────────────────┐              │
-                                                                │                     │        │                    │              │
-                                                                │ ZxNextSerialRemote  │        │    CSpectRemote    │              │
-                                                                │                     │        │                    │              │
-                                                                └─────────────────────┘        └────────────────────┘              │
-                                                                           ▲                              ▲                        │
-                                                                           │                              │                        │
-                                                                           ▼                              ▼                        ▼
-                                                                   ┌──────────────┐               ┌──────────────┐         ┌──────────────┐
-                                                                   │    Serial    │               │    Socket    │         │    Socket    │
-                                                                   └──────────────┘               └──────────────┘         └──────────────┘
+         ┌────────────────────┐
+         │                    │
+         │     DzrpRemote     │◆─────────┬────────────┬────────────┐
+         │                    │          │            │            │
+         └────────────────────┘     ┌─────────┐  ┌─────────┐  ┌─────────┐
+                    △               │ NexFile │  │ SnaFile │  │   Obj   │
+                    │               └─────────┘  └─────────┘  └─────────┘
+                    │
+            ┌───────┴────────────────────┐
+            │                            │
+            │                            │
+┌──────────────────────┐      ┌────────────────────┐
+│                      │      │                    │
+│      ZSimRemote      │      │  DzrpQueuedRemote  │
+│                      │      │                    │
+└──────────────────────┘      └────────────────────┘
+                                         △
+                                         │
+                                         ├────────────────────────────────┐
+                                         │                                │
+                              ┌────────────────────┐           ┌────────────────────┐
+                              │                    │           │                    │
+                              │DzrpTransportRemote │           │     MameRemote     │
+                              │                    │           │                    │
+                              └────────────────────┘           └────────────────────┘
+                                         ▲
+                                         │
+                      ┌──────────────────┴──────────────────────────────┬────────────────────────────┐
+                      │                                                 │                            │
+                      │                                                 │                            │
+                      │                                                 │                            │
+           ┌────────────────────┐                            ┌────────────────────┐       ┌────────────────────┐
+           │                    │                            │                    │       │                    │
+           │ DzrpDezogIfRemote  │                            │ DzrpGenericRemote  │       │    CSpectRemote    │
+           │                    │                            │                    │       │                    │
+           └────────────────────┘                            └────────────────────┘       └────────────────────┘
+                      ▲                                                 ▲
+           ┌──────────┴────────────┐                       ┌────────────┴──────────┐
+           │                       │                       │                       │
+┌─────────────────────┐ ┌─────────────────────┐ ┌─────────────────────┐ ┌─────────────────────┐
+│                     │ │                     │ │DzrpGenericSocketRemo│ │DzrpGenericSerialRemo│
+│ ZxNextSocketRemote  │ │ ZxNextSerialRemote  │ │         te          │ │         te          │
+│                     │ │                     │ │                     │ │                     │
+└─────────────────────┘ └─────────────────────┘ └─────────────────────┘ └─────────────────────┘
 ~~~
 
 

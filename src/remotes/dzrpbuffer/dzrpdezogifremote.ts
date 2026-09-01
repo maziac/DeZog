@@ -1,4 +1,4 @@
-import {DzrpBufferRemote} from './dzrpbufferremote';
+import {DzrpTransportRemote} from './dzrptransportremote';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {Z80RegistersZxNextDecoder} from './z80registerszxnextdecoder';
 import {DzrpTransportType, Settings} from '../../settings/settings';
@@ -10,7 +10,7 @@ import {DZRP} from '../dzrp/dzrpremote';
  * software.
  * The dezogif comes in two flavors: with a serial or a socket interface.
  */
-export class DzrpDezogIfRemote extends DzrpBufferRemote {
+export class DzrpDezogIfRemote extends DzrpTransportRemote {
 	// Value to catch the MESSAGE_START_BYTE if received data was 1 byte only.
 	protected msgStartByteFound: boolean;
 

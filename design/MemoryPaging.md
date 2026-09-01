@@ -149,7 +149,7 @@ Remote <-- Z80Registers
 da <-- Remote
 
 ...
-note over da, Z80Registers: dzrpbufferremote
+note over da, Z80Registers: dzrptransportremote
 Remote -> Remote: receivedMsg()
 note over Remote: Calculate the break address\ndifferently
 

@@ -55,8 +55,7 @@ class MessageBuffer {
  * IF YOU IMPLEMEMENT A REMOTE THAT USES A PHYSICAL TRANSPORT AND
  * USES THE DZRP PROTOCOL, YOU SHOULD DERIVE FROM THIS CLASS.
  */
-// TODO: Rename to DzrpGenericRemote or DzrpTransportType
-export class DzrpBufferRemote extends DzrpQueuedRemote {
+export class DzrpTransportRemote extends DzrpQueuedRemote {
 	/// Timeouts.
 	protected static readonly CONNECTION_TIMEOUT = 1000;	// 1 sec // TODO: exchange the static TIMEOUTS with the one from the Settings.
 

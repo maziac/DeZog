@@ -2,58 +2,72 @@
 Idea is to use one "dzrp" Remote for all.
 This Remote would cover "cspect", "mame", "zxnext", "zsim".
 
+TODO: Overwork this document!!!!
 
 # Dzrp Class Design
 ~~~
-             ┌──────────────────────┐
-             │                      │
-             │      RemoteBase      │
-             │                      │
-             └──────────────────────┘
-                         △
-                         │
-                         │
-              ┌────────────────────┐
-              │                    │
-              │     DzrpRemote     │◆─────────┬────────────┬────────────┐
-              │                    │          │            │            │
-              └────────────────────┘     ┌─────────┐  ┌─────────┐  ┌─────────┐
-                         △               │ NexFile │  │ SnaFile │  │   Obj   │
-                         │               └─────────┘  └─────────┘  └─────────┘
-               ┌─────────┴────────────────────┐
-               │                              │
-               │                              │
-               │                              │
-  ┌─────────────────────────┐      ┌────────────────────┐
-  │                         │      │                    │
-  │       ZSimRemote        │      │  DzrpQueuedRemote  │
-  │                         │      │                    │
-  └─────────────────────────┘      └────────────────────┘
-                                              △
-                                              │
-           ┌──────────────────────────────────┤
-           │                                  │
-           │                                  │
-┌────────────────────┐             ┌────────────────────┐
-│                    │             │                    │
-│     MameRemote     │             │  DzrpBufferRemote  │
-│                    │             │                    │
-└────────────────────┘             └────────────────────┘
-           ▲                                  △
-           │                    ┌─────────────┴────────────────┐
-           │                    │                              │
-           │         ┌─────────────────────┐        ┌────────────────────┐
-           │         │                     │        │                    │
-           │         │ ZxNextSerialRemote  │        │    CSpectRemote    │
-           │         │                     │        │                    │
-           │         └─────────────────────┘        └────────────────────┘
-           │                    ▲                              ▲
-           │                    │                              │
-           ▼                    ▼                              ▼
-   ┌──────────────┐     ┌──────────────┐               ┌──────────────┐
-   │    Socket    │     │    Serial    │               │    Socket    │
-   └──────────────┘     └──────────────┘               └──────────────┘
-~~~
+           ┌──────────────────────┐
+           │                      │
+           │      RemoteBase      │
+           │                      │
+           └──────────────────────┘
+                       △
+                       │
+                       │
+            ┌────────────────────┐
+            │                    │
+            │     DzrpRemote     │◆─────────┬────────────┬────────────┐
+            │                    │          │            │            │
+            └────────────────────┘     ┌─────────┐  ┌─────────┐  ┌─────────┐
+                       △               │ NexFile │  │ SnaFile │  │   Obj   │
+                       │               └─────────┘  └─────────┘  └─────────┘
+                       │
+               ┌───────┴────────────────────┐
+               │                            │
+               │                            │
+   ┌──────────────────────┐      ┌────────────────────┐
+   │                      │      │                    │
+   │      ZSimRemote      │      │  DzrpQueuedRemote  │
+   │                      │      │                    │
+   └──────────────────────┘      └────────────────────┘
+                                            △
+                                            │
+                                            ├────────────────────────────────┐
+                                            │                                │
+                                            │                     ┌────────────────────┐
+                                            │                     │                    │
+                                            │                     │     MameRemote     │
+                                            │                     │                    │
+                                            │                     └────────────────────┘
+                                 ┌────────────────────┐                      ▲
+                                 │                    │                      │
+                                 │DzrpTransportRemote │                      ▼
+                                 │                    │              ┌──────────────┐
+                                 └────────────────────┘              │    Socket    │
+                                            ▲                        └──────────────┘
+                                            │
+                      ┌─────────────────────┴───────────────────────────┬───────────────────────────────────┐
+                      │                                                 │                                   │
+                      │                                                 │                                   │
+           ┌────────────────────┐                            ┌────────────────────┐              ┌────────────────────┐
+           │                    │                            │                    │              │                    │
+           │ DzrpDezogIfRemote  │                            │ DzrpGenericRemote  │              │    CSpectRemote    │
+           │                    │                            │                    │              │                    │
+           └────────────────────┘                            └────────────────────┘              └────────────────────┘
+                      ▲                                                 ▲                                   ▲
+           ┌──────────┴────────────┐                        ┌───────────┴───────────┐                       │
+           │                       │                        │                       │                       ▼
+┌─────────────────────┐ ┌─────────────────────┐  ┌─────────────────────┐ ┌─────────────────────┐    ┌──────────────┐
+│                     │ │                     │  │DzrpGenericSocketRemo│ │DzrpGenericSerialRemo│    │    Socket    │
+│ ZxNextSocketRemote  │ │ ZxNextSerialRemote  │  │         te          │ │         te          │    └──────────────┘
+│                     │ │                     │  │                     │ │                     │
+└─────────────────────┘ └─────────────────────┘  └─────────────────────┘ └─────────────────────┘
+           ▲                       ▲                        ▲                       ▲
+           │                       │                        │                       │
+           ▼                       ▼                        ▼                       ▼
+   ┌──────────────┐        ┌──────────────┐         ┌──────────────┐        ┌──────────────┐
+   │    Socket    │        │    Serial    │         │    Socket    │        │    Serial    │
+   └──────────────┘        └──────────────┘         └──────────────┘        └──────────────┘                           ~~~
 
 ## DzrpRemote
 Has stubs for all DzrpCommands.
@@ -63,10 +77,11 @@ Has the handling for sending and receiving asynchronous messages for use wth som
 Is agnostic of the transport layer.
 I.e. used as a parent for ZXNextSerialRemote and CSpectRemote but also for MameRemote (not using dzrp at low level).
 
-## DzrpBufferRemote
+## DzrpTransportRemote
 Prepares the dzrp messages in a buffer to send them through a transport.
-I.e. this assumes the transport is really dzrp (opposed to e.g. mame).
+I.e. this assumes the physical transport is really uses dzrp content (opposed to e.g. mame).
 But it still is agnostic of the used transport, e.g. if send through socket or serial.
+If you intend to develop a new Remote which uses DZRP also in the physical transport then derive from DzrpTransportRemote or one of its subclasses.
 
 
 # Early conclusion
@@ -83,45 +98,9 @@ It would then e.g. decide by itself which breakpoint commands to use.
 # Next
 1. Move common dzrp commands from zxnextserialremote and cspectremote to dzrpbuffer remote - done
 2. Add a dzrpdezogifremote and put common functionality from zxnextserialremote and zxnextsocketremote in there
-3. In dzrpbufferremote add a command (and a property in settings) to read the cmd-capabilities of the Remote. Use only the commands allowed and give errors for the others.
+3. In DzrpTransportRemote add a command (and a property in settings) to read the cmd-capabilities of the Remote. Use only the commands allowed and give errors for the others.
 4. Add a dzrp command as response for not implemented commands.
 
-~~~
-┌────────────────────┐
-│                    │
-│  DzrpBufferRemote  │
-│                    │
-└────────────────────┘
-           ▲
-           │
-           ├──────────────────────────────────┐
-           │                                  │
-           │                                  │
-┌────────────────────┐             ┌────────────────────┐
-│                    │             │                    │
-│ DzrpDezogIfRemote  │             │    CSpectRemote    │
-│                    │             │                    │
-└────────────────────┘             └────────────────────┘
-           ▲                                  ▲
-           │                                  │
-           │                                  ▼
-           ├───────────────────────┐  ┌──────────────┐
-           │                       │  │    Socket    │
-           │                       │  └──────────────┘
-           │                       │
-           ┴                       │
-┌─────────────────────┐ ┌─────────────────────┐
-│                     │ │                     │
-│ ZxNextSocketRemote  │ │ ZxNextSerialRemote  │
-│                     │ │                     │
-└─────────────────────┘ └─────────────────────┘
-           ▲                       ▲
-           │                       │
-           ▼                       ▼
-   ┌──────────────┐        ┌──────────────┐
-   │    Socket    │        │    Serial    │
-   └──────────────┘        └──────────────┘
-~~~
 
 # Thoughts
 

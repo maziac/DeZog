@@ -1,5 +1,5 @@
 import {LogTransport} from '../../log';
-import {DzrpBufferRemote} from './dzrpbufferremote';
+import {DzrpTransportRemote} from './dzrptransportremote';
 import {ErrorWrapper} from '../../misc/errorwrapper';
 import {SerialPort} from 'serialport';
 
@@ -16,7 +16,7 @@ import {SerialPort} from 'serialport';
 
 type Constructor<T = {}> = new (...args: any[]) => T;
 
-export function WithSerial<TBase extends Constructor<DzrpBufferRemote>>(Base: TBase) {
+export function WithSerial<TBase extends Constructor<DzrpTransportRemote>>(Base: TBase) {
 	return class extends Base {
 		// The serial port instance.
 		protected serialPort: SerialPort | undefined;

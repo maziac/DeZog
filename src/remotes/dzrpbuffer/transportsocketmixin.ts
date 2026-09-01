@@ -1,5 +1,5 @@
 import {Socket} from "net";
-import {DzrpBufferRemote} from "./dzrpbufferremote";
+import {DzrpTransportRemote} from "./dzrptransportremote";
 import {LogTransport} from "../../log";
 import {ErrorWrapper} from "../../misc/errorwrapper";
 import {Settings} from "../../settings/settings";
@@ -16,7 +16,7 @@ import {Settings} from "../../settings/settings";
 
 type Constructor<T = {}> = new (...args: any[]) => T;
 
-export function WithSocket<TBase extends Constructor<DzrpBufferRemote>>(Base: TBase) {
+export function WithSocket<TBase extends Constructor<DzrpTransportRemote>>(Base: TBase) {
 	return class extends Base {
 		protected socket!: Socket;
 
@@ -75,7 +75,7 @@ export function WithSocket<TBase extends Constructor<DzrpBufferRemote>>(Base: TB
 			});
 
 			// Start socket connection
-			this.socket.setTimeout(DzrpBufferRemote.CONNECTION_TIMEOUT); // TODO: use settingsDzrpType.timeout * 1000 instead of hardcoded value
+			this.socket.setTimeout(DzrpTransportRemote.CONNECTION_TIMEOUT); // TODO: use settingsDzrpType.timeout * 1000 instead of hardcoded value
 			const port = this.settingsDzrpTransportType.port!;
 			const hostname = this.settingsDzrpTransportType.hostname!;
 			this.socket.connect(port, hostname);
