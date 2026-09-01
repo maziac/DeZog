@@ -45,12 +45,6 @@ interface RestorableBreakpoint {
  */
 export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpRemote>(Base: TBase) {
 	return class extends Base {
-		// For restoring the breakpoints it is necessary to determine
-		// if a bp is currently restored or not.
-		// If not undefined it is currently restored.
-		protected longBreakedAddress: number | undefined;
-
-
 		// Returned breakpoint index.
 		protected breakpointIdLastIndex: number;
 
@@ -61,7 +55,7 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 
 		/** Use initSimpleMode instead of a constructor. */
 		protected initSimpleMode() {
-			this.longBreakedAddress = undefined;
+			//this.longBreakedAddress = undefined;
 			this.breakpointIdLastIndex = 0;
 			this.breakpointsAndOpcodes = undefined as any;
 		}
@@ -137,6 +131,11 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 		 * @param bp2Addr64k The 64k address of breakpoint 2 or undefined if not used.
 		 */
 		protected async dzrpContinue(bp1Addr64k?: number, bp2Addr64k?: number): Promise<void> {
+			// Check if current address matches a breakpoint
+			const currentAddress = this.getPCLong();
+			const bpAtCurrentAddress = this.breakpoints.some(bp => bp.longAddress === currentAddress);
+			let longBreakedAddress = (bpAtCurrentAddress ? currentAddress : undefined);
+
 			// Get long addresses
 			let longBp1Address = bp1Addr64k;
 			let longBp2Address = bp2Addr64k;
@@ -162,11 +161,7 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 			// Remember old resolve function
 			const originalContinueResolve = this.funcContinueResolve!;
 			const resolveWithBp = async (breakInfo: BreakInfo) => {
-				// Store breakpoint if breakpoint was hit
-				this.longBreakedAddress = undefined;
-				if (breakInfo.reasonNumber === BREAK_REASON_NUMBER.BREAKPOINT_HIT)
-					this.longBreakedAddress = breakInfo.longAddr;
-
+				longBreakedAddress = undefined;
 				// If tmp breakpoint and real breakpoint was hit, i.e. both are the same
 				// then the 'dezogif' cannot determine the tmp breakpoint correctly.
 				// I.e. it is corrected here.
@@ -197,8 +192,8 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 				await originalContinueResolve(breakInfo);
 			};
 
-			// Get all breakpoint addresses (without breakedAddress)
-			const bpAddresses = this.getBreakpointAddresses();
+			// Get all breakpoint addresses (without longBreakedAddress)
+			const bpAddresses = this.getBreakpointAddresses(longBreakedAddress);
 			// Set breakpoints and get opcodes
 			const opcodes = await this.sendDzrpCmdSetBreakpoints(bpAddresses);
 			// Combine
@@ -211,8 +206,8 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 			}
 
 			// Handle different states
-			const oldBreakedAddress = this.longBreakedAddress;
 			let oldOpcode;
+			const oldBreakedAddress = longBreakedAddress;
 			if (oldBreakedAddress === undefined) {
 				// "Normal" case.
 				// Catch resolve method to store the breakpoint ID.
@@ -225,11 +220,7 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 				// insert the bp and continue.
 				// Setup intermediate resolve function.
 				this.funcContinueResolve = async (breakInfo: BreakInfo) => {
-					// Store new breakpoint if breakpoint was hit
-					this.longBreakedAddress = undefined;
-					if (breakInfo.reasonNumber === BREAK_REASON_NUMBER.BREAKPOINT_HIT)
-						this.longBreakedAddress = breakInfo.longAddr;
-
+					longBreakedAddress = undefined;
 					// Check if 2nd continue is necessary
 					let breakAddr64k;
 					if (breakInfo.longAddr !== undefined)
@@ -299,8 +290,8 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 		protected async dzrpRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
 			// Check if breaked address is removed.
 			const bpAddress = bp.longAddress;
-			if (this.longBreakedAddress === bpAddress)
-				this.longBreakedAddress = undefined;
+			// if (this.longBreakedAddress === bpAddress)
+			// 	this.longBreakedAddress = undefined;
 			// Check if debugged program is running
 			if (this.breakpointsAndOpcodes && !this.pauseStep) {
 				// It is running: remove the breakpoint immediately
@@ -322,14 +313,15 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 		}
 
 
-		/** Returns all breakpoint addresses without the this.breakedAddress.
+		/** Returns all breakpoint addresses without the given excludeAddress.
+		 * @param excludeAddress The long address to exclude from the returned list.
 		 * @returns Array with breakpoint address.
 		 */
-		protected getBreakpointAddresses(): Array<number> {
+		protected getBreakpointAddresses(excludeAddress: number | undefined): Array<number> {
 			const bpFiltered = new Array<number>();
 			const tmpBps = this.tmpBreakpoints.keys();
 			for (const addr of tmpBps) {
-				if (addr !== this.longBreakedAddress)
+				if (addr !== excludeAddress)
 					bpFiltered.push(addr);
 			}
 			return bpFiltered;
