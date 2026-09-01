@@ -782,6 +782,7 @@ Note:
 If, for example, the remote only supports commands up to ID 24, the remote need to report only 4 byte.
 - Some of the commands need to be supported always by every remote like e.g. CMD_INIT.
 Nevertheless those are reported here as well.
+- This command MUST be supported by any remote that supports DZRP >= 2.2.0.
 
 
 ## CMD_ADD_BREAKPOINT=40
