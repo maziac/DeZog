@@ -94,7 +94,7 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 			let [opcode, bpAddr1, bpAddr2] = await super.calcStepBp(stepOver);
 			// Check if 2nd breakpoint points to PC
 			const pc = this.getPC();
-			if (pc == bpAddr2) {
+			if (pc === bpAddr2) {
 				// For djnz
 				bpAddr2 = undefined;
 			}
@@ -112,8 +112,8 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 			// So we set only one breakpoint relying on the disassembler setting.
 			const ocFlags = opcode.flags;
 			if (ocFlags & OpcodeFlag.BRANCH_ADDRESS
-				&& (ocFlags & OpcodeFlag.CONDITIONAL) == 0
-				&& opcode.code == 0xCF) {
+				&& (ocFlags & OpcodeFlag.CONDITIONAL) === 0
+				&& opcode.code === 0xCF) {
 				// Note: The opcode length for RST 08 is already adjusted by the disassembler.
 				// Note: Since we cannot step through ROM anyway a stepInto is handled the same
 				// as a stepOver here.
@@ -141,9 +141,9 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 			let longBp1Address = bp1Addr64k;
 			let longBp2Address = bp2Addr64k;
 			const slots = Z80Registers.getSlots();
-			if (bp1Addr64k != undefined)
+			if (bp1Addr64k !== undefined)
 				longBp1Address = Z80Registers.createLongAddress(bp1Addr64k, slots);
-			if (bp2Addr64k != undefined)
+			if (bp2Addr64k !== undefined)
 				longBp2Address = Z80Registers.createLongAddress(bp2Addr64k, slots);
 
 			// Check breakpoints
@@ -164,7 +164,7 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 			const resolveWithBp = async (breakInfo: BreakInfo) => {
 				// Store breakpoint if breakpoint was hit
 				this.longBreakedAddress = undefined;
-				if (breakInfo.reasonNumber == BREAK_REASON_NUMBER.BREAKPOINT_HIT)
+				if (breakInfo.reasonNumber === BREAK_REASON_NUMBER.BREAKPOINT_HIT)
 					this.longBreakedAddress = breakInfo.longAddr;
 
 				// If tmp breakpoint and real breakpoint was hit, i.e. both are the same
@@ -178,11 +178,11 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 				// Restore breakpoint addresses
 				const count = this.breakpointsAndOpcodes.length;
 				let memCount = count;
-				if (oldOpcode != undefined)
+				if (oldOpcode !== undefined)
 					memCount++;
 				const memValues = new Array<{address: number, value: number}>(memCount);
 				let k = 0;
-				if (oldOpcode != undefined) {
+				if (oldOpcode !== undefined) {
 					// Add the last set breakpoint
 					memValues[k++] = {address: oldBreakedAddress!, value: oldOpcode[0]}
 				}
@@ -213,7 +213,7 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 			// Handle different states
 			const oldBreakedAddress = this.longBreakedAddress;
 			let oldOpcode;
-			if (oldBreakedAddress == undefined) {
+			if (oldBreakedAddress === undefined) {
 				// "Normal" case.
 				// Catch resolve method to store the breakpoint ID.
 				Utility.assert(this.funcContinueResolve);
@@ -221,21 +221,22 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 				await this.sendDzrpCmdContinue(bp1Addr64k, bp2Addr64k);
 			}
 			else {
-				// Continuing from a breakpoint.
+				// Continuing from a breakpoint: Step over the current instruction wo bp,
+				// insert the bp and continue.
 				// Setup intermediate resolve function.
 				this.funcContinueResolve = async (breakInfo: BreakInfo) => {
 					// Store new breakpoint if breakpoint was hit
 					this.longBreakedAddress = undefined;
-					if (breakInfo.reasonNumber == BREAK_REASON_NUMBER.BREAKPOINT_HIT)
+					if (breakInfo.reasonNumber === BREAK_REASON_NUMBER.BREAKPOINT_HIT)
 						this.longBreakedAddress = breakInfo.longAddr;
 
 					// Check if 2nd continue is necessary
 					let breakAddr64k;
-					if (breakInfo.longAddr != undefined)
+					if (breakInfo.longAddr !== undefined)
 						breakAddr64k = breakInfo.longAddr & 0xFFFF;
-					if ((breakAddr64k != undefined &&
-						(breakAddr64k == bp1Addr64k || breakAddr64k == bp2Addr64k))
-						|| breakInfo.reasonNumber == BREAK_REASON_NUMBER.BREAKPOINT_HIT) {
+					if ((breakAddr64k !== undefined &&
+						(breakAddr64k === bp1Addr64k || breakAddr64k === bp2Addr64k))
+						|| breakInfo.reasonNumber === BREAK_REASON_NUMBER.BREAKPOINT_HIT) {
 						// Either a "real" breakpoint was hit or one of the original temporary breakpoints.
 						// In any case we don't need to continue here.
 						await resolveWithBp(breakInfo);
@@ -298,7 +299,7 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 		protected async dzrpRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
 			// Check if breaked address is removed.
 			const bpAddress = bp.longAddress;
-			if (this.longBreakedAddress == bpAddress)
+			if (this.longBreakedAddress === bpAddress)
 				this.longBreakedAddress = undefined;
 			// Check if debugged program is running
 			if (this.breakpointsAndOpcodes && !this.pauseStep) {
@@ -306,7 +307,7 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 				const bpLen = this.breakpointsAndOpcodes.length;
 				for (let i = bpLen - 1; i >= 0; i--) {
 					const bp = this.breakpointsAndOpcodes[i];
-					if (bp.address == bpAddress) {
+					if (bp.address === bpAddress) {
 						// Get opcode and restore memory
 						const opcode = bp.opcode;
 						await this.sendDzrpCmdRestoreMem([{address: bpAddress, value: opcode}]);
@@ -328,7 +329,7 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 			const bpFiltered = new Array<number>();
 			const tmpBps = this.tmpBreakpoints.keys();
 			for (const addr of tmpBps) {
-				if (addr != this.longBreakedAddress)
+				if (addr !== this.longBreakedAddress)
 					bpFiltered.push(addr);
 			}
 			return bpFiltered;
@@ -342,7 +343,7 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 		 * error output.
 		 */
 		protected checkBreakpoint(longAddr: number | undefined): string | undefined {
-			if (longAddr != undefined) {
+			if (longAddr !== undefined) {
 				// Check for ROM
 				const bank = Z80RegistersClass.getBankFromAddress(longAddr);
 				if (bank >= 0xFE)	// ROM
