@@ -59,6 +59,12 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 		// During Continue it is increased/decreased if other breakpoints are manually added.
 		protected breakpointsAndOpcodes: Array<RestorableBreakpoint>;
 
+		/** Use initSimpleMode instead of a constructor. */
+		protected initSimpleMode() {
+			this.longBreakedAddress = undefined;
+			this.breakpointIdLastIndex = 0;
+			this.breakpointsAndOpcodes = undefined as any;
+		}
 
 		/** The implementation of the SW breakpoints as Z80 instruction (RST) requires a modification
 		 * in the calcStep algorithm.

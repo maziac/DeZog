@@ -125,11 +125,8 @@ export class DzrpBufferRemote extends DzrpQueuedRemote {
 		// Change prototype to VariantBClass so that methods from VariantBClass are found
 		Object.setPrototypeOf(this, VariantBClass.prototype);
 
-		// Instance properties that would normally be set by the constructor,
-		// manually set here (constructor is NOT called when using setPrototypeOf!)
-		(this as any).longBreakedAddress = undefined;
-		(this as any).breakpointIdLastIndex = 0;
-		(this as any).breakpointsAndOpcodes = undefined;
+		// Initialize instance properties that would normally be set by the constructor (constructor is NOT called when using setPrototypeOf!)
+		(this as any).initSimpleMode();
 	}
 
 

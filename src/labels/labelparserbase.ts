@@ -1,4 +1,4 @@
-import { ListConfigBase, AsmConfigBase } from './../settings/settings';
+import {ListConfigBase, AsmConfigBase} from './../settings/settings';
 import * as fs from 'fs';
 import {Utility} from '../misc/utility';
 import {UnifiedPath} from '../misc/unifiedpath';
@@ -7,8 +7,7 @@ import {minimatch} from 'minimatch';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 
 
-/**
- * An issue is an error or warning generated while parsing the list file.
+/** An issue is an error or warning generated while parsing the list file.
  * As list files are computer generated this normally does not happen, except
  * for warnings.
  * But for the manually created reverse engineering list file errors can happen
@@ -32,8 +31,7 @@ export interface Issue {
 }
 
 
-/**
- * This class is the base class for the assembler list file parsers.
+/** This class is the base class for the assembler list file parsers.
  */
 export class LabelParserBase {
 	// Overwrite with parser name (for errors) in derived classes.
@@ -137,8 +135,7 @@ export class LabelParserBase {
 	protected issueHandler: (issue: Issue) => void;
 
 
-	/**
-	 *  Constructor.
+	/**  Constructor.
 	 * @param issueHandler Gets called when an error or problem is found in the file.
 	 */
 	public constructor(	// NOSONAR
@@ -169,8 +166,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Reads the given file (an assembler .list file) and extracts all PC
+	/** Reads the given file (an assembler .list file) and extracts all PC
 	 * values (the first 4 digits), so that each line can be associated with a
 	 * PC value.
 	 * @param config The assembler configuration.
@@ -213,8 +209,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Loops all lines of the list file and parses for labels and the addresses
+	/** Loops all lines of the list file and parses for labels and the addresses
 	 * for each line.
 	 */
 	protected parseAllLabelsAndAddresses() {
@@ -242,8 +237,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Loops all entries of the listFile array and parses for the (include) file
+	/** Loops all entries of the listFile array and parses for the (include) file
 	 * names and line numbers.
 	 * @param startLineNr The line number to start the loop with. I.e. sometimes the
 	 * beginning of the list file contains information that is parsed differently.
@@ -270,8 +264,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Parses the line for comments with WPMEM, ASSERTION or LOGPOINT.
+	/** Parses the line for comments with WPMEM, ASSERTION or LOGPOINT.
 	 * Note: This only collect the lines. Parsing is done at a
 	 * later state when all labels are known.
 	 * @param address The address that correspondents to the line.
@@ -282,7 +275,7 @@ export class LabelParserBase {
 		const comment = this.getComment(fullLine);
 
 		// WPMEM
-		let match =this.wpmemRegEx.exec(comment);
+		let match = this.wpmemRegEx.exec(comment);
 		if (match) {
 			// Add watchpoint at this address
 			/*
@@ -312,8 +305,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Check the list file line for a comment and returns just the comment.
+	/** Check the list file line for a comment and returns just the comment.
 	 * Only override if you allow other line comment identifiers than ";".
 	 * @param line The line of the list file as string. E.g. "5    A010 00 00 00...  	defs 0x10		; WPMEM, 5, w"
 	 * @returns Just the comment, e.g. the text after ";". E.g. " WPMEM, 5, w"
@@ -327,8 +319,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Will check if the name is excluded (excludedFiles).
+	/** Will check if the name is excluded (excludedFiles).
 	 * If so the source filename is not set to the source file name so that it
 	 * is "" and will be ignored.
 	 */
@@ -344,8 +335,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Finishes the list file mode.
+	/** Finishes the list file mode.
 	 * Puts filename (the list file name) and line numbers into the
 	 * this.fileLineNrs and this.lineArrays structures.
 	 */
@@ -403,8 +393,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Associates the structure with file and lineNr to the address.
+	/** Associates the structure with file and lineNr to the address.
 	 * Additionally uses the true-case-path for this.
 	 * I.e. on windows and macos a path could have been used with a different capitalization.
 	 * But for storage the correct path is used.
@@ -417,8 +406,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Finishes the sources mode.
+	/** Finishes the sources mode.
 	 * Puts filename (the list file name) and line numbers into the
 	 * this.labelLocations, this.fileLineNrs and this.lineArrays structures.
 	 */
@@ -469,8 +457,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Parses one line for label and address.
 	 * Finds labels at start of the line and labels as EQUs.
 	 * Also finds the address of the line.
@@ -483,8 +470,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Parses one line for current file name and line number in this file.
 	 * The function determines the line number from the list file.
 	 * The line number is the line number in the correspondent source file.
@@ -500,8 +486,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Called by the parser if a new module is found.
+	/** Called by the parser if a new module is found.
 	 * @param moduleName The name of the module.
 	 */
 	protected moduleStart(moduleName: string) {
@@ -514,8 +499,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Called by the parser if a module end is found.
+	/** Called by the parser if a module end is found.
 	 */
 	protected moduleEnd() {
 		// Remove last prefix
@@ -531,8 +515,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Adds a new label to the labelsForNumber64k array.
+	/** Adds a new label to the labelsForNumber64k array.
 	 * Creates a new array if required.
 	 * Adds the the label/value pair also to the numberForLabelMap.
 	 * Don't use for EQUs > 64k.
@@ -553,8 +536,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Adds a new label to the labelsForNumber64k array.
+	/** Adds a new label to the labelsForNumber64k array.
 	 * Creates a new array if required.
 	 * Adds the the label/value pair also to the numberForLabelMap.
 	 * Don't use for EQUs > 64k.
@@ -598,8 +580,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Adds the address to the list file array.
+	/** Adds the address to the list file array.
 	 * Call this even if size is 0. The addresses are also required for
 	 * lines that may contain only a comment, e.g. LOGPOINT, WPMEM, ASSERTION:
 	 * @param longAddress The address of the line. Could be undefined.
@@ -612,8 +593,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Create complete label from module prefix and relative label
+	/** Create complete label from module prefix and relative label
 	 * @param modulePrefix The first part of the label, e.g. "math."
 	 * @param label The last part of the label, e.g. "udiv_c_d"
 	 */
@@ -626,8 +606,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Called by the parser if a new include file is found.
+	/** Called by the parser if a new include file is found.
 	 * Is also used to set the main file at the beginning of parsing or before parsing starts.
 	 * @param includeFileName The name of the include file.
 	 */
@@ -665,8 +644,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Called by the parser if the end of an include file is found.
+	/** Called by the parser if the end of an include file is found.
 	 */
 	protected includeEnd() {
 		if (this.includeFileStack.length === 0)
@@ -683,8 +661,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Called by the parser to set the line number parsed from the list file.
+	/** Called by the parser to set the line number parsed from the list file.
 	 * This is the line number inside an include file.
 	 * Should be called before 'includeStart' and 'includeEnd'.
 	 * But is not so important as there is no assembler code in these lines.
@@ -716,8 +693,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Creates a long address from the address and the bank info.
+	/** Creates a long address from the address and the bank info.
 	 * It calls 'funcConvertBank' to convert the bank into the target memory model bank.
 	 * This is setup at the beginning in 'checkMappingToTargetMemoryModel'.
 	 * @param addr64k The 64k address.
@@ -729,13 +705,12 @@ export class LabelParserBase {
 		// Check banks
 		const convBank = this.funcConvertBank(addr64k, bank);
 		// Create long address
-		const  result = addr64k + ((convBank + 1) << 16);
+		const result = addr64k + ((convBank + 1) << 16);
 		return result;
 	}
 
 
-	/**
-	 * Sends a warning to the Labels class to print out a PROBLEM.
+	/** Sends a warning to the Labels class to print out a PROBLEM.
 	 * @param message The text to print.
 	 */
 	protected sendWarning(message: string, severity: "error" | "warning" = "warning", filepath?: string, lineNr?: number) {
@@ -754,8 +729,7 @@ export class LabelParserBase {
 	}
 
 
-	/**
-	 * Sends a warning to the Labels class to print out a PROBLEM.
+	/** Sends a warning to the Labels class to print out a PROBLEM.
 	 * Throws an exception.
 	 * @param message The text to print.
 	 */
