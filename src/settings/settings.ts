@@ -133,8 +133,6 @@ export interface ZrcpType {
 // Not all derived classes support both. The package.json will allow
 // either of them or both. But the structure optionally contains both.
 export interface DzrpTransportType {
-	supportedCommands: string;	// The supported commands of the remote. Either "all" or a comma separated list of command ids. Can also be a binary number, then it is interpreted as bit mask. E.g. "1,2,3" or "0b111". In total 255 commands could be supported. TODO: Status = experimental.
-
 	// The hostname/IP address of the socket.
 	hostname?: string;
 

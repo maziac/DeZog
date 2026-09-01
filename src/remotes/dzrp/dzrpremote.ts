@@ -132,10 +132,6 @@ export interface BreakInfo {
  * like 'continue'.
  */
 export class DzrpRemote extends RemoteBase {
-	// The current required version of the protocol.
-	// Remotes may overwrite this.
-	protected DZRP_VERSION = [2, 0, 0];
-
 	// The function to hold the Promise's resolve function for a continue request.
 	// Note:  The 'any' type is chosen here so that other Remotes (like MAME)
 	// can extend the parameter list.
@@ -237,6 +233,9 @@ export class DzrpRemote extends RemoteBase {
 			if (resp.error)
 				throw Error(resp.error);
 
+			// Get the supported DZRP commands
+			await this.handleSupportedCommands();
+
 			// Load executable
 			await this.load();
 
@@ -275,6 +274,17 @@ export class DzrpRemote extends RemoteBase {
 			}
 			catch {};
 		}
+	}
+
+
+	/** Override.
+	 * Handles the CMD_GET_SUPPORTED_COMMANDS response.
+	 * At least for the DzrpTransportRemote and subclasses.
+	 * Upper classes (without physical DZRP support) may
+	 * handle it differently.
+	 */
+	protected async handleSupportedCommands(): Promise<void> {
+		//
 	}
 
 
@@ -2176,9 +2186,9 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 	/** Override.
 	 * Sends the command to get the supported commands of the remote.
-	 * @returns a boolean array (size=256) with the supported commands.
-	 * Each array entry correspondents to a command id and tells if
-	 * command is supported (true) or not (false).
+	 * @returns a string with a character representing each command.
+	 * E.g. "1001110": Right = index 0. Not supported: command 0,4,5.
+	 * Supported: command 1,2,3,6.
 	 */
 	protected async sendDzrpCmdGetSupportedCommands(): Promise<string> {
 		Utility.assert(false);

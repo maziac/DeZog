@@ -109,7 +109,7 @@ export function activate(context: vscode.ExtensionContext) {
 		//console.log('Selected option:', selectedPortPath);
 
 		// Start loopback test
-		const zxnextLoopback = new ZxNextSerialLoopback({serial: selectedPortPath.value, timeout: 5, supportedCommands: ''});
+		const zxnextLoopback = new ZxNextSerialLoopback({serial: selectedPortPath.value, timeout: 5});
 		zxnextLoopback.on('info', async msg => {
 			await vscode.window.showInformationMessage(msg);
 		});

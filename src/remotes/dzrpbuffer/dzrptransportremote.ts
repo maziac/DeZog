@@ -59,6 +59,10 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	/// Timeouts.
 	protected static readonly CONNECTION_TIMEOUT = 1000;	// 1 sec // TODO: exchange the static TIMEOUTS with the one from the Settings.
 
+	// The current required version of the protocol.
+	// Remotes may overwrite this.
+	protected DZRP_VERSION = [2, 2, 0];
+
 	// The settings configuration for the DZRP remote.
 	protected settingsDzrpTransportType: DzrpTransportType;
 
@@ -83,20 +87,6 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		this.sequenceNumber = 0;
 		// Instantiate the message queue
 		this.messageQueue = new Array<MessageBuffer>();
-
-		// Disable unsupported commands.
-		let unsupportedCmds: number[] = [];
-		if (this.settingsDzrpTransportType.supportedCommands) {
-			// Use the configuration from the Settings (launch.json)
-			unsupportedCmds = this.getUnsupportedCommands(this.settingsDzrpTransportType.supportedCommands);
-		}
-		else {
-			// Use defaults unsupported commands
-			unsupportedCmds = this.getDefaultUnsupportedCommands();
-		}
-		this.disableUnsupportedCommands(unsupportedCmds);
-		this.selectMode(unsupportedCmds);
-		this.setAssertionWpmemLogpointSupport(unsupportedCmds);
 	}
 
 
@@ -131,47 +121,13 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 
 	/** Returns an array with command ids of those commands which
 	 * are not in the supportedCommands string.
-	 * @param supportedCommands A string with the supported commands, e.g. "all" or "1,2,4" (the cmd ids) or a binary number with the bits set
-	 * for the supported commands.
+	 * @param supportedCommands A string, each character representing a
+	 * command with that index. "0"=not supported, "1"=supported.
 	 */
 	protected getUnsupportedCommands(supportedCommands: string): number[] {
-		const cmdDisabled = Array<boolean>(256).fill(true);
-		const separated = supportedCommands.split(',').map(s => s.trim());
-
-		// Parse: Loop the list
-		for (const valCmd of separated) {
-			if (valCmd === 'all') {
-				// All commands are allowed
-				cmdDisabled.fill(false);
-				break;
-			}
-			if (valCmd.startsWith('0b')) {
-				// A binary, bit-wise selection
-				let bits = valCmd.substring(2);
-				let i = 0;
-				while (bits) {
-					if (i >= 256)
-						throw Error('Too many bits (> 256) while parsing a binary number in the "supportedCommands" string.');
-					const bit = bits.at(-1);
-					if (bit === '1')
-						cmdDisabled[i++] = false;
-					else if (bit === '0')
-						i++;
-					else if (bit !== '_')	// Skip separator
-						throw Error('Unexpected digit while parsing a binary number in the "supportedCommands" string.');
-					// Next
-					bits = bits.substring(0, bits.length - 1);
-				}
-			}
-			else {
-				// Should be a number
-				const cmdId = parseInt(valCmd);
-				// Check
-				if (cmdId < 0 || cmdId > 255)
-					throw Error(`Command id out of range (${valCmd}) in the "supportedCommands" string.`);
-				cmdDisabled[cmdId] = false;
-			}
-		}
+		// Revert the array
+		const revSuppCmds = supportedCommands.replace(/_/g, '').split('').reverse();
+		const revSuppCmdsLength = revSuppCmds.length;
 
 		// Now exchange the unsupported commands
 		const unsupportedCommands: number[] = [];
@@ -180,7 +136,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 			const cmdId = parseInt(entry[0]);
 			if (isNaN(cmdId))
 				break;
-			if (cmdDisabled[cmdId]) {
+			if (revSuppCmdsLength <= cmdId || revSuppCmds[cmdId] === '0') {
 				unsupportedCommands.push(cmdId);
 				console.log(`Unsupported command: ${entry[1]} (${cmdId})`);
 			}
@@ -207,6 +163,20 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 				throw Error(`Feature is not supported by the remote "${this.remoteType}". Details: DZRP command '${cmdName} (${cmdId})' is not supported.`);
 			};
 		}
+	}
+
+
+	/** Handles the CMD_GET_SUPPORTED_COMMANDS response.
+	 * At least for the DzrpTransportRemote and subclasses.
+	 * Upper classes (without physical DZRP support) may
+	 * handle it differently.
+	 */
+	protected async handleSupportedCommands(): Promise<void> {
+		const suppCmds = await this.sendDzrpCmdGetSupportedCommands();
+		const unsupportedCmds = this.getUnsupportedCommands(suppCmds);
+		this.disableUnsupportedCommands(unsupportedCmds);
+		this.selectMode(unsupportedCmds);
+		this.setAssertionWpmemLogpointSupport(unsupportedCmds);
 	}
 
 
@@ -257,14 +227,6 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 			.split('_')
 			.map(part => part.charAt(0).toUpperCase() + part.slice(1))
 			.join('');
-	}
-
-
-	/** Returns the default unsupported commands.
-	 * Per default all commands are supported.
-	 */
-	protected getDefaultUnsupportedCommands(): number[] {
-		return [];
 	}
 
 
@@ -1073,6 +1035,22 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 			de: data[5] + 256 * data[6],
 			hl: data[7] + 256 * data[8]
 		};
+	}
+
+
+	/** Sends the command to get the supported commands of the remote.
+	 * @returns a string with a character representing each command.
+	 * E.g. "1001110": Right = index 0. Not supported: command 0,4,5.
+	 * Supported: command 1,2,3,6.
+	 */
+	protected async sendDzrpCmdGetSupportedCommands(): Promise<string> {
+		const data = await this.sendDzrpCmd(DZRP.CMD_GET_SUPPORTED_COMMANDS);
+		let bitString = '';
+		for (const value of data) {
+			// Process each value if needed
+			bitString = '_' + value.toString(2).padStart(8, '0') + bitString;
+		}
+		return bitString;
 	}
 }
 

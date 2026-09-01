@@ -24,8 +24,6 @@ export class DzrpDezogIfRemote extends DzrpTransportRemote {
 		// this.supportsASSERTION = true;
 		// this.supportsWPMEM = false;
 		// this.supportsLOGPOINT = true;
-		// Overwrite minimal required version
-		this.DZRP_VERSION = [2, 2, 0];
 	}
 
 	/** Returns the default unsupported commands for a dezogif
