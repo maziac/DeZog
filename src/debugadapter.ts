@@ -858,7 +858,7 @@ export class DebugSessionClass extends DebugSession {
 		const snaNexFile = Settings.launch.load;
 		if (snaNexFile) {
 			const ext = UnifiedPath.extname(snaNexFile).toLowerCase();
-			if (ext === '.sna' || ext === '.nex') {
+			if (ext === '.sna' || ext === '.snx' || ext === '.nex') {
 				// Compare the modified date of the sna/nex file with the sld/list file.
 				const listFile = Labels.getListFileDate();
 				if (listFile) {

@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.8.0
+- SNA file format. Now also file extension *.snx is supported.
+
 # 3.7.4
 - PR #193: Fixed bug where pressing 'stop' would sometimes take 5 seconds to disconnect. (mame)
 

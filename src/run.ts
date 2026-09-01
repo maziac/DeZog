@@ -52,6 +52,16 @@ export class Run {
 						memoryModel: 'ZX128K'
 					};
 				}
+				else if (ext === '.snx') {
+					// zsim supports only a small subset of ZX Next features.
+					// Anyhow, try to be as good as possible...
+					zsim = {
+						preset: 'spectrum',
+						memoryModel: 'ZX128K',
+						Z80N: true,
+						zxnDMA: true
+					};
+				}
 				else if (['.p', '.81', '.p81'].includes(ext)) {
 					zsim = {preset: 'zx81'};
 				}

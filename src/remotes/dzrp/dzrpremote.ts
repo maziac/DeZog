@@ -1464,7 +1464,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		try {
 			// Check file extension
 			const ext = path.extname(filePath).toLowerCase();
-			if (ext === '.sna')
+			if (ext === '.sna' || ext === '.snx')
 				await this.loadBinSna(filePath);
 			else if (ext === '.z80')
 				await this.loadBinZ80(filePath);
