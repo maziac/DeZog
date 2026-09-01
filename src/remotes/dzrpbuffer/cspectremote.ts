@@ -31,19 +31,6 @@ export class CSpectRemote extends WithSocket(DzrpTransportRemote) {
 	}
 
 
-	/** Call this from 'doInitialization' when a successful connection
-	 * has been opened to the Remote.
-	 * @emits this.emit('initialized') or this.emit('error', Error(...))
-	 */
-	protected async onConnect(): Promise<void> {
-		// Check for unsupported settings
-		if (Settings.launch.history.codeCoverageEnabled) {
-			this.emit('warning', "launch.json: codeCoverageEnabled==true: CSpect does not support code coverage.");
-		}
-		await super.onConnect();
-	}
-
-
 	/** ZX81 is not supported.
 	 */
 	protected async loadBinZx81(filePath: string): Promise<void> {

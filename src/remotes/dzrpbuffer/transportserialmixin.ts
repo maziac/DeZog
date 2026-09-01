@@ -26,6 +26,9 @@ export function WithSerial<TBase extends Constructor<DzrpTransportRemote>>(Base:
 		/// The successful emit takes place in 'onConnect' which should be called
 		/// by 'doInitialization' after a successful connect.
 		protected async doInitialization(): Promise<void> {
+			// Call super
+			await super.doInitialization();
+
 			// Set timeouts
 			this.cmdRespTimeoutTime = this.settingsDzrpTransportType.timeout * 1000;
 			this.chunkTimeout = this.cmdRespTimeoutTime;

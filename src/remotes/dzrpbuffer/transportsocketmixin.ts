@@ -25,6 +25,9 @@ export function WithSocket<TBase extends Constructor<DzrpTransportRemote>>(Base:
 		/// The successful emit takes place in 'onConnect' which should be called
 		/// by 'doInitialization' after a successful connect.
 		protected async doInitialization(): Promise<void> {
+			// Call super
+			await super.doInitialization();
+
 			// Init socket
 			this.socket = new Socket();
 			this.socket.unref();

@@ -4,7 +4,7 @@ import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
-import {DzrpTransportType} from '../../settings/settings';
+import {DzrpTransportType, Settings} from '../../settings/settings';
 import {createDzrpSimpleMode} from './dzrpsimplemode';
 
 
@@ -232,11 +232,17 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 
 	/// Override.
 	/// Initializes the machine.
-	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
+	/// When ready it should emit this.emit('initialized') or this.emit('error', Error(...));
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
+	/// If you override this, call the base implementation with 'await super.doInitialization();'
+	/// to check for code coverage setting. None of the DZRP remotes (up to now)
+	/// support code coverage.
 	protected async doInitialization(): Promise<void> {
-		// Override this
+		// Check for unsupported settings
+		if (Settings.launch.history.codeCoverageEnabled) {
+			this.emit('warning', `launch.json: codeCoverageEnabled==true: '${this.remoteType}' does not support code coverage.`);
+		}
 	}
 
 
