@@ -1122,13 +1122,12 @@ export class Settings {
 
 		// Code coverage
 		if (launchCfg.history.codeCoverageEnabled === undefined) {
-			if (launchCfg.remoteType === 'cspect' || launchCfg.remoteType === 'mame') {
-				// not supported by cspect and mame
-				launchCfg.history.codeCoverageEnabled = false;
+			if (launchCfg.remoteType === 'zsim' || launchCfg.remoteType === 'zrcp') {
+				// Only supported by zsim and ZEsarUX
+				launchCfg.history.codeCoverageEnabled = true;
 			}
 			else {
-				// Otherwise allow, both for normal and unit tests
-				launchCfg.history.codeCoverageEnabled = true;
+				launchCfg.history.codeCoverageEnabled = false;
 			}
 		}
 
