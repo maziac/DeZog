@@ -1,7 +1,9 @@
 # Changelog
 
 # 3.8.0
-- Uses and requires DZRP >= 2.2.0. Evaluates the CMD_GET_SUPPORTED_COMMANDS.
+- Uses and requires DZRP >= 2.2.0.
+  - Evaluates the CMD_GET_SUPPORTED_COMMANDS.
+  - Show LOG_NTF messages in a new log channel "DeZog DZRP Log notifications". Has to be enabled in the settings.
 - SNA file format. Now also file extension *.snx is supported.
 - A generic "dzrp" remote has been implemented which can connect via serial or socket connection.
 

@@ -120,6 +120,7 @@ The table below shows which commands are used (X) with what remote:
 | [CMD_READ_STATE] (50)                          | X     | -      | -      | -     |
 | [CMD_WRITE_STATE] (51)                         | X     | -      | -      | -     |
 | [NTF_PAUSE] (1)                                | X     | X      | X      | X     |
+| [NTF_LOG] (1)                                  | -     | -      | X      | -     |
 
 Notes:
 - DeZog knows with which remote it communicates and chooses the right subset.
@@ -239,7 +240,6 @@ The numbering for Commands starts at 1. (0 is reserved, i.e. not used).
 
 **Notifications**:
 Notifications use sequence number = 0.
-Currently only one notification is defined.
 
 | Index | Size | Description                                                                      |
 | ----- | ---- | -------------------------------------------------------------------------------- |
