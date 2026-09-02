@@ -860,10 +860,11 @@ Notification (Length=6+n):
 | 3+5*(n-1) | 1-n  | reason string | Null-terminated break reason string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256. If reason string is empty it will contain at least a 0.                                                    |
 
 ## NTF_LOG=2
-Notification (Length=6+n):
-| Index | Size    | Value         | Description                                                   |
-| ----- | ------- | ------------- | ------------------------------------------------------------- |
-| 0     | 0-65535 | Format string | A string with characters and byte and word values, see below. |
+Notification (Length=6+s+t):
+| Index | Size      | Value         | Description                                 |
+| ----- | --------- | ------------- | ------------------------------------------- |
+| 0     | s=0-65535 | Format string | A null-terminated format string, see below. |
+| s     | t         | data          | The binary data to display.                 |
 
 Since a remote running the DZRP might be almost headless (e.g. in case of the ZX Next) with limited logging capabilities it can use this logging notification.
 DeZog will log any received NTF_LOG message for the remote.
@@ -871,15 +872,14 @@ The format string mainly consist of ASCI characters but uses a few special chara
 
 | Special sequence | Size | Description                |
 | ---------------- | ---- | -------------------------- |
-| 0x10             | 1    |                            |
+| '$'              | 1    |                            |
 | type             | 1    | 's'=int, 'u'=uint, 'h'=hex |
-| size             | 1    | 1 = byte, 2 = word         |
-| ...              | 1-2  | The data to display.       |
+| size             | 1    | '1' = byte, '2' = word     |
 
-I.e. when DeZog receives the NTF_LOG it will print the "normal" characters and if it encounters a 0x10 it will interprete the data as above. Afterwards ASCII characters or another 0x10 sequence may follow.
+I.e. when DeZog receives the NTF_LOG it will print the "normal" characters and if it encounters a '$' it will interpret the data as above. Afterwards ASCII characters or another '$' sequence may follow.
 
 Example:
-A string like `"Value of A: ",0x10,'u',1,17` will be displayed as "Value of A: 17"
+A string like `"Value of A=$u1 and BC=$h2",0` followed by data `0x12, 0xAB, 0x71` will be displayed as "Value of A=18 and BC=71AB".
 
 # Modes
 Modes are more about the remotes using DZRP than the protocol itself.

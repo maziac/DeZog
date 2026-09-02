@@ -255,8 +255,64 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 
 	/** Log the DZRP log notification. */
 	protected dzrpLogNtf(data: Buffer) {
-		const logMessage = Utility.getStringFromBuffer(data, 0);
+		const logMessage = this.formatDzrpLogString(data);
 		LogDzrpNtf.log('DZRP Log: ' + logMessage);
+	}
+
+	/** Parses a DZRP NTF_LOG payload and returns the formatted log string.
+	 * The payload consists of a 0-terminated format string followed by the
+	 * binary data referenced from the format string.
+	 * The format string is normal ASCII text that may contain '$' sequences
+	 * to insert a data value: '$' + type ('s'=signed, 'u'=unsigned, 'h'=hex) + size ('1'=byte, '2'=word).
+	 * See design/DeZogProtocol.md, chapter NTF_LOG, for the exact format.
+	 * @param data The payload buffer (format string + binary data).
+	 * @returns The formatted string, e.g. "Value of A=18 and BC=71AB".
+	 */
+	public formatDzrpLogString(data: Buffer): string {
+		const format = Utility.getStringFromBuffer(data, 0);
+		let dataIndex = format.length + 1;	// Skip the format string's 0 terminator
+
+		let result = '';
+		try {
+			const len = format.length;
+			for (let i = 0; i < len; i++) {
+				const c = format[i];
+				// Check for a '$' sequence, needs 2 more chars (type + size)
+				if (c === '$' && i + 2 < len) {
+					const type = format[i + 1];
+					const size = format[i + 2];
+					const byteSize = (size === '2') ? 2 : 1;
+					const value = (byteSize === 2) ? data[dataIndex] + 256 * data[dataIndex + 1] : data[dataIndex];
+					dataIndex += byteSize;
+					i += 2;	// Skip type and size chars
+					switch (type) {
+						case 's': {
+							// Signed value
+							const bits = byteSize * 8;
+							const signBit = 1 << (bits - 1);
+							const signedValue = (value & signBit) ? value - (1 << bits) : value;
+							result += signedValue.toString();
+							break;
+						}
+						case 'h':
+							// Hex value, zero-padded to the value's size
+							result += value.toString().toUpperCase().padStart(byteSize * 2, '0');
+							break;
+						default:
+							// 'u': unsigned value
+							result += value.toString();
+							break;
+					}
+				}
+				else {
+					result += c;
+				}
+			}
+		}
+		catch (e) {
+			result = 'Error formatting DZRP log string: ' + e + '. Log string so far: "' + result + '"';
+		}
+		return result;
 	}
 
 
