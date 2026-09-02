@@ -1,5 +1,6 @@
 import {Opcode, OpcodeFlag} from "../../disassembler/core/opcode";
 import {GenericBreakpoint} from "../../genericwatchpoint";
+import {Mutex} from "../../misc/mutex";
 import {Utility} from "../../misc/utility";
 import {BreakInfo, DzrpRemote} from "../dzrp/dzrpremote";
 import {BREAK_REASON_NUMBER} from "../remotebase";
@@ -45,6 +46,12 @@ interface RestorableBreakpoint {
  */
 export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpRemote>(Base: TBase) {
 	return class extends Base {
+		// Mutex to handle concurrent access to the DZRP commands and notifications.
+		// Is especially used to receive the restore opcodes when setting
+		// a breakpoint while the debugged program is running before the
+		// debugged program may break.
+		protected cmdMutex: Mutex;
+
 		// Returned breakpoint index.
 		protected breakpointIdLastIndex: number;
 
@@ -55,7 +62,7 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 
 		/** Use initSimpleMode instead of a constructor. */
 		protected initSimpleMode() {
-			//this.longBreakedAddress = undefined;
+			this.cmdMutex = new Mutex();
 			this.breakpointIdLastIndex = 0;
 			this.breakpointsAndOpcodes = undefined as any;
 		}
@@ -161,35 +168,42 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 			// Remember old resolve function
 			const originalContinueResolve = this.funcContinueResolve!;
 			const resolveWithBp = async (breakInfo: BreakInfo) => {
-				longBreakedAddress = undefined;
-				// If tmp breakpoint and real breakpoint was hit, i.e. both are the same
-				// then the 'dezogif' cannot determine the tmp breakpoint correctly.
-				// I.e. it is corrected here.
-				if (breakInfo.reasonNumber !== BREAK_REASON_NUMBER.MANUAL_BREAK) {
-					if (breakInfo.longAddr === longBp1Address || breakInfo.longAddr === longBp2Address)
-						breakInfo.reasonNumber = BREAK_REASON_NUMBER.NO_REASON;
-				}
+				// Lock to ensure that a previously sent CMD_SET_BREAKPOINTS command returns the restored memory values before continuing
+				await this.cmdMutex.lock();
+				try {
+					longBreakedAddress = undefined;
+					// If tmp breakpoint and real breakpoint was hit, i.e. both are the same
+					// then the 'dezogif' cannot determine the tmp breakpoint correctly.
+					// I.e. it is corrected here.
+					if (breakInfo.reasonNumber !== BREAK_REASON_NUMBER.MANUAL_BREAK) {
+						if (breakInfo.longAddr === longBp1Address || breakInfo.longAddr === longBp2Address)
+							breakInfo.reasonNumber = BREAK_REASON_NUMBER.NO_REASON;
+					}
 
-				// Restore breakpoint addresses
-				const count = this.breakpointsAndOpcodes.length;
-				let memCount = count;
-				if (oldOpcode !== undefined)
-					memCount++;
-				const memValues = new Array<{address: number, value: number}>(memCount);
-				let k = 0;
-				if (oldOpcode !== undefined) {
-					// Add the last set breakpoint
-					memValues[k++] = {address: oldBreakedAddress!, value: oldOpcode[0]}
+					// Restore breakpoint addresses
+					const count = this.breakpointsAndOpcodes.length;
+					let memCount = count;
+					if (oldOpcode !== undefined)
+						memCount++;
+					const memValues = new Array<{address: number, value: number}>(memCount);
+					let k = 0;
+					if (oldOpcode !== undefined) {
+						// Add the last set breakpoint
+						memValues[k++] = {address: oldBreakedAddress!, value: oldOpcode[0]}
+					}
+					// Change the order
+					for (let i = count - 1; i >= 0; i--) {
+						const bp = this.breakpointsAndOpcodes[i];
+						memValues[k++] = {address: bp.address, value: bp.opcode};
+					}
+					await this.sendDzrpCmdRestoreMem(memValues);
+					this.breakpointsAndOpcodes = undefined as any;
+					// Call original handler
+					await originalContinueResolve(breakInfo);
 				}
-				// Change the order
-				for (let i = count - 1; i >= 0; i--) {
-					const bp = this.breakpointsAndOpcodes[i];
-					memValues[k++] = {address: bp.address, value: bp.opcode};
+				finally {
+					this.cmdMutex.unlock();
 				}
-				await this.sendDzrpCmdRestoreMem(memValues);
-				this.breakpointsAndOpcodes = undefined as any;
-				// Call original handler
-				await originalContinueResolve(breakInfo);
 			};
 
 			// Get all breakpoint addresses (without longBreakedAddress)
@@ -274,12 +288,20 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 
 			// Check if debugged program is running
 			if (this.breakpointsAndOpcodes && !this.pauseStep) {
-				// Set the breakpoint
-				const opcodes = await this.sendDzrpCmdSetBreakpoints([bpAddress]);
-				const opcode = opcodes[0];
-				// Add to temporary breakpoints
-				//if (this.breakpointsAndOpcodes)	// Could be deleted meanwhile
-				this.breakpointsAndOpcodes.push({address: bpAddress, opcode});
+				// Lock: to get the response safely before a
+				// possible pause notification occurs.
+				await this.cmdMutex.lock();
+				try {
+					// Set the breakpoint
+					const opcodes = await this.sendDzrpCmdSetBreakpoints([bpAddress]);
+					const opcode = opcodes[0];
+					// Add to temporary breakpoints
+					//if (this.breakpointsAndOpcodes)	// Could be deleted meanwhile
+					this.breakpointsAndOpcodes.push({address: bpAddress, opcode});
+				}
+				finally {
+					this.cmdMutex.unlock();
+				}
 			}
 		}
 

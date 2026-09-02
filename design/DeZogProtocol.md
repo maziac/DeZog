@@ -440,7 +440,8 @@ Response (Length=1):
 | ----- | ---- | ----- | ----------- |
 | 0     | 1    | 1-15  | Same seq no |
 
-
+Note: If a program is stopped a NTF_PAUSE notification is sent as well.
+The notification must be sent AFTER the CMD_PAUSE response.
 
 ## CMD_READ_MEM=8
 

@@ -1386,11 +1386,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			return 0;
 		}
 
-		// Set breakpoint
-		await this.dzrpAddBreakpoint(bp);
-		if (bp.bpId === 0)
-			bp.longAddress = -1;
-
 		// Add to list
 		this.breakpoints.push(bp);
 
@@ -1398,6 +1393,11 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		if (this.funcContinueResolve) {
 			this.addTmpBreakpoint(bp);
 		}
+
+		// Set breakpoint
+		await this.dzrpAddBreakpoint(bp);
+		if (bp.bpId === 0)
+			bp.longAddress = -1;
 
 		// return
 		return bp.bpId;
