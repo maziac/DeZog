@@ -1,5 +1,4 @@
 # DZRP - DeZog Remote Protocol
-
 Note: This document contains [plantuml](https://plantuml.com/de/sequence-diagram) message sequence charts. On github these are not rendered. Use e.g. vscode with a suitable plugin to view the file correctly.
 
 The DZRP, or Dezog Remote Protocol, defines the messages exchanged between DeZog and a remote program.
@@ -48,7 +47,6 @@ dezog <- program: 'pause' notification
 ~~~
 
 ## Important Note
-
 Beginning with version 1.3.0 the DZRP has become more of a "toolkit" rather than a specific protocol.
 
 I.e. different remotes may use a different subset of commands. For one this is because different remotes do support a different feature set. But this is especially true for the breakpoint implementation which very much differs on a real ZXNext from the ones available in the emulators.
@@ -130,7 +128,6 @@ Notes:
 - \** - The support depends on the state/mode. If asynchronous break is turned off in dezogif, the command should not be used.CMD_GET_SUPPORTED_COMMANDS will dynamically report availability.
 
 ## History
-
 ## 2.2.0
 
 Added:
@@ -203,7 +200,6 @@ Removed:
 
 
 # Data Format
-
 The message format is very simple. It starts with the length information followed by a byte containing the sequence number.
 For commands a byte with the command ID will follow.
 And then the payload follows.
@@ -257,7 +253,6 @@ Currently only one notification is defined.
 Note: The sequence number consists of only the lower 4 bits. So the bits 4-7 are "free". At the moment these are not used and 0.
 
 # Long addresses
-
 With DZRP 2.0.0 (and Dezog 2.0.0) 'long addresses' have been introduced. These are addresses that not only carry the 64k address but additionally 1 byte for the memory bank information.
 
 The stored bank info is the bank number plus 1.
@@ -266,9 +261,7 @@ This is because of the special meaning of ```bank==0``` in DeZog.
 
 
 # Commands and Responses
-
 ## CMD_INIT=1
-
 This is the first command sent after connection.
 The command sender will evaluate the received version and disconnect if versions do not match.
 
@@ -290,7 +283,6 @@ Response (Length=7+n):
 
 
 ## CMD_CLOSE=2
-
 This is the last command. It is sent when the debug session is closed gracefully.
 There is no guarantee that this command is sent at all, e.g. when the connection is disconnected ungracefully.
 But the receiver could use it e.g. to show the (assumed) connection status.
@@ -309,7 +301,6 @@ Response (Length=1):
 
 
 ## CMD_GET_REGISTERS=3
-
 Command (Length=0):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
@@ -343,7 +334,6 @@ Response (Length=30+Nslots):
 
 
 ## CMD_SET_REGISTER=4
-
 Command (Length=3):
 | Index | Size | Value | Description                                                                                                                                                                                                                                              |
 | ----- | ---- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -358,7 +348,6 @@ Response (Length=1):
 
 
 ## CMD_WRITE_BANK=5
-
 Command (Length=1+N):
 | Index | Size | Value  | Description                |
 | ----- | ---- | ------ | -------------------------- |
@@ -387,7 +376,6 @@ Response (Length=2+n):
 Is used to write the ZX Spectrum/ZX Next sna and nex files.
 
 ## CMD_CONTINUE=6
-
 Command (Length=11):
 | Index | Size | Value    | Description                                                                                                               |
 | ----- | ---- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -444,7 +432,6 @@ Note: If a program is stopped a NTF_PAUSE notification is sent as well.
 The notification must be sent AFTER the CMD_PAUSE response.
 
 ## CMD_READ_MEM=8
-
 Command (Length=7):
 | Index | Size | Value | Description               |
 | ----- | ---- | ----- | ------------------------- |
@@ -463,7 +450,6 @@ Response (Length=N+1):
 
 
 ## CMD_WRITE_MEM=9
-
 Command (Length=4+N):
 | Index | Size | Value      | Description                |
 | ----- | ---- | ---------- | -------------------------- |
@@ -481,7 +467,6 @@ Response (Length=1):
 
 
 ## CMD_SET_SLOT=10
-
 Command (Length=2):
 | Index | Size | Value | Description      |
 | ----- | ---- | ----- | ---------------- |
@@ -509,7 +494,6 @@ Response (Length=2):
 
 
 ## CMD_GET_TBBLUE_REG=11
-
 Command (Length=1):
 | Index | Size | Value | Description  |
 | ----- | ---- | ----- | ------------ |
@@ -523,7 +507,6 @@ Response (Length=2):
 
 
 ## CMD_SET_BORDER=12
-
 Command (Length=1):
 | Index | Size | Value           | Description              |
 | ----- | ---- | --------------- | ------------------------ |
@@ -537,7 +520,6 @@ Response (Length=1):
 
 
 ## CMD_SET_BREAKPOINTS=13
-
 Command (Length=3*N):
 | Index     | Size | Value   | Description              |
 | --------- | ---- | ------- | ------------------------ |
@@ -566,7 +548,6 @@ Notes:
 
 
 ## CMD_RESTORE_MEM=14
-
 Restores the memory previously overwritten by CMD_SET_BREAKPOINTS.
 
 Command (Length=4*N):
@@ -596,7 +577,6 @@ Notes:
 
 
 ## CMD_LOOPBACK=15
-
 Command (Length=N):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
@@ -618,7 +598,6 @@ Loops back the received data. Used for testing purposes.
 
 
 ## CMD_GET_SPRITES_PALETTE=16
-
 Command (Length=1):
 | Index | Size | Value | Description   |
 | ----- | ---- | ----- | ------------- |
@@ -633,7 +612,6 @@ Response (Length=513):
 
 
 ## CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL=17
-
 Command (Length=0):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
@@ -652,7 +630,6 @@ Response (Length=6):
 
 
 ## CMD_GET_SPRITES=18
-
 Command (Length=2):
 | Index | Size | Value | Description         |
 | ----- | ---- | ----- | ------------------- |
@@ -667,7 +644,6 @@ Response (Length=1+5*N):
 
 
 ## CMD_GET_SPRITE_PATTERNS=19
-
 Command (Length=4):
 | Index | Size | Value | Description                       |
 | ----- | ---- | ----- | --------------------------------- |
@@ -686,7 +662,6 @@ Note: 512 = 16x16x2.
 
 
 ## CMD_READ_PORT=20
-
 Command (Length=2):
 | Index | Size | Value   | Description       |
 | ----- | ---- | ------- | ----------------- |
@@ -701,7 +676,6 @@ Response (Length=2):
 
 
 ## CMD_WRITE_PORT=21
-
 Command (Length=3):
 | Index | Size | Value   | Description           |
 | ----- | ---- | ------- | --------------------- |
@@ -716,7 +690,6 @@ Response (Length=1):
 
 
 ## CMD_EXEC_ASM=22
-
 Command (Length=23):
 | Index | Size | Value | Description                                                    |
 | ----- | ---- | ----- | -------------------------------------------------------------- |
@@ -747,7 +720,6 @@ Error codes:
 
 
 ## CMD_INTERRUPT_ON_OFF=23
-
 Command (Length=1):
 | Index | Size | Value | Description                             |
 | ----- | ---- | ----- | --------------------------------------- |
@@ -761,7 +733,6 @@ Response (Length=1):
 
 
 ## CMD_GET_SUPPORTED_COMMANDS=24
-
 Command (Length=0):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
@@ -787,7 +758,6 @@ Nevertheless those are reported here as well.
 
 
 ## CMD_ADD_BREAKPOINT=40
-
 Command (Length=3+n):
 | Index | Size | Value               | Description                                   |
 | ----- | ---- | ------------------- | --------------------------------------------- |
@@ -806,7 +776,6 @@ Response (Length=3):
 Note: long addresses (with bank info) are passed, bank=0: 64k address
 
 ## CMD_REMOVE_BREAKPOINT=41
-
 Command (Length=2):
 | Index | Size | Value   | Description   |
 | ----- | ---- | ------- | ------------- |
@@ -820,7 +789,6 @@ Response (Length=1):
 
 
 ## CMD_ADD_WATCHPOINT=42
-
 Command (Length=6):
 | Index | Size | Value                     | Description                            |
 | ----- | ---- | ------------------------- | -------------------------------------- |
@@ -839,7 +807,6 @@ Response (Length=2):
 Note: long addresses (with bank info) are passed, bank=0: 64k address
 
 ## CMD_REMOVE_WATCHPOINT=43
-
 Command (Length=6):
 | Index | Size | Value                     | Description                            |
 | ----- | ---- | ------------------------- | -------------------------------------- |
@@ -856,7 +823,6 @@ Response (Length=1):
 
 
 ## CMD_READ_STATE=50
-
 Command (Length=0):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
@@ -872,7 +838,6 @@ Response (Length=1+N):
 Returning a zero length means that it was not possible to obtain the state.
 
 ## CMD_WRITE_STATE=51
-
 Command (Length=N):
 | Index | Size | Value | Description                                                                         |
 | ----- | ---- | ----- | ----------------------------------------------------------------------------------- |
@@ -885,9 +850,7 @@ Response (Length=1):
 
 
 # Notifications
-
 ## NTF_PAUSE=1
-
 Notification (Length=6+n):
 | Index     | Size | Value         | Description                                                                                                                                                                                                                                  |
 | --------- | ---- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -895,6 +858,28 @@ Notification (Length=6+n):
 | 1         | 2    | 0-65535       | Breakpoint or watchpoint address.                                                                                                                                                                                                            |
 | *5        | 1    | 0-255         | The bank+1 of the breakpoint or watchpoint address.                                                                                                                                                                                          |
 | 3+5*(n-1) | 1-n  | reason string | Null-terminated break reason string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256. If reason string is empty it will contain at least a 0.                                                    |
+
+## NTF_LOG=2
+Notification (Length=6+n):
+| Index | Size    | Value         | Description                                                   |
+| ----- | ------- | ------------- | ------------------------------------------------------------- |
+| 0     | 0-65535 | Format string | A string with characters and byte and word values, see below. |
+
+Since a remote running the DZRP might be almost headless (e.g. in case of the ZX Next) with limited logging capabilities it can use this logging notification.
+DeZog will log any received NTF_LOG message for the remote.
+The format string mainly consist of ASCI characters but uses a few special characters to allow transmitting e.g. byte or word values.
+
+| Special sequence | Size | Description                |
+| ---------------- | ---- | -------------------------- |
+| 0x10             | 1    |                            |
+| type             | 1    | 's'=int, 'u'=uint, 'h'=hex |
+| size             | 1    | 1 = byte, 2 = word         |
+| ...              | 1-2  | The data to display.       |
+
+I.e. when DeZog receives the NTF_LOG it will print the "normal" characters and if it encounters a 0x10 it will interprete the data as above. Afterwards ASCII characters or another 0x10 sequence may follow.
+
+Example:
+A string like `"Value of A: ",0x10,'u',1,17` will be displayed as "Value of A: 17"
 
 # Modes
 Modes are more about the remotes using DZRP than the protocol itself.

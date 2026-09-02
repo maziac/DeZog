@@ -71,6 +71,10 @@ export enum DZRP {
 	// State
 	CMD_READ_STATE = 50,
 	CMD_WRITE_STATE = 51,
+
+	// Notifications
+	NTF_PAUSE = 1,
+	NTF_LOG = 2
 }
 
 

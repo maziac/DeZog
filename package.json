@@ -121,6 +121,12 @@
 					"scope": "resource",
 					"default": false
 				},
+				"dezog.log.dzrpNtf": {
+					"description": "Write DZRP remote log notifications to the \"DeZog DZRP Log Notifications\" output panel.",
+					"type": "boolean",
+					"scope": "resource",
+					"default": false
+				},
 				"dezog.log.zsim.enabled": {
 					"type": "boolean",
 					"description": "Write logs regarding custom (js) code or simulated HW (e.g. zxnDMA) to the \"DeZog zsim\" output panel. For the internal simulator (zsim).",

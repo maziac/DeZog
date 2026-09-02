@@ -7,7 +7,7 @@ import {Decoration, DecorationClass} from './decoration';
 import {DiagnosticsHandler} from './diagnosticshandler';
 import {GlobalStorage} from './globalstorage';
 import {HelpProvider} from './help/helpprovider';
-import {LogGlobal, LogZsim, LogTransport} from './log';
+import {LogGlobal, LogZsim, LogTransport, LogDzrpNtf} from './log';
 import {UnifiedPath} from './misc/unifiedpath';
 import {Utility} from './misc/utility';
 import {PackageInfo} from './whatsnew/packageinfo';
@@ -480,6 +480,17 @@ function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 			const channelOut = logToPanel ? vscode.window.createOutputChannel("DeZog transport") : undefined;
 			// Enable or dispose
 			LogTransport.init(channelOut);
+		}
+	}
+
+	// DZRP remote log notifications
+	{
+		const logToPanel = configuration.get<boolean>('log.dzrpNtf');
+		if (LogDzrpNtf.isEnabled() !== logToPanel) {
+			// State has changed
+			const channelOut = logToPanel ? vscode.window.createOutputChannel("DeZog DZRP Log Notifications") : undefined;
+			// Enable or dispose
+			LogDzrpNtf.init(channelOut);
 		}
 	}
 }

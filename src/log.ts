@@ -228,5 +228,8 @@ export const LogGlobal = new Log();
 /// Logging for zsim custom code is instantiated.
 export const LogZsim = new Log();
 
-/// Socket logging.
+/// Socket and serial logging.
 export const LogTransport = new Log();
+
+/// Log the DZRP remote log notifications.
+export const LogDzrpNtf = new Log();

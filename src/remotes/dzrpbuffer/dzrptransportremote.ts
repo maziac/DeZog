@@ -1,4 +1,4 @@
-import {Log, LogTransport} from '../../log';
+import {Log, LogDzrpNtf, LogTransport} from '../../log';
 import {AlternateCommand, DzrpMachineType, DZRP, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
 import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
@@ -244,8 +244,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Returns the next sequence number for sending
+	/** Returns the next sequence number for sending
 	 */
 	public getNextSeqNo(): number {
 		this.sequenceNumber++;
@@ -254,9 +253,14 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		return this.sequenceNumber;
 	}
 
+	/** Log the DZRP log notification. */
+	protected dzrpLogNtf(data: Buffer) {
+		const logMessage = Utility.getStringFromBuffer(data, 0);
+		LogDzrpNtf.log('DZRP Log: ' + logMessage);
+	}
 
-	/**
-	 * Sends a DZRP command and waits for the response.
+
+	/** Sends a DZRP command and waits for the response.
 	 * @param cmd The command.
 	 * @param data A buffer containing the data.
 	 * @param respTimeoutTime The response timeout. Undefined=use default.
@@ -377,8 +381,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * A DZRP response has been received.
+	/** A DZRP response has been received.
 	 * If there are still messages in the queue the next message is sent.
 	 */
 	protected receivedMsg(data: Buffer) {
@@ -392,24 +395,35 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		// Check for notification
 		if (recSeqno == 0) {
 			// Notification.
-			// Call resolve of 'continue'
-			if (this.funcContinueResolve) {
-				const continueHandler = this.funcContinueResolve;
-				this.funcContinueResolve = undefined;
-				// Get data
-				const type = data[2];
-				let longAddr = Utility.getWord(data, 3);
-				const breakAddressBank = data[5];
-				longAddr += breakAddressBank << 16;
-				// Get reason string
-				let reasonString = Utility.getStringFromBuffer(data, 6);
-				if (reasonString.length == 0)
-					reasonString = undefined as any;
+			const ntfId = data[1];
+			if (ntfId === DZRP.NTF_PAUSE) {
+				// Call resolve of 'continue'
+				if (this.funcContinueResolve) {
+					const continueHandler = this.funcContinueResolve;
+					this.funcContinueResolve = undefined;
+					// Get data
+					const type = data[2];
+					let longAddr = Utility.getWord(data, 3);
+					const breakAddressBank = data[5];
+					longAddr += breakAddressBank << 16;
+					// Get reason string
+					let reasonString = Utility.getStringFromBuffer(data, 6);
+					if (reasonString.length == 0)
+						reasonString = undefined as any;
 
-				// Handle the break.
-				(async () => {
-					await continueHandler({reasonNumber: type, longAddr, reasonString});
-				})();
+					// Handle the break.
+					(async () => {
+						await continueHandler({reasonNumber: type, longAddr, reasonString});
+					})();
+				}
+			}
+			else if (ntfId === DZRP.NTF_LOG) {
+				// Handle log notification
+				const payload = data.subarray(2);
+				this.dzrpLogNtf(payload);
+			}
+			else {
+				LogTransport.log('DZRP: Unknown notification received. ID=' + ntfId);
 			}
 		}
 		else {
@@ -446,8 +460,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Starts the chunk timeout.
+	/** Starts the chunk timeout.
 	 */
 	protected startChunkTimeout() {
 		this.stopChunkTimeout();
@@ -465,8 +478,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Stops the chunk timeout.
+	/** Stops the chunk timeout.
 	 */
 	protected stopChunkTimeout() {
 		if (this.chunkTimeoutHandle)
@@ -475,8 +487,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Creates a string out of a DZRP command.
+	/** Creates a string out of a DZRP command.
 	 * Meant for debugging.
 	 */
 	public dzrpCmdBufferToString(buffer: Buffer, index = 0): string {
@@ -507,8 +518,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Creates a string out of a DZRP response.
+	/** Creates a string out of a DZRP response.
 	 * Also handles the notification.
 	 * Meant for debugging.
 	 */
@@ -536,8 +546,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 
 	//------- Send Commands -------
 
-	/**
-	 * Sends the command to init the remote.
+	/** Sends the command to init the remote.
 	 * @returns The error, program name (incl. version), dzrp version and the machine type.
 	 * error is 0 on success. 0xFF if version numbers not match.
 	 * Other numbers indicate an error on remote side.
@@ -568,16 +577,14 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * The last command sent. Closes the debug session.
+	/** The last command sent. Closes the debug session.
 	 */
 	protected async sendDzrpCmdClose(): Promise<void> {
 		await this.sendDzrpCmd(DZRP.CMD_CLOSE, undefined, this.initCloseRespTimeoutTime);
 	}
 
 
-	/**
-	 * Sends the command to get all registers.
+	/** Sends the command to get all registers.
 	 * @returns An Uint16Array with the register data. Same order as in
 	 * 'Z80Registers.getRegisterData'.
 	 */
@@ -623,8 +630,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to set a register value.
+	/** Sends the command to set a register value.
 	 * @param regIndex E.g. Z80_REG.BC or Z80_REG.A2
 	 * @param value A 1 byte or 2 byte value.
 	 */
@@ -633,8 +639,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to continue ('run') the program.
+	/** Sends the command to continue ('run') the program.
 	 * @param bp1Addr64k The 64k address of breakpoint 1 or undefined if not used.
 	 * @param bp2Addr64k The 64k address of breakpoint 2 or undefined if not used.
 	 */
@@ -659,16 +664,14 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to pause a running program.
+	/** Sends the command to pause a running program.
 	 */
 	protected async sendDzrpCmdPause(): Promise<void> {
 		await this.sendDzrpCmd(DZRP.CMD_PAUSE);
 	}
 
 
-	/**
-	 * Sends the command to add a breakpoint.
+	/** Sends the command to add a breakpoint.
 	 * @param bp The breakpoint. sendDzrpCmdAddBreakpoint will set bp.bpId with the breakpoint
 	 * ID. If the breakpoint could not be set it is set to 0.
 	 */
@@ -684,8 +687,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to remove a breakpoint.
+	/** Sends the command to remove a breakpoint.
 	 * @param bp The breakpoint to remove.
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
@@ -694,8 +696,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to add a watchpoint.
+	/** Sends the command to add a watchpoint.
 	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 * I.e. you can watch whole memory areas.
@@ -717,8 +718,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to remove a watchpoint for an address range.
+	/** Sends the command to remove a watchpoint for an address range.
 	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 * @param access 'r', 'w' or 'rw'.
@@ -739,8 +739,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to retrieve a memory dump.
+	/** Sends the command to retrieve a memory dump.
 	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
@@ -770,8 +769,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to write a memory dump.
+	/** Sends the command to write a memory dump.
 	 * @param addr64k The memory start address.
 	 * @param dataArray The data to write.
 	  */
@@ -783,8 +781,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to write a memory bank.
+	/** Sends the command to write a memory bank.
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
 	 * @throws An exception if e.g. the bank size does not match.
@@ -800,8 +797,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to set a slot/bank associations (8k banks).
+	/** Sends the command to set a slot/bank associations (8k banks).
 	 * @param slot The slot to set
 	 * @param bank The 8k bank to associate the slot with.
 	 * @returns A Promise with an error. An error can only occur on real HW if the slot with dezogif is overwritten.
@@ -814,8 +810,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to read the current state of the machine.
+	/** Sends the command to read the current state of the machine.
 	 * I.e. memory, registers etc.
 	 * @returns A Promise with state data. Format is unknown (remote specific).
 	 * Data will just be saved.
@@ -827,8 +822,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to wite a previously saved state to the remote.
+	/** Sends the command to wite a previously saved state to the remote.
 	 * I.e. memory, registers etc.
 	 * @param stateData The state data. Format is unknown (remote specific).
 	  */
@@ -838,8 +832,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Returns the value of one TBBlue register.
+	/** Returns the value of one TBBlue register.
 	 * @param register  The Tbblue register.
 	 * @returns A promise with the value.
 	  */
@@ -849,8 +842,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to get a sprites palette.
+	/** Sends the command to get a sprites palette.
 	 * @param index 0/1. The first or the second palette.
 	 * @returns An array with 256 entries with the 9 bit color.
 	 * Each entry is 2 byte.
@@ -868,8 +860,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to get a number of sprite attributes.
+	/** Sends the command to get a number of sprite attributes.
 	 * @param index The index of the sprite.
 	 * @param count The number of sprites to return.
 	 * @returns An array with 5 byte attributes for each sprite.
@@ -890,8 +881,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to retrieve sprite patterns.
+	/** Sends the command to retrieve sprite patterns.
 	 * Retrieves only 256 byte patterns. If a 128 byte patterns is required
 	 * the full 256 bytes are returned.
 	 * @param index The index of the pattern [0-63]
@@ -914,8 +904,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to get the sprites clipping window.
+	/** Sends the command to get the sprites clipping window.
 	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
 	  */
 	public async sendDzrpCmdGetSpritesClipWindowAndControl(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
@@ -926,16 +915,14 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to set the border.
+	/** Sends the command to set the border.
 	  */
 	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
 		await this.sendDzrpCmd(DZRP.CMD_SET_BORDER, [borderColor]);
 	}
 
 
-	/**
-	 * Sends the command to set all breakpoints.
+	/** Sends the command to set all breakpoints.
 	 * For the ZXNext all breakpoints are set at once just before the
 	 * next 'continue' is executed.
 	 * @param bpAddresses The breakpoint addresses. Each 0x0000-0xFFFF.
@@ -956,8 +943,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to restore the memory for all breakpoints.
+	/** Sends the command to restore the memory for all breakpoints.
 	 * This is send just after the 'continue' command.
 	 * So that the user only sees correct memory contents even if doing
 	 * a disassembly or memory read.
@@ -990,8 +976,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to enable or disable the interrupts.
+	/** Sends the command to enable or disable the interrupts.
 	 * @param enable true to enable, false to disable interrupts.
 	 */
 	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
@@ -1000,8 +985,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends the command to read from a port.
+	/** Sends the command to read from a port.
 	 * @param port The port address.
 	 * @returns The value read from the port.
 	 */
@@ -1011,8 +995,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Override.
+	/** Override.
 	 * Sends the command to write to a port.
 	 * @param port The port address.
 	 * @param value the value to write.
@@ -1022,8 +1005,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/**
-	 * Sends Z80 to execute in the remote.
+	/** Sends Z80 to execute in the remote.
 	 * The code needs no trailing RET.
 	 * Returns registers AF, BC, DE, HL.
 	 * @param code A buffer with the code to send.
