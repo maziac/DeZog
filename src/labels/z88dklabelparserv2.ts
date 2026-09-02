@@ -359,7 +359,16 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 			const match = this.mapFileRegEx.exec(line);
 			if (match) {
 				const label = match[1];
-				const addr64k = parseInt(match[2], 16);
+				const address = match[2];
+				let addr64k: number;
+				if (address.length > 4) {  // 24 bits address
+					const z88dkAddr = parseInt(address, 16);
+					const bank = z88dkAddr >> 16;
+					const addr16 = z88dkAddr & 0xFFFF;
+					addr64k = addr16 + ((bank + 1) << 16);
+				} else {
+					addr64k = parseInt(address, 16);
+				}
 				this.z88dkMappings.set(label, addr64k);
 			}
 		}
