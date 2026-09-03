@@ -48,32 +48,17 @@ export class ZxNextSerialRemote extends WithSerial(DzrpDezogIfRemote) {
 
 		if (this.receivedData.length == 0 && !this.msgStartByteFound) {
 			// Swallow everything (zeroes) up to after the first 0xA5 found
-			nData = this.findMessageStart(data);
+			const k = data.indexOf(ZxNextSerialRemote.MESSAGE_START_BYTE);
+			if (k < 0)
+				return;	// Not found
+			nData = data.subarray(k + 1);
+			this.msgStartByteFound = true;
 			if (nData.length == 0)
 				return;
-			this.msgStartByteFound = true;
 		}
 		// Call super
 		this.msgStartByteFound = false;
 		super.dataReceived(nData);
-	}
-
-
-	/** Finds the start of the message in the received data.
-	 * Will throw away all starting bytes until the first
-	 * MESSAGE_START_BYTE is found.
-	 * The data after the first MESSAGE_START_BYTE is returned.
-	 * @param data The received data buffer.
-	 * @returns A buffer starting after the first found MESSAGE_START_BYTE.
-	*/
-	protected findMessageStart(data: Buffer): Buffer {
-		const len = data.length;
-		for (let i = 0; i < len; i++) {
-			if (data[i] === ZxNextSerialRemote.MESSAGE_START_BYTE) {
-				return data.subarray(i + 1);
-			}
-		}
-		return Buffer.alloc(0);	// Not found
 	}
 
 
