@@ -146,7 +146,7 @@ export class RemoteBase extends EventEmitter {
 	/// Override this.
 	constructor() {
 		super();
-		this.remoteType = Settings.launch.remoteType;
+		this.remoteType = Settings?.launch?.remoteType || 'remote';
 	}
 
 

@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 import {suite, test, setup} from 'mocha';
-import {Settings} from '../src/settings/settings';
 import {Utility} from '../src/misc/utility';
 import {ZxNextSerialRemote} from '../src/remotes/dzrptransport/zxnextserialremote';
 
@@ -14,15 +13,11 @@ suite('ZxNextSerialRemote', () => {
 
 		setup(() => {
 			Utility.setExtensionPath('.');
-			const cfg: any = {
-				remoteType: 'zxnext',
-				zxnext: {
-					serialPort: 'some-port'
-				},
+			const cfg = {
+				serialPort: 'some-port',
+				timeout: 1000
 			};
-			const launch = Settings.Init(cfg);
-			Settings.launch = launch;
-			znext = new ZxNextSerialRemote(launch.zxnext);
+			znext = new ZxNextSerialRemote(cfg);
 			znextAny = znext as any;
 		});
 
@@ -75,8 +70,6 @@ suite('ZxNextSerialRemote', () => {
 				assert.deepEqual(result, Buffer.from([0xA5, 0xA5, 0, 0, 0, 0]));
 			}
 		});
-
-
 	});
 });
 

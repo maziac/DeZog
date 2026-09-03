@@ -413,9 +413,9 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		this.receivedData.copy(strippedBuffer, 0, 4, this.expectedLength);
 
 		// Log
-		const txt = this.dzrpRespBufferToString(strippedBuffer);
-		LogTransport.log('<<< Remote: Received ' + txt);
-		LogDzrpNtf.log('<<< Remote: Received ' + txt); // TODO: Remove
+		// const txt = this.dzrpRespBufferToString(strippedBuffer);
+		// LogTransport.log('<<< Remote: Received ' + txt);
+		// LogDzrpNtf.log('<<< Remote: Received ' + txt); // TODO: Remove
 
 		// Handle received buffer
 		this.receivedMsg(strippedBuffer);
