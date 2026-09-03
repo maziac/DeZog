@@ -13,7 +13,7 @@ import {Utility} from './misc/utility';
 import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
-import {ZxNextSerialLoopback} from './remotes/dzrpbuffer/zxnextserialloopback';
+import {ZxNextSerialLoopback} from './remotes/dzrptransport/zxnextserialloopback';
 import {Run} from './run';
 
 

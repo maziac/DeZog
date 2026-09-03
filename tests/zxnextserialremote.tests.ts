@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import {suite, test, setup} from 'mocha';
 import {Settings} from '../src/settings/settings';
 import {Utility} from '../src/misc/utility';
-import {ZxNextSerialRemote} from '../src/remotes/dzrpbuffer/zxnextserialremote';
+import {ZxNextSerialRemote} from '../src/remotes/dzrptransport/zxnextserialremote';
 
 
 
@@ -49,7 +49,6 @@ suite('ZxNextSerialRemote', () => {
 			const result = znextAny.findMessageStart(dataIn);
 			assert.deepEqual(result, Buffer.from([0xA5, 0xA5]));
 		});
-
 
 		test('Just one 0xA5 followed by data', () => {
 			{

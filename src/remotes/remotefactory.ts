@@ -1,13 +1,13 @@
 import {Remote, RemoteBase} from './remotebase';
 import {ZSimRemote} from './zsimulator/zsimremote';
-import {CSpectRemote} from './dzrpbuffer/cspectremote';
+import {CSpectRemote} from './dzrptransport/cspectremote';
 import {Utility} from '../misc/utility';
 import {ZesaruxRemote} from './zesarux/zesaruxremote';
-import {ZxNextSerialRemote} from './dzrpbuffer/zxnextserialremote';
-import {ZxNextSocketRemote} from './dzrpbuffer/zxnextsocketremote';
+import {ZxNextSerialRemote} from './dzrptransport/zxnextserialremote';
+import {ZxNextSocketRemote} from './dzrptransport/zxnextsocketremote';
 import {MameGdbRemote} from './mame/mamegdbremote';
 import {SettingsParameters} from '../settings/settings';
-import {DzrpGenericSocketRemote, DzrpGenericSerialRemote} from './dzrpbuffer/dzrpgenericremote';
+import {DzrpGenericSocketRemote, DzrpGenericSerialRemote} from './dzrptransport/dzrpgenericremote';
 
 
 

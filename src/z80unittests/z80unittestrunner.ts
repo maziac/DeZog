@@ -14,7 +14,7 @@ import {UnitTestCaseBase, UnitTestCase, RootTestSuite, UnitTestSuiteConfig, Unit
 import {PromiseCallbacks} from '../misc/promisecallbacks';
 import {DiagnosticsHandler} from '../diagnosticshandler';
 import {GenericWatchpoint} from '../genericwatchpoint';
-import {ZxNextSerialRemote} from '../remotes/dzrpbuffer/zxnextserialremote';
+import {ZxNextSerialRemote} from '../remotes/dzrptransport/zxnextserialremote';
 import {TerminatedEvent} from '@vscode/debugadapter';
 
 
