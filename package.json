@@ -116,7 +116,7 @@
 					"default": false
 				},
 				"dezog.log.transport": {
-					"description": "Write transport logs (socket, serial, etc.) to the \"DeZog transport\" output panel.",
+					"description": "Write transport logs (socket, serial, etc.) to the \"DeZog Transport\" output panel.",
 					"type": "boolean",
 					"scope": "resource",
 					"default": false

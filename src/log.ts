@@ -1,7 +1,5 @@
 
 
-// If there is a pause of 2 seconds between logs then an additional indication is logged.
-const PAUSE_LOG_TIME = 2;
 
 
 /** Class for logging.
@@ -12,6 +10,8 @@ const PAUSE_LOG_TIME = 2;
  * You can find it by opening the command palette and typing "Developer: open Extensions logs Folder".
  */
 export class Log {
+	// If there is a pause of x seconds between logs then an additional indication is logged.
+	protected PAUSE_LOG_TIME: number;
 
 	/// Output logging to the "OUTPUT" tab in vscode.
 	/// This is of type vscode.OutputChannel. But the type can't be used as it would imply a
@@ -49,6 +49,12 @@ export class Log {
 		LogGlobal.log(...args);
 	}
 
+	/** Constructor.
+	 * @param pauseLogTime The pause time in seconds for additional indication logs.
+	 */
+	public constructor(pauseLogTime = 2) {
+		this.PAUSE_LOG_TIME = pauseLogTime;
+	}
 
 	/** Initializes the logging. I.e. enables/disables logging to
 	 * vscode channel and file.
@@ -73,7 +79,7 @@ export class Log {
 		// check time
 		const diffTime = (Date.now() - this.lastLogTime) / 1000;
 		let outputcache = false;
-		if (diffTime > PAUSE_LOG_TIME) {
+		if (this.PAUSE_LOG_TIME > 0 && diffTime > this.PAUSE_LOG_TIME) {
 			// > 2 secs
 			this.outputCache();
 			this.write('...');
@@ -232,4 +238,4 @@ export const LogZsim = new Log();
 export const LogTransport = new Log();
 
 /// Log the DZRP remote log notifications.
-export const LogDzrpNtf = new Log();
+export const LogDzrpNtf = new Log(0);

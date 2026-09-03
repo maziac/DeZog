@@ -1,4 +1,5 @@
-import {LogTransport} from '../../log';
+import {LogDzrpNtf, LogTransport} from '../../log';
+import {Utility} from '../../misc/utility';
 import {ZxNextType} from '../../settings/settings';
 import {DzrpDezogIfRemote} from './dzrpdezogifremote';
 import {WithSerial} from './transportserialmixin';
@@ -40,31 +41,39 @@ export class ZxNextSerialRemote extends WithSerial(DzrpDezogIfRemote) {
 	 * I.e. all received messages start with 0xA5.
 	 */
 	protected dataReceived(data: Buffer) {
+		LogTransport.log('dataReceived, Rawdata: ' + Utility.getStringFromData(data));
+		LogDzrpNtf.log('dataReceived, Rawdata: ' + Utility.getStringFromData(data));
+
 		let nData = data;
 
 		if (this.receivedData.length == 0 && !this.msgStartByteFound) {
-			// Swallow everything (zeroes) up to the first 0xA5 found
-			const len = data.length;
-			let i;
-			for (i = 0; i < len; i++) {
-				if (data[i] == ZxNextSerialRemote.MESSAGE_START_BYTE) {
-					// Start of message found
-					if (len == 1) {
-						this.msgStartByteFound = true;
-						return;
-					}
-					break;
-				}
-			}
-			// Check if start of message found
-			if (i + 1 >= len)
-				return;	// Not found
-			// Start of message found, skip up to 0xA5
-			nData = data.subarray(i + 1);
+			// Swallow everything (zeroes) up to after the first 0xA5 found
+			nData = this.findMessageStart(data);
+			if (nData.length == 0)
+				return;
+			this.msgStartByteFound = true;
 		}
 		// Call super
 		this.msgStartByteFound = false;
 		super.dataReceived(nData);
+	}
+
+
+	/** Finds the start of the message in the received data.
+	 * Will throw away all starting bytes until the first
+	 * MESSAGE_START_BYTE is found.
+	 * The data after the first MESSAGE_START_BYTE is returned.
+	 * @param data The received data buffer.
+	 * @returns A buffer starting after the first found MESSAGE_START_BYTE.
+	*/
+	protected findMessageStart(data: Buffer): Buffer {
+		const len = data.length;
+		for (let i = 0; i < len; i++) {
+			if (data[i] === ZxNextSerialRemote.MESSAGE_START_BYTE) {
+				return data.subarray(i + 1);
+			}
+		}
+		return Buffer.alloc(0);	// Not found
 	}
 
 

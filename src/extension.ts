@@ -477,7 +477,7 @@ function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 		const logToPanel = configuration.get<boolean>('log.transport');
 		if (LogTransport.isEnabled() !== logToPanel) {
 			// State has changed
-			const channelOut = logToPanel ? vscode.window.createOutputChannel("DeZog transport") : undefined;
+			const channelOut = logToPanel ? vscode.window.createOutputChannel("DeZog Transport") : undefined;
 			// Enable or dispose
 			LogTransport.init(channelOut);
 		}

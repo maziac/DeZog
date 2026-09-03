@@ -1,5 +1,5 @@
 import {Log, LogDzrpNtf, LogTransport} from '../../log';
-import {AlternateCommand, DzrpMachineType, DZRP, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
+import {AlternateCommand, DzrpMachineType, DZRP_PROGRAM_NAME, DZRP, DZRP_NTF} from '../dzrp/dzrpremote';
 import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {GenericBreakpoint} from '../../genericwatchpoint';
@@ -256,7 +256,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	/** Log the DZRP log notification. */
 	protected dzrpLogNtf(data: Buffer) {
 		const logMessage = this.formatDzrpLogString(data);
-		LogDzrpNtf.log('DZRP Log: ' + logMessage);
+		LogDzrpNtf.log(logMessage);
 	}
 
 	/** Parses a DZRP NTF_LOG payload and returns the formatted log string.
@@ -373,67 +373,70 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	 */
 	protected dataReceived(data: Buffer) {
 		//LogTransport.log('dataReceived, count=' + data.length);
+		//LogTransport.log('dataReceived, Rawdata: ' + Utility.getStringFromData(data));
+		//LogDzrpNtf.log('dataReceived, Rawdata: ' + Utility.getStringFromData(data));
 
 		// Add data to existing buffer
 		this.receivedData = Buffer.concat([this.receivedData, data]);
+		if (this.receivedData.length <= 0)
+			return;
 
-		if (this.receivedData.length > 0) {
-			// Check if still data to receive
+		// Check if still data to receive
+		if (this.receivedData.length < this.expectedLength) {
+			this.startChunkTimeout();
+			return;	// Wait for more
+		}
+
+		// Check length
+		if (this.receivingHeader) {
+			// Header has been received, read length
+			const buffer = this.receivedData;
+			let recLength = buffer[0];
+			recLength += buffer[1] * 256;
+			recLength += buffer[2] * 256 * 256;
+			recLength += buffer[3] * 256 * 256 * 256;
+			this.expectedLength = recLength + 4;
+			this.receivingHeader = false;
+			// Check if all payload has been received
 			if (this.receivedData.length < this.expectedLength) {
 				this.startChunkTimeout();
 				return;	// Wait for more
 			}
-
-			// Check length
-			if (this.receivingHeader) {
-				// Header has been received, read length
-				const buffer = this.receivedData;
-				let recLength = buffer[0];
-				recLength += buffer[1] * 256;
-				recLength += buffer[2] * 256 * 256;
-				recLength += buffer[3] * 256 * 256 * 256;
-				this.expectedLength = recLength + 4;
-				this.receivingHeader = false;
-				// Check if all payload has been received
-				if (this.receivedData.length < this.expectedLength) {
-					this.startChunkTimeout();
-					return;	// Wait for more
-				}
-			}
-
-			// Complete message received.
-			this.stopChunkTimeout();
-
-			// Strip length
-			const length = this.expectedLength - 4;
-			const strippedBuffer = Buffer.alloc(length);
-			this.receivedData.copy(strippedBuffer, 0, 4, this.expectedLength);
-
-			// Log
-			const txt = this.dzrpRespBufferToString(this.receivedData);
-			LogTransport.log('<<< Remote: Received ' + txt);
-
-			// Handle received buffer
-			this.receivedMsg(strippedBuffer);
-
-			// Prepare next buffer. Copy remaining received bytes.
-			const overLength = this.receivedData.length - this.expectedLength;
-			Utility.assert(overLength >= 0);
-			this.receivingHeader = true;
-			if (overLength == 0) {
-				this.expectedLength = 4;
-				this.receivedData = Buffer.alloc(0);
-				return;
-			}
-
-			// More data has been received
-			const nextBuffer = Buffer.alloc(overLength);
-			this.receivedData.copy(nextBuffer, 0, this.expectedLength);
-			this.receivedData = Buffer.alloc(0);
-			// Call again
-			this.expectedLength = 4;
-			this.dataReceived(nextBuffer);
 		}
+
+		// Complete message received.
+		this.stopChunkTimeout();
+
+		// Strip length
+		const length = this.expectedLength - 4;
+		const strippedBuffer = Buffer.alloc(length);
+		this.receivedData.copy(strippedBuffer, 0, 4, this.expectedLength);
+
+		// Log
+		const txt = this.dzrpRespBufferToString(strippedBuffer);
+		LogTransport.log('<<< Remote: Received ' + txt);
+		LogDzrpNtf.log('<<< Remote: Received ' + txt); // TODO: Remove
+
+		// Handle received buffer
+		this.receivedMsg(strippedBuffer);
+
+		// Prepare next buffer. Copy remaining received bytes.
+		const overLength = this.receivedData.length - this.expectedLength;
+		Utility.assert(overLength >= 0);
+		this.receivingHeader = true;
+		if (overLength == 0) {
+			this.expectedLength = 4;
+			this.receivedData = Buffer.alloc(0);
+			return;
+		}
+
+		// More data has been received
+		const nextBuffer = Buffer.alloc(overLength);
+		this.receivedData.copy(nextBuffer, 0, this.expectedLength);
+		this.receivedData = Buffer.alloc(0);
+		// Call again
+		this.expectedLength = 4;
+		this.dataReceived(nextBuffer);
 	}
 
 
@@ -452,7 +455,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		if (recSeqno == 0) {
 			// Notification.
 			const ntfId = data[1];
-			if (ntfId === DZRP.NTF_PAUSE) {
+			if (ntfId === DZRP_NTF.NTF_PAUSE) {
 				// Call resolve of 'continue'
 				if (this.funcContinueResolve) {
 					const continueHandler = this.funcContinueResolve;
@@ -473,13 +476,14 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 					})();
 				}
 			}
-			else if (ntfId === DZRP.NTF_LOG) {
+			else if (ntfId === DZRP_NTF.NTF_LOG) {
 				// Handle log notification
 				const payload = data.subarray(2);
 				this.dzrpLogNtf(payload);
 			}
 			else {
 				LogTransport.log('DZRP: Unknown notification received. ID=' + ntfId);
+				LogDzrpNtf.log('DZRP: Unknown notification received. ID=' + ntfId);
 			}
 		}
 		else {
@@ -494,6 +498,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 			if (recSeqno != seqno) {
 				const error = Error("DZRP: Received wrong SeqNo. '" + recSeqno + "' instead of expected '" + seqno + "'");
 				LogTransport.log("Error: " + error);
+				LogDzrpNtf.log("Error: " + error);
 				// Note: 'error' events have a special handling and throw an error if event was not handled:
 				// "For all EventEmitter objects, if an 'error' event handler is not provided, the error will be thrown."
 				try {
@@ -521,16 +526,19 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	protected startChunkTimeout() {
 		this.stopChunkTimeout();
 		Utility.assert(this.chunkTimeout !== undefined, 'Chunk timeout not set!');
+		const timeout = this.chunkTimeout;
 		this.chunkTimeoutHandle = setTimeout(() => {
-			const err = new Error('Socket chunk timeout.');
+			const txt = 'Socket chunk timeout (' + timeout + ' ms).';
+			const err = new Error(txt);
 			// Log
-			LogTransport.log('Error: ' + err.message);
+			LogTransport.log('Error: ' + txt);
+			LogDzrpNtf.log('Error: ' + txt);
 			// Error
 			try {
 				this.emit('error', err);
 			}
 			catch {};
-		}, this.chunkTimeout);
+		}, timeout);
 	}
 
 

@@ -26,7 +26,7 @@ import {Z80File} from './z80file';
 export const DZRP_PROGRAM_NAME = "DeZog v" + process.version;
 
 
-/** The DRZP commands and responses.
+/** The DZRP commands and responses.
  * The response contains the command with the bit 7 set.
  */
 export enum DZRP {
@@ -71,18 +71,14 @@ export enum DZRP {
 	// State
 	CMD_READ_STATE = 50,
 	CMD_WRITE_STATE = 51,
-
-	// Notifications
-	NTF_PAUSE = 1,
-	NTF_LOG = 2
 }
 
 
-/**
- * DZRP notifications.
+/** DZRP notifications.
  */
 export enum DZRP_NTF {
-	NTF_PAUSE = 1
+	NTF_PAUSE = 1,
+	NTF_LOG = 2
 }
 
 
