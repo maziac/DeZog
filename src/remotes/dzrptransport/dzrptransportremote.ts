@@ -408,9 +408,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		this.stopChunkTimeout();
 
 		// Strip length
-		const length = this.expectedLength - 4;
-		const strippedBuffer = Buffer.alloc(length);
-		this.receivedData.copy(strippedBuffer, 0, 4, this.expectedLength);
+		const strippedBuffer = this.receivedData.subarray(4, this.expectedLength);
 
 		// Log
 		// const txt = this.dzrpRespBufferToString(strippedBuffer);
@@ -431,8 +429,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		}
 
 		// More data has been received
-		const nextBuffer = Buffer.alloc(overLength);
-		this.receivedData.copy(nextBuffer, 0, this.expectedLength);
+		const nextBuffer = this.receivedData.subarray(this.expectedLength);
 		this.receivedData = Buffer.alloc(0);
 		// Call again
 		this.expectedLength = 4;
