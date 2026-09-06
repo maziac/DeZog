@@ -2,8 +2,7 @@ import {EventEmitter} from "stream";
 import {LogTransport} from "../../log";
 import {Utility} from "../../misc/utility";
 import {Z80_REG} from "../z80registers";
-import {DzrpQueuedRemote} from "./dzrpqueuedremote";
-import {DZRP, DzrpRemote} from "./dzrpremote";
+import {DzrpTransportRemote} from "../dzrptransport/dzrptransportremote";
 
 /**
  * Class to test the communication with a DZRP client.
@@ -13,7 +12,7 @@ import {DZRP, DzrpRemote} from "./dzrpremote";
  */
 export class DzrpTransportTest extends EventEmitter {
 	// The remote to use for sending commands.
-	protected remote: DzrpQueuedRemote | any;	// NOSONAR: "any" to easily access the protected methods.
+	protected remote: DzrpTransportRemote | any;	// NOSONAR: "any" to easily access the protected methods.
 
 	// Indicates if the test loop is running.
 	protected running = false;
@@ -21,8 +20,9 @@ export class DzrpTransportTest extends EventEmitter {
 	// Command list.
 	protected cmdList: Array<() => Promise<void>> = [
 		async () => {
-			console.log('sendDzrpCmdClose');
-			await this.remote.sendDzrpCmdClose();
+			// A close would kill the communication, so we skip it.
+			// console.log('sendDzrpCmdClose');
+			// await this.remote.sendDzrpCmdClose();
 			console.log('sendDzrpCmdInit');
 			await this.remote.sendDzrpCmdInit();
 		},
@@ -115,8 +115,8 @@ export class DzrpTransportTest extends EventEmitter {
 			await this.remote.sendDzrpCmdGetSpritesPalette(index);
 		},
 		async () => {
-			console.log('sendDzrpCmdGetSpritesClipWindow');
-			await this.remote.sendDzrpCmdGetSpritesClipWindow();
+			console.log('sendDzrpCmdGetSpritesClipWindowAndControl');
+			await this.remote.sendDzrpCmdGetSpritesClipWindowAndControl();
 		},
 		// async () => {
 		// 	console.log('sendDzrpCmdGetSprites');
@@ -252,6 +252,12 @@ export class DzrpTransportTest extends EventEmitter {
 	/** Sends a random command.
 	 */
 	protected async sendRndCmd() {
+		// this.remote.checkContents = true;
+		// console.log('sendDzrpCmdReadMem');
+		// //const addr = this.rndInt(0, 0xFFFF);
+		// //const count = this.rndInt(1, 0xFFFF);
+		// await this.remote.sendDzrpCmdReadMem(0, 0x8000);
+		// return;
 		// Choose one randomly
 		const m = this.rndInt(0, this.cmdList.length - 1);
 		await this.cmdList[m]();

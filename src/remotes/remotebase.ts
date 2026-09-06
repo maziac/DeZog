@@ -870,7 +870,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns The associated frame or undefined.
 	 */
 	public getFrame(ref: number): CallStackFrame | undefined {
-		const frame = this.listFrames.getObject(ref);
+		const frame = this.listFrames?.getObject(ref);
 		return frame;
 	}
 

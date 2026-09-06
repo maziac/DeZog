@@ -87,6 +87,7 @@ export function WithSocket<TBase extends Constructor<DzrpTransportRemote>>(Base:
 		/** This will disconnect the socket.
 		 */
 		public async disconnect(): Promise<void> {
+			this.stopChunkTimeout();
 			if (!this.socket)
 				return;
 
@@ -97,6 +98,7 @@ export function WithSocket<TBase extends Constructor<DzrpTransportRemote>>(Base:
 			}
 
 			return new Promise<void>(resolve => {
+				this.stopChunkTimeout();
 				this.socket?.removeAllListeners();
 				// Timeout is required because socket.end() does not call the
 				// callback if it is already closed and the state cannot

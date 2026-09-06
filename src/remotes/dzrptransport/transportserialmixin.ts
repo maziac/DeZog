@@ -78,6 +78,7 @@ export function WithSerial<TBase extends Constructor<DzrpTransportRemote>>(Base:
 		/** Closes the serial port.
 		 */
 		public async closeSerialPort(): Promise<void> {
+			this.stopChunkTimeout();
 			return new Promise<void>(resolve => {
 				(async () => {
 					if (this.serialPort) {

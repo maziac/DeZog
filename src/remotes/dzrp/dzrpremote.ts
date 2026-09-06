@@ -562,7 +562,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				// 0 100 = the pause to use between messages
 				if (cmdArray.length !== 3) {
 					// Error
-					throw Error("Expecting parameter 3 parameters: start min_time max_time.");
+					throw Error("Expecting parameter 3, parameters: start min_time max_time.");
 				}
 				const minTime = Utility.parseValue(cmdArray[1]);
 				const maxTime = Utility.parseValue(cmdArray[2]);
@@ -575,11 +575,21 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				await this.dzrpTransportTest.cmdsStart(minTime, maxTime);
 				return "Started test loop sending commands...";
 			}
-			if (startEnd === "end") {
-				// "test end"
+			if (startEnd === "stop") {
+				// "test stop"
 				await this.dzrpTransportTest?.cmdsEnd();
 				this.dzrpTransportTest = undefined;
 				return "Stopped sending commands.";
+			}
+			if (startEnd === "pause") {
+				// "test pause 1000" (pause for 1 second)
+				if (cmdArray.length !== 2) {
+					// Error
+					throw Error("Expecting parameter 2, parameters: pause pause_time(ms)");
+				}
+				const pauseTime = Utility.parseValue(cmdArray[1]);
+				await new Promise(resolve => setTimeout(resolve, pauseTime));
+				return "Paused for " + pauseTime + " ms.";
 			}
 			if (startEnd === "timeout") {
 				// "test timeout 100 200 400 6"
@@ -601,7 +611,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			}
 			else {
 				// Error
-				throw Error("Expecting parameter 'start', 'end' or 'timeout'.");
+				throw Error("Expecting parameter 'start', 'stop' or 'timeout'.");
 			}
 
 		}
