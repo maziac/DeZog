@@ -1374,6 +1374,17 @@ Pausing will just work.
 If you use the Copper please check the documentation [here](https://github.com/maziac/dezogif/blob/main/documentation/AsynchronousBreak.md) to pause from DeZog.
 
 
+#### HW Problems
+
+The USB serial converters usually only have small RX buffers and the Zx Next UARTs support no flow control.
+Therefore it can happen that data sent from the ZX Next is not accepted at the USB serial converter when its buffer is full.
+Usually a PC or mac should be fast enough to retrieve the data but vscode/DeZog runs under node with limited parallizing capabilities. So it can happen rarely that bytes get lost. Especially if a lot of data (e.g. memory read of 32k of data) would be transferred.
+
+If the (RX) buffer size of a USB serial converter is only 256 bytes, at 921600 baud this holds for only 3ms. I.e. if the host is not able to retrieve the data once in that time frame, data might be lost.
+
+Ironically the other direction (receiving data at the ZX Next) is not so critical as the Next at 28MHz is fast enough to read the bytes from the UART (the ZX Next can solely operate on this and is not interrupted by other tasks as the PC or mac).
+
+
 #### HW
 
 **Disclaimer**
@@ -1383,7 +1394,7 @@ You should only try to do this yourself if you already have experience with elec
 
 **IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THE HW, SW OR ANYTHING ELSE PRESENTED HERE.**
 
-You require a USB/Serial converter like this [one](https://www.amazon.com/Serial-Adapter-Female-FT232RL-Windows/dp/B07R45QJVR/ref=sr_1_1_sspa?__mk_de_DE=ÅMÅŽÕÑ&dchild=1&keywords=Serial+UART-Konverterkabel+USB+TTL+3.3+V&qid=1595515176&sr=8-1-spons&psc=1&spLa=ZW5jcnlwdGVkUXVhbGlmaWVyPUEyR1M0VFUzR0tGVkgmZW5jcnlwdGVkSWQ9QTA0Mzk4NDYzVUkySkE0S0ZGS0MwJmVuY3J5cHRlZEFkSWQ9QTA3NzU0NDQzRU85R05FQkJMMEFSJndpZGdldE5hbWU9c3BfYXRmJmFjdGlvbj1jbGlja1JlZGlyZWN0JmRvTm90TG9nQ2xpY2s9dHJ1ZQ==):
+You require a USB/Serial converter like this one:
 ![](images/usb_serial_cable.jpg)
 
 It needs to be capable of 921600 Baud.
