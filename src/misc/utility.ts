@@ -1143,8 +1143,8 @@ export class Utility {
 
 		let result = "";
 		let printCount = count;
-		if (printCount > 300)
-			printCount = 300;
+		if (printCount > 60)
+			printCount = 60;
 		for (let i = 0; i < printCount; i++)
 			result += data[i + start].toString() + " ";
 		if (printCount != count)

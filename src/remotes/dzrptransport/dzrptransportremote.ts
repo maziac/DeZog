@@ -411,9 +411,9 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		const strippedBuffer = this.receivedData.subarray(4, this.expectedLength);
 
 		// Log
-		// const txt = this.dzrpRespBufferToString(strippedBuffer);
-		// LogTransport.log('<<< Remote: Received ' + txt);
-		// LogDzrpNtf.log('<<< Remote: Received ' + txt); // TODO: Remove
+		const txt = this.dzrpRespBufferToString(this.receivedData, 0, this.expectedLength);
+		LogTransport.log('<<< Remote: Received ' + txt);
+		LogDzrpNtf.log('<<< Remote: Received ' + txt); // TODO: Remove
 
 		// Handle received buffer
 		this.receivedMsg(strippedBuffer);
@@ -583,8 +583,8 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	 * Also handles the notification.
 	 * Meant for debugging.
 	 */
-	public dzrpRespBufferToString(buffer: Buffer, index = 0): string {
-		const count = buffer.length - index;
+	public dzrpRespBufferToString(buffer: Buffer, index = 0, end = buffer.length): string {
+		const count = end - index;
 		let text = "";
 		if (count >= 5) {
 			const length = buffer[index] + 256 * buffer[index + 1] + 256 * 256 * buffer[index + 2] + 256 * 256 * 256 * buffer[index + 3];
@@ -596,10 +596,11 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 				text += "Response:\n";
 			text += "  Length: " + length + " (" + lengthString + ")\n";
 			text += "  SeqNo:  " + seqno + "\n";
+			end = index + 4 + length;
 			index += 5;
 		}
 		// Rest of data
-		const dataString = Utility.getStringFromData(buffer, index);
+		const dataString = Utility.getStringFromData(buffer, index, end - index);
 		text += "  Data:   " + dataString + "\n";
 		return text;
 	}

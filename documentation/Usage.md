@@ -1377,6 +1377,7 @@ If you use the Copper please check the documentation [here](https://github.com/m
 #### HW Problems
 
 The USB serial converters usually only have small RX buffers and the Zx Next UARTs support no flow control.
+HW flow control would be best but is not available at the ZX Next (at least for KS1 and N-Go).
 Therefore it can happen that data sent from the ZX Next is not accepted at the USB serial converter when its buffer is full.
 Usually a PC or mac should be fast enough to retrieve the data but vscode/DeZog runs under node with limited parallizing capabilities. So it can happen rarely that bytes get lost. Especially if a lot of data (e.g. memory read of 32k of data) would be transferred.
 

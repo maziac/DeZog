@@ -119,9 +119,9 @@ export function WithSerial<TBase extends Constructor<DzrpTransportRemote>>(Base:
 				// Send data
 				const txt = this.dzrpCmdBufferToString(buffer);
 				LogTransport.log('>>> ' + this.logName + ': Sending ' + txt);
-				let outerError;
+				let outerError;	// TODO: What is this needed for?
 				try {
-					this.serialPort?.write(buffer, (error) => {
+					this.writeToSerialPort(buffer, (error) => {
 						if (!outerError) {
 							if (error)
 								throw error;
@@ -135,6 +135,11 @@ export function WithSerial<TBase extends Constructor<DzrpTransportRemote>>(Base:
 					reject(new Error(msg));
 				}
 			});
+		}
+
+		/** Low level write to the serial port. */
+		protected async writeToSerialPort(buffer: Buffer, cb?: (error: Error | null | undefined) => void): Promise<void> {
+			this.serialPort?.write(buffer, cb);
 		}
 	};
 }
