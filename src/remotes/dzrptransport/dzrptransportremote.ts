@@ -372,9 +372,10 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	/** Called when data has been received.
 	 */
 	protected dataReceived(data: Buffer) {
-		//LogTransport.log('dataReceived, count=' + data.length);
-		//LogTransport.log('dataReceived, Rawdata: ' + Utility.getStringFromData(data));
-		//LogDzrpNtf.log('dataReceived, Rawdata: ' + Utility.getStringFromData(data));
+		LogTransport.log('dataReceived, count=' + data.length);
+		const ltxt = 'dataReceived, Rawdata: ' + Utility.getStringFromData(data);
+		LogTransport.log(ltxt);
+		LogDzrpNtf.log(ltxt);
 
 		// Add data to existing buffer
 		this.receivedData = Buffer.concat([this.receivedData, data]);

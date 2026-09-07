@@ -566,7 +566,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				}
 				const minTime = Utility.parseValue(cmdArray[1]);
 				const maxTime = Utility.parseValue(cmdArray[2]);
-				await this.dzrpTransportTest?.cmdsEnd();
+				await this.dzrpTransportTest?.cmdsStop();
 				this.dzrpTransportTest = new DzrpTransportTest(this);
 				this.dzrpTransportTest.on('debug_console', msg => {
 					// Forward
@@ -577,7 +577,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			}
 			if (startEnd === "stop") {
 				// "test stop"
-				await this.dzrpTransportTest?.cmdsEnd();
+				await this.dzrpTransportTest?.cmdsStop();
 				this.dzrpTransportTest = undefined;
 				return "Stopped sending commands.";
 			}

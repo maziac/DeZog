@@ -1147,8 +1147,10 @@ export class Utility {
 			printCount = 60;
 		for (let i = 0; i < printCount; i++)
 			result += data[i + start].toString() + " ";
-		if (printCount != count)
-			result += "...";
+		if (printCount != count) {
+			result += "... ";
+			result += data[start + count - 1].toString();
+		}
 		return result;
 	}
 

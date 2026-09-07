@@ -3,6 +3,7 @@ import {LogTransport} from "../../log";
 import {Utility} from "../../misc/utility";
 import {Z80_REG} from "../z80registers";
 import {DzrpTransportRemote} from "../dzrptransport/dzrptransportremote";
+import {DZRP, DzrpRemote} from "./dzrpremote";
 
 /**
  * Class to test the communication with a DZRP client.
@@ -169,7 +170,7 @@ export class DzrpTransportTest extends EventEmitter {
 	 */
 	public async cmdsStart(minTime: number, maxTime: number) {
 		// Stop any probably running test loop.
-		await this.cmdsEnd();
+		await this.cmdsStop();
 		// Start asynchronous loop
 		(async () => {
 			let counter = 0;
@@ -191,9 +192,6 @@ export class DzrpTransportTest extends EventEmitter {
 						this.emit('debug_console', "" + counter + " messages sent.");
 					}
 				}
-				// Stop with a CMD_CLOSE
-				await this.remote.sendDzrpCmdClose();
-				counter++;
 				// Notify
 				this.emit('debug_console', "Stopped after " + counter + " messages without errors.");
 				this.emit('stopped');
@@ -214,7 +212,7 @@ export class DzrpTransportTest extends EventEmitter {
 	 * Ends the test started in 'start'.
 	 * After 'end' returns, 'this.running' is false.
 	 */
-	public async cmdsEnd() {
+	public async cmdsStop() {
 		// Check if a test is ongoing
 		if (this.running) {
 			return new Promise<void>(resolve => {
@@ -252,7 +250,6 @@ export class DzrpTransportTest extends EventEmitter {
 	/** Sends a random command.
 	 */
 	protected async sendRndCmd() {
-		// this.remote.checkContents = true;
 		// console.log('sendDzrpCmdReadMem');
 		// //const addr = this.rndInt(0, 0xFFFF);
 		// //const count = this.rndInt(1, 0xFFFF);
