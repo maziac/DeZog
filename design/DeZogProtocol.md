@@ -113,7 +113,7 @@ The table below shows which commands are used (X) with what remote:
 | [CMD_EXEC_ASM] (22)                            | -     | x      | x      | -     |
 | [CMD_INTERRUPT_ON_OFF] (23)                    | X     | X      | X      | -     |
 | [CMD_GET_SUPPORTED_COMMANDS] (24)              | X     | X      | X      | -     |
-| [CMD_ENABLE_BREAK_ON_INTERRUPT] (25)           | X     | -      | -      | -     |
+| [CMD_ENABLE_BREAK_ON_INTERRUPT] (39)           | X     | -      | -      | -     |
 | [CMD_ADD_BREAKPOINT] (40)                      | X     | X      | -      | X     |
 | [CMD_REMOVE_BREAKPOINT] (41)                   | X     | X      | -      | X     |
 | [CMD_ADD_WATCHPOINT] (42)                      | X     | -      | -      | X     |
@@ -134,6 +134,7 @@ Notes:
 
 Added:
 - CMD_GET_SUPPORTED_COMMANDS added which returns the supported commands.
+- CMD_ENABLE_BREAK_ON_INTERRUPT to disable/enable pausing the debugged program on entering an interrupt.
 
 Changed:
 - Sequence number range changed from 1-255 to 1-15.
@@ -759,7 +760,7 @@ Nevertheless those are reported here as well.
 - This command MUST be supported by any remote that supports DZRP >= 2.2.0.
 
 
-## CMD_ENABLE_BREAK_ON_INTERRUPT
+## CMD_ENABLE_BREAK_ON_INTERRUPT=39
 Command (Length=1):
 | Index | Size | Value | Description                                               |
 | ----- | ---- | ----- | --------------------------------------------------------- |
