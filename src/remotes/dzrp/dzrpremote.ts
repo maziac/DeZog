@@ -61,6 +61,8 @@ export enum DZRP {
 
 	CMD_GET_SUPPORTED_COMMANDS = 24,
 
+	CMD_ENABLE_BREAK_ON_INTERRUPT = 25,
+
 	// Breakpoint
 	CMD_ADD_BREAKPOINT = 40,
 	CMD_REMOVE_BREAKPOINT = 41,
@@ -2203,5 +2205,13 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	protected async sendDzrpCmdGetSupportedCommands(): Promise<string> {
 		Utility.assert(false);
 		return '';
+	}
+
+
+	/** Override.
+	 * Enables/disables to break program execution if an interrupt occurs.
+	 */
+	protected async sendDzrpCmdEnableBreakOnInterrupt(enable: boolean): Promise<void> {
+		Utility.assert(false);
 	}
 }

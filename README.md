@@ -133,8 +133,8 @@ For more demanding projects you have the choice to install a real emulator.
 
 These are the options:
 
-- the [CSpect](http://www.cspect.org) emulator (known to be interoperable is version ???. Versions older than ??? are not compatible.) TODO: Update version numbers.
-- the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable is version 12.1. Versions older than 10.3 are not compatible.)
+- the [CSpect](http://www.cspect.org) emulator (known to be interoperable is version 3.3.???. Versions older than ??? are not compatible.) TODO: Update after DeZogPlugin release.
+- the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable is version 13.0. Versions older than 10.3 are not compatible.)
 - [MAME](https://www.mamedev.org/release.html) (known to be interoperable is version 0.242)
 
 Note: The version numbers given here are versions that I have used myself. Newer versions probably also work.

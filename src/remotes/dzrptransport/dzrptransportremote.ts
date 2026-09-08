@@ -174,7 +174,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		const unsupportedCmds = this.getUnsupportedCommands(suppCmds);
 		this.disableUnsupportedCommands(unsupportedCmds);
 		this.selectMode(unsupportedCmds);
-		this.setAssertionWpmemLogpointSupport(unsupportedCmds);
+		this.setAssertionWpmemLogpointEtcSupport(unsupportedCmds);
 	}
 
 
@@ -185,7 +185,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	 * @throws Error if some inconsistency is found (e.g. CMD_ADD_BREAKPOINT
 	 * is supported but CMD_REMOVE_BREAKPOINT is not).
 	 */
-	protected setAssertionWpmemLogpointSupport(unsupportedCommands: number[]): void {
+	protected setAssertionWpmemLogpointEtcSupport(unsupportedCommands: number[]): void {
 
 		// Enable/disable ASSERTIONs, WPMEM and LOGPOINTs according supported commands:
 		// Watchpoints/WPMEM:
@@ -193,6 +193,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		// ASSERTIONs/LOGPOINTs depend on normal breakpoints:
 		this.supportsASSERTION = (!unsupportedCommands.includes(DZRP.CMD_SET_BREAKPOINTS)) || (!unsupportedCommands.includes(DZRP.CMD_ADD_BREAKPOINT));
 		this.supportsLOGPOINT = this.supportsASSERTION;
+		this.supportsBreakOnInterrupt = !unsupportedCommands.includes(DZRP.CMD_ENABLE_BREAK_ON_INTERRUPT);
 
 		// Enable/disable state save/restore
 		if (unsupportedCommands.includes(DZRP.CMD_WRITE_STATE)) {
@@ -1100,6 +1101,14 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 			bitString = '_' + value.toString(2).padStart(8, '0') + bitString;
 		}
 		return bitString;
+	}
+
+
+	/** Enables/disables to break program execution if an interrupt occurs.
+	 */
+	protected async sendDzrpCmdEnableBreakOnInterrupt(enable: boolean): Promise<void> {
+		const on = (enable) ? 1 : 0;
+		await this.sendDzrpCmd(DZRP.CMD_ENABLE_BREAK_ON_INTERRUPT, [on]);
 	}
 }
 

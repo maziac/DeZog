@@ -113,6 +113,7 @@ The table below shows which commands are used (X) with what remote:
 | [CMD_EXEC_ASM] (22)                            | -     | x      | x      | -     |
 | [CMD_INTERRUPT_ON_OFF] (23)                    | X     | X      | X      | -     |
 | [CMD_GET_SUPPORTED_COMMANDS] (24)              | X     | X      | X      | -     |
+| [CMD_ENABLE_BREAK_ON_INTERRUPT] (25)           | X     | -      | -      | -     |
 | [CMD_ADD_BREAKPOINT] (40)                      | X     | X      | -      | X     |
 | [CMD_REMOVE_BREAKPOINT] (41)                   | X     | X      | -      | X     |
 | [CMD_ADD_WATCHPOINT] (42)                      | X     | -      | -      | X     |
@@ -756,6 +757,21 @@ If, for example, the remote only supports commands up to ID 24, the remote need 
 - Some of the commands need to be supported always by every remote like e.g. CMD_INIT.
 Nevertheless those are reported here as well.
 - This command MUST be supported by any remote that supports DZRP >= 2.2.0.
+
+
+## CMD_ENABLE_BREAK_ON_INTERRUPT
+Command (Length=1):
+| Index | Size | Value | Description                                               |
+| ----- | ---- | ----- | --------------------------------------------------------- |
+| 0     | 1    | 0-1   | 0=disable break on interrupt, 1=enable break on interrupt |
+
+
+Response (Length=1):
+| Index | Size | Value | Description |
+| ----- | ---- | ----- | ----------- |
+| 0     | 1    | 1-15  | Same seq no |
+
+The command will enable/disable pausing program execution if an interrupt occurs.
 
 
 ## CMD_ADD_BREAKPOINT=40

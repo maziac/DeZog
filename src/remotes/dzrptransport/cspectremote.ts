@@ -1,5 +1,5 @@
 import {DzrpTransportRemote} from './dzrptransportremote';
-import {CSpectType, Settings} from '../../settings/settings';
+import {Settings} from '../../settings/settings';
 import {WithSocket} from './transportsocketmixin';
 
 
@@ -12,13 +12,6 @@ import {WithSocket} from './transportsocketmixin';
  */
 export class CSpectRemote extends WithSocket(DzrpTransportRemote) {
 	protected override logName = 'CSpectRemote';
-
-	/// Constructor.
-	constructor(settingsDzrpType: CSpectType) {
-		super(settingsDzrpType);
-		// Init
-		this.supportsBreakOnInterrupt = false;
-	}
 
 
 	/** ZX81 is not supported.

@@ -1,7 +1,7 @@
 import {DzrpTransportRemote} from './dzrptransportremote';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {Z80RegistersZxNextDecoder} from './z80registerszxnextdecoder';
-import {DzrpTransportType, Settings} from '../../settings/settings';
+import {Settings} from '../../settings/settings';
 
 
 
@@ -12,14 +12,6 @@ import {DzrpTransportType, Settings} from '../../settings/settings';
 export class DzrpDezogIfRemote extends DzrpTransportRemote {
 	// Value to catch the MESSAGE_START_BYTE if received data was 1 byte only.
 	protected msgStartByteFound: boolean;
-
-
-	/// Constructor.
-	constructor(settingsDzrpType: DzrpTransportType) {
-		super(settingsDzrpType);
-		// Init
-		this.supportsBreakOnInterrupt = false;
-	}
 
 
 	/** Override to create another decoder.
