@@ -573,7 +573,8 @@ Response (Length=1):
 Notes:
 - This command is only used by the ZX Next, not by the emulators.
 - N is max. 16383 ((65536-2)/4)
-- long addresses (with bank info) are passed, bank=0: 64k address
+- Long addresses (with bank info) are passed, bank=0: 64k address
+- Memory is only restored if the (to be restored) memory value is 0xC7 (=RST0). I.e. if the debugged program has (self-) modified code, it is left untouched.
 
 
 ## CMD_LOOPBACK=15
