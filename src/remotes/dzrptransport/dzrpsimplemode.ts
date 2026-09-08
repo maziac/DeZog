@@ -153,11 +153,12 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 				longBp2Address = Z80Registers.createLongAddress(bp2Addr64k, slots);
 
 			// Check breakpoints
-			if (this.checkBreakpoint(longBp1Address) || this.checkBreakpoint(longBp2Address)) {
+			let stepError = this.checkBreakpoint(longBp1Address) || this.checkBreakpoint(longBp2Address);
+			if (stepError) {
 				const longAddr = this.getPCLong();
 				const breakInfo: BreakInfo = {
 					longAddr,
-					reasonString: "Cannot step at address " + Utility.getHexString(longAddr, 4) + "h.",
+					reasonString: "Cannot step: " + stepError,
 					reasonNumber: BREAK_REASON_NUMBER.STEPPING_NOT_ALLOWED
 				};
 				this.emit('warning', breakInfo.reasonString);
