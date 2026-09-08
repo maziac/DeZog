@@ -372,10 +372,10 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	/** Called when data has been received.
 	 */
 	protected dataReceived(data: Buffer) {
-		LogTransport.log('dataReceived, count=' + data.length);
-		const ltxt = 'dataReceived, Rawdata: ' + Utility.getStringFromData(data);
-		LogTransport.log(ltxt);
-		LogDzrpNtf.log(ltxt);
+		// LogTransport.log('dataReceived, count=' + data.length);
+		// const ltxt = 'dataReceived, Rawdata: ' + Utility.getStringFromData(data);
+		// LogTransport.log(ltxt);
+		// LogDzrpNtf.log(ltxt);
 
 		// Add data to existing buffer
 		this.receivedData = Buffer.concat([this.receivedData, data]);
@@ -412,9 +412,9 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		const strippedBuffer = this.receivedData.subarray(4, this.expectedLength);
 
 		// Log
+		const timestamp = '[' + Log.getTimeString() + ']';
 		const txt = this.dzrpRespBufferToString(this.receivedData, 0, this.expectedLength);
-		LogTransport.log('<<< Remote: Received ' + txt);
-		LogDzrpNtf.log('<<< Remote: Received ' + txt); // TODO: Remove
+		LogTransport.log(timestamp + ' ' + '<<< Remote: Received ' + txt);
 
 		// Handle received buffer
 		this.receivedMsg(strippedBuffer);
@@ -495,8 +495,8 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 			// Check response
 			if (recSeqno != seqno) {
 				const error = Error("DZRP: Received wrong SeqNo. '" + recSeqno + "' instead of expected '" + seqno + "'");
-				LogTransport.log("Error: " + error);
-				LogDzrpNtf.log("Error: " + error);
+				LogTransport.log(error);
+				LogDzrpNtf.log(error);
 				// Note: 'error' events have a special handling and throw an error if event was not handled:
 				// "For all EventEmitter objects, if an 'error' event handler is not provided, the error will be thrown."
 				try {

@@ -1,4 +1,4 @@
-import {LogTransport} from '../../log';
+import {Log, LogTransport} from '../../log';
 import {DzrpTransportRemote} from './dzrptransportremote';
 import {ErrorWrapper} from '../../misc/errorwrapper';
 import {SerialPort} from 'serialport';
@@ -37,6 +37,7 @@ export function WithSerial<TBase extends Constructor<DzrpTransportRemote>>(Base:
 			this.serialPort = new SerialPort({
 				path: serialPath,
 				baudRate: 921600,
+				//baudRate: 1228800,
 				autoOpen: false
 			});
 
@@ -117,8 +118,9 @@ export function WithSerial<TBase extends Constructor<DzrpTransportRemote>>(Base:
 			// Send buffer
 			return new Promise<void>((resolve, reject) => {
 				// Send data
+				const timestamp = '[' + Log.getTimeString() + ']';
 				const txt = this.dzrpCmdBufferToString(buffer);
-				LogTransport.log('>>> ' + this.logName + ': Sending ' + txt);
+				LogTransport.log(timestamp + ' ' + '>>> ' + this.logName + ': Sending ' + txt);
 				let outerError;	// TODO: What is this needed for?
 				try {
 					this.writeToSerialPort(buffer, (error) => {

@@ -257,7 +257,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * 'receivedData'.
 	 */
 	protected dataReceived(data: string) {
-		LogTransport.log(this.logName + ': dataReceived: ' + Utility.maxString(data, 50) + ', count=' + data.length);
+		//LogTransport.log(this.logName + ': dataReceived: ' + Utility.maxString(data, 50) + ', count=' + data.length);
 
 		try {
 			// Add data to existing buffer

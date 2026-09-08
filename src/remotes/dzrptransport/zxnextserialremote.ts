@@ -1,5 +1,4 @@
-import {LogDzrpNtf, LogTransport} from '../../log';
-import {Utility} from '../../misc/utility';
+import {LogTransport} from '../../log';
 import {ZxNextType} from '../../settings/settings';
 import {DzrpDezogIfRemote} from './dzrpdezogifremote';
 import {WithSerial} from './transportserialmixin';
@@ -41,9 +40,9 @@ export class ZxNextSerialRemote extends WithSerial(DzrpDezogIfRemote) {
 	 * I.e. all received messages start with 0xA5.
 	 */
 	protected dataReceived(data: Buffer) {
-		const txt = 'dataReceived, Rawdata: ' + Utility.getStringFromData(data);
-		LogTransport.log(txt);
-		LogDzrpNtf.log(txt);
+		// const txt = 'dataReceived, Rawdata: ' + Utility.getStringFromData(data);
+		// LogTransport.log(txt);
+		// LogDzrpNtf.log(txt);
 
 		let nData = data;
 

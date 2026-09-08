@@ -49,6 +49,17 @@ export class Log {
 		LogGlobal.log(...args);
 	}
 
+
+	/** Returns a formatted time string in the format "HH:MM:SS.mmm" */
+	public static getTimeString() {
+		const date = new Date();
+		const s = date.getHours().toString().padStart(2, '0') + ':'
+			+ date.getMinutes().toString().padStart(2, '0') + ':'
+			+ date.getSeconds().toString().padStart(2, '0') + '.'
+			+ date.getMilliseconds().toString().padStart(3, '0');
+		return s;
+	}
+
 	/** Constructor.
 	 * @param pauseLogTime The pause time in seconds for additional indication logs.
 	 */

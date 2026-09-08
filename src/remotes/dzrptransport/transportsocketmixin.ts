@@ -1,6 +1,6 @@
 import {Socket} from "net";
 import {DzrpTransportRemote} from "./dzrptransportremote";
-import {LogTransport} from "../../log";
+import {Log, LogTransport} from "../../log";
 import {ErrorWrapper} from "../../misc/errorwrapper";
 import {Settings} from "../../settings/settings";
 
@@ -125,8 +125,9 @@ export function WithSocket<TBase extends Constructor<DzrpTransportRemote>>(Base:
 			// Send buffer
 			return new Promise<void>(resolve => {
 				// Send data
+				const timestamp = '[' + Log.getTimeString() + ']';
 				const txt = this.dzrpCmdBufferToString(buffer);
-				LogTransport.log('>>> ' + this.logName + ': Sending ' + txt);
+				LogTransport.log(timestamp + ' ' + '>>> ' + this.logName + ': Sending ' + txt);
 				this.socket.write(buffer, () => {
 					resolve();
 				});
