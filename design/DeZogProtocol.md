@@ -93,7 +93,6 @@ The table below shows which commands are used (X) with what remote:
 | [CMD_CLOSE]   (2)                              | -     | X      | X      | X     |
 | [CMD_GET_REGISTERS] (3)                        | X     | X      | X      | -     |
 | [CMD_SET_REGISTER] (4)                         | X     | X      | X      | X     |
-| [CMD_WRITE_BANK] (5)                           | X     | X      | X      | -     |
 | [CMD_CONTINUE] (6)                             | X     | X      | X      | X     |
 | [CMD_PAUSE] (7)                                | X     | X      | X**    | X     |
 | [CMD_READ_MEM] (8)                             | X     | X      | X      | X     |
@@ -137,6 +136,8 @@ Added:
 - CMD_ENABLE_BREAK_ON_INTERRUPT to disable/enable pausing the debugged program on entering an interrupt.
 
 Changed:
+- CMD_READ_MEM/CMD_WRITE_MEM extended to allow usage of bank number.
+- CMD_WRITE_BANK removed (use CMD_WRITE_MEM instead)
 - Sequence number range changed from 1-255 to 1-15.
 - Explanation for "normal" and "simple" mode added.
 
@@ -147,7 +148,7 @@ Added:
 - CMD_READ_PORT: Reading a port.
 - CMD_WRITE_PORT: Writing to a port.
 - CMD_EXEC_ASM: Executing a small assembler program.
-- CMD_INTERRUPT_ON_OFF: Command to enable disable the interrupts.
+- CMD_INTERRUPT_ON_OFF: Command to enable/disable the interrupts.
 
 
 ### 2.0.0
@@ -349,34 +350,6 @@ Response (Length=1):
 | 0     | 1    | 1-15  | Same seq no |
 
 
-## CMD_WRITE_BANK=5
-Command (Length=1+N):
-| Index | Size | Value  | Description                |
-| ----- | ---- | ------ | -------------------------- |
-| 0     | 1    | 0-255  | Bank number                |
-| 1     | 1    | \[0]   | First byte of memory block |
-| ..    | ..   | ...    | ...                        |
-| *N    | 1    | \[N-1] | Last byte of memory block  |
-
-
-Example for ZXNext with 8K memory banks:
-| Index | Size | Value     | Description                |
-| ----- | ---- | --------- | -------------------------- |
-| 0     | 1    | 0-223     | 8k bank number             |
-| 1     | 1    | \[0]      | First byte of memory block |
-| ..    | ..   | ...       | ...                        |
-| 8191  | 1    | \[0x1FFF] | Last byte of memory block  |
-
-
-Response (Length=2+n):
-| Index | Size | Value               | Description                                                                                                       |
-| ----- | ---- | ------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 0     | 1    | 1-15                | Same seq no                                                                                                       |
-| *1    | 1    | 0-255               | Error: 0=no error, 1 = error.                                                                                     |
-| *2    | 1-n  | 0-terminated string | Either 0 or a string which explains the error. E.g. one could have tried to overwrite ROM or the DezogIf program. |
-
-Is used to write the ZX Spectrum/ZX Next sna and nex files.
-
 ## CMD_CONTINUE=6
 Command (Length=11):
 | Index | Size | Value    | Description                                                                                                               |
@@ -437,7 +410,7 @@ The notification must be sent AFTER the CMD_PAUSE response.
 Command (Length=7):
 | Index | Size | Value | Description               |
 | ----- | ---- | ----- | ------------------------- |
-| 0     | 1    | 0     | reserved                  |
+| 0     | 1    | 0-255 | bankp1                    |
 | 1     | 2    | addr  | Start of the memory block |
 | 3     | 2    | n     | Size of the memory block  |
 
@@ -450,12 +423,20 @@ Response (Length=N+1):
 | ..    | ..   | ...        | ...                        |
 | 1+n-1 | 1    | addr\[n-1] | Last byte of memory block  |
 
+If bankp1 is 0:
+- The memory is read from the 64k memory address space.
+
+If bankp1 > 1:
+- The memory is read from the bank specified by bankp1. The used bank is bankp1-1.
+E.g. if bankp1 is 6 then bank number 5 is read.
+- addr: This is the start of the block inside the bank. The high bits of the addr (>bank-size) are clipped. Example: if bank-size is 0x2000 and addr is 0xE007 then the memory block is read from offset 7 inside the bank.
+
 
 ## CMD_WRITE_MEM=9
 Command (Length=4+N):
 | Index | Size | Value      | Description                |
 | ----- | ---- | ---------- | -------------------------- |
-| 0     | 1    | 0          | reserved                   |
+| 0     | 1    | 0          | bankp1                     |
 | 1     | 2    | addr       | Start of the memory block  |
 | 3     | 1    | addr\[0]   | First byte of memory block |
 | ...   | ...  | ...        | ...                        |
@@ -466,6 +447,14 @@ Response (Length=1):
 | Index | Size | Value | Description |
 | ----- | ---- | ----- | ----------- |
 | 0     | 1    | 1-15  | Same seq no |
+
+If bankp1 is 0:
+- The memory is written to the 64k memory address space.
+
+If bankp1 > 1:
+- The memory is read from the bank specified by bankp1. The used bank is bankp1-1.
+E.g. if bankp1 is 6 then bank number 5 is read.
+- addr: This is the start of the block inside the bank. The high bits of the addr (>bank-size) are clipped. Example: if bank-size is 0x2000 and addr is 0xE007 then the memory block is read from offset 7 inside the bank.
 
 
 ## CMD_SET_SLOT=10
