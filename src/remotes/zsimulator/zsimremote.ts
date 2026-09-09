@@ -2,7 +2,7 @@ import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80_REG, Z80Registers} from '../z80registers';
 import {Z80Ports} from './z80ports';
 import {Z80Cpu} from './z80cpu';
-import {Settings, SettingsParameters, ZSimType} from '../../settings/settings';
+import {SettingsParameters, ZSimType} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {MemBuffer} from '../../misc/membuffer';
@@ -1154,15 +1154,16 @@ export class ZSimRemote extends DzrpRemote {
 	 * Therefore first the "normal" load routine is called and then a HW emulation is
 	 * installed that is invoked when the LOAD/SAVE routine (0x0207) is called.
 	 * This routine takes care of the loading of the second file.
+	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinZx81(filePath: string): Promise<void> {
+	protected async loadBinZx81(filePath: string): Promise<number | undefined> {
 		// Remember the file's directory
 		if (this.zx81LoadOverlay) {
 			const folder = path.dirname(filePath);
 			this.zx81LoadOverlay.setFolder(folder);
 		}
 		// Call super
-		await super.loadBinZx81(filePath);
+		return await super.loadBinZx81(filePath);
 	}
 
 
@@ -1173,23 +1174,12 @@ export class ZSimRemote extends DzrpRemote {
 	 * E.g. as long as only 16k banks 0, 2 and 5 are used in the SNA file it
 	 * is possible to load it onto a ZX48K.
 	 * See https://faqwiki.zxnet.co.uk/wiki/SNA_format
+	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinSna(filePath: string): Promise<void> {
-
+	protected async loadBinSna(filePath: string): Promise<number | undefined> {
 		// Load and parse file
 		const snaFile = new SnaFile();
 		snaFile.readFile(filePath);
-
-		// Check if topOfStack is set
-		if (Settings.launch.topOfStack) {
-			// For p-files topOfStack is set automatically, send a warning
-			this.emit('warning', "Setting 'topOfStack' is the launch.json is not necessary. For .sna files 'topOfStack' can be set automatically.");
-		}
-		else {
-			// Set topOfStack automatically.
-			const topSpStack = snaFile.sp;
-			Settings.launch.topOfStack = "0x" + topSpStack.toString(16);
-		}
 
 		// If ZXNext is used then MemoryModelZxNextTwoROM should be used:
 		Utility.assert(!(this.memoryModel instanceof MemoryModelZxNextOneROM));
@@ -1230,7 +1220,6 @@ export class ZSimRemote extends DzrpRemote {
 				throw Error("A " + sna128String + "SNA file can't be loaded into a '" + this.memoryModel.name + "' memory model.");
 			}
 		}
-
 		// TODO: Call super instead of copying the code below
 
 		// Set the border
@@ -1263,6 +1252,8 @@ export class ZSimRemote extends DzrpRemote {
 		// Interrupt (IFF2)
 		const interrupt_enabled = (snaFile.iff2 & 0b00000100) !== 0;
 		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
+
+		return snaFile.sp;
 	}
 
 	/** Loads a .z80 file.
@@ -1271,8 +1262,9 @@ export class ZSimRemote extends DzrpRemote {
 	 * as long as no memory is used that is not present in the memory model.
 	 * E.g. as long as only 16k banks 0, 2 and 5 are used in the z80 file it
 	 * is possible to load it onto a ZX48K.
+	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinZ80(filePath: string): Promise<void> {
+	protected async loadBinZ80(filePath: string): Promise<number | undefined> {
 		// Load and parse file
 		const z80File = new Z80File();
 		z80File.readFile(filePath);
@@ -1358,6 +1350,8 @@ export class ZSimRemote extends DzrpRemote {
 		if (z80File.is48kFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNextTwoRom)) {
 			this.z80Cpu.ports.write(0x7FFD, 0b00010000);
 		}
+
+		return z80File.sp;
 	}
 
 
@@ -1369,8 +1363,9 @@ export class ZSimRemote extends DzrpRemote {
 	 * E.g. as long as only 16k banks 0, 2 and 5 are used in the NEX file it
 	 * is possible to load it onto a ZX48K.
 	 * See https://wiki.specnext.dev/NEX_file_format
+	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinNex(filePath: string): Promise<void> {
+	protected async loadBinNex(filePath: string): Promise<number | undefined> {
 		// Check for 128K
 		if (!(this.memoryModel instanceof MemoryModelZxNextTwoRom))
 			throw Error("A NEX file can only be loaded into a 'ZXNEXT' memory model. This is a '" + this.memoryModel.name + "' memory model.");
@@ -1403,6 +1398,8 @@ export class ZSimRemote extends DzrpRemote {
 
 		// Set IM (Interrupt Mode) to 1 for ZX Spectrum.
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, 1);
+
+		return nexFile.sp;
 	}
 
 

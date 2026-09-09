@@ -22,7 +22,7 @@ export class DzrpDezogIfRemote extends DzrpTransportRemote {
 
 	/** ZX81 is not supported.
 	 */
-	protected async loadBinZx81(filePath: string): Promise<void> {
+	protected async loadBinZx81(filePath: string): Promise<number | undefined> {
 		throw Error("File extension in '" + filePath + "' not supported with remoteType:'" + Settings.launch.remoteType + "'.");
 	}
 

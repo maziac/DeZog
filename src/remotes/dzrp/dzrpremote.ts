@@ -1461,19 +1461,21 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 
 	/** Loads .nex, .sna or .p files.
+	 * @returns The sp after loading the file.
 	 */
-	public async loadBin(filePath: string): Promise<void> {
+	public async loadBin(filePath: string): Promise<number | undefined> {
+		let sp: number | undefined;
 		try {
 			// Check file extension
 			const ext = path.extname(filePath).toLowerCase();
 			if (ext === '.sna' || ext === '.snx')
-				await this.loadBinSna(filePath);
+				sp = await this.loadBinSna(filePath);
 			else if (ext === '.z80')
-				await this.loadBinZ80(filePath);
+				sp = await this.loadBinZ80(filePath);
 			else if (ext === '.nex')
-				await this.loadBinNex(filePath);
+				sp = await this.loadBinNex(filePath);
 			else if (ext === '.p' || ext === '.81' || ext === '.p81')
-				await this.loadBinZx81(filePath);
+				sp = await this.loadBinZx81(filePath);
 			else {
 				// Error: unsupported file
 				throw Error("File extension in '" + filePath + "' not supported with remoteType:'" + Settings.launch.remoteType + "'.");
@@ -1481,6 +1483,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		} catch (e) {
 			throw e;	// Rethrow
 		}
+		return sp;
 	}
 
 
@@ -1492,8 +1495,9 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * The System VARS 0x4000-0x4008 are set according to the available RAM size.
 	 *
 	 * See https://k1.spdns.de/Develop/Projects/zasm/Info/O80%20and%20P81%20Format.txt
+	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinZx81(filePath: string): Promise<void> {
+	protected async loadBinZx81(filePath: string): Promise<number | undefined> {
 		// Find RAMTOP: Fill memory, read it back and check until which address it is correct.
 		// This would work with Remotes even if the memory model is not known.
 		// This does, more or less, the same as the ZX81.
@@ -1515,16 +1519,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		const ramTop = (0x4000 + ramSize) & 0xFFFF;
 		const topStack = (ramTop - 4) & 0xFFFF;
 		let topSpStack = topStack;
-
-		// Check if topOfStack is set
-		if (Settings.launch.topOfStack) {
-			// For p-files topOfStack is set automatically, send a warning
-			this.emit('warning', "Setting 'topOfStack' in the launch.json is not necessary. For .p files 'topOfStack' can be set automatically.");
-		}
-		else {
-			// Set topOfStack automatically.
-			Settings.launch.topOfStack = "0x" + topSpStack.toString(16);
-		}
 
 		// Read file
 		let fileBuffer = fs.readFileSync(filePath);
@@ -1607,13 +1601,16 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		if (0x4009 + len > topStack) {
 			this.emit('warning', `Loading ${path.basename(filePath)}: Note: The machine stack was overwritten by the data`);
 		}
+
+		return topSpStack;
 	}
 
 
 	/** Loads a .sna file.
 	 * See https://faqwiki.zxnet.co.uk/wiki/SNA_format
+	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinSna(filePath: string): Promise<void> {
+	protected async loadBinSna(filePath: string): Promise<number | undefined> {
 		// Load and parse file
 		const snaFile = new SnaFile();
 		snaFile.readFile(filePath);
@@ -1663,13 +1660,16 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		// Check if interrupt should be enabled
 		const interrupt_enabled = (snaFile.iff2 & 0b00000100) !== 0;
 		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
+
+		return snaFile.sp;
 	}
 
 
 	/** Loads a .z80 file.
 	 * See https://worldofspectrum.org/faq/reference/z80format.htm
+	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinZ80(filePath: string): Promise<void> {
+	protected async loadBinZ80(filePath: string): Promise<number | undefined> {
 		// Load and parse file
 		const z80File = new Z80File();
 		z80File.readFile(filePath);
@@ -1719,13 +1719,16 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		// Check if interrupt should be enabled
 		const interrupt_enabled = (z80File.iff1 !== 0);
 		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
+
+		return z80File.sp;
 	}
 
 
 	/** Loads a .nex file.
 	 * See https://wiki.specnext.dev/NEX_file_format
+	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinNex(filePath: string): Promise<void> {
+	protected async loadBinNex(filePath: string): Promise<number | undefined> {
 		// Load and parse file
 		const nexFile = new NexFile();
 		nexFile.readFile(filePath);
@@ -1754,6 +1757,8 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		// Set the SP and PC registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.SP, nexFile.sp);
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, nexFile.pc);
+
+		return nexFile.sp;
 	}
 
 

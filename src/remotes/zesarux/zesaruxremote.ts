@@ -1591,8 +1591,9 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Loads sna, nex or tap file.
 	 * @param path The (absolute) path to the file.
 	 */
-	public async loadBin(path: string): Promise<void> {
+	public async loadBin(path: string): Promise<number | undefined> {
 		await zSocket.sendAwait('smartload "' + Settings.launch.load + '"');	// Note: this also changes cpu to tbblue
+		return undefined;
 	}
 
 

@@ -249,7 +249,11 @@ export class RemoteBase extends EventEmitter {
 		// Load sna or nex file
 		const loadPath = Settings.launch.load;
 		if (loadPath) {
-			await this.loadBin(loadPath);
+			const sp = await this.loadBin(loadPath);
+			// Use sp if topOfStack is not set
+			if (sp && !Settings.launch.topOfStack) {
+				Settings.launch.topOfStack = "0x" + sp.toString(16);
+			}
 		}
 
 		// Load registers
@@ -287,8 +291,9 @@ export class RemoteBase extends EventEmitter {
 	/**
 	 * Loads sna or nex file. (or any other file type supported by remote.)
 	 * @param path The (absolute) path to the file.
+	 * @returns The sp after loading the file.
 	 */
-	public async loadBin(path: string): Promise<void> {
+	public async loadBin(path: string): Promise<number | undefined> {
 		// Override
 		throw Error('Loading files is not supported.');
 	}

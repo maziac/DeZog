@@ -862,8 +862,9 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * machine spectrum.
 	 * If it is used with some other machine the behavior is undefined
 	 * = user error.
+	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinSna(filePath: string): Promise<void> {
+	protected async loadBinSna(filePath: string): Promise<number | undefined> {
 		// Load and parse file
 		const snaFile = new SnaFile();
 		snaFile.readFile(filePath);
@@ -900,6 +901,8 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		//await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
 		//await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
 		//Setting the interrupt
+
+		return snaFile.sp;
 	}
 
 
@@ -912,8 +915,9 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * machine spectrum.
 	 * If it is used with some other machine the behavior is undefined
 	 * = user error.
+	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinZ80(filePath: string): Promise<void> {
+	protected async loadBinZ80(filePath: string): Promise<number | undefined> {
 		// Load and parse file
 		const z80File = new Z80File();
 		z80File.readFile(filePath);
@@ -964,13 +968,16 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		//await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
 		//await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
 		//Setting the interrupt
+
+		return z80File.sp;
 	}
 
 
 	/** Loads a .nex file.
 	 * See https://wiki.specnext.dev/NEX_file_format
+	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinNex(filePath: string): Promise<void> {
+	protected async loadBinNex(filePath: string): Promise<number | undefined> {
 		throw Error('Cannot load a .nex file into MAME.');
 	}
 }
