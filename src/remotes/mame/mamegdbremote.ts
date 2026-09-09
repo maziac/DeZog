@@ -787,11 +787,15 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 
 	/** Sends the command to retrieve a memory dump.
+	 * Sends the command to retrieve a memory dump.
+	 * @param bankp1 The bank+1 value. 0=full 64k memory, 1=bank0, 2=bank1, etc.
 	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	protected async sendDzrpCmdReadMem(addr64k: number, size: number): Promise<Uint8Array> {
+	protected async sendDzrpCmdReadMem(bankp1: number, addr64k: number, size: number): Promise<Uint8Array> {
+		if (bankp1 > 0)
+			throw Error('MAME gdbstub does not support banked memory reads.');
 		const cmd = 'm' + addr64k.toString(16) + ',' + size.toString(16);
 		const resp = await this.sendPacketData(cmd);
 		// Parse the hex values
@@ -807,10 +811,14 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 
 	/** Sends the command to write a memory dump.
+	 * @param bankp1 The bank+1 value. 0=full 64k memory, 1=bank0, 2=bank1, etc.
 	 * @param addr64k The memory start address (64k).
 	 * @param dataArray The data to write.
 	  */
-	public async sendDzrpCmdWriteMem(addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
+	public async sendDzrpCmdWriteMem(bankp1: number, addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
+		if (bankp1 > 0)
+			throw Error('MAME gdbstub does not support banked memory writes.');
+
 		const chunkSize = 2000;	// empirical value: at least on macos up to 5000 seems safe.
 		let totalSize = dataArray.length;
 		let i = 0;

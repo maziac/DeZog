@@ -359,7 +359,7 @@ suite('Zx81UlaScreen', () => {
 		test('getUlaScreen returns no dfile if no display', () => {
 			zx81UlaScreen.noDisplay = true;
 			const charset = new Uint8Array(512);
-			z80Cpu.memory.readBlock = (addr64k: number, size: number) => (addr64k === 0x1E00) ? charset : undefined as any;
+			z80Cpu.memory.readBlock64 = (addr64k: number, size: number) => (addr64k === 0x1E00) ? charset : undefined as any;
 			const result = zx81UlaScreen.getUlaScreen();
 			assert.equal(result.name, 'zx81');
 			assert.equal(result.borderColor, 15);
@@ -374,7 +374,7 @@ suite('Zx81UlaScreen', () => {
 			charset = charset.map(() => Math.floor(Math.random() * 256));
 			let dfile = new Uint8Array(33 * 24);
 			dfile = dfile.map(() => Math.floor(Math.random() * 256));
-			z80Cpu.memory.readBlock = (addr64k: number, size: number) => {
+			z80Cpu.memory.readBlock64 = (addr64k: number, size: number) => {
 				if (addr64k === 0x6001)
 					return dfile;
 				if (addr64k === 0x1E00)

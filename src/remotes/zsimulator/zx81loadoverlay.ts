@@ -101,7 +101,7 @@ export class Zx81LoadOverlay extends EventEmitter {
 				if (isNaN(saveAddr))
 					throw new Error(`Trying to SAVE "${zx81FName}": Invalid address`);
 				if (isNaN(saveLen))
-					 throw new Error(`Trying to SAVE "${zx81FName}": Invalid length`);
+					throw new Error(`Trying to SAVE "${zx81FName}": Invalid length`);
 				fname = fname.substring(0, semicolonPos);
 			}
 
@@ -133,7 +133,7 @@ export class Zx81LoadOverlay extends EventEmitter {
 				throw Error("Trying to save " + saveLen.toString() + " bytes");
 
 			// Get memory
-			const data = z80Cpu.memory.readBlock(saveAddr, saveLen);
+			const data = z80Cpu.memory.readBlock64(saveAddr, saveLen);
 
 			// Check if the file already exists
 			let filePath = this.folder + fname;
@@ -165,7 +165,7 @@ export class Zx81LoadOverlay extends EventEmitter {
 			const tstates = Math.ceil(3250000 * saveLen / 38);
 			return tstates;
 		}
-		catch(error) {
+		catch (error) {
 			this.emit('message', "SAVE error: " + error.message);
 			return 3250000;    // Return the equivalent of 1 sec @ 3.25Mhz
 		}
@@ -241,7 +241,7 @@ export class Zx81LoadOverlay extends EventEmitter {
 		// Load raw file
 		const fileBuffer = fs.readFileSync(filePath);
 		// Write file
-		this.z80Cpu.memory.writeBlock(addr & 0xFFFF, fileBuffer, [BankType.RAM]);
+		this.z80Cpu.memory.writeBlock64k(addr & 0xFFFF, fileBuffer, [BankType.RAM]);
 		return fileBuffer.length;
 	}
 
@@ -278,7 +278,7 @@ export class Zx81LoadOverlay extends EventEmitter {
 		const ramSize = ramTop - 0x4000;
 
 		// Write file
-		z80Cpu.memory.writeBlock(0x4009, fileBuffer, [BankType.RAM]);
+		z80Cpu.memory.writeBlock64k(0x4009, fileBuffer, [BankType.RAM]);
 
 		// Check possible issues
 		if (len < 0x3c) {
@@ -312,7 +312,7 @@ export class Zx81LoadOverlay extends EventEmitter {
 	 * @param char The ZX81 character code. Will be anded with 0x3F.
 	 * @returns The ASCII character as a string.
 	 */
-	protected zx81CharToAscii(char: number): string{
+	protected zx81CharToAscii(char: number): string {
 		char &= 0x3F;
 		if (char >= 0x26)	// A - Z
 			return String.fromCharCode(char + 0x1B);

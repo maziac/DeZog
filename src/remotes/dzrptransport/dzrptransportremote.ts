@@ -804,11 +804,13 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 
 
 	/** Sends the command to retrieve a memory dump.
+	 * Sends the command to retrieve a memory dump.
+	 * @param bankp1 The bank+1 value. 0=full 64k memory, 1=bank0, 2=bank1, etc.
 	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	protected async sendDzrpCmdReadMem(addr64k: number, size: number): Promise<Uint8Array> {
+	protected async sendDzrpCmdReadMem(bankp1: number, addr64k: number, size: number): Promise<Uint8Array> {
 		let buffer;
 		// Handle special case size=0x10000
 		if (size == 0x10000 && addr64k == 0) {
@@ -823,7 +825,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		}
 		else {
 			// Send command to get memory dump
-			const data = await this.sendDzrpCmd(DZRP.CMD_READ_MEM, [0,
+			const data = await this.sendDzrpCmd(DZRP.CMD_READ_MEM, [bankp1,
 				addr64k & 0xFF, addr64k >>> 8,
 				size & 0xFF, size >>> 8]);
 			// Create UInt8Array
@@ -834,12 +836,13 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 
 
 	/** Sends the command to write a memory dump.
-	 * @param addr64k The memory start address.
+	 * @param bankp1 The bank+1 value. 0=full 64k memory, 1=bank0, 2=bank1, etc.
+	 * @param addr64k The memory start address (64k).
 	 * @param dataArray The data to write.
 	  */
-	public async sendDzrpCmdWriteMem(addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
+	public async sendDzrpCmdWriteMem(bankp1: number, addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
 		const data = Buffer.from(dataArray);
-		await this.sendDzrpCmd(DZRP.CMD_WRITE_MEM, [0,
+		await this.sendDzrpCmd(DZRP.CMD_WRITE_MEM, [bankp1,
 			addr64k & 0xFF, addr64k >>> 8,
 			...data]);
 	}

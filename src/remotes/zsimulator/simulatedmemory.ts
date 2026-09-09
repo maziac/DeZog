@@ -230,7 +230,7 @@ export class SimulatedMemory implements Serializable {
 		for (const slotName of this.slotNames) {
 			const index = slotName.index;
 			const bank = this.bankSwitchingContext[slotName.name];
-			if(prevSlots[index] !== bank)
+			if (prevSlots[index] !== bank)
 				this.slots[index] = bank;
 		}
 	}
@@ -658,7 +658,7 @@ export class SimulatedMemory implements Serializable {
 	 * @param size The length of the data in bytes.
 	 * @returns The data as Uint8Array (a new array is returned.)
 	 */
-	public readBlock(startAddr64k: number, size: number): Uint8Array {
+	public readBlock64(startAddr64k: number, size: number): Uint8Array {
 		const data = new Uint8Array(size);
 		let dataOffset = 0;
 
@@ -694,7 +694,7 @@ export class SimulatedMemory implements Serializable {
 	 * @param allowedTypes The allowed bank types. Default is UNKNOWN, ROM and RAM.
 	 * E.g. if you only want to allow to write to RAM set [BankType.RAM].
 	 */
-	public writeBlock(startAddr64k: number, data: Buffer | Uint8Array, allowedTypes: BankType[] = [BankType.ROM, BankType.RAM, BankType.UNKNOWN]) {
+	public writeBlock64k(startAddr64k: number, data: Buffer | Uint8Array, allowedTypes: BankType[] = [BankType.ROM, BankType.RAM, BankType.UNKNOWN]) {
 		if (!(data instanceof Uint8Array))
 			data = new Uint8Array(data);
 		// The block may span several banks.
@@ -727,15 +727,53 @@ export class SimulatedMemory implements Serializable {
 	}
 
 
-	/** Writes a complete memory bank.
+	/** Reads a block of bytes from a bank.
 	 * @param bankNr The bank number.
-	 * @param block The block to write.
+	 * @param offs The offset inside the bank.
+	 * @param size The length of the data in bytes.
+	 * @returns The data as Uint8Array (a new array is returned.)
 	 */
-	public writeBank(bankNr: number, block: Buffer | Uint8Array) {
+	public readBlockBank(bankNr: number, offs: number, size: number): Uint8Array {
+		// The block is inside one bank only. It will wrap around.
 		const bank = this.memoryBanks[bankNr];
-		if (block.length != bank.byteLength)
-			throw Error("writeBank: Block length " + block.length + " not allowed. Expected " + bank.byteLength + ".");
-		bank.set(block);
+		const bankSize = bank.byteLength;
+		const realOffs = offs % bankSize;
+		let realSize = size;
+		if (realOffs + realSize > bankSize)
+			realSize = bankSize - realOffs;
+
+		// Copy
+		const data = bank.subarray(realOffs, realOffs + realSize);
+
+		return data;
+	}
+
+
+	/** Writes a block of bytes.
+	 * @param bankNr The bank number.
+	 * @param offs The offset inside the bank.
+	 * @param data The block to write.
+	 * @param allowedTypes The allowed bank types. Default is UNKNOWN, ROM and RAM.
+	 * E.g. if you only want to allow to write to RAM set [BankType.RAM].
+	 */
+	public writeBlockBank(bankNr: number, offs: number, data: Buffer | Uint8Array, allowedTypes: BankType[] = [BankType.ROM, BankType.RAM, BankType.UNKNOWN]) {
+		if (!(data instanceof Uint8Array))
+			data = new Uint8Array(data);
+		const size = data.byteLength;
+
+		// The block is inside one bank only. It will wrap around.
+		const bank = this.memoryBanks[bankNr];
+		const bankSize = bank.byteLength;
+		const realOffs = offs % bankSize;
+
+		if (realOffs + size > bankSize) {
+			// Shorten origin
+			const realSize = bankSize - realOffs;
+			data = data.subarray(0, realSize);
+		}
+
+		// Copy
+		bank.set(data, realOffs);
 	}
 
 

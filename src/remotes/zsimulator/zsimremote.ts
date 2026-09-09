@@ -1412,6 +1412,8 @@ tstates set value: set t-states to 'value', then create a tick event. E.g. "-e t
 tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e tstates add 1000"
 "zx81-basic-vars [var1] [,var2...]": Get all or certain ZX81 BASIC variables. E.g. "-e zx81 basic-vars" or "-e zx81-basic-vars N Z$"
 `;
+				// Generic dzrp commands
+				response += await super.dbgExec(cmd);
 				return response;
 			}
 			if (cmd_name === "out") {
@@ -1486,8 +1488,8 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 				return response;
 			}
 
-			// Unknown command.
-			return `'${cmd_name}' is not supported on this ${this.remoteType}.`;
+			// Check more
+			return await super.dbgExec(cmd);
 		}
 		catch (e) {	// NOSONAR: is here for debugging purposes to set a breakpoint
 			// Rethrow
@@ -1615,36 +1617,32 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 
 	/**
 	 * Sends the command to retrieve a memory dump.
-	 * @param addr64k The memory start address.
+	 * @param bankp1 The bank+1 value. 0=full 64k memory, 1=bank0, 2=bank1, etc.
+	 * @param addr64k The 64k memory start address (bankp1 == 0) or index into the bank (bankp1 != 0).
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	public async sendDzrpCmdReadMem(addr64k: number, size: number): Promise<Uint8Array> {
-		const buffer = this.memory.readBlock(addr64k, size);
+	public async sendDzrpCmdReadMem(bankp1: number, addr64k: number, size: number): Promise<Uint8Array> {
+		let buffer: Uint8Array;
+		if (bankp1 === 0)
+			buffer = this.memory.readBlock64(addr64k, size);
+		else
+			buffer = this.memory.readBlockBank(bankp1 - 1, addr64k, size);
 		return buffer;
 	}
 
 
 	/**
 	 * Sends the command to write a memory dump.
-	 * @param addr64k The memory start address.
+	 * @param bankp1 The bank+1 value. 0=full 64k memory, 1=bank0, 2=bank1, etc.
+	 * @param addr64k The 64k memory start address (bankp1 == 0) or index into the bank (bankp1 != 0).
 	 * @param dataArray The data to write.
 	  */
-	public async sendDzrpCmdWriteMem(addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
-		this.memory.writeBlock(addr64k, dataArray);
-	}
-
-
-	/**
-	 * Sends the command to write a memory bank.
-	 * This is e.g. used by loadBinSna. The bank number given here is always for a ZXNext memory model
-	 * and need to be scaled to other memory models.
-	 * @param bank 8k memory bank number.
-	 * @param dataArray The data to write.
-	 * @throws An exception if e.g. the bank size does not match.
-	  */
-	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer | Uint8Array): Promise<void> {
-		this.memory.writeBank(bank, dataArray);
+	public async sendDzrpCmdWriteMem(bankp1: number, addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
+		if (bankp1 === 0)
+			this.memory.writeBlock64k(addr64k, dataArray);
+		else
+			this.memory.writeBlockBank(bankp1 - 1, addr64k, dataArray);
 	}
 
 

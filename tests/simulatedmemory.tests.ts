@@ -119,37 +119,37 @@ suite('SimulatedMemory', () => {
 	test('writeBlock/readBlock', () => {
 		const mem = new PagedMemory(8, 256);
 
-		mem.writeBlock(0x0000, new Uint8Array([0xAB]));
-		let result = mem.readBlock(0x0000, 2);
+		mem.writeBlock64k(0x0000, new Uint8Array([0xAB]));
+		let result = mem.readBlock64(0x0000, 2);
 		assert.equal(result[0], 0xAB);
 		assert.equal(result[1], 0);
 
-		mem.writeBlock(0x1000, new Uint8Array([0xAB, 0x12, 0x13, 0x14, 0x15]));
-		result = mem.readBlock(0x1000, 5);
+		mem.writeBlock64k(0x1000, new Uint8Array([0xAB, 0x12, 0x13, 0x14, 0x15]));
+		result = mem.readBlock64(0x1000, 5);
 		assert.equal(result[0], 0xAB);
 		assert.equal(result[1], 0x12);
 		assert.equal(result[2], 0x13);
 		assert.equal(result[3], 0x14);
 		assert.equal(result[4], 0x15);
 
-		mem.writeBlock(0xFFFF, new Uint8Array([0xC0]));
-		result = mem.readBlock(0xFFFF, 1);
+		mem.writeBlock64k(0xFFFF, new Uint8Array([0xC0]));
+		result = mem.readBlock64(0xFFFF, 1);
 		assert.equal(result[0], 0xC0);
-		result = mem.readBlock(0x0000, 1);
+		result = mem.readBlock64(0x0000, 1);
 		assert.equal(result[0], 0xAB);
 
-		mem.writeBlock(0xFFFF, new Uint8Array([0xD1, 0xD2]));
-		result = mem.readBlock(0xFFFF, 2);
+		mem.writeBlock64k(0xFFFF, new Uint8Array([0xD1, 0xD2]));
+		result = mem.readBlock64(0xFFFF, 2);
 		assert.equal(result[0], 0xD1);
 		assert.equal(result[1], 0xD2);
 
-		mem.writeBlock(0xFFFF, Buffer.from([0xE1, 0xE2]));
-		result = mem.readBlock(0xFFFF, 2);
+		mem.writeBlock64k(0xFFFF, Buffer.from([0xE1, 0xE2]));
+		result = mem.readBlock64(0xFFFF, 2);
 		assert.equal(result[0], 0xE1);
 		assert.equal(result[1], 0xE2);
 
-		mem.writeBlock(0x3FFE, Buffer.from([0xF1, 0xF2, 0xF3, 0xF4]));
-		result = mem.readBlock(0x3FFE, 4);
+		mem.writeBlock64k(0x3FFE, Buffer.from([0xF1, 0xF2, 0xF3, 0xF4]));
+		result = mem.readBlock64(0x3FFE, 4);
 		assert.equal(result[0], 0xF1);
 		assert.equal(result[1], 0xF2);
 		assert.equal(result[2], 0xF3);

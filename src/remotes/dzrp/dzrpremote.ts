@@ -385,30 +385,32 @@ export class DzrpRemote extends RemoteBase {
 			await this.sendDzrpCmdWriteBank(bank, data);
 		}
 		else if (cmd_name === "cmd_read_mem") {
-			if (cmdArray.length < 2) {
+			if (cmdArray.length < 3) {
 				// Error
-				throw Error("Expecting at least 2 parameters: address and count.");
+				throw Error("Expecting at least 3 parameters: bank+1, address and count.");
 			}
-			const addr = Utility.parseValue(cmdArray[0]);
-			const count = Utility.parseValue(cmdArray[1]);
-			const data = await this.sendDzrpCmdReadMem(addr, count);
+			const bankp1 = Utility.parseValue(cmdArray[0]);
+			const addr = Utility.parseValue(cmdArray[1]);
+			const count = Utility.parseValue(cmdArray[2]);
+			const data = await this.sendDzrpCmdReadMem(bankp1, addr, count);
 			// Print
 			response = Utility.getHexString(addr, 4) + "h: ";
 			for (const dat of data)
 				response += Utility.getHexString(dat, 2) + "h ";
 		}
 		else if (cmd_name === "cmd_write_mem") {
-			if (cmdArray.length < 2) {
+			if (cmdArray.length < 3) {
 				// Error
-				throw Error("Expecting at least 2 parameters: address and memory content list.");
+				throw Error("Expecting at least 3 parameters: bank+1, address and memory content list.");
 			}
+			const bankp1 = Utility.parseValue(cmdArray.shift()!);
 			const addr = Utility.parseValue(cmdArray.shift()!);
 			// Create test data
 			const length = cmdArray.length;
 			const data = new Uint8Array(length);
 			for (let i = 0; i < data.length; i++)
 				data[i] = Utility.parseValue(cmdArray[i]) & 0xFF;
-			await this.sendDzrpCmdWriteMem(addr, data);
+			await this.sendDzrpCmdWriteMem(bankp1, addr, data);
 		}
 		else if (cmd_name === "cmd_set_slot") {
 			if (cmdArray.length != 2) {
@@ -1440,7 +1442,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * @returns A promise with an Uint8Array.
 	 */
 	public async readMemoryDump(addr64k: number, size: number): Promise<Uint8Array> {
-		return this.sendDzrpCmdReadMem(addr64k, size);
+		return this.sendDzrpCmdReadMem(0, addr64k, size);
 	}
 
 
@@ -1449,7 +1451,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * @param dataArray The data to write.
 	 */
 	public async writeMemoryDump(address: number, dataArray: Uint8Array): Promise<void> {
-		await this.sendDzrpCmdWriteMem(address, dataArray);
+		await this.sendDzrpCmdWriteMem(0, address, dataArray);
 	}
 
 
@@ -1462,7 +1464,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		const objBuffer = fs.readFileSync(filePath);
 
 		// Write as memory dump
-		await this.sendDzrpCmdWriteMem(startAddress, objBuffer);
+		await this.sendDzrpCmdWriteMem(0, startAddress, objBuffer);
 
 		// Make sure that the registers are reloaded
 		//await this.getRegistersFromEmulator();
@@ -1516,8 +1518,8 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		let lenCheck = 0x4000;
 		const initBuffer = new Uint8Array(lenCheck);
 		initBuffer.fill(0x02);
-		await this.sendDzrpCmdWriteMem(0x4000, initBuffer);
-		const cmpBuffer = await this.sendDzrpCmdReadMem(0x4000, lenCheck);
+		await this.sendDzrpCmdWriteMem(0, 0x4000, initBuffer);
+		const cmpBuffer = await this.sendDzrpCmdReadMem(0, 0x4000, lenCheck);
 		let i = 0;
 		for (; i < lenCheck; i++) {
 			if (cmpBuffer[i] !== 0x02)
@@ -1525,7 +1527,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		}
 		// Clear memory
 		const clearBuffer = new Uint8Array(i);
-		await this.sendDzrpCmdWriteMem(0x4000, clearBuffer);
+		await this.sendDzrpCmdWriteMem(0, 0x4000, clearBuffer);
 
 		const ramSize = i;
 		const ramTop = (0x4000 + ramSize) & 0xFFFF;
@@ -1575,17 +1577,17 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			0,	 // 0x4006: Selects [K], [L], [F], or [G] Cursor
 			0xFE, 0xFF]	// 0x4007: PPC     Line Number of most recently executed BASIC line  (($FFFE=cmd line))
 		);
-		await this.sendDzrpCmdWriteMem(0x4000, systemVars);
+		await this.sendDzrpCmdWriteMem(0, 0x4000, systemVars);
 
 		// Restore stack:	76	06	00	3E
 		const stack = new Uint8Array([
 			0x76, 0x06,	// E.g. at 0x7FFC
 			0x00, 0x3E	// E.g. at 0x7FFE
 		]);
-		await this.sendDzrpCmdWriteMem(topSpStack, stack);
+		await this.sendDzrpCmdWriteMem(0, topSpStack, stack);
 
 		// Write file
-		await this.sendDzrpCmdWriteMem(0x4009, fileBuffer);
+		await this.sendDzrpCmdWriteMem(0, 0x4009, fileBuffer);
 
 		// Set topOfStack
 		Settings.launch.topOfStack = "0x" + topSpStack.toString(16);
@@ -1598,7 +1600,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		}
 
 		// E_LINE
-		const elineMem = await this.sendDzrpCmdReadMem(0x4014, 2);
+		const elineMem = await this.sendDzrpCmdReadMem(0, 0x4014, 2);
 		const eline = elineMem[0] | (elineMem[1] << 8);
 		if (0x4009 + len < eline) {
 			await this.sendDzrpCmdSetRegister(Z80_REG.PC, 0x03A6);	// BREAK_CONT_REPEATS;
@@ -2003,11 +2005,12 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 	/** Override.
 	 * Sends the command to retrieve a memory dump.
+	 * @param bankp1 The bank+1 value. 0=full 64k memory, 1=bank0, 2=bank1, etc.
 	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	protected async sendDzrpCmdReadMem(addr64k: number, size: number): Promise<Uint8Array> {
+	protected async sendDzrpCmdReadMem(bankp1: number, addr64k: number, size: number): Promise<Uint8Array> {
 		Utility.assert(false);
 		return new Uint8Array(0);
 	}
@@ -2015,10 +2018,11 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 	/** Override.
 	 * Sends the command to write a memory dump.
+	 * @param bankp1 The bank+1 value. 0=full 64k memory, 1=bank0, 2=bank1, etc.
 	 * @param addr64k The memory start address (64k).
 	 * @param dataArray The data to write.
 	  */
-	public async sendDzrpCmdWriteMem(addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
+	public async sendDzrpCmdWriteMem(bankp1: number, addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
 		Utility.assert(false);
 	}
 

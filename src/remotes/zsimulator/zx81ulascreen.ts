@@ -126,14 +126,14 @@ export class Zx81UlaScreen extends UlaScreen {
 			attribColors.fill(0x26);	// yellow on red
 			// for (let i = 0; i < 0x4000; i++)
 			// 	attribColors[i] = i & 0xFF;
-			this.z80Cpu.memory.writeBlock(0xC000, attribColors);
+			this.z80Cpu.memory.writeBlock64k(0xC000, attribColors);
 		}
 
 		// Read an optional colourization file
 		if (chroma81.colourizationFile) {
 			// Load the colorization file
 			const colourization = Zx81LoadColorization.fromFile(chroma81.colourizationFile);
-			this.z80Cpu.memory.writeBlock(0xC000, colourization.colorMap);
+			this.z80Cpu.memory.writeBlock64k(0xC000, colourization.colorMap);
 			this.borderColor = colourization.borderColor;
 		}
 	}
@@ -360,12 +360,12 @@ export class Zx81UlaScreen extends UlaScreen {
 
 		// Read the charset 0x1E00-0x1FFF (512 bytes)
 		const memory = this.z80Cpu.memory;
-		const charset = memory.readBlock(0x1E00, 512);
+		const charset = memory.readBlock64(0x1E00, 512);
 		// Get the content of the D_FILE system variable (2 bytes).
 		const dfile_ptr = memory.getMemory16(0x400c);
 		// 24 lines of 33 bytes (could be less).
 		const dfile_maxlen = 33 * 24;
-		const dfile = memory.readBlock(dfile_ptr + 1, dfile_maxlen);	// Skips the first 0x76
+		const dfile = memory.readBlock64(dfile_ptr + 1, dfile_maxlen);	// Skips the first 0x76
 
 		// Color / Chroma 81
 		let chroma;
@@ -374,12 +374,12 @@ export class Zx81UlaScreen extends UlaScreen {
 			let data;
 			if (mode === 0) {
 				// Character code mode, mapping table at $C000-$C3FF
-				data = memory.readBlock(0xC000, 0x0400);
+				data = memory.readBlock64(0xC000, 0x0400);
 			}
 			else {
 				// Attribute file mode, colors at DFILE+$8000
 				const addr = (dfile_ptr + 0x8000) & 0xFFFF;
-				data = memory.readBlock(addr, dfile_maxlen);
+				data = memory.readBlock64(addr, dfile_maxlen);
 			}
 			chroma = {
 				mode,
