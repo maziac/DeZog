@@ -23,7 +23,7 @@ export class RemoteFactory {
 		let remote: RemoteBase;
 		switch (launch.remoteType) {
 			case 'zrcp':	// ZEsarUX Remote Control Protocol
-				remote = new ZesaruxRemote();
+				remote = new ZesaruxRemote(launch.zrcp);
 				break;
 			case 'cspect':	// CSpect socket
 				remote = new CSpectRemote(launch.cspect);
@@ -39,7 +39,7 @@ export class RemoteFactory {
 				remote = new ZSimRemote(launch);
 				break;
 			case 'mame':
-				remote = new MameGdbRemote();
+				remote = new MameGdbRemote(launch.mame);
 				break;
 			case 'dzrp':	// Generic dzrp. USB/serial or socket connection.
 				// 'serial' selects the serial connection, otherwise a socket is used.

@@ -1,7 +1,7 @@
 import {zSocket, ZesaruxSocket} from './zesaruxsocket';
 import {Utility} from '../../misc/utility';
 import {Labels} from '../../labels/labels';
-import {Settings} from '../../settings/settings';
+import {Settings, ZrcpType} from '../../settings/settings';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, RemoteBreakpoint} from '../remotebase';
 import {ZesaruxCpuHistory, DecodeZesaruxHistoryInfo} from './zesaruxcpuhistory';
@@ -36,6 +36,9 @@ class Zesarux {
 export class ZesaruxRemote extends RemoteBase {
 	protected override logName = 'ZesaruxRemote';
 
+	// The settings configuration for the ZEsarUX remote.
+	protected settingsZrcpType: ZrcpType;
+
 	/// Minimum required ZEsarUX version.
 	static MIN_ZESARUX_VERSION = '10.3';
 
@@ -64,9 +67,10 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/// Constructor.
-	constructor() {
+	constructor(settingsZrcpType: ZrcpType) {
 		super();
 		// Init
+		this.settingsZrcpType = settingsZrcpType;
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = true;
 		this.supportsLOGPOINT = false;

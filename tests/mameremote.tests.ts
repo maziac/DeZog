@@ -97,8 +97,9 @@ suite('MameRemote', () => {
 			const cfg: any = {
 				remoteType: 'mame'
 			};
-			Settings.launch = Settings.Init(cfg);
-			mame = new MameGdbRemote() as any;
+			const launch = Settings.Init(cfg);
+			Settings.launch = launch;
+			mame = new MameGdbRemote(launch.mame) as any;
 		});
 
 		test('checksum', () => {
@@ -218,8 +219,9 @@ suite('MameRemote', () => {
 			}
 		}
 		// Init
-		Settings.launch = Settings.Init({remoteType: 'mame'} as any);
-		const mockMame = new MockMame() as any;
+		const launch = Settings.Init({remoteType: 'mame'} as any);
+		Settings.launch = launch;
+		const mockMame = new MockMame(launch.mame) as any;
 
 		// Set PC to 0xEC12
 		const pc = 0xEC12;
@@ -243,8 +245,9 @@ suite('MameRemote', () => {
 			}
 		}
 
-		Settings.launch = Settings.Init({remoteType: 'mame'} as any);
-		const mockMame = new MockMame() as any;
+		const launch = Settings.Init({remoteType: 'mame'} as any);
+		Settings.launch = launch;
+		const mockMame = new MockMame(launch.mame) as any;
 		mockMame.socket = {
 			removeAllListeners() {
 				//

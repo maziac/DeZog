@@ -78,7 +78,7 @@ export function WithSocket<TBase extends Constructor<DzrpTransportRemote>>(Base:
 			});
 
 			// Start socket connection
-			this.socket.setTimeout(DzrpTransportRemote.CONNECTION_TIMEOUT); // TODO: use settingsDzrpType.timeout * 1000 instead of hardcoded value
+			this.socket.setTimeout(this.settingsDzrpTransportType.timeout * 1000);
 			const port = this.settingsDzrpTransportType.port!;
 			const hostname = this.settingsDzrpTransportType.hostname!;
 			this.socket.connect(port, hostname);

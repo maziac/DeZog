@@ -3,7 +3,7 @@ import {GenericBreakpoint} from '../../genericwatchpoint';
 import {LogTransport} from '../../log';
 import {Socket} from 'net';
 import {Utility} from '../../misc/utility';
-import {Settings} from '../../settings/settings';
+import {MameType, Settings} from '../../settings/settings';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';
@@ -27,8 +27,9 @@ const CTRL_C = '\x03';
 export class MameGdbRemote extends DzrpQueuedRemote {
 	protected override logName = 'MameGdbRemote';
 
-	/// Timeout.
-	protected static readonly CONNECTION_TIMEOUT = 1000;	// 1 sec
+	// The settings configuration for the Mame remote.
+	protected settingsMameType: MameType;
+
 
 	// The socket connection.
 	public socket: Socket;
@@ -38,9 +39,10 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 
 	/// Constructor.
-	constructor() {
+	constructor(settingsMameType: MameType) {
 		super();
 		// Init
+		this.settingsMameType = settingsMameType;
 		this.supportsASSERTION = true;
 		this.supportsWPMEM = true;
 		this.supportsLOGPOINT = true;
@@ -58,7 +60,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		// Init socket
 		this.socket = new Socket();
 		this.socket.unref();
-		this.cmdRespTimeoutTime = Settings.launch.mame.timeout * 1000;
+		this.cmdRespTimeoutTime = this.settingsMameType.timeout * 1000;
 
 		// React on-open
 		this.socket.on('connect', () => {
@@ -106,9 +108,9 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		});
 
 		// Start socket connection
-		this.socket.setTimeout(MameGdbRemote.CONNECTION_TIMEOUT); // TODO: use settings timeout
-		const port = Settings.launch.mame.port!;
-		const hostname = Settings.launch.mame.hostname!;
+		this.socket.setTimeout(this.settingsMameType.timeout * 1000);
+		const port = this.settingsMameType.port!;
+		const hostname = this.settingsMameType.hostname!;
 		this.socket.connect(port, hostname);
 	}
 

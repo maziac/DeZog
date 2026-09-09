@@ -1,26 +1,26 @@
 
 import * as assert from 'assert';
 import {suite, test, setup} from 'mocha';
-import { ZesaruxRemote } from '../src/remotes/zesarux/zesaruxremote';
-import { Z80RegistersClass } from '../src/remotes/z80registers';
+import {ZesaruxRemote} from '../src/remotes/zesarux/zesaruxremote';
+import {Z80RegistersClass} from '../src/remotes/z80registers';
 import {Settings} from '../src/settings/settings';
 
 
 suite('ZesaruxEmulator', () => {
 
 	let emul: any;
+	let launch: any;
 
 	setup(() => {
-		const cfg: any={
+		const cfg: any = {
 		};
-		const launch = Settings.Init(cfg);
+		launch = Settings.Init(cfg);
 		Z80RegistersClass.Init(launch);
 	});
 
-
 	suite('ZesaruxCallStack', () => {
 		setup(() => {
-			emul = new ZesaruxRemote();
+			emul = new ZesaruxRemote(launch.zrcp);
 		});
 
 		test('getInterruptName', () => {

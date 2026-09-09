@@ -54,9 +54,6 @@ class MessageBuffer {
  * USES THE DZRP PROTOCOL, YOU SHOULD DERIVE FROM THIS CLASS.
  */
 export class DzrpTransportRemote extends DzrpQueuedRemote {
-	/// Timeouts.
-	protected static readonly CONNECTION_TIMEOUT = 1000;	// 1 sec // TODO: exchange the static TIMEOUTS with the one from the Settings.
-
 	// The current required version of the protocol.
 	// Remotes may overwrite this.
 	protected DZRP_VERSION = [2, 2, 0];
