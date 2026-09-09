@@ -21,7 +21,7 @@ suite('Z80Cpu', () => {
 		for (let i = 0; i < count; i += 2) {
 			const addr = memArray[i];
 			const val = memArray[i + 1];
-			mem.writeBlock(addr, [val]);
+			mem.writeBlock64k(addr, [val]);
 		}
 	}
 
