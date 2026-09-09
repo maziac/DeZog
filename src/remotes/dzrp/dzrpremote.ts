@@ -1494,12 +1494,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * See https://k1.spdns.de/Develop/Projects/zasm/Info/O80%20and%20P81%20Format.txt
 	 */
 	protected async loadBinZx81(filePath: string): Promise<void> {
-		// Check if topOfStack is set
-		if (Settings.launch.topOfStack) {
-			// For p-files topOfStack is set automatically, send a warning
-			this.emit('warning', "'topOfStack' is set in the launch.json but ignored because for .p files 'topOfStack' is set automatically.");
-		}
-
 		// Find RAMTOP: Fill memory, read it back and check until which address it is correct.
 		// This would work with Remotes even if the memory model is not known.
 		// This does, more or less, the same as the ZX81.
@@ -1521,6 +1515,16 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		const ramTop = (0x4000 + ramSize) & 0xFFFF;
 		const topStack = (ramTop - 4) & 0xFFFF;
 		let topSpStack = topStack;
+
+		// Check if topOfStack is set
+		if (Settings.launch.topOfStack) {
+			// For p-files topOfStack is set automatically, send a warning
+			this.emit('warning', "Setting 'topOfStack' in the launch.json is not necessary. For .p files 'topOfStack' can be set automatically.");
+		}
+		else {
+			// Set topOfStack automatically.
+			Settings.launch.topOfStack = "0x" + topSpStack.toString(16);
+		}
 
 		// Read file
 		let fileBuffer = fs.readFileSync(filePath);
@@ -1576,9 +1580,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 
 		// Write file
 		await this.sendDzrpCmdWriteMem(0, 0x4009, fileBuffer);
-
-		// Set topOfStack
-		Settings.launch.topOfStack = "0x" + topSpStack.toString(16);
 
 		// Check possible issues
 		if (len < 0x3c) {

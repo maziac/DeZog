@@ -2,7 +2,7 @@ import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80_REG, Z80Registers} from '../z80registers';
 import {Z80Ports} from './z80ports';
 import {Z80Cpu} from './z80cpu';
-import {SettingsParameters, ZSimType} from '../../settings/settings';
+import {Settings, SettingsParameters, ZSimType} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {MemBuffer} from '../../misc/membuffer';
@@ -1175,9 +1175,21 @@ export class ZSimRemote extends DzrpRemote {
 	 * See https://faqwiki.zxnet.co.uk/wiki/SNA_format
 	 */
 	protected async loadBinSna(filePath: string): Promise<void> {
+
 		// Load and parse file
 		const snaFile = new SnaFile();
 		snaFile.readFile(filePath);
+
+		// Check if topOfStack is set
+		if (Settings.launch.topOfStack) {
+			// For p-files topOfStack is set automatically, send a warning
+			this.emit('warning', "Setting 'topOfStack' is the launch.json is not necessary. For .sna files 'topOfStack' can be set automatically.");
+		}
+		else {
+			// Set topOfStack automatically.
+			const topSpStack = snaFile.sp;
+			Settings.launch.topOfStack = "0x" + topSpStack.toString(16);
+		}
 
 		// If ZXNext is used then MemoryModelZxNextTwoROM should be used:
 		Utility.assert(!(this.memoryModel instanceof MemoryModelZxNextOneROM));
@@ -1218,6 +1230,8 @@ export class ZSimRemote extends DzrpRemote {
 				throw Error("A " + sna128String + "SNA file can't be loaded into a '" + this.memoryModel.name + "' memory model.");
 			}
 		}
+
+		// TODO: Call super instead of copying the code below
 
 		// Set the border
 		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
