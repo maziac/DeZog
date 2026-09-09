@@ -137,9 +137,11 @@ Added:
 
 Changed:
 - CMD_READ_MEM/CMD_WRITE_MEM extended to allow usage of bank number.
-- CMD_WRITE_BANK removed (use CMD_WRITE_MEM instead)
 - Sequence number range changed from 1-255 to 1-15.
 - Explanation for "normal" and "simple" mode added.
+
+Removed:
+- CMD_WRITE_BANK removed (use CMD_WRITE_MEM instead)
 
 
 ### 2.1.0

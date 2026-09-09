@@ -36,7 +36,7 @@ export enum DZRP {
 	CMD_CLOSE = 2,
 	CMD_GET_REGISTERS = 3,
 	CMD_SET_REGISTER = 4,
-	CMD_WRITE_BANK = 5,
+	//CMD_WRITE_BANK = 5, // Deprecated/removed
 	CMD_CONTINUE = 6,
 	CMD_PAUSE = 7,
 	CMD_READ_MEM = 8,
@@ -371,18 +371,6 @@ export class DzrpRemote extends RemoteBase {
 			const regIndex = Utility.parseValue(cmdArray[0]);
 			const value = Utility.parseValue(cmdArray[1]);
 			await this.sendDzrpCmdSetRegister(regIndex as Z80_REG, value);
-		}
-		else if (cmd_name === "cmd_write_bank") {
-			if (cmdArray.length < 1) {
-				// Error
-				throw Error("Expecting 1 parameter: 8k bank number [0-223].");
-			}
-			const bank = Utility.parseValue(cmdArray[0]);
-			// Create test data
-			const data = new Uint8Array(0x2000);
-			for (let i = 0; i < data.length; i++)
-				data[i] = i & 0xFF;
-			await this.sendDzrpCmdWriteBank(bank, data);
 		}
 		else if (cmd_name === "cmd_read_mem") {
 			if (cmdArray.length < 3) {
@@ -1633,8 +1621,8 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		for (const memBank of snaFile.memBanks) {
 			// As 2x 8k memory banks. I.e. DZRP is for ZX Next only.
 			const bank8 = 2 * memBank.bank;
-			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, MemBank16k.BANK16K_SIZE / 2));
-			await this.sendDzrpCmdWriteBank(bank8 + 1, memBank.data.slice(MemBank16k.BANK16K_SIZE / 2));
+			await this.sendDzrpCmdWriteMem(bank8 + 1, 0, memBank.data.slice(0, MemBank16k.BANK16K_SIZE / 2));
+			await this.sendDzrpCmdWriteMem(bank8 + 2, 0, memBank.data.slice(MemBank16k.BANK16K_SIZE / 2));
 		}
 
 		// Set the default slot/bank association
@@ -1689,8 +1677,8 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		for (const memBank of z80File.memBanks) {
 			// As 2x 8k memory banks. I.e. DZRP is for ZX Next only.
 			const bank8 = 2 * memBank.bank;
-			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, MemBank16k.BANK16K_SIZE / 2));
-			await this.sendDzrpCmdWriteBank(bank8 + 1, memBank.data.slice(MemBank16k.BANK16K_SIZE / 2));
+			await this.sendDzrpCmdWriteMem(bank8 + 1, 0, memBank.data.slice(0, MemBank16k.BANK16K_SIZE / 2));
+			await this.sendDzrpCmdWriteMem(bank8 + 2, 0, memBank.data.slice(MemBank16k.BANK16K_SIZE / 2));
 		}
 
 		// Set the default slot/bank association
@@ -1749,8 +1737,8 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			Log.log("loadBinNex: Writing 16k bank " + memBank.bank);
 			// As 2x 8k memory banks
 			const bank8 = 2 * memBank.bank;
-			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, MemBank16k.BANK16K_SIZE / 2));
-			await this.sendDzrpCmdWriteBank(bank8 + 1, memBank.data.slice(MemBank16k.BANK16K_SIZE / 2));
+			await this.sendDzrpCmdWriteMem(bank8 + 1, 0, memBank.data.slice(0, MemBank16k.BANK16K_SIZE / 2));
+			await this.sendDzrpCmdWriteMem(bank8 + 2, 0, memBank.data.slice(MemBank16k.BANK16K_SIZE / 2));
 		}
 
 		// Set the default slot/bank association.
@@ -2023,17 +2011,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * @param dataArray The data to write.
 	  */
 	public async sendDzrpCmdWriteMem(bankp1: number, addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
-		Utility.assert(false);
-	}
-
-
-	/** Override.
-	 * Sends the command to write a memory bank.
-	 * @param bank 8k memory bank number.
-	 * @param dataArray The data to write.
-	 * @throws An exception if e.g. the bank size does not match.
-	  */
-	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer | Uint8Array): Promise<void> {
 		Utility.assert(false);
 	}
 

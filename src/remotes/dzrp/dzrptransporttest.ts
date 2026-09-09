@@ -41,14 +41,6 @@ export class DzrpTransportTest extends EventEmitter {
 			const value = this.rndInt(0, 0xFFFF);
 			await this.remote.sendDzrpCmdSetRegister(index, value);
 		},
-		async () => {
-			console.log('sendDzrpCmdWriteBank');
-			const bank = this.rndInt(0, 80);
-			const data = new Uint8Array(0x2000);
-			const value = this.rndInt(0, 255);
-			data.fill(value);
-			await this.remote.sendDzrpCmdWriteBank(bank, data);
-		},
 		// cmdList.push(async () => {
 		// 	await this.remote.sendDzrpCmdContinue();
 		// });

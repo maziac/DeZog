@@ -848,22 +848,6 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/** Sends the command to write a memory bank.
-	 * @param bank 8k memory bank number.
-	 * @param dataArray The data to write.
-	 * @throws An exception if e.g. the bank size does not match.
-	  */
-	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer | Uint8Array): Promise<void> {
-		const resp = await this.sendDzrpCmd(DZRP.CMD_WRITE_BANK, [bank, ...dataArray]);
-		const error = resp[0];
-		let errorString;
-		if (error != 0) {
-			errorString = Utility.getStringFromBuffer(resp, 1);
-			throw Error("sendDzrpCmdWriteBank: " + errorString);
-		}
-	}
-
-
 	/** Sends the command to set a slot/bank associations (8k banks).
 	 * @param slot The slot to set
 	 * @param bank The 8k bank to associate the slot with.
