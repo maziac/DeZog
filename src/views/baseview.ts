@@ -158,6 +158,7 @@ export class BaseView extends EventEmitter {
 	 * Normally not required.
 	 */
 	public dispose() {
+		this.vscodePanel?.dispose();
 		this.emit('remove');
 	}
 

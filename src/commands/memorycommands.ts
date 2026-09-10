@@ -463,19 +463,26 @@ export class MemoryCommands {
 		}
 
 		// Create new view
-		const panel = new MemoryDumpView();
-		if (bank !== undefined) {
-			// Get bank size
-			const bankSize = Remote.memoryModel.getBankSize(bank);
-			panel.setBank(bank, bankSize);
+		let panel: MemoryDumpView | undefined;
+		try {
+			panel = new MemoryDumpView();
+			if (bank !== undefined) {
+				// Get bank size
+				const bankSize = Remote.memoryModel.getBankSize(bank);
+				panel.setBank(bank, bankSize);
+			}
+			for (let k = 0; k < tokens.length; k += 2) {
+				const start = addrSizes[k];
+				const size = addrSizes[k + 1]
+				panel.addBlock(start, size);
+			}
+			panel.mergeBlocks();
+			await panel.update();
 		}
-		for (let k = 0; k < tokens.length; k += 2) {
-			const start = addrSizes[k];
-			const size = addrSizes[k + 1]
-			panel.addBlock(start, size);
+		catch (e) {
+			panel?.dispose();
+			throw e;
 		}
-		panel.mergeBlocks();
-		await panel.update();
 
 		// Send response
 		return 'OK';
@@ -527,19 +534,27 @@ export class MemoryCommands {
 		}
 
 		// Create new view
-		const panel = new MemoryDiffView();
-		if (bank !== undefined) {
-			// Get bank size
-			const bankSize = Remote.memoryModel.getBankSize(bank);
-			panel.setBank(bank, bankSize);
+		let panel;
+		try {
+			panel = new MemoryDiffView();
+			if (bank !== undefined) {
+				// Get bank size
+				const bankSize = Remote.memoryModel.getBankSize(bank);
+				panel.setBank(bank, bankSize);
+			}
+			for (let k = 0; k < tokens.length; k += 2) {
+				const start = addrSizes[k];
+				const size = addrSizes[k + 1]
+				panel.addBlock(start, size);
+			}
+			panel.mergeBlocks();
+			await panel.update();
 		}
-		for (let k = 0; k < tokens.length; k += 2) {
-			const start = addrSizes[k];
-			const size = addrSizes[k + 1]
-			panel.addBlock(start, size);
+		catch (e) {
+			panel?.dispose();
+			throw e;
 		}
-		panel.mergeBlocks();
-		await panel.update();
+
 
 		// Send response
 		return 'OK';
@@ -595,19 +610,27 @@ export class MemoryCommands {
 		}
 
 		// Create new view
-		const panel = new MemoryDumpViewWord(littleEndian);
-		if (bank !== undefined) {
-			// Get bank size
-			const bankSize = Remote.memoryModel.getBankSize(bank);
-			panel.setBank(bank, bankSize);
+		let panel;
+		try {
+			panel = new MemoryDumpViewWord(littleEndian);
+			if (bank !== undefined) {
+				// Get bank size
+				const bankSize = Remote.memoryModel.getBankSize(bank);
+				panel.setBank(bank, bankSize);
+			}
+			for (let k = 0; k < tokens.length; k += 2) {
+				const start = addrSizes[k];
+				const size = addrSizes[k + 1]
+				panel.addBlock(start, size);
+			}
+			panel.mergeBlocks();
+			await panel.update();
 		}
-		for (let k = 0; k < tokens.length; k += 2) {
-			const start = addrSizes[k];
-			const size = addrSizes[k + 1]
-			panel.addBlock(start, size);
+		catch (e) {
+			panel?.dispose();
+			throw e;
 		}
-		panel.mergeBlocks();
-		await panel.update();
+
 
 		// Send response
 		return 'OK';

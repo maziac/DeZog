@@ -1336,7 +1336,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A promise with an Uint8Array.
 	 */
 	public async readBankMemoryDump(bank: number, offset: number, size: number): Promise<Uint8Array> {
-		throw Error(`Not supported by '${this.remoteType}'.`);
+		throw Error(`Reading from a memory bank is not supported by '${this.remoteType}'.`);
 	}
 
 
@@ -1346,7 +1346,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param dataArray The data to write.
 	 */
 	public async writeBankMemoryDump(bank: number, offset: number, dataArray: Uint8Array): Promise<void> {
-		throw Error(`Not supported by '${this.remoteType}'.`);
+		throw Error(`Writing to a memory bank is not supported by '${this.remoteType}'.`);
 	}
 
 

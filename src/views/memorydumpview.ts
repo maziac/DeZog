@@ -14,8 +14,7 @@ import {MetaBlock} from '../misc/metablock';
 const MEM_DUMP_BOUNDARY = 16;
 
 
-/**
- * A Webview that shows a memory dump.
+/** A Webview that shows a memory dump.
  * The memory dump can also be edited.
  * There is a rather complex messaging between the webview's html javascript (the webview
  * panel) and the extension (the typescript code):
@@ -49,9 +48,6 @@ export class MemoryDumpView extends BaseView {
 
 	/// Used to store the previous register addresses, e.g. HL, DE etc.
 	protected prevRegAddr = new Map<string, number>();
-
-	// The windows title prefix, e.g. "Memory ".
-	protected titlePrefix = "Memory ";
 
 	// Search:
 	// The addresses found in last search are stored here.
@@ -87,8 +83,6 @@ export class MemoryDumpView extends BaseView {
 	public setBank(bank: number, bankSize: number) {
 		this.bank = bank;
 		this.bankSize = bankSize;
-		if (this.bank !== undefined)
-			this.titlePrefix = 'Bank ' + this.bank + ': ';
 	}
 
 	/** Dispose the view (called e.g. on close).
@@ -100,8 +94,8 @@ export class MemoryDumpView extends BaseView {
 		// Remove from list
 		const arr = MemoryDumpView.MemoryViews;
 		const index = arr.indexOf(this);
-		Utility.assert(index >= 0);
-		arr.splice(index, 1);
+		if (index >= 0)
+			arr.splice(index, 1);
 	}
 
 
@@ -380,16 +374,26 @@ export class MemoryDumpView extends BaseView {
 	 */
 	protected setPanelTitle() {
 		if (this.vscodePanel) {
-			// Create from all blocks
-			let title = '';
-			for (let metaBlock of this.memDump.metaBlocks) {
-				if (title)
-					title += ', ';
-				title += metaBlock.title;
-			}
-			title = this.titlePrefix + title;
+			let title = this.getConcatenatedMetablockTitles();
+			if (this.bank !== undefined)
+				title = 'Bank ' + this.bank + ': ' + title;
+			else
+				title = 'Memory ' + title;
 			this.vscodePanel.title = title;
 		}
+	}
+
+
+	/** Returns the concatenated titles of all meta blocks. */
+	protected getConcatenatedMetablockTitles(): string {
+		// Create from all blocks
+		let title = '';
+		for (let metaBlock of this.memDump.metaBlocks) {
+			if (title)
+				title += ', ';
+			title += metaBlock.title;
+		}
+		return title;
 	}
 
 

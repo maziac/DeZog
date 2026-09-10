@@ -61,8 +61,21 @@ export class MemoryDiffView extends MemoryDumpView {
 	 */
 	constructor() {
 		super();
-		this.titlePrefix = 'Memory Diff View: ';
 		this.previousDiffCriteria = 'no check';	// Do no check at the beginning
+	}
+
+
+	/** Create and sets the panel title from the meta block address ranges.
+	 */
+	protected setPanelTitle() {
+		if (this.vscodePanel) {
+			let title = this.getConcatenatedMetablockTitles();
+			if (this.bank !== undefined)
+				title = 'Bank ' + this.bank + ' Diff View: ' + title;
+			else
+				title = 'Memory Diff View ' + title;
+			this.vscodePanel.title = title;
+		}
 	}
 
 

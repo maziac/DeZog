@@ -21,7 +21,6 @@ const MEM_COLUMNS = 8;
  * - The hovering on the other side shows the value and previous value as word.
  */
 export class MemoryDumpViewWord extends MemoryDumpView {
-
 	/// true if little endian is used.
 	protected littleEndian: boolean;
 
@@ -31,9 +30,21 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	constructor(littleEndian: boolean) {
 		super();
 		this.littleEndian = littleEndian;
-		// Title prefix depends on endianness
-		if (!littleEndian)
-			this.titlePrefix += "(big endian) ";
+	}
+
+
+	/** Create and sets the panel title from the meta block address ranges.
+	 */
+	protected setPanelTitle() {
+		if (this.vscodePanel) {
+			const endianess = (this.littleEndian) ? "" : "(big endian) ";
+			let title = this.getConcatenatedMetablockTitles();
+			if (this.bank !== undefined)
+				title = 'Bank ' + this.bank + endianess.trimEnd() + ': ' + title;
+			else
+				title = 'Memory ' + endianess + title;
+			this.vscodePanel.title = title;
+		}
 	}
 
 
