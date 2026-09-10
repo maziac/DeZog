@@ -76,6 +76,7 @@ I.e. different remotes may use a different subset of commands. For one this is b
 [CMD_EXEC_ASM]: #cmd_exec_asm22
 [CMD_INTERRUPT_ON_OFF]: #cmd_interrupt_on_off23
 [CMD_GET_SUPPORTED_COMMANDS]: #cmd_get_supported_commands24
+[CMD_ENABLE_BREAK_ON_INTERRUPT]: #cmd_enable_break_on_interrupt39
 [CMD_ADD_BREAKPOINT]: #cmd_add_breakpoint40
 [CMD_REMOVE_BREAKPOINT]: #cmd_remove_breakpoint41
 [CMD_ADD_WATCHPOINT]: #cmd_add_watchpoint42
