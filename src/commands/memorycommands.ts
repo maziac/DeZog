@@ -43,6 +43,9 @@ export class MemoryCommands {
 	 * @returns A Promise with a text to print.
 	 */
 	public static async evalMemDelta(tokens: Array<string>): Promise<string> {
+		// Check for bank parameter
+		const bank = this.getBank(tokens);
+
 		// Check count of arguments
 		if (tokens.length < 3) {
 			// Error Handling: Too less arguments
@@ -72,7 +75,7 @@ export class MemoryCommands {
 		// Get memory
 		const md = new MemoryDump();
 		md.addBlockWithoutBoundary(startAddress, size);
-		const data = await Remote.readMemoryDump(startAddress, size);
+		const data = await this.readMemory(bank, startAddress, size);
 		md.metaBlocks[0].data = data;
 
 		// Delta search
@@ -88,20 +91,20 @@ export class MemoryCommands {
 
 		// Combine similar findings, e.g. "mik" is found in 2 locations. If both locations start with
 		// the same value (e.g. "M") they can be merged.
-		const valueOffsets = new Set<number>();
+		const values = new Set<{delta: number, address: number}>();
 		for (const addr64k of addresses) {
 			// Calculate offset
 			const index = addr64k - startAddress;
-			const valOffset = searchInputData[0] - data[index];
-			valueOffsets.add(valOffset);
+			const delta = searchInputData[0] - data[index];
+			values.add({delta: delta, address: addr64k});
 		}
 
 		// 'Print'
 		let output = '';
 		const clmns = 16;
-		for (const valOffset of valueOffsets) {
+		for (const value of values) {
 			// Print offset
-			output += 'OFFSET: ' + valOffset + ' (' + Utility.getHexString(valOffset & 0xFF, 2) + 'h)\n';
+			output += 'DELTA: ' + value.delta + ' (' + Utility.getHexString(value.delta & 0xFF, 2) + 'h) @' + Utility.getHexString(value.address, 4) + 'h\n';
 			// Print complete range
 			for (let i = 0; i < size;) {
 				// Print address
@@ -124,7 +127,7 @@ export class MemoryCommands {
 						break;
 					}
 					// Calculate value with offset
-					const modValue = (data[i++] + valOffset) & 0xFF;
+					const modValue = (data[i++] + value.delta) & 0xFF;
 					output += Utility.getHexString(modValue, 2) + ' ';
 					ascii += Utility.getASCIIChar(modValue);
 				}
@@ -145,6 +148,9 @@ export class MemoryCommands {
 	 * @returns A Promise with a text to print.
 	 */
 	public static async evalMemDump(tokens: Array<string>): Promise<string> {
+		// Check for bank parameter
+		const bank = this.getBank(tokens);
+
 		// Check count of arguments
 		if (tokens.length < 2) {
 			// Error Handling: Too less arguments
@@ -204,7 +210,11 @@ export class MemoryCommands {
 		}
 
 		// Get memory
-		const data = await Remote.readMemoryDump(address, size);
+		let data;
+		if (bank === undefined)
+			data = await Remote.readMemoryDump(address, size);
+		else
+			data = await Remote.readBankMemoryDump(bank, address, size);
 
 		// 'Print'
 		let output = '';
@@ -228,14 +238,15 @@ export class MemoryCommands {
 
 
 	/** Sets a memory location to some value.
+	 * @param bank The memory bank. Optional. If undefined, the 64k memory is used.
 	 * @param valSize 1 or 2 for byte or word.
 	 * @param addressString A string with a label or hex/decimal number or an expression that is used as start address.
 	 * @param valueString The value to set.
 	 * @param repeatString How often the value gets repeated. Optional. Defaults to '1'.
 	 * @param endiannessString The endianness. For valSize==2. 'little' or 'big'. Optional. defaults to 'little'.
 	 */
-	// Todo: Also allow bank=? for md and memset
-	protected static async memSet(valSize: number, addressString: string, valueString: string, repeatString?: string, endiannessString?: string) {
+	protected static async memSet(bank: number | undefined, valSize: number, addressString: string, valueString: string, repeatString?: string, endiannessString?: string) {
+
 		// Address
 		const address = Utility.evalExpression(addressString);
 		if (address < 0 || address > 0xFFFF)
@@ -278,7 +289,9 @@ export class MemoryCommands {
 		}
 
 		// Write to remote
-		await Remote.writeMemoryDump(address, data);
+		await this.writeMemory(bank, address, data);
+
+		return 'OK';
 	}
 
 
@@ -289,6 +302,9 @@ export class MemoryCommands {
 	 * @returns 'OK'
 	 */
 	public static async evalMemSetByte(tokens: Array<string>): Promise<string> {
+		// Check for bank parameter
+		const bank = this.getBank(tokens);
+
 		// Check count of arguments
 		if (tokens.length < 2) {
 			// Error Handling: Too less arguments
@@ -300,7 +316,7 @@ export class MemoryCommands {
 			throw Error("Too many arguments.");
 		}
 
-		await this.memSet(1, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/);
+		await this.memSet(bank, 1, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/);
 
 		// Update possibly memory views
 		await BaseView.staticCallUpdateFunctionsAsync();
@@ -316,6 +332,9 @@ export class MemoryCommands {
 	 * @returns 'OK'
 	 */
 	public static async evalMemSetWord(tokens: Array<string>): Promise<string> {
+		// Check for bank parameter
+		const bank = this.getBank(tokens);
+
 		// Check count of arguments
 		if (tokens.length < 2) {
 			// Error Handling: Too less arguments
@@ -327,7 +346,7 @@ export class MemoryCommands {
 			throw Error("Too many arguments.");
 		}
 
-		await this.memSet(2, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/, tokens[3] /*endianness*/);
+		await this.memSet(bank, 2, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/, tokens[3] /*endianness*/);
 
 		// Update possibly memory views
 		await BaseView.staticCallUpdateFunctionsAsync();
@@ -341,6 +360,9 @@ export class MemoryCommands {
 	 * @returns A Promise with a text to print.
 	 */
 	public static async evalMemLoad(tokens: Array<string>): Promise<string> {
+		// Check for bank parameter
+		const bank = this.getBank(tokens);
+
 		// Check count of arguments
 		if (tokens.length < 2) {
 			// Error Handling: No arguments
@@ -364,7 +386,7 @@ export class MemoryCommands {
 		try {
 			const data = fs.readFileSync(absPath);
 			// Write data to memory
-			await Remote.writeMemoryDump(address, data);
+			await this.writeMemory(bank, address, data);
 			// Update possibly memory views
 			await BaseView.staticCallUpdateFunctionsAsync();
 		}
@@ -383,6 +405,9 @@ export class MemoryCommands {
 	 * @returns A Promise with a text to print.
 	 */
 	public static async evalMemSave(tokens: Array<string>): Promise<string> {
+		// Check for bank parameter
+		const bank = this.getBank(tokens);
+
 		// Check count of arguments
 		if (tokens.length < 3) {
 			// Error Handling: No arguments
@@ -407,7 +432,7 @@ export class MemoryCommands {
 			throw Error("No filename given.");
 
 		// Get memory
-		const data = await Remote.readMemoryDump(address, size);
+		const data = await this.readMemory(bank, address, size);
 
 		// Save to .tmp/filename
 		const relPath = Utility.getRelTmpFilePath(filename);
@@ -419,23 +444,64 @@ export class MemoryCommands {
 	}
 
 
+	/** Retrieves the bank number from the tokens if specified.
+	 * @param tokens The command tokens.
+	 * @returns The bank number or undefined if not specified.
+	 */
+	protected static getBank(tokens: Array<string>): number | undefined {
+		let bank: number | undefined = undefined;
+		if (tokens.length > 0 && tokens[0].startsWith("bank=")) {
+			const arr = tokens[0].split("=");
+			bank = Utility.evalExpression(arr[1]);
+			tokens.shift();
+		}
+		return bank;
+	}
+
+
+	/** Retrieves a memory dump, either from the main memory or a specific bank.
+	 * @param bank The bank number or undefined for main memory.
+	 * @param address The starting address.
+	 * @param size The size of the memory dump.
+	 * @returns A Promise with the memory dump as a Uint8Array.
+	 */
+	protected static async readMemory(bank: number | undefined, address: number, size: number): Promise<Uint8Array> {
+		// Get memory
+		let data;
+		if (bank === undefined)
+			data = await Remote.readMemoryDump(address, size);
+		else
+			data = await Remote.readBankMemoryDump(bank, address, size);
+		return data;
+	}
+
+
+	/** Writes data to memory, either to the main memory or a specific bank.
+	 * @param bank The bank number or undefined for main memory.
+	 * @param address The starting address.
+	 * @param data The data to write.
+	 * @returns A Promise that resolves when the write is complete.
+	 */
+	protected static async writeMemory(bank: number | undefined, address: number, data: Uint8Array): Promise<void> {
+		if (bank === undefined)
+			await Remote.writeMemoryDump(address, data);
+		else
+			await Remote.writeBankMemoryDump(bank, address, data);
+	}
+
+
 	/** Shows a view with a memory dump.
 	 * @param tokens The arguments. I.e. the address and size.
 	 * @returns A Promise with a text to print.
 	 */
 	public static async evalMemViewByte(tokens: Array<string>): Promise<string> {
+		// Check for bank parameter
+		const bank = this.getBank(tokens);
+
 		// Check count of arguments
 		if (tokens.length === 0) {
 			// Error Handling: No arguments
 			throw new Error("Address and size expected.");
-		}
-
-		// Check for bank parameter
-		let bank: number | undefined = undefined;
-		if (tokens[0].startsWith("bank=")) {
-			const arr = tokens[0].split("=");
-			bank = Utility.evalExpression(arr[1]);
-			tokens.shift();
 		}
 
 		if (tokens.length % 2 != 0) {
@@ -495,18 +561,13 @@ export class MemoryCommands {
 	 * @returns A Promise with a text to print.
 	 */
 	public static async evalMemViewDiff(tokens: Array<string>): Promise<string> {
+		// Check for bank parameter
+		const bank = this.getBank(tokens);
+
 		// Check count of arguments
-		if (tokens.length == 0) {
+		if (tokens.length === 0) {
 			// Error Handling: No arguments
 			throw new Error("Address and size expected.");
-		}
-
-		// Check for bank parameter
-		let bank: number | undefined = undefined;
-		if (tokens[0].startsWith("bank=")) {
-			const arr = tokens[0].split("=");
-			bank = Utility.evalExpression(arr[1]);
-			tokens.shift();
 		}
 
 		if (tokens.length % 2 != 0) {
@@ -569,12 +630,7 @@ export class MemoryCommands {
 	 */
 	public static async evalMemViewWord(tokens: Array<string>): Promise<string> {
 		// Check for bank parameter
-		let bank: number | undefined = undefined;
-		if (tokens[0].startsWith("bank=")) {
-			const arr = tokens[0].split("=");
-			bank = Utility.evalExpression(arr[1]);
-			tokens.shift();
-		}
+		const bank = this.getBank(tokens);
 
 		// Check for endianness
 		let littleEndian = true;

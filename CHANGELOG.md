@@ -6,6 +6,8 @@
   - Show LOG_NTF messages in a new log channel "DeZog DZRP Log notifications". Has to be enabled in the settings.
 - SNA file format. Now also file extension *.snx is supported.
 - A generic "dzrp" remote has been implemented which can connect via serial or socket connection.
+- Memory Views (debug commands "-mv", "-mvw" and "-mvd") allow additional parameter "bank=" to specify the bank to display.
+- Debug commands "-md", "-mdelta", "-ml", "-ms", "-msetb" and "-msetw" allow additional parameter to specify a bank to read from or write to.
 
 # 3.7.4
 - PR #193: Fixed bug where pressing 'stop' would sometimes take 5 seconds to disconnect. (mame)
