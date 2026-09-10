@@ -69,26 +69,24 @@ export class ZxNextSerialRemote extends WithSerial(DzrpDezogIfRemote) {
 	}
 
 
-	/**
-	 * TODO: This is not fully true anymore for the "async break" with copper. Rewrite documentation and handle it somehow.
-	 *
-	 * Note:
+	/** Note:
 	 * This is like the super class implementation except that it suppresses a warning message.
 	 * If F5 (CONTINUE) or F10 etc. is pressed rapidly or held down it may happen that a request
 	 * (e.g. memory request) is done after CMD_CONTINUE has been sent. Due to some asynchronous
 	 * requests from vscode.
 	 * Normally this is not a problem, the remote would just answer the request.
 	 * For the ZXNext UART serial protocol this is different.
-	 * The UART is not accessible when the Z80 program is being run. This is because the 'dezogif'
-	 * program does not check the UART for new data when run and because the Joystick ports are
+	 * The UART might not be accessible when the Z80 program is being run. This is because the 'dezogif'
+	 * program might not check the UART for new data when run and because the Joystick ports might
 	 * remapped to serve as joystick ports and not as UART ports when the program is being run.
 	 * Thus, the ZX Next is not able to receive and not able to respond.
-	 * Furthermore if the user now changes e.g. a register or memory content there should be
-	 * feedback that this is not possible.
 	 * On the other hand the "automatic" requests from vscode should be suppressed.
 	 * As there is no way to distinguish it is done with a time guardian.
 	 * I.e about one second after the CMD_CONTINUE was sent no warning is emitted.
 	 * Otherwise the warning is shown.
+	 *
+	 * Note: With Async-Break in the ZXNext this would not be necessary. However the user
+	 * might have turned it off.
 	 */
 	protected startCmdRespTimeout(respTimeoutTime: number) {
 		this.stopCmdRespTimeout();

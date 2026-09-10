@@ -520,7 +520,7 @@ export class MemoryCommands {
 			// Size
 			const sizeString = tokens[k + 1];
 			// Allow size of 0x10000
-			const size = Utility.parseValue(sizeString);
+			const size = Utility.evalExpression(sizeString);
 			// Error Handling: size too big
 			if (size > 0x10000) {
 				throw new Error("Size too big: '" + sizeString + "'.");
@@ -586,7 +586,7 @@ export class MemoryCommands {
 			// Size
 			const sizeString = tokens[k + 1];
 			// Allow size of 0x10000
-			const size = Utility.parseValue(sizeString);
+			const size = Utility.evalExpression(sizeString);
 			// Error Handling: size too big
 			if (size > 0x10000) {
 				throw new Error("Size too big: '" + sizeString + "'.");
@@ -657,7 +657,7 @@ export class MemoryCommands {
 			// Size
 			const sizeString = tokens[k + 1];
 			// Parse size
-			const size = Utility.parseValue(sizeString);
+			const size = Utility.evalExpression(sizeString);
 			// Error Handling: size too big
 			if (size > 0x8000) {	// $8000 words = $10000 bytes
 				throw new Error("Size too big: '" + sizeString + "'.");

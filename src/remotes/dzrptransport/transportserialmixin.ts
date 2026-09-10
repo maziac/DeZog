@@ -121,7 +121,7 @@ export function WithSerial<TBase extends Constructor<DzrpTransportRemote>>(Base:
 				const timestamp = '[' + Log.getTimeString() + ']';
 				const txt = this.dzrpCmdBufferToString(buffer);
 				LogTransport.log(timestamp + ' ' + '>>> ' + this.logName + ': Sending ' + txt);
-				let outerError;	// TODO: What is this needed for?
+				let outerError;
 				try {
 					this.writeToSerialPort(buffer, (error) => {
 						if (!outerError) {
