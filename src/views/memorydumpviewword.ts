@@ -43,8 +43,8 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	 * @param startAddress The address of the memory block in words.
 	 * @param size The size of the memory block in words.
 	 */
-	public addBlock(startAddress: number, size: number, title: string) {
-		this.memDump.addBlockWithoutBoundary(startAddress, 2 * size, title);
+	public addBlock(startAddress: number, size: number, title?: string) {
+		super.addBlock(startAddress, 2 * size, title);
 	}
 
 

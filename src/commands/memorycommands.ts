@@ -472,7 +472,7 @@ export class MemoryCommands {
 		for (let k = 0; k < tokens.length; k += 2) {
 			const start = addrSizes[k];
 			const size = addrSizes[k + 1]
-			panel.addBlock(start, size, Utility.getHexString(start & 0xFFFF, 4) + 'h-' + Utility.getHexString((start + size - 1) & 0xFFFF, 4) + 'h');
+			panel.addBlock(start, size);
 		}
 		panel.mergeBlocks();
 		await panel.update();
@@ -492,6 +492,14 @@ export class MemoryCommands {
 		if (tokens.length == 0) {
 			// Error Handling: No arguments
 			throw new Error("Address and size expected.");
+		}
+
+		// Check for bank parameter
+		let bank: number | undefined = undefined;
+		if (tokens[0].startsWith("bank=")) {
+			const arr = tokens[0].split("=");
+			bank = Utility.evalExpression(arr[1]);
+			tokens.shift();
 		}
 
 		if (tokens.length % 2 != 0) {
@@ -520,10 +528,15 @@ export class MemoryCommands {
 
 		// Create new view
 		const panel = new MemoryDiffView();
+		if (bank !== undefined) {
+			// Get bank size
+			const bankSize = Remote.memoryModel.getBankSize(bank);
+			panel.setBank(bank, bankSize);
+		}
 		for (let k = 0; k < tokens.length; k += 2) {
 			const start = addrSizes[k];
 			const size = addrSizes[k + 1]
-			panel.addBlock(start, size, Utility.getHexString(start & 0xFFFF, 4) + 'h-' + Utility.getHexString((start + size - 1) & 0xFFFF, 4) + 'h');
+			panel.addBlock(start, size);
 		}
 		panel.mergeBlocks();
 		await panel.update();
@@ -540,6 +553,14 @@ export class MemoryCommands {
 	 * @returns A Promise with a text to print.
 	 */
 	public static async evalMemViewWord(tokens: Array<string>): Promise<string> {
+		// Check for bank parameter
+		let bank: number | undefined = undefined;
+		if (tokens[0].startsWith("bank=")) {
+			const arr = tokens[0].split("=");
+			bank = Utility.evalExpression(arr[1]);
+			tokens.shift();
+		}
+
 		// Check for endianness
 		let littleEndian = true;
 		if (tokens.length % 2 != 0) {
@@ -575,10 +596,15 @@ export class MemoryCommands {
 
 		// Create new view
 		const panel = new MemoryDumpViewWord(littleEndian);
+		if (bank !== undefined) {
+			// Get bank size
+			const bankSize = Remote.memoryModel.getBankSize(bank);
+			panel.setBank(bank, bankSize);
+		}
 		for (let k = 0; k < tokens.length; k += 2) {
 			const start = addrSizes[k];
 			const size = addrSizes[k + 1]
-			panel.addBlock(start, size, Utility.getHexString(start & 0xFFFF, 4) + 'h-' + Utility.getHexString((start + 2 * size - 1) & 0xFFFF, 4) + 'h');
+			panel.addBlock(start, size);
 		}
 		panel.mergeBlocks();
 		await panel.update();
