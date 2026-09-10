@@ -1220,7 +1220,6 @@ export class ZSimRemote extends DzrpRemote {
 				throw Error("A " + sna128String + "SNA file can't be loaded into a '" + this.memoryModel.name + "' memory model.");
 			}
 		}
-		// TODO: Call super instead of copying the code below
 
 		// Set the border
 		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
@@ -1255,6 +1254,7 @@ export class ZSimRemote extends DzrpRemote {
 
 		return snaFile.sp;
 	}
+
 
 	/** Loads a .z80 file.
 	 * Loading is intelligent. I.e. if a z80 file from a ZX128 is loaded into a ZX48 or a ZXNEXT

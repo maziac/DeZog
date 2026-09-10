@@ -11,8 +11,7 @@ import {MemoryDumpView} from './memorydumpview';
 const MEM_COLUMNS = 8;
 
 
-/**
- * A Webview that shows a memory dump.
+/** A Webview that shows a memory dump.
  * Very similar to MemoryDumpView but shows the memory contents as words.
  *
  * Notes:
@@ -39,20 +38,18 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	}
 
 
-	/**
-	 * Adds a new memory block to display.
+	/** Adds a new memory block to display.
 	 * Memory blocks are ordered, i.e. the 'memDumps' array is ordered from
 	 * low to high (the start addresses).
 	 * @param startAddress The address of the memory block in words.
 	 * @param size The size of the memory block in words.
 	 */
 	public addBlock(startAddress: number, size: number, title: string) {
-		this.memDump.addBlockWithoutBoundary(startAddress, 2*size, title);
+		this.memDump.addBlockWithoutBoundary(startAddress, 2 * size, title);
 	}
 
 
-	/**
-	 * Retrieves the value info text (that is the hover text).
+	/** Retrieves the value info text (that is the hover text).
 	 * @param address The address for which the info should be shown.
 	 */
 	protected async getValueInfoText(address: number) {
@@ -83,8 +80,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	}
 
 
-	/**
-	 * Creates one html table out of a meta block.
+	/** Creates one html table out of a meta block.
 	 * @param index The number of the memory block, starting at 0.
 	 * Used for the id.
 	 * @param metaBlock The block to convert.
@@ -97,7 +93,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		const bytesColor = Settings.launch.memoryViewer.bytesColor;
 		const changedColor = "red";
 
-		const format=
+		const format =
 			`
 			<style>
 			td {
@@ -126,16 +122,16 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 
 		// Create a string with the table itself.
 		let table = '';
-		let address=metaBlock.address;
+		let address = metaBlock.address;
 		let i = 0;
 		const data = metaBlock.data;
-		const len=data.length;
+		const len = data.length;
 
 
 		// Table column headers
 		table += '<tr>\n<th>Address:</th> <th></th>';
-		for(let k=0; k<MEM_COLUMNS; k++) {
-			table += '<th>+' + (2*k).toString(16).toUpperCase() + '</th>';
+		for (let k = 0; k < MEM_COLUMNS; k++) {
+			table += '<th>+' + (2 * k).toString(16).toUpperCase() + '</th>';
 		}
 		table += '\n</tr>';
 
@@ -145,12 +141,12 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		let secondAddress;
 		for (let k = 0; k < len - 1; k += 2) {
 			// Address but bound to 64k to forecome wrap arounds
-			const addr64k=address&0xFFFF;
+			const addr64k = address & 0xFFFF;
 			// Check start of line
-			if(i == 0) {
+			if (i == 0) {
 				// start of a new line
-				let addrText=Utility.getHexString(addr64k,4) + ':';
-				table +='<tr>\n<td class="addressClmn" addressLine="'+addr64k + '" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
+				let addrText = Utility.getHexString(addr64k, 4) + ':';
+				table += '<tr>\n<td class="addressClmn" addressLine="' + addr64k + '" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
 				table += '<td> </td>\n';
 			}
 
@@ -168,10 +164,10 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				firstAddress = addr64k2;
 				secondAddress = addr64k;
 			}
-			valueText = '<span address="' + secondAddress + '">' + valueText.substring(0, 2) + '</span><span address="' + firstAddress + '">' + valueText.substring(2, 2+2) + '</span>';
+			valueText = '<span address="' + secondAddress + '">' + valueText.substring(0, 2) + '</span><span address="' + firstAddress + '">' + valueText.substring(2, 2 + 2) + '</span>';
 
 			// Check if in address range
-			if(metaBlock.isInRange(address))
+			if (metaBlock.isInRange(address))
 				valueText = this.addEmphasizeInRange(valueText);
 			else
 				valueText = this.addDeemphasizeNotInRange(valueText);
@@ -181,10 +177,10 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				valueText = this.addEmphasizeLabelled(valueText);
 
 			// Create html cell
-			table += '<td address="' + addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)">' + valueText +'</td>\n';
+			table += '<td address="' + addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)">' + valueText + '</td>\n';
 
 			// Check end of line
-			if (i == MEM_COLUMNS-1) {
+			if (i == MEM_COLUMNS - 1) {
 				// end of a new line
 				table += '</tr>\n';
 			}
@@ -192,7 +188,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			// Next column
 			address += 2;
 			i++;
-			if(i >= MEM_COLUMNS)
+			if (i >= MEM_COLUMNS)
 				i = 0;
 		}
 
@@ -201,9 +197,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	}
 
 
-
-	/**
-	 * Creates the script (i.e. functions) for all blocks (html tables).
+	/** Creates the script (i.e. functions) for all blocks (html tables).
 	 */
 	protected createHtmlScript(): string {
 		// The html script
@@ -458,8 +452,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	}
 
 
-	/**
-	 * The web view posted a message to this view.
+	/** The web view posted a message to this view.
 	 * Most events are simply passed to the parent object.
 	 * But the 'valueChanged' is event is evaluated because a different
 	 * range (word) is allowed.

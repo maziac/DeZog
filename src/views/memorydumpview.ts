@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import {Remote} from '../remotes/remotebase';
 import * as util from 'util';
+import {Remote} from '../remotes/remotebase';
 import {Utility} from '../misc/utility';
 import {Labels} from '../labels/labels';
 import {MemoryDump, FoundAddresses} from '../misc/memorydump';
@@ -65,8 +65,7 @@ export class MemoryDumpView extends BaseView {
 	protected delta: boolean;
 
 
-	/**
-	 * Creates the basic panel.
+	/** Creates the basic panel.
 	 */
 	constructor() {
 		super(true, false);
@@ -74,8 +73,7 @@ export class MemoryDumpView extends BaseView {
 	}
 
 
-	/**
-	 * Dispose the view (called e.g. on close).
+	/** Dispose the view (called e.g. on close).
 	 * Removes it from the static list.
 	 */
 	public dispose() {
@@ -89,8 +87,7 @@ export class MemoryDumpView extends BaseView {
 	}
 
 
-	/**
-	 * The web view posted a message to this view.
+	/** The web view posted a message to this view.
 	 * @param message The message. message.command contains the command as a string.
 	 * This needs to be created inside the web view.
 	 */
@@ -199,8 +196,7 @@ export class MemoryDumpView extends BaseView {
 	}
 
 
-	/**
-	 * Adds a new memory block to display.
+	/** Adds a new memory block to display.
 	 * Memory blocks are ordered, i.e. the 'memDumps' array is ordered from
 	 * low to high (the start addresses).
 	 * @param startAddress The address of the memory block.
@@ -211,21 +207,19 @@ export class MemoryDumpView extends BaseView {
 	}
 
 
-	/**
-	 * Merges nearby blocks into one block.
+	/** Merges nearby blocks into one block.
 	 */
 	public mergeBlocks() {
 		this.memDump.mergeBlocks();
 	}
 
 
-	/**
-	 * The user just changed a cell in the dump view table.
+	/** The user just changed a cell in the dump view table.
 	 * @param address The address to change.
 	 * @param value The new value.
 	 */
 	protected async changeMemory(address: number, value: number) {
-		await Remote.writeMemory(address, value);
+		await this.writeMemory(address, value);
 		// Also update all webviews
 		await BaseView.staticCallUpdateFunctionsAsync();
 		// Inform vscode
@@ -233,8 +227,7 @@ export class MemoryDumpView extends BaseView {
 	}
 
 
-	/**
-	 * Retrieves the value info text (that is the hover text).
+	/** Retrieves the value info text (that is the hover text).
 	 * @param address The address for which the info should be shown.
 	 * @param md The MemoryDump to convert.
 	 */
@@ -263,8 +256,7 @@ export class MemoryDumpView extends BaseView {
 	}
 
 
-	/**
-	 * Retrieves the info text for the address (that is the hover text).
+	/** Retrieves the info text for the address (that is the hover text).
 	 * @param address The address for which the info should be shown.
 	 */
 	protected async getAddressInfoText(address: number) {
@@ -295,7 +287,7 @@ export class MemoryDumpView extends BaseView {
 		// Get data from Remote
 		for (const metaBlock of this.memDump.metaBlocks) {
 			// Updates the shown memory dump.
-			const data = await Remote.readMemoryDump(metaBlock.address, metaBlock.size);
+			const data = await this.readMemoryDump(metaBlock.address, metaBlock.size);
 			// Store data
 			metaBlock.prevData = metaBlock.data ?? new Uint8Array(data);	// For the first time the same data is copied also to prevData.
 			metaBlock.data = data;
@@ -306,8 +298,7 @@ export class MemoryDumpView extends BaseView {
 	}
 
 
-	/**
-	 * Updates the html. E.g. after the change of a value.
+	/** Updates the html. E.g. after the change of a value.
 	 * Without getting the memory from the Remote.
 	 */
 	protected updateWithoutRemote() {
@@ -1015,8 +1006,7 @@ window.addEventListener('load', () => {
 	}
 
 
-	/**
-	 * Creates one html table out of a meta block.
+	/**Creates one html table out of a meta block.
 	 * @param index The number of the memory block, starting at 0.
 	 * Used for the id.
 	 * @param metaBlock The block to convert. The template takes only the name from it.
@@ -1039,8 +1029,7 @@ window.addEventListener('load', () => {
 	}
 
 
-	/**
-	 * Creates one html table out of a meta block.
+	/** Creates one html table out of a meta block.
 	 * @param index The number of the memory block, starting at 0.
 	 * Used for the id.
 	 * @param metaBlock The block to convert.
@@ -1195,8 +1184,7 @@ window.addEventListener('load', () => {
 	}
 
 
-	/**
-	 * Sets the html code to display the memory dump.
+	/** Sets the html code to display the memory dump.
 	 * Is called only once at creation time as it does not hold the actual data.
 	 */
 	protected setHtml() {
@@ -1245,7 +1233,7 @@ window.addEventListener('load', () => {
 		// Create style section
 		const arr = Settings.launch.memoryViewer.registerPointerColors;
 		let style = '';
-		for (let i = 0; i < arr.length; i+=2) {
+		for (let i = 0; i < arr.length; i += 2) {
 			style += `
 			.registerPointer${arr[i]} {
 				background-color: ${arr[i + 1]};
@@ -1271,8 +1259,7 @@ window.addEventListener('load', () => {
 	}
 
 
-	/**
-	 * Set colors for register pointers.
+	/** Set colors for register pointers.
 	 * Colors are only set if the webview is visible.
 	 */
 	protected setColorsForRegisterPointers() {
@@ -1303,8 +1290,7 @@ window.addEventListener('load', () => {
 	}
 
 
-	/**
-	 * Determines what is shown between the tables,
+	/** Determines what is shown between the tables,
 	 * e.g. "...".
 	 */
 	protected getHtmlVertBreak() {
@@ -1312,8 +1298,7 @@ window.addEventListener('load', () => {
 	}
 
 
-	/**
-	 * Adds color to the html.
+	/** Adds color to the html.
 	 * @param origText
 	 * @param colorText E.g. 'red'
 	 * @returns html text that combines origText with hoverText
@@ -1324,8 +1309,7 @@ window.addEventListener('load', () => {
 	}
 
 
-	/**
-	 * Adds emphasizes for labelled values.
+	/** Adds emphasizes for labelled values.
 	 * @param origText
 	 * @returns html text that id emphasized.
 	 */
@@ -1335,8 +1319,7 @@ window.addEventListener('load', () => {
 	}
 
 
-	/**
-	 * Adds emphasizes for addresses in range, i.e. the addresses that the user wanted to see.
+	/** Adds emphasizes for addresses in range, i.e. the addresses that the user wanted to see.
 	 * @param origText
 	 * @returns html text that id emphasized.
 	 */
@@ -1347,5 +1330,19 @@ window.addEventListener('load', () => {
 	protected addDeemphasizeNotInRange(origText: string,): string {
 		const resText = '<font color="gray">' + origText + '</font>';
 		return resText;
+	}
+
+
+	/** Reads a memory dump from the remote.
+	 */
+	protected async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
+		const data = await Remote.readMemoryDump(address, size);
+		return data;
+	}
+
+	/** Writes a memory value to the remote.
+	 */
+	protected async writeMemory(address: number, value: number): Promise<void> {
+		await Remote.writeMemory(address, value);
 	}
 }
