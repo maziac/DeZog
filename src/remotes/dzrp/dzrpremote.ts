@@ -1443,6 +1443,27 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	}
 
 
+	/** Reads a memory from a bank.
+	 * @param bank The bank number.
+	 * @param offset The memory start address inside the bank.
+	 * @param size The memory size.
+	 * @returns A promise with an Uint8Array.
+	 */
+	public async readBankMemoryDump(bank: number, offset: number, size: number): Promise<Uint8Array> {
+		return this.sendDzrpCmdReadMem(bank + 1, offset, size);
+	}
+
+
+	/** Writes a memory dump to a bank.
+	 * @param bank The bank number.
+	 * @param offset The memory start address inside the bank.
+	 * @param dataArray The data to write.
+	 */
+	public async writeBankMemoryDump(bank: number, offset: number, dataArray: Uint8Array): Promise<void> {
+		await this.sendDzrpCmdWriteMem(bank + 1, offset, dataArray);
+	}
+
+
 	/** Loads object file (binary without any meta data).
 	 * @param filePath The absolute path to the file.
 	 * @param startAddress The address where the data should be loaded.

@@ -26,8 +26,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	protected littleEndian: boolean;
 
 
-	/**
-	 * Creates the basic panel.
+	/** Creates the basic panel.
 	 */
 	constructor(littleEndian: boolean) {
 		super();

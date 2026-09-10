@@ -743,7 +743,7 @@ export class SimulatedMemory implements Serializable {
 			realSize = bankSize - realOffs;
 
 		// Copy
-		const data = bank.subarray(realOffs, realOffs + realSize);
+		const data = bank.slice(realOffs, realOffs + realSize);
 
 		return data;
 	}

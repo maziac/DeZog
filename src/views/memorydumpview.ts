@@ -64,14 +64,32 @@ export class MemoryDumpView extends BaseView {
 	protected zeroTerminated: boolean;
 	protected delta: boolean;
 
+	// undefined: show full 64k area, 1...: show bank contents.
+	protected bank: number | undefined;
+	protected bankSize: number;
+
 
 	/** Creates the basic panel.
 	 */
 	constructor() {
 		super(true, false);
+		this.bankSize = 0x10000;	// The full 64k area by default
 		MemoryDumpView.MemoryViews.push(this);
 	}
 
+
+	/** Sets the bank to display.
+	 * Use this only if banked contents should be shown.
+	 * If not used, the full 64k range is shown.
+	 * @param bank The bank number
+	 * @param bankSize The size of the bank.
+	 */
+	public setBank(bank: number, bankSize: number) {
+		this.bank = bank;
+		this.bankSize = bankSize;
+		if (this.bank !== undefined)
+			this.titlePrefix = 'Bank ' + this.bank + ': ';
+	}
 
 	/** Dispose the view (called e.g. on close).
 	 * Removes it from the static list.
@@ -203,6 +221,8 @@ export class MemoryDumpView extends BaseView {
 	 * @param size The size of the memory block. (Can be 0x10000 max)
 	 */
 	public addBlock(startAddress: number, size: number, title: string) {
+		startAddress &= this.bankSize - 1;
+		size &= this.bankSize - 1;
 		this.memDump.addBlock(startAddress, size, title);
 	}
 
@@ -287,10 +307,20 @@ export class MemoryDumpView extends BaseView {
 		// Get data from Remote
 		for (const metaBlock of this.memDump.metaBlocks) {
 			// Updates the shown memory dump.
+			console.log('1 metaBlock.prevData', metaBlock.prevData);
+			console.log('1 metaBlock.data', metaBlock.data);
 			const data = await this.readMemoryDump(metaBlock.address, metaBlock.size);
+			console.log('data', metaBlock.data);
+			console.log('2 metaBlock.prevData', metaBlock.prevData);
+			console.log('2 metaBlock.data', metaBlock.data);
 			// Store data
 			metaBlock.prevData = metaBlock.data ?? new Uint8Array(data);	// For the first time the same data is copied also to prevData.
+			console.log('3 metaBlock.prevData', metaBlock.prevData);
+			console.log('3 metaBlock.data', metaBlock.data);
 			metaBlock.data = data;
+			console.log('4 metaBlock.prevData', metaBlock.prevData);
+			console.log('4 metaBlock.data', metaBlock.data);
+			console.log();
 		}
 
 		// Update the html
@@ -872,7 +902,7 @@ window.addEventListener('load', () => {
 				{	// Was used in the past instead of 'memoryChanged'. I.e.
 					// this sets the whole memory as new data via a html string.
 					// Problem here was that it created new objects which did not
-					// work together with updating the  search results.
+					// work together with updating the search results.
 					// Now it is still used for the register memory view
 					// which has no search and potentially may change
 					// range each step.
@@ -1006,7 +1036,7 @@ window.addEventListener('load', () => {
 	}
 
 
-	/**Creates one html table out of a meta block.
+	/** Creates one html table out of a meta block.
 	 * @param index The number of the memory block, starting at 0.
 	 * Used for the id.
 	 * @param metaBlock The block to convert. The template takes only the name from it.
@@ -1214,16 +1244,20 @@ window.addEventListener('load', () => {
 
 
 		// Add a legend to the table with registers and colors.
-		let legend = `
+		let legend = '';
+		if (this.bank === undefined) {
+			// Registers only used for 64k views
+			legend = `
 		<br>
 		Legend:<br>
 		`;
-		const regColors = Settings.launch.memoryViewer.registerPointerColors;
-		const regColorsLen = regColors.length;
-		for (let k = 0; k < regColorsLen; k += 2) {
-			const color = regColors[k + 1];
-			//legend += '<span style="background-color: ' + color + ';borderRadius: 3px">' + regColors[k] + ' = ' + color + '</span><br>';
-			legend += '<span style="background-color: ' + color + ';border-radius: 3px">&nbsp; ' + regColors[k] + ' &nbsp;</span> &nbsp;&nbsp; ';
+			const regColors = Settings.launch.memoryViewer.registerPointerColors;
+			const regColorsLen = regColors.length;
+			for (let k = 0; k < regColorsLen; k += 2) {
+				const color = regColors[k + 1];
+				//legend += '<span style="background-color: ' + color + ';borderRadius: 3px">' + regColors[k] + ' = ' + color + '</span><br>';
+				legend += '<span style="background-color: ' + color + ';border-radius: 3px">&nbsp; ' + regColors[k] + ' &nbsp;</span> &nbsp;&nbsp; ';
+			}
 		}
 
 		// Loop through all metablocks
@@ -1263,6 +1297,8 @@ window.addEventListener('load', () => {
 	 * Colors are only set if the webview is visible.
 	 */
 	protected setColorsForRegisterPointers() {
+		if (this.bank !== undefined)
+			return;	// Only for the 64k view, not for banks
 		// Set colors for register pointers
 		const arr = Settings.launch.memoryViewer.registerPointerColors;
 		for (let i = 0; i < arr.length - 1; i += 2) {
@@ -1336,13 +1372,24 @@ window.addEventListener('load', () => {
 	/** Reads a memory dump from the remote.
 	 */
 	protected async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
-		const data = await Remote.readMemoryDump(address, size);
+		let data;
+		if (this.bank === undefined) {
+			data = await Remote.readMemoryDump(address, size);
+		}
+		else {
+			data = await Remote.readBankMemoryDump(this.bank, address, size);
+		}
 		return data;
 	}
 
 	/** Writes a memory value to the remote.
 	 */
 	protected async writeMemory(address: number, value: number): Promise<void> {
-		await Remote.writeMemory(address, value);
+		if (this.bank === undefined) {
+			await Remote.writeMemory(address, value);
+		}
+		else {
+			await Remote.writeBankMemoryDump(this.bank, address, new Uint8Array([value]));
+		}
 	}
 }

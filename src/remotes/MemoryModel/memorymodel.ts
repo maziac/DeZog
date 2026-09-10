@@ -655,4 +655,14 @@ export class MemoryModel {
 		// No RAM found in initial slots. Return some value.
 		return 0x10000;
 	}
+
+	/** Returns the bank size for the given bank number.
+	 * @param bankNr The bank number.
+	 * @returns The size of the bank.
+	 */
+	public getBankSize(bankNr: number): number {
+		if (bankNr < 0 || bankNr >= this.banks.length)
+			throw Error("Bank number (" + bankNr + ") out of range.");
+		return this.banks[bankNr].size;
+	}
 }

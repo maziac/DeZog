@@ -14,8 +14,7 @@ import {MemoryRegisterView} from "../views/memoryregisterview";
  */
 export class MemoryCommands {
 
-	/**
-	 * Checks if the given string is 'little' or 'big' case insensitive.
+	/** Checks if the given string is 'little' or 'big' case insensitive.
 	 * Throws an exception if string evaluates to something different.
 	 * @param endiannessString The string to check.
 	 * @returns true for 'little' or undefined and 'false for 'big'.
@@ -32,8 +31,7 @@ export class MemoryCommands {
 	}
 
 
-	/**
-	 * Does a delta string search on the given memory range
+	/** Does a delta string search on the given memory range
 	 * and converts the range afterwards by the found offset.
 	 * This is to find hiscore names in memory when the text is not
 	 * ASCII encoded. In this case most probably at least the
@@ -142,8 +140,7 @@ export class MemoryCommands {
 	}
 
 
-	/**
-	 * Shows a view with a memory dump.
+	/** Shows a view with a memory dump.
 	 * @param tokens The arguments. I.e. the address and size.
 	 * @returns A Promise with a text to print.
 	 */
@@ -230,14 +227,14 @@ export class MemoryCommands {
 	}
 
 
-	/**
-	 * Sets a memory location to some value.
+	/** Sets a memory location to some value.
 	 * @param valSize 1 or 2 for byte or word.
 	 * @param addressString A string with a label or hex/decimal number or an expression that is used as start address.
 	 * @param valueString The value to set.
 	 * @param repeatString How often the value gets repeated. Optional. Defaults to '1'.
 	 * @param endiannessString The endianness. For valSize==2. 'little' or 'big'. Optional. defaults to 'little'.
 	 */
+	// Todo: Also allow bank=? for md and memset
 	protected static async memSet(valSize: number, addressString: string, valueString: string, repeatString?: string, endiannessString?: string) {
 		// Address
 		const address = Utility.evalExpression(addressString);
@@ -285,8 +282,7 @@ export class MemoryCommands {
 	}
 
 
-	/**
-	 * Sets a memory location to some byte value.
+	/** Sets a memory location to some byte value.
 	 * "-msetb address value repeat"
 	 * "-msetb 8000h 74h""
 	 * @param tokens The arguments. I.e. the address, value and (optional) repeat.
@@ -313,8 +309,7 @@ export class MemoryCommands {
 	}
 
 
-	/**
-	 * Sets a memory location to some word value.
+	/** Sets a memory location to some word value.
 	 * "-msetw address value repeat endianness"
 	 * "-msetw 8000h 7654h""
 	 * @param tokens The arguments. I.e. the address, value, repeat and endianness. Only the first 2 are mandatory.
@@ -424,16 +419,23 @@ export class MemoryCommands {
 	}
 
 
-	/**
-	 * Shows a view with a memory dump.
+	/** Shows a view with a memory dump.
 	 * @param tokens The arguments. I.e. the address and size.
 	 * @returns A Promise with a text to print.
 	 */
 	public static async evalMemViewByte(tokens: Array<string>): Promise<string> {
 		// Check count of arguments
-		if (tokens.length == 0) {
+		if (tokens.length === 0) {
 			// Error Handling: No arguments
 			throw new Error("Address and size expected.");
+		}
+
+		// Check for bank parameter
+		let bank: number | undefined = undefined;
+		if (tokens[0].startsWith("bank=")) {
+			const arr = tokens[0].split("=");
+			bank = Utility.evalExpression(arr[1]);
+			tokens.shift();
 		}
 
 		if (tokens.length % 2 != 0) {
@@ -462,6 +464,11 @@ export class MemoryCommands {
 
 		// Create new view
 		const panel = new MemoryDumpView();
+		if (bank !== undefined) {
+			// Get bank size
+			const bankSize = Remote.memoryModel.getBankSize(bank);
+			panel.setBank(bank, bankSize);
+		}
 		for (let k = 0; k < tokens.length; k += 2) {
 			const start = addrSizes[k];
 			const size = addrSizes[k + 1]
@@ -526,8 +533,7 @@ export class MemoryCommands {
 	}
 
 
-	/**
-	 * Shows a view with a memory dump. The memory is organized in
+	/** Shows a view with a memory dump. The memory is organized in
 	 * words instead of bytes.
 	 * One can choose little or big endian.
 	 * @param tokens The arguments. I.e. the address, size and endianness.
@@ -582,8 +588,7 @@ export class MemoryCommands {
 	}
 
 
-	/**
-	 * Shows the register memory view.
+	/** Shows the register memory view.
 	 * @returns A Promise with a text to print. I.e. "OK"
 	 */
 	public static async evalRegisterMemView(tokens: Array<string>): Promise<string> {
