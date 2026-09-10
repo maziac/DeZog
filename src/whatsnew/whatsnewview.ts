@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import {readFileSync} from 'fs';
-import {PackageInfo} from './packageinfo';
+import {PackageInfo} from '../packageinfo';
 import {Version} from './version';
 import {GlobalStorage} from '../globalstorage';
 

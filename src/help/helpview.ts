@@ -1,10 +1,10 @@
 import {readFileSync} from 'fs';
-import { BaseView } from '../views/baseview';
+import {BaseView} from '../views/baseview';
 import * as vscode from 'vscode';
 import {Utility} from '../misc/utility';
 import {UnifiedPath} from '../misc/unifiedpath';
 import * as showdown from 'showdown';
-import {PackageInfo} from '../whatsnew/packageinfo';
+import {PackageInfo} from '../packageinfo';
 
 
 /**

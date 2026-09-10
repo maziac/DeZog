@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 
 
-/**
- * Reads the package.json of the extension.
+/** Reads the package.json of the extension.
  */
 export class PackageInfo {
 
@@ -10,8 +9,7 @@ export class PackageInfo {
 	public static extension: vscode.Extension<any>;
 
 
-	/**
-	 * Sets the extension path.
+	/** Sets the extension path.
 	 * Called on extension activation.
 	 */
 	public static Init(context: vscode.ExtensionContext) {
@@ -20,8 +18,7 @@ export class PackageInfo {
 	}
 
 
-	/**
-	 * Convenience method to return the configuration/the settings.
+	/** Convenience method to return the configuration/the settings.
 	 */
 	public static getConfiguration(): vscode.WorkspaceConfiguration {
 		const packageJSON = this.extension.packageJSON;

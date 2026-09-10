@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import {readFileSync} from 'fs';
-import {PackageInfo} from '../whatsnew/packageinfo';
+import {PackageInfo} from '../packageinfo';
 import {HelpView} from './helpview';
 //import {UnifiedPath} from '../misc/unifiedpath';
 

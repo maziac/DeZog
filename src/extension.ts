@@ -10,7 +10,7 @@ import {HelpProvider} from './help/helpprovider';
 import {LogGlobal, LogZsim, LogTransport, LogDzrpNtf} from './log';
 import {UnifiedPath} from './misc/unifiedpath';
 import {Utility} from './misc/utility';
-import {PackageInfo} from './whatsnew/packageinfo';
+import {PackageInfo} from './packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
 import {ZxNextSerialLoopback} from './remotes/dzrptransport/zxnextserialloopback';

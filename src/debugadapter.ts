@@ -42,6 +42,7 @@ import {Run} from './run';
 import {LogEval} from './misc/logeval';
 import {ErrorWrapper} from './misc/errorwrapper';
 import argv from 'string-argv';
+import {PackageInfo} from './packageinfo';
 
 
 
@@ -602,6 +603,10 @@ export class DebugSessionClass extends DebugSession {
 	 * @param response
 	 */
 	protected async launch(response: DebugProtocol.Response) {
+		// Add DeZog version to the debug console
+		const version = PackageInfo.extension.packageJSON.version;
+		this.debugConsoleAppendLine("DeZog (v" + version + ") started.");
+
 		// Setup the disassembler
 		DisassemblyClass.createDisassemblySingleton();
 
