@@ -891,6 +891,11 @@ I.e. when DeZog receives the NTF_LOG it will print the "normal" characters and i
 Example:
 A string like `"Value of A=$u1 and BC=$h2",0` followed by data `0x12, 0xAB, 0x71` will be displayed as "Value of A=18 and BC=71AB".
 
+Note:
+This command is only meant for debugging purposes.
+Don't use it in production code.
+
+
 # Modes
 Modes are more about the remotes using DZRP than the protocol itself.
 There are 2 modes.
