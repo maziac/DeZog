@@ -223,7 +223,6 @@ export class DebugSessionClass extends DebugSession {
 	}
 
 
-
 	/** Checks the language id once at the start.
 	 * If user has a wrong language id for the *.asm file, e.g.
 	 * asm-x86-nasm breakpoints will not work as dezog does nto expect
@@ -800,6 +799,8 @@ export class DebugSessionClass extends DebugSession {
 							this.checkDateSnaNexFile();
 							// Load objs to memory
 							await Remote.loadObjs();
+							// At last load system variables to memory (if wanted)
+							await Remote.loadSysVars(Settings.launch.loadSysVars);
 							// This needs to be done after the labels have been read
 							await Remote.initWpmemAssertionLogpoints();
 						}

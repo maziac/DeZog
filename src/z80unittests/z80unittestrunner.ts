@@ -322,7 +322,9 @@ export class Z80UnitTestRunner {
 							Remote.readListFiles(configuration);
 							// Load objs to memory
 							await Remote.loadObjs();
-							// This needs to be done after the labels have been read
+							// At last load system variables to memory
+							await Remote.loadSysVars(Settings.launch.loadSysVars);
+							// This needs to be done after the labels have been read (if wanted)
 							await Remote.initWpmemAssertionLogpoints();
 
 							// Initialize Cpu- or StepHistory.

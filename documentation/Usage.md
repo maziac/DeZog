@@ -262,6 +262,7 @@ Note: you can also omit this. In that case DeZog attaches to the emulator withou
 ],
 ~~~
 - execAddress: for object files you can set the PC (program counter) start address. I.e. after loading the program will start at this address.
+- loadSysVars: If used the system variables are loaded into memory after all other loading (load/loadObjs) happened. This initializes the screen, loads the system variables and a few more bytes. In total memory area 0x4000 - 0x5CCD is initialized. Allowed values are 'sysvars-zx16k' and 'sysvars-zx48k'. If loadSysVars is used your program might use e.g. the `RST16` ROM routine to print characters to the screen. Please note that it does not change any register values. Especially if you do not disable the interrupts (DI) in your program you might need to set the IY register by yourself to 0x5C3A.
 - smallValuesMaximum: DeZog format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically constants like the maximum number of something you defined in your asm file.
 Big values are typically addresses. Here you can give the boundary between these 2 groups. bigValues usually also show their contents, i.e. the value at the address along the address itself. Usually 512 is a good boundary value.
 - tmpDir: A temporary directory used for files created during the debugging. This is e.g. used for the file to show the disassembly PC reaches areas without any associated assembler listing or for the save states.

@@ -104,6 +104,10 @@ export interface LoadObj {
 	start: string;
 }
 
+/// For loading system variables.
+export type LoadSysVar = 'none' | 'sysvars-zx16k' | 'sysvars-zx48k';
+
+
 /// Definitions for the 'zrcp' remote type.
 export interface ZrcpType {
 	// The hostname/IP address of the socket.
@@ -468,6 +472,9 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// If defined, an array of paths to binary files together with start addresses to load at startup
 	loadObjs: Array<LoadObj>;
 
+	/// If defined loads the system variables at startup. Together with the screen clearing.
+	loadSysVars: LoadSysVar;
+
 	/// Start automatically after launch.
 	startAutomatically: boolean;
 
@@ -554,6 +561,7 @@ export class Settings {
 				execAddress: <any>undefined,
 				load: <any>undefined,
 				loadObjs: <any>undefined,
+				loadSysVars: <any>undefined,
 				startAutomatically: <any>undefined,
 				commandsAfterLaunch: <any>undefined,
 				history: <any>undefined,
@@ -1068,6 +1076,9 @@ export class Settings {
 				loadObj.path = '';
 		}
 
+		if (!launchCfg.loadSysVars)
+			launchCfg.loadSysVars = 'none';
+
 		if (launchCfg.tmpDir === undefined)
 			launchCfg.tmpDir = '.tmp';
 		launchCfg.tmpDir = UnifiedPath.getUnifiedPath(launchCfg.tmpDir);
@@ -1334,6 +1345,12 @@ export class Settings {
 			// Check that start address is given
 			if (loadObj.start === undefined)
 				throw Error("'loadObj.start': You must specify a 'start' address for '" + path + "'.");
+		}
+
+		// System variables
+		const loadSysVars = Settings.launch.loadSysVars;
+		if (!['none', 'sysvars-zx16k', 'sysvars-zx48k'].includes(loadSysVars)) {
+			throw Error("'loadSysVars': Unknown system variables: '" + loadSysVars + "'.");
 		}
 
 		// Rev-Eng: Check that glob pattern at least finds one file.

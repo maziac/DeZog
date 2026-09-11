@@ -1269,6 +1269,15 @@
 									}
 								}
 							},
+							"loadSysVars": {
+								"type": "string",
+								"description": "(Optional) Load system variables into the emulator on startup of the debug session. Is loaded after all other memory contents. Allowed values are 'sysvars-zx16k', or 'sysvars-zx48k'.",
+								"enum": [
+									"sysvars-zx16k",
+									"sysvars-zx48k"
+								],
+								"default": "sysvars-zx48k"
+							},
 							"startAutomatically": {
 								"type": "boolean",
 								"description": "Start automatically after launch. Default is false."
