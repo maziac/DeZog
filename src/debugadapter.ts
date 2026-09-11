@@ -41,8 +41,8 @@ import {MemoryCommands} from './commands/memorycommands';
 import {Run} from './run';
 import {LogEval} from './misc/logeval';
 import {ErrorWrapper} from './misc/errorwrapper';
-import argv from 'string-argv';
 import {PackageInfo} from './packageinfo';
+import argv from 'string-argv';
 
 
 
@@ -144,6 +144,9 @@ export class DebugSessionClass extends DebugSession {
 	// The instance which handles the exception breakpoints (ASSERTION, WPMEM, LOGPOINT).
 	protected exceptionBreakpoints: ExceptionBreakpoints;
 
+	// To remember if language id was already checked.
+	protected languageIdNotChecked: boolean = true;
+
 
 	/**
 	 * Create and return the singleton object.
@@ -217,6 +220,67 @@ export class DebugSessionClass extends DebugSession {
 		await vscode.debug.startDebugging(workspaceFolder, configName);
 
 		return res;
+	}
+
+
+
+	/** Checks the language id once at the start.
+	 * If user has a wrong language id for the *.asm file, e.g.
+	 * asm-x86-nasm breakpoints will not work as dezog does nto expect
+	 * this language id.
+	 * The check is called on the first file the debugger stops, then
+	 * its language id is checked. If some of the (n)asm-code-lens
+	 * language ids is found a warning with explanation is given.
+	 * If some other non-supported language id is found a general warning
+	 * is given.
+	 */
+	protected checkLanguageId(filename: string | undefined) {
+		if (!filename)
+			return;
+		this.languageIdNotChecked = false;
+
+		// First check if debug.allowBreakpointsEverywhere is set.
+		const config = vscode.workspace.getConfiguration('debug', vscode.Uri.file(filename));
+		const allowEverywhere = config.get<boolean>('allowBreakpointsEverywhere');
+		if (allowEverywhere)
+			return;
+
+		// Check language id of the file.
+		(async () => {
+			// We need to open the doc (the doc would be opened anyway (if not already open) when stackTrace returns.
+			const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(filename));
+			const languageId = doc.languageId;
+			console.log(languageId);
+			const basename = UnifiedPath.basename(filename);
+
+			// Check for asm-code-lens
+			const asmCodeLensX86LanguageIds = [
+				"asm-x86-nasm",
+				"asm-x86-masm",
+				"asm-x86-gas"
+			];
+			if (asmCodeLensX86LanguageIds.includes(languageId)) {
+				const txt = `The language id for the file '${basename}' is '${languageId}' which is for an x86 file. DeZog expects a Z80 file. Some features (e.g. breakpoints) may not work correctly. Please go to vscode settings, search for 'asm-code-lens' and change the assembler to 'sjasmplus (z80)'. (Alternatively you can set 'debug.allowBreakpointsEverywhere' to true.)`;
+				this.showWarning(txt);
+				return;
+			}
+
+			// Check other IDs
+			const dezogLanguageIds = [
+				"plaintext",
+				"asm-z80-sjasmplus",
+				"asm-z80-sjasmplus-list",
+				"z80-macroasm",
+				"z80-asm",
+				"zeus-asm",
+				"gbz80",
+				"pasmo"
+			];
+			if (!dezogLanguageIds.includes(languageId)) {
+				const txt = `The language id for the file '${basename}' is '${languageId}'. The language id is not supported by DeZog. Either correct the language association of the file(s) or alternatively go to the vscode settings and set 'debug.allowBreakpointsEverywhere' to true.`;
+				this.showWarning(txt);
+			}
+		})();
 	}
 
 
@@ -445,6 +509,9 @@ export class DebugSessionClass extends DebugSession {
 	protected async initializeRequest(response: DebugProtocol.InitializeResponse, _args: DebugProtocol.InitializeRequestArguments): Promise<void> {
 		// Stop any running program.
 		Run.terminate();
+
+		// Reset warning
+		this.languageIdNotChecked = true;
 
 		//const dbgSession = vscode.debug.activeDebugSession;
 		// build and return the capabilities of this debug adapter:
@@ -1055,6 +1122,12 @@ export class DebugSessionClass extends DebugSession {
 		// Go through complete call stack and get the sources.
 		// If no source exists the stack frame will have 'src' as undefined.
 		const [sfrs, longCallstackAddresses] = this.stackFramesForCallStack(callStack);
+
+		// Check language id
+		if (this.languageIdNotChecked && sfrs.length > 0) {
+			const path = sfrs[0].source?.path;
+			this.checkLanguageId(path);
+		}
 
 		try {
 			// Save all breakpoints with addresses, as 'setNewAddresses' could change all line/address associations.
