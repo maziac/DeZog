@@ -262,6 +262,11 @@
 				"category": "DeZog"
 			},
 			{
+				"command": "dezog.showLanguageId",
+				"title": "Show Language Id",
+				"category": "DeZog"
+			},
+			{
 				"command": "dezog.disassembly.refresh",
 				"title": "Refresh disassembly",
 				"category": "DeZog",

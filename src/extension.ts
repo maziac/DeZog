@@ -15,6 +15,7 @@ import {WhatsNewView} from './whatsnew/whatsnewview';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
 import {ZxNextSerialLoopback} from './remotes/dzrptransport/zxnextserialloopback';
 import {Run} from './run';
+import path = require('path');
 
 
 /**
@@ -226,6 +227,18 @@ export function activate(context: vscode.ExtensionContext) {
 			const arr = getSelectedLineBlocks();
 			await session.analyzeAtCursor('callGraph', arr);
 		}
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.showLanguageId', async () => {
+		const editor = vscode.window.activeTextEditor;
+		const fileName = editor?.document.fileName; // e.g. "/path/to/file.ts"
+		if (!editor || !fileName) {
+			vscode.window.showErrorMessage('No active editor or file found.');
+			return;
+		}
+		const languageId = editor.document.languageId; // e.g. "typescript", "python"
+		const baseName = path.basename(fileName);
+		vscode.window.showInformationMessage(`Language Id: ${languageId} (${baseName})`);
 	}));
 
 	// Command to disable code coverage display and analyzes.
