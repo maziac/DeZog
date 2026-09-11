@@ -1676,5 +1676,9 @@
 				]
 			}
 		]
+	},
+	"allowScripts": {
+		"@serialport/bindings-cpp": false,
+		"esbuild": false
 	}
 }
