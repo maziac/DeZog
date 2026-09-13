@@ -244,10 +244,14 @@ export class DebugSessionClass extends DebugSession {
 		if (allowEverywhere)
 			return;
 
+		// Check if file exists at all
+		if (!fs.existsSync(filename))
+			return;
+
 		// Check language id of the file.
 		(async () => {
 			// We need to open the doc (the doc would be opened anyway (if not already open) when stackTrace returns.
-			const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(filename));
+			const doc = await vscode.workspace.openTextDocument("vscode.Uri.file(filename)");
 			const languageId = doc.languageId;
 			console.log(languageId);
 			const basename = UnifiedPath.basename(filename);
