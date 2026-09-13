@@ -76,6 +76,8 @@ I.e. different remotes may use a different subset of commands. For one this is b
 [CMD_EXEC_ASM]: #cmd_exec_asm22
 [CMD_INTERRUPT_ON_OFF]: #cmd_interrupt_on_off23
 [CMD_GET_SUPPORTED_COMMANDS]: #cmd_get_supported_commands24
+[CMD_READ_BANK_MEM]: #cmd_read_bank_mem25
+[CMD_WRITE_BANK_MEM]: #cmd_write_bank_mem26
 [CMD_ENABLE_BREAK_ON_INTERRUPT]: #cmd_enable_break_on_interrupt39
 [CMD_ADD_BREAKPOINT]: #cmd_add_breakpoint40
 [CMD_REMOVE_BREAKPOINT]: #cmd_remove_breakpoint41
@@ -113,6 +115,8 @@ The table below shows which commands are used (X) with what remote:
 | [CMD_EXEC_ASM] (22)                            | -     | x      | x      | -     |
 | [CMD_INTERRUPT_ON_OFF] (23)                    | X     | X      | X      | -     |
 | [CMD_GET_SUPPORTED_COMMANDS] (24)              | X     | X      | X      | -     |
+| [CMD_READ_BANK_MEM] (25)                       | X     | X      | X      | X     |
+| [CMD_WRITE_BANK_MEM] (26)                      | X     | X      | X      | X     |
 | [CMD_ENABLE_BREAK_ON_INTERRUPT] (39)           | X     | -      | -      | -     |
 | [CMD_ADD_BREAKPOINT] (40)                      | X     | X      | -      | X     |
 | [CMD_REMOVE_BREAKPOINT] (41)                   | X     | X      | -      | X     |
@@ -135,14 +139,14 @@ Notes:
 Added:
 - CMD_GET_SUPPORTED_COMMANDS added which returns the supported commands.
 - CMD_ENABLE_BREAK_ON_INTERRUPT to disable/enable pausing the debugged program on entering an interrupt.
+- CMD_READ_BANK_MEM/CMD_WRITE_BANK_MEM added to allow read from/write to a bank.
 
 Changed:
-- CMD_READ_MEM/CMD_WRITE_MEM extended to allow usage of bank number.
 - Sequence number range changed from 1-255 to 1-15.
 - Explanation for "normal" and "simple" mode added.
 
 Removed:
-- CMD_WRITE_BANK removed (use CMD_WRITE_MEM instead)
+- CMD_WRITE_BANK removed (use CMD_WRITE_BANK_MEM instead)
 
 
 ### 2.1.0
@@ -409,11 +413,12 @@ Response (Length=1):
 Note: If a program is stopped a NTF_PAUSE notification is sent as well.
 The notification must be sent AFTER the CMD_PAUSE response.
 
+
 ## CMD_READ_MEM=8
 Command (Length=7):
 | Index | Size | Value | Description               |
 | ----- | ---- | ----- | ------------------------- |
-| 0     | 1    | 0-255 | bankp1                    |
+| 0     | 1    | 0     | reserved                  |
 | 1     | 2    | addr  | Start of the memory block |
 | 3     | 2    | n     | Size of the memory block  |
 
@@ -426,20 +431,14 @@ Response (Length=N+1):
 | ..    | ..   | ...        | ...                        |
 | 1+n-1 | 1    | addr\[n-1] | Last byte of memory block  |
 
-If bankp1 is 0:
-- The memory is read from the 64k memory address space.
-
-If bankp1 > 1:
-- The memory is read from the bank specified by bankp1. The used bank is bankp1-1.
-E.g. if bankp1 is 6 then bank number 5 is read.
-- addr: This is the start of the block inside the bank. The high bits of the addr (>bank-size) are clipped. Example: if bank-size is 0x2000 and addr is 0xE007 then the memory block is read from offset 7 inside the bank.
+The memory is read from the 64k memory address space.
 
 
 ## CMD_WRITE_MEM=9
 Command (Length=4+N):
 | Index | Size | Value      | Description                |
 | ----- | ---- | ---------- | -------------------------- |
-| 0     | 1    | 0          | bankp1                     |
+| 0     | 1    | 0          | reserved                   |
 | 1     | 2    | addr       | Start of the memory block  |
 | 3     | 1    | addr\[0]   | First byte of memory block |
 | ...   | ...  | ...        | ...                        |
@@ -451,13 +450,7 @@ Response (Length=1):
 | ----- | ---- | ----- | ----------- |
 | 0     | 1    | 1-15  | Same seq no |
 
-If bankp1 is 0:
-- The memory is written to the 64k memory address space.
-
-If bankp1 > 1:
-- The memory is read from the bank specified by bankp1. The used bank is bankp1-1.
-E.g. if bankp1 is 6 then bank number 5 is read.
-- addr: This is the start of the block inside the bank. The high bits of the addr (>bank-size) are clipped. Example: if bank-size is 0x2000 and addr is 0xE007 then the memory block is read from offset 7 inside the bank.
+The memory is written to the 64k memory address space.
 
 
 ## CMD_SET_SLOT=10
@@ -750,6 +743,47 @@ If, for example, the remote only supports commands up to ID 24, the remote need 
 - Some of the commands need to be supported always by every remote like e.g. CMD_INIT.
 Nevertheless those are reported here as well.
 - This command MUST be supported by any remote that supports DZRP >= 2.2.0.
+
+
+## CMD_READ_BANK_MEM=25
+Command (Length=7):
+| Index | Size | Value  | Description               |
+| ----- | ---- | ------ | ------------------------- |
+| 0     | 1    | 0-255  | bank                      |
+| 1     | 2    | offset | Start of the memory block |
+| 3     | 2    | n      | Size of the memory block  |
+
+
+Response (Length=N+1):
+| Index | Size | Value        | Description                |
+| ----- | ---- | ------------ | -------------------------- |
+| 0     | 1    | 1-15         | Same seq no                |
+| 1     | 1    | offset\[0]   | First byte of memory block |
+| ..    | ..   | ...          | ...                        |
+| 1+n-1 | 1    | offset\[n-1] | Last byte of memory block  |
+
+- The memory is read from the bank specified by 'bank'. T
+- offset: The offset inside the bank.
+
+
+## CMD_WRITE_BANK_MEM=26
+Command (Length=4+N):
+| Index | Size | Value        | Description                |
+| ----- | ---- | ------------ | -------------------------- |
+| 0     | 1    | 0            | bank                       |
+| 1     | 2    | offset       | Start of the memory block  |
+| 3     | 1    | offset\[0]   | First byte of memory block |
+| ...   | ...  | ...          | ...                        |
+| 3+n-1 | 1    | offset\[n-1] | Last byte of memory block  |
+
+
+Response (Length=1):
+| Index | Size | Value | Description |
+| ----- | ---- | ----- | ----------- |
+| 0     | 1    | 1-15  | Same seq no |
+
+- The memory is written to the bank specified by bank.
+- offset: The offset inside the bank.
 
 
 ## CMD_ENABLE_BREAK_ON_INTERRUPT=39

@@ -1628,32 +1628,48 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 
 	/**
 	 * Sends the command to retrieve a memory dump.
-	 * @param bankp1 The bank+1 value. 0=full 64k memory, 1=bank0, 2=bank1, etc.
-	 * @param addr64k The 64k memory start address (bankp1 == 0) or index into the bank (bankp1 != 0).
+	 * @param addr64k The 64k memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	public async sendDzrpCmdReadMem(bankp1: number, addr64k: number, size: number): Promise<Uint8Array> {
+	public async sendDzrpCmdReadMem(addr64k: number, size: number): Promise<Uint8Array> {
 		let buffer: Uint8Array;
-		if (bankp1 === 0)
-			buffer = this.memory.readBlock64(addr64k, size);
-		else
-			buffer = this.memory.readBlockBank(bankp1 - 1, addr64k, size);
+		buffer = this.memory.readBlock64(addr64k, size);
 		return buffer;
 	}
 
 
 	/**
 	 * Sends the command to write a memory dump.
-	 * @param bankp1 The bank+1 value. 0=full 64k memory, 1=bank0, 2=bank1, etc.
-	 * @param addr64k The 64k memory start address (bankp1 == 0) or index into the bank (bankp1 != 0).
+	 * @param addr64k The 64k memory start address.
 	 * @param dataArray The data to write.
 	  */
-	public async sendDzrpCmdWriteMem(bankp1: number, addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
-		if (bankp1 === 0)
-			this.memory.writeBlock64k(addr64k, dataArray);
-		else
-			this.memory.writeBlockBank(bankp1 - 1, addr64k, dataArray);
+	public async sendDzrpCmdWriteMem(addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
+		this.memory.writeBlock64k(addr64k, dataArray);
+	}
+
+
+	/**
+	 * Sends the command to retrieve a memory dump from a bank.
+	 * @param bank The bank value.
+	 * @param offset The offset within the bank.
+	 * @param size The data size.
+	 * @returns A promise with an Uint8Array.
+	 */
+	public async sendDzrpCmdReadBankMem(bank: number, offset: number, size: number): Promise<Uint8Array> {
+		const buffer = this.memory.readBlockBank(bank, offset, size);
+		return buffer;
+	}
+
+
+	/**
+	 * Sends the command to write a memory dump.
+	 * @param bank The bank value.
+	 * @param offset The offset within the bank.
+	 * @param size The data size.
+	  */
+	public async sendDzrpCmdWriteBankMem(bank: number, offset: number, dataArray: Buffer | Uint8Array): Promise<void> {
+		this.memory.writeBlockBank(bank, offset, dataArray);
 	}
 
 
