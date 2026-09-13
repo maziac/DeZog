@@ -424,7 +424,7 @@ export class Z80RegistersClass {
 	 * separately and passed here. Increases the performance a little
 	 * bit.
 	 * Or if required different slots could be parsed here.
-	 * @returns E.g. address+slots[address>>13]+1.
+	 * @returns E.g. address+(slots[address>>13]+1)<<16.
 	 */
 	public createLongAddress(addr64k: number, slots?: number[]): number {
 		if (this.funcCreateLongAddress == undefined)
