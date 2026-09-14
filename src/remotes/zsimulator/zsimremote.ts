@@ -1145,6 +1145,13 @@ export class ZSimRemote extends DzrpRemote {
 	}
 
 
+	/** No adjustment necessary.
+	 */
+	protected async adjustRomBanks(regs: Uint16Array) {
+		// Do nothing.
+	}
+
+
 	/** Loads a .p, .81 or .p81 file.
 	 * The normal load routine is overwritten to allow loading of
 	 * multiple files.
@@ -1769,7 +1776,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 
 
 	/**
-	 * Sends the command to enable or disable the interrupts.
+	 * Enables/disables the interrupts.
 	 * @param enable true to enable, false to disable interrupts.
 	 */
 	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {

@@ -651,9 +651,9 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	 */
 	protected async sendDzrpCmdGetRegisters(): Promise<Uint16Array> {
 		// Get regs
-		Log.log('sendDzrpCmdGetRegisters ->', JSON.stringify(Z80Registers.getCache() || {}));
+		//Log.log('sendDzrpCmdGetRegisters ->', JSON.stringify(Z80Registers.getCache() || {}));
 		const regs = await this.sendDzrpCmd(DZRP.CMD_GET_REGISTERS);
-		Log.log('sendDzrpCmdGetRegisters ----', Z80Registers.getCache() || "undefined");
+		//Log.log('sendDzrpCmdGetRegisters ----', Z80Registers.getCache() || "undefined");
 		const pc = Utility.getWord(regs, 0);
 		const sp = Utility.getWord(regs, 2);
 		const af = Utility.getWord(regs, 4);

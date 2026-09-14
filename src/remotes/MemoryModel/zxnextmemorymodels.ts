@@ -72,7 +72,7 @@ export class MemoryModelZxNextTwoRom extends MemoryModelZxNextBase {
 					initialBank: 0xFE,
 					banks: [
 						{
-							index: [0, 223],	// 254  RAM banks
+							index: [0, 223],	// 224 RAM banks
 						},
 						{
 							index: 0xFC,
@@ -168,9 +168,10 @@ export class MemoryModelZxNextTwoRom extends MemoryModelZxNextBase {
 }
 
 
-/** The ZX Next memory model used by CSpect and ZXNext:
- * For both I cannot determine which ROM is in use, so I indicate only "ROM" not
- * "ROM1" or "ROM0".
+/** The ZX Next memory model used prior DeZog 3.8 by CSpect and ZXNext:
+ * The ROM0 and ROM1 were not distinguished, only "ROM" was used.
+ * Probably this is of no use anymore.
+ * TODO: Remove completely. Probably also MemoryModelZxNextBase can be removed as well and only MemoryModelZxNextTwoRom remains and can be renamed.
  * 8 slots per 8k.
  * 0000-1FFF: RAM/ROM
  * 2000-3FFF: RAM/ROM

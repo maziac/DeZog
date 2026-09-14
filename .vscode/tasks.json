@@ -122,6 +122,7 @@
 				"CSpect.exe", // For windows users: remove this entry
 				"-w4", // Window size
 				"-zxnext", // Use zxnext HW registers
+				//"-zx128", // ZX128K
 				"-mmc=./", // Enable RST 8, emulate SW card at director ./  (the trailing slash is important)
 				"-tv", // Disable TV shader
 				"-r", // Remember window settings
