@@ -62,12 +62,8 @@ export class Z80RegistersStandardDecoder extends DecodeRegisterData {
 		return data[Z80_REG.DE2];
 	}
 
-	public parseI(data: RegisterData): number {
-		return data[Z80_REG.IR]>>>8;
-	}
-
-	public parseR(data: RegisterData): number {
-		return data[Z80_REG.IR]&0xFF;
+	public parseIR(data: RegisterData): number {
+		return data[Z80_REG.IR];
 	}
 
 	public parseIM(data: RegisterData): number {
@@ -76,11 +72,11 @@ export class Z80RegistersStandardDecoder extends DecodeRegisterData {
 
 	public parseSlots(data: RegisterData): number[] {
 		// Decode slots
-		let i=Z80_REG.IM+1;
-		const slotCount=data[i++];
-		const slots=new Array<number>(slotCount);
-		for (let k=0; k<slotCount; k++) {
-			slots[k]=data[i++];
+		let i = Z80_REG.IM + 1;
+		const slotCount = data[i++];
+		const slots = new Array<number>(slotCount);
+		for (let k = 0; k < slotCount; k++) {
+			slots[k] = data[i++];
 		}
 		return slots;
 	}

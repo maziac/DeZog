@@ -57,34 +57,98 @@ suite('MameRemote', () => {
 */
 
 	suite('Z80RegistersMameDecoder', () => {
-		const line = "2211443366558877aa99ccbbEEDD1FFF3F2F5F4F7F6F9F8F";
+		// Order: pc,sp,af,bc,de,hl,ix,iy,af2,bc2,de2,hl2,ir,im';
+		const lineRegs = "A709 FFFE ABCD 2598 1156 2242 FAFF CCE7 2211 3322 4433 7720 ABCD 2";
+		const lineMmu = "FF FF A B 4 5 0 1";
+		const lineRegsMmu = lineRegs + ' ' + lineMmu;
+		const arrRegs = lineRegs.split(' ');
+		const arrRegsMmu = lineRegsMmu.split(' ');
 		let Decoder = new Z80RegistersMameDecoder();
 
-		test('All registers', () => {
-			let value = Decoder.parseAF(line);
-			assert.equal(0x1122, value);
-			value = Decoder.parseBC(line);
-			assert.equal(0x3344, value);
-			value = Decoder.parseDE(line);
-			assert.equal(0x5566, value);
-			value = Decoder.parseHL(line);
-			assert.equal(0x7788, value);
-			value = Decoder.parseAF2(line);
-			assert.equal(0x99AA, value);
-			value = Decoder.parseBC2(line);
-			assert.equal(0xBBCC, value);
-			value = Decoder.parseDE2(line);
-			assert.equal(0xDDEE, value);
-			value = Decoder.parseHL2(line);
-			assert.equal(0xFF1F, value);
-			value = Decoder.parseIX(line);
-			assert.equal(0x2F3F, value);
-			value = Decoder.parseIY(line);
-			assert.equal(0x4F5F, value);
-			value = Decoder.parseSP(line);
-			assert.equal(0x6F7F, value);
-			value = Decoder.parsePC(line);
-			assert.equal(0x8F9F, value);
+		suite('without mmu', () => {
+			test('registers', () => {
+				let value = Decoder.parsePC(arrRegs);
+				assert.equal(0xA709, value);
+				value = Decoder.parseSP(arrRegs);
+				assert.equal(0xFFFE, value);
+				value = Decoder.parseAF(arrRegs);
+				assert.equal(0xABCD, value);
+				value = Decoder.parseBC(arrRegs);
+				assert.equal(0x2598, value);
+				value = Decoder.parseDE(arrRegs);
+				assert.equal(0x1156, value);
+				value = Decoder.parseHL(arrRegs);
+				assert.equal(0x2242, value);
+				value = Decoder.parseIX(arrRegs);
+				assert.equal(0xFAFF, value);
+				value = Decoder.parseIY(arrRegs);
+				assert.equal(0xCCE7, value);
+				value = Decoder.parseAF2(arrRegs);
+				assert.equal(0x2211, value);
+				value = Decoder.parseBC2(arrRegs);
+				assert.equal(0x3322, value);
+				value = Decoder.parseDE2(arrRegs);
+				assert.equal(0x4433, value);
+				value = Decoder.parseHL2(arrRegs);
+				assert.equal(0x7720, value);
+				value = Decoder.parseIR(arrRegs);
+				assert.equal(0xABCD, value);
+				value = Decoder.parseI(arrRegs);
+				assert.equal(0xAB, value);
+				value = Decoder.parseR(arrRegs);
+				assert.equal(0xCD, value);
+				value = Decoder.parseIM(arrRegs);
+				assert.equal(2, value);
+			});
+
+			test('slots', () => {
+				const slots = Decoder.parseSlots(arrRegs);
+				assert.equal(slots.length, 1);
+				assert.equal(slots[0], 0);
+			});
+		});
+
+		suite('with mmu', () => {
+			test('registers', () => {
+				let value = Decoder.parsePC(arrRegsMmu);
+				assert.equal(0xA709, value);
+				value = Decoder.parseSP(arrRegsMmu);
+				assert.equal(0xFFFE, value);
+				value = Decoder.parseAF(arrRegsMmu);
+				assert.equal(0xABCD, value);
+				value = Decoder.parseBC(arrRegsMmu);
+				assert.equal(0x2598, value);
+				value = Decoder.parseDE(arrRegsMmu);
+				assert.equal(0x1156, value);
+				value = Decoder.parseHL(arrRegsMmu);
+				assert.equal(0x2242, value);
+				value = Decoder.parseIX(arrRegsMmu);
+				assert.equal(0xFAFF, value);
+				value = Decoder.parseIY(arrRegsMmu);
+				assert.equal(0xCCE7, value);
+				value = Decoder.parseAF2(arrRegsMmu);
+				assert.equal(0x2211, value);
+				value = Decoder.parseBC2(arrRegsMmu);
+				assert.equal(0x3322, value);
+				value = Decoder.parseDE2(arrRegsMmu);
+				assert.equal(0x4433, value);
+				value = Decoder.parseHL2(arrRegsMmu);
+				assert.equal(0x7720, value);
+				value = Decoder.parseIR(arrRegsMmu);
+				assert.equal(0xABCD, value);
+				value = Decoder.parseI(arrRegsMmu);
+				assert.equal(0xAB, value);
+				value = Decoder.parseR(arrRegsMmu);
+				assert.equal(0xCD, value);
+				value = Decoder.parseIM(arrRegsMmu);
+				assert.equal(2, value);
+			});
+
+			test('slots', () => {
+				const slots = Decoder.parseSlots(arrRegsMmu);
+				assert.equal(slots.length, 8);
+				assert.deepEqual(slots, [0xFF, 0xFF, 0xA, 0xB, 0x4, 0x5, 0x0, 0x1]);
+			});
 		});
 	});
 

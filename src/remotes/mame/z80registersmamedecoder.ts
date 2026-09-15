@@ -77,12 +77,8 @@ export class Z80RegistersMameDecoder extends Z80RegistersStandardDecoder {
 		return this.parse(data, Z80_REG.DE2);
 	}
 
-	public parseI(data: RegisterData): number {
-		return this.parse(data, Z80_REG.I);
-	}
-
-	public parseR(data: RegisterData): number {
-		return this.parse(data, Z80_REG.R);
+	public parseIR(data: RegisterData): number {
+		return this.parse(data, Z80_REG.IR);
 	}
 
 	public parseIM(data: RegisterData): number {
@@ -90,8 +86,8 @@ export class Z80RegistersMameDecoder extends Z80RegistersStandardDecoder {
 	}
 
 	public parseSlots(data: RegisterData): number[] {
-		let mmu = Z80_REG.IM + 1;
-		if (data.length < mmu) {
+		const mmu = Z80_REG.IM + 1;
+		if (data.length <= mmu) {
 			// No MMU registers, probably no Z80N
 			return [0];
 		}

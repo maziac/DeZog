@@ -146,19 +146,13 @@ export class DecodeRegisterData {
 		return 0;
 	}
 
-	public parseI(data: RegisterData): number {
+	public parseIR(data: RegisterData): number {
 		// Override
 		Utility.assert(false);
 		return 0;
 	}
 
-	public parseR(data: string): number {
-		// Override
-		Utility.assert(false);
-		return 0;
-	}
-
-	public parseIM(data: string): number {
+	public parseIM(data: RegisterData): number {
 		// Override
 		Utility.assert(false);
 		return 0;
@@ -252,5 +246,14 @@ export class DecodeRegisterData {
 		return res;
 	}
 
+	public parseI(data: RegisterData): number {
+		const res = this.parseIR(data) >>> 8;
+		return res;
+	}
+
+	public parseR(data: RegisterData): number {
+		const res = this.parseIR(data) & 0xFF;
+		return res;
+	}
 }
 
