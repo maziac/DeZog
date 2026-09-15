@@ -144,7 +144,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			// Start so that the ZX Next initializes
 			//await this.sendPacketData('c');
 			await this.sendQrcmd('g');
-			await new Promise(resolve => setTimeout(resolve, 1000));
+			//	await new Promise(resolve => setTimeout(resolve, 1000));
 			await this.sendQrcmd('gv');
 
 			// Check the XML
@@ -791,10 +791,26 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * ID.
 	 */
 	public async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
-		const address64k = bp.longAddress & 0xFFFF;	// Long addresses not supported
-		const cmd = 'Z0,' + address64k.toString(16) + ',0';
-		await this.sendPacketDataOk(cmd);
-		bp.bpId = 1;	// Just need to set something not zero.
+		const address64k = bp.longAddress & 0xFFFF;
+		let condition = '';
+
+		// ZXNext banking support
+		if (this.Z80N) {
+			// Creates e.g.: bpset 0xc000,mmu6==0x21
+			const bankp1 = (bp.longAddress >>> 16) & 0xFF;
+			if (bankp1 > 0) {
+				const bank = bankp1 - 1;
+				const slot = address64k >>> 13;
+				condition = `,mmu${slot}==0x${bank.toString(16)}`;
+			}
+		}
+
+		// Send the command to set the breakpoint
+		const cmd = `bpset 0x${address64k.toString(16)}${condition}`;
+		const response = await this.sendQrcmd(cmd);
+		// response is e.g. 'Breakpoint 1A set', starts at 1
+		const mameBpId = response.split(' ')[1];	// Extract the ID from the response
+		bp.bpId = parseInt(mameBpId, 16);	//
 	}
 
 
@@ -802,9 +818,11 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * @param bp The breakpoint to remove.
 	 */
 	public async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
-		const address64k = bp.longAddress & 0xFFFF;	// Long addresses not supported
-		const cmd = 'z0,' + address64k.toString(16) + ',0';
-		await this.sendPacketDataOk(cmd);
+		const mameBpId = bp.bpId!;
+		const cmd = `bpclear 0x${mameBpId.toString(16)}`;
+		const response = await this.sendQrcmd(cmd);
+		if (!response.includes('cleared'))
+			throw Error(`MAME: ${response}`);
 	}
 
 
@@ -813,6 +831,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 * @param access 'r', 'w' or 'rw'.
 	 */
+	// TODO
 	public async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string): Promise<void> {
 		const address64k = address & 0xFFFF;	// Long addresses not supported
 		let type = '4';	// rw
