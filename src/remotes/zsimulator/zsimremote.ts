@@ -19,7 +19,7 @@ import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {MemoryModelAllRam} from '../MemoryModel/genericmemorymodels';
 import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../MemoryModel/zxspectrummemorymodels';
-import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../MemoryModel/zxnextmemorymodels';
+import {MemoryModelZxNextTwoRom} from '../MemoryModel/zxnextmemorymodels';
 import {MemoryModelColecoVision} from '../MemoryModel/colecovisionmemorymodels';
 import {MemoryModelZX81_1k, MemoryModelZX81_2k, MemoryModelZX81_16k, MemoryModelZX81_32k, MemoryModelZX81_48k, MemoryModelZX81_56k} from '../MemoryModel/zx81memorymodels';
 import {SpectrumUlaScreen} from './spectrumulascreen';
@@ -1189,7 +1189,7 @@ export class ZSimRemote extends DzrpRemote {
 		snaFile.readFile(filePath);
 
 		// If ZXNext is used then MemoryModelZxNextTwoROM should be used:
-		Utility.assert(!(this.memoryModel instanceof MemoryModelZxNextOneROM));
+		Utility.assert(this.memoryModel instanceof MemoryModelZxNextTwoRom);
 
 		// 16K
 		if (this.memoryModel instanceof MemoryModelZx16k)
@@ -1277,7 +1277,7 @@ export class ZSimRemote extends DzrpRemote {
 		z80File.readFile(filePath);
 
 		// If ZXNext is used then MemoryModelZxNextTwoROM should be used:
-		Utility.assert(!(this.memoryModel instanceof MemoryModelZxNextOneROM));
+		Utility.assert(this.memoryModel instanceof MemoryModelZxNextTwoRom);
 
 		// 16K
 		if (this.memoryModel instanceof MemoryModelZx16k)
@@ -1688,7 +1688,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 	  */
 	public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
 		// If ZXNext is used then MemoryModelZxNextTwoROM should be used:
-		Utility.assert(!(this.memoryModel instanceof MemoryModelZxNextOneROM));
+		Utility.assert(this.memoryModel instanceof MemoryModelZxNextTwoRom);
 
 		// Special handling for ZXNext ROM:
 		if (this.memoryModel instanceof MemoryModelZxNextTwoRom) {

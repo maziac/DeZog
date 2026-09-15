@@ -8,7 +8,7 @@ import {Remote} from '../src/remotes/remotebase';
 import {Settings, SettingsParameters} from '../src/settings/settings';
 import {Labels} from '../src/labels/labels';
 import {DecodeZesaruxRegisters, DecodeZesaruxRegistersZx128k} from '../src/remotes/zesarux/decodezesaruxdata';
-import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
+import {MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 
 suite('Utility', () => {
 
@@ -592,7 +592,7 @@ suite('Utility', () => {
 				Settings.launch = Settings.Init(cfg);
 				Z80RegistersClass.createRegisters(Settings.launch);
 				Z80Registers.decoder = new DecodeZesaruxRegistersZx128k()
-				const mm = new MemoryModelZxNextOneROM();
+				const mm = new MemoryModelZxNextTwoRom();
 				mm.init();
 				RemoteFactory.createRemote(Settings.launch);
 			});

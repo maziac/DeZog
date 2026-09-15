@@ -6,7 +6,7 @@ import * as path from 'path';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {MemoryModelAllRam, MemoryModelUnknown} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZx128k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
-import {MemoryModelZxNextOneROM, MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
+import {MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {ReverseEngineeringLabelParser} from '../src/labels/reverseengineeringlabelparser';
 import {Utility} from '../src/misc/utility';
@@ -681,25 +681,6 @@ suite('Labels (revEng)', () => {
 				assert.equal(parser.createLongAddress(0x0000, 0xFE), 0x0FF0000);
 				assert.equal(parser.createLongAddress(0x2000, 0xFF), 0x1002000);
 			});
-
-
-			test('Target: MemoryModelZxNextOneROM', () => {
-				const mm = new MemoryModelZxNextOneROM();
-				createSldFile(mm);
-
-				// RAM
-				for (let bank = 0; bank < 224; bank++) {
-					for (let address = 0; address < 0x10000; address += 0x2000) {
-						const expected = ((bank + 1) << 16) + address;
-						assert.equal(parser.createLongAddress(address, bank), expected);
-					}
-				}
-
-				// ROM
-				assert.equal(parser.createLongAddress(0x0000, 0xFE), 0x0FF0000);
-				assert.equal(parser.createLongAddress(0x2000, 0xFF), 0x1002000);
-			});
-
 
 			test('Target: custom MemoryModel', () => {
 				// Custom memory model
