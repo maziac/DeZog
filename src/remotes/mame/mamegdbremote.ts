@@ -9,11 +9,9 @@ import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {MemoryModelUnknown} from '../MemoryModel/genericmemorymodels';
-import {SnaFile} from '../dzrp/snafile';
-import {MemBank16k} from '../dzrp/membank16k';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {ErrorWrapper} from '../../misc/errorwrapper';
-import {Z80File} from '../dzrp/z80file';
+import {MemoryModelZxNextTwoRom} from '../MemoryModel/zxnextmemorymodels';
 
 
 
@@ -37,6 +35,14 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	// Stores the received data.
 	protected receivedData: string;
 
+	// If mame is using the Z80 Next CPU / tbblue.
+	// Is determined during connection setup.
+	protected Z80N: boolean;
+
+	// Used for temporary bank reads/writes:
+	protected readonly TMP_SLOT = 6;
+
+
 
 	/// Constructor.
 	constructor(settingsMameType: MameType) {
@@ -47,6 +53,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		this.supportsWPMEM = true;
 		this.supportsLOGPOINT = true;
 		this.supportsBreakOnInterrupt = false;
+		this.Z80N = false;
 	}
 
 
@@ -133,6 +140,13 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			//await this.sendPacketData('?'); // Reply is ignored
 			const qXmlReply = await this.sendPacketData('qXfer:features:read:target.xml:00,FFFF');	// Enable 'g', 'G', 'p', and 'P commands
 
+			// TODO: need better / faster initialization sequence:
+			// Start so that the ZX Next initializes
+			//await this.sendPacketData('c');
+			await this.sendQrcmd('g');
+			await new Promise(resolve => setTimeout(resolve, 1000));
+			await this.sendQrcmd('gv');
+
 			// Check the XML
 			this.parseXml(qXmlReply);
 
@@ -141,8 +155,15 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 			Z80Registers.decoder = this.createZ80RegistersDecoder();
 
-			// 64k ROM
-			this.memoryModel = new MemoryModelUnknown()
+			// 64k RAM
+			if (this.Z80N) {
+				// ZX Next
+				this.memoryModel = new MemoryModelZxNextTwoRom();
+			}
+			else {
+				// Unknown memory model: 64k RAM assumed
+				this.memoryModel = new MemoryModelUnknown()
+			}
 			this.memoryModel.init();
 
 			// Ready
@@ -250,6 +271,17 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		const architecture = match[1];
 		if (architecture != 'z80')
 			throw Error("Architecture '" + architecture + "' is not supported by DeZog. Please select a driver/ROM in MAME with a 'z80' architecture.");
+		// Check if Z80N (checks if mmu is available)
+		let z80n = true;
+		for (let mmu = 0; mmu < 8; mmu++) {
+			const matchTxt = 'reg name="mmu' + mmu + '"';
+			const regex = new RegExp(matchTxt);
+			const found = regex.test(xml);
+			if (!found) {
+				z80n = false;
+			}
+		}
+		this.Z80N = z80n;
 	}
 
 
@@ -483,6 +515,27 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
+	/** Sends a qRcmd packet to MAME.
+	 * @param command The command string to send. E.g. "print b@0xC000"
+	 * @returns A Promise with the response string.
+	 */
+	protected async sendQrcmd(command: string): Promise<string> {
+		const encodedCommand = this.hexEncode(command);
+		const response = await this.sendPacketData("qRcmd," + encodedCommand);
+		// Check for error
+		if (response.startsWith('E') || response.includes('error'))
+			throw Error("MAME replied with an Error: '" + response + "' (for '" + command + "')");
+		// Send return value (decoded response)
+		const result = this.hexDecode(response);
+		if (result.startsWith('>'))
+			throw Error("MAME replied with an Error:\n" + result + "\n (for '" + command + "')");
+		return result;
+	}
+
+	// const encoded = this.hexEncode(unencoded);
+	// const responseDecoded = await this.sendPacketData("qRcmd," + encoded);
+	// response = this.hexDecode(responseDecoded);
+
 	/** Writes the buffer to the socket.
 	 */
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
@@ -522,6 +575,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
   send:  Without other parameter. Used to send a break (CTRL-C).
   	The break is automatically followed by a 'p0b' (get PC register).
   close: Closes the port.
+  qRcmd: Send special commands to the remote.
 `;
 		}
 
@@ -539,6 +593,10 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 				cmd_name = packetData;
 				response = await this.sendPacketData(packetData);
 			}
+		}
+		else if (cmd_name?.toLowerCase() == "qrcmd") {
+			const unencoded = cmdArray.join(' ');
+			response = await this.sendQrcmd(unencoded);
 		}
 		else if (cmd_name == "close") {
 			await this.socketClose();
@@ -558,6 +616,28 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
+	/** Encodes the string as hex string.
+	 * Used for "qRcmd".
+	 */
+	protected hexEncode(str: string): string {
+		let hex = '';
+		for (let i = 0; i < str.length; i++) {
+			hex += str.charCodeAt(i).toString(16).padStart(2, '0');
+		}
+		return hex;
+	}
+
+
+	/** Decodes a hex string.
+	 * Used for "qRcmd".
+	 */
+	protected hexDecode(hex: string): string {
+		let str = '';
+		for (let i = 0; i < hex.length; i += 2) {
+			str += String.fromCharCode(parseInt(hex.substring(i, i + 2), 16));
+		}
+		return str;
+	}
 
 	//------- Send Commands -------
 
@@ -576,9 +656,28 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * the Remote.
 	 */
 	public async getRegistersFromEmulator(): Promise<void> {
-		const regs = await this.sendPacketData('g');	// Returns a string with the reg values as hex
+		// const regs = await this.sendPacketData('g');	// Returns a string with the reg values as hex
+		// Z80Registers.setCache(regs);
+
+		let cmd = 'print pc,sp,af,bc,de,hl,ix,iy,af2,bc2,de2,hl2,ir,im';
+		if (this.Z80N)
+			cmd += ',mmu0,mmu1,mmu2,mmu3,mmu4,mmu5,mmu6,mmu7';
+		const regValues = await this.sendQrcmd(cmd);
+		const regs = regValues.split(' ');	// Split the response into individual register values
 		Z80Registers.setCache(regs);
 	}
+
+	// TODO: Should I implement this instead of changing getRegistersFromEmulator
+	/** Sends the command to get all registers.
+	 * @returns An Uint16Array with the register data. Same order as in
+	 * 'Z80Registers.getRegisterData'.
+	 */
+	// public async sendDzrpCmdGetRegisters(): Promise<Uint16Array> {
+	// 	const regs = await this.sendPacketData('g');	// Returns a string with the reg values as hex
+	// 	Z80Registers.setCache(regs);
+	// 	const regData = Z80Registers.getRegisterData();
+	// 	return regData;
+	// }
 
 
 	/** Sends the command to set a register value.
@@ -586,56 +685,11 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * @param value A 1 byte or 2 byte value.
 	 */
 	public async sendDzrpCmdSetRegister(regIndex: Z80_REG, value: number): Promise<void> {
-		const permut = [
-			0x0B,	// PC -> MAME
-			0x0A,	// SP -> MAME
-			0x00,	// AF -> MAME
-			0x01,	// BC -> MAME
-			0x02,	// DE -> MAME
-			0x03,	// HL -> MAME
-			0x08,	// IX -> MAME
-			0x09,	// IY -> MAME
-			0x04,	// AF2 -> MAME
-			0x05,	// BC2 -> MAME
-			0x06,	// DE2 -> MAME
-			0x07,	// HL2 -> MAME
-		];
-
-		// Word registers:
-		if (regIndex <= Z80_REG.HL2) {
-			value &= 0xFFFF;
-			const mameRegIndex = permut[regIndex];
-			const cmdSet = 'P' + mameRegIndex.toString(16) + '=' + Utility.getHexWordStringLE(value);
-			await this.sendPacketDataOk(cmdSet);
-			return;
-		}
-
-		// Byte registers:
-		if (regIndex >= Z80_REG.F && regIndex <= Z80_REG.H2) {
-			value &= 0xFF;
-			// Get the word register.
-			const byteRegIndex = regIndex - Z80_REG.F;
-			const dwordIndex = Math.floor(byteRegIndex / 2) + Z80_REG.AF;
-			let dword = Z80Registers.getRegValue(dwordIndex);
-			// Now check which half should be changed
-			const half = byteRegIndex % 2;
-			if (half) {
-				// Upper half should be changed, e.g. B of BC
-				dword = (dword & 0xFF) + 256 * value;
-			}
-			else {
-				// Lower half should be changed, e.g. C of BC
-				dword = (dword & 0xFF00) + value;
-			}
-			// Change dword register
-			const mameRegIndex = permut[dwordIndex];
-			const cmdSet = 'P' + mameRegIndex.toString(16) + '=' + Utility.getHexWordStringLE(dword);
-			await this.sendPacketDataOk(cmdSet);
-			return;
-		}
-
-		// All other registers are not supported
-		this.emit('warning', "MAME: Changing register " + Z80_REG[regIndex] + " is not supported.");
+		let regString = Z80Registers.getRegName(regIndex);
+		regString = regString.replace("'", "2");
+		const valueHexString = value.toString(16);
+		const cmd = `${regString}=${valueHexString}`;
+		await this.sendQrcmd(cmd);
 	}
 
 
@@ -790,14 +844,11 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 	/** Sends the command to retrieve a memory dump.
 	 * Sends the command to retrieve a memory dump.
-	 * @param bankp1 The bank+1 value. 0=full 64k memory, 1=bank0, 2=bank1, etc.
 	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	protected async sendDzrpCmdReadMem(bankp1: number, addr64k: number, size: number): Promise<Uint8Array> {
-		if (bankp1 > 0)
-			throw Error('MAME gdbstub does not support banked memory reads.');
+	protected async sendDzrpCmdReadMem(addr64k: number, size: number): Promise<Uint8Array> {
 		const cmd = 'm' + addr64k.toString(16) + ',' + size.toString(16);
 		const resp = await this.sendPacketData(cmd);
 		// Parse the hex values
@@ -812,15 +863,37 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
+	/** Sends the command to retrieve a memory dump.
+	 * @param bank The bank value.
+	 * @param offset The memory start offset within the bank.
+	 * @param size The data size.
+	 */
+	protected async sendDzrpCmdReadBankMem(bank: number, offset: number, size: number): Promise<Uint8Array> {
+		if (!this.Z80N)
+			throw Error('MAME/DeZog does support banked memory reads only for Z80N.');
+
+		// For banked memory switch in the appropriate bank temporarily:
+		// Get bank for tmp slot
+		const slots = this.getSlots();
+		const tmpBank = slots[this.TMP_SLOT];
+		// Set new bank
+		await this.sendDzrpCmdSetSlot(this.TMP_SLOT, bank);
+		// Read memory
+		const slotOffs = this.TMP_SLOT * 0x2000; // Each slot is 8k, TMP_SLOT offset in memory
+		const addr64k = (offset & 0x1FFF) + slotOffs;
+		const buffer = await this.sendDzrpCmdReadMem(addr64k, size);	// Use normal read mem function
+		// Restore the original bank in the TMP_SLOT
+		await this.sendDzrpCmdSetSlot(this.TMP_SLOT, tmpBank);
+		return buffer;
+	}
+
+
 	/** Sends the command to write a memory dump.
 	 * @param bankp1 The bank+1 value. 0=full 64k memory, 1=bank0, 2=bank1, etc.
 	 * @param addr64k The memory start address (64k).
 	 * @param dataArray The data to write.
 	  */
-	public async sendDzrpCmdWriteMem(bankp1: number, addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
-		if (bankp1 > 0)
-			throw Error('MAME gdbstub does not support banked memory writes.');
-
+	public async sendDzrpCmdWriteMem(addr64k: number, dataArray: Buffer | Uint8Array): Promise<void> {
 		const chunkSize = 2000;	// empirical value: at least on macos up to 5000 seems safe.
 		let totalSize = dataArray.length;
 		let i = 0;
@@ -846,139 +919,64 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
+	/** Sends the command to write a memory dump.
+	 * @param bank The bank value.
+	 * @param offset The memory start offset within the bank.
+	 * @param size The data size.
+	  */
+	public async sendDzrpCmdWriteBankMem(bank: number, offset: number, dataArray: Buffer | Uint8Array): Promise<void> {
+		if (!this.Z80N)
+			throw Error('MAME/DeZog does support banked memory writes only for Z80N.');
+
+		// For banked memory switch in the appropriate bank temporarily:
+		// Get bank for tmp slot
+		const tmpBankString = await this.sendQrcmd(`print mmu${this.TMP_SLOT}`);
+		const tmpBank = parseInt(tmpBankString);
+		// Set new bank
+		await this.sendDzrpCmdSetSlot(this.TMP_SLOT, bank);
+		// Copy memory
+		const slotOffs = this.TMP_SLOT * 0x2000; // Each slot is 8k, TMP_SLOT offset in memory
+		const addr64k = (offset & 0x1FFF) + slotOffs;
+		await this.sendDzrpCmdWriteMem(addr64k, dataArray);	// Use normal write mem function
+		// Restore the original bank in the TMP_SLOT
+		await this.sendDzrpCmdSetSlot(this.TMP_SLOT, tmpBank);
+	}
+
+
+	/** Sends the command to set a slot/bank associations (8k banks).
+	 * @param slot The slot to set
+	 * @param bank The 8k bank to associate the slot with.
+	 * @returns A Promise with an error. An error can only occur on real HW if the slot with dezogif is overwritten.
+	 */
+	public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
+		const bankHexString = '0x' + bank.toString(16);
+		await this.sendQrcmd(`do mmu${slot}=${bankHexString}`);
+		return 0;	// No error
+	}
+
+
+	/** Sends the command to set the border.
+	 */
+	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
+		const borderColorHexString = '0x' + borderColor.toString(16);
+		await this.sendQrcmd(`do ib@0x00FE=${borderColorHexString}`);
+	}
+
+
+	/** Enables/disables the interrupts.
+	 * @param enable true to enable, false to disable interrupts.
+	 */
+	protected async sendDzrpCmdInterruptOnOff(enable: boolean): Promise<void> {
+		const enableInterrupt = (enable) ? 1 : 0;
+		await this.sendQrcmd(`iff1=${enableInterrupt}`);
+		await this.sendQrcmd(`iff2=${enableInterrupt}`);
+	}
+
+
 	/** Ignore command.
 	 */
 	protected async sendDzrpCmdClose(): Promise<void> {
 		// Do nothing
-	}
-
-
-	/** Loads a .sna file.
-	 * This does not use sendDrzpCmdWriteBank as MAME gdbstub does not
-	 * support slots and banking the way Dezog would require it.
-	 * Therefore only 48k Spectrum .sna files are supported and this is
-	 * written into memory with sendDzrpWriteMemory.
-	 * Loading a .sna file does make sense only for mame started with
-	 * machine spectrum.
-	 * If it is used with some other machine the behavior is undefined
-	 * = user error.
-	 * @returns The sp after loading the file.
-	 */
-	protected async loadBinSna(filePath: string): Promise<number | undefined> {
-		// Load and parse file
-		const snaFile = new SnaFile();
-		snaFile.readFile(filePath);
-
-		// Check that it is a 48k sna file
-		if (snaFile.is128kFile)
-			throw Error('Loading of 128k .sna files into MAME is not supported. Only 48k .sna files are supported.');
-
-		// Transfer 16k memory banks
-		let address = MemBank16k.BANK16K_SIZE;
-		for (const memBank of snaFile.memBanks) {
-			// Write memory
-			await this.writeMemoryDump(address, memBank.data);
-			// Next
-			address += MemBank16k.BANK16K_SIZE;
-		}
-
-		// Set the registers
-		await this.sendDzrpCmdSetRegister(Z80_REG.PC, snaFile.pc);
-		await this.sendDzrpCmdSetRegister(Z80_REG.SP, snaFile.sp);
-		await this.sendDzrpCmdSetRegister(Z80_REG.AF, snaFile.af);
-		await this.sendDzrpCmdSetRegister(Z80_REG.BC, snaFile.bc);
-		await this.sendDzrpCmdSetRegister(Z80_REG.DE, snaFile.de);
-		await this.sendDzrpCmdSetRegister(Z80_REG.HL, snaFile.hl);
-		await this.sendDzrpCmdSetRegister(Z80_REG.IX, snaFile.ix);
-		await this.sendDzrpCmdSetRegister(Z80_REG.IY, snaFile.iy);
-		await this.sendDzrpCmdSetRegister(Z80_REG.AF2, snaFile.af2);
-		await this.sendDzrpCmdSetRegister(Z80_REG.BC2, snaFile.bc2);
-		await this.sendDzrpCmdSetRegister(Z80_REG.DE2, snaFile.de2);
-		await this.sendDzrpCmdSetRegister(Z80_REG.HL2, snaFile.hl2);
-
-		// Not supported by MAME:
-		//await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
-		//await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
-		//await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
-		//Setting the interrupt
-
-		return snaFile.sp;
-	}
-
-
-	/** Loads a .z80 file.
-	 * This does not use sendDrzpCmdWriteBank as MAME gdbstub does not
-	 * support slots and banking the way Dezog would require it.
-	 * Therefore only 48k Spectrum .z80 files are supported and this is
-	 * written into memory with sendDzrpWriteMemory.
-	 * Loading a .z80 file does make sense only for mame started with
-	 * machine spectrum.
-	 * If it is used with some other machine the behavior is undefined
-	 * = user error.
-	 * @returns The sp after loading the file.
-	 */
-	protected async loadBinZ80(filePath: string): Promise<number | undefined> {
-		// Load and parse file
-		const z80File = new Z80File();
-		z80File.readFile(filePath);
-
-		// Check that it is a 48k z80 file
-		if (!z80File.is48kFile)
-			throw Error('Only loading of 48k .z80 files into MAME is supported.');
-
-		// Transfer 16k memory banks
-		let address;
-		for (const memBank of z80File.memBanks) {
-			switch (memBank.bank) {
-				case 5:
-					address = 0x4000;
-					break;
-				case 2:
-					address = 0x8000;
-					break;
-				case 0:
-					address = 0xC000;
-					break;
-				default:
-					// Ignore, should not happen
-					this.continue;
-			}
-			// Write memory
-			await this.writeMemoryDump(address, memBank.data);
-			// Next
-			address += MemBank16k.BANK16K_SIZE;
-		}
-
-		// Set the registers
-		await this.sendDzrpCmdSetRegister(Z80_REG.PC, z80File.pc);
-		await this.sendDzrpCmdSetRegister(Z80_REG.SP, z80File.sp);
-		await this.sendDzrpCmdSetRegister(Z80_REG.AF, z80File.af);
-		await this.sendDzrpCmdSetRegister(Z80_REG.BC, z80File.bc);
-		await this.sendDzrpCmdSetRegister(Z80_REG.DE, z80File.de);
-		await this.sendDzrpCmdSetRegister(Z80_REG.HL, z80File.hl);
-		await this.sendDzrpCmdSetRegister(Z80_REG.IX, z80File.ix);
-		await this.sendDzrpCmdSetRegister(Z80_REG.IY, z80File.iy);
-		await this.sendDzrpCmdSetRegister(Z80_REG.AF2, z80File.af2);
-		await this.sendDzrpCmdSetRegister(Z80_REG.BC2, z80File.bc2);
-		await this.sendDzrpCmdSetRegister(Z80_REG.DE2, z80File.de2);
-		await this.sendDzrpCmdSetRegister(Z80_REG.HL2, z80File.hl2);
-
-		// Not supported by MAME:
-		//await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
-		//await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
-		//await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
-		//Setting the interrupt
-
-		return z80File.sp;
-	}
-
-
-	/** Loads a .nex file.
-	 * See https://wiki.specnext.dev/NEX_file_format
-	 * @returns The sp after loading the file.
-	 */
-	protected async loadBinNex(filePath: string): Promise<number | undefined> {
-		throw Error('Cannot load a .nex file into MAME.');
 	}
 }
 

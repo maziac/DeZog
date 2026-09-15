@@ -366,6 +366,16 @@ export class Z80RegistersClass {
 
 
 	/**
+	 * Returns the register name.
+	 * @param reg The register enum.
+	 * @returns The name of the register as a string.
+	 */
+	public getRegName(reg: Z80_REG): string {
+		const name = Z80RegistersClass.registerNames[reg];
+		return name;
+	}
+
+	/**
 	 * Returns the register value as a number.
 	 * @param reg The register enum.
 	 * @returns The value of the register or NaN if register cannot be
