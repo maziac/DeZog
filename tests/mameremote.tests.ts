@@ -8,54 +8,6 @@ import {Settings} from '../src/settings/settings';
 
 
 suite('MameRemote', () => {
-	/*
-	let zsim: ZSimRemote;
-
-	suite('Z80RegistersMameDecoder', () => {
-
-		setup(() => {
-			Utility.setExtensionPath('.');
-			const cfg: any = {
-				remoteType: 'zsim',
-				zsim: {
-					zxKeyboard: true,
-					visualMemory: true,
-					ulaScreen: "spectrum",
-					cpuLoad: 1,
-					Z80N: false,
-					memoryModel: "ZX48K"
-				},
-				history: {
-					reverseDebugInstructionCount: 0,
-					spotCount: 0,
-					codeCoverageEnabled: false
-				}
-			};
-			Settings.launch = Settings.Init(cfg);
-			Z80RegistersClass.createRegisters();
-			zsim = new ZSimRemote();
-		});
-
-		test('Check ROM', () => {
-			// @ts-ignore: protected access
-			zsim.configureMachine(Settings.launch.zsim);
-
-			// Check first 2 bytes
-			let value = zsim.memory.read8(0x0000);
-			assert.equal(0xF3, value);
-			value = zsim.memory.read8(0x0001);
-			assert.equal(0xAF, value);
-
-			// Check last 2 bytes
-			value = zsim.memory.read8(0x3FFE);
-			assert.equal(0x42, value);
-			value = zsim.memory.read8(0x3FFF);
-			assert.equal(0x3C, value);
-		});
-
-	});
-*/
-
 	suite('Z80RegistersMameDecoder', () => {
 		// Order: pc,sp,af,bc,de,hl,ix,iy,af2,bc2,de2,hl2,ir,im';
 		const lineRegs = "A709 FFFE ABCD 2598 1156 2242 FAFF CCE7 2211 3322 4433 7720 ABCD 2";
@@ -68,37 +20,37 @@ suite('MameRemote', () => {
 		suite('without mmu', () => {
 			test('registers', () => {
 				let value = Decoder.parsePC(arrRegs);
-				assert.equal(0xA709, value);
+				assert.equal(value, 0xA709);
 				value = Decoder.parseSP(arrRegs);
-				assert.equal(0xFFFE, value);
+				assert.equal(value, 0xFFFE);
 				value = Decoder.parseAF(arrRegs);
-				assert.equal(0xABCD, value);
+				assert.equal(value, 0xABCD);
 				value = Decoder.parseBC(arrRegs);
-				assert.equal(0x2598, value);
+				assert.equal(value, 0x2598);
 				value = Decoder.parseDE(arrRegs);
-				assert.equal(0x1156, value);
+				assert.equal(value, 0x1156);
 				value = Decoder.parseHL(arrRegs);
-				assert.equal(0x2242, value);
+				assert.equal(value, 0x2242);
 				value = Decoder.parseIX(arrRegs);
-				assert.equal(0xFAFF, value);
+				assert.equal(value, 0xFAFF);
 				value = Decoder.parseIY(arrRegs);
-				assert.equal(0xCCE7, value);
+				assert.equal(value, 0xCCE7);
 				value = Decoder.parseAF2(arrRegs);
-				assert.equal(0x2211, value);
+				assert.equal(value, 0x2211);
 				value = Decoder.parseBC2(arrRegs);
-				assert.equal(0x3322, value);
+				assert.equal(value, 0x3322);
 				value = Decoder.parseDE2(arrRegs);
-				assert.equal(0x4433, value);
+				assert.equal(value, 0x4433);
 				value = Decoder.parseHL2(arrRegs);
-				assert.equal(0x7720, value);
+				assert.equal(value, 0x7720);
 				value = Decoder.parseIR(arrRegs);
-				assert.equal(0xABCD, value);
+				assert.equal(value, 0xABCD);
 				value = Decoder.parseI(arrRegs);
-				assert.equal(0xAB, value);
+				assert.equal(value, 0xAB);
 				value = Decoder.parseR(arrRegs);
-				assert.equal(0xCD, value);
+				assert.equal(value, 0xCD);
 				value = Decoder.parseIM(arrRegs);
-				assert.equal(2, value);
+				assert.equal(value, 2);
 			});
 
 			test('slots', () => {
@@ -111,37 +63,37 @@ suite('MameRemote', () => {
 		suite('with mmu', () => {
 			test('registers', () => {
 				let value = Decoder.parsePC(arrRegsMmu);
-				assert.equal(0xA709, value);
+				assert.equal(value, 0xA709);
 				value = Decoder.parseSP(arrRegsMmu);
-				assert.equal(0xFFFE, value);
+				assert.equal(value, 0xFFFE);
 				value = Decoder.parseAF(arrRegsMmu);
-				assert.equal(0xABCD, value);
+				assert.equal(value, 0xABCD);
 				value = Decoder.parseBC(arrRegsMmu);
-				assert.equal(0x2598, value);
+				assert.equal(value, 0x2598);
 				value = Decoder.parseDE(arrRegsMmu);
-				assert.equal(0x1156, value);
+				assert.equal(value, 0x1156);
 				value = Decoder.parseHL(arrRegsMmu);
-				assert.equal(0x2242, value);
+				assert.equal(value, 0x2242);
 				value = Decoder.parseIX(arrRegsMmu);
-				assert.equal(0xFAFF, value);
+				assert.equal(value, 0xFAFF);
 				value = Decoder.parseIY(arrRegsMmu);
-				assert.equal(0xCCE7, value);
+				assert.equal(value, 0xCCE7);
 				value = Decoder.parseAF2(arrRegsMmu);
-				assert.equal(0x2211, value);
+				assert.equal(value, 0x2211);
 				value = Decoder.parseBC2(arrRegsMmu);
-				assert.equal(0x3322, value);
+				assert.equal(value, 0x3322);
 				value = Decoder.parseDE2(arrRegsMmu);
-				assert.equal(0x4433, value);
+				assert.equal(value, 0x4433);
 				value = Decoder.parseHL2(arrRegsMmu);
-				assert.equal(0x7720, value);
+				assert.equal(value, 0x7720);
 				value = Decoder.parseIR(arrRegsMmu);
-				assert.equal(0xABCD, value);
+				assert.equal(value, 0xABCD);
 				value = Decoder.parseI(arrRegsMmu);
-				assert.equal(0xAB, value);
+				assert.equal(value, 0xAB);
 				value = Decoder.parseR(arrRegsMmu);
-				assert.equal(0xCD, value);
+				assert.equal(value, 0xCD);
 				value = Decoder.parseIM(arrRegsMmu);
-				assert.equal(2, value);
+				assert.equal(value, 2);
 			});
 
 			test('slots', () => {
