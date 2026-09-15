@@ -8,7 +8,7 @@ import {SjasmplusMemoryModel, SjasmplusSldLabelParser} from '../src/labels/sjasm
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelUnknown} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZx128k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
-import {MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
+import {MemoryModelZxNext} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import {CustomMemoryType} from './../src/settings/settingscustommemory';
 import {Utility} from '../src/misc/utility';
 
@@ -253,7 +253,7 @@ suite('Labels (sjasmplus)', () => {
 				}]
 			};
 			lbls = new LabelsClass();
-			lbls.readListFiles(config, new MemoryModelZxNextTwoRom());
+			lbls.readListFiles(config, new MemoryModelZxNext());
 		});
 
 		test('Start addresses found', () => {
@@ -477,8 +477,8 @@ main.asm|12||0|-1|-1|Z|pages.size:65536,pages.count:32,slots.count:1,slots.adr:0
 			});
 
 
-			test('Target: MemoryModelZxNextTwoRom', () => {
-				const mm = new MemoryModelZxNextTwoRom();
+			test('Target: MemoryModelZxNext', () => {
+				const mm = new MemoryModelZxNext();
 				createSldFile(mm);
 
 				// Note: ROM is not considered while source to target mapping conversion.
@@ -626,8 +626,8 @@ main.asm|12||0|-1|-1|Z|pages.size:16384,pages.count:4,slots.count:4,slots.adr:0,
 			});
 
 
-			test('Target: MemoryModelZxNextTwoRom', () => {	// NOSONAR
-				const mm = new MemoryModelZxNextTwoRom();
+			test('Target: MemoryModelZxNext', () => {	// NOSONAR
+				const mm = new MemoryModelZxNext();
 				createSldFile(mm);
 
 				// Note: ROM is not considered while source to target mapping conversion.
@@ -782,8 +782,8 @@ main.asm|11||0|-1|-1|Z|pages.size:16384,pages.count:8,slots.count:4,slots.adr:0,
 				assert.equal(parser.createLongAddress(0xE000, 7), 0x8E000);
 			});
 
-			test('Target: MemoryModelZxNextTwoRom', () => {
-				const mm = new MemoryModelZxNextTwoRom();
+			test('Target: MemoryModelZxNext', () => {
+				const mm = new MemoryModelZxNext();
 				createSldFile(mm);
 
 				// Note: ROM is not considered while source to target mapping conversion.
@@ -967,8 +967,8 @@ main.asm|14||0|-1|-1|Z|pages.size:8192,pages.count:224,slots.count:8,slots.adr:0
 			});
 
 
-			test('Target: MemoryModelZxNextTwoRom', () => {
-				const mm = new MemoryModelZxNextTwoRom();
+			test('Target: MemoryModelZxNext', () => {
+				const mm = new MemoryModelZxNext();
 				createSldFile(mm);
 
 				for (let bank = 0; bank < 224; bank++) {

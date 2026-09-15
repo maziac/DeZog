@@ -19,7 +19,7 @@ import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {MemoryModelAllRam} from '../MemoryModel/genericmemorymodels';
 import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../MemoryModel/zxspectrummemorymodels';
-import {MemoryModelZxNextTwoRom} from '../MemoryModel/zxnextmemorymodels';
+import {MemoryModelZxNext} from '../MemoryModel/zxnextmemorymodels';
 import {MemoryModelColecoVision} from '../MemoryModel/colecovisionmemorymodels';
 import {MemoryModelZX81_1k, MemoryModelZX81_2k, MemoryModelZX81_16k, MemoryModelZX81_32k, MemoryModelZX81_48k, MemoryModelZX81_56k} from '../MemoryModel/zx81memorymodels';
 import {SpectrumUlaScreen} from './spectrumulascreen';
@@ -383,7 +383,7 @@ export class ZSimRemote extends DzrpRemote {
 				this.memoryModel = new MemoryModelZx128k();
 				break;
 			case "ZXNEXT":	// ZX Next
-				this.memoryModel = new MemoryModelZxNextTwoRom();
+				this.memoryModel = new MemoryModelZxNext();
 				// Bank switching.
 				for (let tbblueRegister = 0x50; tbblueRegister <= 0x57; tbblueRegister++) {
 					this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
@@ -1188,8 +1188,8 @@ export class ZSimRemote extends DzrpRemote {
 		const snaFile = new SnaFile();
 		snaFile.readFile(filePath);
 
-		// If ZXNext is used then MemoryModelZxNextTwoROM should be used:
-		Utility.assert(this.memoryModel instanceof MemoryModelZxNextTwoRom);
+		// If ZXNext is used then MemoryModelZxNext should be used:
+		Utility.assert(this.memoryModel instanceof MemoryModelZxNext);
 
 		// 16K
 		if (this.memoryModel instanceof MemoryModelZx16k)
@@ -1207,7 +1207,7 @@ export class ZSimRemote extends DzrpRemote {
 				this.memory.writeMemoryData(bank, offset, snaMemBank.data, 0, snaMemBank.data.length);
 			}
 		}
-		else if (this.memoryModel instanceof MemoryModelZxNextTwoRom) {
+		else if (this.memoryModel instanceof MemoryModelZxNext) {
 			// Bank numbers need to be doubled
 			for (const memBank of snaFile.memBanks) {
 				const nextBank = 2 * memBank.bank;
@@ -1249,7 +1249,7 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
 
 		// Set ROM1 or ROM0
-		if (snaFile.is128kFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNextTwoRom)) {
+		if (snaFile.is128kFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNext)) {
 			// Write port 7FFD
 			const port7ffd = snaFile.port7ffd;
 			this.z80Cpu.ports.write(0x7FFD, port7ffd);
@@ -1276,8 +1276,8 @@ export class ZSimRemote extends DzrpRemote {
 		const z80File = new Z80File();
 		z80File.readFile(filePath);
 
-		// If ZXNext is used then MemoryModelZxNextTwoROM should be used:
-		Utility.assert(this.memoryModel instanceof MemoryModelZxNextTwoRom);
+		// If ZXNext is used then MemoryModelZxNext should be used:
+		Utility.assert(this.memoryModel instanceof MemoryModelZxNext);
 
 		// 16K
 		if (this.memoryModel instanceof MemoryModelZx16k)
@@ -1302,7 +1302,7 @@ export class ZSimRemote extends DzrpRemote {
 				this.memory.writeMemoryData(bank, offset, z80MemBank.data, 0, z80MemBank.data.length);
 			}
 		}
-		else if (this.memoryModel instanceof MemoryModelZxNextTwoRom) {
+		else if (this.memoryModel instanceof MemoryModelZxNext) {
 			// Bank numbers need to be doubled
 			for (const memBank of z80File.memBanks) {
 				const nextBank = 2 * memBank.bank;
@@ -1348,13 +1348,13 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
 
 		// Set ROM1 or ROM0
-		if (z80File.is128kFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNextTwoRom)) {
+		if (z80File.is128kFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNext)) {
 			// Write port 7FFD
 			const port7ffd = z80File.port7ffd!; // Can be undefined for 48K z80 files
 			this.z80Cpu.ports.write(0x7FFD, port7ffd);
 		}
 		// If 48k .z80 file is run in 128K memory model then switch ROM to ROM1
-		if (z80File.is48kFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNextTwoRom)) {
+		if (z80File.is48kFile && (this.memoryModel instanceof MemoryModelZx128k || this.memoryModel instanceof MemoryModelZxNext)) {
 			this.z80Cpu.ports.write(0x7FFD, 0b00010000);
 		}
 
@@ -1374,7 +1374,7 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected async loadBinNex(filePath: string): Promise<number | undefined> {
 		// Check for 128K
-		if (!(this.memoryModel instanceof MemoryModelZxNextTwoRom))
+		if (!(this.memoryModel instanceof MemoryModelZxNext))
 			throw Error("A NEX file can only be loaded into a 'ZXNEXT' memory model. This is a '" + this.memoryModel.name + "' memory model.");
 
 		// Load and parse file
@@ -1687,17 +1687,19 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 	 * @returns A Promise with an error=0 (no error).
 	  */
 	public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
-		// If ZXNext is used then MemoryModelZxNextTwoROM should be used:
-		Utility.assert(this.memoryModel instanceof MemoryModelZxNextTwoRom);
+		// If ZXNext is used then MemoryModelZxNext should be used:
+		Utility.assert(this.memoryModel instanceof MemoryModelZxNext);
 
 		// Special handling for ZXNext ROM:
-		if (this.memoryModel instanceof MemoryModelZxNextTwoRom) {
+		if (this.memoryModel instanceof MemoryModelZxNext) {
 			/*
 			 * For ROM only 0xFF exists. But it is ambiguous,
 			 * could be ROM0 (128k editor) or ROM1 (48k basic) (or even another ROM)
 			 * be initialized to ROM0 anyway.
 			 * So, we simply skip it. Is not called in normal operation anyway.
 			*/
+
+			// TODO: Does this makes sense at all:
 			if (bank === 0xFF) {
 				// Ignore:
 				return 1;	// Error: could not set slot

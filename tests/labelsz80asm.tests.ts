@@ -6,7 +6,7 @@ import * as path from 'path';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
-import {MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
+import {MemoryModelZxNext} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import {Z80asmLabelParser} from '../src/labels/z80asmlabelparser';
 import {Utility} from '../src/misc/utility';
 
@@ -351,8 +351,8 @@ E000           labelE000:
 			});
 
 
-			test('createLongAddress MemoryModelZxNextTwoRom', () => {
-				const mm = new MemoryModelZxNextTwoRom();
+			test('createLongAddress MemoryModelZxNext', () => {
+				const mm = new MemoryModelZxNext();
 				createParser(mm);
 
 				assert.equal(parser.numberForLabel.get('label0000'), 0x0FF0000);

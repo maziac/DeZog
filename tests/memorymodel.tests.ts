@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import {suite, test, setup} from 'mocha';
 import {BankType, MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
-import {MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
+import {MemoryModelZxNext} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import {Z80Registers, Z80RegistersClass} from '../src/remotes/z80registers';
 import {Settings} from '../src/settings/settings';
 import {MemoryModelColecoVision} from '../src/remotes/MemoryModel/colecovisionmemorymodels';
@@ -874,8 +874,8 @@ suite('MemoryModel', () => {
 		});
 
 
-		test('ZXNEXT (MemoryModelZxNextTwoRom)', () => {
-			const mm = new MemoryModelZxNextTwoRom() as any;
+		test('ZXNEXT (MemoryModelZxNext)', () => {
+			const mm = new MemoryModelZxNext() as any;
 			assert.equal(mm.slotRanges.length, 8);
 			assert.equal(mm.slotRanges[0].start, 0x0000);
 			assert.equal(mm.slotRanges[0].end, 0x1FFF);
@@ -1118,8 +1118,8 @@ suite('MemoryModel', () => {
 			assert.equal(Z80Registers.getSlotFromAddress(0xC000), 3);
 		});
 
-		test('ZXNEXT (MemoryModelZxNextTwoRom)', () => {
-			const mm = new MemoryModelZxNextTwoRom() as any;
+		test('ZXNEXT (MemoryModelZxNext)', () => {
+			const mm = new MemoryModelZxNext() as any;
 			assert.equal(mm.slotRanges.length, 8);
 			const slots = [7, 6, 5, 4, 3, 2, 1, 0];	// 8 slots a 8K
 

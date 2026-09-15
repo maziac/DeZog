@@ -15,7 +15,7 @@ import {Log} from '../../log';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {PromiseCallbacks} from '../../misc/promisecallbacks';
 import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../MemoryModel/zxspectrummemorymodels';
-import {MemoryModelZxNextBase, MemoryModelZxNextTwoRom} from '../MemoryModel/zxnextmemorymodels';
+import {MemoryModelZxNextBase, MemoryModelZxNext} from '../MemoryModel/zxnextmemorymodels';
 import {DzrpTransportTest} from './dzrptransporttest';
 import {LogEval} from '../../misc/logeval';
 import {Z80File} from './z80file';
@@ -262,7 +262,7 @@ export class DzrpRemote extends RemoteBase {
 					break;
 				case DzrpMachineType.ZXNEXT:
 					// ZxNext: 8x8k banks
-					this.memoryModel = new MemoryModelZxNextTwoRom();
+					this.memoryModel = new MemoryModelZxNext();
 					break;
 				default:
 					// Error: Unknown type
@@ -331,8 +331,8 @@ export class DzrpRemote extends RemoteBase {
 				regs[slot0]--;	// Change slot 0 to 0xFE
 			}
 		}
-		// Adjust to determine ROM0 and ROM1 if MemoryModelZxNextTwoRom is used
-		if (this.memoryModel instanceof MemoryModelZxNextTwoRom) {
+		// Adjust to determine ROM0 and ROM1 if MemoryModelZxNext is used
+		if (this.memoryModel instanceof MemoryModelZxNext) {
 			// We check the contents of the ROM to distinguish.
 			// Both slots need to be checked, because one slot could be ROM the other could be RAM.
 			const slot0 = Z80_REG.IM + 2;

@@ -11,7 +11,7 @@ import {BREAK_REASON_NUMBER} from '../remotebase';
 import {MemoryModelUnknown} from '../MemoryModel/genericmemorymodels';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {ErrorWrapper} from '../../misc/errorwrapper';
-import {MemoryModelZxNextTwoRom} from '../MemoryModel/zxnextmemorymodels';
+import {MemoryModelZxNext} from '../MemoryModel/zxnextmemorymodels';
 
 
 
@@ -158,7 +158,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			// 64k RAM
 			if (this.Z80N) {
 				// ZX Next
-				this.memoryModel = new MemoryModelZxNextTwoRom();
+				this.memoryModel = new MemoryModelZxNext();
 			}
 			else {
 				// Unknown memory model: 64k RAM assumed

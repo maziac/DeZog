@@ -6,7 +6,7 @@ import * as path from 'path';
 import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {MemoryModelAllRam, MemoryModelUnknown} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZx128k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
-import {MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
+import {MemoryModelZxNext} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {ReverseEngineeringLabelParser} from '../src/labels/reverseengineeringlabelparser';
 import {Utility} from '../src/misc/utility';
@@ -663,8 +663,8 @@ suite('Labels (revEng)', () => {
 			});
 
 
-			test('Target: MemoryModelZxNextTwoRom', () => {
-				const mm = new MemoryModelZxNextTwoRom();
+			test('Target: MemoryModelZxNext', () => {
+				const mm = new MemoryModelZxNext();
 				createSldFile(mm);
 
 				// RAM

@@ -8,7 +8,7 @@ import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {Z88dkLabelParser} from '../src/labels/z88dklabelparser';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
-import {MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
+import {MemoryModelZxNext} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import {Utility} from '../src/misc/utility';
 
 
@@ -446,8 +446,8 @@ labelE000                          = $E000 ; addr, local, , main, , main.asm:22
 		});
 
 
-		test('createLongAddress MemoryModelZxNextTwoRom', () => {
-			const mm = new MemoryModelZxNextTwoRom();
+		test('createLongAddress MemoryModelZxNext', () => {
+			const mm = new MemoryModelZxNext();
 			createParser(mm);
 
 			assert.equal(parser.numberForLabel.get('label0000'), 0x0FF0000);

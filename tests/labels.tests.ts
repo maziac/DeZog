@@ -4,7 +4,7 @@ import {LabelsClass, SourceFileEntry} from '../src/labels/labels';
 import {MemoryModelAllRam, MemoryModelUnknown} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZX81_1k, MemoryModelZX81_2k, MemoryModelZX81_16k, MemoryModelZX81_32k, MemoryModelZX81_48k, MemoryModelZX81_56k} from '../src/remotes/MemoryModel/zx81memorymodels';
 import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
-import {MemoryModelZxNextTwoRom} from '../src/remotes/MemoryModel/zxnextmemorymodels';
+import {MemoryModelZxNext} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -639,8 +639,8 @@ suite('Labels', () => {
 			assert.equal(parser.createLongAddress(0xE000, 0), 0x1E000);
 		});
 
-		test('Target: MemoryModelZxNextTwoRom', () => {
-			const mm = new MemoryModelZxNextTwoRom();
+		test('Target: MemoryModelZxNext', () => {
+			const mm = new MemoryModelZxNext();
 			createParser(mm);
 
 			// Note: these are the same tests as if there was only one ROM.

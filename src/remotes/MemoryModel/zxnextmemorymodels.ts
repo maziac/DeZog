@@ -6,7 +6,7 @@ import {MemoryModelZxSpectrumBase} from "./zxspectrummemorymodels";
  */
 
 
-/** Virtual class  used as base for MemoryModelZxNextOneRom and MemoryModelZxNextTwoRom.
+/** Virtual class  used as base for MemoryModelZxNext.
  * Is itself not instantiated.
  */
 export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
@@ -43,7 +43,7 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
 }
 
 
-/** The ZX Next memory model used by zsim and zesarux:
+/** The ZX Next memory model used by zsim, zesarux and the dzrp remotes:
  * It supports ROM1 (ZX Basic) and ROM0 (128k editor).
  * 8 slots per 8k.
  * 0000-1FFF: RAM/ROM0/ROM1
@@ -63,7 +63,7 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
  * ROM1, lower 2k: 0xFE
  * ROM1, upper 2k: 0xFF
  */
-export class MemoryModelZxNextTwoRom extends MemoryModelZxNextBase {
+export class MemoryModelZxNext extends MemoryModelZxNextBase {
 	constructor() {
 		super({
 			slots: [
