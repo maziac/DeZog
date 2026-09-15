@@ -144,7 +144,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			// Start so that the ZX Next initializes
 			//await this.sendPacketData('c');
 			await this.sendQrcmd('g');
-			//	await new Promise(resolve => setTimeout(resolve, 1000));
+			await new Promise(resolve => setTimeout(resolve, 12000));
 			await this.sendQrcmd('gv');
 
 			// Check the XML
