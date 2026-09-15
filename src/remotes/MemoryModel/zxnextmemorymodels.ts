@@ -1,4 +1,5 @@
 import {Utility} from "../../misc/utility";
+import {MemoryBank} from "./memorymodel";
 import {MemoryModelZxSpectrumBase} from "./zxspectrummemorymodels";
 
 
@@ -39,6 +40,57 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
 
 		// Otherwise: normal parsing
 		return super.parseBank(addr64k, bankString);
+	}
+
+
+	/** Similar to 'getMemoryBanks' but additionally tries to identify the
+	 * ROM name from its content.
+	 * Therefore for a ROM bank it uses the passed function to read memory
+	 * values of the ROM.
+	 * With these values it is possible to identify the ROM name.
+	 * @param slots The slots to use for display.
+	 * @param readMemory A function to read memory from the current 64k space.
+	 * @returns An array with the available memory pages, including identified ROM names if possible.
+	 *
+	 */
+	public async getMemoryBanksWithRomNames(slots: number[], readMemory: (bankNr: number, offset: number, length: number) => Promise<Uint8Array>): Promise<MemoryBank[]> {
+		Utility.assert(slots);
+		const pages: Array<MemoryBank> = [];
+		const len = this.slotRanges.length;
+		for (let slot = 0; slot < len; slot++) {
+			const bankNr = slots[slot];
+			let name;
+			if (bankNr == undefined) {
+				// Unassigned
+				name = 'UNASSIGNED';
+			}
+			else {
+				// Use bank
+				name = this.getBankName(bankNr);
+				// Try to identify ROM name
+				if (bankNr === 0xFF || bankNr > 0xF0) {	// TODO: Remove > F0
+					const identifiedName = await this.identifyRomName(readMemory, slot);
+					if (identifiedName)
+						name = identifiedName;
+				}
+			}
+			// Store
+			const slotRange = this.slotRanges[slot];
+			pages.push({start: slotRange.start, end: slotRange.end, name});
+		}
+		// Return
+		return pages;
+	}
+
+
+	/** Identifies the ROM name by inspecting bytes of the ROM.
+	 * @param readMemory A function to read memory from the current 64k space.
+	 * @param slot The slot number to inspect.
+	 * @returns The identified ROM name or undefined if it could not be identified.
+	 */
+	protected async identifyRomName(readMemory: (bankNr: number, offset: number, length: number) => Promise<Uint8Array>, slot: number): Promise<string | undefined> {
+		// Implement ROM identification logic here
+		return undefined;
 	}
 }
 

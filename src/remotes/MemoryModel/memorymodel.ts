@@ -432,6 +432,21 @@ export class MemoryModel {
 	}
 
 
+	/** Override.
+	 * Similar to 'getMemoryBanks' but additionally tries to identify the
+	 * ROM name from its content.
+	 * Therefore for a ROM bank it uses the passed function to read memory
+	 * values of the ROM.
+	 * With these values it is possible to identify the ROM name.
+	 * @param slots The slots to use for display.
+	 * @param readMemory A function to read memory from the current 64k space.
+	 * @returns An array with the available memory pages, including identified ROM names if possible.
+	 */
+	public async getMemoryBanksWithRomNames(slots: number[], readMemory: (bankNr: number, offset: number, length: number) => Promise<Uint8Array>): Promise<MemoryBank[]> {
+		return this.getMemoryBanks(slots);
+	}
+
+
 	/** Returns the name of a bank.
 	 * @param bankNr The bank number.
 	 * @return E.g. "ROM0"
