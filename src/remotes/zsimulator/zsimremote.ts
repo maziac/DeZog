@@ -249,7 +249,7 @@ export class ZSimRemote extends DzrpRemote {
 				return;	// not allowed
 			// Choose ROM bank according slot
 			if (slot == 0)
-				value = 0xFE;
+				value = 0xFE;	// TODO: change to 0xFF
 		}
 		else if (value > 223)
 			return;	// not existing bank
@@ -269,7 +269,7 @@ export class ZSimRemote extends DzrpRemote {
 		// Change the slot/bank
 		let bank = this.memory.getSlots()[slot];
 		// Check for ROM = 0xFE
-		if (bank == 0xFE)
+		if (bank == 0xFE) // TODO: unnecessary
 			bank = 0xFF;
 		return bank;
 	}

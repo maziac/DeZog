@@ -466,6 +466,7 @@ Command:
 | ----- | ---- | ----------------- | ------------------- |
 | 0     | 1    | 0-7               | The slot to set.    |
 | 1     | 1    | 0-223, 0xFE, 0xFF | The 8k bank to use. |
+TODO: Don't allow 0xFE
 
 Note:
 - ROM = 0xFF (255)

@@ -387,7 +387,7 @@ export class ZesaruxRemote extends RemoteBase {
 					let bankNumber = parseInt(rest);
 					if (type == 'O') {
 						// Beginning with 0xFE is ROM
-						bankNumber += 0xFE;
+						bankNumber += 0xFE; // TODO: Probably this needs to be changed to bankNumber = 0xFF
 					}
 					slots[i] = bankNumber;
 				}
