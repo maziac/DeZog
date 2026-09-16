@@ -1454,7 +1454,7 @@ export class RemoteBase extends EventEmitter {
 		// Get the slots
 		const slots = this.getSlots();
 		// Convert
-		const banks = await this.memoryModel.getMemoryBanksWithRomNames(slots, (offset: number, length: number) => this.readMemoryDump(offset, length));
+		const banks = await this.memoryModel.getMemoryBanksWithRomNames(slots, (bank: number, offset: number, length: number) => this.readBankMemoryDump(bank, offset, length));
 		// Return
 		return banks;
 	}

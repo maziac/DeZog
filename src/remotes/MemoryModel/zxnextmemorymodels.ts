@@ -50,37 +50,51 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
 	 * values of the ROM.
 	 * With these values it is possible to identify the ROM name.
 	 * @param slots The slots to use for display.
-	 * @param readMemory A function to read memory from the current 64k space.
+	 * @param readMemory A function to read memory from a given ROM bank.
 	 * @returns An array with the available memory pages, including identified ROM names if possible.
 	 *
 	 */
-	public async getMemoryBanksWithRomNames(slots: number[], readMemory: (offset: number, length: number) => Promise<Uint8Array>): Promise<MemoryBank[]> {
+	public async getMemoryBanksWithRomNames(slots: number[], readMemory: (bank: number, offset: number, length: number) => Promise<Uint8Array>): Promise<MemoryBank[]> {
 		Utility.assert(slots);
 		const pages: Array<MemoryBank> = [];
 		const len = this.slotRanges.length;
+
+		// Read bank names from memory model
 		for (let slot = 0; slot < len; slot++) {
-			const bankNr = slots[slot];
-			let name;
-			if (bankNr == undefined) {
-				// Unassigned
-				name = 'UNASSIGNED';
-			}
-			else {
-				// Use bank
-				name = this.getBankName(bankNr);
-				// Try to identify ROM name
-				if (bankNr === 0xFF || bankNr > 0xF0) {	// TODO: Remove > F0
-					const identifiedName = await RomIdentification.identify(readMemory, slot);
-					if (identifiedName)
-						name = identifiedName;
-					else
-						name += ' (unknown)';
-				}
-			}
+			let bankNr = slots[slot];
+			const name = (bankNr === undefined) ? 'UNASSIGNED' : this.getBankName(bankNr);
 			// Store
 			const slotRange = this.slotRanges[slot];
 			pages.push({start: slotRange.start, end: slotRange.end, name});
 		}
+
+		// Identify specific ROM names if a ROM bank is present
+		let bankNr = -1;
+		if (slots[0] === 0xFF || slots[1] === 0xFF
+			|| slots[0] > 0xF0 || slots[1] > 0xF0) { // TODO : REMOVE > line
+			bankNr = 0xFE; // TODO
+			// ROM bank
+			// Try to identify ROM name
+			const identifiedName = await RomIdentification.identify(readMemory, bankNr);
+			let name = '';
+			let suffix = '';
+			if (identifiedName)
+				name = identifiedName;
+			else
+				suffix = ' (unknown)';
+			// Modify pages 0 and 1 if necessary
+			if (name || suffix) {
+				for (let i = 0; i < 2; i++) {
+					if (slots[i] === 0xFF || slots[i] > 0xF0) { // TODO: Remove > F0
+						if (name)
+							pages[i].name = name;
+						else
+							pages[i].name += suffix;
+					}
+				}
+			}
+		}
+
 		// Return
 		return pages;
 	}
@@ -113,7 +127,7 @@ export class MemoryModelZxNext extends MemoryModelZxNextBase {
 			slots: [
 				{
 					range: [0x0000, 0x1FFF],
-					initialBank: 0xFE,
+					initialBank: 0xFE, // TODO: Both slots should point to 0xFF
 					banks: [
 						{
 							index: [0, 223],	// 224 RAM banks

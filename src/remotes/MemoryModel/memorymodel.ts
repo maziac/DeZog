@@ -439,10 +439,10 @@ export class MemoryModel {
 	 * values of the ROM.
 	 * With these values it is possible to identify the ROM name.
 	 * @param slots The slots to use for display.
-	 * @param readMemory A function to read memory from the current 64k space.
+	 * @param readMemory A function to read memory from a given ROM bank.
 	 * @returns An array with the available memory pages, including identified ROM names if possible.
 	 */
-	public async getMemoryBanksWithRomNames(slots: number[], readMemory: (offset: number, length: number) => Promise<Uint8Array>): Promise<MemoryBank[]> {
+	public async getMemoryBanksWithRomNames(slots: number[], readMemory: (bank: number, offset: number, length: number) => Promise<Uint8Array>): Promise<MemoryBank[]> {
 		return this.getMemoryBanks(slots);
 	}
 
