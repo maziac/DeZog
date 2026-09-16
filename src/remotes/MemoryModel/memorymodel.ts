@@ -442,7 +442,7 @@ export class MemoryModel {
 	 * @param readMemory A function to read memory from the current 64k space.
 	 * @returns An array with the available memory pages, including identified ROM names if possible.
 	 */
-	public async getMemoryBanksWithRomNames(slots: number[], readMemory: (bankNr: number, offset: number, length: number) => Promise<Uint8Array>): Promise<MemoryBank[]> {
+	public async getMemoryBanksWithRomNames(slots: number[], readMemory: (offset: number, length: number) => Promise<Uint8Array>): Promise<MemoryBank[]> {
 		return this.getMemoryBanks(slots);
 	}
 

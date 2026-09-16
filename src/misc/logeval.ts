@@ -188,7 +188,7 @@ export class LogEval {
 				|| varName === 'Remote.cpuFrequency'
 			)
 				return 27;
-			if(varName === 'Remote.slots')
+			if (varName === 'Remote.slots')
 				return "slots";
 			throw Error("Unknown variable: ");
 		}
@@ -331,14 +331,15 @@ export class LogEval {
 		return value;
 	}
 
-	protected async getRemoteValue(varName: string): Promise<number|string> {
+	protected async getRemoteValue(varName: string): Promise<number | string> {
 		if (varName === 'Remote.tStates')
 			return this.remote.getTstates();
 		if (varName === 'Remote.cpuFrequency')
 			return this.remote.getCpuFrequency();
 		if (varName.startsWith('Remote.slots')) {
+			// TODO: Test this:
 			// Get code memory
-			const memoryBanks = this.remote.getMemoryBanks();
+			const memoryBanks = await this.remote.getMemoryBanks();
 			const slots = this.remote.getSlots();
 			const count = slots.length;
 			// Convert array

@@ -1450,13 +1450,13 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise with an array with the available memory pages. Contains start and end address
 	 * and a name.
 	 */
-	public getMemoryBanks(): MemoryBank[] {
+	public async getMemoryBanks(): Promise<MemoryBank[]> {
 		// Get the slots
 		const slots = this.getSlots();
 		// Convert
-		const pages = this.memoryModel.getMemoryBanks(slots);
+		const banks = await this.memoryModel.getMemoryBanksWithRomNames(slots, (offset: number, length: number) => this.readMemoryDump(offset, length));
 		// Return
-		return pages;
+		return banks;
 	}
 
 

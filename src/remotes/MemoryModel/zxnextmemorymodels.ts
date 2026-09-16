@@ -1,6 +1,7 @@
 import {Utility} from "../../misc/utility";
 import {MemoryBank} from "./memorymodel";
 import {MemoryModelZxSpectrumBase} from "./zxspectrummemorymodels";
+import {RomIdentification} from "./romidentification";
 
 
 /** Contains the predefined memory models for the ZX Next computer.
@@ -53,7 +54,7 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
 	 * @returns An array with the available memory pages, including identified ROM names if possible.
 	 *
 	 */
-	public async getMemoryBanksWithRomNames(slots: number[], readMemory: (bankNr: number, offset: number, length: number) => Promise<Uint8Array>): Promise<MemoryBank[]> {
+	public async getMemoryBanksWithRomNames(slots: number[], readMemory: (offset: number, length: number) => Promise<Uint8Array>): Promise<MemoryBank[]> {
 		Utility.assert(slots);
 		const pages: Array<MemoryBank> = [];
 		const len = this.slotRanges.length;
@@ -69,9 +70,11 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
 				name = this.getBankName(bankNr);
 				// Try to identify ROM name
 				if (bankNr === 0xFF || bankNr > 0xF0) {	// TODO: Remove > F0
-					const identifiedName = await this.identifyRomName(readMemory, slot);
+					const identifiedName = await RomIdentification.identify(readMemory, slot);
 					if (identifiedName)
 						name = identifiedName;
+					else
+						name += ' (unknown)';
 				}
 			}
 			// Store
@@ -80,17 +83,6 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
 		}
 		// Return
 		return pages;
-	}
-
-
-	/** Identifies the ROM name by inspecting bytes of the ROM.
-	 * @param readMemory A function to read memory from the current 64k space.
-	 * @param slot The slot number to inspect.
-	 * @returns The identified ROM name or undefined if it could not be identified.
-	 */
-	protected async identifyRomName(readMemory: (bankNr: number, offset: number, length: number) => Promise<Uint8Array>, slot: number): Promise<string | undefined> {
-		// Implement ROM identification logic here
-		return undefined;
 	}
 }
 
@@ -138,7 +130,8 @@ export class MemoryModelZxNext extends MemoryModelZxNextBase {
 							name: 'ROM1',
 							shortName: 'R1',
 							rom: true,
-							filePath: Utility.getExtensionPath() + '/data/48.rom'
+							filePath: Utility.getExtensionPath() + '/data/128.rom',
+							fileOffset: 0x4000
 						},
 					]
 				},
@@ -162,8 +155,8 @@ export class MemoryModelZxNext extends MemoryModelZxNextBase {
 							name: 'ROM1',
 							shortName: 'R1',	// Same name, overwrites mapping
 							rom: true,
-							filePath: Utility.getExtensionPath() + '/data/48.rom',
-							fileOffset: 0x2000
+							filePath: Utility.getExtensionPath() + '/data/128.rom',
+							fileOffset: 0x6000
 						},
 					]
 				},
