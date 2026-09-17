@@ -355,7 +355,8 @@ suite('ZSimRemote', () => {
 					codeCoverageEnabled: false
 				}
 			};
-			const launch = Settings.Init(cfg);
+			Settings.launch = Settings.Init(cfg);
+			const launch = Settings.launch;
 			Z80RegistersClass.createRegisters(launch);
 			Utility.setRootPath('/');	// Does not matter but must be set.
 			zsim = new ZSimRemote(launch) as any;
