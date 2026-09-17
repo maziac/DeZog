@@ -361,7 +361,7 @@ export function createDzrpSimpleMode<TBase extends new (...args: any[]) => DzrpR
 			if (longAddr !== undefined) {
 				// Check for ROM
 				const bank = Z80RegistersClass.getBankFromAddress(longAddr);
-				if (bank >= 0xFE)	// ROM // TODO: change to 0xFF
+				if (bank === 0xFF)	// ROM
 					return "ROM";
 
 				// Check for special area

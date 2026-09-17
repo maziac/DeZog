@@ -90,7 +90,7 @@ export class SpectrumUlaScreen extends UlaScreen implements Serializable {
 		// Check bit 1 and bit 15 being 0 (partially decoding)
 		if ((port & 0b1000_0000_0000_0010) === 0) {
 			// bit 3: Select normal(0) or shadow(1) screen to be displayed.
-			const useShadowBank = ((value & 0b01000) != 0);
+			const useShadowBank = ((value & 0b0_1000) != 0);
 			this.currentUlaBank = (useShadowBank) ? this.shadowUlaBank : this.normalUlaBank;
 		}
 	}

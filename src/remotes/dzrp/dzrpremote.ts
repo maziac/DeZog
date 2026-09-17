@@ -1715,7 +1715,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		}
 
 		// Set the default slot/bank association
-		const slotBanks = [254, 255, 10, 11, 4, 5, 0, 1];	// 5, 2, 0
+		const slotBanks = [255, 255, 10, 11, 4, 5, 0, 1];	// 5, 2, 0
 		for (let slot = 0; slot < 8; slot++) {
 			const bank8 = slotBanks[slot];
 			await this.sendDzrpCmdSetSlot(slot, bank8);
@@ -1774,7 +1774,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		}
 
 		// Set the default slot/bank association
-		const slotBanks = [254, 255, 10, 11, 4, 5, 0, 1];	// 5, 2, 0
+		const slotBanks = [255, 255, 10, 11, 4, 5, 0, 1];	// 5, 2, 0
 		for (let slot = 0; slot < 8; slot++) {
 			const bank8 = slotBanks[slot];
 			await this.sendDzrpCmdSetSlot(slot, bank8);

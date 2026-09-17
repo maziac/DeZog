@@ -245,11 +245,8 @@ export class ZSimRemote extends DzrpRemote {
 		const slot = this.tbblueRegisterSelectValue & 0x07;
 		if (value == 0xFF) {
 			// Handle ROM specially
-			if (slot > 1)
+			if (slot >= 2)
 				return;	// not allowed
-			// Choose ROM bank according slot
-			if (slot == 0)
-				value = 0xFE;	// TODO: change to 0xFF
 		}
 		else if (value > 223)
 			return;	// not existing bank
@@ -268,9 +265,6 @@ export class ZSimRemote extends DzrpRemote {
 		const slot = this.tbblueRegisterSelectValue & 0x07;
 		// Change the slot/bank
 		let bank = this.memory.getSlots()[slot];
-		// Check for ROM = 0xFE
-		if (bank == 0xFE) // TODO: unnecessary
-			bank = 0xFF;
 		return bank;
 	}
 
@@ -1188,9 +1182,6 @@ export class ZSimRemote extends DzrpRemote {
 		const snaFile = new SnaFile();
 		snaFile.readFile(filePath);
 
-		// If ZXNext is used then MemoryModelZxNext should be used:
-		Utility.assert(this.memoryModel instanceof MemoryModelZxNext);
-
 		// 16K
 		if (this.memoryModel instanceof MemoryModelZx16k)
 			throw Error("Loading SNA file not supported for memory model '" + this.memoryModel.name + "'.");
@@ -1388,6 +1379,7 @@ export class ZSimRemote extends DzrpRemote {
 		for (const memBank of nexFile.memBanks) {
 			// Convert 16K to 8K banks
 			const bank = 2 * memBank.bank;
+			// Note: bank is never 0xFF (ROM) in a nex file, otherwise splitting into 2 bank numbers would be wrong.
 			this.memory.writeMemoryData(bank, 0, memBank.data, 0, 0x2000);
 			this.memory.writeMemoryData(bank + 1, 0, memBank.data, 0x2000, 0x2000);
 		}
@@ -1690,21 +1682,6 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 		// If ZXNext is used then MemoryModelZxNext should be used:
 		Utility.assert(this.memoryModel instanceof MemoryModelZxNext);
 
-		// Special handling for ZXNext ROM:
-		if (this.memoryModel instanceof MemoryModelZxNext) {
-			/*
-			 * For ROM only 0xFF exists. But it is ambiguous,
-			 * could be ROM0 (128k editor) or ROM1 (48k basic) (or even another ROM)
-			 * be initialized to ROM0 anyway.
-			 * So, we simply skip it. Is not called in normal operation anyway.
-			*/
-
-			// TODO: Does this makes sense at all:
-			if (bank === 0xFF) {
-				// Ignore:
-				return 1;	// Error: could not set slot
-			}
-		}
 		this.memory.setSlot(slot, bank);
 		return 0;
 	}

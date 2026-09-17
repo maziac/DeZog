@@ -92,4 +92,14 @@ export interface CustomMemoryBank {
 
 	// Optional default byte fill value. If not set; RAM/ROM uses 0, UNUSED uses 0xFF
 	defaultFill?: number;
+
+	// The bank size. Normally it is derived from the slot
+	// size but can be overridden if necessary.
+	// E.g. used for the 16k ROM banks in ZXNext that are
+	// divided into 2x 8k slots/areas.
+	bankSize?: number;
+
+	// Optional offset of the bank within the slot.
+	// Only used for ZXNext ROM banks that span 2x 8k slots.
+	bankOffset?: number;
 }

@@ -764,7 +764,7 @@ suite('MemoryDump', () => {
 				md.setValueFor(100, 0);
 				md.setValueFor(101, 255);
 				md.setValueFor(200, 255);
-				md.setValueFor(201, 254);
+				md.setValueFor(201, 254); // TODO: change to 255
 
 				md.setValueFor(400, 128);
 				md.setValueFor(401, 0);

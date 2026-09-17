@@ -56,7 +56,8 @@ export interface BankInfo {
 	// Used in the disassembly. E.g. '3' or 'R0'.
 	shortName: string;
 
-	// The size of the bank
+	// The size of the bank from the configuration.
+	// Note: In special cases the real bank size might differ. E.g. for the ZxNextMemoryModel the ROM is set programmatically to 16k whereas from the config it is 8k.
 	size: number;
 
 	// The type: ROM, RAM, ...
@@ -74,6 +75,30 @@ export interface BankInfo {
 
 	// Optional default byte fill value. If not set; RAM/ROM uses 0, UNUSED uses 0xFF
 	defaultFill: number;
+
+	// Optional offset of the bank within the slot.
+	// Only used for ZXNext ROM banks that span 2x 8k slots.
+	// Note to myself: I use an index-signature here instead
+	// of a map so that I can access the key by name.
+	// E.g. : slotBankOffset[0] = 0x2000;
+	// A disadvantage of using an index-signature instead is that
+	// modifying a map/object is more cumbersome but  I don't do it here anyway.
+	slotBankOffsets?: {[slot: number]: number};
+}
+
+
+/** Returned by MemoryModel on 'createStateContext'.
+ * Can be used to retain a state e.g. for more complex memory switching
+ * like for the ZXNext.
+ */
+export class MemoryModelState {
+	protected memoryBanks: Uint8Array[];
+	protected slots: number[];
+	constructor(slots: number[], memoryBanks: Uint8Array[]) {
+		this.slots = slots;
+		this.memoryBanks = memoryBanks;
+	}
+	public writePort(portAddress: number, portValue: number) {}
 }
 
 
@@ -149,6 +174,9 @@ export class MemoryModel {
 			if (end < start)
 				throw Error("Range-end lower than range-start.");
 
+			// Associate address range with slot index
+			const slotIndex = this.slotRanges.length;
+			this.slotAddress64kAssociation.fill(slotIndex, start, end + 1);
 
 			// Banks
 			const slotBanks = new Set<number>();
@@ -158,14 +186,10 @@ export class MemoryModel {
 			if (banksLen == 0)
 				throw Error("No banks specified for range.");
 			for (const bank of banks) {
-				const bankNumbers = this.createBankOrBanks(bank, size, true); //(banksLen > 1));
+				const bankNumbers = this.createBankOrBanks(bank, size, slotIndex, true); //(banksLen > 1));
 				// Store all banks for the slot
 				bankNumbers.forEach(bankNr => slotBanks.add(bankNr));
 			}
-
-			// Associate address range with slot index
-			const slotIndex = this.slotRanges.length;
-			this.slotAddress64kAssociation.fill(slotIndex, start, end + 1);
 
 			// Check if an initial bank was given
 			let initialBank = custMemSlot.initialBank;
@@ -229,6 +253,16 @@ export class MemoryModel {
 	}
 
 
+	/** Returns a state object/class.
+	 * Normally returns undefined, but can be used to handle e.g.
+	 * complex memory switching scenarios like for the ZXNext.
+	 * Override.
+	 */
+	public createStateContext(slots: number[], banks: Uint8Array[]): MemoryModelState | undefined {
+		return undefined;
+	}
+
+
 	/** Assigns the unused slot ranges to new banks.
 	 * This is just an implementation detail to make the slot/bank handling easier.
 	 */
@@ -280,6 +314,20 @@ export class MemoryModel {
 				prevInfo.name = bankInfo.name;
 			if (!prevInfo.shortName)
 				prevInfo.shortName = bankInfo.shortName;
+			// Handle slot bank offset (for ZxNext ROM)
+			const addSlotBankOffset = bankInfo.slotBankOffsets;
+			if (addSlotBankOffset) {
+				// Add a new bank offset
+				const slotBankOffset = prevInfo.slotBankOffsets;
+				if (slotBankOffset) {
+					// Merge the new slot bank offset into the existing one.
+					Object.assign(slotBankOffset, addSlotBankOffset);
+				}
+				else {
+					// Simply use the new slot bank offset.
+					prevInfo.slotBankOffsets = addSlotBankOffset;
+				}
+			}
 		}
 		else {
 			// New entry
@@ -316,11 +364,13 @@ export class MemoryModel {
 	 * If a bank with the index already exists then the max. size is selected and
 	 * an error is thrown if the names do not match.
 	 * @param bank The configuration from the settings.
-	 * @param size The size of the bank.
+	 * @param slotSize The size of the slot. The bank size can be bigger if given.
+	 * @param slotIndex The index of the slot the bank belongs to. (Only used for banks that span across slots)
 	 * @param assignShortName If false then short name will be set to ''.
 	 * @returns An ordered array with the created bank numbers.
 	 */
-	protected createBankOrBanks(bank: CustomMemoryBank, size: number, assignShortName: boolean): number[] {
+	protected createBankOrBanks(bank: CustomMemoryBank, slotSize: number, slotIndex: number, assignShortName: boolean): number[] {
+		const size = bank.bankSize ?? slotSize;
 		const bankNumbers: number[] = [];
 		let indexStart: number;
 		let indexOrRange = bank.index;
@@ -334,6 +384,14 @@ export class MemoryModel {
 				throw Error("Bank index too high.");
 			if (indexStart < 0)
 				throw Error("Bank index < 0.");
+
+			// Handle bank offset (used for banks that span across slots like ZxNext ROM)
+			let slotBankOffset: {[slot: number]: number} | undefined;
+			if (bank.bankOffset !== undefined) {
+				// Add additional info
+				slotBankOffset = {[slotIndex]: bank.bankOffset};
+			}
+
 			const bankInfo: BankInfo = {
 				name: this.createBankName(bank.name, indexStart),
 				shortName: (assignShortName) ? this.createBankShortName(bank.shortName, indexStart) : '',
@@ -341,7 +399,8 @@ export class MemoryModel {
 				bankType,
 				filePath: bank.filePath,
 				fileOffset: bank.fileOffset as number,
-				defaultFill
+				defaultFill,
+				slotBankOffsets: slotBankOffset
 			};
 			this.setBankInfo(indexStart, bankInfo);
 			bankNumbers.push(indexStart);

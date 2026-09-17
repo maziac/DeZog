@@ -1,9 +1,9 @@
-import {Settings} from './../../settings/settings';
-import {MemBuffer, Serializable} from '../../misc/membuffer';
-import {BankType, MemoryModel, SlotRange} from '../MemoryModel/memorymodel';
 import * as fs from "fs";
 import * as path from 'path';
 import * as intelHex from 'intel-hex';
+import {Settings} from './../../settings/settings';
+import {MemBuffer, Serializable} from '../../misc/membuffer';
+import {BankType, MemoryModel, MemoryModelState, SlotRange} from '../MemoryModel/memorymodel';
 import {Z80Ports} from './z80ports';
 import {Utility} from '../../misc/utility';
 
@@ -113,6 +113,9 @@ export class SimulatedMemory implements Serializable {
 	// Holds the slot indices and the names.
 	protected slotNames: SlotName[];
 
+	// Used to hold the state for a memory model. E.g. for
+	// complex memory switching.
+	protected memoryModelState: MemoryModelState | undefined;
 
 	/** Constructor.
 	 * Configures the slot and bank count.
@@ -164,6 +167,9 @@ export class SimulatedMemory implements Serializable {
 		// Associate banks with slots
 		this.slots = [...memModel.initialSlots];	// Copy
 
+		// Get programmatical memory model behavior (wimilar to ioMmu but programmatically)
+		this.memoryModelState = this.memoryModel.createStateContext(this.slots, this.memoryBanks);
+
 		// And install the port handlers
 		this.slotNames = [];
 		for (let i = 0; i < this.memoryModel.slotRanges.length; i++) {
@@ -171,12 +177,14 @@ export class SimulatedMemory implements Serializable {
 			if (slotRange.name)
 				this.slotNames.push({index: i, name: slotRange.name});
 		}
-		this.installIoMmuHandlers(ports);
+		if (this.memoryModel.ioMmu || this.memoryModelState) {
+			this.installIoMmuHandlers(ports);
 
-		// Check the ioMmu
-		this.bankSwitchingContext = {};
-		this.checkIoMmu();
-		this.bankSwitchingContext = {};
+			// Check the ioMmu
+			this.bankSwitchingContext = {};
+			this.checkIoMmu();
+			this.bankSwitchingContext = {};
+		}
 
 		// Breakpoints
 		this.clearHit();
@@ -192,22 +200,27 @@ export class SimulatedMemory implements Serializable {
 	protected installIoMmuHandlers(ports: Z80Ports) {
 		// Install handler
 		ports.registerGenericOutPortFunction((port: number, value: number) => {
-			const prevSlots = [...this.slots];
-			this.setSlotsInContext();
-			// Calculate bank
-			this.evaluateIoMmu(this.memoryModel.ioMmu, port, value);
-			this.getSlotsFromContext(prevSlots);
-			// Check for error
-			try {
-				this.checkSlots();
+			// Custom MMU?
+			if (this.memoryModel.ioMmu) {
+				const prevSlots = [...this.slots];
+				this.setSlotsInContext();
+				// Switch bank (custom)
+				this.evaluateIoMmu(this.memoryModel.ioMmu, port, value);
+				this.getSlotsFromContext(prevSlots);
+				// Check for error
+				try {
+					this.checkSlots();
+				}
+				catch (e) {
+					// Restore previous slots
+					this.slots = [...prevSlots];
+					// Adjust message
+					e.message = "ioMmu: " + e.message;
+					throw e;
+				}
 			}
-			catch (e) {
-				// Restore previous slots
-				this.slots = [...prevSlots];
-				// Adjust message
-				e.message = "ioMmu: " + e.message;
-				throw e;
-			}
+			// Switch banks (programmatically)
+			this.memoryModelState?.writePort(port, value);
 		});
 	}
 
@@ -597,7 +610,7 @@ export class SimulatedMemory implements Serializable {
 	 * @param bankNr The bank to write.
 	 * @param bankOffset Offset into the bank buffer.
 	 * @param data The data to write.
-	 * @param dataOffset Offset into the data buffer.
+	 * @param dataOffset Offset in the data buffer.
 	 * @param size The number of bytes to write.
 	 */
 	public writeMemoryData(bankNr: number, bankOffset: number, data: Uint8Array, dataOffset: number, size: number) {
@@ -661,22 +674,25 @@ export class SimulatedMemory implements Serializable {
 	public readBlock64(startAddr64k: number, size: number): Uint8Array {
 		const data = new Uint8Array(size);
 		let dataOffset = 0;
+		const bankInfo = this.memoryModel.banks;
 
 		while (size > 0) {
 			// Get start address and bank
 			const slotIndex = this.slotAddress64kAssociation[startAddr64k];
 			const bankNr = this.slots[slotIndex];
-			const rangeStart = this.slotRanges[slotIndex].start;
-			const offs = startAddr64k - rangeStart;
 			const bank = this.memoryBanks[bankNr];
 			if (!bank)
 				break;	// A switch to a non existing bank happened.
+			const rangeStart = this.slotRanges[slotIndex].start;
+			const slotBankOffsets = bankInfo[bankNr]!.slotBankOffsets;
+			const bankOffset = slotBankOffsets ? (slotBankOffsets[slotIndex] ?? 0) : 0;
+			const offs = startAddr64k - rangeStart;
 			const rangeSize = this.slotRanges[slotIndex].end + 1 - rangeStart;
 			// Copy
 			let sizeOffs = rangeSize - offs;
 			if (sizeOffs > size)
 				sizeOffs = size;
-			data.set(bank.slice(offs, offs + sizeOffs), dataOffset);
+			data.set(bank.slice(offs + bankOffset, offs + bankOffset + sizeOffs), dataOffset);
 			// Next
 			dataOffset += sizeOffs;
 			size -= sizeOffs;

@@ -1,5 +1,6 @@
+import * as fs from "fs";
 import {Utility} from "../../misc/utility";
-import {MemoryBank} from "./memorymodel";
+import {MemoryBank, MemoryModelState} from "./memorymodel";
 import {MemoryModelZxSpectrumBase} from "./zxspectrummemorymodels";
 import {RomIdentification} from "./romidentification";
 
@@ -24,15 +25,11 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
 	 * @param bankString The string representing the short bank name. Used by the rev-eng parser. Can be undefined. Then the bank is derived from the slot.
 	 * @returns The bank number.
 	 */
+	// TODO: test
 	public parseBank(addr64k: number, bankString: string): number {
 		if (bankString) {
 			// Parse bank
 			let bank = this.parseShortNameForBank(bankString);
-			// Adjust bank number (for ROM1 and ROM0)
-			if ((bank === 0xFF || bank === 0xFD) && addr64k < 0x2000) {
-				// Decrement bank number: 0xFE or 0xFC
-				bank--;
-			}
 			const banks = this.getBanksFor(addr64k);
 			if (!banks.has(bank))
 				throw Error("Bank '" + bankString + "' is not reachable from address " + Utility.getHexString(addr64k, 4) + ".");
@@ -70,9 +67,8 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
 
 		// Identify specific ROM names if a ROM bank is present
 		let bankNr = -1;
-		if (slots[0] === 0xFF || slots[1] === 0xFF
-			|| slots[0] > 0xF0 || slots[1] > 0xF0) { // TODO : REMOVE > line
-			bankNr = 0xFE; // TODO
+		if (slots[0] === 0xFF || slots[1] === 0xFF) {
+			bankNr = 0xFF;
 			// ROM bank
 			// Try to identify ROM name
 			const identifiedName = await RomIdentification.identify(readMemory, bankNr);
@@ -85,7 +81,7 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
 			// Modify pages 0 and 1 if necessary
 			if (name || suffix) {
 				for (let i = 0; i < 2; i++) {
-					if (slots[i] === 0xFF || slots[i] > 0xF0) { // TODO: Remove > F0
+					if (slots[i] === 0xFF) {
 						if (name)
 							pages[i].name = name;
 						else
@@ -120,32 +116,34 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
  * ROM0, upper 2k: 0xFD
  * ROM1, lower 2k: 0xFE
  * ROM1, upper 2k: 0xFF
+ *
+ * Note: The bank 0xFF is 16k in size (slots are 8k each).
+ * For slot 1 the upper half is used. This cannot be handled by
+ * Memory Model configuration. Therefore the handling is done
+ * programmatically in MemoryModelState RomSwitching.
  */
 export class MemoryModelZxNext extends MemoryModelZxNextBase {
+	public createStateContext(slots: number[], banks: Uint8Array[]): MemoryModelState | undefined {
+		return new RomSwitching(slots, banks);
+	}
+
+	// Constructor.
 	constructor() {
 		super({
 			slots: [
 				{
 					range: [0x0000, 0x1FFF],
-					initialBank: 0xFE, // TODO: Both slots should point to 0xFF
+					initialBank: 0xFF,
 					banks: [
 						{
 							index: [0, 223],	// 224 RAM banks
 						},
 						{
-							index: 0xFC,
-							name: 'ROM0',
-							shortName: 'R0',
+							index: 0xFF,
+							name: 'ROM',
+							shortName: 'R',
 							rom: true,
-							filePath: Utility.getExtensionPath() + '/data/128.rom' 	// 1
-						},
-						{
-							index: 0xFE,
-							name: 'ROM1',
-							shortName: 'R1',
-							rom: true,
-							filePath: Utility.getExtensionPath() + '/data/128.rom',
-							fileOffset: 0x4000
+							bankSize: 0x4000,	// Differs from the usual 8k bank size
 						},
 					]
 				},
@@ -154,30 +152,20 @@ export class MemoryModelZxNext extends MemoryModelZxNextBase {
 					initialBank: 0xFF,
 					banks: [
 						{
-							index: [0, 223],	// All banks are already defined in previous range
+							index: [0, 223],
 						},
 						{
-							index: 0xFD,
-							name: 'ROM0',
-							shortName: 'R0',	// Same name, overwrites mapping
-							rom: true,
-							filePath: Utility.getExtensionPath() + '/data/128.rom',
-							fileOffset: 0x2000
-						},
-						{
+							// Bank is already defined in previous slot.
+							// Note: the bank offset is handled programmatically.
 							index: 0xFF,
-							name: 'ROM1',
-							shortName: 'R1',	// Same name, overwrites mapping
-							rom: true,
-							filePath: Utility.getExtensionPath() + '/data/128.rom',
-							fileOffset: 0x6000
+							bankOffset: 0x2000
 						},
 					]
 				},
 				{
 					range: [0x4000, 0x5FFF],
 					initialBank: 10,
-					banks: [{index: [0, 255]}]
+					banks: [{index: [0, 223]}]
 				},
 				{
 					range: [0x6000, 0x7FFF],
@@ -204,24 +192,72 @@ export class MemoryModelZxNext extends MemoryModelZxNextBase {
 					initialBank: 1,
 					banks: [{index: [0, 223]}]
 				}
-			],
-			// ioMmu is undefined because memory management is implemented programmatically.
-			// The writing of the the slot register would be possible to implement here,
-			// but the port also needs to support reading of the register,
-			// what cannot be supported here.
-			ioMmu: [
-				"var disabled;",
-				"if((portAddress | 0x7FFD) == 0x7FFD && !disabled) {",
-				"  bank = 2*(portValue & 0x07); // RAM block select",
-				"  slots[6] = bank;",
-				"  slots[7] = bank+1;",
-				"  romBank = 0xFC + 2*((portValue & 0b0010000) >>> 4);",
-				"  slots[0] = romBank;",
-				"  slots[1] = romBank+1;",
-				"  disabled = portValue & 0b0100000; // DIS",
-				"}"
 			]
 		});
 		this.name = 'ZXNEXT';
+	}
+}
+
+
+// Class for the ZxNextMemoryModel to allow 128K ROM switching.
+// TODO: Implement this already in Zx128kMemoryModel.
+class RomSwitching extends MemoryModelState {
+	// Holds the 2*16K ROM data (128k ROM)
+	protected rom128Bin: Uint8Array;
+
+	// The currently selected ROM (0=128K or 1=48K)
+	protected selectedRom = 1;
+
+	// Remember if ROM switching is disabled.
+	protected romSwitchingDisabled = false;
+
+	/// Constructor.
+	constructor(slots: number[], memoryBanks: Uint8Array[]) {
+		super(slots, memoryBanks);
+		// Load the ROM
+		const filePath = Utility.getExtensionPath() + '/data/128.rom';
+		this.rom128Bin = Uint8Array.from(fs.readFileSync(filePath));
+		// Switch initially
+		this.switchRomBank(memoryBanks);
+	}
+
+	// Copy the selected ROM to the bank.
+	public writePort = (portAddress: number, portValue: number) => {
+		// Port 0x7FFD:
+		// Bit 0-2: 16k RAM block select for 0xC000-0xFFFF
+		// Bit 3: 0=normal Screen/Bank 5, 1=shadow Screen/Bank 7
+		// Bit 4: 0=128K-ROM, 1=48K-ROM
+		// Bit 5: Disable paging
+		if ((portAddress | 0x7FFD) === 0x7FFD && !this.romSwitchingDisabled) {
+			// Bits 0-2: RAM Select
+			const ramBank = 2 * (portValue & 0x07); // RAM block select
+			this.slots[6] = ramBank;
+			this.slots[7] = ramBank + 1;
+
+			// Paging
+			this.romSwitchingDisabled = (portValue & 0b0010_0000) !== 0; // DIS
+
+			// Bit 3: Screen select (normal/shadow) done in ULA screen
+
+			// Bit 4: ROM select
+			const prevRom = this.selectedRom;
+			this.selectedRom = (portValue & 0b0001_0000) >>> 4;
+
+			if (prevRom !== this.selectedRom) {
+				// ROM has changed, update the bank
+				this.switchRomBank(this.memoryBanks);
+			}
+		}
+	}
+
+
+	/** Switches (copies) the ROM bank according 'selectedRom'. */
+	protected switchRomBank(banks: Uint8Array[]) {
+		// Determine offset
+		const offset = (this.selectedRom === 0) ? 0 : 0x4000;
+		// Copy file to bank
+		const bank = 0xFF;
+		const bankData = this.rom128Bin.slice(offset, offset + 0x4000);
+		banks[bank] = bankData;
 	}
 }
