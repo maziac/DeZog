@@ -1,5 +1,6 @@
 import {Utility} from "../../misc/utility";
-import {MemoryModel} from "./memorymodel";
+import {BankType, MemoryBank, MemoryModel} from "./memorymodel";
+import {RomIdentification} from "./romidentification";
 
 
 /** Contains the predefined memory models for ZX Specturm computers.
@@ -9,6 +10,64 @@ import {MemoryModel} from "./memorymodel";
 /** ZX Spectrum base definition.
  */
 export class MemoryModelZxSpectrumBase extends MemoryModel {
+	/** Similar to 'getMemoryBanks' but additionally tries to identify the
+	 * ROM name from its content.
+	 * Therefore for a ROM bank it uses the passed function to read memory
+	 * values of the ROM.
+	 * With these values it is possible to identify the ROM name.
+	 * @param slots The slots to use for display.
+	 * @param readMemory A function to read memory from a given ROM bank.
+	 * @returns An array with the available memory pages, including identified ROM names if possible.
+	 *
+	 */
+	public async getMemoryBanksWithRomNames(slots: number[], readMemory: (bank: number, offset: number, length: number) => Promise<Uint8Array>): Promise<MemoryBank[]> {
+		Utility.assert(slots);
+		const pages: Array<MemoryBank> = [];
+		const len = this.slotRanges.length;
+
+		// Read bank names from memory model and check for ROMs
+		const identifiedRoms: Record<number, {name: string, suffix: string}> = {};
+		for (let slot = 0; slot < len; slot++) {
+			const bankNr = slots[slot];
+			let name: string;
+			if (bankNr === undefined) {
+				name = 'UNASSIGNED';
+			}
+			else {
+				name = this.getBankName(bankNr);
+				// Check for ROM
+				if (this.banks[bankNr].bankType === BankType.ROM) {
+					// ROM bank
+					// Already identified?
+					let romNameSuffix = identifiedRoms[bankNr]
+					if (!romNameSuffix) {
+						// Try to identify ROM name
+						const identifiedName = await RomIdentification.identify(readMemory, bankNr);
+						let romName = '';
+						let suffix = '';
+						if (identifiedName)
+							romName = identifiedName;
+						else
+							suffix = ' (unknown)';
+						// Remember
+						romNameSuffix = {name: romName, suffix};
+						identifiedRoms[bankNr] = romNameSuffix;
+					}
+					// Set name
+					if (romNameSuffix.name)
+						name = romNameSuffix.name;
+					else
+						name += romNameSuffix.suffix;
+				}
+			}
+			// Store
+			const slotRange = this.slotRanges[slot];
+			pages.push({start: slotRange.start, end: slotRange.end, name});
+		}
+
+		// Return
+		return pages;
+	}
 }
 
 
@@ -131,7 +190,7 @@ export class MemoryModelZx128k extends MemoryModelZxSpectrumBase {
 					initialBank: 0,
 					banks: [
 						{
-							index: [0, ramBanks-1],
+							index: [0, ramBanks - 1],
 						}
 					]
 				}

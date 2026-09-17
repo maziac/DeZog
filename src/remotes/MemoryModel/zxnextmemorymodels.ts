@@ -1,8 +1,7 @@
 import * as fs from "fs";
 import {Utility} from "../../misc/utility";
-import {MemoryBank, MemoryModelState} from "./memorymodel";
+import {MemoryModelState} from "./memorymodel";
 import {MemoryModelZxSpectrumBase} from "./zxspectrummemorymodels";
-import {RomIdentification} from "./romidentification";
 
 
 /** Contains the predefined memory models for the ZX Next computer.
@@ -38,61 +37,6 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
 
 		// Otherwise: normal parsing
 		return super.parseBank(addr64k, bankString);
-	}
-
-
-	/** Similar to 'getMemoryBanks' but additionally tries to identify the
-	 * ROM name from its content.
-	 * Therefore for a ROM bank it uses the passed function to read memory
-	 * values of the ROM.
-	 * With these values it is possible to identify the ROM name.
-	 * @param slots The slots to use for display.
-	 * @param readMemory A function to read memory from a given ROM bank.
-	 * @returns An array with the available memory pages, including identified ROM names if possible.
-	 *
-	 */
-	public async getMemoryBanksWithRomNames(slots: number[], readMemory: (bank: number, offset: number, length: number) => Promise<Uint8Array>): Promise<MemoryBank[]> {
-		Utility.assert(slots);
-		const pages: Array<MemoryBank> = [];
-		const len = this.slotRanges.length;
-
-		// Read bank names from memory model
-		for (let slot = 0; slot < len; slot++) {
-			let bankNr = slots[slot];
-			const name = (bankNr === undefined) ? 'UNASSIGNED' : this.getBankName(bankNr);
-			// Store
-			const slotRange = this.slotRanges[slot];
-			pages.push({start: slotRange.start, end: slotRange.end, name});
-		}
-
-		// Identify specific ROM names if a ROM bank is present
-		let bankNr = -1;
-		if (slots[0] === 0xFF || slots[1] === 0xFF) {
-			bankNr = 0xFF;
-			// ROM bank
-			// Try to identify ROM name
-			const identifiedName = await RomIdentification.identify(readMemory, bankNr);
-			let name = '';
-			let suffix = '';
-			if (identifiedName)
-				name = identifiedName;
-			else
-				suffix = ' (unknown)';
-			// Modify pages 0 and 1 if necessary
-			if (name || suffix) {
-				for (let i = 0; i < 2; i++) {
-					if (slots[i] === 0xFF) {
-						if (name)
-							pages[i].name = name;
-						else
-							pages[i].name += suffix;
-					}
-				}
-			}
-		}
-
-		// Return
-		return pages;
 	}
 }
 
@@ -200,7 +144,6 @@ export class MemoryModelZxNext extends MemoryModelZxNextBase {
 
 
 // Class for the ZxNextMemoryModel to allow 128K ROM switching.
-// TODO: Implement this already in Zx128kMemoryModel.
 class RomSwitching extends MemoryModelState {
 	// Holds the 2*16K ROM data (128k ROM)
 	protected rom128Bin: Uint8Array;

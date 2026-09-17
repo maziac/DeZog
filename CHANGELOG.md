@@ -9,6 +9,8 @@
 - Memory Views (debug commands "-mv", "-mvw" and "-mvd") allow additional parameter "bank=" to specify the bank to display.
 - Debug commands "-md", "-mdelta", "-ml", "-ms", "-msetb" and "-msetw" allow additional parameter to specify a bank to read from or write to.
 - New launch.json property "loadSysVars" to load zx16k or zx48 system variables at startup.
+- Internally used 0xFF for ROM instead of 0xFE pseudo ROM identifier.
+- ROM identification for ZX Spectrum based ROMs
 
 # 3.7.4
 - PR #193: Fixed bug where pressing 'stop' would sometimes take 5 seconds to disconnect. (mame)
