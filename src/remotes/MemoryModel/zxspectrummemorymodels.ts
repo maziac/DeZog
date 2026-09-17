@@ -164,7 +164,8 @@ export class MemoryModelZx128k extends MemoryModelZxSpectrumBase {
 							name: 'ROM1',
 							shortName: 'R1',
 							rom: true,
-							filePath: Utility.getExtensionPath() + '/data/48.rom'
+							filePath: Utility.getExtensionPath() + '/data/128.rom',
+							fileOffset: 0x4000
 						}
 					]
 				},
