@@ -177,11 +177,11 @@ export class SimulatedMemory implements Serializable {
 			if (slotRange.name)
 				this.slotNames.push({index: i, name: slotRange.name});
 		}
+		this.bankSwitchingContext = {};
 		if (this.memoryModel.ioMmu || this.memoryModelState) {
 			this.installIoMmuHandlers(ports);
 
 			// Check the ioMmu
-			this.bankSwitchingContext = {};
 			this.checkIoMmu();
 			this.bankSwitchingContext = {};
 		}
@@ -511,7 +511,9 @@ export class SimulatedMemory implements Serializable {
 		const bankNr = this.slots[slotIndex];
 		const rangeStart = this.slotRanges[slotIndex].start;
 		const offs = addr64k - rangeStart;
-		const value = this.memoryBanks[bankNr][offs];
+		const slotBankOffsets = this.memoryModel.banks[bankNr].slotBankOffsets;
+		const bankOffset = slotBankOffsets ? (slotBankOffsets[slotIndex] ?? 0) : 0;
+		const value = this.memoryBanks[bankNr][offs + bankOffset];
 		return value;
 	}
 
