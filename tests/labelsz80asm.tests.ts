@@ -355,7 +355,7 @@ E000           labelE000:
 				const mm = new MemoryModelZxNext();
 				createParser(mm);
 
-				assert.equal(parser.numberForLabel.get('label0000'), 0x0FF0000);
+				assert.equal(parser.numberForLabel.get('label0000'), 0x1000000);
 				assert.equal(parser.numberForLabel.get('label2000'), 0x1002000);
 				assert.equal(parser.numberForLabel.get('label4000'), 0x00B4000);
 				assert.equal(parser.numberForLabel.get('label6000'), 0x00C6000);

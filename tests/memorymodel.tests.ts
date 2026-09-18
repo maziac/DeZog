@@ -903,7 +903,7 @@ suite('MemoryModel', () => {
 			assert.equal(mm.slotRanges[7].ioMMu, undefined);
 
 			assert.equal(mm.initialSlots.length, 8);
-			assert.equal(mm.initialSlots[0], 0xFE);
+			assert.equal(mm.initialSlots[0], 0xFF);
 			assert.equal(mm.initialSlots[1], 0xFF);
 			assert.equal(mm.initialSlots[2], 10);
 			assert.equal(mm.initialSlots[3], 11);
@@ -916,34 +916,25 @@ suite('MemoryModel', () => {
 			assert.equal(mm.banks[0].name, "BANK0");
 			assert.equal(mm.banks[1].name, "BANK1");
 			assert.equal(mm.banks[223].name, "BANK223");
-			assert.equal(mm.banks[252].name, "ROM0");
-			assert.equal(mm.banks[253].name, "ROM0");
-			assert.equal(mm.banks[254].name, "ROM1");
-			assert.equal(mm.banks[255].name, "ROM1");
+			assert.equal(mm.banks[255].name, "ROM");
 			assert.equal(mm.banks[0].shortName, "0");
 			assert.equal(mm.banks[1].shortName, "1");
 			assert.equal(mm.banks[223].shortName, "223");
-			assert.equal(mm.banks[252].shortName, "R0");
-			assert.equal(mm.banks[253].shortName, "R0");
-			assert.equal(mm.banks[254].shortName, "R1");
-			assert.equal(mm.banks[255].shortName, "R1");
+			assert.equal(mm.banks[255].shortName, "R");
 
 			assert.equal(mm.banks[0].bankType, BankType.RAM);
 			assert.equal(mm.banks[1].bankType, BankType.RAM);
 			assert.equal(mm.banks[223].bankType, BankType.RAM);
-			assert.equal(mm.banks[252].bankType, BankType.ROM);
-			assert.equal(mm.banks[253].bankType, BankType.ROM);
-			assert.equal(mm.banks[254].bankType, BankType.ROM);
 			assert.equal(mm.banks[255].bankType, BankType.ROM);
 
-			const memBanks = mm.getMemoryBanks([254, 255, 6, 5, 3, 0, 251, 6]);
+			const memBanks = mm.getMemoryBanks([255, 255, 6, 5, 3, 0, 200, 6]);
 			assert.equal(memBanks.length, 8);
 			assert.equal(memBanks[0].start, 0x0000);
 			assert.equal(memBanks[0].end, 0x1FFF);
-			assert.equal(memBanks[0].name, "ROM1");
+			assert.equal(memBanks[0].name, "ROM");
 			assert.equal(memBanks[1].start, 0x2000);
 			assert.equal(memBanks[1].end, 0x3FFF);
-			assert.equal(memBanks[1].name, "ROM1");
+			assert.equal(memBanks[1].name, "ROM");
 			assert.equal(memBanks[2].start, 0x4000);
 			assert.equal(memBanks[2].end, 0x5FFF);
 			assert.equal(memBanks[2].name, "BANK6");
@@ -958,7 +949,7 @@ suite('MemoryModel', () => {
 			assert.equal(memBanks[5].name, "BANK0");
 			assert.equal(memBanks[6].start, 0xC000);
 			assert.equal(memBanks[6].end, 0xDFFF);
-			assert.equal(memBanks[6].name, "BANK251");
+			assert.equal(memBanks[6].name, "BANK200");
 			assert.equal(memBanks[7].start, 0xE000);
 			assert.equal(memBanks[7].end, 0xFFFF);
 			assert.equal(memBanks[7].name, "BANK6");

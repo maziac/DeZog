@@ -675,11 +675,12 @@ suite('Labels (revEng)', () => {
 					}
 				}
 
-				// ROM
-				assert.equal(parser.createLongAddress(0x0000, 0xFC), 0x0FD0000);
-				assert.equal(parser.createLongAddress(0x2000, 0xFD), 0x0FE2000);
-				assert.equal(parser.createLongAddress(0x0000, 0xFE), 0x0FF0000);
+				// ROM: only bank 0xFF exists
+				assert.equal(parser.createLongAddress(0x0000, 0xFF), 0x1000000);
 				assert.equal(parser.createLongAddress(0x2000, 0xFF), 0x1002000);
+				assert.throws(() => parser.createLongAddress(0x0000, 0xFC), Error);
+				assert.throws(() => parser.createLongAddress(0x2000, 0xFD), Error);
+				assert.throws(() => parser.createLongAddress(0x0000, 0xFE), Error);
 			});
 
 			test('Target: custom MemoryModel', () => {

@@ -648,7 +648,7 @@ suite('Labels', () => {
 			// from a non-banking scheme to another.
 			// I.e. the possibly ROM paging is ignored.
 
-			assert.equal(parser.createLongAddress(0x0000, 0), 0x0FF0000);
+			assert.equal(parser.createLongAddress(0x0000, 0), 0x1000000);
 			assert.equal(parser.createLongAddress(0x2000, 0), 0x1002000);
 			assert.equal(parser.createLongAddress(0x4000, 0), 0x00B4000);
 			assert.equal(parser.createLongAddress(0x6000, 0), 0x00C6000);
