@@ -392,11 +392,6 @@ export class MemoryModel {
 				slotBankOffset = {[slotIndex]: bank.bankOffset};
 			}
 
-			// Check: bankOffset only allowed for ROM banks.
-			// (Because simulatedMemory does not implement the bankOffset behavior for write8/writeMemoryData).
-			if (bankType != BankType.ROM && bank.bankOffset !== undefined && bank.bankOffset !== 0)
-				throw Error("bankOffset is only allowed for ROM banks.");
-
 			const bankInfo: BankInfo = {
 				name: this.createBankName(bank.name, indexStart),
 				shortName: (assignShortName) ? this.createBankShortName(bank.shortName, indexStart) : '',

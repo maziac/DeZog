@@ -143,10 +143,25 @@ export class SimulatedMemory implements Serializable {
 		const bankCount = memModel.banks.length;
 		this.memoryBanks = new Array<Uint8Array>(bankCount);
 		this.bankTypes = new Array<BankType>(bankCount);
+		const slotCount = memModel.initialSlots.length;
 		// Allocate
 		for (let i = 0; i < bankCount; i++) {
 			const bank = memModel.banks[i];
 			if (bank) {
+				// Check: bankOffset only allowed for ROM banks.
+				const bankType = bank.bankType;
+				if (bankType !== BankType.ROM) {
+					const slotBankOffsets = bank.slotBankOffsets;
+					if (slotBankOffsets) {
+						for (let slotIndex = 0; slotIndex < slotCount; slotIndex++) {
+							const slotBankOffset = slotBankOffsets[slotIndex] ?? 0;
+							if (slotBankOffset !== 0)
+								throw Error("bankOffset is only allowed for ROM banks.");
+						}
+					}
+				}
+
+				// Convert to memory bank
 				const memBank = new Uint8Array(bank.size);
 				this.memoryBanks[i] = memBank;
 				this.bankTypes[i] = bank.bankType;
