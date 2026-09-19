@@ -337,17 +337,15 @@ export class LogEval {
 		if (varName === 'Remote.cpuFrequency')
 			return this.remote.getCpuFrequency();
 		if (varName.startsWith('Remote.slots')) {
-			// TODO: Test this:
 			// Get code memory
 			const memoryBanks = await this.remote.getMemoryBanks();
-			const slots = this.remote.getSlots();
-			const count = slots.length;
+			const slotCount = memoryBanks.length;
 			// Convert array
 			let slotTexts: string[] = [];
-			for (let i = 0; i < count; i++) {
-				const bankIndex = slots[i];
+			for (let slot = 0; slot < slotCount; slot++) {
+				const bankIndex = slot;
 				const bank = memoryBanks[bankIndex];
-				slotTexts.push(`slot[${i}]=${bank.name}`);
+				slotTexts.push(`slot[${slot}]=${bank.name}`);
 			}
 			const txt = slotTexts.join(', ');
 			return txt;
