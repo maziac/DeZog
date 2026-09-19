@@ -849,11 +849,10 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	 * @param size The data size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	// TODO: tests required
 	protected async sendDzrpCmdReadBankMem(bank: number, offset: number, size: number): Promise<Uint8Array> {
 		let buffer;
 		// Handle special case size=0x10000
-		if (size == 0x10000 && offset == 0) {
+		if (size === 0x10000 && offset === 0) {
 			// Get 2 chunks of memory as 0x10000 is too big).
 			const data0 = await this.sendDzrpCmdReadBankMem(bank, 0, 0x8000);
 			const data1 = await this.sendDzrpCmdReadBankMem(bank, 0x8000, 0x8000);
@@ -863,6 +862,8 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 			buffer.set(data0);
 			buffer.set(data1, 0x8000);
 		}
+		else if (size >= 0x10000)
+			throw new Error("Size too big: '" + size + "'.");
 		else {
 			// Send command to get memory dump
 			const data = await this.sendDzrpCmd(DZRP.CMD_READ_BANK_MEM, [bank,

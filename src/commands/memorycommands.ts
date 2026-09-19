@@ -423,7 +423,7 @@ export class MemoryCommands {
 		// Size
 		const sizeString = tokens[1];
 		const size = Utility.evalExpression(sizeString);
-		if (size < 0 || size > 0xFFFF)
+		if (size < 0 || size > 0x10000)
 			throw Error("Size (" + size + ") out of range.");
 
 		// Get filename

@@ -394,7 +394,7 @@ export class DzrpRemote extends RemoteBase {
 				data[i] = Utility.parseValue(cmdArray[i]) & 0xFF;
 			await this.sendDzrpCmdWriteMem(addr, data);
 		}
-		else if (cmd_name === "cmd_read_bank_mem") { // TODO: Correct Help
+		else if (cmd_name === "cmd_read_bank_mem") {
 			if (cmdArray.length < 3) {
 				// Error
 				throw Error("Expecting at least 3 parameters: bank, address and count.");

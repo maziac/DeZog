@@ -277,11 +277,17 @@ export class Utility {
 					res = Labels.getNumberFromString64k(modulePrefix + lbl) || NaN;
 				}
 
+				// Check for "normal" number
+
+
 				if (isNaN(res)) {
 					// Check for "normal" label
-					res = Labels.getNumberFromString64k(lbl);
-					if (isNaN(res))
-						res = p1;	// Return unchanged substring
+					res = Labels.getNumberForLabel(lbl);
+					if (isNaN(res)) {
+						res = Utility.parseValue(lbl);
+						if (isNaN(res))
+							res = p1;	// Return unchanged substring
+					}
 				}
 			}
 			return res.toString();
