@@ -15,7 +15,7 @@ import {Log} from '../../log';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {PromiseCallbacks} from '../../misc/promisecallbacks';
 import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../MemoryModel/zxspectrummemorymodels';
-import {MemoryModelZxNextBase, MemoryModelZxNext} from '../MemoryModel/zxnextmemorymodels';
+import {MemoryModelZxNext} from '../MemoryModel/zxnextmemorymodels';
 import {DzrpTransportTest} from './dzrptransporttest';
 import {LogEval} from '../../misc/logeval';
 import {Z80File} from './z80file';
@@ -311,57 +311,9 @@ export class DzrpRemote extends RemoteBase {
 		//Log.log('clearRegisters ->', Z80Registers.getCache() || "undefined");
 		// Get regs
 		const regs = await this.sendDzrpCmdGetRegisters();
-		await this.adjustRomBanks(regs);
 		// And set
 		Z80Registers.setCache(regs);
 		//Log.log('clearRegisters <-', Z80Registers.getCache() || "undefined");
-	}
-
-
-	/** Adjusts the ROM banks by peeking into the memory to
-	 * determine if it is ROM 0 or ROM1.
-	 * Adjusts in-place.
-	 */
-	protected async adjustRomBanks(regs: Uint16Array) {
-		// Adjust ROM bank. Change 0xFF in slot 0 to 0xFE.
-		if (this.memoryModel instanceof MemoryModelZxNextBase) {
-			// For all ZXNext DZRP variants
-			const slot0 = Z80_REG.IM + 2;
-			if (regs[slot0] === 0xFF) {
-				regs[slot0]--;	// Change slot 0 to 0xFE
-			}
-		}
-		// Adjust to determine ROM0 and ROM1 if MemoryModelZxNext is used
-		if (this.memoryModel instanceof MemoryModelZxNext) {
-			// We check the contents of the ROM to distinguish.
-			// Both slots need to be checked, because one slot could be ROM the other could be RAM.
-			const slot0 = Z80_REG.IM + 2;
-			const slot1 = Z80_REG.IM + 3;
-			if (regs[slot0] === 0xFE) {
-				// Check for ROM0 (avoid changes for dezogif)
-				const addr = 0x0100;
-				const value = await this.sendDzrpCmdReadMem(addr, 1);
-				// @0100: 0xC3 = ROM0 (128), 0x42 = ROM1 (48)
-				if (value[0] === 0xC3) {
-					// ROM1 (48)
-					regs[slot0] -= 2;	// Mark as ROM0
-					if (regs[slot1] === 0xFF) {
-						// Slot one as well, no check required
-						regs[slot1] -= 2;	// Mark as ROM0
-					}
-				}
-			}
-			else if (regs[slot1] === 0xFF) {
-				// Maybe only slot 1 is ROM
-				const addr = 0x2200;
-				const value = await this.sendDzrpCmdReadMem(addr, 1);
-				// @2200: 0x01 = ROM0 (128), 0x82 = ROM1 (48)
-				if (value[0] === 0x01) {
-					// ROM0 (128)
-					regs[slot1] -= 2;	// Mark as ROM0
-				}
-			}
-		}
 	}
 
 

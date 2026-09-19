@@ -35,8 +35,9 @@ export class MemoryModelZxSpectrumBase extends MemoryModel {
 			}
 			else {
 				name = this.getBankName(bankNr);
+				const bank = this.banks[bankNr];
 				// Check for ROM
-				if (this.banks[bankNr].bankType === BankType.ROM) {
+				if (bank && bank.bankType === BankType.ROM) {
 					// ROM bank
 					// Already identified?
 					let romNameSuffix = identifiedRoms[bankNr]
