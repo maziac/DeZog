@@ -1109,14 +1109,17 @@ export class ZesaruxRemote extends RemoteBase {
 					// ZXNext
 					const slot = Z80Registers.getSlotFromAddress(address);
 					// Treat ROM banks special for ZEsarUX
-					if (bank >= 0xFC && bank <= 0xFF) {	// 252 - 255
+					if (bank === 0xFF) {	// 255
+						// All ZesarUX ROM banks are treated equally
 						// 0xFC = 252 -> 8000h
 						// 0xFD = 253 -> 8001h
 						// 0xFE = 254 -> 8002h
 						// 0xFF = 255 -> 8003h
-						bank = 0x8000 + (bank & 0x3)
+						const zesaruxRomBanks = 0x8000;
+						condition += ' and SEG' + slot + '>=' + zesaruxRomBanks;
 					}
-					condition += ' and SEG' + slot + '=' + bank;
+					else
+						condition += ' and SEG' + slot + '=' + bank;
 				}
 			}
 			// Add BP condition
