@@ -24,7 +24,6 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
 	 * @param bankString The string representing the short bank name. Used by the rev-eng parser. Can be undefined. Then the bank is derived from the slot.
 	 * @returns The bank number.
 	 */
-	// TODO: test
 	public parseBank(addr64k: number, bankString: string): number {
 		if (bankString) {
 			// Parse bank

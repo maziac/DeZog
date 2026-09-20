@@ -628,7 +628,6 @@ export class MemoryModel {
 	 * @param longAddrString E.g "800A.4" or "0010.R0" or "A000" (if no banking for that slot)
 	 * @returns A long address, e.g. 0x05800A for "800A.4"
 	 */
-	// TODO: Add test
 	public parseAddress(longAddrString: string): number {
 		// Divide address from bank
 		const addrBank = longAddrString.split('.');

@@ -1302,6 +1302,26 @@ suite('MemoryModel', () => {
 				mm.parseBank(0x0000, 'R0xxx');
 			}, Error);
 		});
+
+		test('parseBank (MemoryModelZxNext)', () => {
+			const mm = new MemoryModelZxNext() as any;
+
+			assert.throws(() => {
+				mm.parseBank(0x0000, 'abcd');
+			}, Error);
+
+			assert.equal(mm.parseBank(0x0000, 'R'), 0xFF);
+			assert.equal(mm.parseBank(0x1FFF, 'R'), 0xFF);
+			assert.equal(mm.parseBank(0x2000, 'R'), 0xFF);
+			assert.equal(mm.parseBank(0x3FFF, 'R'), 0xFF);
+			assert.equal(mm.parseBank(0x4000, '10'), 10);
+			assert.equal(mm.parseBank(0x6000, '11'), 11);
+			assert.equal(mm.parseBank(0x8000, '4'), 4);
+			assert.equal(mm.parseBank(0xA000, '5'), 5);
+			assert.equal(mm.parseBank(0xC000, '0'), 0);
+			assert.equal(mm.parseBank(0xE000, '1'), 1);
+			assert.equal(mm.parseBank(0xFFFF, '1'), 1);
+		});
 	});
 
 
