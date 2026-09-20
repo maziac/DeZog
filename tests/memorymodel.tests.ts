@@ -1238,7 +1238,6 @@ suite('MemoryModel', () => {
 			assert.equal(mm.parseBank(0x0000, ''), 0);
 		});
 
-
 		test('errors', () => {
 			const mm = new MemoryModel({
 				slots: [
@@ -1302,6 +1301,142 @@ suite('MemoryModel', () => {
 				// "Bank with shortName does not exist ..."
 				mm.parseBank(0x0000, 'R0xxx');
 			}, Error);
+		});
+	});
+
+
+	suite('parseAddress', () => {
+		test('simple (1 ROM bank)', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0x3FFF],
+						banks: [
+							{
+								name: 'ROMA',
+								shortName: 'RA',
+								rom: true,
+								index: 2,
+							}
+						]
+					},
+					{
+						range: [0x4000, 0xFFFF],
+						banks: [
+							{
+								name: 'RAM',
+								shortName: '3',
+								rom: true,
+								index: 3,
+							}
+						]
+					},
+				]
+			});
+
+			assert.equal(mm.parseAddress("0000.RA"), 0x030000);
+			assert.equal(mm.parseAddress("3FFF.RA"), 0x033FFF);
+			assert.throws(() => mm.parseAddress("4000.RA")); // Failure
+			assert.equal(mm.parseAddress("4000.3"), 0x044000);
+		});
+
+		test('2 different ROM banks in 2 different slots', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0x1FFF],
+						banks: [
+							{
+								name: 'ROMA',
+								shortName: 'RA',
+								rom: true,
+								index: 2,
+							}
+						],
+					},
+					{
+						range: [0x2000, 0x3FFF],
+						banks: [
+							{
+								name: 'ROMB',
+								shortName: 'RB',
+								rom: true,
+								index: 3,
+							}
+						]
+					},
+					{
+						range: [0x4000, 0xFFFF],
+						banks: [
+							{
+								name: 'RAM',
+								shortName: '4',
+								index: 4,
+							}
+						]
+					},
+				]
+			});
+
+			assert.equal(mm.parseAddress("0000.RA"), 0x030000);
+			assert.equal(mm.parseAddress("3FFF.RB"), 0x043FFF);
+			assert.throws(() => mm.parseAddress("0000.RB")); // Failure
+			assert.throws(() => mm.parseAddress("3FFF.RA")); // Failure
+			assert.equal(mm.parseAddress("4000.4"), 0x054000);
+		});
+
+		test('same ROM bank in 2 different slots', () => {
+			const mm = new MemoryModel({
+				slots: [
+					{
+						range: [0x0000, 0x1FFF],
+						banks: [
+							{
+								name: 'ROM',
+								shortName: 'R',
+								rom: true,
+								index: 2,
+							}
+						],
+					},
+					{
+						range: [0x2000, 0x3FFF],
+						banks: [
+							{
+								index: 2,	// Same ROM bank as in the first slot
+								bankOffset: 0x2000,
+							}
+						]
+					},
+					{
+						range: [0x4000, 0xFFFF],
+						banks: [
+							{
+								name: 'RAM',
+								shortName: '3',
+								index: 3,
+							}
+						]
+					},
+				]
+			});
+
+			assert.equal(mm.parseAddress("0000.R"), 0x030000);
+			assert.equal(mm.parseAddress("3FFF.R"), 0x033FFF);
+			assert.throws(() => mm.parseAddress("4000.R")); // Failure
+			assert.equal(mm.parseAddress("4000.3"), 0x044000);
+		});
+
+		test('MemoryModelZxNext', () => {
+			const mm = new MemoryModelZxNext();
+
+			assert.equal(mm.parseAddress("0000.R"), 0x1000000); // ROM = 0xFF (+1 = 0x100)
+			assert.equal(mm.parseAddress("3FFF.R"), 0x1003FFF); // ROM = 0xFF (+1 = 0x100)
+			assert.throws(() => mm.parseAddress("4000.R")); // Failure
+			assert.equal(mm.parseAddress("4000.11"), 0x0C4000);	// Bank 10
+
+			// 64k address -> not allowed if more than 1 bank uses
+			assert.throws(() => mm.parseAddress("1234"));
 		});
 	});
 });
