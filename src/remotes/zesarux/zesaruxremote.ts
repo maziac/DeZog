@@ -15,6 +15,7 @@ import {MemoryModelZxNext} from '../MemoryModel/zxnextmemorymodels';
 import * as semver from 'semver';
 import {MemoryModelColecoVision} from '../MemoryModel/colecovisionmemorymodels';
 import {ErrorWrapper} from '../../misc/errorwrapper';
+import {MemoryBank} from '../MemoryModel/memorymodel';
 
 
 
@@ -338,6 +339,53 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
+	 * Used by the "Memory Banks" display in DeZog.
+	 * In contrast to the general getMemoryBanks method, this one
+	 * does not call identify Roms. The emulator directly returns
+	 * information on the ROM. And on the other hand has no easy way
+	 * to read banked memory which is necessary for identify ROM.
+	 */
+	public async getMemoryBanks(): Promise<MemoryBank[]> {
+		// Get the slots
+		const slots = this.getSlots();
+		// Convert
+		const banks = await this.memoryModel.getMemoryBanks(slots);
+
+		// Special handling for banked ROMs
+		const decoder = Z80Registers.decoder;
+		if (decoder instanceof DecodeZesaruxRegistersZxNext) {
+			const cache = Z80Registers.getCache();
+			const zesaruxSlots = decoder.parseSlotsZesarux(cache);
+			// Decode ZEsarUX MMU info:
+			// Bit 15 stands for ROM.
+			// I.e. $8000 and $8001 are ROM.
+			// ZXNext: "MMU=8002 8003 000a 000b 0004 0005 0000 0001", 	ROM0: 0x8000 or 0x8001,	ROM1: 0x8002 or 0x8003
+			// ZX128:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001",	ROM0: 0x8000, ROM1: 0x8001
+			// ZX48K:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001"
+			// ZX16K:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001"
+			// Others are simply the bank number.
+			// coleco:  "MMU=80008001000a000b0004000500000001"
+			const count = zesaruxSlots.length;
+			for (let i = 0; i < count; i++) {
+				const bank = zesaruxSlots[i];
+				// Check for ROM banks
+				if (bank >= 0x8000) {
+					// This is a ROM bank, name it
+					let romNr = (bank & 0x7fff);
+					// The 2 same ROM halfs have different numbers in ZEsarUX
+					romNr >>>= 1;
+					banks[i].name += '' + romNr;
+				}
+			}
+		}
+
+		// Return
+		return banks;
+	}
+
+
+
+	/**
 	 * Initializes the zesarux breakpoints.
 	 * Override this if fast-breakpoints should be used.
 	 */
@@ -353,51 +401,6 @@ export class ZesaruxRemote extends RemoteBase {
 		this.freeBreakpointIds.length = 0;
 		for (let i = ZesaruxRemote.MAX_USED_BREAKPOINTS; i > 0; i--)  // 1-99
 			this.freeBreakpointIds.push(i);
-	}
-
-
-	/**
-	 * Retrieves the slots from zesarux directly.
-	 */
-	protected async getSlotsFromEmulator(): Promise<number[]> {
-		// Check if in reverse debugging mode
-		// In this mode registersCache should be set and thus this function is never called.
-		Utility.assert(CpuHistory);
-		Utility.assert(!CpuHistory.isInStepBackMode());
-
-		// Decode
-		const slotsString: string = await zSocket.sendAwait('get-memory-pages');
-		const slotsStringArray = slotsString.split(' ');
-		// Check for no slots
-		let slots;
-		let count = slotsStringArray.length - 1;
-		switch (count) {
-			case 4:
-				// ZX128, e.g. RO1 RA5 RA2 RA0
-				for (let i = 0; i < count; i++)
-					slotsStringArray[i] = slotsStringArray[i].substring(1);	// Skip "R"
-			// Flow through
-			case 8:
-				// ZXNext
-				slots = new Array<number>(count);
-				for (let i = 0; i < count; i++) {
-					const bankString = slotsStringArray[i];
-					const type = bankString.substring(0, 1);
-					const rest = bankString.substring(1);
-					let bankNumber = parseInt(rest);
-					if (type == 'O') {
-						// Beginning with 0xFE is ROM
-						bankNumber += 0xFE; // TODO: Probably this needs to be changed to bankNumber = 0xFF
-					}
-					slots[i] = bankNumber;
-				}
-				break;
-			default:
-				// No slots
-				slots = new Array<number>(count);
-				break;
-		}
-		return slots;
 	}
 
 

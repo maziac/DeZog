@@ -1449,6 +1449,7 @@ export class RemoteBase extends EventEmitter {
 	 * and converts it to an array of MemoryBanks.
 	 * @returns A Promise with an array with the available memory pages. Contains start and end address
 	 * and a name.
+	 * Used by the "Memory Banks" display in DeZog.
 	 */
 	public async getMemoryBanks(): Promise<MemoryBank[]> {
 		// Get the slots
@@ -1458,7 +1459,6 @@ export class RemoteBase extends EventEmitter {
 		// Return
 		return banks;
 	}
-
 
 
 	/**

@@ -233,7 +233,17 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 		return res;
 	}
 
-	// Override this function.
+	// Override
+	public parseSlots(data: string): number[] {
+		return [0];	// Correspondents to MemoryModelUnknown
+	}
+}
+
+
+// Base class for banked ZEsarUX registers decoders.
+export class DecodeZesaruxRegistersBankedBase extends DecodeZesaruxRegisters {
+	// Return the original slot values from ZEsarUX.
+	// Used by the "Memory Banks" display in DeZog.
 	// Decode ZEsarUX MMU info:
 	// Bit 15 stands for ROM.
 	// I.e. $8000 and $8001 are ROM.
@@ -243,54 +253,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	// ZX16K:  "MMU=8001 0005 0002 0000 0004 0005 0000 0001"
 	// Others are simply the bank number.
 	// coleco:  "MMU=80008001000a000b0004000500000001"
-	public parseSlots(data: string): number[] {
-		return [0];	// Correspondents to MemoryModelUnknown
-	}
-}
-
-
-// Decoder for the ZX128K.
-export class DecodeZesaruxRegistersZx128k extends DecodeZesaruxRegisters {
-	constructor() {
-		super(4);	// 4 slots
-	}
-
-	public parseSlots(data: string): number[] {
-		// Note: the mmuIndex has to be calculated every time because
-		// the position may vary for "normal" lines and "history" lines.
-		let mmuIndex = data.indexOf('MMU=');
-		Utility.assert(mmuIndex >= 0);
-		mmuIndex += 4;
-
-		let line = data.substring(mmuIndex);
-		const count = this.countSlots;
-		const slots = new Array<number>(count);
-		for (let i = 0; i < count; i++) {
-			const slotPart = line.substring(0, 4);
-			let value = parseInt(slotPart, 16);
-			// Decode ZEsarUX: Bit 15 stands for ROM.
-			// I.e. $8000 and $8001 are ROM.
-			// ZX128: 	ROM0: 0x8000, ROM1: 0x8001
-			// Others are simply the bank number.
-			if (value >= 0x8000)
-				value = 8 + (value & 0x0001);	// 8 = ROM0, 9 = ROM1
-			slots[i] = value;
-			// Next
-			line = line.substring(4);
-		}
-
-		return slots;
-	}
-}
-
-
-// Decoder for the ZxNext.
-export class DecodeZesaruxRegistersZxNext extends DecodeZesaruxRegisters {
-	constructor() {
-		super(8);	// 8 slots
-	}
-
-	public parseSlots(data: string): number[] {
+	public parseSlotsZesarux(data: string): number[] {
 		// Note: the mmuIndex has to be calculated every time because
 		// the position may vary for "normal" lines and "history" lines.
 		let mmuIndex = data.indexOf('MMU=');
@@ -305,14 +268,49 @@ export class DecodeZesaruxRegistersZxNext extends DecodeZesaruxRegisters {
 			let value = parseInt(slotPart, 16);
 			// Decode ZEsarUX: Bit 15 stands for ROM.
 			// ZXNext: 	ROM0: 0x8000 or 0x8001,	ROM1: 0x8002 or 0x8003
-			// Others are simply the bank number.
-			if (value >= 0x8000)
-				value = 0xFC + (value & 0x0003);
 			slots[i] = value;
 			// Next
 			line = line.substring(4);
 		}
+		return slots;
+	}
+}
 
+
+// Decoder for the ZX128K.
+export class DecodeZesaruxRegistersZx128k extends DecodeZesaruxRegistersBankedBase {
+	constructor() {
+		super(4);	// 4 slots
+	}
+
+	// DeZog internally uses bank 8 and 9 for ROM 0 and ROM 1.
+	public parseSlots(data: string): number[] {
+		const slots = this.parseSlotsZesarux(data);
+		const count = slots.length;
+		for (let i = 0; i < count; i++) {
+			let value = slots[i];
+			if (value >= 0x8000)
+				slots[i] = 8 + (value & 0x0001);	// 8 = ROM0, 9 = ROM1
+		}
+		return slots;
+	}
+}
+
+
+// Decoder for the ZxNext.
+export class DecodeZesaruxRegistersZxNext extends DecodeZesaruxRegistersBankedBase {
+	constructor() {
+		super(8);	// 8 slots
+	}
+
+	// Adjusts the ROM numbers of ZEsarUX to the one (0xFF) used by the
+	// ZxNext
+	public parseSlots(data: string): number[] {
+		const slots = this.parseSlotsZesarux(data);
+		for (let i = 0; i < 2; i++) {
+			if (slots[i] >= 0x8000)
+				slots[i] = 0xFF;	// Adjust ROM numbers to the one used by the ZxNext
+		}
 		return slots;
 	}
 }
