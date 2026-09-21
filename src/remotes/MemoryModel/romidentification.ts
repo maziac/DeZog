@@ -115,6 +115,7 @@ export class RomIdentification {
 	public static async identify(readMemory: (bank: number, offset: number, length: number) => Promise<Uint8Array>, bank: number): Promise<string | undefined> {
 		const primaryBytes = await readMemory(bank, this.ROM_PRIMARY_OFFSET, this.ROM_PRIMARY_LENGTH);
 		const match = this.ROM_SIGNATURES.get(this.bytesToHexKey(primaryBytes));
+		//const match = this.ROM_SIGNATURES.get("D778119113CD0A0CCD3B");
 		if (!match)
 			return undefined;
 
