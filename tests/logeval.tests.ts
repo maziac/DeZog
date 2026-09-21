@@ -27,10 +27,10 @@ suite('LogEval', () => {
 		}
 		public getMemoryBanks(): any[] {
 			return [
-				{name: 'bank0'},
 				{name: 'bank1'},
-				{name: 'bank2'},
+				{name: 'bank0'},
 				{name: 'bank3'},
+				{name: 'bank2'},
 			]
 		}
 	}

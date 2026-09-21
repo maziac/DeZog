@@ -288,6 +288,10 @@ export class Utility {
 						if (isNaN(res))
 							res = p1;	// Return unchanged substring
 					}
+					else {
+						// It was a label, restrict it to 64k space
+						res &= 0xFFFF;
+					}
 				}
 			}
 			return res.toString();

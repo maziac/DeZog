@@ -1447,8 +1447,8 @@ export class RemoteBase extends EventEmitter {
 	/**
 	 * Reads the memory pages, i.e. the slot/banks relationship from zesarux
 	 * and converts it to an array of MemoryBanks.
-	 * @returns A Promise with an array with the available memory pages. Contains start and end address
-	 * and a name.
+	 * @returns  An array with MemoryBank information (name) of the
+	 * banks in the slot positions.
 	 * Used by the "Memory Banks" display in DeZog.
 	 */
 	public async getMemoryBanks(): Promise<MemoryBank[]> {

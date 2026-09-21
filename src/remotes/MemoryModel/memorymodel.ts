@@ -464,8 +464,8 @@ export class MemoryModel {
 
 	/** Returns a description for the slots used in the variables section.
 	 * @param slots The slots to use for display.
-	 * @returns An array with the available memory pages. Contains start and end address
-	 * and a name.
+	 * @returns An array with MemoryBank information (name) of the
+	 * banks in the slot positions.
 	 */
 	public getMemoryBanks(slots: number[]): MemoryBank[] {
 		const pages: Array<MemoryBank> = [];
