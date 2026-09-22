@@ -412,7 +412,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		// Log
 		const timestamp = '[' + Log.getTimeString() + ']';
 		const txt = this.dzrpRespBufferToString(this.receivedData, 0, this.expectedLength);
-		LogTransport.log(timestamp + ' ' + '<<< Remote: Received ' + txt);
+		LogTransport.log(timestamp + ' <<< ' + this.logName + ': Received ' + txt);
 
 		// Handle received buffer
 		this.receivedMsg(strippedBuffer);

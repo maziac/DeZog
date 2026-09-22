@@ -1,6 +1,6 @@
 import {BreakInfo} from '../dzrp/dzrpremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
-import {LogTransport} from '../../log';
+import {Log, LogTransport} from '../../log';
 import {Socket} from 'net';
 import {Utility} from '../../misc/utility';
 import {MameType, Settings} from '../../settings/settings';
@@ -39,8 +39,9 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	// Is determined during connection setup.
 	protected Z80N: boolean;
 
-	// Used for temporary bank reads/writes:
-	protected readonly TMP_SLOT = 6;
+	// Used for temporary bank reads/writes.
+	// Requires slot 0 or 1 because ROM can only be paged into these slots.
+	protected readonly TMP_SLOT = 0;
 
 
 
@@ -140,11 +141,47 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			//await this.sendPacketData('?'); // Reply is ignored
 			const qXmlReply = await this.sendPacketData('qXfer:features:read:target.xml:00,FFFF');	// Enable 'g', 'G', 'p', and 'P commands
 
-			// TODO: need better / faster initialization sequence:
-			// Start so that the ZX Next initializes
-			//await this.sendPacketData('c');
+			// Start the ZXNext and wait until the ZXNextOS is ready.
+			// It is checked by looking at interrupt being enabled
+			// and the FRAMES sysvar:
+			// 3 bytes (low, mid, high) @5C78
 			await this.sendQrcmd('g');
-			await new Promise(resolve => setTimeout(resolve, 12000));
+			let count = 0;
+			let prevFRAMES = 0xFFFFFF;
+			const dateStart = Date.now();
+			while (true) {
+				const response = await this.sendQrcmd('print im,iff1,256*w@5C79+b@5C78 ');
+				const result = response.split(' ');
+				// Check for IM1 and intterupt enabled
+				const im = parseInt(result[0], 16);
+				const iff1 = parseInt(result[1], 16);
+				if (im !== 1 || iff1 !== 1) {
+					count = 0;	// Reset counter for IM1/iff1 check
+					continue;
+				}
+				// Check FRAMES sysvar
+				const FRAMES = parseInt(result[2], 16);
+				if (FRAMES !== prevFRAMES) {
+					if (FRAMES > prevFRAMES) {
+						count++;
+						if (count > 10) {
+							// 10 increments found
+							break;
+						}
+					}
+					else
+						count = 0;	// Reset counter
+					prevFRAMES = FRAMES;
+				}
+				// Sleep 30 ms
+				await new Promise(resolve => setTimeout(resolve, 30));
+				// Check for timeout
+				if (Date.now() - dateStart > 20000) {	// 20 seconds timeout
+					throw new Error('Timeout waiting for ZXNextOS to be ready.');
+				}
+			}
+
+			// Stop emulation
 			await this.sendQrcmd('gv');
 
 			// Check the XML
@@ -155,10 +192,13 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 			Z80Registers.decoder = this.createZ80RegistersDecoder();
 
-			// 64k RAM
+			// Check for ZX Next
 			if (this.Z80N) {
 				// ZX Next
 				this.memoryModel = new MemoryModelZxNext();
+				// ZX Next detected: Set ROM to ROM1 (48k)
+				// We come from ZxNextOS so it is ROM3:
+				await this.sendQrcmd('nr8e=3');
 			}
 			else {
 				// Unknown memory model: 64k RAM assumed
@@ -291,7 +331,9 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * 'receivedData'.
 	 */
 	protected dataReceived(data: string) {
-		//LogTransport.log(this.logName + ': dataReceived: ' + Utility.maxString(data, 50) + ', count=' + data.length);
+		// Log
+		const timestamp = '[' + Log.getTimeString() + ']';
+		LogTransport.log(timestamp + ' ' + '<<< ' + this.logName + ': dataReceived: ' + Utility.maxString(data, 50) + ', count=' + data.length);
 
 		try {
 			// Add data to existing buffer
@@ -481,7 +523,8 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 				const checkSum = this.checksum(packetData);
 				// Construct packet
 				let packet = '$' + packetData + '#' + checkSum;
-				LogTransport.log('>>> ' + this.logName + ': Sending ' + (withCtrlC ? 'CTRL-C, ' : '') + packet);
+				const timestamp = '[' + Log.getTimeString() + ']';
+				LogTransport.log(timestamp + ' >>> ' + this.logName + ': Sending ' + (withCtrlC ? 'CTRL-C, ' : '') + packet);
 				if (withCtrlC)
 					packet = CTRL_C + packet;
 
@@ -520,6 +563,10 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * @returns A Promise with the response string.
 	 */
 	protected async sendQrcmd(command: string): Promise<string> {
+		// Log
+		const timestamp = '[' + Log.getTimeString() + ']';
+		LogTransport.log(timestamp + ' >>> ' + this.logName + ': sendQrcmd: ' + command);
+
 		const encodedCommand = this.hexEncode(command);
 		const response = await this.sendPacketData("qRcmd," + encodedCommand);
 		// Check for error
@@ -529,6 +576,10 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		const result = this.hexDecode(response);
 		if (result.startsWith('>'))
 			throw Error("MAME replied with an Error:\n" + result + "\n (for '" + command + "')");
+
+		// Log response
+		const respTimestamp = '[' + Log.getTimeString() + ']';
+		LogTransport.log(respTimestamp + ' <<< ' + this.logName + ': sendQrcmd response: ' + result);
 		return result;
 	}
 
@@ -950,7 +1001,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		// For banked memory switch in the appropriate bank temporarily:
 		// Get bank for tmp slot
 		const tmpBankString = await this.sendQrcmd(`print mmu${this.TMP_SLOT}`);
-		const tmpBank = parseInt(tmpBankString);
+		const tmpBank = parseInt(tmpBankString, 16);
 		// Set new bank
 		await this.sendDzrpCmdSetSlot(this.TMP_SLOT, bank);
 		// Copy memory

@@ -397,7 +397,7 @@ export class DzrpRemote extends RemoteBase {
 		else if (cmd_name === "cmd_read_bank_mem") {
 			if (cmdArray.length < 3) {
 				// Error
-				throw Error("Expecting at least 3 parameters: bank, address and count.");
+				throw Error("Expecting at least 3 parameters: bank, offset and count.");
 			}
 			const bank = Utility.parseValue(cmdArray[0]);
 			const offset = Utility.parseValue(cmdArray[1]);
@@ -411,7 +411,7 @@ export class DzrpRemote extends RemoteBase {
 		else if (cmd_name === "cmd_write_bank_mem") {
 			if (cmdArray.length < 3) {
 				// Error
-				throw Error("Expecting at least 3 parameters: bank, address and memory content list.");
+				throw Error("Expecting at least 3 parameters: bank, offset and memory content list.");
 			}
 			const bank = Utility.parseValue(cmdArray.shift()!);
 			const offset = Utility.parseValue(cmdArray.shift()!);
