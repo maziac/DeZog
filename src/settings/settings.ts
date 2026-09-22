@@ -156,6 +156,18 @@ export interface CSpectType extends DzrpTransportType {
 
 // Definitions for the MAME remote type.
 export interface MameType extends DzrpTransportType {
+	// A delay in ms after socket connection has been setup
+	// and dezog loads and starts the debugged program.
+	// Is disabled by default.
+	startDelay: number;
+
+	// If enabled dezog waits for a ZX interrupt before
+	// loading and starting the debugged program.
+	// Has to be used for .nex loading in zxnext. Otherwise
+	// the environment has not be initialized properly.
+	// Is enabled by default if a ZX Next target is found
+	// but can be enabled/disabled here.
+	startWaitOnZxInterrupt: boolean;
 }
 
 // Definitions for ZX Next remote type.
@@ -629,6 +641,9 @@ export class Settings {
 			launchCfg.mame.port = 12000;
 		if (!launchCfg.mame.timeout)
 			launchCfg.mame.timeout = 5;	// 5 secs
+		if (!launchCfg.mame.startDelay)
+			launchCfg.mame.startDelay = 0; // No delay by default
+
 
 		// zsim
 		if (!launchCfg.zsim)

@@ -1653,7 +1653,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * See https://faqwiki.zxnet.co.uk/wiki/SNA_format
 	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinSna(filePath: string): Promise<number | undefined> {
+	protected async loadBinSna(filePath: string): Promise<number> {
 		// Load and parse file
 		const snaFile = new SnaFile();
 		snaFile.readFile(filePath);
@@ -1712,7 +1712,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * See https://worldofspectrum.org/faq/reference/z80format.htm
 	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinZ80(filePath: string): Promise<number | undefined> {
+	protected async loadBinZ80(filePath: string): Promise<number> {
 		// Load and parse file
 		const z80File = new Z80File();
 		z80File.readFile(filePath);

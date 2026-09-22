@@ -12,6 +12,9 @@ import {MemoryModelUnknown} from '../MemoryModel/genericmemorymodels';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {ErrorWrapper} from '../../misc/errorwrapper';
 import {MemoryModelZxNext} from '../MemoryModel/zxnextmemorymodels';
+import {SnaFile} from '../dzrp/snafile';
+import {MemBank16k} from '../dzrp/membank16k';
+import {Z80File} from '../dzrp/z80file';
 
 
 
@@ -130,6 +133,69 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
+	// Start the ZXNext and wait until the ZXNextOS is ready.
+	// It is checked by looking at interrupt being enabled
+	// and the FRAMES sysvar:
+	// 3 bytes (low, mid, high) @5C78
+	protected async waitForZxInterrupt(): Promise<void> {
+		// Start emulation
+		await this.sendQrcmd('g');
+		// Wait on interrupt
+		let count = 0;
+		let prevFRAMES = 0xFFFFFF;
+		const dateStart = Date.now();
+		while (true) {
+			const response = await this.sendQrcmd('print im,iff1,256*w@5C79+b@5C78 ');
+			const result = response.split(' ');
+			// Check for IM1 and intterupt enabled
+			const im = parseInt(result[0], 16);
+			const iff1 = parseInt(result[1], 16);
+			if (im !== 1 || iff1 !== 1) {
+				count = 0;	// Reset counter for IM1/iff1 check
+				continue;
+			}
+			// Check FRAMES sysvar
+			const FRAMES = parseInt(result[2], 16);
+			if (FRAMES !== prevFRAMES) {
+				if (FRAMES > prevFRAMES) {
+					count++;
+					if (count > 10) {
+						// 10 increments found
+						break;
+					}
+				}
+				else
+					count = 0;	// Reset counter
+				prevFRAMES = FRAMES;
+			}
+			// Sleep 30 ms
+			await new Promise(resolve => setTimeout(resolve, 30));
+			// Check for timeout
+			if (Date.now() - dateStart > 20000) {	// 20 seconds timeout
+				throw new Error('Timeout waiting for ZXNextOS to be ready.');
+			}
+		}
+		// Stop emulation
+		await this.sendQrcmd('step'); // Executes a single.step and stops afterwards.
+	}
+
+
+	/** Start Delay.
+	 * Start emulation and wait for a given time.
+	 * @param startDelay The time to wait in milliseconds.
+	 */
+	protected async startDelay(startDelay: number): Promise<void> {
+		if (startDelay > 0) {
+			// Start emulation
+			await this.sendQrcmd('g');
+			// Delay
+			await new Promise(resolve => setTimeout(resolve, startDelay));
+			// Stop emulation
+			await this.sendQrcmd('step'); // Executes a single.step and stops afterwards.
+		}
+	}
+
+
 	/** Call this from 'doInitialization' when a successful connection
 	 * has been opened to the Remote.
 	 * @emits this.emit('initialized') or this.emit('error', Error(...))
@@ -141,56 +207,24 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			//await this.sendPacketData('?'); // Reply is ignored
 			const qXmlReply = await this.sendPacketData('qXfer:features:read:target.xml:00,FFFF');	// Enable 'g', 'G', 'p', and 'P commands
 
-			// Start the ZXNext and wait until the ZXNextOS is ready.
-			// It is checked by looking at interrupt being enabled
-			// and the FRAMES sysvar:
-			// 3 bytes (low, mid, high) @5C78
-			await this.sendQrcmd('g');
-			let count = 0;
-			let prevFRAMES = 0xFFFFFF;
-			const dateStart = Date.now();
-			while (true) {
-				const response = await this.sendQrcmd('print im,iff1,256*w@5C79+b@5C78 ');
-				const result = response.split(' ');
-				// Check for IM1 and intterupt enabled
-				const im = parseInt(result[0], 16);
-				const iff1 = parseInt(result[1], 16);
-				if (im !== 1 || iff1 !== 1) {
-					count = 0;	// Reset counter for IM1/iff1 check
-					continue;
-				}
-				// Check FRAMES sysvar
-				const FRAMES = parseInt(result[2], 16);
-				if (FRAMES !== prevFRAMES) {
-					if (FRAMES > prevFRAMES) {
-						count++;
-						if (count > 10) {
-							// 10 increments found
-							break;
-						}
-					}
-					else
-						count = 0;	// Reset counter
-					prevFRAMES = FRAMES;
-				}
-				// Sleep 30 ms
-				await new Promise(resolve => setTimeout(resolve, 30));
-				// Check for timeout
-				if (Date.now() - dateStart > 20000) {	// 20 seconds timeout
-					throw new Error('Timeout waiting for ZXNextOS to be ready.');
-				}
-			}
-
-			// Stop emulation
-			await this.sendQrcmd('gv');
-
 			// Check the XML
 			this.parseXml(qXmlReply);
 
-			// Load executable
-			await this.load();
+			// Delay before starting?
+			const startDelay = this.settingsMameType.startDelay;
+			if (startDelay > 0) {
+				await this.startDelay(startDelay);
+			}
 
-			Z80Registers.decoder = this.createZ80RegistersDecoder();
+			// Wait on interrupts?
+			let startWaitOnZxInterrupt = this.settingsMameType.startWaitOnZxInterrupt;
+			if (startWaitOnZxInterrupt === undefined) {
+				// Enabled by default for ZX Next, disabled for others.
+				startWaitOnZxInterrupt = this.Z80N;
+			}
+			if (startWaitOnZxInterrupt) {
+				await this.waitForZxInterrupt();
+			}
 
 			// Check for ZX Next
 			if (this.Z80N) {
@@ -205,6 +239,11 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 				this.memoryModel = new MemoryModelUnknown()
 			}
 			this.memoryModel.init();
+
+			// Load executable
+			await this.load();
+
+			Z80Registers.decoder = this.createZ80RegistersDecoder();
 
 			// Ready
 			this.emit('initialized', 'MAME connected!')
@@ -319,6 +358,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			const found = regex.test(xml);
 			if (!found) {
 				z80n = false;
+				break;
 			}
 		}
 		this.Z80N = z80n;
@@ -1047,6 +1087,140 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 */
 	protected async sendDzrpCmdClose(): Promise<void> {
 		// Do nothing
+	}
+
+
+	/** Loads a .sna file.
+	 * This does not use sendDrzpCmdWriteBank as MAME gdbstub does not
+	 * support slots and banking the way Dezog would require it.
+	 * Therefore only 48k Spectrum .sna files are supported and this is
+	 * written into memory with sendDzrpWriteMemory.
+	 * Loading a .sna file does make sense only for mame started with
+	 * machine spectrum.
+	 * If it is used with some other machine the behavior is undefined
+	 * = user error.
+	 */
+	protected async loadBinSna(filePath: string): Promise<number> {
+		// Load and parse file
+		const snaFile = new SnaFile();
+		snaFile.readFile(filePath);
+
+		// Check that it is a 48k sna file
+		if (snaFile.is128kFile)
+			throw Error('Loading of 128k .sna files into MAME is not supported. Only 48k .sna files are supported.');
+
+		// Transfer 16k memory banks
+		let address = MemBank16k.BANK16K_SIZE;
+		for (const memBank of snaFile.memBanks) {
+			// Write memory
+			await this.writeMemoryDump(address, memBank.data);
+			// Next
+			address += MemBank16k.BANK16K_SIZE;
+		}
+
+		// Set the registers
+		await this.sendDzrpCmdSetRegister(Z80_REG.PC, snaFile.pc);
+		await this.sendDzrpCmdSetRegister(Z80_REG.SP, snaFile.sp);
+		await this.sendDzrpCmdSetRegister(Z80_REG.AF, snaFile.af);
+		await this.sendDzrpCmdSetRegister(Z80_REG.BC, snaFile.bc);
+		await this.sendDzrpCmdSetRegister(Z80_REG.DE, snaFile.de);
+		await this.sendDzrpCmdSetRegister(Z80_REG.HL, snaFile.hl);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IX, snaFile.ix);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IY, snaFile.iy);
+		await this.sendDzrpCmdSetRegister(Z80_REG.AF2, snaFile.af2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.BC2, snaFile.bc2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.DE2, snaFile.de2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.HL2, snaFile.hl2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
+		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
+
+		// Set ROM1 or ROM0
+		if (snaFile.is128kFile) {
+			// Write port 7FFD
+			const port7ffd = snaFile.port7ffd;
+			await this.sendDzrpCmdWritePort(0x7FFD, port7ffd);
+		}
+
+		// Check if interrupt should be enabled
+		const interrupt_enabled = (snaFile.iff2 & 0b00000100) !== 0;
+		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
+
+		return snaFile.sp;
+	}
+
+
+	/** Loads a .z80 file.
+	 * This does not use sendDrzpCmdWriteBank as MAME gdbstub does not
+	 * support slots and banking the way Dezog would require it.
+	 * Therefore only 48k Spectrum .z80 files are supported and this is
+	 * written into memory with sendDzrpWriteMemory.
+	 * Loading a .z80 file does make sense only for mame started with
+	 * machine spectrum.
+	 * If it is used with some other machine the behavior is undefined
+	 * = user error.
+	 */
+	protected async loadBinZ80(filePath: string): Promise<number> {
+		// Load and parse file
+		const z80File = new Z80File();
+		z80File.readFile(filePath);
+
+		// Check that it is a 48k z80 file
+		if (!z80File.is48kFile)
+			throw Error('Only loading of 48k .z80 files into MAME is supported.');
+
+		// Transfer 16k memory banks
+		let address;
+		for (const memBank of z80File.memBanks) {
+			switch (memBank.bank) {
+				case 5:
+					address = 0x4000;
+					break;
+				case 2:
+					address = 0x8000;
+					break;
+				case 0:
+					address = 0xC000;
+					break;
+				default:
+					// Ignore, should not happen
+					this.continue;
+			}
+			// Write memory
+			await this.writeMemoryDump(address, memBank.data);
+			// Next
+			address += MemBank16k.BANK16K_SIZE;
+		}
+
+		// Set the registers
+		await this.sendDzrpCmdSetRegister(Z80_REG.PC, z80File.pc);
+		await this.sendDzrpCmdSetRegister(Z80_REG.SP, z80File.sp);
+		await this.sendDzrpCmdSetRegister(Z80_REG.AF, z80File.af);
+		await this.sendDzrpCmdSetRegister(Z80_REG.BC, z80File.bc);
+		await this.sendDzrpCmdSetRegister(Z80_REG.DE, z80File.de);
+		await this.sendDzrpCmdSetRegister(Z80_REG.HL, z80File.hl);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IX, z80File.ix);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IY, z80File.iy);
+		await this.sendDzrpCmdSetRegister(Z80_REG.AF2, z80File.af2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.BC2, z80File.bc2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.DE2, z80File.de2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.HL2, z80File.hl2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.R, z80File.r);
+		await this.sendDzrpCmdSetRegister(Z80_REG.I, z80File.i);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IM, z80File.im);
+
+		// Set ROM1 or ROM0
+		if (z80File.is128kFile) {
+			// Write port 7FFD
+			const port7ffd = z80File.port7ffd!;
+			await this.sendDzrpCmdWritePort(0x7FFD, port7ffd);
+		}
+
+		// Check if interrupt should be enabled
+		const interrupt_enabled = (z80File.iff1 !== 0);
+		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
+
+		return z80File.sp;
 	}
 }
 

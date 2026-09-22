@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "3.8.0-rc4",
+	"version": "3.8.0-rc5",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum/ZX81.",
 	"author": {
@@ -1039,6 +1039,15 @@
 									"timeout": {
 										"type": "number",
 										"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
+									},
+									"startDelay": {
+										"type": "number",
+										"description": "The time to wait in milliseconds before starting the debugged program after connecting to MAME. Defaults to 0. You shouldn't need this.",
+										"default": 0
+									},
+									"startWaitOnZxInterrupt": {
+										"type": "boolean",
+										"description": "If true dezog will wait after connecting to MAME until it finds an active ZX timer interrupt. I.e. one that writes to the SYSVARS. Defaults to false for non-ZXNext targets and true for ZXNext targets. Is used to wait until the ZxNextOS has finally initialized before starting the debugged program."
 									}
 								}
 							},

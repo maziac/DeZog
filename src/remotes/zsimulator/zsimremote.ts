@@ -1177,7 +1177,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * See https://faqwiki.zxnet.co.uk/wiki/SNA_format
 	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinSna(filePath: string): Promise<number | undefined> {
+	protected async loadBinSna(filePath: string): Promise<number> {
 		// Load and parse file
 		const snaFile = new SnaFile();
 		snaFile.readFile(filePath);
@@ -1262,7 +1262,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * is possible to load it onto a ZX48K.
 	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinZ80(filePath: string): Promise<number | undefined> {
+	protected async loadBinZ80(filePath: string): Promise<number> {
 		// Load and parse file
 		const z80File = new Z80File();
 		z80File.readFile(filePath);
