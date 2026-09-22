@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
 import {suite, test, setup} from 'mocha';
-import { DecodeZesaruxRegisters, DecodeZesaruxRegistersZx128k, DecodeZesaruxRegistersZx48k, DecodeZesaruxRegistersZxNext } from '../src/remotes/zesarux/decodezesaruxdata';
+import {DecodeZesaruxRegisters, DecodeZesaruxRegistersZx128k, DecodeZesaruxRegistersZx48k, DecodeZesaruxRegistersZxNext} from '../src/remotes/zesarux/decodezesaruxdata';
 
 
 
@@ -145,7 +145,7 @@ suite('DecodeZesaruxRegisters', () => {
 		let Decoder: any;
 		const line1 = "PC=80cf SP=83f3 AF=0208 BC=0301 HL=4002 DE=2006 IX=fffe IY=5c3a AF'=1243 BC'=23fe HL'=f3da DE'=abcd I=23 R=4b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0 MMU=00001111222233334444555566667777";
 		const line2 = "PC=80cf SP=83f3 AF=0208 BC=0301 HL=4002 DE=2006 IX=fffe IY=5c3a AF'=1243 BC'=23fe HL'=f3da DE'=abcd I=23 R=4b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0 whatever-other-position: MMU=088809990AAA0BBB0CCC0DDD0EEE0FFF";
-		const romLine = "PC=80cf SP=83f3 AF=0208 BC=0301 HL=4002 DE=2006 IX=fffe IY=5c3a AF'=1243 BC'=23fe HL'=f3da DE'=abcd I=23 R=4b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0 MMU=80008001800280030000000100020003";
+		const romLine = "PC=80cf SP=83f3 AF=0208 BC=0301 HL=4002 DE=2006 IX=fffe IY=5c3a AF'=1243 BC'=23fe HL'=f3da DE'=abcd I=23 R=4b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0 MMU=80008001000400050000000100020003";
 
 		suite('DecodeZesaruxRegistersZx128k', () => {
 
@@ -169,7 +169,7 @@ suite('DecodeZesaruxRegisters', () => {
 
 				const slots = Decoder.parseSlots(romLine);
 				assert.equal(4, slots.length);
-				assert.deepEqual([8, 9, 8, 9], slots);	// Note: in reality only the first slot could be ROM
+				assert.deepEqual([8, 9, 4, 5], slots);	// Note: in reality only the first slot could be ROM
 			});
 		});
 
@@ -221,10 +221,13 @@ suite('DecodeZesaruxRegisters', () => {
 			});
 
 			test('ROM', () => {
-
 				const slots = Decoder.parseSlots(romLine);
 				assert.equal(8, slots.length);
-				assert.deepEqual([0x00FC, 0x00FD, 0x0FE, 0x00FF, 0x0000, 0x0001, 0x0002, 0x0003], slots);
+				assert.deepEqual([0x00FF, 0x00FF, 0x0004, 0x0005, 0x0000, 0x0001, 0x0002, 0x0003], slots);
+
+				const slotsZesarux = Decoder.parseSlotsZesarux(romLine);
+				assert.equal(8, slotsZesarux.length);
+				assert.deepEqual([0x8000, 0x8001, 0x004, 0x0005, 0x0000, 0x0001, 0x0002, 0x0003], slotsZesarux);
 			});
 		});
 	});
