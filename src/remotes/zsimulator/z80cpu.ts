@@ -139,6 +139,9 @@ export class Z80Cpu implements Serializable, ExecuteInterface {
 
 	/** Properties.
 	 */
+	get state() {
+		return this.z80.getState();
+	}
 	set pc(value) {
 		this.z80.pc = value;
 	}
@@ -146,7 +149,7 @@ export class Z80Cpu implements Serializable, ExecuteInterface {
 	set sp(value) {this.z80.sp = value;}
 	get sp() {return this.z80.sp;}
 	get i() {return this.z80.i;}
-	get de() {return 256 * this.z80.d +this.z80.e;}
+	get de() {return 256 * this.z80.d + this.z80.e;}
 
 	set af(value) {
 		const r = this.z80.getState();

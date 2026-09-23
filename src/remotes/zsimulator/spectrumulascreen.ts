@@ -118,7 +118,8 @@ export class SpectrumUlaScreen extends UlaScreen implements Serializable {
 		if (this.vsyncTimeCounter >= SpectrumUlaScreen.VSYNC_TIME) {
 			this.vsyncTimeCounter %= SpectrumUlaScreen.VSYNC_TIME;
 			// Generate interrupt
-			this.z80Cpu.interrupt(false, 0);
+			// Note: The data put on the bus is 0xFF, i.e. the lines are pulled to high in IM2 mode. IM mode 0 is not supported anyway.
+			this.z80Cpu.interrupt(false, 0xFF);
 			this.emit('updateScreen');
 		}
 	}

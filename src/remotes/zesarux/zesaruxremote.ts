@@ -895,7 +895,7 @@ export class ZesaruxRemote extends RemoteBase {
 				}
 
 				// If we reach here the stack was either empty or did not contain any call, i.e. nothing to step out to.
-				this.continueResolve.resolve(undefined);
+				this.continueResolve.resolve('Could not step out: no caller found.');
 			})();
 		});
 	}

@@ -1418,6 +1418,7 @@ export class ZSimRemote extends DzrpRemote {
 				response = `zsim specific commands:
 out port value: Output 'value' to 'port'. E.g. "-e out 0x9000 0xFE"
 in port: Print input value from 'port'. E.g. "-e in 0x8000"
+info: shows additional information about the emulator state. E.g. iff1 and iff2.
 tstates set value: set t-states to 'value', then create a tick event. E.g. "-e tstates set 1000"
 tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e tstates add 1000"
 "zx81-basic-vars [var1] [,var2...]": Get all or certain ZX81 BASIC variables. E.g. "-e zx81 basic-vars" or "-e zx81-basic-vars N Z$"
@@ -1451,6 +1452,12 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 				const value = this.z80Cpu.ports.read(port);
 				// Return
 				response = "Read port " + Utility.getHexString(port, 4) + "h: " + Utility.getHexString(value, 2) + "h";
+				return response;
+			}
+			if (cmd_name === "info") {
+				// Show iff1 and iff2:
+				const r = this.z80Cpu.state;
+				response = "IFF1: " + r.iff1 + ", IFF2: " + r.iff2;
 				return response;
 			}
 			if (cmd_name === "tstates") {
