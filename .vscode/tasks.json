@@ -136,8 +136,8 @@
 		{
 			"label": "start mame",
 			"type": "shell",
-			"command": "while true; do ./mame spectrum -window -debugger gdbstub -debug -debugger_port 12000 -verbose -resolution 512x384 ; sleep 2 ; done", // For windows users: please exchange this with e.g. powershell commands
-			//"command": "while true; do ./mame specnext_ks1 -window -debugger gdbstub -debug -debugger_port 12000 -verbose -resolution 512x384 -hard1 ../NextZXOS-2gb/zxnext-sw.img; sleep 2 ; done", // For windows users: please exchange this with e.g. powershell commands
+			//"command": "while true; do ./mame spectrum -window -debugger gdbstub -debug -debugger_port 12000 -verbose -resolution 512x384 ; sleep 2 ; done", // For windows users: please exchange this with e.g. powershell commands
+			"command": "while true; do ./mame tbblue -window -debugger gdbstub -debug -debugger_port 12000 -verbose -resolution 512x384 -hard1 ../NextZXOS-2gb/zxnext-sw.img; sleep 2 ; done", // For windows users: please exchange this with e.g. powershell commands
 			"options": {
 				"cwd": "${config:mame_dir}"
 			},

@@ -1101,7 +1101,12 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * = user error.
 	 */
 	protected async loadBinSna(filePath: string): Promise<number> {
-		// Load and parse file
+		// If ZxNext the "normal" load sna routine can be used,
+		// (otherwise only 48k .sna files are supported.)
+		if (this.Z80N)
+			return super.loadBinSna(filePath);
+
+		// Load and parse file (48K only)
 		const snaFile = new SnaFile();
 		snaFile.readFile(filePath);
 
