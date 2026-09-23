@@ -291,7 +291,6 @@ to either load a .nex, .sna, .z80, .p (or .tap or *.z80) file. On start of the d
 On ZEsarUX the .nex, .sna, .p, .z80 or .tap file is loaded via ZEsarUX's "smartload" command.
 
 For all other remotes (cspect, zsim, mame and zxnext) the .nex, .z80, .sna or .p file loading is mainly copying the data into the emulators memory, setting a few registers and starting it.
-For the .z80 and .sna files (apart from ZEsarUX) only zsim will set the port 0x7FFD and the interrupt enabled flag correctly.
 
 For the .nex file there can be some missing initializations.
 Most important to note are:
@@ -1621,14 +1620,45 @@ But you could also use "loadObjs" or even "load" (for ZX 48K Spectrum files) if 
 
 Please also see [Reverse Engineering with DeZog](https://github.com/maziac/DeZog/blob/master/documentation/ReverseEngineeringUsage.md).
 
+#### ZX Next support
+DeZog has beginning with version 3.8 support for the MAME tbblue target.
+To start it use the following commandline:
+~~~bash
+while true; do ./mame tbblue -window -debugger gdbstub -debug -debugger_port 12000 -verbose -hard1 <path-to-your-sdcard-image>; sleep 2 ; done
+~~~
+
+The ZX Next will first initialize itself and start the ZX Next OS.
+Normally you would want to start your debugged program after the OS has finished initializing.
+DeZog takes care and waits for MAME until OS initialization finished and will afterwards load your program (.sna, nex, etc.) into MAME and start it.
+(Technically DeZog identifies the end of initialization by looking at the ZX Spectrum SYSVARS and checks that the interrupt has started to increment the FRAMES variable.)
+
+If you want to turn off this behavior you can use
+~~~json
+    "mame": {
+        "startWaitOnZxInterrupt": false
+    }
+~~~
+
+For ZX Next targets 'startWaitOnZxInterrupt' is by default 'true'. For other targets it is 'false'.
+Note that if you need to, you could also set this variable to true for spectrum targets to wait with loading until the ROM has initialized itself.
+
+Just in case you run into some other trouble there is also another variable
+~~~json
+    "mame": {
+        "startDelay": 0
+    }
+~~~
+Here you can set an delay in ms that DeZog waits until it loads and runs the debugged program.
+
 
 #### Memory Banks / Paging
 
-At the moment the MAME gdbstub does not deliver any information about the used memory banks.
-I.e. as soon as there is a memory area that is shared between 2 or more banks DeZog cannot distinguish the addresses anymore.
+Paging is supported only for the MAME tbblue targets. All other targets use 64k address space only.
+
+So if you are not using tbblue target and as soon as there is a memory area that is shared between 2 or more banks DeZog cannot distinguish the addresses anymore.
 You would see once the disassembly of bank X and, when it is switched, the disassembly of bank Y for the same addresses.
 
-So, meaningful reverse engineering with MAME will work only for systems without memory banks / paging.
+So, meaningful reverse engineering with MAME will work only for systems without memory banks / paging or for the tbblue target.
 
 
 ## Usage

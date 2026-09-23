@@ -1110,6 +1110,17 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 */
 	public async loadBin(filePath: string): Promise<number> {
 		const sp = await super.loadBin(filePath);
+		// Remember byte at pc
+		const pcStr = await this.sendQrcmd('print pc');
+		const memByteStr = await this.sendQrcmd(`print b@${pcStr}`);
+		// Exchange with nop
+		await this.sendQrcmd(`b@${pcStr}=0`);	// NOP
+		// Single step
+		await this.sendQrcmd('step');
+		// Restore original byte at pc
+		await this.sendQrcmd(`b@${pcStr}=${memByteStr}`);
+		// Reset PC to original value
+		await this.sendQrcmd(`pc=${pcStr}`);
 		return sp;
 	}
 
