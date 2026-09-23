@@ -38,7 +38,7 @@ export class CSpectRemote extends WithSocket(DzrpTransportRemote) {
 
 	/** ZX81 is not supported.
 	 */
-	protected async loadBinZx81(filePath: string): Promise<number | undefined> {
+	protected async loadBinZx81(filePath: string): Promise<number> {
 		throw Error("File extension in '" + filePath + "' not supported with remoteType:'" + Settings.launch.remoteType + "'.");
 	}
 }

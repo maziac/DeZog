@@ -293,7 +293,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param path The (absolute) path to the file.
 	 * @returns The sp after loading the file.
 	 */
-	public async loadBin(path: string): Promise<number | undefined> {
+	public async loadBin(path: string): Promise<number> {
 		// Override
 		throw Error('Loading files is not supported.');
 	}

@@ -1157,7 +1157,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * This routine takes care of the loading of the second file.
 	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinZx81(filePath: string): Promise<number | undefined> {
+	protected async loadBinZx81(filePath: string): Promise<number> {
 		// Remember the file's directory
 		if (this.zx81LoadOverlay) {
 			const folder = path.dirname(filePath);
@@ -1363,7 +1363,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * See https://wiki.specnext.dev/NEX_file_format
 	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinNex(filePath: string): Promise<number | undefined> {
+	protected async loadBinNex(filePath: string): Promise<number> {
 		// Check for 128K
 		if (!(this.memoryModel instanceof MemoryModelZxNext))
 			throw Error("A NEX file can only be loaded into a 'ZXNEXT' memory model. This is a '" + this.memoryModel.name + "' memory model.");

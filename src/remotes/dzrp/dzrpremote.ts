@@ -212,14 +212,6 @@ export class DzrpRemote extends RemoteBase {
 		//
 	}
 
-	public async init(): Promise<void> {
-		this.sendDzrpCmdWritePort = this.sendDzrpCmdUnimplemented;
-		await super.init();
-	}
-
-	protected async sendDzrpCmdUnimplemented(): Promise<void> {
-		throw Error("DZRP command not implemented in this remote.");
-	}
 
 	/** Override to create another decoder.
 	 */
@@ -1506,8 +1498,8 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	/** Loads .nex, .sna or .p files.
 	 * @returns The sp after loading the file.
 	 */
-	public async loadBin(filePath: string): Promise<number | undefined> {
-		let sp: number | undefined;
+	public async loadBin(filePath: string): Promise<number> {
+		let sp: number;
 		try {
 			// Check file extension
 			const ext = path.extname(filePath).toLowerCase();
@@ -1540,7 +1532,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * See https://k1.spdns.de/Develop/Projects/zasm/Info/O80%20and%20P81%20Format.txt
 	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinZx81(filePath: string): Promise<number | undefined> {
+	protected async loadBinZx81(filePath: string): Promise<number> {
 		// Find RAMTOP: Fill memory, read it back and check until which address it is correct.
 		// This would work with Remotes even if the memory model is not known.
 		// This does, more or less, the same as the ZX81.
@@ -1622,7 +1614,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		if (len < 0x3c) {
 			await this.sendDzrpCmdSetRegister(Z80_REG.PC, 0x03A6);	// BREAK_CONT_REPEATS;
 			this.emit('warning', `Loading ${path.basename(filePath)}: Data corrupted: file is too short: length < sysvars`);
-			return;
+			return topSpStack;
 		}
 
 		// E_LINE
@@ -1631,18 +1623,19 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		if (0x4009 + len < eline) {
 			await this.sendDzrpCmdSetRegister(Z80_REG.PC, 0x03A6);	// BREAK_CONT_REPEATS;
 			this.emit('warning', `Loading ${path.basename(filePath)}: Data corrupted: file is too short: length < ($4014)-$4009`);
-			return;
+			return topSpStack;
 		}
 
 		// Too big?
 		if (0x4009 + len > 0x4000 + ramSize) {
 			this.emit('warning', `Loading ${path.basename(filePath)}: The file is too big for the available RAM (${ramSize}).`);
-			return;
+			return topSpStack;
 		}
 
 		// Overwriting stack?
 		if (0x4009 + len > topStack) {
 			this.emit('warning', `Loading ${path.basename(filePath)}: Note: The machine stack was overwritten by the data`);
+			return topSpStack;
 		}
 
 		return topSpStack;
@@ -1771,7 +1764,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 	 * See https://wiki.specnext.dev/NEX_file_format
 	 * @returns The sp after loading the file.
 	 */
-	protected async loadBinNex(filePath: string): Promise<number | undefined> {
+	protected async loadBinNex(filePath: string): Promise<number> {
 		// Load and parse file
 		const nexFile = new NexFile();
 		nexFile.readFile(filePath);

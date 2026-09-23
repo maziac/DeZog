@@ -694,7 +694,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			response = 'Socket closed';
 		}
 		else {
-			throw Error("Error: not supported.");
+			throw Error("Command not supported.");
 		}
 
 		// Return string
@@ -1068,8 +1068,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	/** Sends the command to set the border.
 	 */
 	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
-		const borderColorHexString = '0x' + borderColor.toString(16);
-		await this.sendQrcmd(`do ib@0x00FE=${borderColorHexString}`);
+		await this.sendDzrpCmdWritePort(0xFE, borderColor);
 	}
 
 
@@ -1083,10 +1082,35 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
+	/* Sends the command to write to a port.
+	 * @param port The port address.
+	 * @param value the value to write.
+	 */
+	protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
+		await this.sendQrcmd(`ib@${port.toString(16)}=${value.toString(16)}`);
+	}
+
+
 	/** Ignore command.
 	 */
 	protected async sendDzrpCmdClose(): Promise<void> {
 		// Do nothing
+	}
+
+
+	/** Calls the super function but works around an issue
+	 * with mame:
+	 * In mame it needs execution of at least one "step" to
+	 * show the effects of the loading. E.g. the new screen
+	 * or the set border color are shown not before the next
+	 * step.
+	 * Therefore a nop is injected at the PC and stepped once.
+	 * Afterwords the PC is reset and the value is restored.
+	 * @returns The sp after loading the file.
+	 */
+	public async loadBin(filePath: string): Promise<number> {
+		const sp = await super.loadBin(filePath);
+		return sp;
 	}
 
 
@@ -1122,6 +1146,9 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			// Next
 			address += MemBank16k.BANK16K_SIZE;
 		}
+
+		// Set the border
+		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
 
 		// Set the registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, snaFile.pc);
