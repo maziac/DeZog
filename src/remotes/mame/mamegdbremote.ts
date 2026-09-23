@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import {BreakInfo} from '../dzrp/dzrpremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Log, LogTransport} from '../../log';
@@ -1095,6 +1097,61 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 */
 	protected async sendDzrpCmdClose(): Promise<void> {
 		// Do nothing
+	}
+
+
+	/** Called from "-state save" command.
+	 * Uses the MAME debugger command "statesave" (via qRcmd).
+	 * The state file is written by MAME itself (MAME's own .sta format).
+	 * Note: MAME does not report an error via qRcmd. Therefore, if MAME
+	 * runs on the local host, the existence of the file is checked.
+	 * @param filePath The file path to store to.
+	 */
+	public override async stateSave(filePath: string): Promise<void> {
+		//filePath += '.sta';
+		// If MAME is not local then strip the base dir (which is local)
+		const isLocal = this.isMameOnLocalHost();
+		if (isLocal) {
+			if (fs.existsSync(filePath))
+				fs.unlinkSync(filePath); // Remove the old file if it exists
+		}
+		else
+			filePath = path.basename(filePath);
+		// Save (quotes are stripped by MAME, they allow spaces and commas in the path)
+		await this.sendQrcmd(`statesave "${filePath}"`);
+		// Check
+		if (isLocal && !fs.existsSync(filePath))
+			throw Error("MAME could not save the state file.");
+	}
+
+
+	/** Called from "-state restore" command.
+	 * Uses the MAME debugger command "stateload" (via qRcmd).
+	 * @param filePath The file path to restore from.
+	 */
+	public override async stateRestore(filePath: string): Promise<void> {
+		//filePath += '.sta';
+		const isLocal = this.isMameOnLocalHost();
+		if (isLocal) {
+			// Check that file exists if MAME is running locally
+			if (!fs.existsSync(filePath))
+				throw Error("State file does not exist.");
+		}
+		else {
+			// Do not use the local dir if mame runs not locally
+			filePath = path.basename(filePath);
+		}
+		// Load
+		await this.sendQrcmd(`stateload "${filePath}"`);
+	}
+
+
+	/** Returns true if MAME runs on the same host as DeZog.
+	 * Only then the state files can be checked by DeZog.
+	 */
+	protected isMameOnLocalHost(): boolean {
+		const hostname = this.settingsMameType.hostname!.toLowerCase();
+		return ['localhost', '127.0.0.1', '::1'].includes(hostname);
 	}
 
 

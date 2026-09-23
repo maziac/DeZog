@@ -1825,9 +1825,6 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 		const stateData = await ungzip(zippedData);
 		// Restore data
 		await this.sendDzrpCmdWriteState(stateData);
-		// Clear register cache
-		await this.getRegistersFromEmulator();
-		await this.getCallStackFromEmulator();
 	}
 
 

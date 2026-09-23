@@ -1410,9 +1410,6 @@ export class ZesaruxRemote extends RemoteBase {
 		await zSocket.sendAwait('snapshot-load ' + filePath);
 		// Initialize more
 		await this.initAfterLoad();
-		// Clear register cache
-		await this.getRegistersFromEmulator();
-		await this.getCallStackFromEmulator();
 	}
 
 

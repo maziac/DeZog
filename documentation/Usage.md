@@ -649,7 +649,7 @@ The following table gives an overview.
 | Code coverage                         | yes    | yes 1)  | no      | no     | no     |
 | Reverse debugging                     | true   | true    | lite    | lite   | lite   |
 | ZX Next capable                       | no     | yes     | yes     | yes    | no     |
-| Save/restore the state                | yes    | yes     | no      | no     | no     |
+| Save/restore the state                | yes    | yes     | no      | no     | yes    |
 | Output of T-States                    | yes    | yes     | no      | no     | no     |
 | Display of sprite attributes/patterns | yes    | yes     | no      | yes    | no     |
 | Load .obj file through DeZog          | yes    | yes     | yes     | yes    | yes 7) |
@@ -2153,6 +2153,7 @@ are valid names.
 
 
 Note: What is saved depends solely on the Remote, i.e. ZEsarUx or the internal simulator.
+For MAME the state is saved by MAME itself (debugger command 'statesave', MAME's .sta format). Note: MAME does not report errors on save/load. DeZog can only check the existence of the state file if MAME runs on the same host (localhost).
 
 
 

@@ -13,6 +13,7 @@
 - ROM identification for ZX Spectrum based ROMs
 - Fixed edge case failure when loading sna files (overflow).
 - zsim: improved support for IM2 mode.
+- mame: state save/restore ("-state save/restore") supported via MAME's 'statesave'/'stateload' debugger commands.
 
 # 3.7.4
 - PR #193: Fixed bug where pressing 'stop' would sometimes take 5 seconds to disconnect. (mame)
