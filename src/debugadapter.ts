@@ -1690,21 +1690,40 @@ export class DebugSessionClass extends DebugSession {
 
 		// Start command
 		(async () => {
-			const event = await command();
+			let event: StoppedEvent | undefined;
+			try {
+				event = await command();
+			}
+			catch (e) {
+				// E.g. a socket timeout while stepping. Without handling, the
+				// adapter would stay in 'processing' state and vscode would
+				// never receive a stopped event.
+				this.showError('Error while processing request: ' + e.message);
+				event = new StoppedEvent('exception', DebugSessionClass.THREAD_ID);
+			}
 
 			// Note: On termination/restart Remote could be undefined
-			if (!Remote)
+			if (!Remote) {
+				this.processingSteppingRequest = false;
+				if (respTimer)
+					clearTimeout(respTimer);
 				return;
+			}
 
-			// End processing
-			this.stopProcessing();
+			try {
+				// End processing
+				this.stopProcessing();
 
-			// Update memory dump etc. (also in reverse debug because of the register display)
-			this.update({step: true});
+				// Update memory dump etc. (also in reverse debug because of the register display)
+				this.update({step: true});
 
-			// Show decorations
-			//await Remote.getRegisters();
-			StepHistory.emitHistory();
+				// Show decorations
+				//await Remote.getRegisters();
+				StepHistory.emitHistory();
+			}
+			catch (e) {
+				Log.log('handleRequest: ' + e.message);
+			}
 
 			// Send response
 			if (respTimer) {
