@@ -529,7 +529,7 @@ export class LabelsClass {
 	 * Returns the corresponding number of a label.
 	 * Long addresses.
 	 * Used by:
-	 * - debugAdapter.evalLabel
+	 * - DebugConsoleCommands.evalLabel
 	 * - zesarux.convertCondition
 	 * - z80unittests.labels.getNumberForLabel("UNITTEST_TEST_WRAPPER");
 	 * @param label The label name.
