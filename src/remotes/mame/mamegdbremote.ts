@@ -1106,6 +1106,8 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * step.
 	 * Therefore a nop is injected at the PC and stepped once.
 	 * Afterwords the PC is reset and the value is restored.
+	 * TODO: maybe this will be fixed in MAME with this commit https://github.com/mamedev/mame/pull/16232/changes/a23da4ec121c82093f4da00470e548309d25c876
+	 * If so I can remove the method.
 	 * @returns The sp after loading the file.
 	 */
 	public async loadBin(filePath: string): Promise<number> {

@@ -11,6 +11,8 @@
 - New launch.json property "loadSysVars" to load zx16k or zx48 system variables at startup.
 - Internally used 0xFF for ROM instead of 0xFE pseudo ROM identifier.
 - ROM identification for ZX Spectrum based ROMs
+- Fixed edge case failure when loading sna files (overflow).
+- zsim: improved support for IM2 mode.
 
 # 3.7.4
 - PR #193: Fixed bug where pressing 'stop' would sometimes take 5 seconds to disconnect. (mame)
