@@ -232,13 +232,13 @@ suite('ZSimRemote', () => {
 			});
 
 			test('set / get', () => {
-				assert.equal(zsimAny.tbblueCpuSpeed, 0b000000);
+				assert.equal(zsimAny.zxNextRegisters.cpuSpeed, 0b000000);
 				assert.equal(zsim.z80Cpu.cpuFreq, 12345);
 
 				// Change frequency
 				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
 				zsim.ports.write(0x253B, 0b00);	// 3.5MHz
-				assert.equal(zsimAny.tbblueCpuSpeed, 0b00);
+				assert.equal(zsimAny.zxNextRegisters.cpuSpeed, 0b00);
 				assert.equal(zsim.z80Cpu.cpuFreq, 3500000);
 				// Read back
 				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
@@ -246,7 +246,7 @@ suite('ZSimRemote', () => {
 
 				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
 				zsim.ports.write(0x253B, 0b01);	// 7MHz
-				assert.equal(zsimAny.tbblueCpuSpeed, 0b01);
+				assert.equal(zsimAny.zxNextRegisters.cpuSpeed, 0b01);
 				assert.equal(zsim.z80Cpu.cpuFreq, 7000000);
 				// Read back
 				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
@@ -254,7 +254,7 @@ suite('ZSimRemote', () => {
 
 				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
 				zsim.ports.write(0x253B, 0b10);	// 14MHz
-				assert.equal(zsimAny.tbblueCpuSpeed, 0b10);
+				assert.equal(zsimAny.zxNextRegisters.cpuSpeed, 0b10);
 				assert.equal(zsim.z80Cpu.cpuFreq, 14000000);
 				// Read back
 				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
@@ -262,7 +262,7 @@ suite('ZSimRemote', () => {
 
 				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
 				zsim.ports.write(0x253B, 0b11);	// 28MHz
-				assert.equal(zsimAny.tbblueCpuSpeed, 0b11);
+				assert.equal(zsimAny.zxNextRegisters.cpuSpeed, 0b11);
 				assert.equal(zsim.z80Cpu.cpuFreq, 28000000);
 				// Read back
 				zsim.ports.write(0x243B, 0x07);	// REG_TURBO_MODE
