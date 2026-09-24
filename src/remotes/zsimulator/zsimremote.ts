@@ -1083,7 +1083,7 @@ export class ZSimRemote extends DzrpRemote {
 		}
 
 		// Set the border
-		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
+		await this.sendDzrpCmdWritePort(0xFE, snaFile.borderColor);
 
 		// Set the registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, snaFile.pc);
@@ -1178,7 +1178,7 @@ export class ZSimRemote extends DzrpRemote {
 		}
 
 		// Set the border
-		await this.sendDzrpCmdSetBorder(z80File.borderColor);
+		await this.sendDzrpCmdWritePort(0xFE, z80File.borderColor);
 
 		// Set the registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, z80File.pc);
@@ -1236,7 +1236,7 @@ export class ZSimRemote extends DzrpRemote {
 		nexFile.readFile(filePath);
 
 		// Set the border
-		await this.sendDzrpCmdSetBorder(nexFile.borderColor);
+		await this.sendDzrpCmdWritePort(0xFE, nexFile.borderColor);
 
 		// Load memory banks
 		for (const memBank of nexFile.memBanks) {
@@ -1593,14 +1593,6 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 	}
 
 
-	/**
-	 * Sends the command to set the border.
-	  */
-	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
-		// Set port for border
-		this.ports.write(0xFE, borderColor);
-	}
-
 
 	/**
 	 * Not used/supported.
@@ -1611,10 +1603,10 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 
 
 	/**
-	 * Not used/supported.
+	 * Writes a value to a port.
 	 */
 	protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
-		throw Error("'sendDzrpCmdWritePort' is not implemented.");
+		this.ports.write(port, value);
 	}
 
 

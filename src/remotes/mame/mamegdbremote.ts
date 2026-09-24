@@ -1043,12 +1043,6 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/** Sends the command to set the border.
-	 */
-	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
-		await this.sendDzrpCmdWritePort(0xFE, borderColor);
-	}
-
 
 	/** Enables/disables the interrupts.
 	 * @param enable true to enable, false to disable interrupts.
@@ -1194,7 +1188,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		}
 
 		// Set the border
-		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
+		await this.sendDzrpCmdWritePort(0xFE, snaFile.borderColor);
 
 		// Set the registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, snaFile.pc);

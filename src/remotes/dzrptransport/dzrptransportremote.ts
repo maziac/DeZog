@@ -1008,12 +1008,6 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/** Sends the command to set the border.
-	  */
-	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
-		await this.sendDzrpCmd(DZRP.CMD_SET_BORDER, [borderColor]);
-	}
-
 
 	/** Sends the command to set all breakpoints.
 	 * For the ZXNext all breakpoints are set at once just before the

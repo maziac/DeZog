@@ -32,8 +32,9 @@ suite('NexFile related', () => {
 			public outSp: number;
 			public outSlotBanks = new Array<number>(8);
 			public outBanks = new Set<number>();
-			public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
-				this.outBorderColor = borderColor;
+			public async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
+				if (port === 0xFE)
+					this.outBorderColor = value;
 			}
 			public async sendDzrpCmdWriteBankMem(bank: number, offset: number, dataArray: Buffer | Uint8Array): Promise<void> {
 				// Check that it is not assigned 2 times

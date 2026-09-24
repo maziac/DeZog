@@ -74,11 +74,6 @@ export class DzrpTransportTest extends EventEmitter {
 			await this.remote.sendDzrpCmdGetTbblueReg(reg);
 		},
 		async () => {
-			console.log('sendDzrpCmdSetBorder');
-			const color = this.rndInt(0, 7);
-			await this.remote.sendDzrpCmdSetBorder(color);
-		},
-		async () => {
 			console.log('sendDzrpCmdSetBreakpoints');
 			const bpLongAddrs: number[] = [];
 			const count = this.rndInt(0, 100);

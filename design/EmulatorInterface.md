@@ -332,7 +332,6 @@ Note: gdb itself might support banking/paging via [overlays](https://docs.adacor
 | CMD_WRITE_MEM                           | X    | M                                            |
 | CMD_SET_SLOT                            |      |                                              |
 | CMD_GET_TBBLUE_REG                      |      |                                              |
-| CMD_SET_BORDER                          |      |                                              |
 | CMD_SET_BREAKPOINTS                     |      |                                              |
 | CMD_RESTORE_MEM                         |      |                                              |
 | CMD_LOOPBACK                            |      |                                              |

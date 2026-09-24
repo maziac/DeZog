@@ -45,7 +45,7 @@ export enum DZRP {
 	CMD_WRITE_MEM = 9,
 	CMD_SET_SLOT = 10,
 	CMD_GET_TBBLUE_REG = 11,
-	CMD_SET_BORDER = 12,
+	//CMD_SET_BORDER = 12, // Deprecated/removed, use CMD_WRITE_PORT
 	CMD_SET_BREAKPOINTS = 13,
 	CMD_RESTORE_MEM = 14,
 	CMD_LOOPBACK = 15,
@@ -1669,7 +1669,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 		}
 
 		// Set the border
-		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
+		await this.sendDzrpCmdWritePort(0xFE, snaFile.borderColor);
 
 		// Set the registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, snaFile.pc);
@@ -1728,7 +1728,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 		}
 
 		// Set the border
-		await this.sendDzrpCmdSetBorder(z80File.borderColor);
+		await this.sendDzrpCmdWritePort(0xFE, z80File.borderColor);
 
 		// Set the registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, z80File.pc);
@@ -1772,7 +1772,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 		nexFile.readFile(filePath);
 
 		// Set the border
-		await this.sendDzrpCmdSetBorder(nexFile.borderColor);
+		await this.sendDzrpCmdWritePort(0xFE, nexFile.borderColor);
 
 		// Transfer 16k memory banks
 		for (const memBank of nexFile.memBanks) {
@@ -2167,12 +2167,6 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 		//return {xl: 0, xr: 0, yt: 0, yb: 0, control: 0};
 	}
 
-
-	/** Sends the command to set the border.
-	 */
-	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
-		Utility.assert(false);
-	}
 
 
 	/** Sends the command to set all breakpoints.
