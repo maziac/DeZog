@@ -63,7 +63,6 @@ I.e. different remotes may use a different subset of commands. For one this is b
 [CMD_WRITE_MEM]: #cmd_write_mem9
 [CMD_SET_SLOT]: #cmd_set_slot10
 [CMD_GET_TBBLUE_REG]: #cmd_get_tbblue_reg11
-[CMD_SET_BORDER]: #cmd_set_border12
 [CMD_SET_BREAKPOINTS]: #cmd_set_breakpoints13
 [CMD_RESTORE_MEM]: #cmd_restore_mem14
 [CMD_LOOPBACK]: #cmd_loopback15
@@ -102,7 +101,6 @@ The table below shows which commands are used (X) with what remote:
 | [CMD_WRITE_MEM] (9)                            | X     | X      | X      | X     |
 | [CMD_SET_SLOT] (10)                            | X     | X      | X      | -     |
 | [CMD_GET_TBBLUE_REG] (11)                      | X     | X      | X      | -     |
-| [CMD_SET_BORDER] (12)                          | X     | X      | X      | -     |
 | [CMD_SET_BREAKPOINTS] (13)                     | -     | -      | X      | -     |
 | [CMD_RESTORE_MEM] (14)                         | -     | -      | X      | -     |
 | [CMD_LOOPBACK] (15)                            | -     | -      | X      | -     |
@@ -147,6 +145,7 @@ Changed:
 
 Removed:
 - CMD_WRITE_BANK removed (use CMD_WRITE_BANK_MEM instead)
+- CMD_SET_BORDER removed (used CMD_WRITE_PORT instead)
 
 
 ### 2.1.0
@@ -492,19 +491,6 @@ Response (Length=2):
 | ----- | ---- | ----- | --------------------- |
 | 0     | 1    | 1-15  | Same seq no           |
 | 1     | 1    | 0-255 | Value of the register |
-
-
-## CMD_SET_BORDER=12
-Command (Length=1):
-| Index | Size | Value           | Description              |
-| ----- | ---- | --------------- | ------------------------ |
-| 6     | 1    | Bits 0-2: color | The color for the border |
-
-
-Response (Length=1):
-| Index | Size | Value | Description |
-| ----- | ---- | ----- | ----------- |
-| 4     | 1    | 1-15  | Same seq no |
 
 
 ## CMD_SET_BREAKPOINTS=13
