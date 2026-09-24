@@ -43,7 +43,7 @@ suite_hide('Miscellaneous', () => {
 				denseArr[k];
 				k += step;
 				if (k >= itemCount)
-					k == 0;
+					k = 0;
 			}, accessCount);
 			// Output
 			console.log('\nPerformance: Array vs. Map');
@@ -63,7 +63,7 @@ suite_hide('Miscellaneous', () => {
 				sparseArr[k];
 				k += step;
 				if (k >= itemCount)
-					k == 0;
+					k = 0;
 			}, accessCount);
 			// Output
 			console.log('Sparse Array, accessing holes: ' + timeSparseArrHoles + 'ms');
@@ -74,7 +74,7 @@ suite_hide('Miscellaneous', () => {
 				sparseArr[k];
 				k += step;
 				if (k >= itemCount)
-					k == 0;
+					k = 0;
 			}, accessCount);
 			// Output
 			console.log('Sparse Array, no holes: ' + timeSparseArrNoHoles + 'ms');
@@ -86,7 +86,7 @@ suite_hide('Miscellaneous', () => {
 				sparseArr[k];
 				k += step2;
 				if (k >= itemCount)
-					k == 0;
+					k = 0;
 			}, accessCount);
 			// Output
 			console.log('Sparse Array, both: ' + timeSparseArrBoth + 'ms');
@@ -103,7 +103,7 @@ suite_hide('Miscellaneous', () => {
 				map.get(k);
 				k += 10;
 				if (k >= itemCount)
-					k == 0;
+					k = 0;
 			}, accessCount);
 			// Output
 			console.log('Map: ' + timeMap + 'ms');

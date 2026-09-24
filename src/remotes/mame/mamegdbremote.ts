@@ -1286,8 +1286,8 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 					address = 0xC000;
 					break;
 				default:
-					// Ignore, should not happen
-					this.continue;
+					// Should not happen
+					throw Error('Unexpected memory bank: ' + memBank.bank);
 			}
 			// Write memory
 			await this.writeMemoryDump(address, memBank.data);
