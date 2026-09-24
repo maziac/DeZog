@@ -1257,6 +1257,9 @@ export class ZSimRemote extends DzrpRemote {
 		// Set the SP and PC registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.SP, nexFile.sp);
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, nexFile.pc);
+		// DeZog does not support returning the open file handle on the
+		// nex file. Therefore 0 is set as file handle.
+		await this.sendDzrpCmdSetRegister(Z80_REG.BC, 0);
 
 		// Set IM (Interrupt Mode) to 1 for ZX Spectrum.
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, 1);
