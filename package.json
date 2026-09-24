@@ -43,6 +43,7 @@
 		"esbuild-browser": "esbuild ./src/remotes/zsimulator/zsimwebview/main.ts --bundle --outdir=out --outbase=src --platform=browser",
 		"watch-node": "npm run esbuild-node -- --sourcemap --watch",
 		"watch-browser": "npm run esbuild-browser -- --sourcemap --watch",
+		"lint": "eslint",
 		"package": "vsce package",
 		"package:small": "file=$npm_package_name-$npm_package_version.vsix ; vsce package --ignoreFile .vscodeignore_small --out $file ; zip $file.zip $file",
 		"check-env": "node -e 'console.log(process.env)' | grep npm",
@@ -74,11 +75,13 @@
 		"@types/vscode": "^1.96.0",
 		"@types/vscode-webview": "^1.57.5",
 		"esbuild": "^0.25.0",
+		"eslint": "^10.11.0",
 		"mocha": "^11.1.0",
 		"sinon": "^21.0.0",
 		"source-map-support": "^0.5.21",
 		"ts-node": "^10.9.2",
-		"typescript": "^5.7.3"
+		"typescript": "^5.7.3",
+		"typescript-eslint": "^8.70.1"
 	},
 	"bugs": {
 		"url": "https://github.com/maziac/DeZog/issues"

@@ -13,5 +13,10 @@
 		"preserveConstEnums": true,
 		"strictNullChecks": true,
 		"noUnusedParameters": false
-	}
+	},
+	"exclude": [
+		"node_modules",
+		"out",
+		"eslint.config.mjs"
+	]
 }

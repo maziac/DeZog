@@ -4,6 +4,7 @@
 .travis.yml
 appveyor.yml
 tsconfig.json
+eslint.config.mjs
 **/*.tests.*
 tests/
 src/
