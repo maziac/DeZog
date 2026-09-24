@@ -298,7 +298,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 		const curPalNumber = ZxNextSpritePatternsView.currentPaletteNumber;
 		if (curPalNumber >= 0) {
 			const avail = ZxNextSpritePatternsView.spritePalettes.get(curPalNumber);
-			if(avail)
+			if (avail)
 				return;
 		}
 
@@ -391,7 +391,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 */
 	public async update(reason?: any): Promise<void> {
 		try {
-			// Mark as invalid until pattern have been loaded. (Just used for displaying the "*"
+			// Mark as invalid until pattern have been loaded. (Just used for displaying the "outdated" banner.)
 			this.patternDataValid = !(reason?.step);
 
 			// Load palette if not available
@@ -458,29 +458,33 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 		</script>
 
+		<div class="toolbar">
 		%s
 
-		<div %s>
-		<button onclick="reload()">Reload</button>
+		<div class="controls" %s>
+			<button class="refresh" onclick="reload()" title="Reloads the sprite patterns and palettes from the remote.">&#x21bb; Refresh</button>
 
-		<!-- To change the background color of the sprite pattern -->
-		<select id="bckgSelector" onchange="bckgSelected(this);">
-			<option value="black">Black Background</option>
-			<option value="white">White Background</option>
-			<option value="gray">Gray Background</option>
-		</select>
+			<!-- To change the background color of the sprite pattern -->
+			<label>Background
+			<select id="bckgSelector" onchange="bckgSelected(this);">
+				<option value="black">Black</option>
+				<option value="white">White</option>
+				<option value="gray">Gray</option>
+			</select>
+			</label>
 
-		<!-- To change the used palette -->
-		<select id="paletteSelector" onchange="paletteSelected(this);">
-			<option>Current Palette (%d)</option>
-			<option>Sprite Palette 0</option>
-			<option>Sprite Palette 1</option>
-			<option>Default Palette</option>
-			<option>False Colors Palette</option>
-		</select>
+			<!-- To change the used palette -->
+			<label>Palette
+			<select id="paletteSelector" onchange="paletteSelected(this);">
+				<option>Current Palette (%d)</option>
+				<option>Sprite Palette 0</option>
+				<option>Sprite Palette 1</option>
+				<option>Default Palette</option>
+				<option>False Colors Palette</option>
+			</select>
+			</label>
 		</div>
-
-		<br>
+		</div>
 
 		<script>
 			// Also select the right index
@@ -493,24 +497,200 @@ export class ZxNextSpritePatternsView extends BaseView {
 		</script>
 		`;
 
-		const invalid = (this.patternDataValid) ? "" : "*";
 		const hidden = (this.retrievingError) ? "hidden" : "";
-		const html = util.format(format, invalid, hidden, ZxNextSpritePatternsView.currentPaletteNumber, this.usedBckgColor, this.usedPalette);
+		const html = util.format(format, this.createStatusBanner(), hidden, ZxNextSpritePatternsView.currentPaletteNumber, this.usedBckgColor, this.usedPalette);
 		return html;
 	}
 
 
 	/**
+	 * Creates the status banner that tells the user if the shown
+	 * sprite patterns/palettes might be outdated.
+	 * The data is not reloaded on every 'step' for performance reasons.
+	 * If the data is not valid a prominent warning with a refresh button is shown.
+	 */
+	protected createStatusBanner(): string {
+		if (this.patternDataValid) {
+			return '<div class="banner ok" role="status"><span class="dot"></span>Up to date</div>';
+		}
+		return `<div class="banner outdated" role="status" title="Patterns and palettes are not reloaded on every cpu instruction for performance reasons. The images may not reflect the current state. Press 'Refresh' to reload.">
+			<span class="icon">&#x26A0;</span>
+			<span class="text"><b>Outdated data.</b> Patterns/palettes not automatically reloaded. Press Refresh.</span>
+		</div>`;
+	}
+
+
+	/**
+	 * Returns the css styles shared by the sprites and the sprite patterns view.
+	 * Uses the VS Code theme variables so that the view fits to every theme.
+	 */
+	protected getBaseStyles(): string {
+		return `
+	body {
+		font-family: var(--vscode-font-family);
+		font-size: var(--vscode-font-size);
+		color: var(--vscode-foreground);
+		padding: 0 12px 24px 12px;
+	}
+	.toolbar {
+		position: sticky;
+		top: 0;
+		z-index: 10;
+		background: var(--vscode-editor-background);
+		padding: 8px 0;
+		margin-bottom: 12px;
+		border-bottom: 1px solid var(--vscode-panel-border);
+	}
+	.controls {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px 16px;
+	}
+	.controls[hidden] {
+		display: none;
+	}
+	.controls label {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		opacity: 0.9;
+	}
+	select {
+		background: var(--vscode-dropdown-background);
+		color: var(--vscode-dropdown-foreground);
+		border: 1px solid var(--vscode-dropdown-border);
+		border-radius: 2px;
+		padding: 3px 6px;
+		font-family: inherit;
+	}
+	button.refresh {
+		background: var(--vscode-button-background);
+		color: var(--vscode-button-foreground);
+		border: none;
+		border-radius: 2px;
+		padding: 4px 12px;
+		cursor: pointer;
+		font-family: inherit;
+	}
+	button.refresh:hover {
+		background: var(--vscode-button-hoverBackground);
+	}
+	.banner {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		box-sizing: border-box;
+		height: 2.2em;	/* Same height for 'ok' and 'outdated' so that the layout does not jump. */
+		margin-bottom: 8px;
+		padding: 0 12px;
+		border-radius: 3px;
+		overflow: hidden;
+	}
+	.banner.ok {
+		padding-left: 0;
+		font-size: 0.9em;
+		opacity: 0.7;
+	}
+	.banner.ok .dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--vscode-testing-iconPassed, #3fb950);
+	}
+	.banner.outdated {
+		background: var(--vscode-inputValidation-warningBackground);
+		border: 1px solid var(--vscode-inputValidation-warningBorder);
+		border-left-width: 5px;
+	}
+	.banner.outdated .icon {
+		font-size: 1.2em;
+		color: var(--vscode-editorWarning-foreground);
+	}
+	.banner.outdated .text {
+		flex: 1 1 auto;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	@keyframes pulse {
+		0%, 100% { box-shadow: 0 0 0 0 var(--vscode-editorWarning-foreground); }
+		50% { box-shadow: 0 0 0 4px transparent; }
+	}
+	body.stale button.refresh {
+		animation: pulse 1.6s ease-in-out infinite;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		body.stale button.refresh { animation: none; }
+	}
+
+	/* Images of outdated data are dimmed. */
+	body.stale .classImg, body.stale #screen {
+		opacity: 0.45;
+		filter: grayscale(0.7);
+	}
+
+	.classPattern {
+		width: auto;
+		height: 2.5em;
+	}
+	.classImg {
+		image-rendering: pixelated;
+		width: auto;
+		height: 2.5em;
+		display: block;
+		margin: 0 auto;
+		transition: opacity 0.2s, filter 0.2s;
+	}
+
+	table {
+		border-collapse: collapse;
+		text-align: center;
+		font-family: var(--vscode-editor-font-family);
+	}
+	th {
+		background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+		font-family: var(--vscode-font-family);
+		font-weight: 600;
+		padding: 4px 8px;
+		border-bottom: 2px solid var(--vscode-panel-border);
+	}
+	td {
+		padding: 2px 8px;
+		border-bottom: 1px solid var(--vscode-panel-border);
+	}
+	tr:hover td {
+		background: var(--vscode-list-hoverBackground);
+	}
+	td.changed {
+		font-weight: bold;
+		background: var(--vscode-editor-findMatchHighlightBackground);
+	}
+	.tableWrap {
+		overflow-x: auto;
+	}
+	.patternGrid {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 16px;
+		align-items: flex-start;
+	}
+	.patternGrid table {
+		border: 1px solid var(--vscode-panel-border);
+	}
+`;
+	}
+
+
+	/**
 	 * Returns a table cell (td) and inserts the first value.
-	 * If first and second value are different then the cell is made bold.
+	 * If first and second value are different then the cell is highlighted.
 	 * @param currentValue The current value to show.
 	 * @param prevValue The previous value.
 	 */
 	protected getTableTdWithBold(currentValue: any, prevValue: any): string {
-		let td = ' <td>';
-		td += (currentValue == prevValue) ? currentValue : '<b>' + currentValue + '</b>';
-		td += '</td>\n';
-		return td;
+		const cls = (currentValue == prevValue) ? '' : ' class="changed"';
+		return ' <td' + cls + '>' + currentValue + '</td>\n';
 	}
 
 
@@ -524,19 +704,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 		// Create a string with the table itself.
 		let palette = ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
 		Utility.assert(palette);
-		let table = `
-<style>
-	.classPattern {
-		width:auto;
-		height:2em;
-	}
-	.classImg {
-		image-rendering:pixelated;
-		width:auto;
-		height:2em;
-	}
-</style>
-`;
+		let table = '<div class="patternGrid">\n';
 		let k = 0;
 		let count = this.patternIds.length;
 		for (const patternId of this.patternIds) {
@@ -608,6 +776,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 			k++;
 		}
 
+		table += '</div>\n';
 		return table;
 	}
 
@@ -621,10 +790,11 @@ export class ZxNextSpritePatternsView extends BaseView {
 		<head>
 			<meta charset="UTF-8">
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<title>Dump</title>
+			<title>Sprite Patterns</title>
+			<style>${this.getBaseStyles().replace(/%/g, '%%')}</style>
 		</head>
 
-		<body style="font-family: Courier">
+		<body class="${this.patternDataValid ? '' : 'stale'}">
 
 		<script>
 			const vscode = acquireVsCodeApi();

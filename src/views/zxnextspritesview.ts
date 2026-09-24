@@ -768,14 +768,31 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * @param currentValue The currentvalue to show.
 	 * @param prevValue The previous value.
 	 */
-	protected getTableTdWithBold(currentValue: any, prevValue: any): string {
+	protected getTableTdWithBold(currentValue: any, prevValue: any, cssClass = ''): string {
 		let convCurrentValue = currentValue;
 		if (convCurrentValue == undefined)
 			convCurrentValue = '-';
-		let td = ' <td>';
-		td += (currentValue == prevValue) ? convCurrentValue : '<b>' + convCurrentValue + '</b>';
-		td += '</td>\n';
-		return td;
+		const classes = (cssClass + ((currentValue == prevValue) ? '' : ' changed')).trim();
+		const clsAttr = (classes) ? ' class="' + classes + '"' : '';
+		return ' <td' + clsAttr + '>' + convCurrentValue + '</td>\n';
+	}
+
+
+	/**
+	 * Returns a table cell for a flag (0/1). Zero values are dimmed.
+	 */
+	protected getTableTdFlag(currentValue: number, prevValue: number | undefined): string {
+		return this.getTableTdWithBold(currentValue, prevValue ?? -1, (currentValue) ? 'flag1' : 'flag0');
+	}
+
+
+	/**
+	 * Returns a table cell with a visibility badge.
+	 */
+	protected getTableTdVisible(visible: boolean, prevVisible: boolean | undefined): string {
+		const badge = (visible) ? '<span class="badge on">visible</span>' : '<span class="badge off">hidden</span>';
+		const cls = (visible == prevVisible) ? '' : ' class="changed"';
+		return ' <td' + cls + '>' + badge + '</td>\n';
 	}
 
 
@@ -789,43 +806,44 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 
 		const format = `
 		<style>
-			.classPattern {
-				width:auto;
-				height:2em;
-			}
-			.classImg {
-				image-rendering:pixelated;
-				width:auto;
-				height:2em;
-			}
 			.classRow0 {
-				background:var(--vscode-panel-background);
+				background: var(--vscode-panel-background);
 			}
 			.classRow1 {
-				background:var(--vscode-panel-dropBackground);
+				background: var(--vscode-panel-dropBackground);
+			}
+			td.flag0 {
+				opacity: 0.4;
+			}
+			.badge {
+				display: inline-block;
+				padding: 0 8px;
+				border-radius: 8px;
+				font-size: 0.85em;
+				font-family: var(--vscode-font-family);
+			}
+			.badge.on {
+				background: var(--vscode-testing-iconPassed, #3fb950);
+				color: var(--vscode-editor-background);
+			}
+			.badge.off {
+				border: 1px solid var(--vscode-panel-border);
+				opacity: 0.6;
+			}
+			#screen {
+				width: 100%;
+				max-width: 640px;
+				height: auto;
+				image-rendering: pixelated;
+				border: 1px solid var(--vscode-panel-border);
+				transition: opacity 0.2s, filter 0.2s;
+			}
+			h3 {
+				margin: 24px 0 8px 0;
 			}
 		</style>
-		<table  style="text-align: center" border="1" cellpadding="0">
-			<colgroup>
-				<col>
-				<col>
-				<col>
-				<col>
-				<col>
-				<col>
-				<col>
-				<col>
-				<col>
-				<col>
-				<col>
-				<col>
-				<col>
-				<col>
-				<col>
-				<col>
-				<col>
-			</colgroup>
-
+		<div class="tableWrap">
+		<table>
           <tr>
 			<th>Slot</th>
 			<th><span title="The image takes all mirroring and rotation into account. In case of unified (relative) sprites also the mirror/rotation of the anchor.">Image</span></th>
@@ -844,13 +862,14 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			<th><span title="XX bits. I.e. the sale factor in X direction.">X-Scale</span></th>
 			<th><span title="YY bits. I.e. the sale factor in Y direction.">Y-Scale</span></th>
 			<th><span title="V bit. 1 = visible.">Visibility</span></th>
-			<th><span title="The sprite type.\nAnchor sprite or relative sprite.\nAn anchor sprite can be either Composite or Unified.\nThe anchor sprite determines the Composite/Unified type of the following relative sprites.">T (Type)<span></th>
+			<th><span title="The sprite type.\nAnchor sprite or relative sprite.\nAn anchor sprite can be either Composite or Unified.\nThe anchor sprite determines the Composite/Unified type of the following relative sprites.">T (Type)</span></th>
 			<th><span title="For a relative sprite this is the index of it's anchor sprite.">Anchor</span></th>
 		  </tr>
 
 %s
 
 		</table>
+		</div>
 
 		`;
 
@@ -897,9 +916,9 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			table += this.getTableTdWithBold(sprite.x, (prevSprite) ? prevSprite.x : -1);
 			table += this.getTableTdWithBold(sprite.y, (prevSprite) ? prevSprite.y : -1);
 			// Attributes
-			table += this.getTableTdWithBold(sprite.xMirrored, (prevSprite) ? prevSprite.xMirrored : -1);
-			table += this.getTableTdWithBold(sprite.yMirrored, (prevSprite) ? prevSprite.yMirrored : -1);
-			table += this.getTableTdWithBold(sprite.rotated, (prevSprite) ? prevSprite.rotated : -1);
+			table += this.getTableTdFlag(sprite.xMirrored, prevSprite?.xMirrored);
+			table += this.getTableTdFlag(sprite.yMirrored, prevSprite?.yMirrored);
+			table += this.getTableTdFlag(sprite.rotated, prevSprite?.rotated);
 			table += this.getTableTdWithBold(sprite.getPaletteOffsetString(), prevSprite?.getPaletteOffsetString());
 			table += this.getTableTdWithBold(sprite.PR, (prevSprite) ? prevSprite.PR : -1);
 			table += this.getTableTdWithBold(sprite.getPoString(), prevSprite?.getPoString());
@@ -907,7 +926,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			table += this.getTableTdWithBold(sprite.getN6String(), prevSprite?.getN6String());
 			table += this.getTableTdWithBold(sprite.getXScaleString(), prevSprite?.getXScaleString());
 			table += this.getTableTdWithBold(sprite.getYScaleString(), prevSprite?.getYScaleString());
-			table += this.getTableTdWithBold(sprite.visible, prevSprite?.visible);
+			table += this.getTableTdVisible(sprite.visible, prevSprite?.visible);
 			table += this.getTableTdWithBold(sprite.getTypeString(), prevSprite?.getTypeString());
 			table += this.getTableTdWithBold(sprite.getAnchorIndexString(), prevSprite?.getAnchorIndexString());
 			table += '</tr>\n\n';
@@ -925,7 +944,8 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 */
 	protected createHtmlCanvas(): string {
 		const format = `
-		<canvas id="screen" width="640px" height="512px" style="border:1px solid #c3c3c3;">
+		<h3>Screen</h3>
+		<canvas id="screen" width="640" height="512">
 
 		<script>
 			let canvas = document.getElementById("screen");
@@ -1015,7 +1035,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		const ui = this.createScriptsAndButtons();
 		const table = this.createHtmlTable();
 		const canvas = this.createHtmlCanvas();
-		const content = ui + table + '\n<p style="margin-bottom:3em;"></p>\n\n' + canvas;
+		const content = ui + table + '\n\n' + canvas;
 		const html = util.format(format, content);
 		this.vscodePanel.webview.html = html;
 	}
