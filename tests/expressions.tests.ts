@@ -1,0 +1,719 @@
+
+import * as assert from 'assert';
+import {suite, test, setup} from 'mocha';
+import {Expressions} from '../src/misc/expressions';
+import {Z80RegistersClass, Z80Registers} from '../src/remotes/z80registers';
+import {RemoteFactory} from '../src/remotes/remotefactory';
+import {Remote} from '../src/remotes/remotebase';
+import {Settings, SettingsParameters} from '../src/settings/settings';
+import {Labels} from '../src/labels/labels';
+import {DecodeZesaruxRegisters, DecodeZesaruxRegistersZx128k} from '../src/remotes/zesarux/decodezesaruxdata';
+import {MemoryModelZxNext} from '../src/remotes/MemoryModel/zxnextmemorymodels';
+
+
+suite('Expressions', () => {
+
+	suite('calculateTabSize', () => {
+
+		test('no tabs', () => {
+			const res = Expressions.calculateTabSizes('1234567890', 1);
+			assert.equal(res, null, "should result in null");
+		});
+
+		test('1 tab', () => {
+			const res = Expressions.calculateTabSizes('1234567\t890', 1);
+			assert.equal(res.length, 2, "should be 2 strings");
+			assert.equal(res[0].length, 7, "length should be 7");
+			assert.equal(res[1].length, 3, "length should be 3");
+		});
+
+		test('tab all formats, size 1', () => {
+			const res = Expressions.calculateTabSizes('${hex}\t1${signed}\t${unsigned}2\t1${char}2\t${bits}\t${flags}', 1);
+			assert.equal(res.length, 6, "should be 6 strings");
+			assert.equal(res[0].length, 2, "${hex} length wrong");
+			assert.equal(res[1].length, 1 + 4, "${signed} length wrong");
+			assert.equal(res[2].length, 3 + 1, "${unsigned} length wrong");
+			assert.equal(res[3].length, 1 + 1 + 1, "${char} length wrong");
+			assert.equal(res[4].length, 8, "${bits} length wrong");
+			assert.equal(res[5].length, 6, "${flags} length wrong");
+		});
+
+		test('tab all formats, size 2', () => {
+			const res = Expressions.calculateTabSizes('${hex}\t1${signed}\t${unsigned}2\t1${char}2\t${bits}\t${flags}', 2);
+			assert.equal(res.length, 6, "should be 6 strings");
+			assert.equal(res[0].length, 4, "${hex} length wrong");
+			assert.equal(res[1].length, 1 + 6, "${signed} length wrong");
+			assert.equal(res[2].length, 5 + 1, "${unsigned} length wrong");
+			assert.equal(res[3].length, 1 + 1 + 1, "${char} length wrong");
+			assert.equal(res[4].length, 16, "${bits} length wrong");
+			assert.equal(res[5].length, 6, "${flags} length wrong");
+		});
+
+		test('tab name, label format', () => {
+			const res = Expressions.calculateTabSizes('${name}\t1${labels}', 1);
+			assert.equal(res.length, 2, "should be 2 strings");
+			assert.notEqual(res[0].length, 0, "${name} length wrong");
+			assert.notEqual(res[1].length, 0, "${labels} length wrong");
+		});
+
+		test('start with tab', () => {
+			const res = Expressions.calculateTabSizes('\t${hex}\t${signed}\t${unsigned}', 1);
+			assert.equal(res.length, 4, "should be 4 strings");
+			assert.equal(res[0].length, 0, "first string len wrong");
+			assert.equal(res[1].length, 2, "${hex} length wrong");
+		});
+
+		test('end with tab', () => {
+			const res = Expressions.calculateTabSizes('${hex}\t${signed}\t${unsigned}\t', 1);
+			assert.equal(res.length, 4, "should be 4 strings");
+			assert.equal(res[3].length, 0, "last string len wrong");
+			assert.equal(res[0].length, 2, "${hex} length wrong");
+		});
+
+		test('double tab', () => {
+			const res = Expressions.calculateTabSizes('${hex}\t\t${signed}\t${unsigned}', 1);
+			assert.equal(res.length, 4, "should be 4 strings");
+			assert.equal(res[0].length, 2, "${hex} length wrong");
+			assert.equal(res[1].length, 0, "tab length wrong");
+		});
+
+	});
+
+
+	suite('numberFormattedBy', () => {
+
+		setup(() => {
+			const cfg: any = {
+				remoteType: 'zrcp'
+			};
+			Settings.launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(Settings.launch);
+			RemoteFactory.createRemote(Settings.launch);
+			Z80Registers.setCache("PC=6005 SP=6094 AF=cf8c BC=0100 HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
+		});
+
+		suite('formats', () => {
+
+			test('formats, size 1', async () => {
+				const format = '${name},${hex},${signed},${unsigned},${bits},${char},${flags}';
+				const res = await Expressions.numberFormatted('myname', 255, 1, format, undefined);
+				assert.equal(res, 'myname,FF,-1,255,11111111,.,SZ1H1PNC', "Unexpected formatting");
+			});
+
+			test('formats, size 2', async () => {
+				const format = '${name},${hex},${signed},${unsigned},${bits},${char},${flags}';
+				const res = await Expressions.numberFormatted('myname', 9999, 2, format, undefined);
+				// Note: value of flags doesn't matter
+				let b = res.startsWith('myname,270F,9999,9999,0010011100001111,.,');
+				assert.ok(b, "Unexpected formatting");
+			});
+
+			test('formats, size 2 negative', async () => {
+				const format = '${signed},${unsigned}';
+				const res = await Expressions.numberFormatted('myname', 32768, 2, format, undefined);
+				assert.equal(res, '-32768,32768', "Unexpected formatting");
+			});
+		});
+
+		suite('tabs', () => {
+
+			test('no tabs', async () => {
+				// No tabbing if single line (no tab format)
+				const format = '${name}\t${hex}\t${signed}\t${unsigned}\t${bits}\t${char}\t${flags}';
+				const res = await Expressions.numberFormatted('myname', 65, 1, format, undefined);
+				assert.equal(res, 'myname 41 65 65 01000001 A -Z-----C', "Unexpected tab formatting");
+			});
+
+			test('general', async () => {
+				const format = '${name}\t${hex}\t${signed}\t${unsigned}\t${bits}\t${char}\t${flags}';
+				const tabSizeArr = Expressions.calculateTabSizes(format, 1);
+				const res = await Expressions.numberFormatted('myname', 65, 1, format, tabSizeArr);
+				assert.equal(res, 'myname 41   65  65 01000001 A -Z-----C ', "Unexpected tab formatting");
+			});
+
+			test('use tab array 1', async () => {
+				const format = '${name},\t${hex},\t${signed},\t${unsigned},\t${bits},\t${char},\t${flags}';
+				const predefined = '1234567\t12345678\t123456789\t1234567890\t12345678901\t123456789012\t1234567890123'
+				const predefArr = predefined.split('\t');
+				const res = await Expressions.numberFormatted('myname', 65, 1, format, predefArr);
+				const arr = res.split(',');
+				assert.equal(arr[0].length + 1, 'myname,'.length, "Unexpected formatting");
+				let i;
+				for (i = 1; i < arr.length - 1; i++) {
+					assert.equal(arr[i].length, predefArr[i].length, "Unexpected formatting");
+				}
+				assert.equal(arr[i].length - 2, predefArr[i].length, "Unexpected formatting");
+			});
+
+			test('wrong predefined array', async () => {
+				const format = '${name},\t${hex},\t${signed}';
+				const predefined = '1234567\t12345678';
+				const predefArr = predefined.split('\t');
+				await Expressions.numberFormatted('myname', 65, 1, format, predefArr);
+				// Test simply that it returns
+			});
+
+			test('special test 1', async () => {
+				const format = "${b#:hex}h\t${b#:unsigned}u\t${b#:signed}i\t'${char}'\t${b#:bits}b";
+				const tabSizeArr = Expressions.calculateTabSizes(format, 1);
+				const res = await Expressions.numberFormatted('', 65, 1, format, tabSizeArr);
+				assert.equal(res, "41h  65u   65i 'A' 01000001b ", "Unexpected tab formatting");
+			});
+
+			test('special test 2', async () => {
+				const format = "${b#:signed}i\t'${char}'\t${b#:bits}b";
+				const tabSizeArr = Expressions.calculateTabSizes(format, 1);
+				const res = await Expressions.numberFormatted('', 255, 1, format, tabSizeArr);
+				assert.equal(res, "  -1i '.' 11111111b ", "Unexpected tab formatting");
+			});
+
+		});
+	});
+
+
+	suite('exprContainsMainRegisters', () => {
+
+		test('standard', () => {
+			assert.ok(Expressions.exprContainsMainRegisters('pc'));
+			assert.ok(Expressions.exprContainsMainRegisters('sp'));
+			assert.ok(Expressions.exprContainsMainRegisters('af'));
+			assert.ok(Expressions.exprContainsMainRegisters('bc'));
+			assert.ok(Expressions.exprContainsMainRegisters('de'));
+			assert.ok(Expressions.exprContainsMainRegisters('hl'));
+			assert.ok(Expressions.exprContainsMainRegisters('ix'));
+			assert.ok(Expressions.exprContainsMainRegisters('iy'));
+			assert.ok(Expressions.exprContainsMainRegisters('a'));
+			assert.ok(Expressions.exprContainsMainRegisters('f'));
+			assert.ok(Expressions.exprContainsMainRegisters('b'));
+			assert.ok(Expressions.exprContainsMainRegisters('c'));
+			assert.ok(Expressions.exprContainsMainRegisters('d'));
+			assert.ok(Expressions.exprContainsMainRegisters('e'));
+			assert.ok(Expressions.exprContainsMainRegisters('h'));
+			assert.ok(Expressions.exprContainsMainRegisters('l'));
+		});
+
+		test('upper case', () => {
+			assert.ok(Expressions.exprContainsMainRegisters('HL'));
+		});
+
+		test('no reg', () => {
+			assert.ok(!Expressions.exprContainsMainRegisters('HL1'));
+			assert.ok(!Expressions.exprContainsMainRegisters('1234'));
+			assert.ok(!Expressions.exprContainsMainRegisters('1bc'));
+			assert.ok(!Expressions.exprContainsMainRegisters('ade'));
+		});
+
+		test('embedded', () => {
+			assert.ok(Expressions.exprContainsMainRegisters(' HL '));
+			assert.ok(Expressions.exprContainsMainRegisters('+de'));
+			assert.ok(Expressions.exprContainsMainRegisters('+c*6'));
+			assert.ok(Expressions.exprContainsMainRegisters('-label+a'));
+			assert.ok(!Expressions.exprContainsMainRegisters('-label+as'));
+		});
+	});
+
+
+	suite('replaceVarsWithValues', () => {
+
+		setup(() => {
+			const cfg: any = {
+				remoteType: 'zrcp'
+			};
+			Settings.launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(Settings.launch);
+			RemoteFactory.createRemote(Settings.launch);
+			Z80Registers.setCache("PC=1110 SP=2120 AF=3130 BC=4140 HL=5150 DE=6160 IX=A1A0 IY=B1B0 AF'=3332 BC'=4342 HL'=5352 DE'=6362 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
+			Z80Registers.decoder = new DecodeZesaruxRegisters(8);
+		});
+
+		test('No labels, no registers', () => {
+			let res = Expressions.replaceVarsWithValues('');
+			assert.equal(res, '');
+
+			res = Expressions.replaceVarsWithValues('0x1000 $200 40h 9786 1000b LABEL');
+			assert.equal(res, '4096 512 64 9786 8 LABEL');
+		});
+
+
+		suite('no breaks', () => {
+
+			test('3a', () => {
+				let res = Expressions.replaceVarsWithValues('3a');
+				assert.equal(res, '3a');	// No substitution
+			});
+
+			test('boolean', () => {
+				const res = Expressions.replaceVarsWithValues('100bc');
+				assert.equal(res, '100bc');
+			});
+			test('0x Hex', () => {
+				const res = Expressions.replaceVarsWithValues('0x100bgh');
+				assert.equal(res, '0x100bgh');
+			});
+			test('h Hex', () => {
+				const res = Expressions.replaceVarsWithValues('100hb');
+				assert.equal(res, '100hb');
+			});
+			test("word wo '", () => {
+				const res = Expressions.replaceVarsWithValues("AF", false);
+				assert.equal(res, 'AF');
+			});
+			test("word with '", () => {
+				const res = Expressions.replaceVarsWithValues("AF'", false);
+				assert.equal(res, "AF'");
+			});
+			test('digit', () => {
+				const res = Expressions.replaceVarsWithValues('100j');
+				assert.equal(res, '100j');
+			});
+		});
+
+		suite('Calculations', () => {
+
+			test('Addition', () => {
+				// No space
+				let res = Expressions.replaceVarsWithValues('lbl_a+lbl_b', false);
+				assert.equal(res, 'lbl_a+lbl_b');
+
+				// Test
+				res = Expressions.replaceVarsWithValues('lbl_a+ lbl_b', false);
+				assert.equal(res, 'lbl_a+ lbl_b');
+
+				// Test
+				res = Expressions.replaceVarsWithValues('lbl_a +lbl_b', false);
+				assert.equal(res, 'lbl_a +lbl_b');
+
+				// Test
+				res = Expressions.replaceVarsWithValues(' lbl_a + lbl_b ', false);
+				assert.equal(res, ' lbl_a + lbl_b ');
+			});
+
+			test('Subtraction', () => {
+				// No space
+				let res = Expressions.replaceVarsWithValues('lbl_a-lbl_b', false);
+				assert.equal(res, 'lbl_a-lbl_b');
+
+				// Test
+				res = Expressions.replaceVarsWithValues('lbl_a- lbl_b', false);
+				assert.equal(res, 'lbl_a- lbl_b');
+
+				// Test
+				res = Expressions.replaceVarsWithValues('lbl_a -lbl_b', false);
+				assert.equal(res, 'lbl_a -lbl_b');
+
+				// Test
+				res = Expressions.replaceVarsWithValues(' lbl_a - lbl_b ', false);
+				assert.equal(res, ' lbl_a - lbl_b ');
+			});
+
+			test('Multiplication', () => {
+				// No space
+				let res = Expressions.replaceVarsWithValues('lbl_a*lbl_b', false);
+				assert.equal(res, 'lbl_a*lbl_b');
+
+				// Test
+				res = Expressions.replaceVarsWithValues('lbl_a* lbl_b', false);
+				assert.equal(res, 'lbl_a* lbl_b');
+
+				// Test
+				res = Expressions.replaceVarsWithValues('lbl_a *lbl_b', false);
+				assert.equal(res, 'lbl_a *lbl_b');
+
+				// Test
+				res = Expressions.replaceVarsWithValues(' lbl_a * lbl_b ', false);
+				assert.equal(res, ' lbl_a * lbl_b ');
+			});
+
+			test('Division', () => {
+				// No space
+				let res = Expressions.replaceVarsWithValues('lbl_a/lbl_b', false);
+				assert.equal(res, 'lbl_a/lbl_b');
+
+				// Test
+				res = Expressions.replaceVarsWithValues('lbl_a/ lbl_b', false);
+				assert.equal(res, 'lbl_a/ lbl_b');
+
+				// Test
+				res = Expressions.replaceVarsWithValues('lbl_a /lbl_b', false);
+				assert.equal(res, 'lbl_a /lbl_b');
+
+				// Test
+				res = Expressions.replaceVarsWithValues(' lbl_a / lbl_b ', false);
+				assert.equal(res, ' lbl_a / lbl_b ');
+			});
+
+			test('mixed', () => {
+				// No space
+				let res = Expressions.replaceVarsWithValues('lbl_a*3+lbl_b', false);
+				assert.equal(res, 'lbl_a*3+lbl_b');
+			});
+		});
+
+		suite('Registers', () => {
+			test('Capital Letters', () => {
+				// Eval no registers
+				let res = Expressions.replaceVarsWithValues('PC SP AF BC HL DE IX IY', false);
+				assert.equal(res, 'PC SP AF BC HL DE IX IY');
+
+				// Eval registers
+				res = Expressions.replaceVarsWithValues('PC SP AF BC HL DE IX IY', true);
+				assert.equal(res, '4368 8480 12592 16704 20816 24928 41376 45488');
+
+				// Eval shadow registers
+				res = Expressions.replaceVarsWithValues("AF' BC' HL' DE' LABEL'", true);
+				assert.equal(res, "13106 17218 21330 25442 LABEL'");
+
+				// Single registers
+				res = Expressions.replaceVarsWithValues('A B C H L D E', true);
+				assert.equal(res, '49 65 64 81 80 97 96');
+
+				// Special registers
+				res = Expressions.replaceVarsWithValues('I R IXH IXL IYH IYL', true);
+				assert.equal(res, '63 94 161 160 177 176');
+
+				// Flags
+				res = Expressions.replaceVarsWithValues('F', true);
+				assert.equal(res, '48');
+			});
+
+
+			test('Lowercase Letters', () => {
+				// Eval registers
+				let res = Expressions.replaceVarsWithValues('pc sp af bc hl de ix iy', true);
+				assert.equal(res, '4368 8480 12592 16704 20816 24928 41376 45488');
+
+				// Single registers
+				res = Expressions.replaceVarsWithValues('a b c h l d e', true);
+				assert.equal(res, '49 65 64 81 80 97 96');
+			});
+
+		});
+
+		test('Register calculations', () => {
+			// No space
+			let res = Expressions.replaceVarsWithValues('C+B', true);
+			assert.equal(res, '64+65');
+
+			// Test
+			res = Expressions.replaceVarsWithValues('C+ B', true);
+			assert.equal(res, '64+ 65');
+
+			// Test
+			res = Expressions.replaceVarsWithValues('C +B', true);
+			assert.equal(res, '64 +65');
+
+			// Test
+			res = Expressions.replaceVarsWithValues(' C + B ', true);
+			assert.equal(res, ' 64 + 65 ');
+
+			// Mixed
+			res = Expressions.replaceVarsWithValues("C*3+B", true);
+			assert.equal(res, "64*3+65");
+		});
+
+
+		test('Labels', () => {
+			(Labels as any).init(0);
+			(Labels as any).numberForLabel.set("MY_LBLA", 0x208081);
+			(Labels as any).numberForLabel.set("MY_LBLB", 0x304041);
+
+			// Eval (0x208081 & 0xFFFF)
+			let res = Expressions.replaceVarsWithValues('MY_LBLA', false);
+			assert.equal(res, '32897');
+
+			// Eval
+			res = Expressions.replaceVarsWithValues("MY_LBLA'", false);
+			assert.equal(res, "MY_LBLA'");
+
+			// Mixed calculation
+			res = Expressions.replaceVarsWithValues("MY_LBLA*3+MY_LBLB", false);
+			assert.equal(res, "32897*3+16449");
+		});
+
+	});
+
+	suite('evalExpression', () => {
+
+		setup(() => {
+			Settings.launch = Settings.Init({remoteType: 'zrcp'} as any);
+			Z80RegistersClass.createRegisters(Settings.launch);
+			Z80Registers.decoder = new DecodeZesaruxRegistersZx128k();
+			const mm = new MemoryModelZxNext();
+			mm.init();
+		});
+
+		test('plus', () => {
+			let res = Expressions.evalExpression('2+5');
+			assert.equal(7, res, "Wrong eval result");
+
+			res = Expressions.evalExpression('2 +5');
+			assert.equal(7, res, "Wrong eval result");
+
+			res = Expressions.evalExpression('2+ 5');
+			assert.equal(7, res, "Wrong eval result");
+
+			res = Expressions.evalExpression('2 + 5');
+			assert.equal(7, res, "Wrong eval result");
+		});
+
+		test('shift <<', () => {
+			let res = Expressions.evalExpression('0<<3');
+			assert.equal(0, res, "Wrong eval result");
+
+			res = Expressions.evalExpression('2<<3');
+			assert.equal(2 << 3, res, "Wrong eval result");
+
+			res = Expressions.evalExpression('2 <<3');
+			assert.equal(2 << 3, res, "Wrong eval result");
+
+			res = Expressions.evalExpression('2<< 3');
+			assert.equal(2 << 3, res, "Wrong eval result");
+
+			res = Expressions.evalExpression('2 << 3');
+			assert.equal(2 << 3, res, "Wrong eval result");
+		});
+
+		test('shift >>>', () => {
+			let res = Expressions.evalExpression('0>>>3');
+			assert.equal(0, res, "Wrong eval result");
+
+			res = Expressions.evalExpression('0x0F>>>3');
+			assert.equal(0x0F >>> 3, res, "Wrong eval result");
+
+			res = Expressions.evalExpression('0x0F >>>3');
+			assert.equal(0x0F >>> 3, res, "Wrong eval result");
+
+			res = Expressions.evalExpression('0x0F>>> 3');
+			assert.equal(0x0F >>> 3, res, "Wrong eval result");
+
+			res = Expressions.evalExpression('0x0F >>> 3');
+			assert.equal(0x0F >>> 3, res, "Wrong eval result");
+		});
+
+
+
+		suite('breakpoints', () => {
+			setup(() => {
+				const cfg = {remoteType: 'zrcp'} as any;
+				Settings.launch = Settings.Init(cfg);
+				Z80RegistersClass.createRegisters(Settings.launch);
+				Z80Registers.decoder = new DecodeZesaruxRegistersZx128k()
+				const mm = new MemoryModelZxNext();
+				mm.init();
+				RemoteFactory.createRemote(Settings.launch);
+			});
+
+			test('simple', () => {
+				Z80Registers.setCache("");
+				let res = Expressions.evalExpression('0x1234 == 0x1234', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Expressions.evalExpression('0x1235 == 0x1234', true);
+				assert.equal(0, res, "Wrong eval result");
+			});
+
+			test('register SP', () => {
+				Z80Registers.setCache("PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
+				let res = Expressions.evalExpression('SP == 0x83FB', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Expressions.evalExpression('0x83FB == SP', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Expressions.evalExpression('SP == 0x83FA', true);
+				assert.equal(0, res, "Wrong eval result");
+
+				res = Expressions.evalExpression('0x83FB != SP', true);
+				assert.equal(0, res, "Wrong eval result");
+			});
+
+			test('All registers', () => {
+				Z80Registers.setCache("PC=80d3 SP=83fb AF=3f08 BC=1234 HL=5678 DE=9abc IX=fedc IY=5c3a AF'=0143 BC'=2345 HL'=f4f3 DE'=89ab I=ab R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
+
+				let res = Expressions.evalExpression('PC == 0x80D3', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Expressions.evalExpression('AF == 3F08h', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Expressions.evalExpression('BC == 0x1234', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Expressions.evalExpression('DE == 9ABCh', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Expressions.evalExpression('HL == 5678h', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Expressions.evalExpression('IX == 0xFEDC', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Expressions.evalExpression('IY == 0x5C3A', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Expressions.evalExpression("AF' == 0143h", true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Expressions.evalExpression("BC' == 0x2345", true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Expressions.evalExpression("DE' == 89ABh", true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Expressions.evalExpression("HL' == F4F3h", true);
+				assert.equal(1, res, "Wrong eval result");
+			});
+
+
+			test('memory (exception)', () => {
+				Z80Registers.setCache("PC=80d3 SP=83fb AF=3f08 BC=1234 HL=5678 DE=9abc IX=fedc IY=5c3a AF'=0143 BC'=2345 HL'=f4f3 DE'=89ab I=ab R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
+
+				// It is not supported to retrieve memory locations.
+				// Therefore a test is done on an exception.
+				assert.throws(() => {
+					Expressions.evalExpression('b@(1000) == 50', true);
+				}, "Expected an exception");
+			});
+		});
+
+	});
+
+
+	suite('evalLogString', () => {
+
+		setup(() => {
+			const cfg: SettingsParameters = {
+				remoteType: 'zsim',
+				zsim: {
+					memoryModel: "RAM"
+				}
+			} as any;
+			Settings.launch = Settings.Init(cfg);
+			Z80RegistersClass.createRegisters(Settings.launch);
+			RemoteFactory.createRemote(cfg);
+			(Remote as any).configureMachine(Settings.launch.zsim);
+		});
+
+		test('Register', async () => {
+			const remote = Remote as any;
+			const cpu = remote.z80Cpu;
+			cpu.a = 129;
+			cpu.de = 0xABCD;
+			const regs = cpu.getRegisterData();
+			Z80Registers.setCache(regs);
+
+			let log = '${A}';
+			let evalString = await Expressions.evalLogString(log);
+			assert.equal('129', evalString);
+
+			log = ' start ${A} end ';
+			evalString = await Expressions.evalLogString(log);
+			assert.equal(' start 129 end ', evalString);
+
+			log = '${DE:hex}';
+			evalString = await Expressions.evalLogString(log);
+			assert.equal('ABCD', evalString);
+
+			log = '${de:hex}';
+			evalString = await Expressions.evalLogString(log);
+			assert.equal('ABCD', evalString);
+
+			log = ' start A=${A:signed} DE=${DE:unsigned} end ';
+			evalString = await Expressions.evalLogString(log);
+			assert.equal(' start A=-127 DE=43981 end ', evalString);
+
+		});
+
+
+		test('Error', async () => {
+			let log = '${(A}';	// incomplete -> creates an error
+			let evalString = await Expressions.evalLogString(log);
+			assert.equal("Error: Error evaluating '(A': Unexpected end of input", evalString);
+		});
+
+
+		test('Memory', async () => {
+			const remote = Remote as any;
+			const cpu = remote.z80Cpu;
+			cpu.hl = 0x8000;
+			Remote.writeMemoryDump(0x8000, new Uint8Array([0xFF, 0x5B]));
+			const regs = cpu.getRegisterData();
+			Z80Registers.setCache(regs);
+
+			let log = '${(7FFFh+1)}';
+			let evalString = await Expressions.evalLogString(log);
+			assert.equal('255', evalString);
+
+			log = '${(0x8000):signed}';
+			evalString = await Expressions.evalLogString(log);
+			assert.equal('-1', evalString);
+
+			log = '${(32768):hex}';
+			evalString = await Expressions.evalLogString(log);
+			assert.equal('FF', evalString);
+
+			log = '${b@(32768):hex}';
+			evalString = await Expressions.evalLogString(log);
+			assert.equal('FF', evalString);
+
+			log = '${w@(hl-1+1):hex}';
+			evalString = await Expressions.evalLogString(log);
+			assert.equal('5BFF', evalString);
+		});
+
+
+		test('Register relative memory', async () => {
+			const remote = Remote as any;
+			const cpu = remote.z80Cpu;
+			let bc = 0x8000;
+			cpu.bc = bc;
+			let regs = cpu.getRegisterData();
+			Z80Registers.setCache(regs);
+			Remote.writeMemoryDump(0x8000, new Uint8Array([212]));
+
+			let log = '${(BC)}';
+			let evalString = await Expressions.evalLogString(log);
+			assert.equal('212', evalString);
+
+			log = '${(BC+0)}';
+			evalString = await Expressions.evalLogString(log);
+			assert.equal('212', evalString);
+
+			bc -= 1000;
+			cpu.bc = bc;
+			regs = cpu.getRegisterData();
+			Z80Registers.setCache(regs);
+			log = '${(BC+1000)}';
+			evalString = await Expressions.evalLogString(log);
+			assert.equal('212', evalString);
+
+			bc += 1000 + 2345;
+			cpu.bc = bc;
+			regs = cpu.getRegisterData();
+			Z80Registers.setCache(regs);
+			log = '${(BC-2345)}';
+			evalString = await Expressions.evalLogString(log);
+			assert.equal('212', evalString);
+		});
+
+
+		test('Label', async () => {
+			const config: any = {
+				z80asm: [{
+					path: './tests/data/labels/z80asm.list', srcDirs: [""],	// Sources mode
+					excludeFiles: []
+				}]
+			};
+			const mm = new MemoryModelZxNext();
+			Labels.readListFiles(config, mm);
+
+			// Prepare memory
+			Remote.writeMemoryDump(0x7015, new Uint8Array([0xFE]));
+
+			let log = '${b@(check_score_for_new_ship):signed}';
+			let evalString = await Expressions.evalLogString(log);
+			assert.equal('-2', evalString);
+		});
+
+	});
+});

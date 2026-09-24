@@ -60,7 +60,7 @@ export class Bytes {
 	public static setUintToMemory(memVal: number, memory: Uint8Array, index: number, count = 1, littleEndian = true) {
 		// Change neg to pos
 		if (memVal < 0)
-			memVal += (0x1) << (8 * count);
+			memVal += 2 ** (8 * count);	// Note: '<<' would overflow for count >= 4
 
 		const end = index + count;
 		// Note: bit wise operators would work on 32 bits only.
