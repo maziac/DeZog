@@ -71,6 +71,18 @@ export class ShallowVar {
 		return undefined;
 	}
 
+
+	/**
+	 * Override if a data breakpoint (watchpoint) can be set on a child
+	 * variable.
+	 * @param name The name of the child variable, e.g. "[3]".
+	 * @returns The memory range of the child variable or undefined if
+	 * not possible.
+	 */
+	public getDataBreakpointRange(_name: string): {address: number, size: number} | undefined {
+		return undefined;
+	}
+
 }
 
 
@@ -775,6 +787,9 @@ export class MemDumpVar extends ShallowVar {
 	// If the value should be interpreted as little endian or not.
 	protected littleEndian: boolean;
 
+	// The long address (with bank) of the memory dump. Used for data breakpoints.
+	protected longAddr: number;
+
 
 	/**
 	 * Constructor.
@@ -782,10 +797,12 @@ export class MemDumpVar extends ShallowVar {
 	 * @param totalCount The element count.
 	 * @param elemSize The element size. byte=1, word=2.
 	 * @param littleEndian If the value should be interpreted as little endian or not.
+	 * @param longAddr (Optional) The long address (with bank). Defaults to 'addr'.
 	 */
-	public constructor(addr: number, totalCount: number, elemSize: number, littleEndian = true) {
+	public constructor(addr: number, totalCount: number, elemSize: number, littleEndian = true, longAddr = addr) {
 		super();
 		this.addr = addr;
+		this.longAddr = longAddr;
 		this.totalCount = totalCount;
 		this.elemSize = elemSize;
 		this.memOffset = 0;
@@ -801,6 +818,27 @@ export class MemDumpVar extends ShallowVar {
 	public setParent(parentStruct: StructVar, memOffset: number) {
 		this.parentStruct = parentStruct;
 		this.memOffset = memOffset;
+	}
+
+
+	/**
+	 * Returns the memory range of an element, e.g. "[3]".
+	 * Only for memory dumps without parent structure.
+	 * @param name The name of the element, e.g. "[3]".
+	 * @returns The (long) address and size of the element.
+	 */
+	public getDataBreakpointRange(name: string): {address: number, size: number} | undefined {
+		if (this.parentStruct)
+			return undefined;
+		const match = /^\[(\d+)\]$/.exec(name);
+		if (!match)
+			return undefined;
+		const index = parseInt(match[1]);
+		if (index >= this.totalCount)
+			return undefined;
+		// Keep the bank of the long address
+		const address = (this.longAddr & ~0xFFFF) + ((this.addr + index * this.elemSize) & 0xFFFF);
+		return {address, size: this.elemSize};
 	}
 
 

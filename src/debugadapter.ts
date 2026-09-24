@@ -8,6 +8,7 @@ import {Decoration} from './decoration';
 import {DiagnosticsHandler} from './diagnosticshandler';
 import {Disassembly, DisassemblyClass} from './disassembler/disassembly';
 import {SimpleDisassembly} from './disassembler/simpledisassembly';
+import {GenericWatchpoint} from './genericwatchpoint';
 import {Labels} from './labels/labels';
 import {Log} from './log';
 import {ExpressionVariable} from './misc/expressionvariable';
@@ -91,6 +92,9 @@ export class DebugSessionClass extends DebugSession {
 
 	// A list with the expressions used in the WATCHes panel and the Expressions section in the VARIABLES pane.
 	protected constExpressionsList = new Map<string, ExpressionVariable>();
+
+	// The watchpoints set by vscode as data breakpoints.
+	protected dataBreakpoints = new Array<GenericWatchpoint>();
 
 	/// The disassembly that is shown in the VARIABLES section.
 	protected disassemblyVar: DisassemblyVar;
@@ -568,11 +572,9 @@ export class DebugSessionClass extends DebugSession {
 		// Allows to set values in the watch pane.
 		response.body.supportsSetExpression = true;
 
-		// Databreakpoints would be nice but the debug protocol gives not much
-		// control here.
-		// It's only possible to set data breakpoints in vscode in the
-		// VARIABLEs pane. But I only have registers there. So it's not useful.
-		response.body.supportsDataBreakpoints = false;
+		// Data breakpoints ("Break on Value Change/Read/Access") for
+		// WATCH expressions and memory elements. Implemented as watchpoints.
+		response.body.supportsDataBreakpoints = true;
 
 		// ASSERTION etc. breakpoints are controlled directly by the unit tests. Those will not be enabled here.
 		if (this.state !== DbgAdapterState.UNITTEST) {
@@ -651,6 +653,7 @@ export class DebugSessionClass extends DebugSession {
 			// Persistent variable references
 			this.listVariables.clear();
 			this.constExpressionsList.clear();
+			this.dataBreakpoints = [];
 			this.disassemblyVar = new DisassemblyVar();
 			this.disassemblyVar.count = Settings.launch.disassemblerArgs.numberOfLines;
 			this.localStackVar = new StackVar();
@@ -2399,6 +2402,15 @@ export class DebugSessionClass extends DebugSession {
 		const indexOffset = lblIndex * elemSize;
 		const labelValue64k = (labelValue + indexOffset) & 0xFFFF;
 
+		// Long address (with bank), e.g. for data breakpoints.
+		// Only possible if the expression is a plain label (no calculation).
+		// Otherwise the 64k address is used.
+		let longAddress = labelValue64k;
+		const longLabelValue = Labels.getNumberForLabel(Expressions.createFullLabel(labelString, modulePrefix, lastLabel))
+			?? Labels.getNumberForLabel(labelString);
+		if (longLabelValue !== undefined && (longLabelValue & 0xFFFF) === (labelValue & 0xFFFF))
+			longAddress = (longLabelValue & ~0xFFFF) + labelValue64k;
+
 		// Create fullLabel
 		//const fullLabel = Expressions.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
 		// Create a label variable
@@ -2423,7 +2435,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 			else {
 				// Simple memdump
-				labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize, littleEndian);
+				labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize, littleEndian, longAddress);
 			}
 		}
 		else {
@@ -2434,11 +2446,11 @@ export class DebugSessionClass extends DebugSession {
 			}
 			if (!labelVar) {
 				// Simple memdump
-				labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize, littleEndian);
+				labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize, littleEndian, longAddress);
 			}
 		}
 
-		const description = HexFormat.getLongAddressString(labelValue64k);
+		const description = HexFormat.getLongAddressString(longAddress);	// Shows the bank for plain labels
 		const varRef = this.listVariables.addObject(labelVar);
 		const exprVar = {
 			description,
@@ -2446,6 +2458,7 @@ export class DebugSessionClass extends DebugSession {
 			varRef,
 			count: elemCount,
 			address: labelValue64k,
+			longAddress,
 			elemSize
 		};
 
@@ -3245,6 +3258,99 @@ export class DebugSessionClass extends DebugSession {
 		catch (e) {
 			this.showError('Memory View: ' + e.message);
 		}
+	}
+
+
+	/** vscode asks if a data breakpoint can be set for a variable, e.g. for
+	 * the context menu "Break on Value Change".
+	 * Possible for WATCH expressions (e.g. "label,2,10") and for the elements
+	 * of a memory dump (e.g. "[3]").
+	 * The 'dataId' contains the (long) address and the size, e.g. "0x018000:20".
+	 * For long addresses the watchpoint is bank aware, i.e. it breaks only if
+	 * the bank is paged in (see DzrpRemote.getWatchpointsByAddress).
+	 */
+	protected async dataBreakpointInfoRequest(response: DebugProtocol.DataBreakpointInfoResponse, args: DebugProtocol.DataBreakpointInfoArguments): Promise<void> {
+		try {
+			if (!Remote?.supportsWPMEM)
+				throw Error("Watchpoints are not supported by the remote.");
+			let address: number;	// Long address or 64k
+			let size: number;
+			let name = args.name;
+			if (args.variablesReference) {
+				// Child of a variable, e.g. an element of a memory dump
+				const varObj = this.listVariables.getObject(args.variablesReference);
+				const range = varObj?.getDataBreakpointRange(args.name);
+				if (!range)
+					throw Error("No data breakpoint possible for '" + args.name + "'.");
+				({address, size} = range);
+			}
+			else {
+				// WATCH expression, e.g. "label,2,10"
+				const item = await this.evaluateLabelExpression(args.name);
+				address = item.longAddress;
+				size = Math.min(item.elemSize * item.count, 0x10000);
+				name = args.name.split(',')[0].trim();
+			}
+			const addrString = HexFormat.getLongAddressString(address);
+			response.body = {
+				dataId: '0x' + HexFormat.getHexString(address, 6) + ':' + size,
+				description: name + ' (' + addrString + ((size > 1) ? ', ' + size + ' bytes' : '') + ')',
+				accessTypes: ['write', 'read', 'readWrite'],
+				canPersist: false
+			};
+		}
+		catch (e) {
+			response.body = {
+				dataId: null,
+				description: e.message
+			};
+		}
+		this.sendResponse(response);
+	}
+
+
+	/** vscode sets the data breakpoints.
+	 * Always the complete list is sent, i.e. all previously set data breakpoints
+	 * are removed first.
+	 */
+	protected async setDataBreakpointsRequest(response: DebugProtocol.SetDataBreakpointsResponse, args: DebugProtocol.SetDataBreakpointsArguments): Promise<void> {
+		// Remove the previous watchpoints
+		for (const wp of this.dataBreakpoints) {
+			try {
+				await Remote.removeWatchpoint(wp);
+			}
+			catch (e) {
+				Log.log('setDataBreakpointsRequest: ' + e.message);
+			}
+		}
+		this.dataBreakpoints = [];
+
+		// Set the new watchpoints
+		const accessMap = {read: 'r', write: 'w', readWrite: 'rw'};
+		const breakpoints = new Array<DebugProtocol.Breakpoint>();
+		for (const bp of args.breakpoints) {
+			try {
+				// Note: Watchpoint conditions are not evaluated by the remotes (see DzrpRemote.evalBpConditionAndLog).
+				if (bp.condition || bp.hitCondition)
+					throw Error("Conditions are not supported for data breakpoints.");
+				const [addressString, sizeString] = bp.dataId.split(':');
+				const wp: GenericWatchpoint = {
+					longOr64kAddress: Number(addressString),
+					size: Number(sizeString),
+					access: accessMap[bp.accessType ?? 'write'],
+					condition: ''
+				};
+				await Remote.setWatchpoint(wp);
+				this.dataBreakpoints.push(wp);
+				breakpoints.push({verified: true});
+			}
+			catch (e) {
+				breakpoints.push({verified: false, message: e.message});
+			}
+		}
+
+		response.body = {breakpoints};
+		this.sendResponse(response);
 	}
 
 

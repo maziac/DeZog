@@ -22,6 +22,10 @@ export interface ExpressionVariable {
 	// The 64k address of the label/expression. Used as memory reference.
 	address: number;
 
+	// The long address (with bank) if the expression is a plain label,
+	// otherwise the 64k address. Used for data breakpoints.
+	longAddress: number;
+
 	// The size of one element (e.g. 2 for "label,2,10").
 	elemSize: number;
 }

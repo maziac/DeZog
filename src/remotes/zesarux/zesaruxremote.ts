@@ -910,6 +910,9 @@ export class ZesaruxRemote extends RemoteBase {
 	 * It uses ZEsarUX new fast 'memory breakpoints' for this if the breakpoint has no additional condition.
 	 * If it has a condition: not implemented.
 	 * @param wp The watchpoint to set.
+	 * Note: ZEsarUX only uses 64k watchpoints whereas the DZRP * remotes also check the bank.
+	 * If one day I implement ZEsarUX as DZRP sub-class also
+	 * banked watchpoints will be possible.
 	 */
 	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
 		// Check if condition is used
@@ -918,6 +921,7 @@ export class ZesaruxRemote extends RemoteBase {
 			// Will most probably never be implemented by Cesar.
 			// I leave this open mainly as a reminder.
 			// At the moment no watchpoint will be set if an additional condition is set.
+			throw Error('ZEsarUX does not support watchpoints WITH conditions.');
 		}
 		else {
 			// This is the general case. Just add a breakpoint on memory access.
