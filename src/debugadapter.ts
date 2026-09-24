@@ -1727,7 +1727,10 @@ export class DebugSessionClass extends DebugSession {
 				this.stopProcessing();
 
 				// Update memory dump etc. (also in reverse debug because of the register display)
-				this.update({step: true});
+				// Only for real steps the 'step' reason is passed. On a break (continue, pause, ...)
+				// e.g. the sprite patterns are reloaded completely.
+				const isStep = (event as any)?.body?.reason === 'step';
+				this.update(isStep ? {step: true} : undefined);
 
 				// Show decorations
 				//await Remote.getRegisters();

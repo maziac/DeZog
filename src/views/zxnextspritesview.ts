@@ -836,7 +836,6 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				height: auto;
 				image-rendering: pixelated;
 				border: 1px solid var(--vscode-panel-border);
-				transition: opacity 0.2s, filter 0.2s;
 			}
 			h3 {
 				margin: 24px 0 8px 0;

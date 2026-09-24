@@ -624,12 +624,6 @@ export class ZxNextSpritePatternsView extends BaseView {
 		body.stale button.refresh { animation: none; }
 	}
 
-	/* Images of outdated data are dimmed. */
-	body.stale .classImg, body.stale #screen {
-		opacity: 0.45;
-		filter: grayscale(0.7);
-	}
-
 	.classPattern {
 		width: auto;
 		height: 2.5em;
@@ -640,7 +634,6 @@ export class ZxNextSpritePatternsView extends BaseView {
 		height: 2.5em;
 		display: block;
 		margin: 0 auto;
-		transition: opacity 0.2s, filter 0.2s;
 	}
 
 	table {
