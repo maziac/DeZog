@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as util from 'util';
 import {HexFormat} from '../misc/hexformat';
-import {Bytes} from '../misc/bytes';
+import {ByteBuffer} from '../misc/bytebuffer';
 import {Expressions} from '../misc/expressions';
 import {Labels} from '../labels/labels';
 import {MetaBlock} from '../misc/metablock';
@@ -163,7 +163,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			}
 
 			// Print value
-			const value = Bytes.getUintFromMemory(data, k, 2, this.littleEndian);
+			const value = ByteBuffer.getUintFromMemory(data, k, 2, this.littleEndian);
 			let valueText = HexFormat.getHexString(value, 4);
 
 			// Split the text in 2 parts

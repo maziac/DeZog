@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import {Utility} from '../../misc/utility';
-import {Bytes} from '../../misc/bytes';
+import {ByteBuffer} from '../../misc/bytebuffer';
 import {MemBank16k} from './membank16k';
 
 
@@ -63,19 +63,19 @@ export class SnaFile {
 
 		// Get registers
 		this.i = snaBuffer[0];
-		this.hl2 = Bytes.getWord(snaBuffer, 1);
-		this.de2 = Bytes.getWord(snaBuffer, 3);
-		this.bc2 = Bytes.getWord(snaBuffer, 5);
-		this.af2 = Bytes.getWord(snaBuffer, 7);
-		this.hl = Bytes.getWord(snaBuffer, 9);
-		this.de = Bytes.getWord(snaBuffer, 11);
-		this.bc = Bytes.getWord(snaBuffer, 13);
-		this.iy = Bytes.getWord(snaBuffer, 15);
-		this.ix = Bytes.getWord(snaBuffer, 17);
-		this.iff2 = Bytes.getWord(snaBuffer, 19);
+		this.hl2 = ByteBuffer.getWord(snaBuffer, 1);
+		this.de2 = ByteBuffer.getWord(snaBuffer, 3);
+		this.bc2 = ByteBuffer.getWord(snaBuffer, 5);
+		this.af2 = ByteBuffer.getWord(snaBuffer, 7);
+		this.hl = ByteBuffer.getWord(snaBuffer, 9);
+		this.de = ByteBuffer.getWord(snaBuffer, 11);
+		this.bc = ByteBuffer.getWord(snaBuffer, 13);
+		this.iy = ByteBuffer.getWord(snaBuffer, 15);
+		this.ix = ByteBuffer.getWord(snaBuffer, 17);
+		this.iff2 = ByteBuffer.getWord(snaBuffer, 19);
 		this.r = snaBuffer[20];
-		this.af = Bytes.getWord(snaBuffer, 21);
-		this.sp = Bytes.getWord(snaBuffer, 23);
+		this.af = ByteBuffer.getWord(snaBuffer, 21);
+		this.sp = ByteBuffer.getWord(snaBuffer, 23);
 		this.im = snaBuffer[25];
 		this.borderColor = snaBuffer[26];
 
@@ -96,7 +96,7 @@ export class SnaFile {
 		if (snaBuffer.length <= index) {
 			this.is128kFile = false;
 			// 48k, get PC from SP
-			this.pc = Bytes.getWord(snaBuffer, HEADER_LENGTH + this.sp - 0x4000) & 0xFFFF;;
+			this.pc = ByteBuffer.getWord(snaBuffer, HEADER_LENGTH + this.sp - 0x4000) & 0xFFFF;;
 			// Increase SP
 			this.sp = (this.sp + 2) & 0xFFFF;
 			// Note: iff1 is not copied from iff2. Should not be important.
@@ -107,7 +107,7 @@ export class SnaFile {
 		this.is128kFile = true;
 
 		// Read a few more values
-		this.pc = Bytes.getWord(snaBuffer, index);
+		this.pc = ByteBuffer.getWord(snaBuffer, index);
 		index += 2;
 		this.port7ffd = snaBuffer[index++];
 		this.trdosrom = snaBuffer[index++];

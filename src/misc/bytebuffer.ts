@@ -2,7 +2,7 @@
  * Reading/writing numbers and strings from/to byte buffers.
  * Has no dependencies to other DeZog modules.
  */
-export class Bytes {
+export class ByteBuffer {
 
 	/**
 	 * Returns a value shrinked to a boundary.

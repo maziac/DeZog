@@ -2,7 +2,7 @@ import {Labels} from '../labels/labels';
 import {DebugProtocol} from '@vscode/debugprotocol';
 import {Settings} from '../settings/settings'
 import {HexFormat} from '../misc/hexformat';
-import {Bytes} from '../misc/bytes';
+import {ByteBuffer} from '../misc/bytebuffer';
 import {Expressions} from '../misc/expressions';
 import {RefList} from '../misc/reflist';
 import {Remote} from '../remotes/remotebase';
@@ -537,7 +537,7 @@ export class SubStructVar extends ShallowVar {
 						else {
 							item.itemRef = () => {
 								const mem = parentStruct.getMemory();
-								const value = Bytes.getUintFromMemory(mem, memIndex, len, this.littleEndian);	// Is done only for little endian, if wanted it could be extended to big endian
+								const value = ByteBuffer.getUintFromMemory(mem, memIndex, len, this.littleEndian);	// Is done only for little endian, if wanted it could be extended to big endian
 								const result = HexFormat.getHexString(value, 2 * len) + 'h';
 								return result;
 							};
@@ -616,13 +616,13 @@ export class SubStructVar extends ShallowVar {
 
 		// Write data
 		const dataWrite = new Uint8Array(item.elemSize);
-		Bytes.setUintToMemory(value, dataWrite, 0, item.elemSize, this.littleEndian);
+		ByteBuffer.setUintToMemory(value, dataWrite, 0, item.elemSize, this.littleEndian);
 		await Remote.writeMemoryDump(address, dataWrite);
 		ShallowVar.memoryChanged = true;
 
 		// Retrieve memory values, to see if they really have been set.
 		const data = await Remote.readMemoryDump(address, item.elemSize);
-		let readValue = Bytes.getUintFromMemory(data, 0, item.elemSize, this.littleEndian);
+		let readValue = ByteBuffer.getUintFromMemory(data, 0, item.elemSize, this.littleEndian);
 
 		// Pass formatted string to vscode
 		const formattedString = Expressions.numberFormatted(name, readValue, item.elemSize, this.formatString(item.elemSize), undefined);
@@ -875,7 +875,7 @@ export class MemDumpVar extends ShallowVar {
 		// Format all array elements
 		for (let i = 0; i < count; i++) {
 			// Get value
-			const value = Bytes.getUintFromMemory(memory, offset + i * this.elemSize, this.elemSize, this.littleEndian);
+			const value = ByteBuffer.getUintFromMemory(memory, offset + i * this.elemSize, this.elemSize, this.littleEndian);
 			// Format
 			const addr_i = addr + offset + i * elemSize;
 			const formatted = Expressions.numberFormattedSync(value, elemSize, format, false, undefined, undefined, tabSizes);
@@ -911,7 +911,7 @@ export class MemDumpVar extends ShallowVar {
 
 		// Write data
 		const dataWrite = new Uint8Array(this.elemSize);
-		Bytes.setUintToMemory(value, dataWrite, 0, this.elemSize, this.littleEndian);
+		ByteBuffer.setUintToMemory(value, dataWrite, 0, this.elemSize, this.littleEndian);
 		for (let i = 0; i < this.elemSize; i++) {
 			dataWrite[i] = value & 0xFF;
 			value = value >>> 8;
@@ -922,7 +922,7 @@ export class MemDumpVar extends ShallowVar {
 		// Retrieve memory values, to see if they really have been set.
 		const data = await Remote.readMemoryDump(address, this.elemSize);
 		// Get value
-		const readValue = Bytes.getUintFromMemory(data, 0, this.elemSize, this.littleEndian);
+		const readValue = ByteBuffer.getUintFromMemory(data, 0, this.elemSize, this.littleEndian);
 
 		// Pass formatted string to vscode
 		const formattedString = Expressions.numberFormatted(name, readValue, this.elemSize, this.formatString(), undefined);
@@ -983,7 +983,7 @@ export class ImmediateMemoryValue {
 	 */
 	public async getValue(): Promise<string> {
 		const memory = await Remote.readMemoryDump(this.address64k, this.size);
-		const memVal = Bytes.getUintFromMemory(memory, 0, this.size, this.littleEndian);
+		const memVal = ByteBuffer.getUintFromMemory(memory, 0, this.size, this.littleEndian);
 		return Expressions.numberFormatted('', memVal, this.size, this.formatString(), undefined);
 	}
 
@@ -997,14 +997,14 @@ export class ImmediateMemoryValue {
 	public async setValue(value: number): Promise<string> {
 		// Write data
 		const dataWrite = new Uint8Array(this.size);
-		Bytes.setUintToMemory(value, dataWrite, 0, this.size, this.littleEndian);
+		ByteBuffer.setUintToMemory(value, dataWrite, 0, this.size, this.littleEndian);
 		await Remote.writeMemoryDump(this.address64k, dataWrite);
 		ShallowVar.memoryChanged = true;
 
 		// Retrieve memory values, to see if they really have been set.
 		const data = await Remote.readMemoryDump(this.address64k, this.size);
 		// Convert
-		const readValue = Bytes.getUintFromMemory(data, 0, this.size, this.littleEndian);
+		const readValue = ByteBuffer.getUintFromMemory(data, 0, this.size, this.littleEndian);
 
 		// Pass formatted string to vscode
 		const formattedString = Expressions.numberFormatted('', readValue, this.size, this.formatString(), undefined);
