@@ -2,6 +2,7 @@
 import * as assert from 'assert';
 import {suite, test, setup} from 'mocha';
 import {RemoteBase} from '../src/remotes/remotebase';
+import {InstrumentationParser} from '../src/remotes/instrumentationparser';
 import {Settings} from '../src/settings/settings';
 import {Z80RegistersClass, Z80Registers} from '../src/remotes/z80registers';
 import {Opcode} from '../src/disassembler/core/opcode';
@@ -36,9 +37,6 @@ suite('RemoteBase', () => {
 	suite('WPMEM, ASSERTION, LOGPOINT', () => {
 
 		test('WPMEM', async () => {
-			const remote = new RemoteBase();
-			const rem = remote as any;
-
 			const wpLines = [
 				{address: undefined, line: "WPMEM"},	// E.g. macro or line without bytes
 				{address: 0x1A000, line: "WPMEM"},
@@ -47,7 +45,7 @@ suite('RemoteBase', () => {
 				{address: 0xA020, line: "WPMEM 0x6000, 5, w, A==0"}
 			];
 
-			const wps: Array<GenericWatchpoint> = rem.createWatchPoints(wpLines);
+			const wps: Array<GenericWatchpoint> = InstrumentationParser.createWatchPoints(wpLines as any);
 			assert.equal(wps.length, 4);
 
 			assert.equal(wps[0].longOr64kAddress, 0x1A000);
@@ -73,15 +71,12 @@ suite('RemoteBase', () => {
 
 
 		test('ASSERTION', async () => {
-			const remote = new RemoteBase();
-			const rem = remote as any;
-
 			const wpLines = [
 				{address: 0xA020, line: "ASSERTION"},
 				{address: 0xA021, line: "ASSERTION B==1"},
 			];
 
-			const assertions: Array<GenericBreakpoint> = rem.createAssertions(wpLines);
+			const assertions: Array<GenericBreakpoint> = InstrumentationParser.createAssertions(wpLines);
 			assert.equal(assertions.length, 2);
 
 			assert.equal(assertions[0].longAddress, 0xA020);
@@ -96,7 +91,6 @@ suite('RemoteBase', () => {
 
 		test('LOGPOINT', async () => {
 			const remote = new RemoteBase();
-			const rem = remote as any;
 			let warning = false;
 			remote.on('warning', () => {
 				warning = true;
@@ -110,7 +104,7 @@ suite('RemoteBase', () => {
 				{address: 0xA027, line: "LOGPOINTx [GROUP2] ${A}"}
 			];
 
-			const lps: Map<string, Array<GenericBreakpoint>> = rem.createLogPoints(lpLines);
+			const lps: Map<string, Array<GenericBreakpoint>> = InstrumentationParser.createLogPoints(lpLines, remote, msg => remote.emit('warning', msg));
 			assert.equal(lps.size, 2);
 
 			let bps: Array<GenericBreakpoint> = lps.get("GROUP1")!;
