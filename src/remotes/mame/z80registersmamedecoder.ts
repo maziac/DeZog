@@ -99,9 +99,7 @@ export class Z80RegistersMameDecoder extends Z80RegistersStandardDecoder {
 			const bank = parseInt(hexString, 16);
 			slots.push(bank);
 		}
-		// At the moment no banking is supported with the MAME gdbstub:
 		return slots;
 	}
-
 }
 

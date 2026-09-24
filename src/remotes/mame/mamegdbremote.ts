@@ -735,43 +735,18 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 	//------- Send Commands -------
 
-	/** Sends the command to init the remote.
-	 * @returns The error, program name (incl. version), dzrp version and the machine type.
-	 * error is 0 on success. 0xFF if version numbers not match.
-	 * Other numbers indicate an error on remote side.
-	 */
-	/*
-	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
-		return {error: undefined, dzrpVersion: '', programName: 'MAME', machineType: DzrpMachineType.ALL_ROM};
-	}
-	*/
-
 	/** If cache is empty retrieves the registers from
 	 * the Remote.
 	 */
 	public async getRegistersFromEmulator(): Promise<void> {
-		// const regs = await this.sendPacketData('g');	// Returns a string with the reg values as hex
-		// Z80Registers.setCache(regs);
-
 		let cmd = 'print pc,sp,af,bc,de,hl,ix,iy,af2,bc2,de2,hl2,ir,im';
 		if (this.Z80N)
 			cmd += ',mmu0,mmu1,mmu2,mmu3,mmu4,mmu5,mmu6,mmu7';
 		const regValues = await this.sendQrcmd(cmd);
-		const regs = regValues.split(' ');	// Split the response into individual register values
+		// Split the response into individual register values
+		const regs = regValues.split(' ');
 		Z80Registers.setCache(regs);
 	}
-
-	// TODO: Should I implement this instead of changing getRegistersFromEmulator
-	/** Sends the command to get all registers.
-	 * @returns An Uint16Array with the register data. Same order as in
-	 * 'Z80Registers.getRegisterData'.
-	 */
-	// public async sendDzrpCmdGetRegisters(): Promise<Uint16Array> {
-	// 	const regs = await this.sendPacketData('g');	// Returns a string with the reg values as hex
-	// 	Z80Registers.setCache(regs);
-	// 	const regData = Z80Registers.getRegisterData();
-	// 	return regData;
-	// }
 
 
 	/** Sends the command to set a register value.
@@ -922,10 +897,10 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 	/** Sends the command to add a watchpoint.
 	 * @param address The watchpoint long address.
+	 * Note: DzrpRemote filters the bank to allow watchpoints on banks.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 * @param access 'r', 'w' or 'rw'.
 	 */
-	// TODO
 	public async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string): Promise<void> {
 		const address64k = address & 0xFFFF;	// Long addresses not supported
 		let type = '4';	// rw
