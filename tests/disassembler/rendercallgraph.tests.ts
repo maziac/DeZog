@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import {suite, test, setup} from 'mocha';
-import {Utility} from '../../src/misc/utility';
+import {HexFormat} from '../../src/misc/hexformat';
 import {Format} from '../../src/disassembler/core/format';
 import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
 import {RenderCallGraph} from '../../src/disassembler/rendercallgraph';
@@ -13,7 +13,7 @@ suite('Disassembler - RenderCallGraph', () => {
 	setup(() => {
 		const disasm = new SmartDisassembler();
 		disasm.funcGetLabel = addr64k => undefined;
-		disasm.funcFormatLongAddress = addr64k => 'LONG' + Utility.getHexString(addr64k, 4);
+		disasm.funcFormatLongAddress = addr64k => 'LONG' + HexFormat.getHexString(addr64k, 4);
 		r = new RenderCallGraph(disasm);
 		Format.hexFormat = '$';
 	});

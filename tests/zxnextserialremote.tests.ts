@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import {suite, test, setup} from 'mocha';
-import {Utility} from '../src/misc/utility';
+import {WorkspacePaths} from '../src/misc/workspacepaths';
 import {ZxNextSerialRemote} from '../src/remotes/dzrptransport/zxnextserialremote';
 import * as sinon from 'sinon';
 
@@ -14,7 +14,7 @@ suite('ZxNextSerialRemote', () => {
 	suite('dataReceived', () => {
 
 		setup(() => {
-			Utility.setExtensionPath('.');
+			WorkspacePaths.setExtensionPath('.');
 			const cfg = {
 				serialPort: 'some-port',
 				timeout: 1000

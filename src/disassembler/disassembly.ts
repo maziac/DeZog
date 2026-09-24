@@ -3,7 +3,7 @@ import {Opcode} from "./core/opcode";
 import {RenderHint, RenderText} from "./rendertext";
 import {SmartDisassembler} from "./smartdisassembler";
 import {Labels} from "../labels/labels";
-import {Utility} from "../misc/utility";
+import {WorkspacePaths} from "../misc/workspacepaths";
 import {Z80Registers} from "../remotes/z80registers";
 import {Settings} from '../settings/settings';
 import {MemAttribute} from './core/memory';
@@ -65,8 +65,8 @@ export class DisassemblyClass extends SmartDisassembler {
 	public static getAbsFilePath(): string {
 		if (!Settings.launch)
 			return undefined as any;
-		const relPath = Utility.getRelTmpFilePath(TmpDasmFileName);
-		const absPath = Utility.getAbsFilePath(relPath);
+		const relPath = WorkspacePaths.getRelTmpFilePath(TmpDasmFileName);
+		const absPath = WorkspacePaths.getAbsFilePath(relPath);
 		return absPath;
 	}
 

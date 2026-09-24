@@ -1,4 +1,5 @@
 import {Utility} from "../../misc/utility";
+import {HexFormat} from "../../misc/hexformat";
 import {CustomMemoryBank, CustomMemoryType} from "../../settings/settingscustommemory";
 import {Z80Registers} from "../z80registers";
 
@@ -604,7 +605,7 @@ export class MemoryModel {
 			const bank = this.parseShortNameForBank(bankString);
 			const banks = this.getBanksFor(addr64k);
 			if (!banks.has(bank))
-				throw Error("Bank '" + bankString + "' is not reachable from address " + Utility.getHexString(addr64k, 4) + ".");
+				throw Error("Bank '" + bankString + "' is not reachable from address " + HexFormat.getHexString(addr64k, 4) + ".");
 			return bank;
 		}
 		else {
@@ -613,9 +614,9 @@ export class MemoryModel {
 			Utility.assert(banks);
 			Utility.assert(banks.size > 0);
 			//if (banks.size == 0)
-			//	throw Error("Address " + Utility.getHexString(addr64k, 4) + " has no mapped bank.");
+			//	throw Error("Address " + HexFormat.getHexString(addr64k, 4) + " has no mapped bank.");
 			if (banks.size > 1)
-				throw Error("Address " + Utility.getHexString(addr64k, 4) + " is in an address range with banked memory but lacks bank information.");
+				throw Error("Address " + HexFormat.getHexString(addr64k, 4) + " is in an address range with banked memory but lacks bank information.");
 			const values = banks.values().next();
 			const value = values.value;
 			return value;
@@ -678,7 +679,7 @@ export class MemoryModel {
 		let txt = "Slot ranges:\n";
 		// Slots
 		for (const slotRange of this.slotRanges) {
-			let line = Utility.getHexString(slotRange.start, 4) + "-" + Utility.getHexString(slotRange.end, 4) + ": " + (slotRange.name || "unnamed") + ", banks: ";	// NOSONAR
+			let line = HexFormat.getHexString(slotRange.start, 4) + "-" + HexFormat.getHexString(slotRange.end, 4) + ": " + (slotRange.name || "unnamed") + ", banks: ";	// NOSONAR
 			// Banks
 			const banks = [...slotRange.banks];
 			line += banks.map(val => this.banks[val].shortName).join(", ");

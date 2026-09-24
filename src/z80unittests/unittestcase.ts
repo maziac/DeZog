@@ -3,6 +3,7 @@ import {LabelsClass} from '../labels/labels';
 import {Settings, SettingsParameters} from '../settings/settings';
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
+import {WorkspacePaths} from '../misc/workspacepaths';
 import * as path from 'path';
 import {FileWatcher} from '../misc/filewatcher';
 import {MemoryModelUnknown} from '../remotes/MemoryModel/genericmemorymodels';
@@ -248,7 +249,7 @@ export class RootTestSuite extends UnitTestSuite {
 			const wsFolder = ws.uri.fsPath;
 
 			// The test id is at the same time the file name (if test item is a file)
-			const filePath = Utility.getLaunchJsonPath(wsFolder);
+			const filePath = WorkspacePaths.getLaunchJsonPath(wsFolder);
 			const fileWatcher = new FileWatcher(filePath);
 			this.wsFwMap.set(wsFolder, fileWatcher);
 			let wsSuite: UnitTestSuiteLaunchJson;
@@ -311,7 +312,7 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 	 */
 
 	constructor(wsFolder: string, label: string) {
-		super(Utility.getLaunchJsonPath(wsFolder), label, undefined as any, Utility.getLaunchJsonPath(wsFolder));
+		super(WorkspacePaths.getLaunchJsonPath(wsFolder), label, undefined as any, WorkspacePaths.getLaunchJsonPath(wsFolder));
 		this.testItem.description = 'workspace';
 		this.wsFolder = wsFolder;
 		this.fileChanged();
@@ -371,7 +372,7 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 		const launchData = readFileSync(launchJsonPath, 'utf8');
 
 		// Parse file
-		const launch = Utility.readLaunchJson(launchJsonPath, launchData);
+		const launch = WorkspacePaths.readLaunchJson(launchJsonPath, launchData);
 
 		// Find the right configurations
 		const configurations = launch.configurations.filter(config => (config.type == 'dezog') && config.unitTests);
@@ -414,7 +415,7 @@ export class UnitTestSuiteConfig extends UnitTestSuite {
 	 * @param config launch.json configuration.
 	 */
 	constructor(wsFolder: string, config: any) {
-		super(wsFolder + '#' + config.name, config.name, undefined as any, Utility.getLaunchJsonPath(wsFolder));
+		super(wsFolder + '#' + config.name, config.name, undefined as any, WorkspacePaths.getLaunchJsonPath(wsFolder));
 		this.testItem.description = 'config';
 		this.wsFolder = wsFolder;
 		this.config = Settings.Init(config);
@@ -490,7 +491,7 @@ export class UnitTestSuiteConfig extends UnitTestSuite {
 
 		// Read labels from sld/list file
 		const labels = new LabelsClass();
-		Utility.setRootPath(this.wsFolder);
+		WorkspacePaths.setRootPath(this.wsFolder);
 		try {
 			labels.readListFiles(this.config, new MemoryModelUnknown());
 		}
@@ -528,7 +529,7 @@ export class UnitTestSuiteConfig extends UnitTestSuite {
 			const location = labels.getLocationOfLabel(fullUtLabel)!;
 			let file;
 			if (location) {
-				file = Utility.getAbsFilePath(location.file);
+				file = WorkspacePaths.getAbsFilePath(location.file);
 			}
 			// Suite or test case
 			if (map.size == 0) {
@@ -566,7 +567,7 @@ export class UnitTestSuiteConfig extends UnitTestSuite {
 		const labelFilesLines: UtLabelFileLine[] = utLabels.map(label => {
 			const location = labels.getLocationOfLabel(label)!
 			Utility.assert(location, "'getAllUtLabels'");
-			return {label, file: Utility.getAbsFilePath(location.file), line: location.lineNr};
+			return {label, file: WorkspacePaths.getAbsFilePath(location.file), line: location.lineNr};
 		});
 		return labelFilesLines;
 	}

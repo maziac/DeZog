@@ -2,6 +2,7 @@ import {Log, LogDzrpNtf, LogTransport} from '../../log';
 import {AlternateCommand, DzrpMachineType, DZRP_PROGRAM_NAME, DZRP, DZRP_NTF} from '../dzrp/dzrpremote';
 import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
+import {Bytes} from '../../misc/bytes';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 import {DzrpTransportType, Settings} from '../../settings/settings';
@@ -267,7 +268,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	 * @returns The formatted string, e.g. "Value of A=18 and BC=71AB".
 	 */
 	public formatDzrpLogString(data: Buffer): string {
-		const format = Utility.getStringFromBuffer(data, 0);
+		const format = Bytes.getStringFromBuffer(data, 0);
 		let dataIndex = format.length + 1;	// Skip the format string's 0 terminator
 
 		let result = '';
@@ -371,7 +372,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	 */
 	protected dataReceived(data: Buffer) {
 		// LogTransport.log('dataReceived, count=' + data.length);
-		// const ltxt = 'dataReceived, Rawdata: ' + Utility.getStringFromData(data);
+		// const ltxt = 'dataReceived, Rawdata: ' + Bytes.getStringFromData(data);
 		// LogTransport.log(ltxt);
 		// LogDzrpNtf.log(ltxt);
 
@@ -458,11 +459,11 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 					this.funcContinueResolve = undefined;
 					// Get data
 					const type = data[2];
-					let longAddr = Utility.getWord(data, 3);
+					let longAddr = Bytes.getWord(data, 3);
 					const breakAddressBank = data[5];
 					longAddr += breakAddressBank << 16;
 					// Get reason string
-					let reasonString = Utility.getStringFromBuffer(data, 6);
+					let reasonString = Bytes.getStringFromBuffer(data, 6);
 					if (reasonString.length == 0)
 						reasonString = undefined as any;
 
@@ -572,7 +573,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 			index += 6;
 		}
 		// Rest of data
-		const dataString = Utility.getStringFromData(buffer, index);
+		const dataString = Bytes.getStringFromData(buffer, index);
 		text += "  Data:   " + dataString + "\n";
 		return text;
 	}
@@ -599,7 +600,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 			index += 5;
 		}
 		// Rest of data
-		const dataString = Utility.getStringFromData(buffer, index, end - index);
+		const dataString = Bytes.getStringFromData(buffer, index, end - index);
 		text += "  Data:   " + dataString + "\n";
 		return text;
 	}
@@ -613,7 +614,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	 * Other numbers indicate an error on remote side.
 	 */
 	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: number[], machineType: DzrpMachineType}> {
-		const nameBuffer = Utility.getBufferFromString(DZRP_PROGRAM_NAME);
+		const nameBuffer = Bytes.getBufferFromString(DZRP_PROGRAM_NAME);
 		const resp = await this.sendDzrpCmd(DZRP.CMD_INIT, [...this.DZRP_VERSION, ...nameBuffer], this.initCloseRespTimeoutTime);
 		// Error
 		let error;
@@ -624,7 +625,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		// Get machine type
 		const machineType = resp[4];
 		// Program name
-		const program_name = Utility.getStringFromBuffer(resp, 5);
+		const program_name = Bytes.getStringFromBuffer(resp, 5);
 
 		// Check version number. Check only major and minor number.
 		if (this.DZRP_VERSION[0] != resp[1]
@@ -654,18 +655,18 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		//Log.log('sendDzrpCmdGetRegisters ->', JSON.stringify(Z80Registers.getCache() || {}));
 		const regs = await this.sendDzrpCmd(DZRP.CMD_GET_REGISTERS);
 		//Log.log('sendDzrpCmdGetRegisters ----', Z80Registers.getCache() || "undefined");
-		const pc = Utility.getWord(regs, 0);
-		const sp = Utility.getWord(regs, 2);
-		const af = Utility.getWord(regs, 4);
-		const bc = Utility.getWord(regs, 6);
-		const de = Utility.getWord(regs, 8);
-		const hl = Utility.getWord(regs, 10);
-		const ix = Utility.getWord(regs, 12);
-		const iy = Utility.getWord(regs, 14);
-		const af2 = Utility.getWord(regs, 16);
-		const bc2 = Utility.getWord(regs, 18);
-		const de2 = Utility.getWord(regs, 20);
-		const hl2 = Utility.getWord(regs, 22);
+		const pc = Bytes.getWord(regs, 0);
+		const sp = Bytes.getWord(regs, 2);
+		const af = Bytes.getWord(regs, 4);
+		const bc = Bytes.getWord(regs, 6);
+		const de = Bytes.getWord(regs, 8);
+		const hl = Bytes.getWord(regs, 10);
+		const ix = Bytes.getWord(regs, 12);
+		const iy = Bytes.getWord(regs, 14);
+		const af2 = Bytes.getWord(regs, 16);
+		const bc2 = Bytes.getWord(regs, 18);
+		const de2 = Bytes.getWord(regs, 20);
+		const hl2 = Bytes.getWord(regs, 22);
 		const r = regs[24];
 		const i = regs[25];
 		const im = regs[26];
@@ -742,9 +743,9 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		// Convert condition string to Buffer
 		if (!condition)
 			condition = '';
-		const condBuf = Utility.getBufferFromString(condition);
+		const condBuf = Bytes.getBufferFromString(condition);
 		const data = await this.sendDzrpCmd(DZRP.CMD_ADD_BREAKPOINT, [bpAddress & 0xFF, (bpAddress >>> 8) & 0xFF, (bpAddress >>> 16) & 0xFF, ...condBuf]);
-		bp.bpId = Utility.getWord(data, 0);
+		bp.bpId = Bytes.getWord(data, 0);
 	}
 
 

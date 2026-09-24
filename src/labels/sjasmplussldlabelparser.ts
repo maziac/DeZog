@@ -1,5 +1,6 @@
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
+import {WorkspacePaths} from '../misc/workspacepaths';
 import {MemoryModelAllRam, MemoryModelUnknown} from '../remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../remotes/MemoryModel/zxspectrummemorymodels';
 import {MemoryModelZxNextBase} from '../remotes/MemoryModel/zxnextmemorymodels';
@@ -260,7 +261,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Convert (also use srcDirs)
 		const config = this.config as AsmConfigBase;
 		Utility.assert(config.srcDirs);
-		sourceFile = Utility.getRelSourceFilePath(sourceFile, config.srcDirs);
+		sourceFile = WorkspacePaths.getRelSourceFilePath(sourceFile, config.srcDirs);
 
 		// Definition file/line not required
 

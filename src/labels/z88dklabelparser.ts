@@ -1,5 +1,7 @@
 import {LabelParserBase} from './labelparserbase';
 import {Utility} from '../misc/utility';
+import {WorkspacePaths} from '../misc/workspacepaths';
+import {Expressions} from '../misc/expressions';
 import {readFileSync} from 'fs';
 import {AsmConfigBase, Z88dkConfig} from '../settings/settings';
 
@@ -66,7 +68,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 		const config = this.config as Z88dkConfig;
 		if (config.mainFile) {
 			// Set main file
-			const fileName = Utility.getRelFilePath(Utility.getAbsFilePath(config.mainFile));
+			const fileName = WorkspacePaths.getRelFilePath(WorkspacePaths.getAbsFilePath(config.mainFile));
 			this.includeStart(fileName);
 		}
 		// Call super
@@ -115,7 +117,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 								valueString = cAddrString;
 							}
 							// Evaluate
-							let value = Utility.evalExpression(valueString, false);
+							let value = Expressions.evalExpression(valueString, false);
 							// Restrict label to 64k (Note: >64k is interpreted as long address)
 							value &= 0xFFFF;
 							// Add label
@@ -128,11 +130,11 @@ export class Z88dkLabelParser extends LabelParserBase {
 					// Special handling for z88dk to overcome the relative addresses (note: the map is empty if no z88dk is used/no map file given)
 					const realAddress = this.z88dkMappings.get(label);
 					if (realAddress !== undefined) {
-						//console.log('z88dk: label='+label+', '+Utility.getHexString(realAddress, 4));
+						//console.log('z88dk: label='+label+', '+HexFormat.getHexString(realAddress, 4));
 						// Label/symbol found
 						this.z88dkMapOffset = realAddress - readAddress;
 						addr64k = realAddress;
-						//console.log('z88dk: realAddress='+Utility.getHexString(realAddress, 4)+', readAddress='+Utility.getHexString(readAddress, 4)+', offset='+this.z88dkMapOffset);
+						//console.log('z88dk: realAddress='+HexFormat.getHexString(realAddress, 4)+', readAddress='+HexFormat.getHexString(readAddress, 4)+', offset='+this.z88dkMapOffset);
 					}
 					// Create long address
 					longAddr = this.createLongAddress(addr64k, 0);

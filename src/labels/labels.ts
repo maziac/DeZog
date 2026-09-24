@@ -1,5 +1,6 @@
 import {ListConfigBase} from './../settings/settings';
-import {Utility} from '../misc/utility';
+import {HexFormat} from '../misc/hexformat';
+import {WorkspacePaths} from '../misc/workspacepaths';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {Remote} from '../remotes/remotebase';
 import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
@@ -640,7 +641,7 @@ export class LabelsClass {
 			// Try convert as string
 			if (text.startsWith('_'))
 				return NaN;
-			result = Utility.parseValue(text);
+			result = HexFormat.parseValue(text);
 		}
 		if (isNaN(result))
 			return result;
@@ -663,7 +664,7 @@ export class LabelsClass {
 			return {fileName: '', lineNr: 0, modulePrefix: undefined, lastLabel: undefined, size: 0};
 		}
 
-		const filePath = Utility.getAbsFilePath(entry.fileName);
+		const filePath = WorkspacePaths.getAbsFilePath(entry.fileName);
 		return {
 			fileName: filePath, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel, size: entry.size
 		};
@@ -693,7 +694,7 @@ export class LabelsClass {
 		// The available structures are not ideal:
 		// First find an address for lineNr.
 		// Then use the address to get modulePrefix and lastLabel.
-		const filePath = Utility.getRelFilePath(fileName);
+		const filePath = WorkspacePaths.getRelFilePath(fileName);
 		const result = {modulePrefix: '', lastLabel: ''};
 		let longAddr;
 		const lineArray = this.lineArrays.get(filePath);
@@ -726,7 +727,7 @@ export class LabelsClass {
 	 * @returns The associated (long) address. -1 if file or line does not exist.
 	 */
 	public getAddrForFileAndLine(fileName: string, lineNr: number): number {
-		const filePath = Utility.getRelFilePath(fileName);
+		const filePath = WorkspacePaths.getRelFilePath(fileName);
 		let addr = -1;
 		const lineArray = this.lineArrays.get(filePath);
 		if (lineArray) {

@@ -6,6 +6,9 @@ import {MemBuffer, Serializable} from '../../misc/membuffer';
 import {BankType, MemoryModel, MemoryModelState, SlotRange} from '../MemoryModel/memorymodel';
 import {Z80Ports} from './z80ports';
 import {Utility} from '../../misc/utility';
+import {HexFormat} from '../../misc/hexformat';
+import {WorkspacePaths} from '../../misc/workspacepaths';
+import {JsContext} from '../../misc/jscontext';
 
 
 
@@ -299,7 +302,7 @@ export class SimulatedMemory implements Serializable {
 			this.bankSwitchingContext.portAddress = portAddress;
 			this.bankSwitchingContext.portValue = portValue;
 			this.bankSwitchingContext.slots = this.slots;	// Note: slots can be either changed by name or by index.
-			Utility.runInContext(ioMmu, this.bankSwitchingContext, 1000);
+			JsContext.runInContext(ioMmu, this.bankSwitchingContext, 1000);
 		}
 		catch (e) {
 			// In case of an error try to find where it occurred
@@ -332,14 +335,14 @@ export class SimulatedMemory implements Serializable {
 			ioMmu = "for (portAddress = 0; portAddress < 0x10000; portAddress++) {\n"
 				+ ioMmu + "}\n";
 			// Run with a timeout of 1000ms.
-			const filename = Utility.getLaunchJsonPath(Utility.getRootPath());
-			Utility.runInContext(ioMmu, this.bankSwitchingContext, 1000, filename, -1);
+			const filename = WorkspacePaths.getLaunchJsonPath(WorkspacePaths.getRootPath());
+			JsContext.runInContext(ioMmu, this.bankSwitchingContext, 1000, filename, -1);
 		}
 		catch (e) {
 			// In case of an error try to find where it occurred
 			const portAddress = this.bankSwitchingContext.portAddress;
 			if (portAddress >= 0) {
-				const hexPort = Utility.getHexString(portAddress, 4);
+				const hexPort = HexFormat.getHexString(portAddress, 4);
 				e.message = this.memoryModel.name + ' Memory Model problem at port address 0x' + hexPort + ': ' + e.message;
 			}
 			else {

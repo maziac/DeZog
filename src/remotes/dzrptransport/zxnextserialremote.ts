@@ -40,7 +40,7 @@ export class ZxNextSerialRemote extends WithSerial(DzrpDezogIfRemote) {
 	 * I.e. all received messages start with 0xA5.
 	 */
 	protected dataReceived(data: Buffer) {
-		// const txt = 'dataReceived, Rawdata: ' + Utility.getStringFromData(data);
+		// const txt = 'dataReceived, Rawdata: ' + Bytes.getStringFromData(data);
 		// LogTransport.log(txt);
 		// LogDzrpNtf.log(txt);
 

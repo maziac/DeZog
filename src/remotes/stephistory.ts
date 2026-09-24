@@ -7,6 +7,8 @@ import {CallStackFrame} from '../callstackframe';
 import {RefList} from '../misc/reflist';
 import {Remote} from '../remotes/remotebase';
 import {Utility} from '../misc/utility';
+import {HexFormat} from '../misc/hexformat';
+import {Expressions} from '../misc/expressions';
 import {Settings} from '../settings/settings';
 import {Format} from '../disassembler/core/format';
 
@@ -273,11 +275,11 @@ export class StepHistoryClass extends EventEmitter {
 					regName2 = regName;
 					if (regName == 'F') {
 						// Convert register
-						regValueString = Utility.getFlagsString(regValue);
+						regValueString = HexFormat.getFlagsString(regValue);
 					}
 					else {
 						// One byte register
-						regValueString = Utility.getHexString(regValue, 2) + 'h';
+						regValueString = HexFormat.getHexString(regValue, 2) + 'h';
 					}
 				}
 				else {
@@ -287,7 +289,7 @@ export class StepHistoryClass extends EventEmitter {
 					if (regName.startsWith('I') || regName == 'SP' || regName == 'PC') {
 						// Double register
 						regName2 = regName;
-						regValueString = Utility.getHexString(regValue, 4);
+						regValueString = HexFormat.getHexString(regValue, 4);
 					}
 					else {
 						// Check both parts
@@ -295,18 +297,18 @@ export class StepHistoryClass extends EventEmitter {
 						// First part
 						if (valueXored & 0xFF00) {
 							regName2 += regName[0];
-							regValueString += Utility.getHexString(regValue >>> 8, 2);
+							regValueString += HexFormat.getHexString(regValue >>> 8, 2);
 						}
 						// Second part
 						if (valueXored & 0xFF) {
 							regName2 += regName[1];
-							regValueString += Utility.getHexString(regValue & 0xFF, 2);
+							regValueString += HexFormat.getHexString(regValue & 0xFF, 2);
 						}
 					}
 
 					// Only 2 byte registers/ Double register
 					//regName2=regName;
-					//regValueString=Utility.getHexString(regValue, 4);
+					//regValueString=HexFormat.getHexString(regValue, 4);
 					regValueString += 'h';
 				}
 
@@ -460,7 +462,7 @@ export class StepHistoryClass extends EventEmitter {
 
 				// Evaluate condition
 				try {
-					const result = Utility.evalExpression(bp.condition, true);
+					const result = Expressions.evalExpression(bp.condition, true);
 					if (result != 0) {
 						condition = bp.condition;
 						break;
@@ -480,13 +482,13 @@ export class StepHistoryClass extends EventEmitter {
 		let reason;
 		if (condition != undefined) {
 			const breakAddress = pc;
-			const addrString = Utility.getHexString(breakAddress & 0xFFFF, 4);
+			const addrString = HexFormat.getHexString(breakAddress & 0xFFFF, 4);
 			let bankString = "";
 			const bank = breakAddress >>> 16;
 			if (bank != 0)
 				bankString = " (bank=" + (bank - 1).toString() + ")";
 			reason = "Breakpoint hit @" + addrString + "h" + bankString;
-			//reason='Breakpoint hit at PC='+Utility.getHexString(pc&0xFFFF, 4)+'h';
+			//reason='Breakpoint hit at PC='+HexFormat.getHexString(pc&0xFFFF, 4)+'h';
 			if (condition != "")
 				reason += ', ' + condition;
 		}

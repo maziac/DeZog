@@ -1,5 +1,7 @@
 import {MetaBlock} from './metablock';
 import {Utility} from './utility';
+import {HexFormat} from './hexformat';
+import {Bytes} from './bytes';
 
 
 /// The boundary at which the memory dumps should be shown.
@@ -66,13 +68,13 @@ export class MemoryDump {
 		// Check for size > 0xFFFF
 		if (size <= 0xFFFF - 2 * (2 * MEM_DUMP_BOUNDARY - 1)) {
 			// Create one meta block for the memory block
-			const boundAddr = Utility.getBoundary(memBlock.address - MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
-			const boundSize = Utility.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + 2 * MEM_DUMP_BOUNDARY - boundAddr;
+			const boundAddr = Bytes.getBoundary(memBlock.address - MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
+			const boundSize = Bytes.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + 2 * MEM_DUMP_BOUNDARY - boundAddr;
 			bigBlock = new MetaBlock(boundAddr, boundSize, [memBlock], title);
 		}
 		else {
-			const boundAddr = Utility.getBoundary(memBlock.address, MEM_DUMP_BOUNDARY);
-			const boundEnd = Utility.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + MEM_DUMP_BOUNDARY;
+			const boundAddr = Bytes.getBoundary(memBlock.address, MEM_DUMP_BOUNDARY);
+			const boundEnd = Bytes.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + MEM_DUMP_BOUNDARY;
 			let boundSize = boundEnd - boundAddr + 1;
 			if (boundSize > 0xFFFF) {
 				boundSize = Math.trunc(0xFFFF / MEM_DUMP_BOUNDARY) * MEM_DUMP_BOUNDARY;
@@ -121,12 +123,12 @@ export class MemoryDump {
 		// Check for size > 0xFFFF
 		if (size <= 0xFFFF - 2 * (2 * MEM_DUMP_BOUNDARY - 1)) {
 			// Create one meta block for the memory block
-			boundAddr = Utility.getBoundary(memBlock.address - MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
-			boundSize = Utility.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + 2 * MEM_DUMP_BOUNDARY - boundAddr;
+			boundAddr = Bytes.getBoundary(memBlock.address - MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
+			boundSize = Bytes.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + 2 * MEM_DUMP_BOUNDARY - boundAddr;
 		}
 		else {
-			boundAddr = Utility.getBoundary(memBlock.address, MEM_DUMP_BOUNDARY);
-			const boundEnd = Utility.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + MEM_DUMP_BOUNDARY;
+			boundAddr = Bytes.getBoundary(memBlock.address, MEM_DUMP_BOUNDARY);
+			const boundEnd = Bytes.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + MEM_DUMP_BOUNDARY;
 			//let boundSize = boundEnd - boundAddr + 1;
 			boundSize = boundEnd - boundAddr + 1;	// The previous assignment was probably wrong.
 			if (boundSize > 0xFFFF) {
@@ -206,7 +208,7 @@ export class MemoryDump {
 			if (data && index >= 0 && index < data.length) {
 				if (index + 1 >= data.length)
 					return NaN;
-				return Utility.getUintFromMemory(data, index, 2, littleEndian)
+				return Bytes.getUintFromMemory(data, index, 2, littleEndian)
 			}
 		}
 		// Nothing found
@@ -230,7 +232,7 @@ export class MemoryDump {
 					return NaN;
 				if (index + 1 >= data.length)
 					return NaN;
-				return Utility.getUintFromMemory(data, index, 2, littleEndian)
+				return Bytes.getUintFromMemory(data, index, 2, littleEndian)
 			}
 		}
 		// Nothing found
@@ -395,9 +397,9 @@ export class MemoryDump {
 		for (const [address, dataInfo] of addresses) {
 			// "Alloc" range
 			const size = dataInfo.data.length;
-			let title = Utility.getHexString(address & 0xFFFF, 4) + 'h';
+			let title = HexFormat.getHexString(address & 0xFFFF, 4) + 'h';
 			if (size > 1)
-				title += '-' + Utility.getHexString((address + size - 1) & 0xFFFF, 4) + 'h';
+				title += '-' + HexFormat.getHexString((address + size - 1) & 0xFFFF, 4) + 'h';
 			diffMemDump.addBlockWithoutBoundary(address, size, title);
 			// Create Uint8Array
 			const mb = diffMemDump.metaBlocks.at(-1)!;	// Get last meta block

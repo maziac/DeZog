@@ -7,6 +7,8 @@ import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
 import {Labels, SourceFileEntry} from '../labels/labels';
 import {LoadSysVar, Settings} from '../settings/settings';
 import {Utility} from '../misc/utility';
+import {HexFormat} from '../misc/hexformat';
+import {Expressions} from '../misc/expressions';
 import {BaseMemory} from '../disassembler/core/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/core/opcode';
 import {Disassembly, DisassemblyClass} from '../disassembler/disassembly';
@@ -424,12 +426,12 @@ export class RemoteBase extends EventEmitter {
 				// defaults
 				let entryAddress: number | undefined = entry.address;
 				if (addressString && addressString.length > 0)
-					entryAddress = Utility.evalExpression(addressString, false); // don't evaluate registers
+					entryAddress = Expressions.evalExpression(addressString, false); // don't evaluate registers
 				if (isNaN(entryAddress))
 					continue;	// could happen if the WPMEM is in an area that is conditionally not compiled, i.e. label does not exist.
 				let length = 1;
 				if (lengthString && lengthString.length > 0) {
-					length = Utility.evalExpression(lengthString, false); // don't evaluate registers
+					length = Expressions.evalExpression(lengthString, false); // don't evaluate registers
 				}
 				/*
 				else {
@@ -513,7 +515,7 @@ export class RemoteBase extends EventEmitter {
 				}
 
 				// Negate the expression
-				conds = Utility.getConditionFromAssertion(conds);
+				conds = Expressions.getConditionFromAssertion(conds);
 
 				// Check if ASSERTION for that address already exists.
 				if (conds.length > 0) {
@@ -801,7 +803,7 @@ export class RemoteBase extends EventEmitter {
 					labelCalledAddrArr.push(label);
 			}
 		}
-		const labelCalledAddr = (labelCalledAddrArr.length > 0) ? labelCalledAddrArr[0] : Utility.getHexString(calledAddr & 0xFFFF, 4) + 'h';
+		const labelCalledAddr = (labelCalledAddrArr.length > 0) ? labelCalledAddrArr[0] : HexFormat.getHexString(calledAddr & 0xFFFF, 4) + 'h';
 
 		// Return
 		return {name: labelCalledAddr, callerAddr};
@@ -835,7 +837,7 @@ export class RemoteBase extends EventEmitter {
 			// Create stack
 			for (let i = depth - 2; i >= 0; i -= 2) {
 				const value = (data[i + 1] << 8) + data[i];
-				zStack.push(Utility.getHexString(value, 4));
+				zStack.push(HexFormat.getHexString(value, 4));
 			}
 		}
 		return zStack;
@@ -1239,7 +1241,7 @@ export class RemoteBase extends EventEmitter {
 					else {
 						const addr64k = longAddr & 0xFFFF;
 						const bank = (longAddr >>> 16) - 1;
-						let addrStr = Utility.getHexString(addr64k, 4) + "h";
+						let addrStr = HexFormat.getHexString(addr64k, 4) + "h";
 						if (bank >= 0)
 							addrStr += ", bank=" + bank;
 						if (file.fileName)

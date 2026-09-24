@@ -17,6 +17,9 @@ import {RefList} from './misc/reflist';
 import {TimeWait} from './misc/timewait';
 import {UnifiedPath} from './misc/unifiedpath';
 import {Utility} from './misc/utility';
+import {HexFormat} from './misc/hexformat';
+import {WorkspacePaths} from './misc/workspacepaths';
+import {Expressions} from './misc/expressions';
 import {CpuHistory, CpuHistoryClass, StepHistory} from './remotes/cpuhistory';
 import {Remote, RemoteBreakpoint} from './remotes/remotebase';
 import {RemoteFactory} from './remotes/remotefactory';
@@ -208,7 +211,7 @@ export class DebugSessionClass extends DebugSession {
 
 
 		// Need to find the corresponding workspace folder
-		const rootFolder = Utility.getRootPath();
+		const rootFolder = WorkspacePaths.getRootPath();
 		const rootFolderUri = vscode.Uri.file(rootFolder);
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(rootFolderUri);
 		Utility.assert(workspaceFolder);
@@ -641,7 +644,7 @@ export class DebugSessionClass extends DebugSession {
 			// Save args
 			Settings.launch = Settings.Init(args);
 			Settings.CheckSettings();
-			Utility.setRootPath(Settings.launch.rootFolder);
+			WorkspacePaths.setRootPath(Settings.launch.rootFolder);
 
 			// Persistent variable references
 			this.listVariables.clear();
@@ -1043,7 +1046,7 @@ export class DebugSessionClass extends DebugSession {
 			const bp = new Breakpoint(verified, lineNr, 0, source);
 			if (foundCbp && foundCbp.longAddress >= 0) {
 				// Add address to source name.
-				const addrString = Utility.getLongAddressString(foundCbp.longAddress);
+				const addrString = HexFormat.getLongAddressString(foundCbp.longAddress);
 				// Add hover text
 				let txt = addrString;
 				const labels = Labels.getLabelsForNumber64k(foundCbp.longAddress);
@@ -1929,7 +1932,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async getCurrentInstruction(count = 0): Promise<string | undefined> {
 		const maxInstructionCount = 10;
 		const pc = Remote.getPC();
-		const pcStr = Utility.getHexString(pc, 4);
+		const pcStr = HexFormat.getHexString(pc, 4);
 		// Check if count too high
 		if (count === maxInstructionCount)
 			return pcStr + ' ...';
@@ -2105,7 +2108,7 @@ export class DebugSessionClass extends DebugSession {
 		const item = this.constExpressionsList.get(args.expression);
 		if (item?.immediateValue) {
 			// Now set the value.
-			const value = Utility.parseValue(args.value);
+			const value = HexFormat.parseValue(args.value);
 			const formattedString = await item.immediateValue.setValue(value);
 			if (formattedString) {
 				response.body = {value: formattedString};
@@ -2177,7 +2180,7 @@ export class DebugSessionClass extends DebugSession {
 				try {
 					// Check for registers
 					if (Z80RegistersClass.isRegister(expression)) {
-						formattedValue = await Utility.getFormattedRegister(expression, Z80RegisterHoverFormat);
+						formattedValue = await Expressions.getFormattedRegister(expression, Z80RegisterHoverFormat);
 					}
 					else {
 						// Label
@@ -2191,18 +2194,18 @@ export class DebugSessionClass extends DebugSession {
 						const lastLabel = entry.lastLabel;
 						const modulePrefix = entry.modulePrefix;
 						// Get label value
-						const labelValue = Utility.evalExpression(expression, true, modulePrefix, lastLabel);
+						const labelValue = Expressions.evalExpression(expression, true, modulePrefix, lastLabel);
 						if (labelValue !== undefined) {
 							// Get content
 							const memDump = await Remote.readMemoryDump(labelValue, 2);
 							// Format byte
 							const memByte = memDump[0];
-							const formattedByte = Utility.numberFormattedSync(memByte, 1, Settings.launch.formatting.watchByte, true);
+							const formattedByte = Expressions.numberFormattedSync(memByte, 1, Settings.launch.formatting.watchByte, true);
 							// Format word
 							const memWord = memByte + 256 * memDump[1];
-							const formattedWord = Utility.numberFormattedSync(memWord, 2, Settings.launch.formatting.watchWord, true);
+							const formattedWord = Expressions.numberFormattedSync(memWord, 2, Settings.launch.formatting.watchWord, true);
 							// Format output
-							const addrString = Utility.getHexString(labelValue, 4) + 'h';
+							const addrString = HexFormat.getHexString(labelValue, 4) + 'h';
 							if (!formattedValue)
 								formattedValue = expression + ': ' + addrString;
 							// Second line
@@ -2325,14 +2328,14 @@ export class DebugSessionClass extends DebugSession {
 		lastLabel = entry.lastLabel;
 		modulePrefix = entry.modulePrefix;
 		// Convert label (+expression)
-		labelValue = Utility.evalExpression(labelString, true, modulePrefix, lastLabel);
+		labelValue = Expressions.evalExpression(labelString, true, modulePrefix, lastLabel);
 
 		if (isNaN(labelValue))
 			throw Error("Could not parse label: " + labelString);
 
 		// Get size from type
 		if (lblType) {
-			elemSize = Utility.evalExpression(lblType, true, modulePrefix, lastLabel);
+			elemSize = Expressions.evalExpression(lblType, true, modulePrefix, lastLabel);
 			if (isNaN(elemSize))
 				throw Error("Could not parse element size.");
 			if (elemSize <= 0)
@@ -2341,7 +2344,7 @@ export class DebugSessionClass extends DebugSession {
 
 		// And index "[x]"
 		if (lblIndexString) {
-			lblIndex = Utility.evalExpression(lblIndexString, false, modulePrefix, lastLabel);
+			lblIndex = Expressions.evalExpression(lblIndexString, false, modulePrefix, lastLabel);
 			if (isNaN(lblIndex))
 				throw Error("Could not parse index.");
 			if (lblIndex < 0)
@@ -2350,7 +2353,7 @@ export class DebugSessionClass extends DebugSession {
 
 		// Check count
 		if (elemCountString) {
-			elemCount = Utility.evalExpression(elemCountString, true, modulePrefix, lastLabel);
+			elemCount = Expressions.evalExpression(elemCountString, true, modulePrefix, lastLabel);
 			if (isNaN(elemCount))
 				throw Error("Could not parse element count.");
 			if (elemCount <= 0)
@@ -2392,7 +2395,7 @@ export class DebugSessionClass extends DebugSession {
 		const labelValue64k = (labelValue + indexOffset) & 0xFFFF;
 
 		// Create fullLabel
-		//const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
+		//const fullLabel = Expressions.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
 		// Create a label variable
 		let labelVar;
 		let immediateValue;
@@ -2430,7 +2433,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 		}
 
-		const description = Utility.getLongAddressString(labelValue64k);
+		const description = HexFormat.getLongAddressString(labelValue64k);
 		const varRef = this.listVariables.addObject(labelVar);
 		const exprVar = {
 			description,
@@ -2440,7 +2443,7 @@ export class DebugSessionClass extends DebugSession {
 		};
 
 		// Check if the address is constant, i.e. it does not contain a register
-		const exprContainsRegs = Utility.exprContainsMainRegisters(labelString);
+		const exprContainsRegs = Expressions.exprContainsMainRegisters(labelString);
 		if (!exprContainsRegs) {
 			// Store, it's address is constant
 			this.constExpressionsList.set(expression, exprVar);
@@ -2475,7 +2478,7 @@ export class DebugSessionClass extends DebugSession {
 				}
 				else {
 					// Convert string to number
-					const value = Utility.evalExpression(valueString, true);
+					const value = Expressions.evalExpression(valueString, true);
 					// Set value
 					const formattedString = await varObj.setValue(name, value);
 					// Send response
@@ -2571,7 +2574,7 @@ export class DebugSessionClass extends DebugSession {
 			if (bank >= 0) {
 				const slotIndex = Z80Registers.getSlotFromAddress(addr);
 				if (bank !== slots[slotIndex]) {
-					this.showError("Cannot set PC to a location (address=" + Utility.getHexString(addr & 0xFFFF, 4) + "h) of a bank (bank " + bank + ") that is currently not paged in.");
+					this.showError("Cannot set PC to a location (address=" + HexFormat.getHexString(addr & 0xFFFF, 4) + "h) of a bank (bank " + bank + ") that is currently not paged in.");
 					return;
 				}
 			}
@@ -2635,7 +2638,7 @@ export class DebugSessionClass extends DebugSession {
 			if (bank >= 0) {
 				const slotIndex = Z80Registers.getSlotFromAddress(addr);
 				if (bank !== slots[slotIndex]) {
-					throw Error("Memory currently not paged in.  (address=" + Utility.getHexString(bank & 0xFFFF, 4) + "h, bank=" + bank + ")");
+					throw Error("Memory currently not paged in.  (address=" + HexFormat.getHexString(bank & 0xFFFF, 4) + "h, bank=" + bank + ")");
 				}
 			}
 		}
@@ -2721,7 +2724,7 @@ export class DebugSessionClass extends DebugSession {
 				}
 				// Otherwise use hex address
 				if (!name)
-					name = Utility.getHexString(longAddr & 0xFFFF, 4) + 'h';
+					name = HexFormat.getHexString(longAddr & 0xFFFF, 4) + 'h';
 				// Add to title
 				titles.push(name);
 			}
@@ -2986,11 +2989,11 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async stateSave(stateName: string): Promise<void> {
 		// Save state
-		const filePath = Utility.getAbsStateFileName(stateName);
+		const filePath = WorkspacePaths.getAbsStateFileName(stateName);
 		try {
 			// Make sure .tmp/states directory exists
 			try {
-				const dir = Utility.getAbsStateFileName('');
+				const dir = WorkspacePaths.getAbsStateFileName('');
 				fs.mkdirSync(dir);
 			}
 			catch {}
@@ -3018,7 +3021,7 @@ export class DebugSessionClass extends DebugSession {
 		let filePath;
 		try {
 			// Read data
-			filePath = Utility.getAbsStateFileName(stateName);
+			filePath = WorkspacePaths.getAbsStateFileName(stateName);
 			// Restore state
 			await Remote.stateRestore(filePath);
 		}

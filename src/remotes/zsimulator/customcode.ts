@@ -1,6 +1,8 @@
 import {EventEmitter} from 'events';
 import {LogZsim} from '../../log';
 import {Utility} from '../../misc/utility';
+import {HexFormat} from '../../misc/hexformat';
+import {JsContext} from '../../misc/jscontext';
 import {readFileSync} from 'fs';
 import {MemBuffer, Serializable} from '../../misc/membuffer';
 
@@ -156,7 +158,7 @@ export class CustomCode extends EventEmitter implements Serializable {
 		try {
 			// Run with a timeout of 2000ms. Note: the timeout does not apply if
 			// a function (e.g. readPort) is called later unfortunately.
-			Utility.runInContext(js, context, timeout, filename, lineOffset, );
+			JsContext.runInContext(js, context, timeout, filename, lineOffset, );
 		}
 		catch (e) {
 			// In case of an error try to find where it occurred
@@ -281,12 +283,12 @@ API.log('-------------------------------------\\n');`
 	 */
 	public readPort(port: number): number | undefined {
 		this.logTstates();
-		LogZsim.log('API.readPort(' + Utility.getHexString(port, 4) + 'h)');
+		LogZsim.log('API.readPort(' + HexFormat.getHexString(port, 4) + 'h)');
 		// Catch probably errors.
 		let value;
 		try {
 			value = this.api.readPort(port);
-			LogZsim.log('  Reading value ' + Utility.getHexString(value, 2) + 'h for port ' + Utility.getHexString(port, 4) + 'h');
+			LogZsim.log('  Reading value ' + HexFormat.getHexString(value, 2) + 'h for port ' + HexFormat.getHexString(port, 4) + 'h');
 		}
 		catch (e) {
 			this.throwError("Error during executing custom java script in 'readPort': " + e.message);
@@ -303,7 +305,7 @@ API.log('-------------------------------------\\n');`
 	 */
 	public writePort(port: number, value: number) {
 		this.logTstates();
-		LogZsim.log('API.writePort(' + Utility.getHexString(port, 4) + 'h, ' + Utility.getHexString(value, 2) + 'h)');
+		LogZsim.log('API.writePort(' + HexFormat.getHexString(port, 4) + 'h, ' + HexFormat.getHexString(value, 2) + 'h)');
 		// Catch probably errors.
 		try {
 			this.api.writePort(port, value);
@@ -406,6 +408,6 @@ API.log('-------------------------------------\\n');`
 		//console.log('deserialize:', contextString);
 		const savedContext = JSON.parse(contextString);
 		// Put into used context
-		Utility.deepCopyContext(savedContext, this.context);
+		JsContext.deepCopyContext(savedContext, this.context);
 	}
 }

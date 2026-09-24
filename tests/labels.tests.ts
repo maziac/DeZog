@@ -10,14 +10,14 @@ import * as os from 'os';
 import * as path from 'path';
 import {LabelParserBase} from '../src/labels/labelparserbase';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
-import {Utility} from '../src/misc/utility';
+import {WorkspacePaths} from '../src/misc/workspacepaths';
 
 
 suite('Labels', () => {
 
 	setup(() => {
 		// To work with simpler file names
-		(Utility as any).rootPath = undefined;
+		(WorkspacePaths as any).rootPath = undefined;
 	});
 
 	suite('Files/lines vs list file', () => {

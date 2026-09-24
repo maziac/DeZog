@@ -7,6 +7,9 @@ import {GenericWatchpoint} from '../genericwatchpoint';
 import {Labels} from '../labels/labels';
 import {UnifiedPath} from '../misc/unifiedpath';
 import {Utility} from '../misc/utility';
+import {HexFormat} from '../misc/hexformat';
+import {WorkspacePaths} from '../misc/workspacepaths';
+import {Expressions} from '../misc/expressions';
 import {Remote} from '../remotes/remotebase';
 import {Z80Registers} from '../remotes/z80registers';
 import {Settings, SettingsParameters} from '../settings/settings';
@@ -241,7 +244,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		// Evaluate expression
 		let result;
 		// Evaluate
-		const value = Utility.evalExpression(expr);
+		const value = Expressions.evalExpression(expr);
 		// Convert to decimal
 		result = value.toString();
 		// Convert also to hex
@@ -293,7 +296,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			labels.forEach(label => {
 				const value = Labels.getNumberForLabel(label)!;
 				const bankString = Remote.memoryModel.getBankNameForAddress(value);
-				result += label + ': ' + Utility.getHexString(value & 0xFFFF, 4) + 'h';
+				result += label + ': ' + HexFormat.getHexString(value & 0xFFFF, 4) + 'h';
 				if (bankString)
 					result += ' (@' + bankString + ')';
 				result += '\n';
@@ -342,14 +345,14 @@ E.g. use "-help -view" to put the help text in an own view.
 
 		// Get address
 		const addressString = tokens[0];
-		const address = Utility.evalExpression(addressString);
+		const address = Expressions.evalExpression(addressString);
 
 		// Get size
 		const countString = tokens[1];
 		let count = 10;	// Default
 		if (tokens.length > 1) {
 			// Count given
-			count = Utility.evalExpression(countString);
+			count = Expressions.evalExpression(countString);
 		}
 
 		// Get memory
@@ -361,7 +364,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		// Convert to text
 		let txt = '';
 		for (const line of dasmArray) {
-			txt += Utility.getHexString(line.address, 4) + '\t' + line.instruction + '\n';
+			txt += HexFormat.getHexString(line.address, 4) + '\t' + line.instruction + '\n';
 		}
 
 		// Send response
@@ -388,17 +391,17 @@ E.g. use "-help -view" to put the help text in an own view.
 			// One argument:
 			// Get address
 			const addressString = tokens[0];
-			const addr64k = Utility.evalExpression(addressString);
+			const addr64k = Expressions.evalExpression(addressString);
 			if (isNaN(addr64k)) {
 				// Error Handling: No number
 				throw new Error("The given address is no number.");
 			}
-			txt += 'Address: ' + addr64k + ', (' + Utility.getHexString(addr64k, 4) + 'h)\n';
+			txt += 'Address: ' + addr64k + ', (' + HexFormat.getHexString(addr64k, 4) + 'h)\n';
 
 			// Convert to long address
 			const address = Z80Registers.createLongAddress(addr64k, slots);
 			txt += 'Slots: [' + slots.join(', ') + ']\n';
-			txt += 'Long address: ' + address + ', (' + Utility.getHexString(address, 6) + 'h)\n';
+			txt += 'Long address: ' + address + ', (' + HexFormat.getHexString(address, 6) + 'h)\n';
 
 			// Check labels
 			txt += 'Label: ';
@@ -430,7 +433,7 @@ E.g. use "-help -view" to put the help text in an own view.
 				const e = Labels.getFileAndLineForAddress(lAddr);
 				if (e.fileName) {
 					count++;
-					txt += Utility.getHexString(addr, 4) + 'h: ' + e.fileName + ', line: ' + (e.lineNr + 1) + ', size: ' + e.size + '\n';
+					txt += HexFormat.getHexString(addr, 4) + 'h: ' + e.fileName + ', line: ' + (e.lineNr + 1) + ', size: ' + e.size + '\n';
 				}
 			}
 			if (count === 0)
@@ -451,12 +454,12 @@ E.g. use "-help -view" to put the help text in an own view.
 		if (tokens.length < 1)
 			throw Error("Expecting at least 1 argument.");
 		// Address
-		const addr64k = Utility.evalExpression(tokens[0]);
+		const addr64k = Expressions.evalExpression(tokens[0]);
 		// Size
 		let size = 1;
 		let access = 'rw';
 		if (tokens[1] !== undefined)
-			size = Utility.evalExpression(tokens[1]);
+			size = Expressions.evalExpression(tokens[1]);
 		// Access
 		if (tokens[2]) {
 			if (!['r', 'w', 'rw'].includes(tokens[2]))
@@ -511,13 +514,13 @@ E.g. use "-help -view" to put the help text in an own view.
 			if (!match) // Error Handling
 				throw new Error("Can't parse: '" + param + "'");
 			// start slot
-			const start = Utility.parseValue(match[1]);
+			const start = HexFormat.parseValue(match[1]);
 			if (isNaN(start))	// Error Handling
 				throw new Error("Expected slot but got: '" + match[1] + "'");
 			// count
 			let countValue = 1;
 			if (match[3]) {
-				countValue = Utility.parseValue(match[4]);
+				countValue = HexFormat.parseValue(match[4]);
 				if (isNaN(countValue))	// Error Handling
 					throw new Error("Can't parse: '" + match[4] + "'");
 				if (match[3] === "-")	// turn range into count
@@ -612,7 +615,7 @@ E.g. use "-help -view" to put the help text in an own view.
 			// List all files in the state dir.
 			let files;
 			try {
-				const dir = Utility.getAbsStateFileName('');
+				const dir = WorkspacePaths.getAbsStateFileName('');
 				files = fs.readdirSync(dir);
 			}
 			catch {}
@@ -626,10 +629,10 @@ E.g. use "-help -view" to put the help text in an own view.
 		else if (param === 'clearall') {
 			// Removes the files in the states directory
 			try {
-				const dir = Utility.getAbsStateFileName('');
+				const dir = WorkspacePaths.getAbsStateFileName('');
 				const files = fs.readdirSync(dir);
 				for (const file of files) {
-					const path = Utility.getAbsStateFileName(file);
+					const path = WorkspacePaths.getAbsStateFileName(file);
 					fs.unlinkSync(path);
 				}
 			}
@@ -641,7 +644,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		else if (param === 'clear') {
 			// Removes one state
 			try {
-				const path = Utility.getAbsStateFileName(stateName);
+				const path = WorkspacePaths.getAbsStateFileName(stateName);
 				fs.unlinkSync(path);
 			}
 			catch (e) {
@@ -677,7 +680,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		}
 
 		// Root folder
-		const unifiedRootFolder = UnifiedPath.getUnifiedPath(Utility.getRootPath());
+		const unifiedRootFolder = UnifiedPath.getUnifiedPath(WorkspacePaths.getRootPath());
 
 		// Check if file exists
 		const absFileName = unifiedRootFolder + '/' + filename;

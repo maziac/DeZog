@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import {suite, test, setup} from 'mocha';
 import {readFileSync} from 'fs';
-import {Utility} from '../../src/misc/utility';
+import {HexFormat} from '../../src/misc/hexformat';
 import {Format} from '../../src/disassembler/core/format';
 import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
 import {RenderHtml} from '../../src/disassembler/renderhtml';
@@ -27,8 +27,8 @@ suite('Disassembler - RenderHtml', () => {
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 		disasm = new SmartDisassembler();
 		disasm.funcGetLabel = addr64k => undefined;
-		disasm.funcFormatLongAddress = addr64k => Utility.getHexString(addr64k, 4) + '.1';
-		disasm.funcFormatLongAddressHex = addr64k => '$' + Utility.getHexString(addr64k, 4) + '.1';
+		disasm.funcFormatLongAddress = addr64k => HexFormat.getHexString(addr64k, 4) + '.1';
+		disasm.funcFormatLongAddressHex = addr64k => '$' + HexFormat.getHexString(addr64k, 4) + '.1';
 		r = new RenderHtml(disasm);
 		r.clmnsAddress = 7;
 		r.clmnsBytes = 10;

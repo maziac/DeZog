@@ -1,5 +1,6 @@
 import {DebugProtocol} from '@vscode/debugprotocol';
-import {Utility} from '../misc/utility';
+import {HexFormat} from '../misc/hexformat';
+import {WorkspacePaths} from '../misc/workspacepaths';
 import * as fs from 'fs';
 import * as fglob from 'fast-glob';
 import {UnifiedPath} from '../misc/unifiedpath';
@@ -855,11 +856,11 @@ export class Settings {
 			launchCfg.zsim.customCode.debug = false;
 		if (launchCfg.zsim.customCode.jsPath !== undefined) {
 			const path = UnifiedPath.getUnifiedPath(launchCfg.zsim.customCode.jsPath);
-			launchCfg.zsim.customCode.jsPath = Utility.getAbsFilePath(path, rootFolder);
+			launchCfg.zsim.customCode.jsPath = WorkspacePaths.getAbsFilePath(path, rootFolder);
 		}
 		if (launchCfg.zsim.customCode.uiPath !== undefined) {
 			const path = UnifiedPath.getUnifiedPath(launchCfg.zsim.customCode.uiPath);
-			launchCfg.zsim.customCode.uiPath = Utility.getAbsFilePath(path, rootFolder);
+			launchCfg.zsim.customCode.uiPath = WorkspacePaths.getAbsFilePath(path, rootFolder);
 		}
 		if (launchCfg.zsim.customCode.timeStep === undefined) {
 			// In fact: never call tick()
@@ -874,9 +875,9 @@ export class Settings {
 				const block = customVisualBlocks[i];
 				// Convert from string to number
 				if (typeof block.address === "string")
-					block.address = Utility.parseValue(block.address);
+					block.address = HexFormat.parseValue(block.address);
 				if (typeof block.size === "string")
-					block.size = Utility.parseValue(block.size);
+					block.size = HexFormat.parseValue(block.size);
 			}
 		}
 
@@ -894,7 +895,7 @@ export class Settings {
 				const len = slotRange.range.length;
 				for (let i = 0; i < len; i++) {
 					// Convert hex into number
-					slotRange.range[i] = Utility.convertHexNumber(slotRange.range[i])!;
+					slotRange.range[i] = HexFormat.convertHexNumber(slotRange.range[i])!;
 				}
 				// Banks
 				for (const bank of slotRange.banks) {
@@ -904,10 +905,10 @@ export class Settings {
 					// Create abs paths
 					if (bank.filePath) {
 						const path = UnifiedPath.getUnifiedPath(bank.filePath);
-						bank.filePath = Utility.getAbsFilePath(path, rootFolder);
+						bank.filePath = WorkspacePaths.getAbsFilePath(path, rootFolder);
 					}
 					// Convert rom offset from hex-string to number
-					bank.fileOffset = Utility.convertHexNumber(bank.fileOffset);
+					bank.fileOffset = HexFormat.convertHexNumber(bank.fileOffset);
 				}
 			}
 		}
@@ -959,9 +960,9 @@ export class Settings {
 				if (fpPath) {
 					// Note: path is a glob path
 					const unifiedRootFolder = UnifiedPath.getUnifiedPath(rootFolder);
-					const escapedRootFolder = Utility.escapePathForGlob(unifiedRootFolder);
+					const escapedRootFolder = WorkspacePaths.escapePathForGlob(unifiedRootFolder);
 					const unifiedFpPath = UnifiedPath.getUnifiedPath(fpPath);
-					file.path = Utility.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
+					file.path = WorkspacePaths.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
 				}
 				return file;
 			});
@@ -982,9 +983,9 @@ export class Settings {
 				if (fpPath) {
 					// Note: path is a glob path
 					const unifiedRootFolder = UnifiedPath.getUnifiedPath(rootFolder);
-					const escapedRootFolder = Utility.escapePathForGlob(unifiedRootFolder);
+					const escapedRootFolder = WorkspacePaths.escapePathForGlob(unifiedRootFolder);
 					const unifiedFpPath = UnifiedPath.getUnifiedPath(fpPath);
-					file.path = Utility.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
+					file.path = WorkspacePaths.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
 				}
 				return file;
 			});
@@ -1009,12 +1010,12 @@ export class Settings {
 				if (fpPath) {
 					// Note: path is a glob path
 					const unifiedRootFolder = UnifiedPath.getUnifiedPath(rootFolder);
-					const escapedRootFolder = Utility.escapePathForGlob(unifiedRootFolder);
+					const escapedRootFolder = WorkspacePaths.escapePathForGlob(unifiedRootFolder);
 					const unifiedFpPath = UnifiedPath.getUnifiedPath(fpPath);
-					file.path = Utility.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
+					file.path = WorkspacePaths.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
 				}
 				if (fpMapFile)
-					file.mapFile = Utility.getAbsFilePath(fpMapFile, rootFolder);
+					file.mapFile = WorkspacePaths.getAbsFilePath(fpMapFile, rootFolder);
 				return file;
 			});
 		}
@@ -1036,12 +1037,12 @@ export class Settings {
 				if (fpPath) {
 					// Note: path is a glob path
 					const unifiedRootFolder = UnifiedPath.getUnifiedPath(rootFolder);
-					const escapedRootFolder = Utility.escapePathForGlob(unifiedRootFolder);
+					const escapedRootFolder = WorkspacePaths.escapePathForGlob(unifiedRootFolder);
 					const unifiedFpPath = UnifiedPath.getUnifiedPath(fpPath);
-					file.path = Utility.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
+					file.path = WorkspacePaths.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
 				}
 				if (fpMapFile)
-					file.mapFile = Utility.getAbsFilePath(fpMapFile, rootFolder);
+					file.mapFile = WorkspacePaths.getAbsFilePath(fpMapFile, rootFolder);
 				return file;
 			});
 		}
@@ -1060,9 +1061,9 @@ export class Settings {
 				if (fpPath) {
 					// Note: path is a glob path
 					const unifiedRootFolder = UnifiedPath.getUnifiedPath(rootFolder);
-					const escapedRootFolder = Utility.escapePathForGlob(unifiedRootFolder);
+					const escapedRootFolder = WorkspacePaths.escapePathForGlob(unifiedRootFolder);
 					const unifiedFpPath = UnifiedPath.getUnifiedPath(fpPath);
-					file.path = Utility.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
+					file.path = WorkspacePaths.getAbsFilePathWoUnify(unifiedFpPath, escapedRootFolder)
 				}
 				return file;
 			});
@@ -1075,7 +1076,7 @@ export class Settings {
 
 		if (launchCfg.load) {
 			const uload = UnifiedPath.getUnifiedPath(launchCfg.load)
-			launchCfg.load = Utility.getAbsFilePath(uload, rootFolder);
+			launchCfg.load = WorkspacePaths.getAbsFilePath(uload, rootFolder);
 		}
 		else
 			launchCfg.load = '';
@@ -1085,7 +1086,7 @@ export class Settings {
 		for (let loadObj of launchCfg.loadObjs) {
 			if (loadObj.path) {
 				const loadObjPath = UnifiedPath.getUnifiedPath(loadObj.path)
-				loadObj.path = Utility.getAbsFilePath(loadObjPath, rootFolder);
+				loadObj.path = WorkspacePaths.getAbsFilePath(loadObjPath, rootFolder);
 			}
 			else
 				loadObj.path = '';
@@ -1097,7 +1098,7 @@ export class Settings {
 		if (launchCfg.tmpDir === undefined)
 			launchCfg.tmpDir = '.tmp';
 		launchCfg.tmpDir = UnifiedPath.getUnifiedPath(launchCfg.tmpDir);
-		launchCfg.tmpDir = Utility.getAbsFilePath
+		launchCfg.tmpDir = WorkspacePaths.getAbsFilePath
 			(launchCfg.tmpDir, rootFolder);
 		if (isNaN(launchCfg.smallValuesMaximum))
 			launchCfg.smallValuesMaximum = 255;

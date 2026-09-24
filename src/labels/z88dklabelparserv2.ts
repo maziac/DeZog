@@ -1,5 +1,6 @@
 import {LabelParserBase} from './labelparserbase';
 import {Utility} from '../misc/utility';
+import {Expressions} from '../misc/expressions';
 import {readFileSync} from 'fs';
 import {AsmConfigBase, Z88dkConfig} from '../settings/settings';
 import {UnifiedPath} from '../misc/unifiedpath';
@@ -247,7 +248,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 			// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
 			try {
 				// Evaluate
-				let value = Utility.evalExpression(valueString, false);
+				let value = Expressions.evalExpression(valueString, false);
 				// Restrict label to 64k (Note: >64k is interpreted as long address)
 				value &= 0xFFFF;
 				// Add label
@@ -263,7 +264,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 				// Special handling for z88dk to overcome the relative addresses (note: the map is empty if no z88dk is used/no map file given)
 				const realAddress = this.z88dkMappings.get(label);
 				if (realAddress !== undefined) {	// Is e.g. undefined if in an IF/ENDIF
-					//console.log('z88dk: label=' + label + ', realAddress=' + Utility.getHexString(realAddress, 4));
+					//console.log('z88dk: label=' + label + ', realAddress=' + HexFormat.getHexString(realAddress, 4));
 					// Use label address
 					this.lastLabelAddress = realAddress;
 					this.lastAddr64k = realAddress;
@@ -285,7 +286,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 				this.z88dkMapOffset = this.lastLabelAddress - addr64k;
 			}
 			this.lastAddr64k = addr64k + this.z88dkMapOffset;
-			//console.log('z88dk: lastAddr64k=' + Utility.getHexString(this.lastAddr64k, 4) + ', addr64k=' + Utility.getHexString(addr64k, 4) + ', offset=' + Utility.getHexString(this.z88dkMapOffset, 4));
+			//console.log('z88dk: lastAddr64k=' + HexFormat.getHexString(this.lastAddr64k, 4) + ', addr64k=' + HexFormat.getHexString(addr64k, 4) + ', offset=' + HexFormat.getHexString(this.z88dkMapOffset, 4));
 
 			// Search for bytes after the address:
 			// E.g. "80F1  d5c6";

@@ -1,5 +1,7 @@
 import {zSocket, ZesaruxSocket} from './zesaruxsocket';
 import {Utility} from '../../misc/utility';
+import {HexFormat} from '../../misc/hexformat';
+import {Expressions} from '../../misc/expressions';
 import {Labels} from '../../labels/labels';
 import {Settings, ZrcpType} from '../../settings/settings';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
@@ -556,15 +558,15 @@ export class ZesaruxRemote extends RemoteBase {
 						let conditionTrue = true;
 						if (abp.condition != undefined) {
 							try {
-								const evalCond = Utility.evalExpression(abp.condition, true);
+								const evalCond = Expressions.evalExpression(abp.condition, true);
 								conditionTrue = (evalCond != 0);
 							}
 							catch (e) {}	// Ignore errors
 						}
 						if (conditionTrue) {
-							const assertionCond = Utility.getAssertionFromCondition(abp.condition);
+							const assertionCond = Expressions.getAssertionFromCondition(abp.condition);
 							//reasonString = "Assertion failed: " + assertionCond;
-							const replaced = Utility.replaceVarsWithValues(assertionCond);
+							const replaced = Expressions.replaceVarsWithValues(assertionCond);
 							breakReasonString = "Assertion failed: " + replaced;
 						}
 					}
@@ -1086,7 +1088,7 @@ export class ZesaruxRemote extends RemoteBase {
 		// Create condition from address and bp.condition
 		let condition = '';
 		if (address >= 0) {
-			condition = 'PC=0' + Utility.getHexString(address & 0xFFFF, 4) + 'h';
+			condition = 'PC=0' + HexFormat.getHexString(address & 0xFFFF, 4) + 'h';
 			// Add check for long BP
 			let bank = Z80RegistersClass.getBankFromAddress(address);
 			if (bank != -1) {
@@ -1357,7 +1359,7 @@ export class ZesaruxRemote extends RemoteBase {
 			// Convert array to long hex string.
 			let bytes = '';
 			for (let i = 0; i < sendSize; i++) {
-				bytes += Utility.getHexString(dataArray[k++], 2);
+				bytes += HexFormat.getHexString(dataArray[k++], 2);
 			}
 			// Send
 			await zSocket.sendAwait('write-memory-raw ' + address + ' ' + bytes);

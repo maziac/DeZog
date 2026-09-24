@@ -1,7 +1,7 @@
 import {BaseMemory} from "./core/basememory";
 import {Opcode} from "./core/opcode";
 import {Format} from "./core/format";
-import {Utility} from "../misc/utility";
+import {HexFormat} from "../misc/hexformat";
 
 
 
@@ -120,12 +120,12 @@ export class SimpleDisassembly  {
 		const instructionOffset = 16;
 		const dasmArray = SimpleDisassembly.getDasmMemory(addr, data);
 		for (const addrInstr of dasmArray) {
-			text += Utility.getHexString(addrInstr.address, 4);
+			text += HexFormat.getHexString(addrInstr.address, 4);
 			// The bytes representing the opcode
 			let bytes = '';
 			const offset = addrInstr.address - addr;
 			for (let i = 0; i < addrInstr.size; i++) {
-				bytes += ' ' + Utility.getHexString(data[offset + i], 2);
+				bytes += ' ' + HexFormat.getHexString(data[offset + i], 2);
 			}
 			bytes += '  ';
 			bytes = bytes.padEnd(instructionOffset, ' ');
@@ -158,11 +158,11 @@ export class SimpleDisassembly  {
 					ascii = '';
 				}
 				// Add address
-				text += precNewLine + Utility.getHexString((addr+i)&0xFFFF, 4);
+				text += precNewLine + HexFormat.getHexString((addr+i)&0xFFFF, 4);
 			}
 			// Print value
 			const value = data[i];
-			text += ' ' + Utility.getHexString(value, 2);
+			text += ' ' + HexFormat.getHexString(value, 2);
 			// Ascii?
 			if (plusAscii)
 				ascii += String.fromCharCode(value);

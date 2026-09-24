@@ -1,5 +1,6 @@
 import {Labels} from "./labels/labels";
-import {Utility} from "./misc/utility";
+import {HexFormat} from "./misc/hexformat";
+import {Expressions} from "./misc/expressions";
 import {Remote} from "./remotes/remotebase";
 
 
@@ -163,14 +164,14 @@ export class ExceptionBreakpoints {
 			if (realEnable) {
 				// Also list all assertion breakpoints
 				for (const abp of abps) {
-					result += Utility.getLongAddressString(abp.longAddress);
+					result += HexFormat.getLongAddressString(abp.longAddress);
 					const labels = Labels.getLabelsForLongAddress(abp.longAddress);
 					if (labels.length > 0) {
 						const labelsString = labels.join(', ');
 						result += ' (' + labelsString + ')';
 					}
 					// Condition, remove the brackets
-					result += ', Condition: ' + Utility.getAssertionFromCondition(abp.condition) + '\n';
+					result += ', Condition: ' + Expressions.getAssertionFromCondition(abp.condition) + '\n';
 				}
 			}
 		}
@@ -196,7 +197,7 @@ export class ExceptionBreakpoints {
 			// Also list all watchpoints
 			const wps = Remote.getAllWpmemWatchpoints();
 			for (const wp of wps) {
-				result += Utility.getLongAddressString(wp.longOr64kAddress);
+				result += HexFormat.getLongAddressString(wp.longOr64kAddress);
 				const labels = Labels.getLabelsForLongOr64kAddress(wp.longOr64kAddress);
 				if (labels.length > 0) {
 					const labelsString = labels.join(', ');
@@ -263,7 +264,7 @@ export class ExceptionBreakpoints {
 					// List log breakpoints
 					const lps = Remote.getLogpointsForGroup(group);
 					for (const lp of lps) {
-						result += '\n    ' + Utility.getLongAddressString(lp.longAddress);
+						result += '\n    ' + HexFormat.getLongAddressString(lp.longAddress);
 						const labels = Labels.getLabelsForLongAddress(lp.longAddress);
 						if (labels.length > 0) {
 							const labelsString = labels.join(', ');

@@ -1,4 +1,4 @@
-import {Utility} from "../utility";
+import {HexFormat} from "../hexformat";
 import {Zx81Tokens} from "./zx81tokens";
 
 /** Class to read and interpret the ZX81 BASIC variables. */
@@ -244,7 +244,7 @@ export class Zx81BasicVars {
 			else {
 				txt += value;
 				const address = this.basicVarsAddress.get(varName)!;
-				txt += ' @0x' + Utility.getHexString(address, 4);
+				txt += ' @0x' + HexFormat.getHexString(address, 4);
 			}
 			results.push(txt);
 		}
@@ -264,7 +264,7 @@ export class Zx81BasicVars {
 			else {
 				txt += value;
 				const address = this.basicVarsAddress.get(varName)!;
-				txt += ' @0x' + Utility.getHexString(address, 4);
+				txt += ' @0x' + HexFormat.getHexString(address, 4);
 			}
 			results.push(txt);
 		}

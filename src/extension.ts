@@ -10,6 +10,7 @@ import {HelpProvider} from './help/helpprovider';
 import {LogGlobal, LogZsim, LogTransport, LogDzrpNtf} from './log';
 import {UnifiedPath} from './misc/unifiedpath';
 import {Utility} from './misc/utility';
+import {WorkspacePaths} from './misc/workspacepaths';
 import {PackageInfo} from './packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
@@ -42,7 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Save the extension path also to PackageInfo
 	const extPath = context.extensionPath;
 	// it is also stored here as Utility does not include vscode which is more unit-test-friendly.
-	Utility.setExtensionPath(extPath);
+	WorkspacePaths.setExtensionPath(extPath);
 
 	// Check version and show 'What's new' if necessary.
 	const mjrMnrChanged = WhatsNewView.updateVersion(context);

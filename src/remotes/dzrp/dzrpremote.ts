@@ -7,6 +7,8 @@ import {SnaFile} from './snafile';
 import {NexFile} from './nexfile';
 import {Settings} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
+import {HexFormat} from '../../misc/hexformat';
+import {Expressions} from '../../misc/expressions';
 import * as path from 'path';
 import {Labels} from '../../labels/labels';
 import {gzip, ungzip} from 'node-gzip';
@@ -342,7 +344,7 @@ export class DzrpRemote extends RemoteBase {
 			let i = 0;
 			for (const name of regNames) {
 				const value = regs[i];
-				response += "\n" + name + "(" + i + "): 0x" + Utility.getHexString(value, 4) + "/" + value;
+				response += "\n" + name + "(" + i + "): 0x" + HexFormat.getHexString(value, 4) + "/" + value;
 				i++;
 			}
 			// Slots
@@ -356,8 +358,8 @@ export class DzrpRemote extends RemoteBase {
 				// Error
 				throw Error("Expecting 2 parameters: regIndex and value.");
 			}
-			const regIndex = Utility.parseValue(cmdArray[0]);
-			const value = Utility.parseValue(cmdArray[1]);
+			const regIndex = HexFormat.parseValue(cmdArray[0]);
+			const value = HexFormat.parseValue(cmdArray[1]);
 			await this.sendDzrpCmdSetRegister(regIndex as Z80_REG, value);
 		}
 		else if (cmd_name === "cmd_read_mem") {
@@ -365,25 +367,25 @@ export class DzrpRemote extends RemoteBase {
 				// Error
 				throw Error("Expecting at least 2 parameters: address and count.");
 			}
-			const addr = Utility.parseValue(cmdArray[0]);
-			const count = Utility.parseValue(cmdArray[1]);
+			const addr = HexFormat.parseValue(cmdArray[0]);
+			const count = HexFormat.parseValue(cmdArray[1]);
 			const data = await this.sendDzrpCmdReadMem(addr, count);
 			// Print
-			response = Utility.getHexString(addr, 4) + "h: ";
+			response = HexFormat.getHexString(addr, 4) + "h: ";
 			for (const dat of data)
-				response += Utility.getHexString(dat, 2) + "h ";
+				response += HexFormat.getHexString(dat, 2) + "h ";
 		}
 		else if (cmd_name === "cmd_write_mem") {
 			if (cmdArray.length < 2) {
 				// Error
 				throw Error("Expecting at least 2 parameters: address and memory content list.");
 			}
-			const addr = Utility.parseValue(cmdArray.shift()!);
+			const addr = HexFormat.parseValue(cmdArray.shift()!);
 			// Create test data
 			const length = cmdArray.length;
 			const data = new Uint8Array(length);
 			for (let i = 0; i < data.length; i++)
-				data[i] = Utility.parseValue(cmdArray[i]) & 0xFF;
+				data[i] = HexFormat.parseValue(cmdArray[i]) & 0xFF;
 			await this.sendDzrpCmdWriteMem(addr, data);
 		}
 		else if (cmd_name === "cmd_read_bank_mem") {
@@ -391,27 +393,27 @@ export class DzrpRemote extends RemoteBase {
 				// Error
 				throw Error("Expecting at least 3 parameters: bank, offset and count.");
 			}
-			const bank = Utility.parseValue(cmdArray[0]);
-			const offset = Utility.parseValue(cmdArray[1]);
-			const count = Utility.parseValue(cmdArray[2]);
+			const bank = HexFormat.parseValue(cmdArray[0]);
+			const offset = HexFormat.parseValue(cmdArray[1]);
+			const count = HexFormat.parseValue(cmdArray[2]);
 			const data = await this.sendDzrpCmdReadBankMem(bank, offset, count);
 			// Print
-			response = Utility.getHexString(offset, 4) + "h: ";
+			response = HexFormat.getHexString(offset, 4) + "h: ";
 			for (const dat of data)
-				response += Utility.getHexString(dat, 2) + "h ";
+				response += HexFormat.getHexString(dat, 2) + "h ";
 		}
 		else if (cmd_name === "cmd_write_bank_mem") {
 			if (cmdArray.length < 3) {
 				// Error
 				throw Error("Expecting at least 3 parameters: bank, offset and memory content list.");
 			}
-			const bank = Utility.parseValue(cmdArray.shift()!);
-			const offset = Utility.parseValue(cmdArray.shift()!);
+			const bank = HexFormat.parseValue(cmdArray.shift()!);
+			const offset = HexFormat.parseValue(cmdArray.shift()!);
 			// Create test data
 			const length = cmdArray.length;
 			const data = new Uint8Array(length);
 			for (let i = 0; i < data.length; i++)
-				data[i] = Utility.parseValue(cmdArray[i]) & 0xFF;
+				data[i] = HexFormat.parseValue(cmdArray[i]) & 0xFF;
 			await this.sendDzrpCmdWriteBankMem(bank, offset, data);
 		}
 		else if (cmd_name === "cmd_set_slot") {
@@ -419,8 +421,8 @@ export class DzrpRemote extends RemoteBase {
 				// Error
 				throw Error("Expecting 2 parameters: slot and bank.");
 			}
-			const slot = Utility.parseValue(cmdArray[0]);
-			const bank = Utility.parseValue(cmdArray[1]);
+			const slot = HexFormat.parseValue(cmdArray[0]);
+			const bank = HexFormat.parseValue(cmdArray[1]);
 			await this.sendDzrpCmdSetSlot(slot, bank);
 		}
 		else if (cmd_name === "cmd_get_tbblue_reg") {
@@ -428,24 +430,24 @@ export class DzrpRemote extends RemoteBase {
 				// Error
 				throw Error("Expecting 1 parameter: register.");
 			}
-			const reg = Utility.parseValue(cmdArray[0]);
+			const reg = HexFormat.parseValue(cmdArray[0]);
 			const value = await this.sendDzrpCmdGetTbblueReg(reg);
-			response += "\nReg[" + Utility.getHexString(reg, 2) + "h/" + reg + "]: " + Utility.getHexString(value, 2) + "h/" + value;
+			response += "\nReg[" + HexFormat.getHexString(reg, 2) + "h/" + reg + "]: " + HexFormat.getHexString(value, 2) + "h/" + value;
 		}
 		else if (cmd_name === "cmd_get_sprites_palette") {
 			if (cmdArray.length < 1) {
 				// Error
 				throw Error("Expecting 1 parameter: palette number (0 or 1).");
 			}
-			const paletteNumber = Utility.parseValue(cmdArray[0]);
+			const paletteNumber = HexFormat.parseValue(cmdArray[0]);
 			const palette = await this.sendDzrpCmdGetSpritesPalette(paletteNumber);
 			// Print
 			for (const p of palette)
-				response += Utility.getHexString(p, 3) + " ";
+				response += HexFormat.getHexString(p, 3) + " ";
 		}
 		else if (cmd_name === "cmd_get_sprites_clip_window_and_control") {
 			const clip = await this.sendDzrpCmdGetSpritesClipWindowAndControl();
-			response += "xl=" + clip.xl + ", xr=" + clip.xr + ", yt=" + clip.yt + ", yb=" + clip.yb + ", control=" + Utility.getBitsString(clip.control, 8);
+			response += "xl=" + clip.xl + ", xr=" + clip.xr + ", yt=" + clip.yt + ", yb=" + clip.yb + ", control=" + HexFormat.getBitsString(clip.control, 8);
 		}
 		else if (cmd_name === "cmd_set_breakpoints") {
 			// Note: This command supports only the setting of 1 breakpoint:
@@ -454,13 +456,13 @@ export class DzrpRemote extends RemoteBase {
 				// Error
 				throw Error("Expecting 2 parameters: address and bank.");
 			}
-			const address = Utility.parseValue(cmdArray[0]);
-			const bank = Utility.parseValue(cmdArray[1]);
+			const address = HexFormat.parseValue(cmdArray[0]);
+			const bank = HexFormat.parseValue(cmdArray[1]);
 			// Create data to send
 			const longAddress = address + ((bank + 1) << 16);
 			const memValues = await this.sendDzrpCmdSetBreakpoints([longAddress]);
 			const value = memValues[0];
-			response += '\n Response: 0x' + Utility.getHexString(value, 2) + '/' + value;
+			response += '\n Response: 0x' + HexFormat.getHexString(value, 2) + '/' + value;
 		}
 		else if (cmd_name === "cmd_restore_mem") {
 			// Note: This command supports only the restoring of 1 breakpoint:
@@ -469,9 +471,9 @@ export class DzrpRemote extends RemoteBase {
 				// Error
 				throw Error("Expecting 3 parameters: address, bank and value.");
 			}
-			const address = Utility.parseValue(cmdArray[0]);
-			const bank = Utility.parseValue(cmdArray[1]);
-			const value = Utility.parseValue(cmdArray[2]);
+			const address = HexFormat.parseValue(cmdArray[0]);
+			const bank = HexFormat.parseValue(cmdArray[1]);
+			const value = HexFormat.parseValue(cmdArray[2]);
 			// Create data to send
 			const longAddress = address + ((bank + 1) << 16);
 			await this.sendDzrpCmdRestoreMem([{address: longAddress, value}]);
@@ -482,10 +484,10 @@ export class DzrpRemote extends RemoteBase {
 				// Error
 				throw Error("Expecting 1 parameter: port.");
 			}
-			const port = Utility.parseValue(cmdArray[0]);
+			const port = HexFormat.parseValue(cmdArray[0]);
 			// Send
 			const portValue = await this.sendDzrpCmdReadPort(port);
-			response += '\n in (0x' + Utility.getHexString(port, 4) + '): 0x' + Utility.getHexString(portValue, 2);
+			response += '\n in (0x' + HexFormat.getHexString(port, 4) + '): 0x' + HexFormat.getHexString(portValue, 2);
 		}
 		else if (cmd_name === "cmd_write_port") {
 			// "cmd_write_port port value"
@@ -493,8 +495,8 @@ export class DzrpRemote extends RemoteBase {
 				// Error
 				throw Error("Expecting 2 parameters: port and value.");
 			}
-			const port = Utility.parseValue(cmdArray[0]);
-			const portValue = Utility.parseValue(cmdArray[1]);
+			const port = HexFormat.parseValue(cmdArray[0]);
+			const portValue = HexFormat.parseValue(cmdArray[1]);
 			// Send
 			await this.sendDzrpCmdWritePort(port, portValue);
 		}
@@ -505,16 +507,16 @@ export class DzrpRemote extends RemoteBase {
 				throw Error("Expecting 1 or more values (the code).");
 			}
 			// Convert strings to numbers
-			const code = cmdArray.map(value => Utility.parseValue(value));
+			const code = cmdArray.map(value => HexFormat.parseValue(value));
 			// Send
 			const resp = await this.sendDzrpCmdExecAsm(code);
 			response += `
 error: ${resp.error}
-a: 0x${Utility.getHexString(resp.a, 2)}
-f: 0x${Utility.getHexString(resp.f, 2)}
-bc: 0x${Utility.getHexString(resp.bc, 4)}
-de: 0x${Utility.getHexString(resp.de, 4)}
-hl: 0x${Utility.getHexString(resp.hl, 4)}`;
+a: 0x${HexFormat.getHexString(resp.a, 2)}
+f: 0x${HexFormat.getHexString(resp.f, 2)}
+bc: 0x${HexFormat.getHexString(resp.bc, 4)}
+de: 0x${HexFormat.getHexString(resp.de, 4)}
+hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 		}
 		else if (cmd_name === "cmd_interrupt_on_off") {
 			// "cmd_interrupt_on_off val"
@@ -522,7 +524,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				// Error
 				throw Error("Expecting 1 parameter: enable (0 or 1).");
 			}
-			const enable = Utility.parseValue(cmdArray[0]) !== 0;
+			const enable = HexFormat.parseValue(cmdArray[0]) !== 0;
 			// Send
 			await this.sendDzrpCmdInterruptOnOff(enable);
 		}
@@ -532,8 +534,8 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				// Error
 				throw Error("Expecting 2 parameters: address and bank.");
 			}
-			const address = Utility.parseValue(cmdArray[0]);
-			const bank = Utility.parseValue(cmdArray[1]);
+			const address = HexFormat.parseValue(cmdArray[0]);
+			const bank = HexFormat.parseValue(cmdArray[1]);
 			// Create data to send
 			const longAddress = address + ((bank + 1) << 16);
 			const bp: GenericBreakpoint = {
@@ -550,7 +552,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			}
 			const bp: GenericBreakpoint = {
 				longAddress: -1,	// not used
-				bpId: Utility.parseValue(cmdArray[0])
+				bpId: HexFormat.parseValue(cmdArray[0])
 			};
 			// Create data to send
 			await this.dzrpRemoveBreakpoint(bp);
@@ -570,8 +572,8 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 					// Error
 					throw Error("Expecting parameter 3, parameters: start min_time max_time.");
 				}
-				const minTime = Utility.parseValue(cmdArray[1]);
-				const maxTime = Utility.parseValue(cmdArray[2]);
+				const minTime = HexFormat.parseValue(cmdArray[1]);
+				const maxTime = HexFormat.parseValue(cmdArray[2]);
 				await this.dzrpTransportTest?.cmdsStop();
 				this.dzrpTransportTest = new DzrpTransportTest(this);
 				this.dzrpTransportTest.on('debug_console', msg => {
@@ -593,7 +595,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 					// Error
 					throw Error("Expecting parameter 2, parameters: pause pause_time(ms)");
 				}
-				const pauseTime = Utility.parseValue(cmdArray[1]);
+				const pauseTime = HexFormat.parseValue(cmdArray[1]);
 				await new Promise(resolve => setTimeout(resolve, pauseTime));
 				return "Paused for " + pauseTime + " ms.";
 			}
@@ -607,10 +609,10 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 					// Error
 					throw Error("Expecting at least 3 parameters: timeout len1 len2 [pause [seqNumber]].");
 				}
-				const len1 = Utility.parseValue(cmdArray[1]);
-				const len2 = Utility.parseValue(cmdArray[2]);
-				const pause = Utility.parseValue(cmdArray[3]);
-				const seqno = Utility.parseValue(cmdArray[4]);
+				const len1 = HexFormat.parseValue(cmdArray[1]);
+				const len2 = HexFormat.parseValue(cmdArray[2]);
+				const pause = HexFormat.parseValue(cmdArray[3]);
+				const seqno = HexFormat.parseValue(cmdArray[4]);
 				const dzrpTimeoutTest = new DzrpTransportTest(this);
 				await dzrpTimeoutTest.sendCmdWithPause(len1, len2, pause, seqno);
 				return "Two parts sent.";
@@ -628,15 +630,15 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				// Error
 				return "Expecting 2 parameters: sprite start index and count.";
 			}
-			const index=Utility.parseValue(cmdArray[0]);
-			const count=Utility.parseValue(cmdArray[1]);
+			const index=HexFormat.parseValue(cmdArray[0]);
+			const count=HexFormat.parseValue(cmdArray[1]);
 			const data=await this.sendDzrpCmdGetSprites(index, count);
 			// Print
 			for (let i=0; i<data.length; i++) {
 				if (i%5==0)
 					response+="\nSprite "+(i/5)+": ";
 				//const value: number=data[0];
-				//response+=Utility.getHexString(value, 2)+" ";
+				//response+=HexFormat.getHexString(value, 2)+" ";
 				response+=data[i]+" ";
 			}
 		}
@@ -810,7 +812,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				// Check if condition is true
 				// REMARK: If I would allow 'await evalExpression' I could also allow e.g. memory checks
 				try {
-					const evalCond = Utility.evalExpression(bp.condition, true);
+					const evalCond = Expressions.evalExpression(bp.condition, true);
 					if (evalCond != 0) {
 						// Condition is true
 						return {condition: bp.condition, log: bp.log};
@@ -861,15 +863,15 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 				const abps = this.assertionBreakpoints.filter(abp => abp.longAddress === breakAddress);
 				for (const abp of abps) {
 					if (condition === abp.condition) {
-						const assertionCond = Utility.getAssertionFromCondition(condition);
+						const assertionCond = Expressions.getAssertionFromCondition(condition);
 						//reasonString = "Assertion failed: " + assertionCond;
-						const replaced = Utility.replaceVarsWithValues(assertionCond);
+						const replaced = Expressions.replaceVarsWithValues(assertionCond);
 						reasonString = "Assertion failed: " + replaced;
 						return reasonString;
 					}
 				}
 				// Or breakpoint
-				const addrString = Utility.getHexString(breakAddress & 0xFFFF, 4);
+				const addrString = HexFormat.getHexString(breakAddress & 0xFFFF, 4);
 				let bankString = "";
 				const bank = breakAddress >>> 16;
 				if (bank != 0)
@@ -885,7 +887,7 @@ hl: 0x${Utility.getHexString(resp.hl, 4)}`;
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE: {
 				// Watchpoint
 				const address = breakAddress;
-				reasonString = "Watchpoint " + ((breakNumber === BREAK_REASON_NUMBER.WATCHPOINT_READ) ? "read" : "write") + " access at address " + Utility.getLongAddressString(address);
+				reasonString = "Watchpoint " + ((breakNumber === BREAK_REASON_NUMBER.WATCHPOINT_READ) ? "read" : "write") + " access at address " + HexFormat.getLongAddressString(address);
 				const labels = Labels.getLabelsPlusIndexForNumber64k(address);
 				if (labels.length > 0) {
 					const labelsString = labels.join(', ');

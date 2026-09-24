@@ -1,4 +1,4 @@
-import {Utility} from './../src/misc/utility';
+import {WorkspacePaths} from './../src/misc/workspacepaths';
 import * as assert from 'assert';
 import {suite, test} from 'mocha';
 import {MemBuffer} from '../src/misc/membuffer';
@@ -317,7 +317,7 @@ suite('SimulatedMemory', () => {
 		test('no ioMmu', () => {
 			const mm = new MemoryModel({slots: []});
 			const ports = new Z80Ports('AND', 0xFF);
-			Utility.setRootPath('/');	// Does not matter but must be set.
+			WorkspacePaths.setRootPath('/');	// Does not matter but must be set.
 			new SimulatedMemory(mm, ports) as any;	// Should not throw anything
 		});
 
@@ -334,7 +334,7 @@ suite('SimulatedMemory', () => {
 				]
 			});
 			const ports = new Z80Ports('AND', 0xFF);
-			Utility.setRootPath('/');	// Does not matter but must be set.
+			WorkspacePaths.setRootPath('/');	// Does not matter but must be set.
 			new SimulatedMemory(mm, ports) as any;	// Should not throw anything
 		});
 
@@ -352,7 +352,7 @@ suite('SimulatedMemory', () => {
 				]
 			});
 			const ports = new Z80Ports('AND', 0xFF);
-			Utility.setRootPath('/');	// Does not matter but must be set.
+			WorkspacePaths.setRootPath('/');	// Does not matter but must be set.
 			try {
 				new SimulatedMemory(mm, ports) as any;	// Should throw
 				// Should not reach here:
@@ -374,7 +374,7 @@ suite('SimulatedMemory', () => {
 				]
 			});
 			const ports = new Z80Ports('AND', 0xFF);
-			Utility.setRootPath('/');	// Does not matter but must be set.
+			WorkspacePaths.setRootPath('/');	// Does not matter but must be set.
 			try {
 				new SimulatedMemory(mm, ports) as any;	// Should throw
 				// Should not reach here:
@@ -406,7 +406,7 @@ suite('SimulatedMemory', () => {
 				]
 			});
 			const ports = new Z80Ports('AND', 0xFF);
-			Utility.setRootPath('/');	// Does not matter but must be set.
+			WorkspacePaths.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
 			mem.checkIoMmu();	// Should not throw anything
 			// Check that slots are reset correctly by checkIoMmu
@@ -435,7 +435,7 @@ suite('SimulatedMemory', () => {
 				]
 			});
 			const ports = new Z80Ports('AND', 0xFF);
-			Utility.setRootPath('/');	// Does not matter but must be set.
+			WorkspacePaths.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
 			mem.evaluateIoMmu(mm.ioMmu, 0, 0);
 			// Check that slots are set correctly by evaluateIoMmu
@@ -466,7 +466,7 @@ suite('SimulatedMemory', () => {
 				]
 			});
 			const ports = new Z80Ports('AND', 0xFF);
-			Utility.setRootPath('/');	// Does not matter but must be set.
+			WorkspacePaths.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
 			const prevSlots = [...mem.slots];
 			mem.setSlotsInContext();
@@ -497,7 +497,7 @@ suite('SimulatedMemory', () => {
 				]
 			});
 			const ports = new Z80Ports('AND', 0xFF);
-			Utility.setRootPath('/');	// Does not matter but must be set.
+			WorkspacePaths.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
 
 			// Set correct slots
@@ -523,7 +523,7 @@ suite('SimulatedMemory', () => {
 				]
 			});
 			const ports = new Z80Ports('AND', 0xFF);
-			Utility.setRootPath('/');	// Does not matter but must be set.
+			WorkspacePaths.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
 
 			// Set incorrect slot
@@ -550,7 +550,7 @@ suite('SimulatedMemory', () => {
 				]
 			});
 			const ports = new Z80Ports('AND', 0xFF);
-			Utility.setRootPath('/');	// Does not matter but must be set.
+			WorkspacePaths.setRootPath('/');	// Does not matter but must be set.
 			const mem = new SimulatedMemory(mm, ports) as any;
 
 			// Set incorrect slot

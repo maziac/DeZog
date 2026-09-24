@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import {BaseView} from '../../views/baseview';
 import {ZSimRemote} from './zsimremote';
 import {Utility} from '../../misc/utility';
+import {HexFormat} from '../../misc/hexformat';
+import {WorkspacePaths} from '../../misc/workspacepaths';
 import {LogZsim} from '../../log';
 import {GlobalStorage} from '../../globalstorage';
 import {readFileSync} from 'fs';
@@ -593,7 +595,7 @@ export class ZSimulationView extends BaseView {
 	 */
 	protected setHtml() {
 		// Resource path
-		const extPath = Utility.getExtensionPath();
+		const extPath = WorkspacePaths.getExtensionPath();
 		const resourcePath = vscode.Uri.file(extPath);
 		const vscodeResPath = this.vscodePanel.webview.asWebviewUri(resourcePath).toString();
 		// Set keyboard values
@@ -867,7 +869,7 @@ export class ZSimulationView extends BaseView {
 				html += `
 				<!-- Custom Visual Memory Block ${b} -->
 				<details open="true">
-					<summary>Start: 0x${Utility.getHexString(block.address, 4)}, End: 0x${Utility.getHexString(endAddress, 4)}</summary>
+					<summary>Start: 0x${HexFormat.getHexString(block.address, 4)}, End: 0x${HexFormat.getHexString(endAddress, 4)}</summary>
 					<div style="position:relative;">
 						<div class="border slot" style="top:0.5em; left:0; width:100%; height:2em;"></div>
 						<canvas class="slot" id="custom_visual_mem_block_img_id_${b}" style="image-rendering:pixelated; position:absolute; top:0.5em; left:0; width:100%; pointer-events:none; z-index:10; background:transparent;"></canvas>

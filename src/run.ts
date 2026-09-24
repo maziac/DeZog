@@ -3,7 +3,7 @@ import {Settings} from './settings/settings'; // Adjust the import path as neces
 import path = require('path');
 import {Z80RegistersClass} from './remotes/z80registers';
 import {ZSimRemote} from './remotes/zsimulator/zsimremote';
-import {Utility} from './misc/utility';
+import {WorkspacePaths} from './misc/workspacepaths';
 import {BaseView} from './views/baseview';
 import {ZSimulationView} from './remotes/zsimulator/zsimulationview';
 import {DebugSessionClass} from './debugadapter';
@@ -87,7 +87,7 @@ export class Run {
 			// Create zsim
 			Z80RegistersClass.createRegisters(launch);
 			const remote = new ZSimRemote(launch);
-			Utility.setRootPath(rootFolder);
+			WorkspacePaths.setRootPath(rootFolder);
 			remote.configureMachine();
 			await remote.loadBin(fsPath);
 			// Adds a window that displays the ZX screen.

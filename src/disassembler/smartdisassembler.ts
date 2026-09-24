@@ -1,5 +1,6 @@
 import {BankType, MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {Utility} from '../misc/utility';
+import {HexFormat} from '../misc/hexformat';
 import {AsmNode} from './core/asmnode';
 import {Comments} from './comments';
 import {Format} from './core/format';
@@ -93,7 +94,7 @@ export class SmartDisassembler {
 		// Convert to long address
 		const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
 		// Formatting
-		let addrString = Utility.getHexString(addr64k, 4);
+		let addrString = HexFormat.getHexString(addr64k, 4);
 		const shortName = this.memoryModel.getBankShortNameForAddress(longAddr);
 		if (shortName)
 			addrString += ReverseEngineeringLabelParser.bankSeparator + shortName;
@@ -804,16 +805,16 @@ export class SmartDisassembler {
 							// Now check for RST addresses
 							if (blockNode.start & ~0b00111000) {
 								// Is normal CALL
-								node.label = this.labelSubPrefix + Utility.getHexString(addr64k, 4);
+								node.label = this.labelSubPrefix + HexFormat.getHexString(addr64k, 4);
 							}
 							else {
 								// Is RST
-								node.label = this.labelRstPrefix + Utility.getHexString(addr64k, 2);
+								node.label = this.labelRstPrefix + HexFormat.getHexString(addr64k, 2);
 							}
 						}
 						else {
 							// Use normal label
-							node.label = this.labelLblPrefix + Utility.getHexString(addr64k, 4);
+							node.label = this.labelLblPrefix + HexFormat.getHexString(addr64k, 4);
 						}
 					}
 				}
@@ -896,11 +897,11 @@ export class SmartDisassembler {
 			// Global labels:
 			// Labels
 			for (const localNode of localNodes) {
-				localNode.label = this.labelLblPrefix + Utility.getHexString(localNode.start, 4);
+				localNode.label = this.labelLblPrefix + HexFormat.getHexString(localNode.start, 4);
 			}
 			// Loops
 			for (const loopNode of loopNodes) {
-				loopNode.label = this.labelLblPrefix + Utility.getHexString(loopNode.start, 4);
+				loopNode.label = this.labelLblPrefix + HexFormat.getHexString(loopNode.start, 4);
 			}
 		}
 	}
@@ -942,11 +943,11 @@ export class SmartDisassembler {
 						label = blockNode.label;
 						if (label) {
 							// Create a new local label, e.g. "SUB_C000.CODE_C00B"
-							label += '.' + this.labelCodePrefix + Utility.getHexString(addr64k, 4);
+							label += '.' + this.labelCodePrefix + HexFormat.getHexString(addr64k, 4);
 						}
 						else {
 							// Create a new label, e.g. "CODE_C00B"
-							label = this.labelCodePrefix + Utility.getHexString(addr64k, 4);
+							label = this.labelCodePrefix + HexFormat.getHexString(addr64k, 4);
 						}
 						// And store
 						this.otherLabels.set(addr64k, label);
@@ -954,7 +955,7 @@ export class SmartDisassembler {
 					else {
 						// DATA
 						// Now create a new label
-						label = this.labelDataLblPrefix + Utility.getHexString(addr64k, 4);
+						label = this.labelDataLblPrefix + HexFormat.getHexString(addr64k, 4);
 						// And store
 						this.otherLabels.set(addr64k, label);
 					}

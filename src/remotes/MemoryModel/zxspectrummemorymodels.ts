@@ -1,4 +1,5 @@
 import {Utility} from "../../misc/utility";
+import {WorkspacePaths} from "../../misc/workspacepaths";
 import {BankType, MemoryBank, MemoryModel} from "./memorymodel";
 import {RomIdentification} from "./romidentification";
 
@@ -86,7 +87,7 @@ export class MemoryModelZx16k extends MemoryModelZxSpectrumBase {
 							index: 0,
 							name: 'ROM',
 							rom: true,
-							filePath: Utility.getExtensionPath() + '/data/48.rom'
+							filePath: WorkspacePaths.getExtensionPath() + '/data/48.rom'
 						}
 					]
 				},
@@ -120,7 +121,7 @@ export class MemoryModelZx48k extends MemoryModelZxSpectrumBase {
 							index: 0,
 							name: 'ROM',
 							rom: true,
-							filePath: Utility.getExtensionPath() + '/data/48.rom'
+							filePath: WorkspacePaths.getExtensionPath() + '/data/48.rom'
 						}
 					]
 				},
@@ -158,14 +159,14 @@ export class MemoryModelZx128k extends MemoryModelZxSpectrumBase {
 							name: 'ROM0',
 							shortName: 'R0',
 							rom: true,
-							filePath: Utility.getExtensionPath() + '/data/128.rom' 	// 128k editor
+							filePath: WorkspacePaths.getExtensionPath() + '/data/128.rom' 	// 128k editor
 						},
 						{
 							index: 9,
 							name: 'ROM1',
 							shortName: 'R1',
 							rom: true,
-							filePath: Utility.getExtensionPath() + '/data/128.rom',
+							filePath: WorkspacePaths.getExtensionPath() + '/data/128.rom',
 							fileOffset: 0x4000
 						}
 					]

@@ -9,7 +9,7 @@ import {Z88dkLabelParser} from '../src/labels/z88dklabelparser';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZxNext} from '../src/remotes/MemoryModel/zxnextmemorymodels';
-import {Utility} from '../src/misc/utility';
+import {WorkspacePaths} from '../src/misc/workspacepaths';
 
 
 suite('Labels (z88dk)', () => {
@@ -23,7 +23,7 @@ suite('Labels (z88dk)', () => {
 	// Runs before each test in this suite
 	setup(() => {
 		// To work with simpler file names
-		(Utility as any).rootPath = undefined;
+		(WorkspacePaths as any).rootPath = undefined;
 	});
 
 

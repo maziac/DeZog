@@ -6,6 +6,7 @@ import {CallStackFrame} from '../callstackframe';
 import {Remote} from '../remotes/remotebase';
 import {Labels} from '../labels/labels';
 import {Utility} from '../misc/utility';
+import {HexFormat} from '../misc/hexformat';
 import {TimeWait} from '../misc/timewait';
 
 
@@ -625,7 +626,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 				// Now find label for this address
 				// REMARK: Maybe I should check if I could lookup a long address here
 				const labelCallAddrArr = Labels.getLabelsForNumber64k(callAddr);
-				labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr, 4) + 'h';
+				labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : HexFormat.getHexString(callAddr, 4) + 'h';
 			}
 
 			// Check if there also was an interrupt in previous line
@@ -789,7 +790,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			const callAddr = (opcodes >>> 8) & 0xFFFF;
 			// REMARK: Maybe I should check if I could lookup a long address here
 			const labelCallAddrArr = Labels.getLabelsForNumber64k(callAddr);
-			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr, 4) + 'h';
+			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : HexFormat.getHexString(callAddr, 4) + 'h';
 			const name = labelCallAddr;
 			frame = new CallStackFrame(0, nextSP - 2, name);	// pc is set later anyway
 			this.reverseDbgStack.push(frame);
@@ -802,7 +803,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			const callAddr = this.getRstAddress(opcodes);
 			// REMARK: Maybe I should check if I could lookup a long address here
 			const labelCallAddrArr = Labels.getLabelsForNumber64k(callAddr);
-			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr, 4) + 'h';
+			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : HexFormat.getHexString(callAddr, 4) + 'h';
 			const name = labelCallAddr;
 			frame = new CallStackFrame(0, nextSP - 2, name);	// pc is set later anyway
 			this.reverseDbgStack.push(frame);

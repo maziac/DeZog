@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import * as util from 'util';
 import {Remote} from '../remotes/remotebase';
-import {Utility} from '../misc/utility';
+import {HexFormat} from '../misc/hexformat';
+import {Expressions} from '../misc/expressions';
 import {Labels} from '../labels/labels';
 import {MemoryDump, FoundAddresses} from '../misc/memorydump';
 import {Settings} from '../settings/settings';
@@ -109,7 +110,7 @@ export class MemoryDumpView extends BaseView {
 				try {
 					// Change memory
 					const address = parseInt(message.address);
-					const value = Utility.evalExpression(message.value);
+					const value = Expressions.evalExpression(message.value);
 					if (value <= 255 && value >= -255) {
 						await this.changeMemory(address, value);
 					}
@@ -218,7 +219,7 @@ export class MemoryDumpView extends BaseView {
 		startAddress &= this.bankSize - 1;
 		size &= this.bankSize - 1;
 		if (title === undefined)
-			title = Utility.getHexString(startAddress & 0xFFFF, 4) + 'h-' + Utility.getHexString((startAddress + size - 1) & 0xFFFF, 4) + 'h';
+			title = HexFormat.getHexString(startAddress & 0xFFFF, 4) + 'h-' + HexFormat.getHexString((startAddress + size - 1) & 0xFFFF, 4) + 'h';
 		this.memDump.addBlock(startAddress, size, title);
 	}
 
@@ -250,17 +251,17 @@ export class MemoryDumpView extends BaseView {
 	protected async getValueInfoText(address: number, md: MemoryDump) {
 		// Value
 		const value = md.getValueFor(address);
-		const valFormattedString = await Utility.numberFormatted('', value, 1, Settings.launch.memoryViewer.valueHoverFormat, undefined);
+		const valFormattedString = await Expressions.numberFormatted('', value, 1, Settings.launch.memoryViewer.valueHoverFormat, undefined);
 		let text = valFormattedString + '\n';
 
 		// Address
-		const addrFormattedString = await Utility.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined);
+		const addrFormattedString = await Expressions.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined);
 		text += '@\n' + addrFormattedString;
 
 		// Check for last value
 		const prevValue = md.getPrevValueFor(address);
 		if (!isNaN(prevValue)) {
-			text += '\nPrevious value: ' + Utility.getHexString(prevValue, 2) + 'h';
+			text += '\nPrevious value: ' + HexFormat.getHexString(prevValue, 2) + 'h';
 		}
 		// Now send the formatted text to the web view for display.
 		const msg = {
@@ -277,7 +278,7 @@ export class MemoryDumpView extends BaseView {
 	 */
 	protected async getAddressInfoText(address: number) {
 		// Address
-		const formattedString = await Utility.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined);
+		const formattedString = await Expressions.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined);
 		// Now send the formatted text to the web view for display.
 		const msg = {
 			command: 'addressInfoText',
@@ -347,8 +348,8 @@ export class MemoryDumpView extends BaseView {
 				addrValues.forEach(addrVal => {
 					allAddrValsText.push([
 						addrVal[0],
-						Utility.getHexString(addrVal[1], 2),
-						Utility.getHTMLChar(addrVal[1])
+						HexFormat.getHexString(addrVal[1], 2),
+						HexFormat.getHTMLChar(addrVal[1])
 					]);
 				});
 			}
@@ -1137,7 +1138,7 @@ window.addEventListener('load', () => {
 			// Check start of line
 			if (startOfLine) {
 				// start of a new line
-				let addrText = Utility.getHexString(addr64k, 4) + ':';
+				let addrText = HexFormat.getHexString(addr64k, 4) + ':';
 				table += '<tr>\n<td class="addressClmn" addressLine="' + addr64k + '" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
 				table += '<td> </td>\n';
 				ascii = '';
@@ -1152,7 +1153,7 @@ window.addEventListener('load', () => {
 
 			// Print value
 			const value = data[k];
-			let valueText = Utility.getHexString(value, 2);
+			let valueText = HexFormat.getHexString(value, 2);
 
 			// Check if in address range
 			if (metaBlock.isInRange(address))
@@ -1169,7 +1170,7 @@ window.addEventListener('load', () => {
 
 
 			// Convert to ASCII (->html)
-			ascii += '<span address="' + address + '" onmouseover="mouseOverValue(this)">' + Utility.getHTMLChar(value) + '</span>';
+			ascii += '<span address="' + address + '" onmouseover="mouseOverValue(this)">' + HexFormat.getHTMLChar(value) + '</span>';
 
 			// Check end of line
 			if (i == clmns - 1) {

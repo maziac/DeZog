@@ -10,7 +10,7 @@ import {MemoryModelAllRam, MemoryModelUnknown} from '../src/remotes/MemoryModel/
 import {MemoryModelZx128k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zxspectrummemorymodels';
 import {MemoryModelZxNext} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import {CustomMemoryType} from './../src/settings/settingscustommemory';
-import {Utility} from '../src/misc/utility';
+import {WorkspacePaths} from '../src/misc/workspacepaths';
 
 
 suite('Labels (sjasmplus)', () => {
@@ -18,7 +18,7 @@ suite('Labels (sjasmplus)', () => {
 	// Runs before each test in this suite
 	setup(() => {
 		// To work with simpler file names
-		(Utility as any).rootPath = undefined;
+		(WorkspacePaths as any).rootPath = undefined;
 	});
 
 	suite('Labels', () => {

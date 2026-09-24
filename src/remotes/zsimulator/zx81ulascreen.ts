@@ -156,7 +156,7 @@ export class Zx81UlaScreen extends UlaScreen {
 		this.IOWR = true;
 		this.A0 = (port & 0x0001) !== 0;
 		this.A1 = (port & 0x0002) !== 0;
-		//logOn && this.log('outPort($' + Utility.getHexString(port, 4) + ', ' + _data.toString(2).padStart(8, '0') + ')');
+		//logOn && this.log('outPort($' + HexFormat.getHexString(port, 4) + ', ' + _data.toString(2).padStart(8, '0') + ')');
 	}
 
 
@@ -169,7 +169,7 @@ export class Zx81UlaScreen extends UlaScreen {
 	protected inPort(port: number): number | undefined {
 		this.IORD = true;
 		this.A0 = ((port & 0x0001) !== 0);
-		//logOn && this.log('inPort($' + Utility.getHexString(port, 4) + ')');
+		//logOn && this.log('inPort($' + HexFormat.getHexString(port, 4) + ')');
 		return undefined;
 	}
 

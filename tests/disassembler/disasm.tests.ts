@@ -4,7 +4,7 @@ import {readFileSync} from 'fs';
 import {Format} from '../../src/disassembler/core/format';
 import {AsmNode} from '../../src/disassembler/core/asmnode';
 import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
-import {Utility} from '../../src/misc/utility';
+import {HexFormat} from '../../src/misc/hexformat';
 import {MemoryModelAllRam} from '../../src/remotes/MemoryModel/genericmemorymodels';
 import {Settings} from '../../src/settings/settings';
 import {Z80Registers, Z80RegistersClass} from '../../src/remotes/z80registers';
@@ -1369,10 +1369,10 @@ suite('Disassembler', () => {
 			for (const node of sortedNodes) {
 				// Print label and address:
 				let addr = node.start;
-				console.log(Utility.getHexString(addr, 4) + ' ' + node.label + ':');
+				console.log(HexFormat.getHexString(addr, 4) + ' ' + node.label + ':');
 				// Loop over all instructions
 				for (const opcode of node.instructions) {
-					console.log(Utility.getHexString(addr, 4) + '\t' + opcode.disassembledText);
+					console.log(HexFormat.getHexString(addr, 4) + '\t' + opcode.disassembledText);
 					// Next
 					addr += opcode.length;
 				}

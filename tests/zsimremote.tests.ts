@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import {suite, test, setup} from 'mocha';
 import {ZSimRemote} from '../src/remotes/zsimulator/zsimremote';
 import {Settings} from '../src/settings/settings';
-import {Utility} from '../src/misc/utility';
+import {WorkspacePaths} from '../src/misc/workspacepaths';
 import {Z80RegistersClass} from '../src/remotes/z80registers';
 import {MemoryModelColecoVision} from '../src/remotes/MemoryModel/colecovisionmemorymodels';
 import {SpectrumUlaScreen} from '../src/remotes/zsimulator/spectrumulascreen';
@@ -16,7 +16,7 @@ suite('ZSimRemote', () => {
 	suite('48k', () => {
 
 		setup(() => {
-			Utility.setExtensionPath('.');
+			WorkspacePaths.setExtensionPath('.');
 			const cfg: any = {
 				remoteType: 'zsim',
 				zsim: {
@@ -70,7 +70,7 @@ suite('ZSimRemote', () => {
 	suite('memoryPagingControl, ZX128K', () => {
 
 		setup(() => {
-			Utility.setExtensionPath('.');
+			WorkspacePaths.setExtensionPath('.');
 			const cfg: any = {
 				zsim: {
 					zxKeyboard: true,
@@ -88,7 +88,7 @@ suite('ZSimRemote', () => {
 			};
 			const launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters(launch);
-			Utility.setRootPath('/');	// Does not matter but must be set.
+			WorkspacePaths.setRootPath('/');	// Does not matter but must be set.
 			zsim = new ZSimRemote(launch);
 			zsimAny = zsim as any;
 			zsimAny.configureMachine(Settings.launch.zsim);
@@ -206,7 +206,7 @@ suite('ZSimRemote', () => {
 	suite('tbblue', () => {
 		suite('REG_TURBO_MODE', () => {
 			setup(() => {
-				Utility.setExtensionPath('.');
+				WorkspacePaths.setExtensionPath('.');
 				const cfg: any = {
 					remoteType: 'zsim',
 					memoryModel: 'RAM',
@@ -225,7 +225,7 @@ suite('ZSimRemote', () => {
 				};
 				const launch = Settings.Init(cfg);
 				Z80RegistersClass.createRegisters(launch);
-				Utility.setRootPath('/');	// Does not matter but must be set.
+				WorkspacePaths.setRootPath('/');	// Does not matter but must be set.
 				zsim = new ZSimRemote(launch) as any;
 				zsimAny = zsim as any;
 				zsimAny.configureMachine(Settings.launch.zsim);
@@ -338,7 +338,7 @@ suite('ZSimRemote', () => {
 	suite('tbblueMemoryManagementSlots', () => {
 
 		setup(() => {
-			Utility.setExtensionPath('.');
+			WorkspacePaths.setExtensionPath('.');
 			const cfg: any = {
 				remoteType: 'zsim',
 				zsim: {
@@ -358,7 +358,7 @@ suite('ZSimRemote', () => {
 			Settings.launch = Settings.Init(cfg);
 			const launch = Settings.launch;
 			Z80RegistersClass.createRegisters(launch);
-			Utility.setRootPath('/');	// Does not matter but must be set.
+			WorkspacePaths.setRootPath('/');	// Does not matter but must be set.
 			zsim = new ZSimRemote(launch) as any;
 			zsimAny = zsim as any;
 			zsimAny.configureMachine(Settings.launch.zsim);
@@ -449,7 +449,7 @@ suite('ZSimRemote', () => {
 	suite('COLECOVISION', () => {
 
 		setup(() => {
-			Utility.setExtensionPath('.');
+			WorkspacePaths.setExtensionPath('.');
 			const cfg: any = {
 				remoteType: 'zsim',
 				zsim: {

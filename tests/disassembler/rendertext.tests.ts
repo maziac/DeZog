@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import {suite, test, setup} from 'mocha';
 import {readFileSync} from 'fs';
-import {Utility} from '../../src/misc/utility';
+import {HexFormat} from '../../src/misc/hexformat';
 import {Format} from '../../src/disassembler/core/format';
 import {RenderText} from '../../src/disassembler/rendertext';
 import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
@@ -31,7 +31,7 @@ suite('Disassembler - RenderText', () => {
 		disasm = new SmartDisassembler();
 		disasm.funcGetLabel = addr64k => undefined;
 		disasm.funcFormatLongAddress = (addr64k) => {
-			let addrString = Utility.getHexString(addr64k, 4);
+			let addrString = HexFormat.getHexString(addr64k, 4);
 			const slotBank = (disasm as any).addressesSlotBankInfo[addr64k]
 			if (!slotBank.singleBank) {
 				addrString += '.' + (slotBank.slot + 1);	// Fake a bank number by simply using the slot number.
@@ -812,10 +812,10 @@ suite('Disassembler - RenderText', () => {
 					// Expected line
 					let expected;
 					if ((addr64k & 0x7FFF) < 500) {
-						expected = Utility.getHexString(addr64k, 4) + ".1 FF RST RST_38";
+						expected = HexFormat.getHexString(addr64k, 4) + ".1 FF RST RST_38";
 					}
 					else {
-						expected = Utility.getHexString(addr64k, 4) + ".1 00 NOP";
+						expected = HexFormat.getHexString(addr64k, 4) + ".1 00 NOP";
 					}
 					// Check
 					const actual = cText[line];
@@ -838,10 +838,10 @@ suite('Disassembler - RenderText', () => {
 					// Expected line
 					let expected;
 					if ((addr64k & 0x7FFF) < 500) {
-						expected = Utility.getHexString(addr64k, 4) + ".1 FF RST RST_38";
+						expected = HexFormat.getHexString(addr64k, 4) + ".1 FF RST RST_38";
 					}
 					else {
-						expected = Utility.getHexString(addr64k, 4) + ".1 00 NOP";
+						expected = HexFormat.getHexString(addr64k, 4) + ".1 00 NOP";
 					}
 					// Check
 					const actual = cText[line];

@@ -1,4 +1,5 @@
 import {Utility} from '../misc/utility';
+import {Expressions} from '../misc/expressions';
 import {SettingsParameters} from '../settings/settings';
 import {DecodeRegisterData, RegisterData} from './decoderegisterdata';
 
@@ -338,7 +339,7 @@ export class Z80RegistersClass {
 			rLen = 1;	// This is IXH, IXL, IYH, IYL
 
 		Utility.assert(this.valid());
-		const res = Utility.numberFormattedSync(value, rLen, format, false, reg);
+		const res = Expressions.numberFormattedSync(value, rLen, format, false, reg);
 		return res;
 	}
 

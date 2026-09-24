@@ -1,7 +1,7 @@
 import {LabelsClass} from '../labels/labels';
 import {Z80RegistersClass} from '../remotes/z80registers';
 import {RemoteBase} from '../remotes/remotebase';
-import {Utility} from '../misc/utility';
+import {HexFormat} from '../misc/hexformat';
 
 
 /** Evaluates log expressions.
@@ -227,10 +227,10 @@ export class LogEval {
 				retValue = value.toString();
 				break;
 			case 'hex8':
-				retValue = '0x' + Utility.getHexString(value & 0xFF, 2);
+				retValue = '0x' + HexFormat.getHexString(value & 0xFF, 2);
 				break;
 			case 'hex16':
-				retValue = '0x' + Utility.getHexString(value & 0xFFFF, 4);
+				retValue = '0x' + HexFormat.getHexString(value & 0xFFFF, 4);
 				break;
 			case 'int8': {
 				let iResult = value & 0xFF;

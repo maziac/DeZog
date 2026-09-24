@@ -3,6 +3,7 @@ import * as util from 'util';
 import {ZxNextSpritePatternsView} from './zxnextspritepatternsview';
 import {ImageConvert} from '../misc/imageconvert';
 import {Utility} from '../misc/utility';
+import {HexFormat} from '../misc/hexformat';
 
 
 /// Max. number of sprites.
@@ -322,7 +323,7 @@ class SpriteData {
 	 * Returns the palette offset in hex.
 	 */
 	public getPaletteOffsetString() {
-		const hex = Utility.getHexString(this.paletteOffset, 2) + 'h';
+		const hex = HexFormat.getHexString(this.paletteOffset, 2) + 'h';
 		return hex;
 	}
 

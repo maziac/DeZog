@@ -1,4 +1,4 @@
-import {Utility} from '../misc/utility';
+import {Expressions} from '../misc/expressions';
 import {MemoryModel} from '../remotes/MemoryModel/memorymodel';
 import {MemoryModelAllRam, MemoryModelUnknown} from '../remotes/MemoryModel/genericmemorymodels';
 import {MemoryModelZx48k} from '../remotes/MemoryModel/zxspectrummemorymodels';
@@ -190,7 +190,7 @@ export class ReverseEngineeringLabelParser extends LabelParserBase {
 			// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
 			try {
 				// Evaluate
-				let value = Utility.evalExpression(valueString, false);
+				let value = Expressions.evalExpression(valueString, false);
 				// Restrict label to 64k (Note: >64k is interpreted as long address)
 				value &= 0xFFFF;
 				// Add EQU

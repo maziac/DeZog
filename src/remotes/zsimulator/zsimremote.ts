@@ -4,6 +4,8 @@ import {Z80Ports} from './z80ports';
 import {Z80Cpu} from './z80cpu';
 import {SettingsParameters, ZSimType} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
+import {HexFormat} from '../../misc/hexformat';
+import {WorkspacePaths} from '../../misc/workspacepaths';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {MemBuffer} from '../../misc/membuffer';
 import {CodeCoverageArray} from './codecovarray';
@@ -499,7 +501,7 @@ export class ZSimRemote extends DzrpRemote {
 		if (zx81LoadOverlay) {
 			// Create the zxnDMA object
 			this.zx81LoadOverlay = new Zx81LoadOverlay(this.z80Cpu);
-			this.zx81LoadOverlay.setFolder(Utility.getRootPath());
+			this.zx81LoadOverlay.setFolder(WorkspacePaths.getRootPath());
 			this.executors.unshift(this.zx81LoadOverlay);	// Before z80cpu
 			this.zx81LoadOverlay.on('message', txt => {
 				this.emit('debug_console', txt);
@@ -1433,12 +1435,12 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 					throw new Error("Wrong number of arguments: port and value expected.");
 				}
 				// Get port and value
-				const port = Utility.parseValue(tokens[0]);
-				const value = Utility.parseValue(tokens[1]);
+				const port = HexFormat.parseValue(tokens[0]);
+				const value = HexFormat.parseValue(tokens[1]);
 				// Set port
 				this.z80Cpu.ports.write(port, value);
 				// Return
-				response = "Wrote " + Utility.getHexString(value, 2) + "h to port " + Utility.getHexString(port, 4) + "h";
+				response = "Wrote " + HexFormat.getHexString(value, 2) + "h to port " + HexFormat.getHexString(port, 4) + "h";
 				return response;
 			}
 			if (cmd_name === "in") {
@@ -1447,11 +1449,11 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 					throw new Error("Wrong number of arguments: port expected.");
 				}
 				// Get port and value
-				const port = Utility.parseValue(tokens[0]);
+				const port = HexFormat.parseValue(tokens[0]);
 				// Get port
 				const value = this.z80Cpu.ports.read(port);
 				// Return
-				response = "Read port " + Utility.getHexString(port, 4) + "h: " + Utility.getHexString(value, 2) + "h";
+				response = "Read port " + HexFormat.getHexString(port, 4) + "h: " + HexFormat.getHexString(value, 2) + "h";
 				return response;
 			}
 			if (cmd_name === "info") {
@@ -1466,7 +1468,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 					throw new Error("Wrong number of arguments.");
 				}
 				const subcmd = tokens[0];
-				const value = Utility.parseValue(tokens[1]);
+				const value = HexFormat.parseValue(tokens[1]);
 				if (subcmd === "set")
 					this.passedTstates = value;
 				else if (subcmd === "add")
@@ -1493,7 +1495,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 					// No arguments -> get all variables
 					values = zx81BasicVars.getAllVariablesWithValues();
 					const size = varBuffer.length;
-					response = `BASIC-vars @0x${Utility.getHexString(varsStart, 4)} (${varsStart}), size=0x${Utility.getHexString(size, 4)} (${size}):\n`;
+					response = `BASIC-vars @0x${HexFormat.getHexString(varsStart, 4)} (${varsStart}), size=0x${HexFormat.getHexString(size, 4)} (${size}):\n`;
 				}
 				else {
 					// Get certain variables

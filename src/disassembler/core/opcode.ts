@@ -3,7 +3,7 @@ import {strict as assert} from 'assert';
 import {BaseMemory} from './basememory';
 import {NumberType} from './numbertype'
 import {Format} from './format';
-import {Utility} from '../../misc/utility';
+import {HexFormat} from '../../misc/hexformat';
 
 
 /// Classifies opcodes.
@@ -1961,7 +1961,7 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 
 			case 5: // REG_PERIPHERAL_1
 				// Is a bitfield. Decoding would create a very long line, therefore only a conversion into binary is done.
-				valuename = Utility.getBitsString(regValue, 8) + "b";
+				valuename = HexFormat.getBitsString(regValue, 8) + "b";
 				break;
 
 			case 6: // REG_PERIPHERAL_2
@@ -2088,7 +2088,7 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 
 			case 67: // REG_PALETTE_CONTROL
 				// Is a bitfield. Decoding would create a very long line, therefore only a conversion into binary is done.
-				valuename = Utility.getBitsString(regValue, 8) + "b";
+				valuename = HexFormat.getBitsString(regValue, 8) + "b";
 				break;
 
 			case 68: // REG_PALETTE_VALUE_16

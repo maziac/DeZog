@@ -1,5 +1,6 @@
 import * as fs from "fs";
-import {Utility} from "../../misc/utility";
+import {HexFormat} from "../../misc/hexformat";
+import {WorkspacePaths} from "../../misc/workspacepaths";
 import {MemoryModelState} from "./memorymodel";
 import {MemoryModelZxSpectrumBase} from "./zxspectrummemorymodels";
 
@@ -30,7 +31,7 @@ export class MemoryModelZxNextBase extends MemoryModelZxSpectrumBase {
 			let bank = this.parseShortNameForBank(bankString);
 			const banks = this.getBanksFor(addr64k);
 			if (!banks.has(bank))
-				throw Error("Bank '" + bankString + "' is not reachable from address " + Utility.getHexString(addr64k, 4) + ".");
+				throw Error("Bank '" + bankString + "' is not reachable from address " + HexFormat.getHexString(addr64k, 4) + ".");
 			return bank;
 		}
 
@@ -157,7 +158,7 @@ class RomSwitching extends MemoryModelState {
 	constructor(slots: number[], memoryBanks: Uint8Array[]) {
 		super(slots, memoryBanks);
 		// Load the ROM
-		const filePath = Utility.getExtensionPath() + '/data/128.rom';
+		const filePath = WorkspacePaths.getExtensionPath() + '/data/128.rom';
 		this.rom128Bin = Uint8Array.from(fs.readFileSync(filePath));
 		// Switch initially
 		this.switchRomBank(memoryBanks);

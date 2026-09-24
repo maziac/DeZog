@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import {MemoryDump} from '../misc/memorydump';
-import {Utility} from "../misc/utility";
+import {HexFormat} from "../misc/hexformat";
+import {WorkspacePaths} from "../misc/workspacepaths";
+import {Expressions} from "../misc/expressions";
 import {Remote} from "../remotes/remotebase";
 import {Settings} from "../settings/settings";
 import {BaseView} from '../views/baseview';
@@ -54,13 +56,13 @@ export class MemoryCommands {
 
 		// Address
 		const addressString = tokens[0];
-		const startAddress = Utility.evalExpression(addressString);
+		const startAddress = Expressions.evalExpression(addressString);
 		if (startAddress < 0 || startAddress > 0xFFFF)
 			throw Error("Address (" + startAddress + ") out of range.");
 
 		// Size
 		const sizeString = tokens[1];
-		const size = Utility.evalExpression(sizeString);
+		const size = Expressions.evalExpression(sizeString);
 		if (size < 0 || size > 0xFFFF)
 			throw Error("Size (" + size + ") out of range.");
 
@@ -104,14 +106,14 @@ export class MemoryCommands {
 		const clmns = 16;
 		for (const value of values) {
 			// Print offset
-			output += 'DELTA: ' + value.delta + ' (' + Utility.getHexString(value.delta & 0xFF, 2) + 'h) @' + Utility.getHexString(value.address, 4) + 'h\n';
+			output += 'DELTA: ' + value.delta + ' (' + HexFormat.getHexString(value.delta & 0xFF, 2) + 'h) @' + HexFormat.getHexString(value.address, 4) + 'h\n';
 			// Print complete range
 			for (let i = 0; i < size;) {
 				// Print address
 				const addr = startAddress + i;
 				const remainder = addr % clmns;
 				const addrShow = addr - remainder;
-				const addrString = Utility.getHexString(addrShow, 4);
+				const addrString = HexFormat.getHexString(addrShow, 4);
 				output += addrString + ': ';
 
 				// Print hex and ascii:
@@ -128,8 +130,8 @@ export class MemoryCommands {
 					}
 					// Calculate value with offset
 					const modValue = (data[i++] + value.delta) & 0xFF;
-					output += Utility.getHexString(modValue, 2) + ' ';
-					ascii += Utility.getASCIIChar(modValue);
+					output += HexFormat.getHexString(modValue, 2) + ' ';
+					ascii += HexFormat.getASCIIChar(modValue);
 				}
 				// Add ASCII
 				output += ' ' + ascii + '\n';
@@ -159,13 +161,13 @@ export class MemoryCommands {
 
 		// Address
 		const addressString = tokens[0];
-		const address = Utility.evalExpression(addressString);
+		const address = Expressions.evalExpression(addressString);
 		if (address < 0 || address > 0xFFFF)
 			throw Error("Address (" + address + ") out of range.");
 
 		// Size
 		const sizeString = tokens[1];
-		const size = Utility.evalExpression(sizeString);
+		const size = Expressions.evalExpression(sizeString);
 		if (size < 0 || size > 0xFFFF)
 			throw Error("Size (" + size + ") out of range.");
 
@@ -227,7 +229,7 @@ export class MemoryCommands {
 					value += data[i + 1] << 8;
 			}
 			if (hex)
-				output += Utility.getHexString(value, 2 * unitSize) + ' ';
+				output += HexFormat.getHexString(value, 2 * unitSize) + ' ';
 			else
 				output += value + ' ';
 		}
@@ -248,18 +250,18 @@ export class MemoryCommands {
 	protected static async memSet(bank: number | undefined, valSize: number, addressString: string, valueString: string, repeatString?: string, endiannessString?: string) {
 
 		// Address
-		const address = Utility.evalExpression(addressString);
+		const address = Expressions.evalExpression(addressString);
 		if (address < 0 || address > 0xFFFF)
 			throw Error("Address (" + address + ") out of range.");
 
 		// Value
-		const value = Utility.evalExpression(valueString);
+		const value = Expressions.evalExpression(valueString);
 		const maxValue = 2 ** (valSize * 8);
 		if (value >= maxValue || value < (-maxValue / 2))
 			throw Error("Value (" + value + ") too big (or too small).");
 
 		// Repeat
-		const repeat = (repeatString != undefined) ? Utility.evalExpression(repeatString) : 1;
+		const repeat = (repeatString != undefined) ? Expressions.evalExpression(repeatString) : 1;
 		const totalSize = valSize * repeat;
 		if (totalSize <= 0 || totalSize > 0xFFFF)
 			throw Error("Repetition (" + repeat + ") out of range.");
@@ -371,7 +373,7 @@ export class MemoryCommands {
 
 		// Address
 		const addressString = tokens[0];
-		const address = Utility.evalExpression(addressString);
+		const address = Expressions.evalExpression(addressString);
 		if (address < 0 || address > 0xFFFF)
 			throw Error("Address (" + address + ") out of range.");
 
@@ -381,8 +383,8 @@ export class MemoryCommands {
 			throw Error("No filename given.");
 
 		// Read data from file
-		const relPath = Utility.getRelTmpFilePath(filename);
-		const absPath = Utility.getAbsFilePath(relPath);
+		const relPath = WorkspacePaths.getRelTmpFilePath(filename);
+		const absPath = WorkspacePaths.getAbsFilePath(relPath);
 		try {
 			const data = fs.readFileSync(absPath);
 			// Write data to memory
@@ -416,13 +418,13 @@ export class MemoryCommands {
 
 		// Address
 		const addressString = tokens[0];
-		const address = Utility.evalExpression(addressString);
+		const address = Expressions.evalExpression(addressString);
 		if (address < 0 || address > 0xFFFF)
 			throw Error("Address (" + address + ") out of range.");
 
 		// Size
 		const sizeString = tokens[1];
-		const size = Utility.evalExpression(sizeString);
+		const size = Expressions.evalExpression(sizeString);
 		if (size < 0 || size > 0x10000)
 			throw Error("Size (" + size + ") out of range.");
 
@@ -435,8 +437,8 @@ export class MemoryCommands {
 		const data = await this.readMemory(bank, address, size);
 
 		// Save to .tmp/filename
-		const relPath = Utility.getRelTmpFilePath(filename);
-		const absPath = Utility.getAbsFilePath(relPath);
+		const relPath = WorkspacePaths.getRelTmpFilePath(filename);
+		const absPath = WorkspacePaths.getAbsFilePath(relPath);
 		fs.writeFileSync(absPath, data);
 
 		// Send response
@@ -452,7 +454,7 @@ export class MemoryCommands {
 		let bank: number | undefined = undefined;
 		if (tokens.length > 0 && tokens[0].startsWith("bank=")) {
 			const arr = tokens[0].split("=");
-			bank = Utility.evalExpression(arr[1]);
+			bank = Expressions.evalExpression(arr[1]);
 			tokens.shift();
 		}
 		return bank;
@@ -514,13 +516,13 @@ export class MemoryCommands {
 		for (let k = 0; k < tokens.length; k += 2) {
 			// Address
 			const addressString = tokens[k];
-			const address = Utility.evalExpression(addressString);
+			const address = Expressions.evalExpression(addressString);
 			addrSizes.push(address);
 
 			// Size
 			const sizeString = tokens[k + 1];
 			// Allow size of 0x10000
-			const size = Utility.evalExpression(sizeString);
+			const size = Expressions.evalExpression(sizeString);
 			// Error Handling: size too big
 			if (size > 0x10000) {
 				throw new Error("Size too big: '" + sizeString + "'.");
@@ -580,13 +582,13 @@ export class MemoryCommands {
 		for (let k = 0; k < tokens.length; k += 2) {
 			// Address
 			const addressString = tokens[k];
-			const address = Utility.evalExpression(addressString);
+			const address = Expressions.evalExpression(addressString);
 			addrSizes.push(address);
 
 			// Size
 			const sizeString = tokens[k + 1];
 			// Allow size of 0x10000
-			const size = Utility.evalExpression(sizeString);
+			const size = Expressions.evalExpression(sizeString);
 			// Error Handling: size too big
 			if (size > 0x10000) {
 				throw new Error("Size too big: '" + sizeString + "'.");
@@ -651,13 +653,13 @@ export class MemoryCommands {
 		for (let k = 0; k < tokens.length; k += 2) {
 			// Address
 			const addressString = tokens[k];
-			const address = Utility.evalExpression(addressString);
+			const address = Expressions.evalExpression(addressString);
 			addrSizes.push(address);
 
 			// Size
 			const sizeString = tokens[k + 1];
 			// Parse size
-			const size = Utility.evalExpression(sizeString);
+			const size = Expressions.evalExpression(sizeString);
 			// Error Handling: size too big
 			if (size > 0x8000) {	// $8000 words = $10000 bytes
 				throw new Error("Size too big: '" + sizeString + "'.");

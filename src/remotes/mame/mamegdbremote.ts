@@ -5,6 +5,7 @@ import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Log, LogTransport} from '../../log';
 import {Socket} from 'net';
 import {Utility} from '../../misc/utility';
+import {HexFormat} from '../../misc/hexformat';
 import {MameType, Settings} from '../../settings/settings';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
@@ -507,7 +508,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		if (i < 0)
 			throw Error("No break address (PC) found.");
 		i += 3;	// Skip '0b:'
-		const pc64k = Utility.parseHexWordLE(packetData, i);
+		const pc64k = HexFormat.parseHexWordLE(packetData, i);
 
 		// Get break reason
 		let k = packetData.indexOf(':');
@@ -543,7 +544,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			checkSum += packetData.charCodeAt(i);
 		checkSum &= 0xFF;	// modulo 256
 		// Convert to hex string
-		const hexString = Utility.getHexString(checkSum, 2);
+		const hexString = HexFormat.getHexString(checkSum, 2);
 		return hexString;
 	}
 
@@ -1020,7 +1021,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			const end = i + sendSize;
 			for (; i < end; i++) {
 				const val = dataArray[i];
-				cmd += Utility.getHexString(val, 2);
+				cmd += HexFormat.getHexString(val, 2);
 			}
 			// Send to MAME
 			await this.sendPacketDataOk(cmd);

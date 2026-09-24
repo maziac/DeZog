@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import {suite, test, setup} from 'mocha';
-import {Utility} from '../src/misc/utility';
+import {WorkspacePaths} from '../src/misc/workspacepaths';
 import {DzrpTransportRemote} from '../src/remotes/dzrptransport/dzrptransportremote';
 
 
@@ -14,7 +14,7 @@ suite('DzrpTransportRemote', () => {
 	suite('dataReceived', () => {
 
 		setup(() => {
-			Utility.setExtensionPath('.');
+			WorkspacePaths.setExtensionPath('.');
 			const cfg = {
 				serialPort: 'some-port',
 				timeout: 1000

@@ -1,6 +1,7 @@
 import {ListConfigBase, AsmConfigBase} from './../settings/settings';
 import * as fs from 'fs';
 import {Utility} from '../misc/utility';
+import {WorkspacePaths} from '../misc/workspacepaths';
 import {UnifiedPath} from '../misc/unifiedpath';
 import {SourceFileEntry, ListFileLine} from './labels';
 import {minimatch} from 'minimatch';
@@ -214,7 +215,7 @@ export class LabelParserBase {
 	 */
 	protected parseAllLabelsAndAddresses() {
 		// Loop through all lines
-		const fileName = Utility.getRelFilePath(this.config.path);
+		const fileName = WorkspacePaths.getRelFilePath(this.config.path);
 		const listLinesFull = fs.readFileSync(this.config.path).toString().split('\n');
 		// Strip away windows line endings
 		const listLines = listLinesFull.map(line => line.trimEnd());
@@ -342,7 +343,7 @@ export class LabelParserBase {
 	protected listFileModeFinish() {
 		// Use list file directly instead of real filenames.
 		const lineArray = new Array<number>();
-		const fileName = Utility.getRelFilePath(this.config.path);
+		const fileName = WorkspacePaths.getRelFilePath(this.config.path);
 		this.lineArrays.set(fileName, lineArray);
 		for (const entry of this.listFile) {
 			// Create label -> file location association
@@ -387,7 +388,7 @@ export class LabelParserBase {
 			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
 				//				if(entry.size > 0)	// Only real code gets an address, e.g. not just a label without opcode
 				lineArray[entry.lineNr] = entry.longAddr;
-				//console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));
+				//console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+HexFormat.getHexString(entry.addr, 4));
 			}
 		}
 	}
@@ -621,11 +622,11 @@ export class LabelParserBase {
 			// Include the parent file dir in search
 			const parentFileName = this.includeFileStack[this.includeFileStack.length - 1].fileName;
 			const dirName = UnifiedPath.dirname(parentFileName);
-			fileName = Utility.getRelSourceFilePath(includeFileName, [dirName, ...config.srcDirs]);
+			fileName = WorkspacePaths.getRelSourceFilePath(includeFileName, [dirName, ...config.srcDirs]);
 		}
 		else {
 			// Main file
-			fileName = Utility.getRelSourceFilePath(includeFileName, config.srcDirs);
+			fileName = WorkspacePaths.getRelSourceFilePath(includeFileName, config.srcDirs);
 		}
 
 		this.includeFileStack.push({fileName, includeFileName, lineNr: 0});

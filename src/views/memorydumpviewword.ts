@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as util from 'util';
-import {Utility} from '../misc/utility';
+import {HexFormat} from '../misc/hexformat';
+import {Bytes} from '../misc/bytes';
+import {Expressions} from '../misc/expressions';
 import {Labels} from '../labels/labels';
 import {MetaBlock} from '../misc/metablock';
 import {Settings} from '../settings/settings';
@@ -65,11 +67,11 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	protected async getValueInfoText(address: number) {
 		// Value
 		const value = this.memDump.getWordValueFor(address, this.littleEndian);
-		const valFormattedString = await Utility.numberFormatted('', value, 2, Settings.launch.memoryViewer.valueHoverFormat, undefined);
+		const valFormattedString = await Expressions.numberFormatted('', value, 2, Settings.launch.memoryViewer.valueHoverFormat, undefined);
 		let text = valFormattedString + '\n';
 
 		// Address
-		const addrFormattedString = await Utility.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined);
+		const addrFormattedString = await Expressions.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined);
 		text += '@\n' + addrFormattedString;
 
 		// Check for last value
@@ -77,7 +79,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		if (!isNaN(prevValue)) {
 			if (prevValue != value) {
 				// has changed so add the last value to the hover text
-				text += '\nPrevious value: ' + Utility.getHexString(prevValue, 4) + 'h';
+				text += '\nPrevious value: ' + HexFormat.getHexString(prevValue, 4) + 'h';
 			}
 		}
 		// Now send the formatted text to the web view for display.
@@ -155,14 +157,14 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			// Check start of line
 			if (i == 0) {
 				// start of a new line
-				let addrText = Utility.getHexString(addr64k, 4) + ':';
+				let addrText = HexFormat.getHexString(addr64k, 4) + ':';
 				table += '<tr>\n<td class="addressClmn" addressLine="' + addr64k + '" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
 				table += '<td> </td>\n';
 			}
 
 			// Print value
-			const value = Utility.getUintFromMemory(data, k, 2, this.littleEndian);
-			let valueText = Utility.getHexString(value, 4);
+			const value = Bytes.getUintFromMemory(data, k, 2, this.littleEndian);
+			let valueText = HexFormat.getHexString(value, 4);
 
 			// Split the text in 2 parts
 			const addr64k2 = (addr64k + 1) & 0xFFFF;
@@ -474,7 +476,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				try {
 					// Change memory: value is a word
 					const address = parseInt(message.address);
-					const value = Utility.evalExpression(message.value);
+					const value = Expressions.evalExpression(message.value);
 					// Write a word: 2 bytes (no check required, evalExpression masks internally with 0xFFFF)
 					await this.changeMemory(address, value & 0xFF);
 					await this.changeMemory((address + 1) & 0xFFFF, (value >> 8) & 0xFF);	// Masking is still required here

@@ -1,5 +1,5 @@
 import {MemoryDump} from '../misc/memorydump';
-import {Utility} from '../misc/utility';
+import {HexFormat} from '../misc/hexformat';
 import {MemoryDumpView} from './memorydumpview';
 
 
@@ -88,7 +88,7 @@ export class MemoryDiffView extends MemoryDumpView {
 		startAddress &= this.bankSize - 1;
 		size &= this.bankSize - 1;
 		if (title === undefined)
-			title = Utility.getHexString(startAddress & 0xFFFF, 4) + 'h-' + Utility.getHexString((startAddress + size - 1) & 0xFFFF, 4) + 'h';
+			title = HexFormat.getHexString(startAddress & 0xFFFF, 4) + 'h-' + HexFormat.getHexString((startAddress + size - 1) & 0xFFFF, 4) + 'h';
 		this.memDump.addBlockWithoutBoundary(startAddress, size, title);
 	}
 

@@ -9,7 +9,7 @@ import {MemoryModelZx128k, MemoryModelZx48k} from '../src/remotes/MemoryModel/zx
 import {MemoryModelZxNext} from '../src/remotes/MemoryModel/zxnextmemorymodels';
 import {MemoryModel} from '../src/remotes/MemoryModel/memorymodel';
 import {ReverseEngineeringLabelParser} from '../src/labels/reverseengineeringlabelparser';
-import {Utility} from '../src/misc/utility';
+import {WorkspacePaths} from '../src/misc/workspacepaths';
 
 
 suite('Labels (revEng)', () => {
@@ -29,7 +29,7 @@ suite('Labels (revEng)', () => {
 	// Runs before each test in this suite
 	setup(() => {
 		// To work with simpler file names
-		(Utility as any).rootPath = undefined;
+		(WorkspacePaths as any).rootPath = undefined;
 	});
 
 	suite('Labels', () => {

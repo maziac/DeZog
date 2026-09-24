@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import {suite, test, setup} from 'mocha';
 import {Opcode} from '../../src/disassembler/core/opcode';
 import {AsmNode} from '../../src/disassembler/core/asmnode';
-import {Utility} from '../../src/misc/utility';
+import {HexFormat} from '../../src/misc/hexformat';
 import {RenderBase} from '../../src/disassembler/renderbase';
 import {SmartDisassembler} from '../../src/disassembler/smartdisassembler';
 
@@ -14,7 +14,7 @@ suite('Disassembler - RenderBase', () => {
 	setup(() => {
 		const disasm = new SmartDisassembler();
 		disasm.funcGetLabel = addr64k => undefined;
-		disasm.funcFormatLongAddress = addr64k => 'LONG' + Utility.getHexString(addr64k, 4);
+		disasm.funcFormatLongAddress = addr64k => 'LONG' + HexFormat.getHexString(addr64k, 4);
 		r = new RenderBase(disasm);
 	});
 

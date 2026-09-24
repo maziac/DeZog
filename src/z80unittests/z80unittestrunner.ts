@@ -5,6 +5,7 @@ import {Remote, RemoteBreakpoint} from '../remotes/remotebase';
 import {Labels, SourceFileEntry} from '../labels/labels';
 import {Settings} from '../settings/settings';
 import {Utility} from '../misc/utility';
+import {WorkspacePaths} from '../misc/workspacepaths';
 import {Decoration} from '../decoration';
 import {StepHistory, CpuHistory, CpuHistoryClass} from '../remotes/cpuhistory';
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
@@ -294,7 +295,7 @@ export class Z80UnitTestRunner {
 		// Setup settings
 		Settings.launch = Settings.Init(configuration);
 		Settings.CheckSettings();
-		Utility.setRootPath(Settings.launch.rootFolder);
+		WorkspacePaths.setRootPath(Settings.launch.rootFolder);
 
 		// Reset all decorations
 		Decoration.clearAllDecorations();
@@ -422,7 +423,7 @@ export class Z80UnitTestRunner {
 		await DebugSessionClass.singleton().terminateRemote();
 
 		// Setup root folder
-		Utility.setRootPath(testConfig.wsFolder);
+		WorkspacePaths.setRootPath(testConfig.wsFolder);
 
 		// Start debugger
 		this.debugAdapter = undefined as any;
