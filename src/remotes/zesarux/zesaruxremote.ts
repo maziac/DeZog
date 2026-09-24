@@ -1602,9 +1602,12 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	public async loadBin(path: string): Promise<number> {
 		await zSocket.sendAwait('smartload "' + Settings.launch.load + '"');	// Note: this also changes cpu to tbblue
-		// TODO: Get SP and return
-
-		return 0;
+		// Get SP and return
+		const regs = await zSocket.sendAwait('get-registers');
+		// E.g: "PC=8000 SP=6000 AF=0054 BC=8000 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=00  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
+		const match = /SP=([0-9a-fA-F]{4})/.exec(regs);
+		const sp = match ? parseInt(match[1], 16) : 0;
+		return sp;
 	}
 
 
