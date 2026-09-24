@@ -15,6 +15,7 @@
 - zsim: improved support for IM2 mode.
 - mame: state save/restore ("-state save/restore") supported via MAME's 'statesave'/'stateload' debugger commands.
 - Fixed setting negative values for memory elements of 4.
+- Memory views are now accessible directly from the "Variable" and "Watch" pane.
 
 # 3.7.4
 - PR #193: Fixed bug where pressing 'stop' would sometimes take 5 seconds to disconnect. (mame)

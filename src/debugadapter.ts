@@ -38,6 +38,8 @@ import {RenderFlowChart} from './disassembler/renderflowchart';
 import {RenderHtml} from './disassembler/renderhtml';
 import {ExceptionBreakpoints} from './exceptionbreakpoints';
 import {DebugConsoleCommands} from './commands/debugconsolecommands';
+import {MemoryCommands} from './commands/memorycommands';
+import {MemoryRegisterView} from './views/memoryregisterview';
 import {Run} from './run';
 import {LogEval} from './misc/logeval';
 import {ErrorWrapper} from './misc/errorwrapper';
@@ -2239,7 +2241,10 @@ export class DebugSessionClass extends DebugSession {
 						result,
 						variablesReference: item.varRef,
 						type: item.description,
-						indexedVariables: item.count
+						indexedVariables: item.count,
+						// Used to open the DeZog memory view from the context menu.
+						// Note: The menu is shown only if 'type' is set (i.e. not for failed expressions).
+						memoryReference: this.createMemoryReference(item.address, item.elemSize, item.count)
 					};
 				}	// try
 				catch (e) {
@@ -2439,7 +2444,9 @@ export class DebugSessionClass extends DebugSession {
 			description,
 			immediateValue,
 			varRef,
-			count: elemCount
+			count: elemCount,
+			address: labelValue64k,
+			elemSize
 		};
 
 		// Check if the address is constant, i.e. it does not contain a register
@@ -3140,6 +3147,104 @@ export class DebugSessionClass extends DebugSession {
 			fileWatcher.dispose();
 		}
 		this.fileWatchers = [];
+	}
+
+
+	/** Creates a 'memoryReference' for an expression of the WATCH pane.
+	 * Besides the address it contains the element size and count, so that
+	 * the memory view can be opened with the right size.
+	 * Note: 'supportsReadMemoryRequest' is not used, i.e. the memory reference
+	 * is only interpreted by DeZog itself.
+	 * @param address The 64k address.
+	 * @param elemSize The size of one element, e.g. 2 for "label,2,10".
+	 * @param count The number of elements, e.g. 10 for "label,2,10".
+	 * @returns E.g. "0x8000:2:10".
+	 */
+	protected createMemoryReference(address: number, elemSize: number, count: number): string {
+		return '0x' + HexFormat.getHexString(address, 4) + ':' + elemSize + ':' + count;
+	}
+
+
+	/** Converts a 'memoryReference' (as given e.g. to the registers in the
+	 * VARIABLES pane or to the expressions in the WATCH pane) into a 64k address
+	 * and, if available, the element size and count.
+	 * @param memoryReference E.g. "0x8000" (registers) or "0x8000:2:10" (WATCH).
+	 * @returns The address and optional the element size and count.
+	 * Throws an exception if not a number.
+	 */
+	protected parseMemoryReference(memoryReference: string): {address: number, elemSize?: number, count?: number} {
+		const [addressString, elemSizeString, countString] = memoryReference.split(':');
+		const address = Number(addressString);
+		if (isNaN(address))
+			throw Error("Invalid memory reference: '" + memoryReference + "'");
+		if (elemSizeString === undefined)
+			return {address};
+		const elemSize = Number(elemSizeString);
+		const count = Number(countString);
+		if (isNaN(elemSize) || isNaN(count))
+			throw Error("Invalid memory reference: '" + memoryReference + "'");
+		return {address, elemSize, count};
+	}
+
+
+	/** Opens a DeZog memory view for a variable (register) of the VARIABLES
+	 * pane or for an expression of the WATCH pane.
+	 * Called from the context menu.
+	 * @param context The context passed by vscode to the menu command.
+	 * For the VARIABLES pane: {sessionId, container, variable}.
+	 * The address (and for WATCHes the size) is taken from the 'memoryReference'.
+	 * @param type The type of the memory view. 'registers' opens the memory
+	 * register view for the selected register (no address required).
+	 * 'default' opens the word view for word elements, otherwise the byte view.
+	 */
+	public async showMemoryView(context: any, type: 'default' | 'byte' | 'word' | 'diff' | 'registers'): Promise<void> {
+		try {
+			Log.log('showMemoryView: ' + JSON.stringify(context));	// Prototype: to see what vscode passes
+			if (type === 'registers') {
+				// Show only the selected register
+				const regName = context?.variable?.name;
+				if (!regName)
+					throw Error("No register found.");
+				const registerMemoryView = new MemoryRegisterView();
+				registerMemoryView.addRegisters([regName]);
+				await registerMemoryView.update();
+				return;
+			}
+
+			// Get address
+			const variable = context?.variable ?? context;
+			if (variable?.memoryReference === undefined)
+				throw Error("No memory reference.");
+			const {address, elemSize, count} = this.parseMemoryReference(variable.memoryReference);
+
+			// Size in bytes: for WATCH expressions (e.g. "label,2,10") element size * count,
+			// otherwise (registers) a default
+			let size = 0x100;
+			if (elemSize !== undefined && count !== undefined)
+				size = Math.min(elemSize * count, 0x10000);
+
+			// The default: word view for word elements (e.g. "label,2,10"), otherwise byte view
+			if (type === 'default')
+				type = (elemSize === 2) ? 'word' : 'byte';
+
+			// Open the view
+			const addrString = '0x' + HexFormat.getHexString(address, 4);
+			switch (type) {
+				case 'byte':
+					await MemoryCommands.evalMemViewByte([addrString, size.toString()]);
+					break;
+				case 'word':
+					// Size in words
+					await MemoryCommands.evalMemViewWord([addrString, Math.ceil(size / 2).toString()]);
+					break;
+				case 'diff':
+					await MemoryCommands.evalMemViewDiff([addrString, size.toString()]);
+					break;
+			}
+		}
+		catch (e) {
+			this.showError('Memory View: ' + e.message);
+		}
 	}
 
 

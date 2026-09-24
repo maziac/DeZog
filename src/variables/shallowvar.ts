@@ -197,6 +197,9 @@ export class MemorySlotsVar extends ShallowVarConst {
  */
 export class RegistersMainVar extends ShallowVar {
 
+	// The registers that are used as memory reference.
+	protected static readonly ADDRESS_REGISTERS = new Set(["PC", "SP", "HL", "DE", "BC", "IX", "IY", "HL'", "DE'", "BC'"]);
+
 	/**
 	 * Communicates with the remote to retrieve the register values.
 	 * @returns A Promise with the register values.
@@ -210,14 +213,36 @@ export class RegistersMainVar extends ShallowVar {
 		for (let i = 0; i < count; i++) {
 			const regName = regNames[i + start];
 			const formattedValue = Remote.getVarFormattedReg(regName);
+			const memoryReference = this.getMemoryReference(regName);
 			registers[i] = {
 				name: regName,
 				type: formattedValue,
 				value: formattedValue,
-				variablesReference: 0
+				variablesReference: 0,
+				memoryReference
 			};
+			if (memoryReference) {
+				// Enables the DeZog memory view entries in the context menu
+				(registers[i] as any).__vscodeVariableMenuContext = 'dezogRegister';
+			}
 		}
 		return registers;
+	}
+
+
+	/** Returns the memory reference for 16 bit registers that
+	 * can be used as address (e.g. HL). Used to open a DeZog memory
+	 * view from the context menu.
+	 * @param regName E.g. "HL" or "A".
+	 * @returns E.g. "0x8000" or undefined for 8 bit registers.
+	 */
+	protected getMemoryReference(regName: string): string | undefined {
+		if (!RegistersMainVar.ADDRESS_REGISTERS.has(regName))
+			return undefined;
+		const value = Remote.getRegisterValue(regName);
+		if (isNaN(value))
+			return undefined;
+		return '0x' + HexFormat.getHexString(value, 4);
 	}
 
 

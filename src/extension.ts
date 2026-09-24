@@ -177,6 +177,16 @@ export function activate(context: vscode.ExtensionContext) {
 		await session.setPcToLine(filename, position.line);
 	}));
 
+	// Commands to open a memory view from the VARIABLES or WATCH pane (context menu)
+	for (const type of ['default', 'byte', 'word', 'diff', 'registers'] as const) {
+		context.subscriptions.push(vscode.commands.registerCommand('dezog.memoryView.' + type, async (menuContext: any) => {
+			// Only allowed in debug context
+			const session = DebugSessionClass.singleton();
+			if (session.running)
+				await session.showMemoryView(menuContext, type);
+		}));
+	}
+
 	// Command to do a disassembly at the cursor's position.
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.disassemblyAtCursor.code', async () => {
 		// Only allowed in debug context

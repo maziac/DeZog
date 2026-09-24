@@ -277,12 +277,60 @@
 				"command": "dezog.run",
 				"title": "Run with DeZog",
 				"category": "DeZog"
+			},
+			{
+				"command": "dezog.memoryView.byte",
+				"title": "Memory View (Byte)",
+				"category": "DeZog",
+				"icon": "$(file-binary)"
+			},
+			{
+				"command": "dezog.memoryView.word",
+				"title": "Memory View (Word)",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.memoryView.diff",
+				"title": "Memory Diff View",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.memoryView.registers",
+				"title": "Memory Register View",
+				"category": "DeZog",
+				"icon": "$(file-binary)"
+			},
+			{
+				"command": "dezog.memoryView.default",
+				"title": "Memory View",
+				"category": "DeZog",
+				"icon": "$(file-binary)"
 			}
 		],
 		"menus": {
 			"commandPalette": [
 				{
 					"command": "dezog.whatsNew"
+				},
+				{
+					"command": "dezog.memoryView.byte",
+					"when": "false"
+				},
+				{
+					"command": "dezog.memoryView.word",
+					"when": "false"
+				},
+				{
+					"command": "dezog.memoryView.diff",
+					"when": "false"
+				},
+				{
+					"command": "dezog.memoryView.registers",
+					"when": "false"
+				},
+				{
+					"command": "dezog.memoryView.default",
+					"when": "false"
 				},
 				{
 					"command": "dezog.help"
@@ -363,6 +411,49 @@
 					"group": "navigation"
 				}
 			],
+			"debug/variables/context": [
+				{
+					"command": "dezog.memoryView.registers",
+					"when": "debugType == 'dezog' && debugProtocolVariableMenuContext == 'dezogRegister'",
+					"group": "inline"
+				},
+				{
+					"submenu": "dezog.memoryView",
+					"when": "debugType == 'dezog' && debugProtocolVariableMenuContext == 'dezogRegister'",
+					"group": "z_dezog"
+				}
+			],
+			"debug/watch/context": [
+				{
+					"command": "dezog.memoryView.default",
+					"when": "debugType == 'dezog' && watchItemType == 'expression' && variableType",
+					"group": "inline"
+				},
+				{
+					"submenu": "dezog.memoryView",
+					"when": "debugType == 'dezog' && watchItemType == 'expression' && variableType",
+					"group": "z_dezog"
+				}
+			],
+			"dezog.memoryView": [
+				{
+					"command": "dezog.memoryView.byte",
+					"group": "1_views@1"
+				},
+				{
+					"command": "dezog.memoryView.word",
+					"group": "1_views@2"
+				},
+				{
+					"command": "dezog.memoryView.registers",
+					"when": "debugProtocolVariableMenuContext == 'dezogRegister'",
+					"group": "1_views@3"
+				},
+				{
+					"command": "dezog.memoryView.diff",
+					"group": "2_diff@1"
+				}
+			],
 			"dezog.disassemblyAtCursor": [
 				{
 					"command": "dezog.disassemblyAtCursor.code"
@@ -387,6 +478,10 @@
 			]
 		},
 		"submenus": [
+			{
+				"id": "dezog.memoryView",
+				"label": "DeZog Memory View"
+			},
 			{
 				"id": "dezog.disassemblyAtCursor",
 				"label": "Disassembly at Cursor / of Selection"

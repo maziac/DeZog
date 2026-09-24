@@ -18,5 +18,11 @@ export interface ExpressionVariable {
 
 	// The number of indexed child variables.
 	count: number;
+
+	// The 64k address of the label/expression. Used as memory reference.
+	address: number;
+
+	// The size of one element (e.g. 2 for "label,2,10").
+	elemSize: number;
 }
 
