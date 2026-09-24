@@ -54,7 +54,7 @@ Every specific Emulator derives three different classes:
 | ZEsarUX   | y           | y          | y           | y        | y      | y        | n          | y           | y         |
 | CSpect    | y           | y          | y           | e        | n      | n        | ?          | e           | e         |
 | ZXNext HW | y           | s          | y           | e        | n      | n        | n          | e           | e         |
-| MAME      | y           | y          | y           | ?        | ?y     | n        | n          | n           | ?         |
+| MAME      | y           | y          | y           | y        | y      | n        | y          | s           | ?         |
 
 - y = is or would be supported
 - s = somewhat, supported but with constraints
@@ -73,8 +73,10 @@ MAME needs to be started like this:
 ~~~
 
 I.e. MAME uses gdb syntax for communication with DeZog.
+The remote is implemented in `src/remotes/mame/mamegdbremote.ts` (class `MameGdbRemote`, derived from `DzrpQueuedRemote`).
+It overrides the `sendDzrpCmd...` methods and maps them to gdb packets and to MAME debugger commands (see below).
 
-Here are the available commands in short:
+Here are the gdb commands the gdbstub offers in short:
 - CTRL-C: Break (stop debugger execution)
 - c: Continue
 - s: Step into
@@ -87,9 +89,12 @@ Here are the available commands in short:
 - X: Load binary data
 - z: Clear breakpoint/watchpoint
 - Z: Set breakpoint/watchpoint
+- qRcmd: Execute a MAME debugger console command (see "qRcmd")
+- qXfer:features:read:target.xml: Describes the target (CPU, registers)
 
-Missing:
-- no bank/paging info
+Missing in the gdbstub:
+- no bank/paging info (worked around with qRcmd, see "Paging/Banking")
+- no state save/load (worked around with qRcmd, see "State save/load")
 
 The gdbstub acts like a gdbserver.
 It communicates with the gdb at the client via a remote protocol:
@@ -179,8 +184,11 @@ z0,2312,0
 ~~~
 
 If 2 breakpoints are set at the same address, these are still 2 breakpoints.
-spec
 I.e. if one of these breakpoints is removed the other still remains.
+
+Note: DeZog uses the gdb `Z0`/`z0` packets only for the temporary breakpoints used for stepping (`Z1`/`z1`, see `dzrpContinue`).
+Normal user breakpoints are set via the MAME debugger command `bpset` (see "qRcmd") because only that allows to add a condition (the bank on ZX Next).
+Watchpoints use `Z2`-`Z4`/`z2`-`z4` (write, read, access).
 
 
 ### Detach
@@ -197,10 +205,19 @@ The k(ill) command terminates MAME.
 The MAME gdbstub sets an internal variable to true but it does nto act on it in any way.
 
 
-### statesave / stateload
+### State save/load
 
-The MAME debugger supports load and save of the state.
-Unfortunately this is not available through the gdbstub.
+The MAME debugger supports load and save of the state via the debugger commands `statesave <file>` and `stateload <file>`.
+These are not available as gdb packets, but they can be executed through `qRcmd`.
+DeZog uses this for the debug console commands `-state save` and `-state restore`
+(`MameGdbRemote.stateSave()` / `stateRestore()`).
+
+- The state file is written/read by MAME itself (MAME's own .sta format). It contains the complete machine state (CPU, memory, banking, video, ...), not only the Z80 state as in the other remotes.
+- The path is quoted (`statesave "<file>"`). MAME strips the quotes, they allow spaces and commas in the path.
+- MAME does not report errors via `qRcmd` for these commands.
+  - If MAME runs on the local host (`hostname` is `localhost`, `127.0.0.1` or `::1`) DeZog checks itself: for save the old file is deleted first and afterwards it is checked that the new file exists, for restore it is checked that the file exists.
+  - If MAME runs on a different host DeZog cannot check the file. Only the base name of the file is sent, i.e. the file is stored in/read from the state directory of MAME on that host (not the local workspace directory).
+- Reverse debugging/step history is not affected: DeZog has no CPU history for MAME.
 
 
 
@@ -286,196 +303,119 @@ I.e. 12 words in hex.
 
 Note: The IM and IR registers are not transferred.
 
-
-### How to get the program into the emulator
-
-a) the program is already there: For MAME this is nothing special the ROM is loaded at startup.
-b) the program is transferred by DeZog: Not sure if it works to write a ROM via gdbstub. Since everything is ROM might also not be needed.
-
-
-## Using Lua to implement the DZRP protocol in MAME
-
-Note: this is not implemented, see "Conclusion".
-
-### Compiling MAME
-
-To compile MAME with all debugging support use:
+Therefore DeZog does not use 'g' to read the registers. Instead it uses the debugger command
 ~~~
-make REGENIE=1 SYMBOLS=1 SYMLEVEL=3 OPTIMIZE=0 -j5
+print pc,sp,af,bc,de,hl,ix,iy,af2,bc2,de2,hl2,ir,im
 ~~~
-
-This takes about 2 hrs (without debugging 1h).
-
-Starting MAME on macos should be done with the vscode extension codelldb ('lldb').
-Has a better performance than gdb.
-Anyhow, starting of MAME is still slow and might take up to a minute.
-Stepping time is fine though.
+via `qRcmd` (plus `mmu0`...`mmu7` for the ZX Next). The reply contains the values separated by spaces
+and is decoded by `Z80RegistersMameDecoder`.
+Registers are set with `qRcmd` as well (e.g. `bc=1234`; AF' etc. are named `af2`, ...).
+`P` is not used.
 
 
-### DZRP vs GDB Remote Protocol
+### qRcmd
 
-The MAME gdbstub functionality is compared with the DZRP functionality to find any lacks.
-One major drawback we can see already: the MAME gdbstub does not support any information about the banking/paging.
-Note: gdb itself might support banking/paging via [overlays](https://docs.adacore.com/gdb-docs/html/gdb.html#Overlays).
+`qRcmd,<hex-encoded string>` sends a command of the MAME debugger console to MAME. The reply is the hex encoded output of the command.
+DeZog uses this for everything that the gdbstub cannot do (`sendQrcmd()`):
 
+| Purpose                       | MAME debugger command                      |
+| ----------------------------- | ------------------------------------------ |
+| Read registers                | `print pc,sp,af,...,im[,mmu0..mmu7]`       |
+| Set register                  | `<reg>=<value>`                            |
+| Interrupts on/off             | `iff1=<0/1>`, `iff2=<0/1>`                 |
+| Write to port                 | `ib@<port>=<value>`                        |
+| Set slot (ZX Next only)       | `do mmu<slot>=<bank>`                      |
+| Read/write bank (ZX Next)     | `print mmu<n>` / `do mmu<n>=...`           |
+| Add breakpoint                | `bpset <addr>[,mmu<slot>==<bank>]`         |
+| Remove breakpoint             | `bpclear <id>`                             |
+| State save/load               | `statesave "<file>"`, `stateload "<file>"` |
+| Run/single step (start delay) | `g`, `step`                                |
+| ZX Next: set ROM              | `nr8e=3` (ROM3)                            |
 
-| Command                                 | MAME | Cmd                                          |
-| --------------------------------------- | ---- | -------------------------------------------- |
-| CMD_INIT                                | X    | !,?                                          |
-| CMD_CLOSE                               | X    | D (MAME starts running wo debugger attached) |
-| CMD_GET_REGISTERS                       | X    | g                                            |
-| CMD_SET_REGISTER                        | X    | P                                            |
-| CMD_WRITE_BANK                          |      |                                              |
-| CMD_CONTINUE                            | X    | c                                            |
-| CMD_PAUSE                               | X    | \x03, CTRL-C                                 |
-| CMD_READ_MEM                            | X    | m                                            |
-| CMD_WRITE_MEM                           | X    | M                                            |
-| CMD_SET_SLOT                            |      |                                              |
-| CMD_GET_TBBLUE_REG                      |      |                                              |
-| CMD_SET_BREAKPOINTS                     |      |                                              |
-| CMD_RESTORE_MEM                         |      |                                              |
-| CMD_LOOPBACK                            |      |                                              |
-| CMD_GET_SPRITES_PALETTE                 |      |                                              |
-| CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL |      |                                              |
-| CMD_GET_SPRITES                         |      |                                              |
-| CMD_GET_SPRITE_PATTERNS                 |      |                                              |
-| CMD_ADD_BREAKPOINT                      | X    | Z0                                           |
-| CMD_REMOVE_BREAKPOINT                   | X    | z0                                           |
-| CMD_ADD_WATCHPOINT                      | X    | Z2-4                                         |
-| CMD_REMOVE_WATCHPOINT                   | X    | z2-4                                         |
-| CMD_READ_STATE                          |      |                                              |
-| CMD_WRITE_STATE                         |      |                                              |
+Errors: MAME reports errors as reply starting with 'E', containing 'error' or (in the decoded output) starting with '>'. DeZog turns these into exceptions.
+
+The debug console command `-exec qrcmd <cmd>` (`dbgExec`) can be used to send any such command manually, e.g. `-exec qrcmd print pc`.
 
 
-### MAME - Paging
+### Loading programs
 
-See https://docs.mamedev.org/techspecs/memory.html#shares-banks-and-regions,
-https://wiki.mamedev.org/index.php/CPUs_and_Address_Spaces.
+The ROM is loaded by MAME itself at startup. The program to debug is transferred by DeZog after the connection setup (`load()`):
+- `.sna`: For ZX Next the normal DeZog routine is used. For other machines only 48k files are supported (128k throws an error). The memory is written with `M`, border via port 0xFE, registers via `qRcmd`.
+- `.z80`: only 48k files.
+- `.nex`: ZX Next.
+- Loading .sna/.z80 makes sense only if MAME was started with a 48k Spectrum machine. For other machines the behavior is undefined.
+- Workaround in `loadBin()`: MAME shows the effects of the loading (e.g. the new screen or border) only after at least one executed instruction. Therefore a NOP is temporarily put at the PC, one step is executed and PC and the memory byte are restored.
 
-- Address space (class address_space): methods for read/write access.
-  - ADDRESS_SPACE_PROGRAM: Code and data (von Neumann)
-  - ADDRESS_SPACE_DATA: Separate space where data is stored (Harvard).
-  - ADDRESS_SPACE_IO: Address space for IO.
-- Address maps: Maps banks into address ranges.
-- Memory region: Most probably this is the 'natural' address space, e.g. 64k for a Z80.
+### Start options
 
-Special types of memory:
-- banks (SMH_BANK(banknum)): Max. 32 banks, SMH_BANK(1)...SMH_BANK(32).
-  - memory_configure_bank: configure the base pointer to a bank.
-  - memory_set_bank: select one of the pointers.
-  - A base pointer is e.g. memory_region(REGION_CPU2) + 0x2000.
-- RAM (SMH_RAM), ROM (SMH_ROM): Are implemented as banks, but cannot be changed.
-- no-ops (SMH_NOP), unmapped space (SMH_UNMAP): unused memory, writes go nowhere, reads return 0.
+Dependent on the `mame` settings in launch.json:
+- `startDelay`: The emulation is started and stopped again (`g`, wait, `step`) after the given time, e.g. to let the machine boot.
+- `startWaitOnZxInterrupt`: Starts the emulation and waits until IM 1 and interrupts are enabled and the FRAMES system variable (0x5C78) counts up, i.e. until ZXNextOS is ready. Default: enabled for the ZX Next, disabled otherwise. Timeout: 20 seconds.
 
 
-Example:
-~~~
-[MAME]> for k,v in pairs(manager.machine.devices["maincpu"].spaces["program"].map.entries) do print(k,v,v.address_start,v.address_end,v.region, v.read.handlertype, v.read.tag) end
-1       sol.address_map_entry *: 0x7fea3b1f3a68 0       32767   :maincpu        rom     nil
-2       sol.address_map_entry *: 0x7fea3b1c3078 32768   49151   nil     bank    bank1
-3       sol.address_map_entry *: 0x7fea0b156c08 49152   56831   nil     ram     nil
-4       sol.address_map_entry *: 0x7fea0b1b6368 56832   57343   nil     ram     nil
-5       sol.address_map_entry *: 0x7fea0b1bead8 57344   59391   nil     ram     nil
-6       sol.address_map_entry *: 0x7fea0b1c77b8 59392   61439   nil     ram     nil
-~~~
-I.e. ```mapentries = manager.machine.devices["maincpu"].spaces["program"].map.entries``` contains the 'slots' in entry.address_start/address_end.
-The type (rom, ram, bank) is in v.read.handlertype and the current bank ("bank1") contains an address space that covers all "banks".
-I.e. from ```bank = manager.machine.memory.banks[":bank1"]``` I get the index of the bank (inside "bank1") via bank.entry (0-based).
-Use ```print(manager.machine.memory.banks[":bank1"].entry)``` to access it.
-~~~
-space = manager.machine.devices[":maincpu"].spaces["program"]
-reg = manager.machine.memory.regions[":maincpu"]
-bank = manager.machine.memory.banks[":bank1"]
-bank.entry = 0
-print("bank.entry: ", bank.entry)
-print("space: 0x8000: ", space:read_u8(0x8000))
-print("region: 0x8000: ", reg:read_u8(0x8000))
-print("region: 0x10000: ", reg:read_u8(0x10000))
-print("region: 0x14000: ", reg:read_u8(0x14000))
-bank.entry = 1
-print("bank.entry: ", bank.entry)
-print("space: 0x8000: ", space:read_u8(0x8000))
-print("region: 0x8000: ", reg:read_u8(0x8000))
-print("region: 0x10000: ", reg:read_u8(0x10000))
-print("region: 0x14000: ", reg:read_u8(0x14000))
+## DZRP commands and MAME
 
-~~~
+`MameGdbRemote` does not speak DZRP, but it implements the `sendDzrpCmd...` methods of the DZRP base classes.
+This is how they are mapped:
 
-```manager.machine:soft_reset()``` does not reload the ROMs.
-```manager.machine:hard_rest()``` does, but also restarts the plugin.
+| DZRP command / method                                                                                       | MAME | Implementation                                                                  |
+| ----------------------------------------------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------- |
+| CMD_INIT                                                                                                    | X    | `qXfer:features:read:target.xml` (checks 'z80', detects Z80N by `mmu0`-`mmu7`)  |
+| CMD_CLOSE                                                                                                   | X    | Nothing sent. On disconnect: `k` (kill, terminates MAME)                        |
+| CMD_GET_REGISTERS                                                                                           | X    | qRcmd `print pc,sp,af,...` (not `g`, IM/IR are missing there)                   |
+| CMD_SET_REGISTER                                                                                            | X    | qRcmd `<reg>=<value>` (not `P`)                                                 |
+| CMD_INTERRUPT_ON_OFF                                                                                        | X    | qRcmd `iff1=`, `iff2=`                                                          |
+| CMD_WRITE_PORT                                                                                              | X    | qRcmd `ib@<port>=<value>` (replaces the former CMD_SET_BORDER)                  |
+| CMD_CONTINUE                                                                                                | X    | `c` (temporary breakpoints for stepping with `Z1`/`z1`)                         |
+| CMD_PAUSE                                                                                                   | X    | `\x03` (CTRL-C) followed by `p0b` to get a reply                                |
+| CMD_READ_MEM                                                                                                | X    | `m`                                                                             |
+| CMD_WRITE_MEM                                                                                               | X    | `M` (in chunks of 2000 bytes)                                                   |
+| CMD_READ_BANK_MEM                                                                                           | Z80N | Temporarily pages the bank into slot 0, reads with `m`, restores                |
+| CMD_WRITE_BANK_MEM                                                                                          | Z80N | Same as read, with `M`                                                          |
+| CMD_SET_SLOT                                                                                                | Z80N | qRcmd `do mmu<slot>=<bank>`                                                     |
+| CMD_ADD_BREAKPOINT                                                                                          | X    | qRcmd `bpset <addr>[,mmu<slot>==<bank>]`, the MAME bp id is stored in `bp.bpId` |
+| CMD_REMOVE_BREAKPOINT                                                                                       | X    | qRcmd `bpclear <id>`                                                            |
+| CMD_ADD_WATCHPOINT                                                                                          | X    | `Z2` (w), `Z3` (r), `Z4` (rw), 64k address only                                 |
+| CMD_REMOVE_WATCHPOINT                                                                                       | X    | `z2`-`z4`                                                                       |
+| State save/load (`-state save/restore`)                                                                     | X    | qRcmd `statesave`/`stateload`                                                   |
+| CMD_WRITE_BANK                                                                                              |      | Not supported                                                                   |
+| CMD_GET_TBBLUE_REG                                                                                          |      | Not supported (only `mmu0`-`mmu7` are read with the registers)                  |
+| CMD_SET_BREAKPOINTS, CMD_RESTORE_MEM                                                                        |      | Not supported                                                                   |
+| CMD_LOOPBACK                                                                                                |      | Not supported                                                                   |
+| CMD_GET_SPRITES*, CMD_GET_SPRITE_PATTERNS, CMD_GET_SPRITES_PALETTE, CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL |      | Not supported                                                                   |
+| CMD_READ_STATE, CMD_WRITE_STATE                                                                             |      | Not supported (DZRP state, i.e. no CPU history/reverse debugging)               |
 
-write handler: If the bank is read-only simply no handler is available for 'write':
-~~~
-MAME]> for k,v in pairs(manager.machine.devices["maincpu"].spaces["program"].map.entries) do print(k,v,v.address_start,v.address_end,v.region, v.read.handlertype, v.read.tag) end
-1       sol.address_map_entry *: 0x7fea5b895428 0       32767   :maincpu        rom     nil
-2       sol.address_map_entry *: 0x7fea5b8e2918 32768   49151   nil     bank    bank1
-3       sol.address_map_entry *: 0x7fea0b07c728 49152   56831   nil     ram     nil
-4       sol.address_map_entry *: 0x7fea0b0fa478 56832   57343   nil     ram     nil
-5       sol.address_map_entry *: 0x7fea0b06a638 57344   59391   nil     ram     nil
-6       sol.address_map_entry *: 0x7fea0b08b9a8 59392   61439   nil     ram     nil
-~~~
-
-### Address Map
-
-~~~c++
- static ADDRESS_MAP_START( main_map, ADDRESS_SPACE_PROGRAM, 8 )
-     AM_RANGE(0x8000, 0x83ff) AM_RAM AM_SHARE(1)
-     AM_RANGE(0x8400, 0x87ff) AM_RAM
-     AM_RANGE(0x8800, 0x8bff) AM_READNOP   /* 6850 ACIA */
-     AM_RANGE(0x8c00, 0x8c00) AM_MIRROR(0x3fe) AM_READWRITE(qix_video_firq_r, qix_video_firq_w)
-     AM_RANGE(0x8c01, 0x8c01) AM_MIRROR(0x3fe) AM_READWRITE(qix_data_firq_ack_r, qix_data_firq_ack_w)
-     AM_RANGE(0x9000, 0x93ff) AM_READWRITE(pia_3_r, pia_3_w)
-     AM_RANGE(0x9400, 0x97ff) AM_READWRITE(pia_0_r, qix_pia_0_w)
-     AM_RANGE(0x9800, 0x9bff) AM_READWRITE(pia_1_r, pia_1_w)
-     AM_RANGE(0x9c00, 0x9fff) AM_READWRITE(pia_2_r, pia_2_w)
-     AM_RANGE(0xa000, 0xffff) AM_ROM
- ADDRESS_MAP_END
-~~~
-
-- 'main_map': is the (compiled) name of the map (name of the variable).
-- AM_READ, AM_WRITE, AM_READWRITE: The read/write handlers get the offset from the start address in the AM_RANGE macro.
-- AM_REGION: Can override a RAM/ROM assignment (?)
-- AM_SHARE: Used to share the same RAM between 2 CPUs. For each CPU the shared memory can have different ranges (different start addresses).
-
-Runtime modifications:
-It is possible to change the memory configuration afterwards.
-E.g. it is possible to install different read/write handlers:
-~~~c++
-memory_install_read8_handler(machine, cpu, space, start, end, mask, mirror, rhandler)
-memory_install_write8_handler(machine, cpu, space, start, end, mask, mirror, rhandler)
-memory_install_readwrite8_handler(machine, cpu, space, start, end, mask, mirror, rhandler, whandler)
-~~~
+Not supported by MAME: code coverage (a warning is shown), break on interrupt, reverse debugging.
+Supported: ASSERTION, WPMEM and LOGPOINT.
 
 
-If executing ```map <address>``` in the debugger one can see the read/write handlers attached to the memory.
+## MAME - Paging/Banking in DeZog
 
+The gdbstub has no paging/banking information at all: `m`/`M` always access the CPU's current 64k address space.
+Whether DeZog can show banks therefore depends on the machine.
 
-### Conclusion
+### Generic Z80 machines (Z80N not detected)
 
-I have tried a lot but at the end I failed.
-Lua is very limited when it comes to implement a useful interface to DeZog.
+- The memory model is `MemoryModelUnknown`: 64k of RAM without slots/banks is assumed.
+- Long addresses are not used, only 64k addresses. Watchpoints and breakpoints ignore the bank part of a long address.
+- Reading/writing banks (`sendDzrpCmdReadBankMem`/`WriteBankMem`) throws an error ("supports banked memory only for Z80N").
+- Machines with banked memory (e.g. a 128k Spectrum) can be debugged, but DeZog only sees the memory that is currently paged in. The paging state (e.g. port 0x7FFD) is not evaluated.
+- Loading .sna/.z80 works only for 48k files (see "Loading programs").
 
-Here are a few problems:
-- socket implementation: The mame socket implementation is also used for Lua. It is not possible to determine that a socket has been closed.
-As a workaround the DZRP close command could be used. That at least would work on graceful terminations.
-- I also thought about using the lua as a mediator to the gdbstub and implement only additional functionality in Lua. But this is not possible, when the mame debugger stops the Lua is not served anymore.
-- Stopping: Mame does not react on setting the ```manager.machine.debugger.execution_state``` to "stop". Or better: only for a short time. Then it turns "run" on by itself. Therefore it is necessary to block mame from running in the lua script with a busy loop (there is no "sleep" command available).
-- But the main problem in the end: There is no reliable way to get the banking information. I thought I found a way and it was working with lwings, but e.g. with spec128 it was failing, showing no banks.
+### ZX Next (Z80N detected)
 
-The last problem was were I stopped further development.
-I.e. MAME will continue to be supported, but through the gdbstub as before.
-Thus it will not include any slot/banking information.
+Z80N is detected if the target XML contains the registers `mmu0` ... `mmu7` (8 slots of 8k).
+- The memory model is `MemoryModelZxNext`, i.e. slots/banks like on the real ZX Next.
+- `mmu0`-`mmu7` are read together with the other registers (`print ...,mmu0,...,mmu7`) which gives the slot/bank association. `getSlots()` is derived from that.
+- Set slot: `do mmu<slot>=<bank>`.
+- Bank memory access: DeZog pages the bank temporarily into slot 0 (`TMP_SLOT`), accesses it via the normal 64k `m`/`M` and restores the original bank afterwards. Slot 0 is used (see `TMP_SLOT`) because the ROM can only be paged into slots 0 and 1. The program is stopped while this happens. Only offsets within one 8k bank are possible per access.
+- Breakpoints with a long address get a MAME condition: `bpset 0xC000,mmu6==0x21` (bank = bankp1-1, slot = address>>>13). Breakpoints with only a 64k address are set without condition.
+- Watchpoints: The gdbstub only knows 64k addresses. `DzrpRemote` filters the hits and checks the bank against the current slots.
+- At startup the ROM is set to ROM3 (`nr8e=3`) because DeZog comes from ZXNextOS.
 
-If I should ever try to continue on this:
-Look into the 'mame_lua' branch of DeZog.
-The plugin can be found in the 'mame/dezog/' folder.
-The dezog folder needs to be places in mame in the 'mame/plugins/' folder.
-Mame needs to be started with e.g.:
-~~~
-./mame spec128 -resolution 640x480  -window  -debug -debugger none -console -plugin dezog
-~~~
+### Limits
 
-The mame remote for lua is in 'remotes/dzrpbuffer/mameremote.ts'.
+- No banking information for other multi-bank machines (128k Spectrum, ...). A possible enhancement would be reading the machine's paging registers via `qRcmd` and selecting a matching memory model.
 
 
 ## ZEsarUX
