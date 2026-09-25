@@ -57,6 +57,7 @@
 		"intel-hex": "^0.2.0",
 		"jsonc-parser": "^3.3.1",
 		"leader-line": "^1.0.7",
+		"markdown-it": "^15.0.2",
 		"minimatch": "^10.0.1",
 		"node-graphviz": "^0.1.1",
 		"node-gzip": "^1.1.2",
@@ -65,7 +66,6 @@
 		"rng": "^0.2.2",
 		"semver": "^7.7.0",
 		"serialport": "^13.0.0",
-		"showdown": "^2.1.0",
 		"string-argv": "^0.3.2",
 		"xml2js": "^0.6.2"
 	},
@@ -76,12 +76,18 @@
 		"@types/vscode-webview": "^1.57.5",
 		"esbuild": "^0.25.0",
 		"eslint": "^10.11.0",
-		"mocha": "^11.1.0",
+		"mocha": "^11.8.0",
 		"sinon": "^21.0.0",
 		"source-map-support": "^0.5.21",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.7.3",
 		"typescript-eslint": "^8.70.1"
+	},
+	"overrides": {
+		"mocha": {
+			"diff": "^8.0.3",
+			"serialize-javascript": "^7.1.1"
+		}
 	},
 	"bugs": {
 		"url": "https://github.com/maziac/DeZog/issues"

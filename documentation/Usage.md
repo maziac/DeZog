@@ -221,7 +221,7 @@ A typical configuration looks like this:
     - "cspect": Use of CSpect emulator with the DeZog plugin. See [CSpect](#cspect).
     - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [ZX Next / Serial Interface](#zx-next--serial-interface).
     - "dzrp": A generic dzrp connection. Experimental. Use to connect new DZRP remotes.
-    - "mame": Use to connect MAME through a socket connection. See [MAME](#mame---multiple-machine-arcade-emulatormame).
+    - "mame": Use to connect MAME through a socket connection. See [MAME](#mame---multiple-machine-arcade-emulator).
 - [sjasmplus] (or z80asm or z88dk): The assembled configuration. An array of list files. (Or in case of sjasmplus: sld files.) Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Assembler Configuration](#assembler-configuration) section.

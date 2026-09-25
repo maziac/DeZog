@@ -3,7 +3,7 @@ import {BaseView} from '../views/baseview';
 import * as vscode from 'vscode';
 import {Utility} from '../misc/utility';
 import {UnifiedPath} from '../misc/unifiedpath';
-import * as showdown from 'showdown';
+import MarkdownIt = require('markdown-it');
 import {PackageInfo} from '../packageinfo';
 
 
@@ -49,15 +49,32 @@ export class HelpView extends BaseView {
 			const mdText = readFileSync(path).toString();
 
 			// Convert md -> html
-			const converter = new showdown.Converter();
-			//converter.setOption('completeHTMLDocument', 'true');
-			converter.setOption('simpleLineBreaks', true);
-			//converter.setOption('simplifiedAutoLink', true);
-			//converter.setOption('noHeaderId', false);
-			converter.setOption('ghCompatibleHeaderId', true);
-			converter.setOption('tables', true);
-			//converter.setOption('tablesHeaderId', 'true');
-			const html2 = converter.makeHtml(mdText);
+			const md = new MarkdownIt({
+				html: true,	// Allow html tags in the markdown
+				breaks: true	// Convert '\n' into <br>
+			});
+			// Add GitHub compatible header ids (used by the links and the TOC)
+			md.core.ruler.push('header_ids', state => {
+				const usedIds = new Map<string, number>();
+				const tokens = state.tokens;
+				for (let i = 0; i < tokens.length; i++) {
+					if (tokens[i].type !== 'heading_open')
+						continue;
+					// The heading text is in the following inline token
+					const title = tokens[i + 1].children!
+						.filter(t => t.type === 'text' || t.type === 'code_inline')
+						.map(t => t.content)
+						.join('');
+					let id = HelpView.getHeaderId(title);
+					// Make unique, like GitHub: id, id-1, id-2, ...
+					const count = usedIds.get(id);
+					usedIds.set(id, (count ?? -1) + 1);
+					if (count !== undefined)
+						id += '-' + (count + 1);
+					tokens[i].attrSet('id', id);
+				}
+			});
+			const html2 = md.render(mdText);
 
 			// Create headings number (CSS is not used because the numbers should occur also in the TOC)
 			const tocCounter = [0, 0, 0];
@@ -94,6 +111,10 @@ table {
 }
 td, th {
     border: 1px solid;
+}
+
+pre {
+  tab-size: 4;
 }
 
 th {
@@ -182,6 +203,20 @@ window.addEventListener('message', event => {
 
 		// Return
 		return this.helpHtml;
+	}
+
+
+	/**
+	 * Creates a GitHub compatible header id from the header's text.
+	 * E.g. "MAME - Multiple Machine Arcade Emulator" -> "mame---multiple-machine-arcade-emulator".
+	 * @param title The text of the header.
+	 * @returns The id, e.g. used in links like "#mame---multiple-machine-arcade-emulator".
+	 */
+	protected static getHeaderId(title: string): string {
+		return title
+			.replace(/ /g, '-')
+			.replace(/[&+$,/:;=?@"#{}|^¨~[\]`\\*)(%.!'<>]/g, '')
+			.toLowerCase();
 	}
 
 
