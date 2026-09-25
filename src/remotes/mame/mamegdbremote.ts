@@ -1143,7 +1143,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		const pcStr = await this.sendQrcmd('print pc');
 		const memByteStr = await this.sendQrcmd(`print b@${pcStr}`);
 		// Exchange with nop
-		await this.sendQrcmd(`b@${pcStr}=0`);	// NOP
+		await this.sendQrcmd(`w@${pcStr}=0`);	// NOP
 		// Single step
 		await this.sendQrcmd('step');
 		// Restore original byte at pc
