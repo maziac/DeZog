@@ -379,7 +379,7 @@ This is how they are mapped:
 | CMD_REMOVE_WATCHPOINT                                                                                       | X    | `z2`-`z4`                                                                       |
 | State save/load (`-state save/restore`)                                                                     | X    | qRcmd `statesave`/`stateload`                                                   |
 | CMD_WRITE_BANK                                                                                              |      | Not supported                                                                   |
-| CMD_GET_TBBLUE_REG                                                                                          |      | Not supported (only `mmu0`-`mmu7` are read with the registers)                  |
+| CMD_GET_NEXTREG                                                                                             |      | Not supported (only `mmu0`-`mmu7` are read with the registers)                  |
 | CMD_SET_BREAKPOINTS, CMD_RESTORE_MEM                                                                        |      | Not supported                                                                   |
 | CMD_LOOPBACK                                                                                                |      | Not supported                                                                   |
 | CMD_GET_SPRITES*, CMD_GET_SPRITE_PATTERNS, CMD_GET_SPRITES_PALETTE, CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL |      | Not supported                                                                   |

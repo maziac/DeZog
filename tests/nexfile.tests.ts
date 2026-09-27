@@ -203,13 +203,15 @@ suite('NexFile related', () => {
 				this.outPorts.push([port, value]);
 			}
 			public async sendDzrpCmdSetNextregs(regValues: Array<[number, number]>): Promise<void> {
+				if (regValues.length === 0)
+					return;
 				this.outSetNextRegsCount++;
 				this.outRegs.push(...regValues);
 			}
 			public async sendDzrpCmdWriteBankMem(bank: number, offset: number, dataArray: Buffer | Uint8Array): Promise<void> {
 				this.outBankWrites.push(bank);
 			}
-			public async sendDzrpCmdGetTbblueReg(register: number): Promise<number> {
+			public async sendDzrpCmdGetNextreg(register: number): Promise<number> {
 				return this.inRegs.get(register)!;
 			}
 			// Returns the registers without the palette values.

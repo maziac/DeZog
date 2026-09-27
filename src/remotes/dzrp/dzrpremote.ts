@@ -44,7 +44,7 @@ export enum DZRP {
 	CMD_READ_MEM = 8,
 	CMD_WRITE_MEM = 9,
 	CMD_SET_SLOT = 10,
-	CMD_GET_TBBLUE_REG = 11,
+	CMD_GET_NEXTREG = 11,
 	//CMD_SET_BORDER = 12, // Deprecated/removed, use CMD_WRITE_PORT
 	CMD_SET_BREAKPOINTS = 13,
 	CMD_RESTORE_MEM = 14,
@@ -429,13 +429,13 @@ export class DzrpRemote extends RemoteBase {
 			const bank = HexFormat.parseValue(cmdArray[1]);
 			await this.sendDzrpCmdSetSlot(slot, bank);
 		}
-		else if (cmd_name === "cmd_get_tbblue_reg") {
+		else if (cmd_name === "cmd_get_nextreg") {
 			if (cmdArray.length < 1) {
 				// Error
 				throw Error("Expecting 1 parameter: register.");
 			}
 			const reg = HexFormat.parseValue(cmdArray[0]);
-			const value = await this.sendDzrpCmdGetTbblueReg(reg);
+			const value = await this.sendDzrpCmdGetNextreg(reg);
 			response += "\nReg[" + HexFormat.getHexString(reg, 2) + "h/" + reg + "]: " + HexFormat.getHexString(value, 2) + "h/" + value;
 		}
 		else if (cmd_name === "cmd_get_sprites_palette") {
@@ -1885,7 +1885,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 		}
 		if (nexFile.ulaScreen || nexFile.loResScreen || nexFile.timexHiResScreen || nexFile.timexHiColScreen) {
 			// Make sure the ULA is enabled
-			const ulaControl = await this.sendDzrpCmdGetTbblueReg(REG_ULA_CONTROL);
+			const ulaControl = await this.sendDzrpCmdGetNextreg(REG_ULA_CONTROL);
 			regValues.push([REG_ULA_CONTROL, ulaControl & 0b0111_1111]);
 		}
 		if (nexFile.ulaScreen) {
@@ -1904,7 +1904,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 		}
 		if (nexFile.timexHiResScreen || nexFile.timexHiColScreen) {
 			// Enable the Timex modes (the NEX loader does this when resetting the registers)
-			const periph3 = await this.sendDzrpCmdGetTbblueReg(REG_PERIPHERAL_3);
+			const periph3 = await this.sendDzrpCmdGetNextreg(REG_PERIPHERAL_3);
 			regValues.push([REG_PERIPHERAL_3, periph3 | 0b0000_0100]);
 			regValues.push([REG_SPRITE_LAYER_SYSTEM, SPRITES_VISIBLE]);
 			if (nexFile.timexHiResScreen)
@@ -1955,7 +1955,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 	 * @returns A promise with the value of the register.
 	 */
 	public async getTbblueRegister(registerNr: number): Promise<number> {
-		const value = await this.sendDzrpCmdGetTbblueReg(registerNr);
+		const value = await this.sendDzrpCmdGetNextreg(registerNr);
 		return value;
 	}
 
@@ -2233,7 +2233,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 	 * @param register  The Tbblue register.
 	 * @returns A promise with the value.
 	  */
-	public async sendDzrpCmdGetTbblueReg(register: number): Promise<number> {
+	public async sendDzrpCmdGetNextreg(register: number): Promise<number> {
 		throw Error("Reading Tbblue registers is not supported.");
 	}
 

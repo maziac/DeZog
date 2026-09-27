@@ -936,12 +936,12 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/** Returns the value of one TBBlue register.
-	 * @param register  The Tbblue register.
+	/** Returns the value of one Next register.
+	 * @param register  The Next register.
 	 * @returns A promise with the value.
 	  */
-	public async sendDzrpCmdGetTbblueReg(register: number): Promise<number> {
-		const buffer = await this.sendDzrpCmd(DZRP.CMD_GET_TBBLUE_REG, [register]);
+	public async sendDzrpCmdGetNextreg(register: number): Promise<number> {
+		const buffer = await this.sendDzrpCmd(DZRP.CMD_GET_NEXTREG, [register]);
 		return buffer[0];
 	}
 
