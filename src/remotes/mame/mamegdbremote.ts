@@ -1059,10 +1059,9 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * are written in this order.
 	 */
 	protected async sendDzrpCmdSetNextregs(regValues: Array<[number, number]>): Promise<void> {
-		// TODO: Try to send several commands at once
-		for (let [reg, value] of regValues) {
-			await this.sendQrcmd(`nr${reg.toString(16)}=${value.toString(16)}`);
-		}
+		// Create one command that sets all registers
+		const allCommands = regValues.map(([reg, value]) => `nr${reg.toString(16)}=${value.toString(16)}`).join(';');
+		await this.sendQrcmd(allCommands);
 	}
 
 
@@ -1153,16 +1152,16 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	public async loadBin(filePath: string): Promise<number> {
 		const sp = await super.loadBin(filePath);
 		// Remember byte at pc
-		const pcStr = await this.sendQrcmd('print pc');
-		const memByteStr = await this.sendQrcmd(`print b@${pcStr}`);
-		// Exchange with nop
-		await this.sendQrcmd(`b@${pcStr}=0`);	// NOP
-		// Single step
-		await this.sendQrcmd('step');
-		// Restore original byte at pc
-		await this.sendQrcmd(`b@${pcStr}=${memByteStr}`);
-		// Reset PC to original value
-		await this.sendQrcmd(`pc=${pcStr}`);
+		const qRcmds = [
+			`temp0=pc`,
+			`temp1=b@pc`,
+			`b@pc=0`,	// NOP
+			`step`,
+			'pc=temp0',
+			`b@pc=temp1`,
+		]
+		const qRcmdsStr = qRcmds.join(';');
+		await this.sendQrcmd(qRcmdsStr);
 		return sp;
 	}
 
