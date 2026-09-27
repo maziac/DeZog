@@ -192,6 +192,8 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		this.supportsASSERTION = (!unsupportedCommands.includes(DZRP.CMD_SET_BREAKPOINTS)) || (!unsupportedCommands.includes(DZRP.CMD_ADD_BREAKPOINT));
 		this.supportsLOGPOINT = this.supportsASSERTION;
 		this.supportsBreakOnInterrupt = !unsupportedCommands.includes(DZRP.CMD_ENABLE_BREAK_ON_INTERRUPT);
+		// Used e.g. for uploading the palette of a NEX loading screen
+		this.supportsExecAsm = !unsupportedCommands.includes(DZRP.CMD_EXEC_ASM);
 
 		// Enable/disable state save/restore
 		if (unsupportedCommands.includes(DZRP.CMD_WRITE_STATE)) {
@@ -1099,7 +1101,8 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	 * @returns An error code (0=no error). The registers AF, BC, DE, HL.
 	 */
 	protected async sendDzrpCmdExecAsm(code: Array<number>): Promise<{error: number, a: number, f: number, bc: number, de: number, hl: number}> {
-		const data = await this.sendDzrpCmd(DZRP.CMD_EXEC_ASM, code);
+		const context = 0;	// 0 = debugger context
+		const data = await this.sendDzrpCmd(DZRP.CMD_EXEC_ASM, [context, ...code]);
 		return {
 			error: data[0],
 			f: data[1],

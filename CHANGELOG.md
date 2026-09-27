@@ -5,6 +5,8 @@
   - Evaluates the CMD_GET_SUPPORTED_COMMANDS.
   - Show LOG_NTF messages in a new log channel "DeZog DZRP Log notifications". Has to be enabled in the settings.
 - SNA file format. Now also file extension *.snx is supported.
+- NEX file: the loading screen (Layer2, ULA, LoRes, Timex HiRes/HiCol) is now loaded before the memory banks, incl. palette and display settings like the NEX loader does. zsim only shows the ULA screen.
+- NEX file: fixed the bank offset for files with a 320x256/640x256 Layer2 loading screen (the palette was not taken into account).
 - A generic "dzrp" remote has been implemented which can connect via serial or socket connection.
 - Memory Views (debug commands "-mv", "-mvw" and "-mvd") allow additional parameter "bank=" to specify the bank to display.
 - Debug commands "-md", "-mdelta", "-ml", "-ms", "-msetb" and "-msetw" allow additional parameter to specify a bank to read from or write to.

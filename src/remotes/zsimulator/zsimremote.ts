@@ -1238,6 +1238,11 @@ export class ZSimRemote extends DzrpRemote {
 		// Set the border
 		await this.sendDzrpCmdWritePort(0xFE, nexFile.borderColor);
 
+		// Load the loading screen(s) first.
+		// Note: Only the memory is written, zsim does not display Layer2, LoRes or Timex screens.
+		for (const write of nexFile.getLoadingScreenBankWrites())
+			this.memory.writeMemoryData(write.bank8, write.offset, write.data, 0, write.data.length);
+
 		// Load memory banks
 		for (const memBank of nexFile.memBanks) {
 			// Convert 16K to 8K banks
