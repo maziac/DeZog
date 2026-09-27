@@ -1054,6 +1054,18 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
+	/** Sends the command to write several ZX Next registers.
+	 * @param regValues Array with register/value pairs. The registers
+	 * are written in this order.
+	 */
+	protected async sendDzrpCmdSetNextregs(regValues: Array<[number, number]>): Promise<void> {
+		// TODO: Try to send several commands at once
+		for (let [reg, value] of regValues) {
+			await this.sendQrcmd(`nr${reg.toString(16)}=${value.toString(16)}`);
+		}
+	}
+
+
 	/* Sends the command to write to a port.
 	 * @param port The port address.
 	 * @param value the value to write.
@@ -1061,6 +1073,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
 		await this.sendQrcmd(`ib@${port.toString(16)}=${value.toString(16)}`);
 	}
+
 
 
 	/** Ignore command.
@@ -1143,7 +1156,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		const pcStr = await this.sendQrcmd('print pc');
 		const memByteStr = await this.sendQrcmd(`print b@${pcStr}`);
 		// Exchange with nop
-		await this.sendQrcmd(`w@${pcStr}=0`);	// NOP
+		await this.sendQrcmd(`b@${pcStr}=0`);	// NOP
 		// Single step
 		await this.sendQrcmd('step');
 		// Restore original byte at pc
