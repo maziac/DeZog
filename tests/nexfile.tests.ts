@@ -4,10 +4,6 @@ import {suite, test} from 'mocha';
 import {DzrpRemote} from '../src/remotes/dzrp/dzrpremote';
 import {NexFile} from '../src/remotes/dzrp/nexfile';
 import {Z80_REG} from '../src/remotes/z80registers';
-import {Z80Cpu} from '../src/remotes/zsimulator/z80cpu';
-import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
-import {SimulatedMemory} from '../src/remotes/zsimulator/simulatedmemory';
-import {MemoryModelAllRam} from '../src/remotes/MemoryModel/genericmemorymodels';
 
 suite('NexFile related', () => {
 
@@ -197,29 +193,46 @@ suite('NexFile related', () => {
 
 	suite('DzrpRemote - loadNexLoadingScreens', () => {
 		class MockDzrpRemote extends DzrpRemote {
-			public outPorts = new Array<{port: number, value: number}>();
-			public outNextRegs = new Map<number, number>();
-			public outPaletteValues = new Array<number>();
+			public outPorts = new Array<[number, number]>();
+			// All written registers in order: [reg, value]
+			public outRegs = new Array<[number, number]>();
+			public outSetNextRegsCount = 0;
 			public outBankWrites = new Array<number>();
-			protected selectedReg = 0;
+			public inRegs = new Map<number, number>([[0x08, 0b1000_0000], [0x68, 0b1001_0000]]);
 			public async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
-				if (port === 0x243B)
-					this.selectedReg = value;
-				else if (port === 0x253B) {
-					if (this.selectedReg === 0x44)
-						this.outPaletteValues.push(value);
-					else
-						this.outNextRegs.set(this.selectedReg, value);
-				}
-				else
-					this.outPorts.push({port, value});
+				this.outPorts.push([port, value]);
+			}
+			public async sendDzrpCmdSetNextregs(regValues: Array<[number, number]>): Promise<void> {
+				this.outSetNextRegsCount++;
+				this.outRegs.push(...regValues);
 			}
 			public async sendDzrpCmdWriteBankMem(bank: number, offset: number, dataArray: Buffer | Uint8Array): Promise<void> {
 				this.outBankWrites.push(bank);
 			}
 			public async sendDzrpCmdGetTbblueReg(register: number): Promise<number> {
-				return 0b1000_0000;
+				return this.inRegs.get(register)!;
 			}
+			// Returns the registers without the palette values.
+			public getRegsWithoutPalette(): Array<[number, number]> {
+				return this.outRegs.filter(([reg]) => reg !== 0x44);
+			}
+			// Returns the palette values.
+			public getPaletteValues(): number[] {
+				return this.outRegs.filter(([reg]) => reg === 0x44).map(([, value]) => value);
+			}
+		}
+
+		// Loads a NEX file with the given loading screen flags and checks the result.
+		function testLoad(name: string, flags: number, check: (remote: MockDzrpRemote) => void) {
+			test(name, async () => {
+				const remote = new MockDzrpRemote() as any;
+				const nexFile = new NexFile();
+				nexFile.readBuffer(createNexBuffer(flags, 0b0010_1000));
+				await remote.loadNexLoadingScreens(nexFile);
+				assert.ok(remote.outSetNextRegsCount > 0);
+				assert.equal(remote.outPorts.length, 0);
+				check(remote);
+			});
 		}
 
 		test('No loading screen', async () => {
@@ -228,212 +241,54 @@ suite('NexFile related', () => {
 			nexFile.readFile('./tests/data/nexfiles/project/main.nex');
 			await remote.loadNexLoadingScreens(nexFile);
 			assert.equal(remote.outPorts.length, 0);
-			assert.equal(remote.outNextRegs.size, 0);
+			assert.equal(remote.outRegs.length, 0);
+			assert.equal(remote.outSetNextRegsCount, 0);
 			assert.equal(remote.outBankWrites.length, 0);
 		});
 
-		test('Layer2', async () => {
-			const remote = new MockDzrpRemote() as any;
-			const nexFile = new NexFile();
-			nexFile.readBuffer(createNexBuffer(0x01));
-			await remote.loadNexLoadingScreens(nexFile);
-			assert.equal(remote.outPaletteValues.length, 512);
-			assert.ok(remote.outPaletteValues.every(v => v === 0x11));
-			assert.equal(remote.outNextRegs.get(0x43), 0x10);
-			assert.equal(remote.outNextRegs.get(0x40), 0);
-			assert.equal(remote.outNextRegs.get(0x12), 9);
-			assert.equal(remote.outNextRegs.get(0x15), 0x01);
-			assert.deepEqual(remote.outBankWrites, [18, 19, 20, 21, 22, 23]);
-			assert.deepEqual(remote.outPorts, [{port: 0x123B, value: 2}, {port: 0xFF, value: 0}]);
-		});
-
-		test('ULA', async () => {
-			const remote = new MockDzrpRemote() as any;
-			const nexFile = new NexFile();
-			nexFile.readBuffer(createNexBuffer(0x02));
-			await remote.loadNexLoadingScreens(nexFile);
-			assert.equal(remote.outPaletteValues.length, 0);
-			assert.deepEqual(remote.outBankWrites, [10]);
-			assert.equal(remote.outNextRegs.get(0x15), 0x01);
-			assert.deepEqual(remote.outPorts, [{port: 0x123B, value: 0}, {port: 0xFF, value: 0}]);
-		});
-
-		test('LoRes', async () => {
-			const remote = new MockDzrpRemote() as any;
-			const nexFile = new NexFile();
-			nexFile.readBuffer(createNexBuffer(0x04));
-			await remote.loadNexLoadingScreens(nexFile);
-			assert.equal(remote.outPaletteValues.length, 512);
-			assert.equal(remote.outNextRegs.get(0x43), 0x01);
-			assert.equal(remote.outNextRegs.get(0x15), 0x81);
-			assert.deepEqual(remote.outBankWrites, [10, 11]);
-			assert.deepEqual(remote.outPorts, [{port: 0x123B, value: 0}, {port: 0xFF, value: 3}]);
-		});
-
-		test('Timex HiRes', async () => {
-			const remote = new MockDzrpRemote() as any;
-			const nexFile = new NexFile();
-			nexFile.readBuffer(createNexBuffer(0x08, 0b0010_1000));
-			await remote.loadNexLoadingScreens(nexFile);
-			assert.equal(remote.outPaletteValues.length, 0);
-			assert.equal(remote.outNextRegs.get(0x08), 0b1000_0100);	// Timex enabled
-			assert.deepEqual(remote.outBankWrites, [10, 11]);
-			assert.deepEqual(remote.outPorts, [{port: 0x123B, value: 0}, {port: 0xFF, value: 0b0010_1110}]);
-		});
-
-		test('Palette via CMD_EXEC_ASM', async () => {
-			class MockExecAsmRemote extends MockDzrpRemote {
-				public outCalls = new Array<string>();
-				public outCodes = new Array<number[]>();
-				public async sendDzrpCmdWriteBankMem(bank: number, offset: number, dataArray: Buffer | Uint8Array): Promise<void> {
-					this.outCalls.push('bank' + bank + ':' + dataArray[0].toString(16));
-				}
-				public async sendDzrpCmdExecAsm(code: Array<number>): Promise<{error: number, a: number, f: number, bc: number, de: number, hl: number}> {
-					this.outCalls.push('asm');
-					this.outCodes.push(code);
-					return {error: 0, f: 0, a: 0, bc: 0, de: 0, hl: 0};
-				}
-			}
-			// Layer2: palette is temporarily stored in 8k bank 18
-			let remote = new MockExecAsmRemote() as any;
-			remote.supportsExecAsm = true;
-			let nexFile = new NexFile();
-			nexFile.readBuffer(createNexBuffer(0x01));
-			await remote.loadNexLoadingScreens(nexFile);
-			assert.equal(remote.outPaletteValues.length, 0);
-			assert.deepEqual(remote.outCalls, ['bank18:11', 'asm', 'bank18:22', 'bank19:22', 'bank20:22', 'bank21:22', 'bank22:22', 'bank23:22', 'asm']);
-			assert.deepEqual(remote.outCodes[0], remote.createPaletteUploadAsm(18, 0x10));
-			// The display setup is done by the Z80, not by port writes
-			assert.equal(remote.outPorts.length, 0);
-			assert.equal(remote.outNextRegs.size, 0);
-
-			// LoRes: palette is temporarily stored in 8k bank 10
-			remote = new MockExecAsmRemote() as any;
-			remote.supportsExecAsm = true;
-			nexFile = new NexFile();
-			nexFile.readBuffer(createNexBuffer(0x04));
-			await remote.loadNexLoadingScreens(nexFile);
-			assert.deepEqual(remote.outCalls, ['bank10:11', 'asm', 'bank10:44', 'bank11:44', 'asm']);
-			assert.deepEqual(remote.outCodes[0], remote.createPaletteUploadAsm(10, 0x01));
-		});
-
-		test('createPaletteUploadAsm - execute', () => {
-			// Setup a Z80N with simple Next register emulation
-			const memModel = new MemoryModelAllRam();
-			const ports = new Z80Ports('AND', 0xFF);
-			const cpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports, {cpuFrequency: 3500000, Z80N: true} as any) as any;
-			let selectedReg = 0;
-			const nextRegs = new Map<number, number>([[0x56, 0x07]]);	// Slot 6 = bank 7
-			const regWrites = new Array<{reg: number, value: number}>();
-			ports.registerSpecificOutPortFunction(0x243B, (port, value) => selectedReg = value);
-			ports.registerSpecificOutPortFunction(0x253B, (port, value) => {
-				regWrites.push({reg: selectedReg, value});
-				if (selectedReg !== 0x44)
-					nextRegs.set(selectedReg, value);
-			});
-			ports.registerSpecificInPortFunction(0x253B, port => nextRegs.get(selectedReg) ?? 0);
-
-			// Palette data at 0xC000 (all RAM, slot switching is not emulated)
-			const palette = new Array<number>();
-			for (let i = 0; i < 512; i++)
-				palette.push((i * 7) & 0xFF);
-			cpu.memory.writeBlock64k(0xC000, palette);
-			// Code + RET at 0x8000
-			const remote = new MockDzrpRemote() as any;
-			const code = [...remote.createPaletteUploadAsm(42, 0x10), 0xC9];
-			cpu.memory.writeBlock64k(0x8000, code);
-			// Return address 0x0000
-			cpu.memory.writeBlock64k(0x7FFE, [0x00, 0x00]);
-			cpu.sp = 0x7FFE;
-			cpu.pc = 0x8000;
-
-			// Run until RET
-			let count = 0;
-			while (cpu.pc !== 0x0000) {
-				cpu.z80.run_instruction();
-				assert.ok(++count < 10000, "Endless loop");
-			}
-
-			// Check
-			assert.equal(cpu.sp, 0x8000);
-			const palWrites = regWrites.filter(w => w.reg === 0x44).map(w => w.value);
-			assert.deepEqual(palWrites, palette);
-			const otherWrites = regWrites.filter(w => w.reg !== 0x44);
-			assert.deepEqual(otherWrites, [
-				{reg: 0x56, value: 42},
-				{reg: 0x43, value: 0x10},
-				{reg: 0x40, value: 0},
-				{reg: 0x56, value: 0x07}	// Restored
+		testLoad('Layer2', 0x01, remote => {
+			assert.deepEqual(remote.getPaletteValues(), new Array(512).fill(0x11));
+			assert.deepEqual(remote.getRegsWithoutPalette(), [
+				[0x43, 0x10], [0x40, 0],	// Palette
+				[0x12, 9], [0x70, 0], [0x16, 0], [0x17, 0],
+				[0x1C, 1], [0x18, 0], [0x18, 255], [0x18, 0], [0x18, 191],
+				[0x15, 0x01], [0x69, 0x80]
 			]);
-			// Palette control/index are written before the palette values
-			const firstPalIndex = regWrites.findIndex(w => w.reg === 0x44);
-			assert.ok(regWrites.findIndex(w => w.reg === 0x40) < firstPalIndex);
+			// Palette is written before the index 0x44 values
+			assert.deepEqual(remote.outRegs.slice(0, 3), [[0x43, 0x10], [0x40, 0], [0x44, 0x11]]);
+			assert.deepEqual(remote.outBankWrites, [18, 19, 20, 21, 22, 23]);
 		});
 
-		test('executeIoWrites - split into chunks', async () => {
-			class MockExecAsmRemote extends MockDzrpRemote {
-				public outCodes = new Array<number[]>();
-				public async sendDzrpCmdExecAsm(code: Array<number>): Promise<{error: number, a: number, f: number, bc: number, de: number, hl: number}> {
-					this.outCodes.push(code);
-					return {error: 0, f: 0, a: 0, bc: 0, de: 0, hl: 0};
-				}
-			}
-			const remote = new MockExecAsmRemote() as any;
-			remote.supportsExecAsm = true;
-			const ioWrites = new Array<any>();
-			for (let i = 0; i < 40; i++)
-				ioWrites.push({reg: i, value: i});	// 4 bytes each
-			await remote.executeIoWrites(ioWrites);
-			assert.equal(remote.outCodes.length, 2);
-			assert.ok(remote.outCodes.every(c => c.length <= 90));
-			assert.deepEqual([...remote.outCodes[0], ...remote.outCodes[1]], remote.createIoWritesAsm(ioWrites));
+		testLoad('ULA', 0x02, remote => {
+			assert.deepEqual(remote.getPaletteValues(), []);
+			assert.deepEqual(remote.getRegsWithoutPalette(), [
+				[0x68, 0b0001_0000], [0x15, 0x01], [0x69, 0]
+			]);
+			assert.deepEqual(remote.outBankWrites, [10]);
 		});
 
-		test('createIoWritesAsm - execute', () => {
-			const memModel = new MemoryModelAllRam();
-			const ports = new Z80Ports('AND', 0xFF);
-			const cpu = new Z80Cpu(new SimulatedMemory(memModel, ports), ports, {cpuFrequency: 3500000, Z80N: true} as any) as any;
-			let selectedReg = 0;
-			const nextRegs = new Map<number, number>([[0x68, 0b1001_0000]]);
-			const writes = new Array<string>();
-			ports.registerGenericOutPortFunction((port, value) => {
-				if (port === 0x243B)
-					selectedReg = value;
-				else if (port === 0x253B) {
-					nextRegs.set(selectedReg, value);
-					writes.push('reg' + selectedReg.toString(16) + '=' + value.toString(16));
-				}
-				else
-					writes.push('port' + port.toString(16) + '=' + value.toString(16));
-			});
-			ports.registerSpecificInPortFunction(0x253B, port => nextRegs.get(selectedReg) ?? 0);
-
-			const remote = new MockDzrpRemote() as any;
-			const code = [...remote.createIoWritesAsm([
-				{reg: 0x12, value: 9},
-				{port: 0x123B, value: 2},
-				{reg: 0x68, and: 0x7F, or: 0x01},
-				{port: 0xFF, value: 0x2E}
-			]), 0xC9];
-			cpu.memory.writeBlock64k(0x8000, code);
-			cpu.memory.writeBlock64k(0x7FFE, [0x00, 0x00]);
-			cpu.sp = 0x7FFE;
-			cpu.pc = 0x8000;
-			let count = 0;
-			while (cpu.pc !== 0x0000) {
-				cpu.z80.run_instruction();
-				assert.ok(++count < 1000, "Endless loop");
-			}
-			assert.deepEqual(writes, ['reg12=9', 'port123b=2', 'reg68=11', 'portff=2e']);
-		});
-
-		test('Timex HiCol', async () => {
-			const remote = new MockDzrpRemote() as any;
-			const nexFile = new NexFile();
-			nexFile.readBuffer(createNexBuffer(0x10));
-			await remote.loadNexLoadingScreens(nexFile);
+		testLoad('LoRes', 0x04, remote => {
+			assert.deepEqual(remote.getPaletteValues(), new Array(512).fill(0x11));
+			assert.deepEqual(remote.getRegsWithoutPalette(), [
+				[0x43, 0x01], [0x40, 0],	// Palette
+				[0x68, 0b0001_0000], [0x32, 0], [0x33, 0], [0x15, 0x81], [0x69, 0x03]
+			]);
 			assert.deepEqual(remote.outBankWrites, [10, 11]);
-			assert.deepEqual(remote.outPorts, [{port: 0x123B, value: 0}, {port: 0xFF, value: 2}]);
+		});
+
+		testLoad('Timex HiRes', 0x08, remote => {
+			assert.deepEqual(remote.getPaletteValues(), []);
+			assert.deepEqual(remote.getRegsWithoutPalette(), [
+				[0x68, 0b0001_0000], [0x08, 0b1000_0100], [0x15, 0x01], [0x69, 0b0010_1110]
+			]);
+			assert.deepEqual(remote.outBankWrites, [10, 11]);
+		});
+
+		testLoad('Timex HiCol', 0x10, remote => {
+			assert.deepEqual(remote.getRegsWithoutPalette(), [
+				[0x68, 0b0001_0000], [0x08, 0b1000_0100], [0x15, 0x01], [0x69, 0x02]
+			]);
+			assert.deepEqual(remote.outBankWrites, [10, 11]);
 		});
 	});
 

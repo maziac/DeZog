@@ -77,6 +77,7 @@ I.e. different remotes may use a different subset of commands. For one this is b
 [CMD_GET_SUPPORTED_COMMANDS]: #cmd_get_supported_commands24
 [CMD_READ_BANK_MEM]: #cmd_read_bank_mem25
 [CMD_WRITE_BANK_MEM]: #cmd_write_bank_mem26
+[CMD_SET_NEXTREGS]: #cmd_set_nextregs27
 [CMD_ENABLE_BREAK_ON_INTERRUPT]: #cmd_enable_break_on_interrupt39
 [CMD_ADD_BREAKPOINT]: #cmd_add_breakpoint40
 [CMD_REMOVE_BREAKPOINT]: #cmd_remove_breakpoint41
@@ -115,6 +116,7 @@ The table below shows which commands are used (X) with what remote:
 | [CMD_GET_SUPPORTED_COMMANDS] (24)              | X     | X      | X      | -     |
 | [CMD_READ_BANK_MEM] (25)                       | X     | X      | X      | X     |
 | [CMD_WRITE_BANK_MEM] (26)                      | X     | X      | X      | X     |
+| [CMD_SET_NEXTREGS] (27)                        | -     | X      | X      | -     |
 | [CMD_ENABLE_BREAK_ON_INTERRUPT] (39)           | X     | -      | -      | -     |
 | [CMD_ADD_BREAKPOINT] (40)                      | X     | X      | -      | X     |
 | [CMD_REMOVE_BREAKPOINT] (41)                   | X     | X      | -      | X     |
@@ -138,6 +140,7 @@ Added:
 - CMD_GET_SUPPORTED_COMMANDS added which returns the supported commands.
 - CMD_ENABLE_BREAK_ON_INTERRUPT to disable/enable pausing the debugged program on entering an interrupt.
 - CMD_READ_BANK_MEM/CMD_WRITE_BANK_MEM added to allow read from/write to a bank.
+- CMD_SET_NEXTREGS added to write a list of ZX Next registers (e.g. a complete palette).
 
 Changed:
 - Sequence number range changed from 1-255 to 1-15.
@@ -771,6 +774,27 @@ Response (Length=1):
 
 - The memory is written to the bank specified by bank.
 - offset: The offset inside the bank.
+
+
+## CMD_SET_NEXTREGS=27
+Command (Length=2*N):
+| Index | Size | Value | Description  |
+| ----- | ---- | ----- | ------------ |
+| 0     | 1    | 0-255 | 1st register |
+| 1     | 1    | 0-255 | 1st value    |
+| ...   | ...  | ...   | ...          |
+| 2*N-2 | 1    | 0-255 | Nth register |
+| 2*N-1 | 1    | 0-255 | Nth value    |
+
+
+Response (Length=1):
+| Index | Size | Value | Description |
+| ----- | ---- | ----- | ----------- |
+| 0     | 1    | 1-15  | Same seq no |
+
+- Writes the ZX Next registers in the given order. I.e. the remote executes a 'NEXTREG register,value' for each pair.
+- A register may occur several times. E.g. a complete palette can be set with (0x43, palette control), (0x40, 0) followed by 512 pairs (0x44, value).
+- The written values must persist when the debugged program is continued.
 
 
 ## CMD_ENABLE_BREAK_ON_INTERRUPT=39

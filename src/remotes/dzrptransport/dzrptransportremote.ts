@@ -192,8 +192,6 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		this.supportsASSERTION = (!unsupportedCommands.includes(DZRP.CMD_SET_BREAKPOINTS)) || (!unsupportedCommands.includes(DZRP.CMD_ADD_BREAKPOINT));
 		this.supportsLOGPOINT = this.supportsASSERTION;
 		this.supportsBreakOnInterrupt = !unsupportedCommands.includes(DZRP.CMD_ENABLE_BREAK_ON_INTERRUPT);
-		// Used e.g. for uploading the palette of a NEX loading screen
-		this.supportsExecAsm = !unsupportedCommands.includes(DZRP.CMD_EXEC_ASM);
 
 		// Enable/disable state save/restore
 		if (unsupportedCommands.includes(DZRP.CMD_WRITE_STATE)) {
@@ -889,6 +887,17 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 		await this.sendDzrpCmd(DZRP.CMD_WRITE_BANK_MEM, [bank,
 			offset & 0xFF, offset >>> 8,
 			...data]);
+	}
+
+
+	/** Sends the command to write several ZX Next registers.
+	 * @param regValues Array with register/value pairs. The registers
+	 * are written in this order.
+	 */
+	protected async sendDzrpCmdSetNextregs(regValues: Array<[number, number]>): Promise<void> {
+		if (regValues.length === 0)
+			return;
+		await this.sendDzrpCmd(DZRP.CMD_SET_NEXTREGS, regValues.flat());
 	}
 
 

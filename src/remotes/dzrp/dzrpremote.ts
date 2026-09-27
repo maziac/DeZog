@@ -13,7 +13,7 @@ import * as path from 'path';
 import {Labels} from '../../labels/labels';
 import {gzip, ungzip} from 'node-gzip';
 import {TimeWait} from '../../misc/timewait';
-import {Log} from '../../log';
+import {Log, LogTransport} from '../../log';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {PromiseCallbacks} from '../../misc/promisecallbacks';
 import {MemoryModelZx128k, MemoryModelZx16k, MemoryModelZx48k} from '../MemoryModel/zxspectrummemorymodels';
@@ -66,6 +66,9 @@ export enum DZRP {
 	// Banks
 	CMD_READ_BANK_MEM = 25,
 	CMD_WRITE_BANK_MEM = 26,
+
+	// ZX Next registers
+	CMD_SET_NEXTREGS = 27,
 
 	CMD_ENABLE_BREAK_ON_INTERRUPT = 39,
 
@@ -130,12 +133,6 @@ export interface BreakInfo {
 
 
 
-/** A port write, a ZX Next register write or a ZX Next register
- * read-modify-write (value = (value & and) | or).
- * Used to set up the NEX loading screen.
- */
-export type NexIoWrite = {port: number, value: number} | {reg: number, value: number} | {reg: number, and: number, or: number};
-
 /** A class that communicates with the remote via the DZRP protocol.
  * It is base class for all DZRP remote classes that implement
  * special transports like serial connection or socket.
@@ -157,9 +154,6 @@ export class DzrpRemote extends RemoteBase {
 
 	// This flag is used to pause a step-out.
 	protected pauseStep = false;
-
-	// true if CMD_EXEC_ASM is supported by the remote.
-	protected supportsExecAsm = false;
 
 	// Object to allow to give time to vscode during long running 'steps'.
 	protected timeWait: TimeWait;
@@ -1781,11 +1775,21 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 		const nexFile = new NexFile();
 		nexFile.readFile(filePath);
 
-		// Set the border
-		await this.sendDzrpCmdWritePort(0xFE, nexFile.borderColor);
+		try {
+			// Set the border
+			await this.sendDzrpCmdWritePort(0xFE, nexFile.borderColor);
+		}
+		catch (error) {
+			LogTransport.log("Failed to set border color: " + error);
+		}
 
-		// Show the loading screen(s) first
-		await this.loadNexLoadingScreens(nexFile);
+		try {
+			// Show the loading screen(s) first
+			await this.loadNexLoadingScreens(nexFile);
+		}
+		catch (error) {
+			LogTransport.log("Failed to show loading screen: " + error);
+		}
 
 		// Transfer 16k memory banks
 		for (const memBank of nexFile.memBanks) {
@@ -1816,161 +1820,16 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 	}
 
 
-	/** Writes a ZX Next register via the ports 0x243B/0x253B.
-	 * @param register The register number.
-	 * @param value The value to write.
-	 */
-	protected async writeNextReg(register: number, value: number): Promise<void> {
-		await this.sendDzrpCmdWritePort(0x243B, register);
-		await this.sendDzrpCmdWritePort(0x253B, value);
-	}
-
-
-	/** Executes port and ZX Next register writes.
-	 * If CMD_EXEC_ASM is supported a small program is created and executed.
-	 * Otherwise every write is done with CMD_WRITE_PORT.
-	 * Note: The writes are done by the Z80 in the remote because e.g. in
-	 * CSpect writing the ports (Layer2, Next registers) via CMD_WRITE_PORT
-	 * has no effect.
-	 * @param ioWrites The writes in the order to execute.
-	 */
-	protected async executeIoWrites(ioWrites: NexIoWrite[]): Promise<void> {
-		if (ioWrites.length === 0)
-			return;
-		if (this.supportsExecAsm) {
-			// Split into several programs, dezogif accepts max. 100 bytes of code
-			const MAX_CODE_SIZE = 90;
-			const chunks = new Array<number[]>();
-			let chunk = new Array<number>();
-			for (const ioWrite of ioWrites) {
-				const code = this.createIoWritesAsm([ioWrite]);
-				if (chunk.length + code.length > MAX_CODE_SIZE) {
-					chunks.push(chunk);
-					chunk = new Array<number>();
-				}
-				chunk.push(...code);
-			}
-			chunks.push(chunk);
-			for (const code of chunks) {
-				const result = await this.sendDzrpCmdExecAsm(code);
-				if (result.error !== 0)
-					throw Error("Setting up the NEX loading screen failed with error " + result.error + ".");
-			}
-			return;
-		}
-		// Port writes
-		for (const ioWrite of ioWrites) {
-			if ('port' in ioWrite) {
-				await this.sendDzrpCmdWritePort(ioWrite.port, ioWrite.value);
-			}
-			else if ('value' in ioWrite) {
-				await this.writeNextReg(ioWrite.reg, ioWrite.value);
-			}
-			else {
-				// Read-modify-write
-				try {
-					const value = await this.sendDzrpCmdGetTbblueReg(ioWrite.reg);
-					await this.writeNextReg(ioWrite.reg, (value & ioWrite.and) | ioWrite.or);
-				}
-				catch (e) {
-					Log.log("executeIoWrites: Could not modify register " + ioWrite.reg + ": " + e.message);
-				}
-			}
-		}
-	}
-
-
-	/** Creates a small Z80N program that executes the given port and
-	 * ZX Next register writes.
-	 * The code has no trailing RET.
-	 * @param ioWrites The writes in the order to execute.
-	 * @returns The machine code.
-	 */
-	protected createIoWritesAsm(ioWrites: NexIoWrite[]): number[] {
-		const code = new Array<number>();
-		for (const ioWrite of ioWrites) {
-			if ('port' in ioWrite) {
-				code.push(
-					0x01, ioWrite.port & 0xFF, ioWrite.port >> 8,	// LD BC,port
-					0x3E, ioWrite.value,	// LD A,value
-					0xED, 0x79				// OUT (C),A
-				);
-			}
-			else if ('value' in ioWrite) {
-				code.push(0xED, 0x91, ioWrite.reg, ioWrite.value);	// NEXTREG reg,value
-			}
-			else {
-				code.push(
-					0x01, 0x3B, 0x24,		// LD BC,0x243B
-					0x3E, ioWrite.reg,		// LD A,reg
-					0xED, 0x79,				// OUT (C),A
-					0x04,					// INC B
-					0xED, 0x78,				// IN A,(C)
-					0xE6, ioWrite.and,		// AND and
-					0xF6, ioWrite.or,		// OR or
-					0xED, 0x79				// OUT (C),A
-				);
-			}
-		}
-		return code;
-	}
-
-
-	/** Creates a small Z80N program that transfers a 512 byte palette
-	 * (256 9-bit colors) from the start of an 8k bank to the ZX Next palette.
-	 * Slot 6 is used temporarily to access the bank and restored afterwards.
-	 * The code has no trailing RET.
-	 * @param bank8 The 8k bank that contains the palette data at offset 0.
-	 * @param paletteControl The value for NextReg 0x43 (palette control),
-	 * i.e. the palette to write to.
-	 * @returns The machine code.
-	 */
-	protected createPaletteUploadAsm(bank8: number, paletteControl: number): number[] {
-		return [
-			// Save slot 6
-			0x01, 0x3B, 0x24,		// LD BC,0x243B
-			0x3E, 0x56,				// LD A,0x56
-			0xED, 0x79,				// OUT (C),A
-			0x04,					// INC B
-			0xED, 0x78,				// IN A,(C)
-			0xF5,					// PUSH AF
-			// Page in the palette data at 0xC000
-			0xED, 0x91, 0x56, bank8,	// NEXTREG 0x56,bank8
-			// Select the palette, start with index 0
-			0xED, 0x91, 0x43, paletteControl,	// NEXTREG 0x43,paletteControl
-			0xED, 0x91, 0x40, 0x00,	// NEXTREG 0x40,0
-			0x05,					// DEC B
-			0x3E, 0x44,				// LD A,0x44
-			0xED, 0x79,				// OUT (C),A
-			0x04,					// INC B
-			0x21, 0x00, 0xC0,		// LD HL,0xC000
-			0x1E, 0x00,				// LD E,0	; 256 colors
-			// .loop: 2 bytes per color
-			0x7E,					// LD A,(HL)
-			0x23,					// INC HL
-			0xED, 0x79,				// OUT (C),A
-			0x7E,					// LD A,(HL)
-			0x23,					// INC HL
-			0xED, 0x79,				// OUT (C),A
-			0x1D,					// DEC E
-			0x20, 0xF5,				// JR NZ,.loop
-			// Restore slot 6
-			0xF1,					// POP AF
-			0xED, 0x92, 0x56		// NEXTREG 0x56,A
-		];
-	}
-
-
 	/** Loads the loading screen(s) of a NEX file and makes them visible.
 	 * Does the same as the NEX loader of NextZXOS (nexload.asm):
 	 * uploads the palette, writes the screen data to banks 5 (ULA, LoRes,
-	 * Timex) or 9-11 (Layer2) and sets the registers/ports for display.
+	 * Timex) or 9-11 (Layer2) and sets the registers for display.
+	 * Only ZX Next registers are used (no ports), port 0x123B (Layer2
+	 * visible) and 0xFF (Timex) are set via their alias register 0x69.
 	 * The 320x256 and 640x256 Layer2 screens are not supported.
 	 * @param nexFile The parsed NEX file.
 	 */
 	protected async loadNexLoadingScreens(nexFile: NexFile): Promise<void> {
-		const LAYER2_ACCESS_PORT = 0x123B;
-		const TIMEX_PORT = 0xFF;
 		const REG_PERIPHERAL_3 = 0x08;
 		const REG_LAYER2_RAM_BANK = 0x12;
 		const REG_SPRITE_LAYER_SYSTEM = 0x15;
@@ -1980,38 +1839,27 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 		const REG_CLIP_WINDOW_CONTROL = 0x1C;
 		const REG_LORES_OFFSET_X = 0x32;
 		const REG_LORES_OFFSET_Y = 0x33;
-		const REG_ULA_CONTROL = 0x68;
-		const REG_LAYER2_CONTROL = 0x70;
 		const REG_PALETTE_INDEX = 0x40;
 		const REG_PALETTE_CONTROL = 0x43;
 		const REG_PALETTE_VALUE_9BIT = 0x44;
+		const REG_ULA_CONTROL = 0x68;
+		const REG_DISPLAY_CONTROL_1 = 0x69;	// Bit 7: Layer2 visible (alias 0x123B), bits 5-0: alias port 0xFF (Timex)
+		const REG_LAYER2_CONTROL = 0x70;
 		const SPRITES_VISIBLE = 0x01;
 		const LORES_ENABLE = 0x80;
+		const LAYER2_ENABLE = 0x80;
 
 		// Palette
 		const palette = nexFile.palette;
 		if (palette && (nexFile.layer2Screen || nexFile.loResScreen)) {
 			// LoRes uses the ULA palette, otherwise the Layer2 palette
-			const paletteControl = (nexFile.loResScreen) ? 0b0000_0001 : 0b0001_0000;
-			if (this.supportsExecAsm) {
-				// Upload the palette data to a bank that is overwritten
-				// by the screen data afterwards and let a small program
-				// transfer it to the palette.
-				const tmpBank8 = (nexFile.layer2Screen) ? 2 * NexFile.LAYER2_SCREEN_BANK16K : 2 * NexFile.ULA_SCREEN_BANK16K;
-				await this.sendDzrpCmdWriteBankMem(tmpBank8, 0, palette);
-				const code = this.createPaletteUploadAsm(tmpBank8, paletteControl);
-				const result = await this.sendDzrpCmdExecAsm(code);
-				if (result.error !== 0)
-					throw Error("Uploading the palette of the NEX loading screen failed with error " + result.error + ".");
-			}
-			else {
-				// One port write per byte
-				await this.writeNextReg(REG_PALETTE_CONTROL, paletteControl);
-				await this.writeNextReg(REG_PALETTE_INDEX, 0);
-				await this.sendDzrpCmdWritePort(0x243B, REG_PALETTE_VALUE_9BIT);
-				for (const value of palette)
-					await this.sendDzrpCmdWritePort(0x253B, value);
-			}
+			const regValues: Array<[number, number]> = [
+				[REG_PALETTE_CONTROL, (nexFile.loResScreen) ? 0b0000_0001 : 0b0001_0000],
+				[REG_PALETTE_INDEX, 0]
+			];
+			for (const value of palette)
+				regValues.push([REG_PALETTE_VALUE_9BIT, value]);
+			await this.sendDzrpCmdSetNextregs(regValues);
 		}
 
 		// Screen data
@@ -2019,56 +1867,52 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 			await this.sendDzrpCmdWriteBankMem(write.bank8, write.offset, write.data);
 
 		// Make visible
-		const ioWrites = new Array<NexIoWrite>();
+		const regValues = new Array<[number, number]>();
 		if (nexFile.layer2Screen) {
-			ioWrites.push(
-				{reg: REG_LAYER2_RAM_BANK, value: NexFile.LAYER2_SCREEN_BANK16K},
-				{reg: REG_LAYER2_CONTROL, value: 0},	// 256x192, palette offset 0
-				{reg: REG_LAYER2_OFFSET_X, value: 0},
-				{reg: REG_LAYER2_OFFSET_Y, value: 0},
-				{reg: REG_CLIP_WINDOW_CONTROL, value: 0b0000_0001},	// Reset Layer2 clip index
-				{reg: REG_CLIP_WINDOW_LAYER2, value: 0},
-				{reg: REG_CLIP_WINDOW_LAYER2, value: 255},
-				{reg: REG_CLIP_WINDOW_LAYER2, value: 0},
-				{reg: REG_CLIP_WINDOW_LAYER2, value: 191},
-				{port: LAYER2_ACCESS_PORT, value: 0x02},	// Layer2 visible
-				{reg: REG_SPRITE_LAYER_SYSTEM, value: SPRITES_VISIBLE},
-				{port: TIMEX_PORT, value: 0}
+			regValues.push(
+				[REG_LAYER2_RAM_BANK, NexFile.LAYER2_SCREEN_BANK16K],
+				[REG_LAYER2_CONTROL, 0],	// 256x192, palette offset 0
+				[REG_LAYER2_OFFSET_X, 0],
+				[REG_LAYER2_OFFSET_Y, 0],
+				[REG_CLIP_WINDOW_CONTROL, 0b0000_0001],	// Reset Layer2 clip index
+				[REG_CLIP_WINDOW_LAYER2, 0],
+				[REG_CLIP_WINDOW_LAYER2, 255],
+				[REG_CLIP_WINDOW_LAYER2, 0],
+				[REG_CLIP_WINDOW_LAYER2, 191],
+				[REG_SPRITE_LAYER_SYSTEM, SPRITES_VISIBLE],
+				[REG_DISPLAY_CONTROL_1, LAYER2_ENABLE]	// Timex mode 0
 			);
 		}
 		if (nexFile.ulaScreen || nexFile.loResScreen || nexFile.timexHiResScreen || nexFile.timexHiColScreen) {
 			// Make sure the ULA is enabled
-			ioWrites.push({reg: REG_ULA_CONTROL, and: 0b0111_1111, or: 0});
+			const ulaControl = await this.sendDzrpCmdGetTbblueReg(REG_ULA_CONTROL);
+			regValues.push([REG_ULA_CONTROL, ulaControl & 0b0111_1111]);
 		}
 		if (nexFile.ulaScreen) {
-			ioWrites.push(
-				{port: LAYER2_ACCESS_PORT, value: 0},
-				{reg: REG_SPRITE_LAYER_SYSTEM, value: SPRITES_VISIBLE},
-				{port: TIMEX_PORT, value: 0}
+			regValues.push(
+				[REG_SPRITE_LAYER_SYSTEM, SPRITES_VISIBLE],
+				[REG_DISPLAY_CONTROL_1, 0]	// Layer2 off, Timex mode 0
 			);
 		}
 		if (nexFile.loResScreen) {
-			ioWrites.push(
-				{reg: REG_LORES_OFFSET_X, value: 0},
-				{reg: REG_LORES_OFFSET_Y, value: 0},
-				{port: LAYER2_ACCESS_PORT, value: 0},
-				{reg: REG_SPRITE_LAYER_SYSTEM, value: SPRITES_VISIBLE | LORES_ENABLE},
-				{port: TIMEX_PORT, value: 0x03}
+			regValues.push(
+				[REG_LORES_OFFSET_X, 0],
+				[REG_LORES_OFFSET_Y, 0],
+				[REG_SPRITE_LAYER_SYSTEM, SPRITES_VISIBLE | LORES_ENABLE],
+				[REG_DISPLAY_CONTROL_1, 0x03]	// Layer2 off, Timex mode 3
 			);
 		}
 		if (nexFile.timexHiResScreen || nexFile.timexHiColScreen) {
-			ioWrites.push(
-				// Enable the Timex modes (the NEX loader does this when resetting the registers)
-				{reg: REG_PERIPHERAL_3, and: 0xFF, or: 0b0000_0100},
-				{port: LAYER2_ACCESS_PORT, value: 0},
-				{reg: REG_SPRITE_LAYER_SYSTEM, value: SPRITES_VISIBLE}
-			);
+			// Enable the Timex modes (the NEX loader does this when resetting the registers)
+			const periph3 = await this.sendDzrpCmdGetTbblueReg(REG_PERIPHERAL_3);
+			regValues.push([REG_PERIPHERAL_3, periph3 | 0b0000_0100]);
+			regValues.push([REG_SPRITE_LAYER_SYSTEM, SPRITES_VISIBLE]);
 			if (nexFile.timexHiResScreen)
-				ioWrites.push({port: TIMEX_PORT, value: nexFile.timexHiResColor | 0x06});
+				regValues.push([REG_DISPLAY_CONTROL_1, nexFile.timexHiResColor | 0x06]);
 			if (nexFile.timexHiColScreen)
-				ioWrites.push({port: TIMEX_PORT, value: 0x02});
+				regValues.push([REG_DISPLAY_CONTROL_1, 0x02]);
 		}
-		await this.executeIoWrites(ioWrites);
+		await this.sendDzrpCmdSetNextregs(regValues);
 	}
 
 
@@ -2480,6 +2324,16 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 	 * @param value the value to write.
 	 */
 	protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
+		Utility.assert(false);
+	}
+
+
+	/** Override.
+	 * Sends the command to write several ZX Next registers.
+	 * @param regValues Array with register/value pairs. The registers
+	 * are written in this order.
+	 */
+	protected async sendDzrpCmdSetNextregs(regValues: Array<[number, number]>): Promise<void> {
 		Utility.assert(false);
 	}
 
