@@ -1,4 +1,4 @@
-# Collect ideas for a common DTRP protocol
+# Collect ideas for a common DZRP protocol
 Idea is to use one "dzrp" Remote for all.
 This Remote would cover "cspect", "mame", "zxnext", "zsim".
 
@@ -67,7 +67,8 @@ TODO: Overwork this document!!!!
            ▼                       ▼                        ▼                       ▼
    ┌──────────────┐        ┌──────────────┐         ┌──────────────┐        ┌──────────────┐
    │    Socket    │        │    Serial    │         │    Socket    │        │    Serial    │
-   └──────────────┘        └──────────────┘         └──────────────┘        └──────────────┘                           ~~~
+   └──────────────┘        └──────────────┘         └──────────────┘        └──────────────┘
+~~~
 
 ## DzrpRemote
 Has stubs for all DzrpCommands.

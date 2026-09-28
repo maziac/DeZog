@@ -465,11 +465,10 @@ Command (Length=2):
 
 Example for ZXNext:
 Command:
-| Index | Size | Value             | Description         |
-| ----- | ---- | ----------------- | ------------------- |
-| 0     | 1    | 0-7               | The slot to set.    |
-| 1     | 1    | 0-223, 0xFE, 0xFF | The 8k bank to use. |
-TODO: Don't allow 0xFE
+| Index | Size | Value       | Description         |
+| ----- | ---- | ----------- | ------------------- |
+| 0     | 1    | 0-7         | The slot to set.    |
+| 1     | 1    | 0-223, 0xFF | The 8k bank to use. |
 
 Note:
 - ROM = 0xFF (255)
