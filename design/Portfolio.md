@@ -173,11 +173,8 @@ Shows the Z80 opcode when hovering over an instruction.
 ## asm-code-lens
 A vscode language server that enables code lens, references, hover
 
-## sna-file-viewer
-A viewer for .sna files.
-
-## nex-file-viewer
-A viewer for .nex files.
+## nex-sna-file-viewer
+A viewer for .nex and .sna files.
 
 ## Assembler projects
 

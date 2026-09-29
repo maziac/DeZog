@@ -15,8 +15,7 @@ If you like DeZog please consider supporting it.
 [ASM Code Lens]: https://github.com/maziac/asm-code-lens
 [Z80 Instruction Set]: https://github.com/maziac/z80-instruction-set
 [Hex Hover Converter]: https://github.com/maziac/hex-hover-converter
-[ZX SNA File Viewer]: https://github.com/maziac/sna-fileviewer
-[ZX NEX File Viewer]: https://github.com/maziac/nex-fileviewer
+[NEX & SNA File Viewer]: https://github.com/maziac/nex-sna-file-viewer
 [ZX81 BASIC to P-File Converter and P-File Viewer]: https://github.com/maziac/zx81-bastop
 
 [z80-sample-program]: https://github.com/maziac/z80-sample-program
