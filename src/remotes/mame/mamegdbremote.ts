@@ -74,6 +74,8 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		// Init socket
 		this.socket = new Socket();
 		this.socket.unref();
+		// Perf: disable Nagle, otherwise small request/response packets can be delayed by up to ~200ms.
+		this.socket.setNoDelay(true);
 		this.cmdRespTimeoutTime = this.settingsMameType.timeout * 1000;
 
 		// React on-open

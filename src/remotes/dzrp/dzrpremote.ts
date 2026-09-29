@@ -1164,7 +1164,10 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 						// Construct break reason string to report
 						const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
 						// Clear registers
-						await this.getCallStackFromEmulator();
+						if (this.deferCallStack)
+							this.callStackDeferred = true;	// Perf: built once after the step-over loop
+						else
+							await this.getCallStackFromEmulator();
 						// return
 						this.continueResolve!.resolve(breakReasonString);
 					}

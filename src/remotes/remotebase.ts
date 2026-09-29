@@ -112,6 +112,13 @@ export class RemoteBase extends EventEmitter {
 	/// A list for the frames (call stack items). Is cached here.
 	protected listFrames: RefList<CallStackFrame>;
 
+	// Perf: memory before each stack value, only valid during getCallStackFromEmulator.
+	protected stackEntryMemCache?: Map<number, Uint8Array>;
+
+	// Perf: set by the step-over loop so intermediate steps skip the call stack rebuild, see flushDeferredCallStack.
+	public deferCallStack = false;
+	protected callStackDeferred = false;
+
 	/// Mirror of the remote's breakpoints.
 	protected breakpoints = new Array<RemoteBreakpoint>();
 
@@ -545,7 +552,8 @@ export class RemoteBase extends EventEmitter {
 	protected async getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number} | undefined> {
 		// Get the 3 bytes before address.
 		const addr = parseInt(stackEntryValue, 16);
-		const data = await this.readMemoryDump((addr - 3) & 0xFFFF, 3);
+		const readAddr = (addr - 3) & 0xFFFF;
+		const data = this.stackEntryMemCache?.get(readAddr) ?? await this.readMemoryDump(readAddr, 3);
 		let calledAddr;
 		let callerAddr;
 		// Check for Call
@@ -646,6 +654,49 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
+	 * Perf: reads the 3 bytes before each stack value in a few coalesced memory
+	 * reads instead of one read per value (slow on high-latency remotes).
+	 * @param stack The stack values as hex strings.
+	 */
+	protected async prefetchStackEntries(stack: string[]): Promise<Map<number, Uint8Array>> {
+		const MAX_GAP = 0x100;
+		const MAX_BLOCK = 0x400;
+		// Addresses that would wrap around 0xFFFF are left to getStackEntryType.
+		const addrs = [...new Set(stack.map(v => (parseInt(v, 16) - 3) & 0xFFFF))]
+			.filter(a => a <= 0xFFFD)
+			.sort((a, b) => a - b);
+		const cache = new Map<number, Uint8Array>();
+		let i = 0;
+		while (i < addrs.length) {
+			const start = addrs[i];
+			let j = i;
+			while (j + 1 < addrs.length
+				&& addrs[j + 1] - addrs[j] <= MAX_GAP
+				&& addrs[j + 1] + 3 - start <= MAX_BLOCK)
+				j++;
+			const data = await this.readMemoryDump(start, addrs[j] + 3 - start);
+			for (let k = i; k <= j; k++) {
+				const offs = addrs[k] - start;
+				cache.set(addrs[k], data.subarray(offs, offs + 3));
+			}
+			i = j + 1;
+		}
+		return cache;
+	}
+
+
+	/**
+	 * Builds the call stack if a step skipped it because of deferCallStack.
+	 */
+	public async flushDeferredCallStack(): Promise<void> {
+		if (!this.callStackDeferred)
+			return;
+		this.callStackDeferred = false;
+		await this.getCallStackFromEmulator();
+	}
+
+
+	/**
 	 * Retrieves the stack from the emulator and filters all CALL addresses.
 	 * The callStackFrame.addr is a long address whereas the values on the callStackFrame.stack are 64k.
 	 */
@@ -653,6 +704,7 @@ export class RemoteBase extends EventEmitter {
 		const callStack = new RefList<CallStackFrame>();
 		// Get normal stack values
 		const stack = await this.getStackFromEmulator();	// Returns 64k addresses as hex string.
+		this.stackEntryMemCache = await this.prefetchStackEntries(stack);
 		// Start with main
 		const sp = Z80Registers.getRegValue(Z80_REG.SP);
 		const len = stack.length;
@@ -685,6 +737,7 @@ export class RemoteBase extends EventEmitter {
 				lastCallStackFrame.stack.push(parseInt(valueString, 16));
 			}
 		}
+		this.stackEntryMemCache = undefined;
 
 		// Set PC
 		const pc = this.getPCLong();
