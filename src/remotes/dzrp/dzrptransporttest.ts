@@ -51,7 +51,7 @@ export class DzrpTransportTest extends EventEmitter {
 			console.log('sendDzrpCmdReadMem');
 			const addr = this.rndInt(0, 0xFFFF);
 			const count = this.rndInt(1, 0xFFFF);
-			await this.remote.sendDzrpCmdReadMem(addr, count);
+			await this.remote.sendDzrpCmdReadMem([{addr64k: addr, size: count}]);
 		},
 		async () => {
 			console.log('sendDzrpCmdWriteMem');

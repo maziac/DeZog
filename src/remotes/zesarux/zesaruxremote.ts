@@ -451,6 +451,22 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
+	 * Override.
+	 * Reads the memory only for the CALL and RST stack entries.
+	 * The other entries don't need it, see getStackEntryType.
+	 * @param stack The stack values as hex strings with type, e.g. "15E1 call".
+	 * @returns A map from the stack value to the 3 bytes before its address.
+	 */
+	protected async readStackEntriesMemory(stack: string[]): Promise<Map<string, Uint8Array>> {
+		const callStack = stack.filter(value => {
+			const type = value.substring(5);
+			return type == 'call' || type == 'rst';
+		});
+		return super.readStackEntriesMemory(callStack);
+	}
+
+
+	/**
 	 * Checks the stack entry type for the given value.
 	 * For ZEsarUX the extended stack is used, i.e. the 'stackEntryValue'
 	 * already contains the type.
@@ -460,18 +476,19 @@ export class ZesaruxRemote extends RemoteBase {
 	 * 15E1H call
 	 * 0000H default
 	 * @param stackEntryValue E.g. "3B89"
+	 * @param data The 3 bytes before the address (see readStackEntriesMemory).
 	 * @returns {name, callerAddr}
 	 * if there was a CALL or RST
 	 * - name: The label name or the hex string of the called address
 	 * - callerAddr: The caller address of the subroutine
 	 * Otherwise undefined.
 	 */
-	protected getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number} | undefined> {
+	protected getStackEntryType(stackEntryValue: string, data?: Uint8Array): Promise<{name: string, callerAddr: number} | undefined> {
 		// Get type
 		const type = stackEntryValue.substring(5);
 		if (type == 'call' || type == 'rst') {
 			// Get the addresses
-			return super.getStackEntryType(stackEntryValue);
+			return super.getStackEntryType(stackEntryValue, data);
 		}
 
 		return new Promise<{name: string, callerAddr: number} | undefined>(resolve => {

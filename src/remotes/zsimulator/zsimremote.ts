@@ -6,7 +6,7 @@ import {SettingsParameters, ZSimType} from '../../settings/settings';
 import {Utility} from '../../misc/utility';
 import {HexFormat} from '../../misc/hexformat';
 import {WorkspacePaths} from '../../misc/workspacepaths';
-import {BREAK_REASON_NUMBER} from '../remotebase';
+import {BREAK_REASON_NUMBER, MemBlock} from '../remotebase';
 import {MemBuffer} from '../../misc/membuffer';
 import {CodeCoverageArray} from './codecovarray';
 import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhistory';
@@ -1504,15 +1504,12 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 
 
 	/**
-	 * Sends the command to retrieve a memory dump.
-	 * @param addr64k The 64k memory start address.
-	 * @param size The memory size.
-	 * @returns A promise with an Uint8Array.
+	 * Sends the command to retrieve one or several memory blocks.
+	 * @param blocks The 64k start addresses and sizes of the blocks.
+	 * @returns A promise with an array of Uint8Arrays, one for each block.
 	 */
-	public async sendDzrpCmdReadMem(addr64k: number, size: number): Promise<Uint8Array> {
-		let buffer: Uint8Array;
-		buffer = this.memory.readBlock64(addr64k, size);
-		return buffer;
+	public async sendDzrpCmdReadMem(blocks: MemBlock[]): Promise<Uint8Array[]> {
+		return blocks.map(block => this.memory.readBlock64(block.addr64k, block.size));
 	}
 
 

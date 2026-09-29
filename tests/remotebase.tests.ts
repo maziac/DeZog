@@ -514,4 +514,28 @@ suite('RemoteBase', () => {
 		});
 
 	});
+
+	test('readStackEntriesMemory', async () => {
+		class RemoteBaseMock extends RemoteBase {
+			public readBlocks: Array<Array<{addr64k: number, size: number}>> = [];
+			public async readMemoryBlocks(blocks: Array<{addr64k: number, size: number}>): Promise<Uint8Array[]> {
+				this.readBlocks.push(blocks);
+				return blocks.map(block => new Uint8Array([block.addr64k & 0xFF, 0, 0]));
+			}
+		}
+		const remote = new RemoteBaseMock() as any;
+		const stackMem = await remote.readStackEntriesMemory(['1234', '1234', '0001', '5678', '1234']);
+
+		// Only one read with the distinct values
+		assert.equal(remote.readBlocks.length, 1);
+		assert.deepEqual(remote.readBlocks[0], [
+			{addr64k: 0x1231, size: 3},
+			{addr64k: 0xFFFE, size: 3},	// Wrap around
+			{addr64k: 0x5675, size: 3}
+		]);
+		assert.equal(stackMem.size, 3);
+		assert.equal(stackMem.get('1234')[0], 0x31);
+		assert.equal(stackMem.get('0001')[0], 0xFE);
+		assert.equal(stackMem.get('5678')[0], 0x75);
+	});
 });

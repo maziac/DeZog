@@ -46,6 +46,12 @@ export interface RemoteBreakpoint extends GenericBreakpoint {
 }
 
 
+/** A memory block (64k address) to read, see readMemoryBlocks. */
+export interface MemBlock {
+	addr64k: number;
+	size: number;
+}
+
 
 /**
  * The Remote's base class.
@@ -537,15 +543,17 @@ export class RemoteBase extends EventEmitter {
 	 * long address together with the slot.
 	 * That is used to obtain the label.
 	 * @param stackEntryValue E.g. "3B89"
+	 * @param data The 3 bytes before the address (see readStackEntriesMemory).
+	 * If undefined, they are read from the remote.
 	 * @returns {name, callerAddr}
 	 * if there was a CALL or RST
 	 * - name: The label name or the hex string of the called address
 	 * - callerAddr: The long caller address of the subroutine.
 	 */
-	protected async getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number} | undefined> {
+	protected async getStackEntryType(stackEntryValue: string, data?: Uint8Array): Promise<{name: string, callerAddr: number} | undefined> {
 		// Get the 3 bytes before address.
 		const addr = parseInt(stackEntryValue, 16);
-		const data = await this.readMemoryDump((addr - 3) & 0xFFFF, 3);
+		data ??= await this.readMemoryDump((addr - 3) & 0xFFFF, 3);
 		let calledAddr;
 		let callerAddr;
 		// Check for Call
@@ -646,6 +654,23 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
+	 * Reads the 3 bytes before each stack value, all with one readMemoryBlocks call.
+	 * They are used by getStackEntryType to check for a CALL.
+	 * @param stack The stack values as hex strings, see getStackFromEmulator.
+	 * @returns A map from the stack value to the 3 bytes before its address.
+	 */
+	protected async readStackEntriesMemory(stack: string[]): Promise<Map<string, Uint8Array>> {
+		const values = [...new Set(stack)];
+		const blocks = values.map(value => ({addr64k: (parseInt(value, 16) - 3) & 0xFFFF, size: 3}));
+		const dataArray = await this.readMemoryBlocks(blocks);
+		const stackMem = new Map<string, Uint8Array>();
+		for (let i = 0; i < values.length; i++)
+			stackMem.set(values[i], dataArray[i]);
+		return stackMem;
+	}
+
+
+	/**
 	 * Retrieves the stack from the emulator and filters all CALL addresses.
 	 * The callStackFrame.addr is a long address whereas the values on the callStackFrame.stack are 64k.
 	 */
@@ -653,6 +678,8 @@ export class RemoteBase extends EventEmitter {
 		const callStack = new RefList<CallStackFrame>();
 		// Get normal stack values
 		const stack = await this.getStackFromEmulator();	// Returns 64k addresses as hex string.
+		// Read the memory for all stack values at once
+		const stackMem = await this.readStackEntriesMemory(stack);
 		// Start with main
 		const sp = Z80Registers.getRegValue(Z80_REG.SP);
 		const len = stack.length;
@@ -666,10 +693,9 @@ export class RemoteBase extends EventEmitter {
 		for (let i = 0; i < len; i++) {
 			const valueString = stack[i];
 			if (valueString != prevValueString) {
-				// Optimization: Memory is only retrieved if the value changed.
-				// E.g. if a lot of 0x0000 have to be retrieved this actual memory is
-				// fetched only once.
-				type = await this.getStackEntryType(valueString);	// Long address
+				// Optimization: The type is only evaluated if the value changed.
+				// E.g. for a lot of 0x0000 in a row it is evaluated only once.
+				type = await this.getStackEntryType(valueString, stackMem.get(valueString));	// Long address
 				prevValueString = valueString;
 			}
 			if (type) {
@@ -1184,6 +1210,21 @@ export class RemoteBase extends EventEmitter {
 	public async readMemoryDump(addr64k: number, size: number): Promise<Uint8Array> {
 		Utility.assert(false);	// override this
 		return new Uint8Array();
+	}
+
+
+	/**
+	 * Reads several memory blocks at once.
+	 * This default implementation reads the blocks one by one.
+	 * Remotes that can read several blocks with one request override it.
+	 * @param blocks The 64k start addresses and sizes of the blocks.
+	 * @returns A promise with an array of Uint8Arrays, one for each block.
+	 */
+	public async readMemoryBlocks(blocks: MemBlock[]): Promise<Uint8Array[]> {
+		const result: Uint8Array[] = [];
+		for (const block of blocks)
+			result.push(await this.readMemoryDump(block.addr64k, block.size));
+		return result;
 	}
 
 
