@@ -209,6 +209,8 @@ export class ZesaruxSocket extends Socket {
 	 */
 	protected init() {
 		this.unref();
+		// Disable Nagle, otherwise small request/response packets can be delayed by up to ~200ms.
+		this.setNoDelay(true);
 
 		// Remove all previous listeners (in case of a restart)
 		this.myRemoveAllListeners();
