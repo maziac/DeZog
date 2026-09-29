@@ -31,6 +31,8 @@ export function WithSocket<TBase extends Constructor<DzrpTransportRemote>>(Base:
 			// Init socket
 			this.socket = new Socket();
 			this.socket.unref();
+			// Disable Nagle, otherwise small request/response packets can be delayed by up to ~200ms.
+			this.socket.setNoDelay(true);
 
 			// Set timeouts
 			this.cmdRespTimeoutTime = this.settingsDzrpTransportType.timeout * 1000;
