@@ -750,6 +750,9 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise with a string.
 	 * Is called when it's stopped e.g. when a breakpoint is hit.
 	 * reason contains the stop reason as string.
+	 * Note: The registers are read when stopped, the call stack is not.
+	 * The caller has to call getCallStackFromEmulator() afterwards.
+	 * (Same for stepOver, stepInto and stepOut.)
 	 */
 	public async continue(): Promise<string> {
 		Utility.assert(false);	// override this

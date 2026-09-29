@@ -545,7 +545,6 @@ export class ZesaruxRemote extends RemoteBase {
 					// (could take some time, e.g. until a breakpoint is hit)
 					// Clear register cache
 					await this.getRegistersFromEmulator();
-					await this.getCallStackFromEmulator();
 					// Handle code coverage
 					await this.handleCodeCoverage();
 					// The reason is the 2nd line
@@ -665,7 +664,6 @@ export class ZesaruxRemote extends RemoteBase {
 							// (could take some time, e.g. until a breakpoint is hit)
 							// Clear register cache
 							await this.getRegistersFromEmulator();
-							await this.getCallStackFromEmulator();
 							// Handle code coverage
 							await this.handleCodeCoverage();
 
@@ -696,7 +694,6 @@ export class ZesaruxRemote extends RemoteBase {
 					const result = await zSocket.sendAwait(cmd);
 					// Clear cache
 					await this.getRegistersFromEmulator();
-					await this.getCallStackFromEmulator();
 					// Handle code coverage
 					await this.handleCodeCoverage();
 					// Call handler
@@ -726,7 +723,6 @@ export class ZesaruxRemote extends RemoteBase {
 				await zSocket.sendAwait('cpu-step');
 				// Clear cache
 				await this.getRegistersFromEmulator();
-				await this.getCallStackFromEmulator();
 				// Handle code coverage
 				await this.handleCodeCoverage();
 				// Read the spot history
@@ -867,7 +863,6 @@ export class ZesaruxRemote extends RemoteBase {
 							// (could take some time, e.g. until a breakpoint is hit)
 							// Clear register cache
 							await this.getRegistersFromEmulator();
-							await this.getCallStackFromEmulator();
 							// Handle code coverage
 							await this.handleCodeCoverage();
 

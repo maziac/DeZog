@@ -1098,7 +1098,6 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 							const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
 							// Clear registers
 							await this.getRegistersFromEmulator();
-							await this.getCallStackFromEmulator();
 							// return
 							this.continueResolve!.resolve(breakReasonString);
 						}
@@ -1107,7 +1106,6 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 						// Clear registers
 						try {
 							await this.getRegistersFromEmulator();
-							await this.getCallStackFromEmulator();
 						} catch {}	// Ignore if error already happened
 						const reason: string = e.message;
 						this.continueResolve!.resolve(reason);
@@ -1167,9 +1165,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 					else {
 						// Construct break reason string to report
 						const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
-						// Clear registers
-						await this.getCallStackFromEmulator();
-						// return
+						// return (the call stack is read by the caller, see DebugSessionClass.getCallStackFromRemote)
 						this.continueResolve!.resolve(breakReasonString);
 					}
 				};
@@ -1258,7 +1254,6 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 							const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
 							// Clear registers
 							await this.getRegistersFromEmulator();
-							await this.getCallStackFromEmulator();
 							// return
 							this.continueResolve!.resolve(breakReasonString);
 						}
@@ -1266,7 +1261,6 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 					catch (e) {
 						// Clear registers
 						await this.getRegistersFromEmulator();
-						await this.getCallStackFromEmulator();
 						const reason: string = e;
 						this.continueResolve!.resolve(reason);
 					}
