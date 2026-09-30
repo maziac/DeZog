@@ -482,7 +482,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * - callerAddr: The caller address of the subroutine
 	 * Otherwise undefined.
 	 */
-	protected getStackEntryType(stackEntryValue: string, data: Uint8Array): {name: string, callerAddr: number} | undefined {
+	protected getStackEntryType(stackEntryValue: string, data?: Uint8Array): {name: string, callerAddr: number} | undefined {
 		// Get type
 		const type = stackEntryValue.substring(5);
 		if (type == 'call' || type == 'rst') {

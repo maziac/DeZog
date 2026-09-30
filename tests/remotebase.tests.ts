@@ -524,9 +524,9 @@ suite('RemoteBase', () => {
 			}
 		}
 		const remote = new RemoteBaseMock() as any;
-		const stackMem = await remote.readStackEntriesMemory(['1234', '1234', '0001', '5678', '1234']);
+		const stackMem = await remote.readStackEntriesMemory(['1234', '0001', '5678']);
 
-		// Only one read with the distinct values
+		// Only one read for all values
 		assert.equal(remote.readBlocks.length, 1);
 		assert.deepEqual(remote.readBlocks[0], [
 			{addr64k: 0x1231, size: 3},

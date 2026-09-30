@@ -544,12 +544,15 @@ export class RemoteBase extends EventEmitter {
 	 * That is used to obtain the label.
 	 * @param stackEntryValue E.g. "3B89"
 	 * @param data The 3 bytes before the address (see readStackEntriesMemory).
+	 * undefined if no memory was read for this value.
 	 * @returns {name, callerAddr}
 	 * if there was a CALL or RST
 	 * - name: The label name or the hex string of the called address
 	 * - callerAddr: The long caller address of the subroutine.
 	 */
-	protected getStackEntryType(stackEntryValue: string, data: Uint8Array): {name: string, callerAddr: number} | undefined {
+	protected getStackEntryType(stackEntryValue: string, data?: Uint8Array): {name: string, callerAddr: number} | undefined {
+		if (!data)
+			return undefined;
 		// Get the 3 bytes before address.
 		const addr = parseInt(stackEntryValue, 16);
 		let calledAddr;
@@ -691,13 +694,10 @@ export class RemoteBase extends EventEmitter {
 			callerAddr: number;
 		}>();
 		for (const stackValue of compressedStack) {
-			const memData = stackMem.get(stackValue);
-			if (memData) { // Note: ZEsarUX might return not all values.
-				const type = this.getStackEntryType(stackValue, memData);
-				if (type) {
-					// Found a caller
-					stackCallerMap.set(stackValue, type);
-				}
+			const type = this.getStackEntryType(stackValue, stackMem.get(stackValue));
+			if (type) {
+				// Found a caller
+				stackCallerMap.set(stackValue, type);
 			}
 		}
 
