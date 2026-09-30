@@ -807,12 +807,14 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	 * @returns A promise with an array of Uint8Arrays, one for each block.
 	 */
 	protected async sendDzrpCmdReadMemBlocks(blocks: MemBlock[]): Promise<Uint8Array[]> {
+		//console.log(`sendDzrpCmdReadMemBlocks: blocks count=${blocks.length}`);
 		// Send command with all addresses and sizes
 		const cmdData = [0, 0, 0, 0];	// DWORD: placeholder for length of response
 		let totalSize = 0;
 		for (const {addr64k, size} of blocks) {
 			if (size > 0x10000)
 				throw new Error("Size too big: '" + size + "'.");
+			//console.log(` Reading memory block at address 0x${addr64k.toString(16)} with size 0x${size.toString(16)}`);
 			// Check for special case size = 0x10000
 			if (size === 0x10000) {
 				// Add 2 blocks a 0x8000 each
