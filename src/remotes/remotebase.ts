@@ -613,6 +613,11 @@ export class RemoteBase extends EventEmitter {
 					labelCalledAddrArr.push(label);
 			}
 		}
+
+		// Note: I could return undefined for addresses that have no label,
+		// but in that case the callstack would not be present if e.g.
+		// only a disassembly is shown.
+
 		const labelCalledAddr = (labelCalledAddrArr.length > 0) ? labelCalledAddrArr[0] : HexFormat.getHexString(calledAddr & 0xFFFF, 4) + 'h';
 
 		// Return
