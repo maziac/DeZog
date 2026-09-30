@@ -41,7 +41,7 @@ export enum DZRP {
 	//CMD_WRITE_BANK = 5, // Deprecated/removed
 	CMD_CONTINUE = 6,
 	CMD_PAUSE = 7,
-	CMD_READ_MEM = 8,
+	CMD_READ_MEM = 8,	// Deprecated/removed
 	CMD_WRITE_MEM = 9,
 	CMD_SET_SLOT = 10,
 	CMD_GET_NEXTREG = 11,
@@ -69,6 +69,8 @@ export enum DZRP {
 
 	// ZX Next registers
 	CMD_SET_NEXTREGS = 27,
+
+	CMD_READ_MEM_BLOCKS = 28,
 
 	CMD_ENABLE_BREAK_ON_INTERRUPT = 39,
 
