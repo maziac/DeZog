@@ -208,6 +208,7 @@ I would like to express my gratitude to the following individuals for their inva
 - [Paul Farrow](http://www.fruitcake.plus.com/) for the help on the ZX81 graphics modes.
 - [Víctor Morilla](https://github.com/vmorilla) for the z88dk addition to label parsing, enabling setting of breakpoints and stepping through C source code.
 - [Jorge Gonzalez](https://github.com/jorgegv) for finding and correcting bugs in `dezogif` and for his implementation of the "Async-Break". Please also have a look at his fantastic ZX Next emulator [JNext](https://www.jnext.es/) and his [dezogif_ng](https://github.com/jorgegv/dezogif_ng) to allow debugging through WiFi.
+- [VapourSoft](https://github.com/VapourSoft) for the PR to improve the performance of a MAME remote connection over a non-local the network.
 
 
 # Tutorials
