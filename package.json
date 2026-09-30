@@ -522,7 +522,8 @@
 									"zsim",
 									"zxnext",
 									"mame",
-									"dzrp"
+									"dzrp",
+									"gdb"
 								],
 								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'cspect', 'mame', 'zrcp' (ZEsarUX), 'zxnext' or 'zsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
 								"default": "zsim"
@@ -1152,6 +1153,26 @@
 									"startWaitOnZxInterrupt": {
 										"type": "boolean",
 										"description": "If true dezog will wait after connecting to MAME until it finds an active ZX timer interrupt. I.e. one that writes to the SYSVARS. Defaults to false for non-ZXNext targets and true for ZXNext targets. Is used to wait until the ZxNextOS has finally initialized before starting the debugged program."
+									}
+								}
+							},
+							"gdb": {
+								"description": "The configuration for debugging a target that implements the standard gdb remote serial protocol.",
+								"type": "object",
+								"additionalProperties": false,
+								"properties": {
+									"hostname": {
+										"type": "string",
+										"description": "The hostname/IP address of the gdbstub socket.",
+										"default": "localhost"
+									},
+									"port": {
+										"type": "number",
+										"description": "The port of the gdbstub socket. Defaults to 12000."
+									},
+									"timeout": {
+										"type": "number",
+										"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
 									}
 								}
 							},

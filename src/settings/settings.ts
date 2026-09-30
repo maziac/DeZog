@@ -155,6 +155,10 @@ export interface DzrpTransportType {
 export interface CSpectType extends DzrpTransportType {
 }
 
+// Definitions for the generic gdb remote type.
+export interface GdbType extends DzrpTransportType {
+}
+
 // Definitions for the MAME remote type.
 export interface MameType extends DzrpTransportType {
 	// A delay in ms after socket connection has been setup
@@ -424,7 +428,7 @@ export interface SmartDisassemblerArgs {
  */
 export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments {
 	/// The remote type: zesarux or zxnext.
-	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame' | 'dzrp';
+	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame' | 'dzrp' | 'gdb';
 
 	// The special settings for zrcp (ZEsarux).
 	zrcp: ZrcpType;
@@ -434,6 +438,9 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	// The special settings for MAME.
 	mame: MameType;
+
+	// The special settings for a generic gdbstub.
+	gdb: GdbType;
 
 	// The special settings for the internal Z80 simulator.
 	zsim: ZSimType;
@@ -556,6 +563,7 @@ export class Settings {
 				zrcp: <any>undefined,
 				cspect: <any>undefined,
 				mame: <any>undefined,
+				gdb: <any>undefined,
 				zsim: <any>undefined,
 				zxnext: <any>undefined,
 				dzrp: <any>undefined,
@@ -644,6 +652,16 @@ export class Settings {
 			launchCfg.mame.timeout = 5;	// 5 secs
 		if (!launchCfg.mame.startDelay)
 			launchCfg.mame.startDelay = 0; // No delay by default
+
+		// gdb
+		if (!launchCfg.gdb)
+			launchCfg.gdb = {} as GdbType;
+		if (launchCfg.gdb.hostname === undefined)
+			launchCfg.gdb.hostname = 'localhost';
+		if (launchCfg.gdb.port === undefined)
+			launchCfg.gdb.port = 12000;
+		if (!launchCfg.gdb.timeout)
+			launchCfg.gdb.timeout = 5;	// 5 secs
 
 
 		// zsim
@@ -1277,7 +1295,7 @@ export class Settings {
 
 		// Check remote type
 		const rType = Settings.launch.remoteType;
-		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame', 'dzrp'];
+		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame', 'dzrp', 'gdb'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("'remoteType': Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
