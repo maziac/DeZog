@@ -975,7 +975,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 
 	/** Reads the memory blocks with qRcmd 'print'.
-	 * Each block is read word-wise with 'w@' (big endian), only the last
+	 * Each block is read word-wise with 'w@' (little endian), only the last
 	 * byte of a block with odd size is read with 'b@'.
 	 * E.g. a block of size 5 results in 2x 'w@' and 1x 'b@'.
 	 * MAME prints the values without leading zeros, separated by spaces
@@ -1027,10 +1027,10 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			const data = new Uint8Array(size);
 			let k = 0;
 			for (; k + 1 < size; k += 2) {
-				// MAME returns the byte at the lower address as high byte
+				// Little endian: the byte at the lower address is the low byte
 				const value = parseInt(hexValues[index++], 16);
-				data[k] = value >> 8;
-				data[k + 1] = value & 0xFF;
+				data[k] = value & 0xFF;
+				data[k + 1] = value >> 8;
 			}
 			if (k < size)
 				data[k] = parseInt(hexValues[index++], 16);

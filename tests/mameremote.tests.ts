@@ -312,7 +312,7 @@ suite('MameRemote', () => {
 					return params.map(param => {
 						const addr = parseInt(param.substring(3), 16);
 						if (param.startsWith('w@$')) {
-							const value = 256 * MockMame.memValue(addr) + MockMame.memValue((addr + 1) & 0xFFFF);	// Big endian
+							const value = MockMame.memValue(addr) + 256 * MockMame.memValue((addr + 1) & 0xFFFF);	// Little endian
 							return value.toString(16).toUpperCase();
 						}
 						assert.ok(param.startsWith('b@$'));
@@ -381,10 +381,23 @@ suite('MameRemote', () => {
 			checkBlocks(blocks, result);
 		});
 
+		test('real MAME response (little endian, wrap around)', async () => {
+			// From a MAME log: memory at 0x8004 is CD 47 60, at 0xFFFF is 00, at 0x0000 is F3
+			mockMame.sendQrcmd = async () => '47CD 60 0 0 F300 AF\n\n';
+			const result = await mockMame.sendDzrpCmdReadMem([
+				{addr64k: 0x8004, size: 3},
+				{addr64k: 0x5C38, size: 3},
+				{addr64k: 0xFFFF, size: 3}
+			]);
+			assert.deepEqual(Array.from(result[0]), [0xCD, 0x47, 0x60]);
+			assert.deepEqual(Array.from(result[1]), [0, 0, 0]);
+			assert.deepEqual(Array.from(result[2]), [0x00, 0xF3, 0xAF]);
+		});
+
 		test('response with whitespace and newlines', async () => {
 			mockMame.sendQrcmd = async () => ' 5 A\n  12\r\n';	// w@ = 0x0005, b@ = 0x0A, b@ = 0x12 (no leading zeros)
 			const result = await mockMame.sendDzrpCmdReadMem([{addr64k: 0x1000, size: 3}, {addr64k: 0x2000, size: 1}]);
-			assert.deepEqual(Array.from(result[0]), [0, 5, 10]);
+			assert.deepEqual(Array.from(result[0]), [5, 0, 10]);
 			assert.deepEqual(Array.from(result[1]), [0x12]);
 		});
 
