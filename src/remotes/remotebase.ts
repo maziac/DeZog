@@ -544,16 +544,14 @@ export class RemoteBase extends EventEmitter {
 	 * That is used to obtain the label.
 	 * @param stackEntryValue E.g. "3B89"
 	 * @param data The 3 bytes before the address (see readStackEntriesMemory).
-	 * If undefined, they are read from the remote.
 	 * @returns {name, callerAddr}
 	 * if there was a CALL or RST
 	 * - name: The label name or the hex string of the called address
 	 * - callerAddr: The long caller address of the subroutine.
 	 */
-	protected async getStackEntryType(stackEntryValue: string, data?: Uint8Array): Promise<{name: string, callerAddr: number} | undefined> {
+	protected getStackEntryType(stackEntryValue: string, data: Uint8Array): {name: string, callerAddr: number} | undefined {
 		// Get the 3 bytes before address.
 		const addr = parseInt(stackEntryValue, 16);
-		data ??= await this.readMemoryDump((addr - 3) & 0xFFFF, 3);
 		let calledAddr;
 		let callerAddr;
 		// Check for Call
@@ -660,12 +658,11 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A map from the stack value to the 3 bytes before its address.
 	 */
 	protected async readStackEntriesMemory(stack: string[]): Promise<Map<string, Uint8Array>> {
-		const values = [...new Set(stack)];
-		const blocks = values.map(value => ({addr64k: (parseInt(value, 16) - 3) & 0xFFFF, size: 3}));
+		const blocks = stack.map(value => ({addr64k: (parseInt(value, 16) - 3) & 0xFFFF, size: 3}));
 		const dataArray = await this.readMemoryBlocks(blocks);
 		const stackMem = new Map<string, Uint8Array>();
-		for (let i = 0; i < values.length; i++)
-			stackMem.set(values[i], dataArray[i]);
+		for (let i = 0; i < stack.length; i++)
+			stackMem.set(stack[i], dataArray[i]);
 		return stackMem;
 	}
 
@@ -678,8 +675,9 @@ export class RemoteBase extends EventEmitter {
 		const callStack = new RefList<CallStackFrame>();
 		// Get normal stack values
 		const stack = await this.getStackFromEmulator();	// Returns 64k addresses as hex string.
-		// Read the memory for all stack values at once
-		const stackMem = await this.readStackEntriesMemory(stack);
+		// Read the memory for all different stack values at once
+		const compressedStack = [...new Set(stack)];
+		const stackMem = await this.readStackEntriesMemory(compressedStack);
 		// Start with main
 		const sp = Z80Registers.getRegValue(Z80_REG.SP);
 		const len = stack.length;
@@ -688,16 +686,25 @@ export class RemoteBase extends EventEmitter {
 		callStack.addObject(lastCallStackFrame);
 
 		// Check for each value if it maybe is a CALL or RST
-		let prevValueString;
-		let type;
-		for (let i = 0; i < len; i++) {
-			const valueString = stack[i];
-			if (valueString != prevValueString) {
-				// Optimization: The type is only evaluated if the value changed.
-				// E.g. for a lot of 0x0000 in a row it is evaluated only once.
-				type = await this.getStackEntryType(valueString, stackMem.get(valueString));	// Long address
-				prevValueString = valueString;
+		const stackCallerMap = new Map<string, {
+			name: string;
+			callerAddr: number;
+		}>();
+		for (const stackValue of compressedStack) {
+			const memData = stackMem.get(stackValue);
+			if (memData) { // Note: ZEsarUX might return not all values.
+				const type = this.getStackEntryType(stackValue, memData);
+				if (type) {
+					// Found a caller
+					stackCallerMap.set(stackValue, type);
+				}
 			}
+		}
+
+		// Now create the call stack with only CALLed addresses
+		for (let i = 0; i < len; i++) {
+			const stackValue = stack[i];
+			const type = stackCallerMap.get(stackValue);
 			if (type) {
 				// Set caller address
 				lastCallStackFrame.addr = type.callerAddr;
@@ -708,7 +715,7 @@ export class RemoteBase extends EventEmitter {
 			}
 			else {
 				// Something else, e.g. pushed value
-				lastCallStackFrame.stack.push(parseInt(valueString, 16));
+				lastCallStackFrame.stack.push(parseInt(stackValue, 16));
 			}
 		}
 

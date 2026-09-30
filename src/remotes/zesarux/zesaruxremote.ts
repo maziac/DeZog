@@ -451,7 +451,6 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
-	 * Override.
 	 * Reads the memory only for the CALL and RST stack entries.
 	 * The other entries don't need it, see getStackEntryType.
 	 * @param stack The stack values as hex strings with type, e.g. "15E1 call".
@@ -483,25 +482,20 @@ export class ZesaruxRemote extends RemoteBase {
 	 * - callerAddr: The caller address of the subroutine
 	 * Otherwise undefined.
 	 */
-	protected getStackEntryType(stackEntryValue: string, data?: Uint8Array): Promise<{name: string, callerAddr: number} | undefined> {
+	protected getStackEntryType(stackEntryValue: string, data: Uint8Array): {name: string, callerAddr: number} | undefined {
 		// Get type
 		const type = stackEntryValue.substring(5);
 		if (type == 'call' || type == 'rst') {
 			// Get the addresses
 			return super.getStackEntryType(stackEntryValue, data);
 		}
-
-		return new Promise<{name: string, callerAddr: number} | undefined>(resolve => {
-			if (type.includes('interrupt')) {
-				// Interrupt
-				const retAddr = parseInt(stackEntryValue, 16);
-				resolve({name: this.getInterruptName(), callerAddr: retAddr});
-			}
-			else {
-				// Some pushed value
-				resolve(undefined);
-			}
-		});
+		if (type.includes('interrupt')) {
+			// Interrupt
+			const retAddr = parseInt(stackEntryValue, 16);
+			return {name: this.getInterruptName(), callerAddr: retAddr};
+		}
+		// Some pushed value
+		return undefined;
 	}
 
 
