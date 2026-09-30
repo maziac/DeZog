@@ -806,7 +806,7 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	 * @param blocks The 64k start addresses and sizes of the blocks.
 	 * @returns A promise with an array of Uint8Arrays, one for each block.
 	 */
-	protected async sendDzrpCmdReadMemBlock(blocks: MemBlock[]): Promise<Uint8Array[]> {
+	protected async sendDzrpCmdReadMemBlocks(blocks: MemBlock[]): Promise<Uint8Array[]> {
 		// Send command with all addresses and sizes
 		const cmdData = [0, 0, 0, 0];	// DWORD: placeholder for length of response
 		let totalSize = 0;

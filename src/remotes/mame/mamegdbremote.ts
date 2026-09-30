@@ -947,7 +947,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * @param blocks The 64k start addresses and sizes of the blocks.
 	 * @returns A promise with an array of Uint8Arrays, one for each block.
 	 */
-	protected async sendDzrpCmdReadMem(blocks: MemBlock[]): Promise<Uint8Array[]> {
+	protected async sendDzrpCmdReadMemBlocks(blocks: MemBlock[]): Promise<Uint8Array[]> {
 		if (blocks.length === 1)
 			return [await this.readMemWithM(blocks[0].addr64k, blocks[0].size)];
 		return this.readMemWithPrint(blocks);

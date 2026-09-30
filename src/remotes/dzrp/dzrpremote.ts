@@ -41,7 +41,7 @@ export enum DZRP {
 	//CMD_WRITE_BANK = 5, // Deprecated/removed
 	CMD_CONTINUE = 6,
 	CMD_PAUSE = 7,
-	CMD_READ_MEM = 8,	// Deprecated/removed
+	//CMD_READ_MEM = 8,	// Deprecated/removed
 	CMD_WRITE_MEM = 9,
 	CMD_SET_SLOT = 10,
 	CMD_GET_NEXTREG = 11,
@@ -368,7 +368,7 @@ export class DzrpRemote extends RemoteBase {
 			const value = HexFormat.parseValue(cmdArray[1]);
 			await this.sendDzrpCmdSetRegister(regIndex as Z80_REG, value);
 		}
-		else if (cmd_name === "cmd_read_mem") {
+		else if (cmd_name === "cmd_read_mem_blocks") {
 			if (cmdArray.length < 2 || cmdArray.length % 2 !== 0) {
 				// Error
 				throw Error("Expecting pairs of parameters: address and count.");
@@ -376,7 +376,7 @@ export class DzrpRemote extends RemoteBase {
 			const blocks: MemBlock[] = [];
 			for (let i = 0; i < cmdArray.length; i += 2)
 				blocks.push({addr64k: HexFormat.parseValue(cmdArray[i]), size: HexFormat.parseValue(cmdArray[i + 1])});
-			const dataArray = await this.sendDzrpCmdReadMem(blocks);
+			const dataArray = await this.sendDzrpCmdReadMemBlocks(blocks);
 			// Print
 			for (let i = 0; i < blocks.length; i++) {
 				if (i > 0)
@@ -1451,7 +1451,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 	 * @returns A promise with an Uint8Array.
 	 */
 	public async readMemoryDump(addr64k: number, size: number): Promise<Uint8Array> {
-		const [data] = await this.sendDzrpCmdReadMem([{addr64k, size}]);
+		const [data] = await this.sendDzrpCmdReadMemBlocks([{addr64k, size}]);
 		return data;
 	}
 
@@ -1463,7 +1463,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 	public async readMemoryBlocks(blocks: MemBlock[]): Promise<Uint8Array[]> {
 		if (blocks.length === 0)
 			return [];
-		return this.sendDzrpCmdReadMem(blocks);
+		return this.sendDzrpCmdReadMemBlocks(blocks);
 	}
 
 
@@ -2166,7 +2166,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 	 * @param blocks The 64k start addresses and sizes of the blocks.
 	 * @returns A promise with an array of Uint8Arrays, one for each block.
 	 */
-	protected async sendDzrpCmdReadMem(blocks: MemBlock[]): Promise<Uint8Array[]> {
+	protected async sendDzrpCmdReadMemBlocks(blocks: MemBlock[]): Promise<Uint8Array[]> {
 		Utility.assert(false);
 		return [];
 	}

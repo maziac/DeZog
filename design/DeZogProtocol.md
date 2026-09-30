@@ -59,7 +59,6 @@ I.e. different remotes may use a different subset of commands. For one this is b
 [CMD_WRITE_BANK]: #cmd_write_bank5
 [CMD_CONTINUE]: #cmd_continue6
 [CMD_PAUSE]: #cmd_pause7
-[CMD_READ_MEM]: #cmd_read_mem8
 [CMD_WRITE_MEM]: #cmd_write_mem9
 [CMD_SET_SLOT]: #cmd_set_slot10
 [CMD_GET_NEXTREG]: #cmd_get_nextreg11
@@ -99,7 +98,6 @@ The table below shows which commands are used (X) with what remote:
 | [CMD_SET_REGISTER] (4)                         | X     | X      | X      | X     |
 | [CMD_CONTINUE] (6)                             | X     | X      | X      | X     |
 | [CMD_PAUSE] (7)                                | X     | X      | X**    | X     |
-| [CMD_READ_MEM] (8)                             | X     | X      | X      | X     |
 | [CMD_WRITE_MEM] (9)                            | X     | X      | X      | X     |
 | [CMD_SET_SLOT] (10)                            | X     | X      | X      | -     |
 | [CMD_GET_NEXTREG] (11)                         | X     | X      | X      | -     |
@@ -419,27 +417,6 @@ Response (Length=1):
 
 Note: If a program is stopped a NTF_PAUSE notification is sent as well.
 The notification must be sent AFTER the CMD_PAUSE response.
-
-
-## CMD_READ_MEM=8
-TODO: REMOVE command.
-Command (Length=7):
-| Index | Size | Value | Description               |
-| ----- | ---- | ----- | ------------------------- |
-| 0     | 1    | 0     | reserved                  |
-| 1     | 2    | addr  | Start of the memory block |
-| 3     | 2    | n     | Size of the memory block  |
-
-
-Response (Length=N+1):
-| Index | Size | Value      | Description                |
-| ----- | ---- | ---------- | -------------------------- |
-| 0     | 1    | 1-15       | Same seq no                |
-| 1     | 1    | addr\[0]   | First byte of memory block |
-| ..    | ..   | ...        | ...                        |
-| 1+n-1 | 1    | addr\[n-1] | Last byte of memory block  |
-
-The memory is read from the 64k memory address space.
 
 
 ## CMD_WRITE_MEM=9
@@ -802,10 +779,10 @@ Response (Length=1):
 - The written values must persist when the debugged program is continued.
 
 
-## CMD_READ_MEM=28
+## CMD_READ_MEM_BLOCKS=28
 Reads one or several memory blocks.
 
-Command (Length=1+4*N):
+Command (Length=4+4*N):
 | Index | Size | Value       | Description                               |
 | ----- | ---- | ----------- | ----------------------------------------- |
 | 0     | 4    | resp_length | Total size of the payload of the response |

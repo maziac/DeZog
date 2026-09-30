@@ -1508,7 +1508,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 	 * @param blocks The 64k start addresses and sizes of the blocks.
 	 * @returns A promise with an array of Uint8Arrays, one for each block.
 	 */
-	public async sendDzrpCmdReadMem(blocks: MemBlock[]): Promise<Uint8Array[]> {
+	public async sendDzrpCmdReadMemBlocks(blocks: MemBlock[]): Promise<Uint8Array[]> {
 		return blocks.map(block => this.memory.readBlock64(block.addr64k, block.size));
 	}
 
