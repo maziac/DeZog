@@ -959,7 +959,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		}
 
 		// Read all bytes
-		const values = await this.readBytesWithPrint(addresses);
+		const values = await this.readMemWithPrint(addresses);
 
 		// Split into the blocks
 		const result: Uint8Array[] = [];
@@ -997,7 +997,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	 * @param addresses The 64k addresses.
 	 * @returns The bytes, in the same order as the addresses.
 	 */
-	protected async readBytesWithPrint(addresses: number[]): Promise<Uint8Array> {
+	protected async readMemWithPrint(addresses: number[]): Promise<Uint8Array> {
 		const values = new Uint8Array(addresses.length);
 		let index = 0;
 		while (index < addresses.length) {
