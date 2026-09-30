@@ -1556,6 +1556,20 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
+	 * Reads the call stack from the remote after a continue or step.
+	 * The remotes don't do this on their own, so that e.g. the step-over
+	 * loop in 'nextRequest' reads it only once and not after every instruction.
+	 * The call stack is read before the StoppedEvent is sent, so that the
+	 * vscode requests (stackTrace, scopes) only use the cached value.
+	 */
+	protected async getCallStackFromRemote(): Promise<void> {
+		// The remote could have been terminated meanwhile
+		if (Remote && this.running)
+			await Remote.getCallStackFromEmulator();
+	}
+
+
+	/**
 	 * Calls 'continue' (run) on the remote (emulator).
 	 * Called at the beginning (startAutomatically) and from the
 	 * vscode UI (continueRequest).
@@ -1572,6 +1586,8 @@ export class DebugSessionClass extends DebugSession {
 		// Safety check on termination
 		if (Remote === undefined)
 			return new StoppedEvent('exception', DebugSessionClass.THREAD_ID);
+
+		await this.getCallStackFromRemote();
 
 		// Display break reason
 		if (breakReasonString) {
@@ -1826,6 +1842,10 @@ export class DebugSessionClass extends DebugSession {
 					break;
 			}
 
+			// The call stack is read only once after the last step, not after every instruction.
+			if (!stepBackMode)
+				await this.getCallStackFromRemote();
+
 			// Check for output.
 			if (breakReason) {
 				// Show break reason
@@ -1994,6 +2014,7 @@ export class DebugSessionClass extends DebugSession {
 				StepHistory.clear();
 				// Step into
 				breakReason = await Remote.stepInto();
+				await this.getCallStackFromRemote();
 			}
 
 			// Check for output.
@@ -2040,6 +2061,7 @@ export class DebugSessionClass extends DebugSession {
 				// Normal Step-Out
 				StepHistory.clear();
 				breakReasonString = await Remote.stepOut();
+				await this.getCallStackFromRemote();
 			}
 
 			// Check remote (The Remote could have been terminated meanwhile)

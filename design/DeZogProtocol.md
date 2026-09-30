@@ -146,6 +146,7 @@ Changed:
 - Sequence number range changed from 1-255 to 1-15.
 - Explanation for "normal" and "simple" mode added.
 - CMD_GET_TBBLUE_REG renamed to CMD_GET_NEXTREG (no functional change)
+- CMD_READ_MEM can read several memory blocks with one command (e.g. used for the call stack).
 
 Removed:
 - CMD_WRITE_BANK removed (use CMD_WRITE_BANK_MEM instead)
@@ -418,27 +419,34 @@ The notification must be sent AFTER the CMD_PAUSE response.
 
 
 ## CMD_READ_MEM=8
-Command (Length=7):
-| Index | Size | Value | Description               |
-| ----- | ---- | ----- | ------------------------- |
-| 0     | 1    | 0     | reserved                  |
-| 1     | 2    | addr  | Start of the memory block |
-| 3     | 2    | n     | Size of the memory block  |
+Reads one or several memory blocks.
+
+Command (Length=1+4*N):
+| Index | Size | Value | Description                   |
+| ----- | ---- | ----- | ----------------------------- |
+| 0     | 1    | 0     | reserved                      |
+| 1     | 2    | addr  | Start of the 1st memory block |
+| 3     | 2    | n1    | Size of the 1st memory block  |
+| ...   | ...  | ...   | ...                           |
+| 4*N-3 | 2    | addr  | Start of the Nth memory block |
+| 4*N-1 | 2    | nN    | Size of the Nth memory block  |
 
 
-Response (Length=N+1):
-| Index | Size | Value      | Description                |
-| ----- | ---- | ---------- | -------------------------- |
-| 0     | 1    | 1-15       | Same seq no                |
-| 1     | 1    | addr\[0]   | First byte of memory block |
-| ..    | ..   | ...        | ...                        |
-| 1+n-1 | 1    | addr\[n-1] | Last byte of memory block  |
+Response (Length=1+n1+...+nN):
+| Index | Size | Value | Description                      |
+| ----- | ---- | ----- | -------------------------------- |
+| 0     | 1    | 1-15  | Same seq no                      |
+| 1     | n1   | ...   | Contents of the 1st memory block |
+| ...   | ...  | ...   | ...                              |
+| ...   | nN   | ...   | Contents of the Nth memory block |
 
-The memory is read from the 64k memory address space.
+- The memory is read from the 64k memory address space.
+- The number of blocks N is given by the length of the command.
+- The blocks are returned in the same order as requested, without any separator.
 
 
 ## CMD_WRITE_MEM=9
-Command (Length=4+N):
+Command (Length=3+N):
 | Index | Size | Value      | Description                |
 | ----- | ---- | ---------- | -------------------------- |
 | 0     | 1    | 0          | reserved                   |

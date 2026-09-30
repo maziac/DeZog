@@ -5,6 +5,8 @@
   - Evaluates the CMD_GET_SUPPORTED_COMMANDS.
   - Show LOG_NTF messages in a new log channel "DeZog DZRP Log notifications". Has to be enabled in the settings.
   - New command CMD_SET_NEXTREGS to write a list of ZX Next registers. Used for the NEX loading screen.
+  - CMD_READ_MEM can read several memory blocks at once. Used for the call stack. mame implements it with a single qRcmd.
+- Faster stepping: the call stack is read only once per step (not after every instruction of a step-over) and with one memory request for all stack entries.
 - SNA file format. Now also file extension *.snx is supported.
 - NEX file: the loading screen (Layer2, ULA, LoRes, Timex HiRes/HiCol) is now loaded before the memory banks, incl. palette and display settings like the NEX loader does. zsim only shows the ULA screen.
 - NEX file: fixed the bank offset for files with a 320x256/640x256 Layer2 loading screen (the palette was not taken into account).

@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import {RemoteBase, RemoteBreakpoint, BREAK_REASON_NUMBER} from '../remotebase';
+import {RemoteBase, RemoteBreakpoint, BREAK_REASON_NUMBER, MemBlock} from '../remotebase';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersClass, Z80_REG, Z80Registers} from '../z80registers';
 import {MemBank16k} from './membank16k';
@@ -367,17 +367,22 @@ export class DzrpRemote extends RemoteBase {
 			await this.sendDzrpCmdSetRegister(regIndex as Z80_REG, value);
 		}
 		else if (cmd_name === "cmd_read_mem") {
-			if (cmdArray.length < 2) {
+			if (cmdArray.length < 2 || cmdArray.length % 2 !== 0) {
 				// Error
-				throw Error("Expecting at least 2 parameters: address and count.");
+				throw Error("Expecting pairs of parameters: address and count.");
 			}
-			const addr = HexFormat.parseValue(cmdArray[0]);
-			const count = HexFormat.parseValue(cmdArray[1]);
-			const data = await this.sendDzrpCmdReadMem(addr, count);
+			const blocks: MemBlock[] = [];
+			for (let i = 0; i < cmdArray.length; i += 2)
+				blocks.push({addr64k: HexFormat.parseValue(cmdArray[i]), size: HexFormat.parseValue(cmdArray[i + 1])});
+			const dataArray = await this.sendDzrpCmdReadMem(blocks);
 			// Print
-			response = HexFormat.getHexString(addr, 4) + "h: ";
-			for (const dat of data)
-				response += HexFormat.getHexString(dat, 2) + "h ";
+			for (let i = 0; i < blocks.length; i++) {
+				if (i > 0)
+					response += "\n";
+				response += HexFormat.getHexString(blocks[i].addr64k, 4) + "h: ";
+				for (const dat of dataArray[i])
+					response += HexFormat.getHexString(dat, 2) + "h ";
+			}
 		}
 		else if (cmd_name === "cmd_write_mem") {
 			if (cmdArray.length < 2) {
@@ -1098,7 +1103,6 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 							const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
 							// Clear registers
 							await this.getRegistersFromEmulator();
-							await this.getCallStackFromEmulator();
 							// return
 							this.continueResolve!.resolve(breakReasonString);
 						}
@@ -1107,7 +1111,6 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 						// Clear registers
 						try {
 							await this.getRegistersFromEmulator();
-							await this.getCallStackFromEmulator();
 						} catch {}	// Ignore if error already happened
 						const reason: string = e.message;
 						this.continueResolve!.resolve(reason);
@@ -1167,9 +1170,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 					else {
 						// Construct break reason string to report
 						const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
-						// Clear registers
-						await this.getCallStackFromEmulator();
-						// return
+						// return (the call stack is read by the caller, see DebugSessionClass.getCallStackFromRemote)
 						this.continueResolve!.resolve(breakReasonString);
 					}
 				};
@@ -1258,7 +1259,6 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 							const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
 							// Clear registers
 							await this.getRegistersFromEmulator();
-							await this.getCallStackFromEmulator();
 							// return
 							this.continueResolve!.resolve(breakReasonString);
 						}
@@ -1266,7 +1266,6 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 					catch (e) {
 						// Clear registers
 						await this.getRegistersFromEmulator();
-						await this.getCallStackFromEmulator();
 						const reason: string = e;
 						this.continueResolve!.resolve(reason);
 					}
@@ -1450,7 +1449,19 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 	 * @returns A promise with an Uint8Array.
 	 */
 	public async readMemoryDump(addr64k: number, size: number): Promise<Uint8Array> {
-		return this.sendDzrpCmdReadMem(addr64k, size);
+		const [data] = await this.sendDzrpCmdReadMem([{addr64k, size}]);
+		return data;
+	}
+
+
+	/** Reads several memory blocks at once.
+	 * @param blocks The 64k start addresses and sizes of the blocks.
+	 * @returns A promise with an array of Uint8Arrays, one for each block.
+	 */
+	public async readMemoryBlocks(blocks: MemBlock[]): Promise<Uint8Array[]> {
+		if (blocks.length === 0)
+			return [];
+		return this.sendDzrpCmdReadMem(blocks);
 	}
 
 
@@ -1546,7 +1557,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 		const initBuffer = new Uint8Array(lenCheck);
 		initBuffer.fill(0x02);
 		await this.sendDzrpCmdWriteMem(0x4000, initBuffer);
-		const cmpBuffer = await this.sendDzrpCmdReadMem(0x4000, lenCheck);
+		const cmpBuffer = await this.readMemoryDump(0x4000, lenCheck);
 		let i = 0;
 		for (; i < lenCheck; i++) {
 			if (cmpBuffer[i] !== 0x02)
@@ -1624,7 +1635,7 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 		}
 
 		// E_LINE
-		const elineMem = await this.sendDzrpCmdReadMem(0x4014, 2);
+		const elineMem = await this.readMemoryDump(0x4014, 2);
 		const eline = elineMem[0] | (elineMem[1] << 8);
 		if (0x4009 + len < eline) {
 			await this.sendDzrpCmdSetRegister(Z80_REG.PC, 0x03A6);	// BREAK_CONT_REPEATS;
@@ -2149,14 +2160,13 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 
 
 	/** Override.
-	 * Sends the command to retrieve a memory dump.
-	 * @param addr64k The memory start address.
-	 * @param size The memory size.
-	 * @returns A promise with an Uint8Array.
+	 * Sends the command to retrieve one or several memory blocks.
+	 * @param blocks The 64k start addresses and sizes of the blocks.
+	 * @returns A promise with an array of Uint8Arrays, one for each block.
 	 */
-	protected async sendDzrpCmdReadMem(addr64k: number, size: number): Promise<Uint8Array> {
+	protected async sendDzrpCmdReadMem(blocks: MemBlock[]): Promise<Uint8Array[]> {
 		Utility.assert(false);
-		return new Uint8Array(0);
+		return [];
 	}
 
 

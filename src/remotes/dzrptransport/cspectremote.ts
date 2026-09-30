@@ -28,7 +28,7 @@ export class CSpectRemote extends WithSocket(DzrpTransportRemote) {
 				|| (slots[1] === 0xFF && offset > 0x2000)
 			) {
 				// ROM is paged in, do a normal 64k read
-				return this.sendDzrpCmdReadMem(offset, size);
+				return this.readMemoryDump(offset, size);
 			}
 		}
 		// Do a banked read

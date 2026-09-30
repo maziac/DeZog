@@ -10,7 +10,7 @@ import {MameType, Settings} from '../../settings/settings';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';
-import {BREAK_REASON_NUMBER} from '../remotebase';
+import {BREAK_REASON_NUMBER, MemBlock} from '../remotebase';
 import {MemoryModelUnknown} from '../MemoryModel/genericmemorymodels';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {ErrorWrapper} from '../../misc/errorwrapper';
@@ -49,6 +49,12 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	// Requires slot 0 or 1 because ROM can only be paged into these slots.
 	protected readonly TMP_SLOT = 0;
 
+	// Max. number of values for one MAME 'print' command (MAX_COMMAND_PARAMS in MAME).
+	protected readonly MAX_PRINT_VALUES = 128;
+	// Max. length of the (unencoded) qRcmd command. MAME's packet size is 16384,
+	// the command is hex encoded, i.e. it needs twice the size.
+	protected readonly MAX_QRCMD_LENGTH = 6000;
+
 
 
 	/// Constructor.
@@ -74,6 +80,8 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		// Init socket
 		this.socket = new Socket();
 		this.socket.unref();
+		// Perf: disable Nagle, otherwise small request/response packets can be delayed by up to ~200ms.
+		this.socket.setNoDelay(true);
 		this.cmdRespTimeoutTime = this.settingsMameType.timeout * 1000;
 
 		// React on-open
@@ -930,13 +938,46 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/** Sends the command to retrieve a memory dump.
-	 * Sends the command to retrieve a memory dump.
+	/** Sends the command to retrieve one or several memory blocks.
+	 * A single block is read with 'm'.
+	 * Several blocks are read together with qRcmd 'print b@0x...,b@0x...'.
+	 * Several 'print' commands (each with max. 128 values) are combined
+	 * with ';' into one qRcmd. MAME returns each 'print' as a line of
+	 * hex values separated by spaces.
+	 * @param blocks The 64k start addresses and sizes of the blocks.
+	 * @returns A promise with an array of Uint8Arrays, one for each block.
+	 */
+	protected async sendDzrpCmdReadMem(blocks: MemBlock[]): Promise<Uint8Array[]> {
+		if (blocks.length === 1)
+			return [await this.readMemWithM(blocks[0].addr64k, blocks[0].size)];
+
+		// Collect the addresses of all bytes
+		const addresses: number[] = [];
+		for (const {addr64k, size} of blocks) {
+			for (let k = 0; k < size; k++)
+				addresses.push((addr64k + k) & 0xFFFF);
+		}
+
+		// Read all bytes
+		const values = await this.readBytesWithPrint(addresses);
+
+		// Split into the blocks
+		const result: Uint8Array[] = [];
+		let offset = 0;
+		for (const {size} of blocks) {
+			result.push(values.subarray(offset, offset + size));
+			offset += size;
+		}
+		return result;
+	}
+
+
+	/** Reads a memory block with 'm'.
 	 * @param addr64k The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	protected async sendDzrpCmdReadMem(addr64k: number, size: number): Promise<Uint8Array> {
+	protected async readMemWithM(addr64k: number, size: number): Promise<Uint8Array> {
 		const cmd = 'm' + addr64k.toString(16) + ',' + size.toString(16);
 		const resp = await this.sendPacketData(cmd);
 		// Parse the hex values
@@ -948,6 +989,40 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 			buffer[i] = val;
 		}
 		return buffer;
+	}
+
+
+	/** Reads the bytes at the given addresses with qRcmd 'print'.
+	 * As few qRcmds as possible are sent.
+	 * @param addresses The 64k addresses.
+	 * @returns The bytes, in the same order as the addresses.
+	 */
+	protected async readBytesWithPrint(addresses: number[]): Promise<Uint8Array> {
+		const values = new Uint8Array(addresses.length);
+		let index = 0;
+		while (index < addresses.length) {
+			// Combine several 'print' commands into one qRcmd
+			const printCmds: string[] = [];
+			let cmdLength = 0;
+			let count = 0;
+			while (index + count < addresses.length && cmdLength < this.MAX_QRCMD_LENGTH) {
+				const part = addresses.slice(index + count, index + count + this.MAX_PRINT_VALUES);
+				// Note: '0x' is required, otherwise e.g. 'bc' would be the register
+				const printCmd = 'print ' + part.map(addr => 'b@0x' + addr.toString(16)).join(',');
+				printCmds.push(printCmd);
+				cmdLength += printCmd.length + 1;
+				count += part.length;
+			}
+			const response = await this.sendQrcmd(printCmds.join(';'));
+			// Each 'print' returns a line, long lines are wrapped by MAME
+			const hexValues = response.split(/\s+/).filter(value => value !== '');
+			if (hexValues.length !== count)
+				throw Error("MAME: Expected " + count + " values but got " + hexValues.length + ": '" + response + "'");
+			for (let k = 0; k < count; k++)
+				values[index + k] = parseInt(hexValues[k], 16);
+			index += count;
+		}
+		return values;
 	}
 
 
@@ -969,7 +1044,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 		// Read memory
 		const slotOffs = this.TMP_SLOT * 0x2000; // Each slot is 8k, TMP_SLOT offset in memory
 		const addr64k = (offset & 0x1FFF) + slotOffs;
-		const buffer = await this.sendDzrpCmdReadMem(addr64k, size);	// Use normal read mem function
+		const buffer = await this.readMemWithM(addr64k, size);
 		// Restore the original bank in the TMP_SLOT
 		await this.sendDzrpCmdSetSlot(this.TMP_SLOT, tmpBank);
 		return buffer;

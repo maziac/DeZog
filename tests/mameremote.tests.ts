@@ -289,5 +289,108 @@ suite('MameRemote', () => {
 		assert.equal(mockMame.sentPackets[0], '$k#6B');
 	});
 
-});
 
+	suite('sendDzrpCmdReadMem', () => {
+
+		/** Simulates MAME's 'm' and qRcmd 'print' output.
+		 * The memory contains (addr & 0xFF) ^ 0x5A at each address.
+		 */
+		class MockMame extends MameGdbRemote {
+			public qRcmds: string[] = [];
+			public mReads: Array<{addr64k: number, size: number}> = [];
+
+			public static memValue(addr: number): number {
+				return (addr & 0xFF) ^ 0x5A;
+			}
+
+			protected async sendQrcmd(command: string): Promise<string> {
+				this.qRcmds.push(command);
+				const lines = command.split(';').map(printCmd => {
+					assert.ok(printCmd.startsWith('print '));
+					const params = printCmd.substring(6).split(',');
+					assert.ok(params.length <= 128);
+					return params.map(param => {
+						assert.ok(param.startsWith('b@0x'));
+						const addr = parseInt(param.substring(4), 16);
+						return MockMame.memValue(addr).toString(16).toUpperCase();
+					}).join(' ');
+				});
+				return lines.join('\n') + '\n';
+			}
+
+			protected async readMemWithM(addr64k: number, size: number): Promise<Uint8Array> {
+				this.mReads.push({addr64k, size});
+				const data = new Uint8Array(size);
+				for (let i = 0; i < size; i++)
+					data[i] = MockMame.memValue(addr64k + i);
+				return data;
+			}
+		}
+
+		let mockMame: any;
+
+		setup(() => {
+			const launch = Settings.Init({remoteType: 'mame'} as any);
+			Settings.launch = launch;
+			mockMame = new MockMame(launch.mame);
+		});
+
+		/** Checks that the data is the expected memory content. */
+		function checkBlocks(blocks: Array<{addr64k: number, size: number}>, result: Uint8Array[]) {
+			assert.equal(result.length, blocks.length);
+			for (let i = 0; i < blocks.length; i++) {
+				const {addr64k, size} = blocks[i];
+				assert.equal(result[i].length, size);
+				for (let k = 0; k < size; k++)
+					assert.equal(result[i][k], MockMame.memValue((addr64k + k) & 0xFFFF));
+			}
+		}
+
+		test('one block: m', async () => {
+			const blocks = [{addr64k: 0x2000, size: 100}];
+			const result = await mockMame.sendDzrpCmdReadMem(blocks);
+			assert.equal(mockMame.qRcmds.length, 0);
+			assert.deepEqual(mockMame.mReads, [{addr64k: 0x2000, size: 100}]);
+			checkBlocks(blocks, result);
+		});
+
+		test('several blocks: one print', async () => {
+			const blocks = [
+				{addr64k: 0x00BC, size: 3},
+				{addr64k: 0xFFFE, size: 3}	// Wrap around
+			];
+			const result = await mockMame.sendDzrpCmdReadMem(blocks);
+			assert.equal(mockMame.qRcmds.length, 1);
+			assert.equal(mockMame.qRcmds[0], 'print b@0xbc,b@0xbd,b@0xbe,b@0xfffe,b@0xffff,b@0x0');
+			assert.equal(mockMame.mReads.length, 0);
+			checkBlocks(blocks, result);
+		});
+
+		test('more than 128 values: several prints in one qRcmd', async () => {
+			const blocks: Array<{addr64k: number, size: number}> = [];
+			for (let i = 0; i < 100; i++)
+				blocks.push({addr64k: 0x8000 + 7 * i, size: 3});
+			const result = await mockMame.sendDzrpCmdReadMem(blocks);
+			assert.equal(mockMame.qRcmds.length, 1);
+			assert.equal(mockMame.qRcmds[0].split(';').length, 3);	// 128+128+44
+			checkBlocks(blocks, result);
+		});
+
+		test('many values: several qRcmds within the packet size', async () => {
+			const blocks: Array<{addr64k: number, size: number}> = [];
+			for (let i = 0; i < 700; i++)
+				blocks.push({addr64k: (0x4000 + 17 * i) & 0xFFFF, size: 3});
+			const result = await mockMame.sendDzrpCmdReadMem(blocks);
+			assert.ok(mockMame.qRcmds.length > 1);
+			for (const cmd of mockMame.qRcmds)
+				assert.ok(('qRcmd,'.length + 2 * cmd.length + 4) < 16384);
+			assert.equal(mockMame.mReads.length, 0);
+			checkBlocks(blocks, result);
+		});
+
+		test('wrong number of values', async () => {
+			mockMame.sendQrcmd = async () => '1 2\n';
+			await assert.rejects(mockMame.sendDzrpCmdReadMem([{addr64k: 0x1000, size: 3}, {addr64k: 0x2000, size: 1}]));
+		});
+	});
+});

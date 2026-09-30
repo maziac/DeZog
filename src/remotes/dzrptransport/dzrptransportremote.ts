@@ -7,6 +7,7 @@ import {GenericBreakpoint} from '../../genericwatchpoint';
 import {DzrpQueuedRemote} from '../dzrp/dzrpqueuedremote';
 import {DzrpTransportType, Settings} from '../../settings/settings';
 import {createDzrpSimpleMode} from './dzrpsimplemode';
+import {MemBlock} from '../remotebase';
 
 
 
@@ -801,32 +802,51 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	}
 
 
-	/** Sends the command to retrieve a memory dump.
-	 * Sends the command to retrieve a memory dump.
-	 * @param addr64k The memory start address.
-	 * @param size The memory size.
-	 * @returns A promise with an Uint8Array.
+	/** Sends the command to retrieve one or several memory blocks.
+	 * @param blocks The 64k start addresses and sizes of the blocks.
+	 * @returns A promise with an array of Uint8Arrays, one for each block.
 	 */
-	protected async sendDzrpCmdReadMem(addr64k: number, size: number): Promise<Uint8Array> {
-		let buffer;
+	protected async sendDzrpCmdReadMem(blocks: MemBlock[]): Promise<Uint8Array[]> {
+		// TODO: Workaround until all Remotes have the extended CMD_READ_MEM implemented:
+		// If more than one block is requested, the all is divided into many single sendDzrpCmdReadMem calls.
+		if (blocks.length > 1) {
+			const result: Uint8Array[] = [];
+			for (const block of blocks) {
+				const [data] = await this.sendDzrpCmdReadMem([block]);
+				result.push(data);
+			}
+			return result;
+		}
+
 		// Handle special case size=0x10000
-		if (size == 0x10000 && addr64k == 0) {
+		if (blocks.length === 1 && blocks[0].size === 0x10000 && blocks[0].addr64k === 0) {
 			// Get 2 chunks of memory as 0x10000 is too big).
-			const data0 = await this.sendDzrpCmdReadMem(0, 0x8000);
-			const data1 = await this.sendDzrpCmdReadMem(0x8000, 0x8000);
+			const [data0] = await this.sendDzrpCmdReadMem([{addr64k: 0, size: 0x8000}]);
+			const [data1] = await this.sendDzrpCmdReadMem([{addr64k: 0x8000, size: 0x8000}]);
 			// Create UInt8Array
-			buffer = new Uint8Array(0x10000);
+			const buffer = new Uint8Array(0x10000);
 			// Combine both buffers
 			buffer.set(data0);
 			buffer.set(data1, 0x8000);
+			return [buffer];
 		}
-		else {
-			// Send command to get memory dump
-			const data = await this.sendDzrpCmd(DZRP.CMD_READ_MEM, [0, addr64k & 0xFF, addr64k >>> 8, size & 0xFF, size >>> 8]);
-			// Create UInt8Array
-			buffer = new Uint8Array(data);
+
+		// Send command with all addresses and sizes
+		const cmdData = [0];	// reserved
+		for (const {addr64k, size} of blocks) {
+			if (size >= 0x10000)
+				throw new Error("Size too big: '" + size + "'.");
+			cmdData.push(addr64k & 0xFF, addr64k >>> 8, size & 0xFF, size >>> 8);
 		}
-		return buffer;
+		const data = await this.sendDzrpCmd(DZRP.CMD_READ_MEM, cmdData);
+		// Split the response into the blocks
+		const result: Uint8Array[] = [];
+		let offset = 0;
+		for (const {size} of blocks) {
+			result.push(new Uint8Array(data.subarray(offset, offset + size)));
+			offset += size;
+		}
+		return result;
 	}
 
 
