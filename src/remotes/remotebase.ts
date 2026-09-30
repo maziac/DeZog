@@ -736,7 +736,7 @@ export class RemoteBase extends EventEmitter {
 	  * @returns The stack, i.e. the word values from SP to topOfStack.
 	  * But no more than about 100 elements.
 	  */
-	public async getCallStackCache(): Promise<RefList<CallStackFrame>> {
+	public getCallStackCache(): RefList<CallStackFrame> {
 		return this.listFrames;
 	}
 

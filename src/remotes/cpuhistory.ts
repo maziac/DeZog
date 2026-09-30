@@ -549,7 +549,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	protected async prepareReverseDbgStack(): Promise<void> {
 		if (!this.isInStepBackMode()) {
 			// Prefill array with current stack
-			this.reverseDbgStack = await Remote.getCallStackCache();
+			this.reverseDbgStack = Remote.getCallStackCache();
 		}
 	}
 

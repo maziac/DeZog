@@ -1133,7 +1133,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 		else {
 			// Get callstack
-			callStack = await Remote.getCallStackCache();
+			callStack = Remote.getCallStackCache();
 		}
 
 		// Go through complete call stack and get the sources.
@@ -1434,7 +1434,6 @@ export class DebugSessionClass extends DebugSession {
 		if (StepHistory.isInStepBackMode())
 			frame = StepHistory.getCallStack().getObject(frameId);
 		else {
-			await Remote.getCallStackCache();	// make sure listFrames exist
 			frame = Remote.getFrame(frameId);
 		}
 		if (!frame) {
@@ -1901,7 +1900,7 @@ export class DebugSessionClass extends DebugSession {
 				// Store as (lite step history)
 				const regsCache = Z80Registers.getCache();
 				StepHistory.pushHistoryInfo(regsCache);
-				const callStack = await Remote.getCallStackCache();
+				const callStack = Remote.getCallStackCache();
 				StepHistory.pushCallStack(callStack);
 			}
 			// Reset t-states counter
