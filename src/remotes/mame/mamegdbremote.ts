@@ -940,7 +940,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 
 	/** Sends the command to retrieve one or several memory blocks.
 	 * A single block is read with 'm'.
-	 * Several blocks are read together with qRcmd 'print b@0x...,b@0x...'.
+	 * Several blocks are read together with qRcmd 'print w@$...,b@$...'.
 	 * Several 'print' commands (each with max. 128 values) are combined
 	 * with ';' into one qRcmd. MAME returns each 'print' as a line of
 	 * hex values separated by spaces.
@@ -950,25 +950,7 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	protected async sendDzrpCmdReadMem(blocks: MemBlock[]): Promise<Uint8Array[]> {
 		if (blocks.length === 1)
 			return [await this.readMemWithM(blocks[0].addr64k, blocks[0].size)];
-
-		// Collect the addresses of all bytes
-		const addresses: number[] = [];
-		for (const {addr64k, size} of blocks) {
-			for (let k = 0; k < size; k++)
-				addresses.push((addr64k + k) & 0xFFFF);
-		}
-
-		// Read all bytes
-		const values = await this.readMemWithPrint(addresses);
-
-		// Split into the blocks
-		const result: Uint8Array[] = [];
-		let offset = 0;
-		for (const {size} of blocks) {
-			result.push(values.subarray(offset, offset + size));
-			offset += size;
-		}
-		return result;
+		return this.readMemWithPrint(blocks);
 	}
 
 
@@ -992,37 +974,69 @@ export class MameGdbRemote extends DzrpQueuedRemote {
 	}
 
 
-	/** Reads the bytes at the given addresses with qRcmd 'print'.
+	/** Reads the memory blocks with qRcmd 'print'.
+	 * Each block is read word-wise with 'w@' (big endian), only the last
+	 * byte of a block with odd size is read with 'b@'.
+	 * E.g. a block of size 5 results in 2x 'w@' and 1x 'b@'.
+	 * MAME prints the values without leading zeros, separated by spaces
+	 * or newlines.
 	 * As few qRcmds as possible are sent.
-	 * @param addresses The 64k addresses.
-	 * @returns The bytes, in the same order as the addresses.
+	 * @param blocks The 64k start addresses and sizes of the blocks.
+	 * @returns An array of Uint8Arrays, one for each block.
 	 */
-	protected async readMemWithPrint(addresses: number[]): Promise<Uint8Array> {
-		const values = new Uint8Array(addresses.length);
-		let index = 0;
-		while (index < addresses.length) {
+	protected async readMemWithPrint(blocks: MemBlock[]): Promise<Uint8Array[]> {
+		// Create the print terms
+		// Note: '$' is required, otherwise e.g. 'bc' would be the register
+		const terms: string[] = [];
+		for (const {addr64k, size} of blocks) {
+			const end = addr64k + size;
+			let addr = addr64k;
+			for (; addr + 1 < end; addr += 2)
+				terms.push('w@$' + (addr & 0xFFFF).toString(16));
+			if (addr < end)
+				terms.push('b@$' + (addr & 0xFFFF).toString(16));
+		}
+
+		// Read all values
+		const hexValues: string[] = [];
+		let termIndex = 0;
+		while (termIndex < terms.length) {
 			// Combine several 'print' commands into one qRcmd
 			const printCmds: string[] = [];
 			let cmdLength = 0;
 			let count = 0;
-			while (index + count < addresses.length && cmdLength < this.MAX_QRCMD_LENGTH) {
-				const part = addresses.slice(index + count, index + count + this.MAX_PRINT_VALUES);
-				// Note: '0x' is required, otherwise e.g. 'bc' would be the register
-				const printCmd = 'print ' + part.map(addr => 'b@0x' + addr.toString(16)).join(',');
+			while (termIndex + count < terms.length && cmdLength < this.MAX_QRCMD_LENGTH) {
+				const part = terms.slice(termIndex + count, termIndex + count + this.MAX_PRINT_VALUES);
+				const printCmd = 'print ' + part.join(',');
 				printCmds.push(printCmd);
 				cmdLength += printCmd.length + 1;
 				count += part.length;
 			}
 			const response = await this.sendQrcmd(printCmds.join(';'));
 			// Each 'print' returns a line, long lines are wrapped by MAME
-			const hexValues = response.split(/\s+/).filter(value => value !== '');
-			if (hexValues.length !== count)
-				throw Error("MAME: Expected " + count + " values but got " + hexValues.length + ": '" + response + "'");
-			for (let k = 0; k < count; k++)
-				values[index + k] = parseInt(hexValues[k], 16);
-			index += count;
+			hexValues.push(...response.split(/\s+/).filter(value => value !== ''));
+			termIndex += count;
 		}
-		return values;
+		if (hexValues.length !== terms.length)
+			throw Error("MAME: Expected " + terms.length + " values but got " + hexValues.length + ": '" + hexValues.join(' ') + "'");
+
+		// Decode the blocks
+		const result: Uint8Array[] = [];
+		let index = 0;
+		for (const {size} of blocks) {
+			const data = new Uint8Array(size);
+			let k = 0;
+			for (; k + 1 < size; k += 2) {
+				// MAME returns the byte at the lower address as high byte
+				const value = parseInt(hexValues[index++], 16);
+				data[k] = value >> 8;
+				data[k + 1] = value & 0xFF;
+			}
+			if (k < size)
+				data[k] = parseInt(hexValues[index++], 16);
+			result.push(data);
+		}
+		return result;
 	}
 
 

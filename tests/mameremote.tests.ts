@@ -310,8 +310,12 @@ suite('MameRemote', () => {
 					const params = printCmd.substring(6).split(',');
 					assert.ok(params.length <= 128);
 					return params.map(param => {
-						assert.ok(param.startsWith('b@0x'));
-						const addr = parseInt(param.substring(4), 16);
+						const addr = parseInt(param.substring(3), 16);
+						if (param.startsWith('w@$')) {
+							const value = 256 * MockMame.memValue(addr) + MockMame.memValue((addr + 1) & 0xFFFF);	// Big endian
+							return value.toString(16).toUpperCase();
+						}
+						assert.ok(param.startsWith('b@$'));
 						return MockMame.memValue(addr).toString(16).toUpperCase();
 					}).join(' ');
 				});
@@ -361,18 +365,36 @@ suite('MameRemote', () => {
 			];
 			const result = await mockMame.sendDzrpCmdReadMem(blocks);
 			assert.equal(mockMame.qRcmds.length, 1);
-			assert.equal(mockMame.qRcmds[0], 'print b@0xbc,b@0xbd,b@0xbe,b@0xfffe,b@0xffff,b@0x0');
+			assert.equal(mockMame.qRcmds[0], 'print w@$bc,b@$be,w@$fffe,b@$0');
 			assert.equal(mockMame.mReads.length, 0);
 			checkBlocks(blocks, result);
 		});
 
+		test('5 bytes: 2x w@ and 1x b@', async () => {
+			const blocks = [
+				{addr64k: 0x1000, size: 5},
+				{addr64k: 0x2000, size: 2}
+			];
+			const result = await mockMame.sendDzrpCmdReadMem(blocks);
+			assert.equal(mockMame.qRcmds.length, 1);
+			assert.equal(mockMame.qRcmds[0], 'print w@$1000,w@$1002,b@$1004,w@$2000');
+			checkBlocks(blocks, result);
+		});
+
+		test('response with whitespace and newlines', async () => {
+			mockMame.sendQrcmd = async () => ' 5 A\n  12\r\n';	// w@ = 0x0005, b@ = 0x0A, b@ = 0x12 (no leading zeros)
+			const result = await mockMame.sendDzrpCmdReadMem([{addr64k: 0x1000, size: 3}, {addr64k: 0x2000, size: 1}]);
+			assert.deepEqual(Array.from(result[0]), [0, 5, 10]);
+			assert.deepEqual(Array.from(result[1]), [0x12]);
+		});
+
 		test('more than 128 values: several prints in one qRcmd', async () => {
 			const blocks: Array<{addr64k: number, size: number}> = [];
-			for (let i = 0; i < 100; i++)
+			for (let i = 0; i < 200; i++)
 				blocks.push({addr64k: 0x8000 + 7 * i, size: 3});
 			const result = await mockMame.sendDzrpCmdReadMem(blocks);
 			assert.equal(mockMame.qRcmds.length, 1);
-			assert.equal(mockMame.qRcmds[0].split(';').length, 3);	// 128+128+44
+			assert.equal(mockMame.qRcmds[0].split(';').length, 4);	// 400 values: 128+128+128+16
 			checkBlocks(blocks, result);
 		});
 
