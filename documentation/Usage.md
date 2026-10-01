@@ -519,7 +519,7 @@ Arrays can be viewed by appending the number of elements.
 
 Notes:
 - C-support only works for "z88dkv2" not for "z88dk"
-- C-support is only working with sdcc, not with sccz80.
+- C-support works with sdcc and sccz80 (e.g. `-compiler=sccz80 -clib=new`).
 - For the "path" you can use globbing
 - Top of stack: In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
 - Banking: see "Debug information" above. The bank/page is taken from the addresses of the map file.

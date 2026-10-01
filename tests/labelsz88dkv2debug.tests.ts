@@ -285,3 +285,134 @@ suite('Labels (z88dk v2 format with -debug map file)', () => {
 		});
 	});
 });
+
+
+suite('Labels (z88dk v2 format, sccz80)', () => {
+	// Real output of "zcc +zxn -compiler=sccz80 -clib=new" (trimmed).
+	// factorial.c is in page 20, fibonacci.c in page 22. Both have a local label "i_2".
+	const dir = 'tests/data/labels/projects/z88dk/debug_sccz80';
+	const page = (p: number, addr64k: number) => addr64k + ((p + 1) << 16);
+	let lbls: LabelsClass;
+
+	setup(() => {
+		lbls = new LabelsClass();
+		// To work with simpler file names
+		(WorkspacePaths as any).rootPath = undefined;
+	});
+
+	function config(subDir: string): any {
+		return {
+			z88dkv2: [{
+				path: './' + dir + '/' + subDir + '*.lis',
+				mapFile: './' + dir + '/' + subDir + 'main.map',
+				srcDirs: [dir],
+				excludeFiles: []
+			}]
+		};
+	}
+
+	function checkEntry(address: number, file: string | undefined, lineNr?: number) {
+		const entry = lbls.getSourceFileEntryForAddress(address);
+		const msg = 'Address ' + address.toString(16);
+		if (file === undefined) {
+			assert.ok(entry === undefined || entry.fileName === '', msg);
+			return;
+		}
+		assert.notEqual(entry, undefined, msg);
+		assert.equal(entry!.fileName, dir + '/' + file, msg);
+		assert.equal(entry!.lineNr, lineNr! - 1, msg);
+	}
+
+
+	test('with -debug: C lines from map file', () => {
+		lbls.readListFiles(config(''), new MemoryModelZxNext());
+		// Labels in ".label" syntax
+		assert.equal(lbls.getNumberForLabel('_factorial'), page(20, 0x0000));
+		assert.equal(lbls.getNumberForLabel('_fibonacci'), page(22, 0x0000));
+		// Line -> address
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/factorial.c', 6 - 1), page(20, 0x0000));
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/factorial.c', 7 - 1), page(20, 0x0003));
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/factorial.c', 9 - 1), page(20, 0x0010));
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/factorial.c', 11 - 1), page(20, 0x0017));
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/fibonacci.c', 11 - 1), page(22, 0x0017));
+		// Lines without code (sccz80 symbols at $0000 without section) have no address
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/factorial.c', 1 - 1), -1);
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/factorial.c', 5 - 1), -1);
+		// Address -> line
+		checkEntry(page(20, 0x0003), 'factorial.c', 7);
+		checkEntry(page(20, 0x0010), 'factorial.c', 9);	// Line 8 has no code
+		checkEntry(page(20, 0x0017), 'factorial.c', 11);	// Line 10 has no code
+		checkEntry(page(22, 0x0017), 'fibonacci.c', 11);
+		// No association of the ROM at 0x0000
+		checkEntry((0xFF + 1) << 16, undefined);
+	});
+
+	test('without -debug: C lines from .lis C_LINE markers', () => {
+		lbls.readListFiles(config('nodebug/'), new MemoryModelZxNext());
+		assert.equal(lbls.getNumberForLabel('_factorial'), page(20, 0x0000));
+		assert.equal(lbls.getNumberForLabel('_fibonacci'), page(22, 0x0000));
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/factorial.c', 7 - 1), page(20, 0x0000));
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/factorial.c', 9 - 1), page(20, 0x000D));
+		// The local label "i_2" exists in both modules
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/factorial.c', 11 - 1), page(20, 0x0011));
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/fibonacci.c', 11 - 1), page(22, 0x0012));
+		checkEntry(page(20, 0x000D), 'factorial.c', 9);
+		checkEntry(page(20, 0x0011), 'factorial.c', 11);
+		checkEntry(page(22, 0x0012), 'fibonacci.c', 11);
+	});
+});
+
+
+suite('Labels (z88dk v2 format, source in sub directory)', () => {
+	// The .lis file refers to "game/loop.c", the C_LINE information contains only "loop.c".
+	const dir = 'tests/data/labels/projects/z88dk/subdir_v2';
+	const page = (p: number, addr64k: number) => addr64k + ((p + 1) << 16);
+	let lbls: LabelsClass;
+
+	setup(() => {
+		lbls = new LabelsClass();
+		// To work with simpler file names
+		(WorkspacePaths as any).rootPath = undefined;
+	});
+
+	function config(mapFile: string): any {
+		return {
+			z88dkv2: [{
+				path: './' + dir + '/game/*.lis',
+				mapFile: './' + dir + '/' + mapFile,
+				srcDirs: [dir],
+				excludeFiles: []
+			}]
+		};
+	}
+
+	function checkEntry(address: number, lineNr: number) {
+		const entry = lbls.getSourceFileEntryForAddress(address);
+		const msg = 'Address ' + address.toString(16);
+		assert.notEqual(entry, undefined, msg);
+		assert.equal(entry!.fileName, dir + '/game/loop.c', msg);
+		assert.equal(entry!.lineNr, lineNr - 1, msg);
+	}
+
+	for (const mapFile of ['main_nodebug.map', 'main.map']) {
+		test(mapFile, () => {
+			lbls.readListFiles(config(mapFile), new MemoryModelZxNext());
+			const file = dir + '/game/loop.c';
+			assert.equal(lbls.getAddrForFileAndLine(file, 5 - 1), page(4, 0x8000));
+			assert.equal(lbls.getAddrForFileAndLine(file, 10 - 1), page(4, 0x8007));
+			checkEntry(page(4, 0x8000), 5);
+			checkEntry(page(4, 0x8007), 10);
+			checkEntry(page(4, 0x800F), 10);
+		});
+	}
+
+	test('.lis: C_LINE before the label of a function', () => {
+		// The C_LINE of line 8 is located after the bss section, before the label "_loop".
+		lbls.readListFiles(config('main_nodebug.map'), new MemoryModelZxNext());
+		const file = dir + '/game/loop.c';
+		assert.equal(lbls.getAddrForFileAndLine(file, 8 - 1), page(4, 0x8005));	// Not the bss address
+		checkEntry(page(4, 0x8005), 8);
+		// Line without code
+		assert.equal(lbls.getAddrForFileAndLine(file, 3 - 1), -1);
+	});
+});

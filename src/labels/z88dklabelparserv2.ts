@@ -154,6 +154,17 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	/// The value contains the bank/page in the upper bits.
 	protected z88dkMappings = new Map<string, Z88dkMapSymbol>();
 
+	/// The local symbols of the map file, key is "module:name".
+	/// Local labels (e.g. "i_2" of sccz80) may exist in several modules.
+	protected z88dkLocalMappings = new Map<string, Z88dkMapSymbol>();
+
+	/// The module of the current .lis file (MODULE directive).
+	protected currentModule = '';
+
+	/// The C source file (relative path) of each module, from the .lis files.
+	/// The C_LINE information contains only the file name without directory.
+	protected moduleCFiles = new Map<string, string>();
+
 	/// All __C_LINE_ symbols of the map file. Empty if not compiled with "-debug".
 	protected cLineSymbols: Z88dkMapSymbol[] = [];
 
@@ -176,6 +187,12 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 
 	// Regex to find labels (ignore local labels, e.g. '@label')
 	protected labelRegEx = /(?<!@)([a-z_]\w*):/i;
+
+	// Regex to find labels in the ".label" syntax (used by sccz80), e.g. "._main"
+	protected dotLabelRegEx = /^\s*\.([a-z_]\w*)/i;
+
+	// Regex to find the module, e.g. "MODULE main_c"
+	protected moduleRegEx = /^\s*(?:\d+\s+)?MODULE\s+(\w+)/i;
 
 	// Regex to find EQUs with labels
 	protected equRegEx = /([a-z_]\w*):\s*equ\s+(.*)/i;
@@ -235,6 +252,15 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 		return matchCSource?.[1];
 	}
 
+	/** Returns true if the file name (e.g. from a C_LINE directive) refers to
+	 * the given file. C_LINE contains only the file name, e.g. "game_loop.c"
+	 * for "game/game_loop.c".
+	 */
+	protected isSameFile(name: string, filePath: string): boolean {
+		name = UnifiedPath.getUnifiedPath(name);
+		return name === filePath || filePath.endsWith('/' + name);
+	}
+
 	// Parses the line number corresponding to the C file.
 	// If the .lis file contains C_LINE directives they are used, e.g. 'C_LINE 5,"main.c::x::0::0"'.
 	// Otherwise the comments with the c file and line number are used, e.g. ';main.c:5: int main() {'
@@ -252,7 +278,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 			if (match)
 				ref = {file: match[1], lineNr: match[2]};
 		}
-		if (ref && UnifiedPath.getUnifiedPath(ref.file) === fileName)
+		if (ref && this.isSameFile(ref.file, fileName))
 			this.currentCLine = parseInt(ref.lineNr);
 		return this.currentCLine;
 	}
@@ -322,12 +348,15 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 			catch {}	// do nothing in case of an error
 		}
 		else if (!this.lineDirectiveRegEx.test(line)) {
+			const matchModule = this.moduleRegEx.exec(line);
+			if (matchModule)
+				this.currentModule = matchModule[1];
 			// Check if there is a label (no equ)
-			const matchLabel = this.labelRegEx.exec(line);
+			const matchLabel = this.labelRegEx.exec(line) ?? this.dotLabelRegEx.exec(line);
 			if (matchLabel) {
 				const label = matchLabel[1];
 				// Special handling for z88dk to overcome the relative addresses (note: the map is empty if no z88dk is used/no map file given)
-				const sym = this.z88dkMappings.get(label);
+				const sym = this.z88dkLocalMappings.get(this.currentModule + ':' + label) ?? this.z88dkMappings.get(label);
 				if (sym !== undefined) {	// Is e.g. undefined if in an IF/ENDIF
 					//console.log('z88dk: label=' + label + ', realAddress=' + HexFormat.getHexString(sym.value, 4));
 					// Use label address
@@ -372,6 +401,10 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	 * @param line The current analyzed line of the listFile array.
 	 */
 	protected parseFileAndLineNumber(line: string) {
+		const matchModule = this.moduleRegEx.exec(line);
+		if (matchModule)
+			this.currentModule = matchModule[1];
+
 		// Check for the file name
 		const matchFileName = this.fileNameRegEx.exec(line);
 		if (matchFileName) {
@@ -379,11 +412,13 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 			// Note: with "-debug" the C_LINE directive appends debug info to the file name, e.g. "main.c::x::10000::1"
 			const fileName = stripDebugFileName(matchFileName[1]);
 			const prevFileName = this.includeFileStack[this.includeFileStack.length - 1]?.includeFileName;
-			if (prevFileName === UnifiedPath.getUnifiedPath(fileName))
+			if (prevFileName && this.isSameFile(fileName, prevFileName))
 				return;	// Same file (e.g. C_LINE), keep the current C line
 			// Stop any previous "include"
 			this.includeFileStack.length = 0;
 			this.includeStart(fileName);
+			if (this.currentCSourceFile())
+				this.moduleCFiles.set(this.currentModule, this.includeFileStack[0].fileName);
 			// Resets current C line
 			this.currentCLine = 0;
 			return;
@@ -435,6 +470,53 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 		super.sourcesModeFinish();
 		if (this.hasCLineDebugInfo())
 			this.addCLineDebugInfo();
+		else
+			this.correctCLineAddresses();
+	}
+
+
+	/** Corrects the line -> address association of the C lines of the .lis file.
+	 * The base class uses the address of the first .lis line of a C line, even
+	 * if it contains no code. E.g. the C_LINE directive of a function is located
+	 * before the label of the function and still has the address of the previous
+	 * section. Therefore only lines with code are used.
+	 * A C line without code gets no address.
+	 */
+	protected correctCLineAddresses() {
+		// First address (with or without code) per file and line, as set by the base class
+		const firstAddrs = new Map<string, Map<number, number>>();
+		// First address with code
+		const codeAddrs = new Map<string, Map<number, number>>();
+		for (const entry of this.listFile) {
+			if (entry.longAddr === undefined || !this.cFileRegEx.test(entry.fileName))
+				continue;
+			let first = firstAddrs.get(entry.fileName);
+			if (!first) {
+				first = new Map<number, number>();
+				firstAddrs.set(entry.fileName, first);
+				codeAddrs.set(entry.fileName, new Map<number, number>());
+			}
+			if (!first.has(entry.lineNr))
+				first.set(entry.lineNr, entry.longAddr);
+			const code = codeAddrs.get(entry.fileName)!;
+			if (entry.size > 0 && !code.has(entry.lineNr))
+				code.set(entry.lineNr, entry.longAddr);
+		}
+		for (const [fileName, first] of firstAddrs) {
+			const lineArray = this.lineArrays.get(fileName);
+			if (!lineArray)
+				continue;
+			const code = codeAddrs.get(fileName)!;
+			for (const [lineNr, firstAddr] of first) {
+				if (lineArray[lineNr] !== firstAddr)
+					continue;	// Set by another list file
+				const codeAddr = code.get(lineNr);
+				if (codeAddr === undefined)
+					delete lineArray[lineNr];
+				else
+					lineArray[lineNr] = codeAddr;
+			}
+		}
 	}
 
 
@@ -457,12 +539,18 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 				continue;
 			}
 			// Get relative file name, check for excluded files
-			let fileName = relFileCache.get(info.fileName);
-			if (!relFileCache.has(info.fileName)) {
-				fileName = WorkspacePaths.getRelSourceFilePath(UnifiedPath.getUnifiedPath(info.fileName), config.srcDirs);
+			const cacheKey = sym.module + ':' + info.fileName;
+			let fileName = relFileCache.get(cacheKey);
+			if (!relFileCache.has(cacheKey)) {
+				// Prefer the C file of the module's .lis file (C_LINE contains no directory)
+				const moduleCFile = this.moduleCFiles.get(sym.module);
+				if (moduleCFile && this.isSameFile(info.fileName, moduleCFile))
+					fileName = moduleCFile;
+				else
+					fileName = WorkspacePaths.getRelSourceFilePath(UnifiedPath.getUnifiedPath(info.fileName), config.srcDirs);
 				if (config.excludeFiles.some(glob => minimatch(fileName!, glob)))
 					fileName = undefined;
-				relFileCache.set(info.fileName, fileName);
+				relFileCache.set(cacheKey, fileName);
 			}
 			if (fileName === undefined)
 				continue;	// Excluded
@@ -545,6 +633,9 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 		this.lastLabelAddress = 0;
 		this.lastAddr64k = 0;
 		this.z88dkMappings.clear();
+		this.z88dkLocalMappings.clear();
+		this.currentModule = '';
+		this.moduleCFiles.clear();
 		this.cLineSymbols = [];
 		this.addressSymbols = [];
 		Utility.assert(mapFile);	// mapFile is already absolute path.
@@ -556,12 +647,17 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 			if (!sym)
 				continue;
 			if (sym.name.startsWith(C_LINE_PREFIX)) {
-				this.cLineSymbols.push(sym);
+				// sccz80 also creates symbols for lines without code (e.g. declarations,
+				// header files). These are not in any section and have the value 0.
+				if (sym.section)
+					this.cLineSymbols.push(sym);
 				continue;
 			}
 			if (isDebugSymbol(sym.name))
 				continue;	// __ASM_LINE_ (the .lis file is more precise) and __CDBINFO__ (not used yet)
 			this.z88dkMappings.set(sym.name, sym);
+			if (sym.scope === 'local' && sym.module)
+				this.z88dkLocalMappings.set(sym.module + ':' + sym.name, sym);
 			if (sym.type !== 'const')
 				this.addressSymbols.push(sym);
 		}
