@@ -156,6 +156,11 @@ export class MameGdbRemote extends GdbRemote {
 	}
 
 
+	protected override supportsBankedNexLoading(): boolean {
+		return this.Z80N;
+	}
+
+
 	/** Checks the XML received from MAME.
 	 * In addition to the architecture check it determines if the target is
 	 * a Z80N (i.e. if the mmu registers are available).
@@ -502,6 +507,24 @@ export class MameGdbRemote extends GdbRemote {
 	 */
 	protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
 		await this.sendQrcmd(`ib@${port.toString(16)}=${value.toString(16)}`);
+	}
+
+
+	/** MAME requires killing the emulator to allow a fresh gdb connection.
+	 */
+	protected override async sendDzrpCmdClose(): Promise<void> {
+		if (!this.socket)
+			return;
+		this.socket.removeAllListeners();
+		this.cmdRespTimeoutTime = 0;
+		this.stopCmdRespTimeout();
+		this.messageQueue.length = 0;
+		try {
+			await this.sendPacketData('k');
+		}
+		catch {
+			// The socket may already be closed.
+		}
 	}
 
 

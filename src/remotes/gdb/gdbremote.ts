@@ -177,55 +177,14 @@ export class GdbRemote extends DzrpQueuedRemote {
 	 */
 	public async disconnect(): Promise<void> {
 		await super.disconnect();
-		if (!this.socket)
-			return;
-		this.socket.removeAllListeners();
-
-		// Send a k(ill) command
-		this.cmdRespTimeoutTime = 0;	// No response expected for kill command.
-
-		// Cancel any in-flight timeouts and clear the queue. We want the 'k' command to be sent
-		// immediately. Otherwise there is a delay of 5 seconds before the 'k' command is actually
-		// sent, causing the debug UI bar to remain visible until the command is sent.
-		this.stopCmdRespTimeout();
-		this.messageQueue.length = 0;
-
-		try {
-			await this.sendPacketData('k');
-		}
-		catch (e) {
-			// E.g. if socket could not be connected.
-		}
-
-		return new Promise<void>(resolve => {
-			if (!this.socket) {
-				resolve();
-				return;
-			}
-			// Timeout is required because socket.end() does not call the
-			// callback if it is already closed and the state cannot
-			// reliable be determined.
-			const timeout = setTimeout(() => {
-				if (resolve) {
-					resolve();
-					resolve = undefined as any;
-				}
-			}, 1000);	// 1 sec
-			this.socket.end(() => {
-				if (resolve) {
-					clearTimeout(timeout);
-					resolve();
-					resolve = undefined as any;
-				}
-			});
-			this.socket = undefined as any;
-		});
+		if (this.socket)
+			await this.socketClose(1000);
 	}
 
 
 	/** Closes the socket.
 	 */
-	protected socketClose(): Promise<void> {
+	protected socketClose(timeoutMs = 10000): Promise<void> {
 		return new Promise<void>(resolve => {
 			const socket = this.socket;
 			if (!socket)
@@ -240,7 +199,7 @@ export class GdbRemote extends DzrpQueuedRemote {
 				if (resolve) {
 					resolve();
 				}
-			}, 10000);
+			}, timeoutMs);
 			socket.end(() => {	// NOSONAR
 				if (resolve) {
 					resolve();
@@ -802,11 +761,27 @@ export class GdbRemote extends DzrpQueuedRemote {
 	 * @param blocks The 64k start addresses and sizes of the blocks.
 	 * @returns A promise with an array of Uint8Arrays, one for each block.
 	 */
-	protected async sendDzrpCmdReadMem(blocks: MemBlock[]): Promise<Uint8Array[]> {
+	protected async sendDzrpCmdReadMemBlocks(blocks: MemBlock[]): Promise<Uint8Array[]> {
 		const result: Uint8Array[] = [];
 		for (const {addr64k, size} of blocks)
 			result.push(await this.readMemWithM(addr64k, size));
 		return result;
+	}
+
+
+	/** Plain gdb has no standard support for banked NEX loading.
+	 */
+	protected async loadBinNex(filePath: string): Promise<number> {
+		if (!this.supportsBankedNexLoading())
+			throw Error("Loading .nex files is not supported by the generic gdb remote.");
+		return super.loadBinNex(filePath);
+	}
+
+
+	/** Override when the gdbstub also implements the required banked-memory operations.
+	 */
+	protected supportsBankedNexLoading(): boolean {
+		return false;
 	}
 
 
@@ -861,6 +836,6 @@ export class GdbRemote extends DzrpQueuedRemote {
 	/** Ignore command.
 	 */
 	protected async sendDzrpCmdClose(): Promise<void> {
-		// Do nothing
+		await this.sendPacketDataOk('D');
 	}
 }

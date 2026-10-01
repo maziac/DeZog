@@ -141,6 +141,14 @@ suite('GdbRemote', () => {
 			assert.deepEqual(sent, ['M8000,3:01ABFF']);
 		});
 
+		test('memory blocks are read with m packets', async () => {
+			await gdb.sendDzrpCmdReadMemBlocks([
+				{addr64k: 0x8000, size: 1},
+				{addr64k: 0x9000, size: 2}
+			]);
+			assert.deepEqual(sent, ['m8000,1', 'm9000,2']);
+		});
+
 		test('pause sends a break', async () => {
 			let withCtrlC = false;
 			gdb.sendPacketData = async (packetData: string, ctrlC?: boolean) => {
@@ -151,6 +159,24 @@ suite('GdbRemote', () => {
 			await gdb.sendDzrpCmdPause();
 			assert.deepEqual(sent, ['p0b']);
 			assert.ok(withCtrlC);
+		});
+
+		test('disconnect detaches before closing the socket', async () => {
+			let socketClosed = false;
+			let timeoutMs = 0;
+			gdb.socket = {};
+			gdb.socketClose = async (timeout: number) => {
+				socketClosed = true;
+				timeoutMs = timeout;
+			};
+			await gdb.disconnect();
+			assert.ok(socketClosed);
+			assert.equal(timeoutMs, 1000);
+			assert.deepEqual(sent, ['D']);
+		});
+
+		test('NEX loading is rejected without bank support', async () => {
+			await assert.rejects(gdb.loadBinNex('unused.nex'), /not supported by the generic gdb remote/);
 		});
 	});
 });
