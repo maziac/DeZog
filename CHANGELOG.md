@@ -12,6 +12,7 @@
 - NEX file: fixed the bank offset for files with a 320x256/640x256 Layer2 loading screen (the palette was not taken into account).
 - A generic "dzrp" remote has been implemented which can connect via serial or socket connection.
 - Memory Views (debug commands "-mv", "-mvw" and "-mvd") allow additional parameter "bank=" to specify the bank to display.
+- Memory Views: fixed size 0x10000 (or the full bank size) which showed an empty view. A block ending at 0xFFFF (or at the bank end) does not show an additional line afterwards anymore.
 - Debug commands "-md", "-mdelta", "-ml", "-ms", "-msetb" and "-msetw" allow additional parameter to specify a bank to read from or write to.
 - New launch.json property "loadSysVars" to load zx16k or zx48 system variables at startup.
 - Internally used 0xFF for ROM instead of 0xFE pseudo ROM identifier.

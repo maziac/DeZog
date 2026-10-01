@@ -60,29 +60,43 @@ export class MemoryDump {
 	 * @param startAddress The address of the memory block.
 	 * @param size The size of the memory block in bytes. (Can be 0x10000 max)
 	 * @param title An optional title for the memory block (shown as table header).
+	 * @param endLimit The (exclusive) end of the address range, e.g. 0x10000 or the bank size.
+	 * No additional line is shown after this limit if the block ends exactly there.
 	 */
-	public addBlock(startAddress: number, size: number, title: string | undefined = undefined) {
-		// Create memory block
-		const memBlock = {address: startAddress, size: size, data: []};
-		let bigBlock;
-		// Check for size > 0xFFFF
-		if (size <= 0xFFFF - 2 * (2 * MEM_DUMP_BOUNDARY - 1)) {
-			// Create one meta block for the memory block
-			const boundAddr = ByteBuffer.getBoundary(memBlock.address - MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
-			const boundSize = ByteBuffer.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + 2 * MEM_DUMP_BOUNDARY - boundAddr;
-			bigBlock = new MetaBlock(boundAddr, boundSize, [memBlock], title);
-		}
-		else {
-			const boundAddr = ByteBuffer.getBoundary(memBlock.address, MEM_DUMP_BOUNDARY);
-			const boundEnd = ByteBuffer.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + MEM_DUMP_BOUNDARY;
-			let boundSize = boundEnd - boundAddr + 1;
-			if (boundSize > 0xFFFF) {
-				boundSize = Math.trunc(0xFFFF / MEM_DUMP_BOUNDARY) * MEM_DUMP_BOUNDARY;
-				memBlock.size = boundAddr + boundSize - startAddress;
-			}
-			bigBlock = new MetaBlock(boundAddr, boundSize, [memBlock], title);
-		}
+	public addBlock(startAddress: number, size: number, title: string | undefined = undefined, endLimit = 0x10000) {
+		const {boundAddr, boundSize, memSize} = this.getMetaBlockRange(startAddress, size, endLimit);
+		const memBlock = {address: startAddress, size: memSize, data: []};
+		const bigBlock = new MetaBlock(boundAddr, boundSize, [memBlock], title);
 		this.metaBlocks.push(bigBlock);
+	}
+
+
+	/** Calculates the range of the meta block for a memory block.
+	 * The meta block starts and ends at a MEM_DUMP_BOUNDARY and adds
+	 * one line before and one line after the memory block.
+	 * The line before is omitted at address 0, the line after is omitted
+	 * if the memory block ends exactly at 'endLimit'.
+	 * The meta block size is limited to 0x10000.
+	 * @param startAddress The address of the memory block.
+	 * @param size The size of the memory block in bytes.
+	 * @param endLimit The (exclusive) end of the address range, e.g. 0x10000 or the bank size.
+	 * @returns The meta block address and size and the (possibly reduced) memory block size.
+	 */
+	protected getMetaBlockRange(startAddress: number, size: number, endLimit: number): {boundAddr: number, boundSize: number, memSize: number} {
+		const boundAddr = ByteBuffer.getBoundary(startAddress - MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
+		const endAddr = startAddress + size;	// exclusive
+		let boundEnd = ByteBuffer.getBoundary(endAddr - 1, MEM_DUMP_BOUNDARY) + 2 * MEM_DUMP_BOUNDARY;
+		// No additional line after the end of the address range
+		if (endAddr <= endLimit && boundEnd > endLimit)
+			boundEnd = endLimit;
+		let boundSize = boundEnd - boundAddr;
+		let memSize = size;
+		// Limit to 64k (only for blocks that wrap around)
+		if (boundSize > 0x10000) {
+			boundSize = 0x10000;
+			memSize = boundAddr + boundSize - startAddress;
+		}
+		return {boundAddr, boundSize, memSize};
 	}
 
 
@@ -112,30 +126,13 @@ export class MemoryDump {
 	 * @param blockIndex The block to change.
 	 * @param startAddress The address of the memory block.
 	 * @param size The size of the memory block.
+	 * @param endLimit The (exclusive) end of the address range, e.g. 0x10000 or the bank size.
 	 */
-	public changeBlock(blockIndex: number, startAddress: number, size: number, title: string | undefined = undefined) {
+	public changeBlock(blockIndex: number, startAddress: number, size: number, title: string | undefined = undefined, endLimit = 0x10000) {
 		Utility.assert(blockIndex < this.metaBlocks.length);
 
-		const memBlock = {address: startAddress, size: size, data: []};
-		let bigBlock;
-		let boundAddr;
-		let boundSize;
-		// Check for size > 0xFFFF
-		if (size <= 0xFFFF - 2 * (2 * MEM_DUMP_BOUNDARY - 1)) {
-			// Create one meta block for the memory block
-			boundAddr = ByteBuffer.getBoundary(memBlock.address - MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
-			boundSize = ByteBuffer.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + 2 * MEM_DUMP_BOUNDARY - boundAddr;
-		}
-		else {
-			boundAddr = ByteBuffer.getBoundary(memBlock.address, MEM_DUMP_BOUNDARY);
-			const boundEnd = ByteBuffer.getBoundary(memBlock.address + memBlock.size - 1, MEM_DUMP_BOUNDARY) + MEM_DUMP_BOUNDARY;
-			//let boundSize = boundEnd - boundAddr + 1;
-			boundSize = boundEnd - boundAddr + 1;	// The previous assignment was probably wrong.
-			if (boundSize > 0xFFFF) {
-				boundSize = Math.trunc(0xFFFF / MEM_DUMP_BOUNDARY) * MEM_DUMP_BOUNDARY;
-				memBlock.size = boundAddr + boundSize - startAddress;
-			}
-		}
+		const {boundAddr, boundSize, memSize} = this.getMetaBlockRange(startAddress, size, endLimit);
+		const memBlock = {address: startAddress, size: memSize, data: []};
 
 		// Compare sizes
 		const metaBlock = this.metaBlocks[blockIndex];
@@ -147,7 +144,7 @@ export class MemoryDump {
 		}
 
 		// Otherwise create new block
-		bigBlock = new MetaBlock(boundAddr, boundSize, [memBlock], title);
+		const bigBlock = new MetaBlock(boundAddr, boundSize, [memBlock], title);
 
 		// And exchange with current one
 		this.metaBlocks[blockIndex] = bigBlock;

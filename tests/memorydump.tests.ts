@@ -69,6 +69,48 @@ suite('MemoryDump', () => {
 			assert.equal(mb.size, 64, "size wrong");
 		});
 
+		test('full 64k', () => {
+			const md = new MemoryDump();
+			md.addBlock(0, 0x10000);
+			const mb = md.metaBlocks[0];
+			assert.equal(mb.address, 0, "address wrong");
+			assert.equal(mb.size, 0x10000, "size wrong");
+			assert.equal(mb.memBlocks[0].size, 0x10000, "mem block size wrong");
+		});
+
+		test('end at 0xFFFF', () => {
+			const md = new MemoryDump();
+			md.addBlock(0xFF00, 0x100);
+			const mb = md.metaBlocks[0];
+			assert.equal(mb.address, 0xFEF0, "address wrong");
+			assert.equal(mb.size, 0x110, "size wrong");
+		});
+
+		test('wrap around 0xFFFF', () => {
+			const md = new MemoryDump();
+			md.addBlock(0xFFF8, 0x10);
+			const mb = md.metaBlocks[0];
+			assert.equal(mb.address, 0xFFE0, "address wrong");
+			assert.equal(mb.size, 0x40, "size wrong");
+		});
+
+		test('end at bank end', () => {
+			const md = new MemoryDump();
+			md.addBlock(0x1F00, 0x100, undefined, 0x2000);
+			const mb = md.metaBlocks[0];
+			assert.equal(mb.address, 0x1EF0, "address wrong");
+			assert.equal(mb.size, 0x110, "size wrong");
+		});
+
+		test('changeBlock end at 0xFFFF', () => {
+			const md = new MemoryDump();
+			md.addBlock(0, 1);
+			md.changeBlock(0, 0xFFFF, 1);
+			const mb = md.metaBlocks[0];
+			assert.equal(mb.address, 0xFFE0, "address wrong");
+			assert.equal(mb.size, 0x20, "size wrong");
+		});
+
 	});
 
 
