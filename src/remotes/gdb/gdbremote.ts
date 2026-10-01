@@ -12,6 +12,9 @@ import {BREAK_REASON_NUMBER, MemBlock} from '../remotebase';
 import {MemoryModelUnknown} from '../MemoryModel/genericmemorymodels';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {ErrorWrapper} from '../../misc/errorwrapper';
+import {MemBank16k} from '../dzrp/membank16k';
+import {SnaFile} from '../dzrp/snafile';
+import {Z80File} from '../dzrp/z80file';
 
 
 // The "break" character.
@@ -775,6 +778,121 @@ export class GdbRemote extends DzrpQueuedRemote {
 		if (!this.supportsBankedNexLoading())
 			throw Error("Loading .nex files is not supported by the generic gdb remote.");
 		return super.loadBinNex(filePath);
+	}
+
+
+	/**
+	 * Loads a .sna file.
+	 * This does not use sendDrzpCmdWriteBank as gdbremote does not
+	 * support slots and banking the way Dezog would require it.
+	 * Therefore only 48k Spectrum .sna files are supported and this is
+	 * written into memory with sendDzrpWriteMemory.
+	 * Loading a .sna file does make sense only for a spectrum machine target.
+	 * If it is used with some other machine the behavior is undefined = user error.
+	 */
+	protected override async loadBinSna(filePath: string): Promise<number> {
+		if (this.supportsBankedNexLoading())
+			return super.loadBinSna(filePath);
+
+		const snaFile = new SnaFile();
+		snaFile.readFile(filePath);
+		if (snaFile.is128kFile)
+			throw Error('Loading of 128k .sna files is not supported by the generic gdb remote.');
+
+		let address = MemBank16k.BANK16K_SIZE;
+		for (const memBank of snaFile.memBanks) {
+			await this.sendDzrpCmdWriteMem(address, memBank.data);
+			address += MemBank16k.BANK16K_SIZE;
+		}
+
+		await this.loadSnapshotRegisters([
+			[Z80_REG.PC, snaFile.pc],
+			[Z80_REG.SP, snaFile.sp],
+			[Z80_REG.AF, snaFile.af],
+			[Z80_REG.BC, snaFile.bc],
+			[Z80_REG.DE, snaFile.de],
+			[Z80_REG.HL, snaFile.hl],
+			[Z80_REG.IX, snaFile.ix],
+			[Z80_REG.IY, snaFile.iy],
+			[Z80_REG.AF2, snaFile.af2],
+			[Z80_REG.BC2, snaFile.bc2],
+			[Z80_REG.DE2, snaFile.de2],
+			[Z80_REG.HL2, snaFile.hl2]
+		]);
+		await this.afterLoadBinSna(snaFile);
+		return snaFile.sp;
+	}
+
+
+	/** Hook for target-specific state not represented by standard gdb packets.
+	 */
+	protected async afterLoadBinSna(_snaFile: SnaFile): Promise<void> {
+		// Nothing to do
+	}
+
+
+	/**
+	 * Loads a 48K Z80 snapshot into the flat 64K address space.
+	 * This does not use sendDrzpCmdWriteBank as gdbremote does not
+	 * support slots and banking the way Dezog would require it.
+	 * Therefore only 48k Spectrum .z80 files are supported and this is
+	 * written into memory with sendDzrpWriteMemory.
+	 * Loading a .z80 file does make sense only for a spectrum machine target.
+	 * If it is used with some other machine the behavior is undefined = user error.
+	 */
+	protected override async loadBinZ80(filePath: string): Promise<number> {
+		const z80File = new Z80File();
+		z80File.readFile(filePath);
+		if (!z80File.is48kFile)
+			throw Error('Only loading of 48k .z80 files is supported by the generic gdb remote.');
+
+		for (const memBank of z80File.memBanks) {
+			let address: number;
+			switch (memBank.bank) {
+				case 5:
+					address = 0x4000;
+					break;
+				case 2:
+					address = 0x8000;
+					break;
+				case 0:
+					address = 0xC000;
+					break;
+				default:
+					throw Error('Unexpected memory bank in 48k .z80 file: ' + memBank.bank);
+			}
+			await this.sendDzrpCmdWriteMem(address, memBank.data);
+		}
+
+		await this.loadSnapshotRegisters([
+			[Z80_REG.PC, z80File.pc],
+			[Z80_REG.SP, z80File.sp],
+			[Z80_REG.AF, z80File.af],
+			[Z80_REG.BC, z80File.bc],
+			[Z80_REG.DE, z80File.de],
+			[Z80_REG.HL, z80File.hl],
+			[Z80_REG.IX, z80File.ix],
+			[Z80_REG.IY, z80File.iy],
+			[Z80_REG.AF2, z80File.af2],
+			[Z80_REG.BC2, z80File.bc2],
+			[Z80_REG.DE2, z80File.de2],
+			[Z80_REG.HL2, z80File.hl2]
+		]);
+		await this.afterLoadBinZ80(z80File);
+		return z80File.sp;
+	}
+
+
+	/** Hook for target-specific state not represented by standard gdb packets.
+	 */
+	protected async afterLoadBinZ80(_z80File: Z80File): Promise<void> {
+		// Nothing to do
+	}
+
+
+	protected async loadSnapshotRegisters(registers: Array<[Z80_REG, number]>): Promise<void> {
+		for (const [register, value] of registers)
+			await this.sendDzrpCmdSetRegister(register, value);
 	}
 
 

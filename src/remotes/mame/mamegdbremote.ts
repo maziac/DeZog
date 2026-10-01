@@ -10,7 +10,6 @@ import {MemBlock} from '../remotebase';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {MemoryModelZxNext} from '../MemoryModel/zxnextmemorymodels';
 import {SnaFile} from '../dzrp/snafile';
-import {MemBank16k} from '../dzrp/membank16k';
 import {Z80File} from '../dzrp/z80file';
 
 
@@ -612,145 +611,25 @@ export class MameGdbRemote extends GdbRemote {
 	}
 
 
-	/** Loads a .sna file.
-	 * This does not use sendDrzpCmdWriteBank as MAME gdbstub does not
-	 * support slots and banking the way Dezog would require it.
-	 * Therefore only 48k Spectrum .sna files are supported and this is
-	 * written into memory with sendDzrpWriteMemory.
-	 * Loading a .sna file does make sense only for mame started with
-	 * machine spectrum.
-	 * If it is used with some other machine the behavior is undefined
-	 * = user error.
+	/** Adds MAME-specific state after the shared flat SNA load.
 	 */
-	protected async loadBinSna(filePath: string): Promise<number> {
-		// If ZxNext the "normal" load sna routine can be used,
-		// (otherwise only 48k .sna files are supported.)
-		if (this.Z80N)
-			return super.loadBinSna(filePath);
-
-		// Load and parse file (48K only)
-		const snaFile = new SnaFile();
-		snaFile.readFile(filePath);
-
-		// Check that it is a 48k sna file
-		if (snaFile.is128kFile)
-			throw Error('Loading of 128k .sna files into MAME is not supported. Only 48k .sna files are supported.');
-
-		// Transfer 16k memory banks
-		let address = MemBank16k.BANK16K_SIZE;
-		for (const memBank of snaFile.memBanks) {
-			// Write memory
-			await this.writeMemoryDump(address, memBank.data);
-			// Next
-			address += MemBank16k.BANK16K_SIZE;
-		}
-
-		// Set the border
+	protected override async afterLoadBinSna(snaFile: SnaFile): Promise<void> {
 		await this.sendDzrpCmdWritePort(0xFE, snaFile.borderColor);
-
-		// Set the registers
-		await this.sendDzrpCmdSetRegister(Z80_REG.PC, snaFile.pc);
-		await this.sendDzrpCmdSetRegister(Z80_REG.SP, snaFile.sp);
-		await this.sendDzrpCmdSetRegister(Z80_REG.AF, snaFile.af);
-		await this.sendDzrpCmdSetRegister(Z80_REG.BC, snaFile.bc);
-		await this.sendDzrpCmdSetRegister(Z80_REG.DE, snaFile.de);
-		await this.sendDzrpCmdSetRegister(Z80_REG.HL, snaFile.hl);
-		await this.sendDzrpCmdSetRegister(Z80_REG.IX, snaFile.ix);
-		await this.sendDzrpCmdSetRegister(Z80_REG.IY, snaFile.iy);
-		await this.sendDzrpCmdSetRegister(Z80_REG.AF2, snaFile.af2);
-		await this.sendDzrpCmdSetRegister(Z80_REG.BC2, snaFile.bc2);
-		await this.sendDzrpCmdSetRegister(Z80_REG.DE2, snaFile.de2);
-		await this.sendDzrpCmdSetRegister(Z80_REG.HL2, snaFile.hl2);
 		await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
-
-		// Set ROM1 or ROM0
-		if (snaFile.is128kFile) {
-			// Write port 7FFD
-			const port7ffd = snaFile.port7ffd;
-			await this.sendDzrpCmdWritePort(0x7FFD, port7ffd);
-		}
-
-		// Check if interrupt should be enabled
-		const interrupt_enabled = (snaFile.iff2 & 0b00000100) !== 0;
-		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
-
-		return snaFile.sp;
+		await this.sendDzrpCmdInterruptOnOff((snaFile.iff2 & 0b00000100) !== 0);
 	}
 
 
-	/** Loads a .z80 file.
-	 * This does not use sendDrzpCmdWriteBank as MAME gdbstub does not
-	 * support slots and banking the way Dezog would require it.
-	 * Therefore only 48k Spectrum .z80 files are supported and this is
-	 * written into memory with sendDzrpWriteMemory.
-	 * Loading a .z80 file does make sense only for mame started with
-	 * machine spectrum.
-	 * If it is used with some other machine the behavior is undefined
-	 * = user error.
+	/** Adds MAME-specific state after the shared 48K Z80 memory/register load.
 	 */
-	protected async loadBinZ80(filePath: string): Promise<number> {
-		// Load and parse file
-		const z80File = new Z80File();
-		z80File.readFile(filePath);
-
-		// Check that it is a 48k z80 file
-		if (!z80File.is48kFile)
-			throw Error('Only loading of 48k .z80 files into MAME is supported.');
-
-		// Transfer 16k memory banks
-		let address;
-		for (const memBank of z80File.memBanks) {
-			switch (memBank.bank) {
-				case 5:
-					address = 0x4000;
-					break;
-				case 2:
-					address = 0x8000;
-					break;
-				case 0:
-					address = 0xC000;
-					break;
-				default:
-					// Should not happen
-					throw Error('Unexpected memory bank: ' + memBank.bank);
-			}
-			// Write memory
-			await this.writeMemoryDump(address, memBank.data);
-			// Next
-			address += MemBank16k.BANK16K_SIZE;
-		}
-
-		// Set the registers
-		await this.sendDzrpCmdSetRegister(Z80_REG.PC, z80File.pc);
-		await this.sendDzrpCmdSetRegister(Z80_REG.SP, z80File.sp);
-		await this.sendDzrpCmdSetRegister(Z80_REG.AF, z80File.af);
-		await this.sendDzrpCmdSetRegister(Z80_REG.BC, z80File.bc);
-		await this.sendDzrpCmdSetRegister(Z80_REG.DE, z80File.de);
-		await this.sendDzrpCmdSetRegister(Z80_REG.HL, z80File.hl);
-		await this.sendDzrpCmdSetRegister(Z80_REG.IX, z80File.ix);
-		await this.sendDzrpCmdSetRegister(Z80_REG.IY, z80File.iy);
-		await this.sendDzrpCmdSetRegister(Z80_REG.AF2, z80File.af2);
-		await this.sendDzrpCmdSetRegister(Z80_REG.BC2, z80File.bc2);
-		await this.sendDzrpCmdSetRegister(Z80_REG.DE2, z80File.de2);
-		await this.sendDzrpCmdSetRegister(Z80_REG.HL2, z80File.hl2);
+	protected override async afterLoadBinZ80(z80File: Z80File): Promise<void> {
+		await this.sendDzrpCmdWritePort(0xFE, z80File.borderColor);
 		await this.sendDzrpCmdSetRegister(Z80_REG.R, z80File.r);
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, z80File.i);
 		await this.sendDzrpCmdSetRegister(Z80_REG.IM, z80File.im);
-
-		// Set ROM1 or ROM0
-		if (z80File.is128kFile) {
-			// Write port 7FFD
-			const port7ffd = z80File.port7ffd!;
-			await this.sendDzrpCmdWritePort(0x7FFD, port7ffd);
-		}
-
-		// Check if interrupt should be enabled
-		const interrupt_enabled = (z80File.iff1 !== 0);
-		await this.sendDzrpCmdInterruptOnOff(interrupt_enabled);
-
-		return z80File.sp;
+		await this.sendDzrpCmdInterruptOnOff(z80File.iff1 !== 0);
 	}
 }
 

@@ -1,8 +1,12 @@
 import * as assert from 'assert';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import {suite, test, setup} from 'mocha';
 import {MameGdbRemote} from '../src/remotes/mame/mamegdbremote';
 import {Z80RegistersMameDecoder} from '../src/remotes/mame/z80registersmamedecoder';
 import {BREAK_REASON_NUMBER} from '../src/remotes/remotebase';
+import {Z80_REG} from '../src/remotes/z80registers';
 import {Settings} from '../src/settings/settings';
 
 
@@ -287,6 +291,135 @@ suite('MameRemote', () => {
 		assert.equal(mockMame.messageQueue.length, 0);
 		assert.equal(mockMame.sentPackets.length, 1);
 		assert.equal(mockMame.sentPackets[0], '$k#6B');
+	});
+
+	test('loadBinZ80 uses the shared flat loader and applies MAME state afterward', async () => {
+		class MockMame extends MameGdbRemote {
+			public writes: Array<{address: number, firstByte: number}> = [];
+			public registers: Array<[number, number]> = [];
+			public ports: Array<[number, number]> = [];
+			public interrupts: boolean[] = [];
+
+			public async sendDzrpCmdWriteMem(address: number, data: Uint8Array): Promise<void> {
+				this.writes.push({address, firstByte: data[0]});
+			}
+
+			public async sendDzrpCmdSetRegister(register: number, value: number): Promise<void> {
+				this.registers.push([register, value]);
+			}
+
+			protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
+				this.ports.push([port, value]);
+			}
+
+			protected async sendDzrpCmdInterruptOnOff(enabled: boolean): Promise<void> {
+				this.interrupts.push(enabled);
+			}
+		}
+
+		const launch = Settings.Init({remoteType: 'mame'} as any);
+		Settings.launch = launch;
+		const mockMame = new MockMame(launch.mame);
+		const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'dezog-mame-z80-'));
+		const filePath = path.join(directory, 'test.z80');
+		const z80 = Buffer.alloc(30 + 3 * 0x4000);
+		z80.writeUInt16LE(0x1234, 6);	// Version 1 has a non-zero PC
+		z80.writeUInt16LE(0xF000, 8);
+		z80[10] = 0x12;	// I
+		z80[11] = 0x34;	// R
+		z80[12] = 0x0A;	// Border color 5, uncompressed
+		z80[27] = 1;	// IFF1
+		z80[28] = 1;	// IFF2
+		z80.fill(0x11, 30, 30 + 0x4000);
+		z80.fill(0x22, 30 + 0x4000, 30 + 2 * 0x4000);
+		z80.fill(0x33, 30 + 2 * 0x4000);
+		fs.writeFileSync(filePath, z80);
+
+		try {
+			const sp = await (mockMame as any).loadBinZ80(filePath);
+			assert.equal(sp, 0xF000);
+			assert.deepEqual(mockMame.writes, [
+				{address: 0x4000, firstByte: 0x11},
+				{address: 0x8000, firstByte: 0x22},
+				{address: 0xC000, firstByte: 0x33}
+			]);
+			assert.deepEqual(mockMame.registers.slice(0, 2), [
+				[Z80_REG.PC, 0x1234],
+				[Z80_REG.SP, 0xF000]
+			]);
+			assert.ok(mockMame.registers.some(([register, value]) => register === Z80_REG.R && value === 0x34));
+			assert.ok(mockMame.registers.some(([register, value]) => register === Z80_REG.I && value === 0x12));
+			assert.ok(mockMame.registers.some(([register]) => register === Z80_REG.IM));
+			assert.deepEqual(mockMame.ports, [[0xFE, 5]]);
+			assert.deepEqual(mockMame.interrupts, [true]);
+		}
+		finally {
+			fs.rmSync(directory, {recursive: true, force: true});
+		}
+	});
+
+	test('loadBinSna uses the shared flat loader and applies MAME state afterward', async () => {
+		class MockMame extends MameGdbRemote {
+			public writes: Array<{address: number, firstByte: number}> = [];
+			public registers: Array<[number, number]> = [];
+			public ports: Array<[number, number]> = [];
+			public interrupts: boolean[] = [];
+
+			public async sendDzrpCmdWriteMem(address: number, data: Uint8Array): Promise<void> {
+				this.writes.push({address, firstByte: data[0]});
+			}
+
+			public async sendDzrpCmdSetRegister(register: number, value: number): Promise<void> {
+				this.registers.push([register, value]);
+			}
+
+			protected async sendDzrpCmdWritePort(port: number, value: number): Promise<void> {
+				this.ports.push([port, value]);
+			}
+
+			protected async sendDzrpCmdInterruptOnOff(enabled: boolean): Promise<void> {
+				this.interrupts.push(enabled);
+			}
+		}
+
+		const launch = Settings.Init({remoteType: 'mame'} as any);
+		Settings.launch = launch;
+		const mockMame = new MockMame(launch.mame);
+		const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'dezog-mame-sna-'));
+		const filePath = path.join(directory, 'test.sna');
+		const sna = Buffer.alloc(27 + 3 * 0x4000);
+		sna.writeUInt16LE(0x0004, 19);	// IFF2 bit 2 enables interrupts
+		sna.writeUInt16LE(0xF000, 23);
+		sna[20] = 0x34;	// R
+		sna[25] = 1;	// IM
+		sna[26] = 3;	// Border
+		sna.fill(0x11, 27, 27 + 0x4000);
+		sna.fill(0x22, 27 + 0x4000, 27 + 2 * 0x4000);
+		sna.fill(0x33, 27 + 2 * 0x4000);
+		sna.writeUInt16LE(0x1234, 27 + 0xF000 - 0x4000);
+		fs.writeFileSync(filePath, sna);
+
+		try {
+			const sp = await (mockMame as any).loadBinSna(filePath);
+			assert.equal(sp, 0xF002);
+			assert.deepEqual(mockMame.writes, [
+				{address: 0x4000, firstByte: 0x11},
+				{address: 0x8000, firstByte: 0x22},
+				{address: 0xC000, firstByte: 0x33}
+			]);
+			assert.deepEqual(mockMame.registers.slice(0, 2), [
+				[Z80_REG.PC, 0x1234],
+				[Z80_REG.SP, 0xF002]
+			]);
+			assert.ok(mockMame.registers.some(([register, value]) => register === Z80_REG.R && value === 0x34));
+			assert.ok(mockMame.registers.some(([register, value]) => register === Z80_REG.I && value === 0));
+			assert.ok(mockMame.registers.some(([register, value]) => register === Z80_REG.IM && value === 1));
+			assert.deepEqual(mockMame.ports, [[0xFE, 3]]);
+			assert.deepEqual(mockMame.interrupts, [true]);
+		}
+		finally {
+			fs.rmSync(directory, {recursive: true, force: true});
+		}
 	});
 
 

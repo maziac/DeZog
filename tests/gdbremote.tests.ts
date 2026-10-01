@@ -1,4 +1,7 @@
 import * as assert from 'assert';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import {suite, test, setup} from 'mocha';
 import {GdbRemote} from '../src/remotes/gdb/gdbremote';
 import {MameGdbRemote} from '../src/remotes/mame/mamegdbremote';
@@ -6,6 +9,7 @@ import {Z80RegistersGdbDecoder} from '../src/remotes/gdb/z80registersgdbdecoder'
 import {RemoteFactory} from '../src/remotes/remotefactory';
 import {Remote} from '../src/remotes/remotebase';
 import {Settings} from '../src/settings/settings';
+import {Z80_REG} from '../src/remotes/z80registers';
 
 
 
@@ -147,6 +151,84 @@ suite('GdbRemote', () => {
 				{addr64k: 0x9000, size: 2}
 			]);
 			assert.deepEqual(sent, ['m8000,1', 'm9000,2']);
+		});
+
+		test('loads a 48K SNA with flat M writes and standard registers', async () => {
+			const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'dezog-gdb-sna-'));
+			const filePath = path.join(directory, 'test.sna');
+			const sna = Buffer.alloc(27 + 3 * 0x4000);
+			sna.writeUInt16LE(0xF000, 23);
+			sna.fill(0x11, 27, 27 + 0x4000);
+			sna.fill(0x22, 27 + 0x4000, 27 + 2 * 0x4000);
+			sna.fill(0x33, 27 + 2 * 0x4000);
+			sna.writeUInt16LE(0x1234, 27 + 0xF000 - 0x4000);
+			fs.writeFileSync(filePath, sna);
+
+			const writes: Array<{address: number, firstByte: number}> = [];
+			const registers: Array<[number, number]> = [];
+			gdb.sendDzrpCmdWriteMem = async (address: number, data: Uint8Array) => {
+				writes.push({address, firstByte: data[0]});
+			};
+			gdb.sendDzrpCmdSetRegister = async (register: number, value: number) => {
+				registers.push([register, value]);
+			};
+
+			try {
+				const sp = await gdb.loadBinSna(filePath);
+				assert.equal(sp, 0xF002);
+				assert.deepEqual(writes, [
+					{address: 0x4000, firstByte: 0x11},
+					{address: 0x8000, firstByte: 0x22},
+					{address: 0xC000, firstByte: 0x33}
+				]);
+				assert.deepEqual(registers.slice(0, 2), [
+					[Z80_REG.PC, 0x1234],
+					[Z80_REG.SP, 0xF002]
+				]);
+				assert.ok(registers.some(([register]) => register === Z80_REG.HL2));
+			}
+			finally {
+				fs.rmSync(directory, {recursive: true, force: true});
+			}
+		});
+
+		test('loads a 48K Z80 snapshot with flat M writes and standard registers', async () => {
+			const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'dezog-gdb-z80-'));
+			const filePath = path.join(directory, 'test.z80');
+			const z80 = Buffer.alloc(30 + 3 * 0x4000);
+			z80.writeUInt16LE(0x1234, 6);	// Version 1 has a non-zero PC
+			z80.writeUInt16LE(0xF000, 8);
+			z80.fill(0x11, 30, 30 + 0x4000);
+			z80.fill(0x22, 30 + 0x4000, 30 + 2 * 0x4000);
+			z80.fill(0x33, 30 + 2 * 0x4000);
+			fs.writeFileSync(filePath, z80);
+
+			const writes: Array<{address: number, firstByte: number}> = [];
+			const registers: Array<[number, number]> = [];
+			gdb.sendDzrpCmdWriteMem = async (address: number, data: Uint8Array) => {
+				writes.push({address, firstByte: data[0]});
+			};
+			gdb.sendDzrpCmdSetRegister = async (register: number, value: number) => {
+				registers.push([register, value]);
+			};
+
+			try {
+				const sp = await gdb.loadBinZ80(filePath);
+				assert.equal(sp, 0xF000);
+				assert.deepEqual(writes, [
+					{address: 0x4000, firstByte: 0x11},
+					{address: 0x8000, firstByte: 0x22},
+					{address: 0xC000, firstByte: 0x33}
+				]);
+				assert.deepEqual(registers.slice(0, 2), [
+					[Z80_REG.PC, 0x1234],
+					[Z80_REG.SP, 0xF000]
+				]);
+				assert.ok(registers.some(([register]) => register === Z80_REG.HL2));
+			}
+			finally {
+				fs.rmSync(directory, {recursive: true, force: true});
+			}
 		});
 
 		test('pause sends a break', async () => {
