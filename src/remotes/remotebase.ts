@@ -642,6 +642,8 @@ export class RemoteBase extends EventEmitter {
 		let depth = tos - sp; // 2 bytes per word
 		if (depth > 2 * RemoteBase.MAX_STACK_ITEMS)
 			depth = 2 * RemoteBase.MAX_STACK_ITEMS;
+		// The words are read relative to SP, so an odd depth would shift them by a byte.
+		depth &= ~1;
 
 		// Check if callstack need to be called
 		const zStack: Array<string> = [];

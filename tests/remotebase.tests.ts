@@ -515,6 +515,61 @@ suite('RemoteBase', () => {
 
 	});
 
+	suite('getStackFromEmulator', () => {
+
+		class RemoteBaseMock extends RemoteBase {
+			// The memory: the byte at an address is the address' low byte.
+			public reads: Array<{addr64k: number, size: number}> = [];
+			public async readMemoryDump(addr64k: number, size: number): Promise<Uint8Array> {
+				this.reads.push({addr64k, size});
+				const data = new Uint8Array(size);
+				for (let i = 0; i < size; i++)
+					data[i] = (addr64k + i) & 0xFF;
+				return data;
+			}
+		}
+
+		/** Sets SP and returns the stack as read by the remote. */
+		async function stackFor(sp: number, topOfStack: number) {
+			const remote = new RemoteBaseMock() as any;
+			remote.topOfStack = topOfStack;
+			const cache = Z80RegistersClass.getRegisterData(0x8000, sp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, [0]);
+			Z80Registers.setCache(cache);
+			const stack = await remote.getStackFromEmulator();
+			return {stack, reads: remote.reads};
+		}
+
+		test('even SP: words are read from SP', async () => {
+			// 3 words: F000, F002, F004
+			const {stack} = await stackFor(0xF000, 0xF006);
+			// The word at F004 is first (oldest), the word at SP last.
+			assert.deepEqual(stack, ['0504', '0302', '0100']);
+		});
+
+		test('odd SP: words are still read from SP', async () => {
+			// topOfStack is even, SP is odd, i.e. the difference is odd.
+			// The words must stay aligned to SP: F001, F003. The last byte
+			// (F005) cannot form a whole word and is dropped.
+			const {stack, reads} = await stackFor(0xF001, 0xF006);
+			assert.equal(reads.length, 1);
+			assert.equal(reads[0].addr64k, 0xF001);
+			// An odd number of bytes would shift all words by one byte
+			assert.equal(reads[0].size % 2, 0);
+			assert.deepEqual(stack, ['0403', '0201']);
+		});
+
+		test('the number of items is limited', async () => {
+			const {stack} = await stackFor(0x8000, 0x10000);
+			assert.equal(stack.length, RemoteBase.MAX_STACK_ITEMS);
+		});
+
+		test('SP at topOfStack gives an empty stack', async () => {
+			const {stack} = await stackFor(0xF006, 0xF006);
+			assert.deepEqual(stack, []);
+		});
+	});
+
+
 	test('readStackEntriesMemory', async () => {
 		class RemoteBaseMock extends RemoteBase {
 			public readBlocks: Array<Array<{addr64k: number, size: number}>> = [];
