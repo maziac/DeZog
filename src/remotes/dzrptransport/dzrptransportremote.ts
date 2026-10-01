@@ -806,39 +806,40 @@ export class DzrpTransportRemote extends DzrpQueuedRemote {
 	 * @param blocks The 64k start addresses and sizes of the blocks.
 	 * @returns A promise with an array of Uint8Arrays, one for each block.
 	 */
-	protected async sendDzrpCmdReadMem(blocks: MemBlock[]): Promise<Uint8Array[]> {
-		// TODO: Workaround until all Remotes have the extended CMD_READ_MEM implemented:
-		// If more than one block is requested, the all is divided into many single sendDzrpCmdReadMem calls.
-		if (blocks.length > 1) {
-			const result: Uint8Array[] = [];
-			for (const block of blocks) {
-				const [data] = await this.sendDzrpCmdReadMem([block]);
-				result.push(data);
-			}
-			return result;
-		}
-
-		// Handle special case size=0x10000
-		if (blocks.length === 1 && blocks[0].size === 0x10000 && blocks[0].addr64k === 0) {
-			// Get 2 chunks of memory as 0x10000 is too big).
-			const [data0] = await this.sendDzrpCmdReadMem([{addr64k: 0, size: 0x8000}]);
-			const [data1] = await this.sendDzrpCmdReadMem([{addr64k: 0x8000, size: 0x8000}]);
-			// Create UInt8Array
-			const buffer = new Uint8Array(0x10000);
-			// Combine both buffers
-			buffer.set(data0);
-			buffer.set(data1, 0x8000);
-			return [buffer];
-		}
-
+	protected async sendDzrpCmdReadMemBlocks(blocks: MemBlock[]): Promise<Uint8Array[]> {
+		//console.log(`sendDzrpCmdReadMemBlocks: blocks count=${blocks.length}`);
 		// Send command with all addresses and sizes
-		const cmdData = [0];	// reserved
+		const cmdData = [0, 0, 0, 0];	// DWORD: placeholder for length of response
+		let totalSize = 0;
 		for (const {addr64k, size} of blocks) {
-			if (size >= 0x10000)
+			if (size > 0x10000)
 				throw new Error("Size too big: '" + size + "'.");
-			cmdData.push(addr64k & 0xFF, addr64k >>> 8, size & 0xFF, size >>> 8);
+			//console.log(` Reading memory block at address 0x${addr64k.toString(16)} with size 0x${size.toString(16)}`);
+			// Check for special case size = 0x10000
+			if (size === 0x10000) {
+				// Add 2 blocks a 0x8000 each
+				cmdData.push(addr64k & 0xFF, addr64k >>> 8, 0x00, 0x80);
+				const addr64k2 = (addr64k + 0x8000) & 0xFFFF;
+				cmdData.push(addr64k2 & 0xFF, addr64k2 >>> 8, 0x00, 0x80);
+			}
+			else {
+				// Normal case
+				cmdData.push(addr64k & 0xFF, addr64k >>> 8, size & 0xFF, size >>> 8);
+			}
+			totalSize += size;
 		}
-		const data = await this.sendDzrpCmd(DZRP.CMD_READ_MEM, cmdData);
+		// Set the length of the response in the first 4 bytes (DWORD)
+		const lengthOfResp = totalSize + 1;	// + seq no
+		cmdData[0] = lengthOfResp & 0xFF;
+		cmdData[1] = (lengthOfResp >>> 8) & 0xFF;
+		cmdData[2] = (lengthOfResp >>> 16) & 0xFF;
+		cmdData[3] = (lengthOfResp >>> 24) & 0xFF;
+		const data = await this.sendDzrpCmd(DZRP.CMD_READ_MEM_BLOCKS, cmdData);
+
+		// Check received size
+		if (data.length !== totalSize)
+			throw new Error(`Received data size (${data.length}) does not match the requested total size (${totalSize}).`);
+
 		// Split the response into the blocks
 		const result: Uint8Array[] = [];
 		let offset = 0;

@@ -613,6 +613,11 @@ export class RemoteBase extends EventEmitter {
 					labelCalledAddrArr.push(label);
 			}
 		}
+
+		// Note: I could return undefined for addresses that have no label,
+		// but in that case the callstack would not be present if e.g.
+		// only a disassembly is shown.
+
 		const labelCalledAddr = (labelCalledAddrArr.length > 0) ? labelCalledAddrArr[0] : HexFormat.getHexString(calledAddr & 0xFFFF, 4) + 'h';
 
 		// Return
@@ -637,6 +642,8 @@ export class RemoteBase extends EventEmitter {
 		let depth = tos - sp; // 2 bytes per word
 		if (depth > 2 * RemoteBase.MAX_STACK_ITEMS)
 			depth = 2 * RemoteBase.MAX_STACK_ITEMS;
+		// The words are read relative to SP, so an odd depth would shift them by a byte.
+		depth &= ~1;
 
 		// Check if callstack need to be called
 		const zStack: Array<string> = [];

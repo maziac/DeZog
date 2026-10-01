@@ -5,13 +5,14 @@
   - Evaluates the CMD_GET_SUPPORTED_COMMANDS.
   - Show LOG_NTF messages in a new log channel "DeZog DZRP Log notifications". Has to be enabled in the settings.
   - New command CMD_SET_NEXTREGS to write a list of ZX Next registers. Used for the NEX loading screen.
-  - CMD_READ_MEM can read several memory blocks at once. Used for the call stack. mame implements it with a single qRcmd (consecutive bytes are read as words with 'w@').
+  - New command CMD_READ_MEM_BLOCKS reads several memory blocks at once, CMD_READ_MEM has been removed. Used for the call stack. mame implements it with a single qRcmd (consecutive bytes are read as words with 'w@').
 - Faster stepping: the call stack is read only once per step (not after every instruction of a step-over) and with one memory request for all stack entries.
 - SNA file format. Now also file extension *.snx is supported.
 - NEX file: the loading screen (Layer2, ULA, LoRes, Timex HiRes/HiCol) is now loaded before the memory banks, incl. palette and display settings like the NEX loader does. zsim only shows the ULA screen.
 - NEX file: fixed the bank offset for files with a 320x256/640x256 Layer2 loading screen (the palette was not taken into account).
 - A generic "dzrp" remote has been implemented which can connect via serial or socket connection.
 - Memory Views (debug commands "-mv", "-mvw" and "-mvd") allow additional parameter "bank=" to specify the bank to display.
+- Memory Views: fixed size 0x10000 (or the full bank size) which showed an empty view. A block ending at 0xFFFF (or at the bank end) does not show an additional line afterwards anymore.
 - Debug commands "-md", "-mdelta", "-ml", "-ms", "-msetb" and "-msetw" allow additional parameter to specify a bank to read from or write to.
 - New launch.json property "loadSysVars" to load zx16k or zx48 system variables at startup.
 - Internally used 0xFF for ROM instead of 0xFE pseudo ROM identifier.

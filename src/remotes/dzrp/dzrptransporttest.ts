@@ -48,10 +48,10 @@ export class DzrpTransportTest extends EventEmitter {
 		// 	await this.remote.sendDzrpCmdPause();
 		// },
 		async () => {
-			console.log('sendDzrpCmdReadMem');
+			console.log('sendDzrpCmdReadMemBlocks');
 			const addr = this.rndInt(0, 0xFFFF);
 			const count = this.rndInt(1, 0xFFFF);
-			await this.remote.sendDzrpCmdReadMem([{addr64k: addr, size: count}]);
+			await this.remote.sendDzrpCmdReadMemBlocks([{addr64k: addr, size: count}]);
 		},
 		async () => {
 			console.log('sendDzrpCmdWriteMem');
@@ -237,10 +237,10 @@ export class DzrpTransportTest extends EventEmitter {
 	/** Sends a random command.
 	 */
 	protected async sendRndCmd() {
-		// console.log('sendDzrpCmdReadMem');
+		// console.log('sendDzrpCmdReadMemBlocks');
 		// //const addr = this.rndInt(0, 0xFFFF);
 		// //const count = this.rndInt(1, 0xFFFF);
-		// await this.remote.sendDzrpCmdReadMem(0, 0x8000);
+		// await this.remote.sendDzrpCmdReadMemBlocks(0, 0x8000);
 		// return;
 		// Choose one randomly
 		const m = this.rndInt(0, this.cmdList.length - 1);

@@ -217,10 +217,11 @@ export class MemoryDumpView extends BaseView {
 	 */
 	public addBlock(startAddress: number, size: number, title?: string) {
 		startAddress &= this.bankSize - 1;
-		size &= this.bankSize - 1;
+		if (size > this.bankSize)
+			size = this.bankSize;
 		if (title === undefined)
 			title = HexFormat.getHexString(startAddress & 0xFFFF, 4) + 'h-' + HexFormat.getHexString((startAddress + size - 1) & 0xFFFF, 4) + 'h';
-		this.memDump.addBlock(startAddress, size, title);
+		this.memDump.addBlock(startAddress, size, title, this.bankSize);
 	}
 
 

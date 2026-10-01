@@ -368,7 +368,7 @@ This is how they are mapped:
 | CMD_WRITE_PORT                                                                                              | X    | qRcmd `ib@<port>=<value>` (replaces the former CMD_SET_BORDER)                  |
 | CMD_CONTINUE                                                                                                | X    | `c` (temporary breakpoints for stepping with `Z1`/`z1`)                         |
 | CMD_PAUSE                                                                                                   | X    | `\x03` (CTRL-C) followed by `p0b` to get a reply                                |
-| CMD_READ_MEM                                                                                                | X    | `m` for a single block. Several blocks: qRcmd `print b@0x...,b@0x...` (max. 128 values per `print`, several `print`s combined with `;`) |
+| CMD_READ_MEM_BLOCKS                                                                                         | X    | `m` for a single block. Several blocks: qRcmd `print w@$...,b@$...` (words are little endian, max. 128 values per `print`, several `print`s combined with `;`) |
 | CMD_WRITE_MEM                                                                                               | X    | `M` (in chunks of 2000 bytes)                                                   |
 | CMD_READ_BANK_MEM                                                                                           | Z80N | Temporarily pages the bank into slot 0, reads with `m`, restores                |
 | CMD_WRITE_BANK_MEM                                                                                          | Z80N | Same as read, with `M`                                                          |

@@ -137,7 +137,37 @@ suite('DzrpTransportRemote', () => {
 		});
 	});
 
-	suite('CMD_READ_MEM', () => {
+	suite('CMD_READ_MEM_BLOCKS', () => {
+
+		/** The simulated memory content of the remote. */
+		function memValue(addr64k: number): number {
+			return (addr64k * 7 + 3) & 0xFF;
+		}
+
+		/** Simulates the remote: decodes the blocks from the command data
+		 * and returns the memory content of all blocks.
+		 */
+		async function fakeReadMemBlocks(_cmd: number, data: number[]): Promise<Buffer> {
+			const values: number[] = [];
+			for (let i = 4; i < data.length; i += 4) {
+				const addr64k = data[i] + 256 * data[i + 1];
+				const size = data[i + 2] + 256 * data[i + 3];
+				for (let k = 0; k < size; k++)
+					values.push(memValue((addr64k + k) & 0xFFFF));
+			}
+			return Buffer.from(values);
+		}
+
+		/** Checks that the blocks contain the simulated memory content. */
+		function checkBlocks(blocks: Array<{addr64k: number, size: number}>, result: Uint8Array[]) {
+			assert.equal(result.length, blocks.length);
+			for (let i = 0; i < blocks.length; i++) {
+				const {addr64k, size} = blocks[i];
+				assert.equal(result[i].length, size);
+				for (let k = 0; k < size; k++)
+					assert.equal(result[i][k], memValue((addr64k + k) & 0xFFFF));
+			}
+		}
 
 		setup(() => {
 			WorkspacePaths.setExtensionPath('.');
@@ -152,46 +182,103 @@ suite('DzrpTransportRemote', () => {
 		test('one block', async () => {
 			const sendDzrpCmd = sinon.stub(remoteAny, 'sendDzrpCmd').resolves(Buffer.from([1, 2, 3]));
 
-			const result = await remoteAny.sendDzrpCmdReadMem([{addr64k: 0x1234, size: 3}]);
+			const result = await remoteAny.sendDzrpCmdReadMemBlocks([{addr64k: 0x1234, size: 3}]);
 
 			assert.ok(sendDzrpCmd.calledOnce);
-			assert.equal(sendDzrpCmd.firstCall.args[0], DZRP.CMD_READ_MEM);
-			assert.deepEqual(sendDzrpCmd.firstCall.args[1], [0, 0x34, 0x12, 3, 0]);
+			assert.equal(sendDzrpCmd.firstCall.args[0], DZRP.CMD_READ_MEM_BLOCKS);
+			assert.deepEqual(sendDzrpCmd.firstCall.args[1], [
+				4, 0, 0, 0,		// Response length: 3 + seq no
+				0x34, 0x12, 3, 0
+			]);
 			assert.equal(result.length, 1);
 			assert.deepEqual([...result[0]], [1, 2, 3]);
 		});
 
-		test('several blocks: one command per block (workaround)', async () => {
-			// Returns 'size' bytes with the low byte of the address
-			const sendDzrpCmd = sinon.stub(remoteAny, 'sendDzrpCmd').callsFake(async (_cmd: number, data: number[]) => Buffer.alloc(data[3] + 256 * data[4], data[1]));
-
-			const result = await remoteAny.sendDzrpCmdReadMem([
+		test('several blocks: one command', async () => {
+			const sendDzrpCmd = sinon.stub(remoteAny, 'sendDzrpCmd').callsFake(fakeReadMemBlocks);
+			const blocks = [
 				{addr64k: 0x1234, size: 3},
-				{addr64k: 0xFFFE, size: 4}
-			]);
+				{addr64k: 0xFFFE, size: 4},	// Wrap around
+				{addr64k: 0x8000, size: 0x0102}
+			];
 
-			assert.equal(sendDzrpCmd.callCount, 2);
-			assert.equal(sendDzrpCmd.firstCall.args[0], DZRP.CMD_READ_MEM);
-			assert.deepEqual(sendDzrpCmd.firstCall.args[1], [0, 0x34, 0x12, 3, 0]);
-			assert.equal(sendDzrpCmd.secondCall.args[0], DZRP.CMD_READ_MEM);
-			assert.deepEqual(sendDzrpCmd.secondCall.args[1], [0, 0xFE, 0xFF, 4, 0]);
-			assert.equal(result.length, 2);
-			assert.deepEqual([...result[0]], [0x34, 0x34, 0x34]);
-			assert.deepEqual([...result[1]], [0xFE, 0xFE, 0xFE, 0xFE]);
+			const result = await remoteAny.sendDzrpCmdReadMemBlocks(blocks);
+
+			assert.ok(sendDzrpCmd.calledOnce);
+			assert.equal(sendDzrpCmd.firstCall.args[0], DZRP.CMD_READ_MEM_BLOCKS);
+			assert.deepEqual(sendDzrpCmd.firstCall.args[1], [
+				0x0A, 0x01, 0, 0,	// Response length: 3 + 4 + 0x102 + seq no = 0x10A
+				0x34, 0x12, 3, 0,
+				0xFE, 0xFF, 4, 0,
+				0x00, 0x80, 0x02, 0x01
+			]);
+			checkBlocks(blocks, result);
 		});
 
-		test('0x10000 bytes: 2 commands', async () => {
-			const sendDzrpCmd = sinon.stub(remoteAny, 'sendDzrpCmd').callsFake(async (_cmd: number, data: number[]) => Buffer.alloc(0x8000, data[2]));
+		test('blocks do not share the response buffer', async () => {
+			const response = Buffer.from([1, 2, 3, 4]);
+			sinon.stub(remoteAny, 'sendDzrpCmd').resolves(response);
 
-			const result = await remoteAny.sendDzrpCmdReadMem([{addr64k: 0, size: 0x10000}]);
+			const result = await remoteAny.sendDzrpCmdReadMemBlocks([
+				{addr64k: 0x1000, size: 2},
+				{addr64k: 0x2000, size: 2}
+			]);
 
-			assert.equal(sendDzrpCmd.callCount, 2);
-			assert.deepEqual(sendDzrpCmd.firstCall.args[1], [0, 0, 0, 0, 0x80]);
-			assert.deepEqual(sendDzrpCmd.secondCall.args[1], [0, 0, 0x80, 0, 0x80]);
-			assert.equal(result.length, 1);
-			assert.equal(result[0].length, 0x10000);
-			assert.equal(result[0][0x7FFF], 0);
-			assert.equal(result[0][0x8000], 0x80);
+			response.fill(0);
+			assert.deepEqual([...result[0]], [1, 2]);
+			assert.deepEqual([...result[1]], [3, 4]);
+		});
+
+		test('0x10000 bytes: split into 2 blocks in one command', async () => {
+			const sendDzrpCmd = sinon.stub(remoteAny, 'sendDzrpCmd').callsFake(fakeReadMemBlocks);
+			const blocks = [{addr64k: 0, size: 0x10000}];
+
+			const result = await remoteAny.sendDzrpCmdReadMemBlocks(blocks);
+
+			assert.ok(sendDzrpCmd.calledOnce);
+			assert.deepEqual(sendDzrpCmd.firstCall.args[1], [
+				0x01, 0x00, 0x01, 0x00,	// Response length: 0x10000 + seq no
+				0x00, 0x00, 0x00, 0x80,
+				0x00, 0x80, 0x00, 0x80
+			]);
+			checkBlocks(blocks, result);
+		});
+
+		test('0x10000 bytes at an odd address together with other blocks', async () => {
+			const sendDzrpCmd = sinon.stub(remoteAny, 'sendDzrpCmd').callsFake(fakeReadMemBlocks);
+			const blocks = [
+				{addr64k: 0x0010, size: 2},
+				{addr64k: 0x9234, size: 0x10000},	// Wraps around
+				{addr64k: 0x0020, size: 1}
+			];
+
+			const result = await remoteAny.sendDzrpCmdReadMemBlocks(blocks);
+
+			assert.ok(sendDzrpCmd.calledOnce);
+			assert.deepEqual(sendDzrpCmd.firstCall.args[1], [
+				0x04, 0x00, 0x01, 0x00,	// Response length: 2 + 0x10000 + 1 + seq no = 0x10004
+				0x10, 0x00, 0x02, 0x00,
+				0x34, 0x92, 0x00, 0x80,
+				0x34, 0x12, 0x00, 0x80,
+				0x20, 0x00, 0x01, 0x00
+			]);
+			checkBlocks(blocks, result);
+		});
+
+		test('size too big', async () => {
+			const sendDzrpCmd = sinon.stub(remoteAny, 'sendDzrpCmd').callsFake(fakeReadMemBlocks);
+
+			await assert.rejects(remoteAny.sendDzrpCmdReadMemBlocks([{addr64k: 0, size: 0x10001}]), /Size too big/);
+			assert.ok(sendDzrpCmd.notCalled);
+		});
+
+		test('wrong response size', async () => {
+			sinon.stub(remoteAny, 'sendDzrpCmd').resolves(Buffer.from([1, 2]));
+
+			await assert.rejects(remoteAny.sendDzrpCmdReadMemBlocks([
+				{addr64k: 0x1000, size: 2},
+				{addr64k: 0x2000, size: 1}
+			]), /does not match/);
 		});
 	});
 });

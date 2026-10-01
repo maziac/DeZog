@@ -59,7 +59,6 @@ I.e. different remotes may use a different subset of commands. For one this is b
 [CMD_WRITE_BANK]: #cmd_write_bank5
 [CMD_CONTINUE]: #cmd_continue6
 [CMD_PAUSE]: #cmd_pause7
-[CMD_READ_MEM]: #cmd_read_mem8
 [CMD_WRITE_MEM]: #cmd_write_mem9
 [CMD_SET_SLOT]: #cmd_set_slot10
 [CMD_GET_NEXTREG]: #cmd_get_nextreg11
@@ -78,6 +77,7 @@ I.e. different remotes may use a different subset of commands. For one this is b
 [CMD_READ_BANK_MEM]: #cmd_read_bank_mem25
 [CMD_WRITE_BANK_MEM]: #cmd_write_bank_mem26
 [CMD_SET_NEXTREGS]: #cmd_set_nextregs27
+[CMD_READ_MEM_BLOCKS]: #cmd_read_mem_blocks28
 [CMD_ENABLE_BREAK_ON_INTERRUPT]: #cmd_enable_break_on_interrupt39
 [CMD_ADD_BREAKPOINT]: #cmd_add_breakpoint40
 [CMD_REMOVE_BREAKPOINT]: #cmd_remove_breakpoint41
@@ -98,7 +98,6 @@ The table below shows which commands are used (X) with what remote:
 | [CMD_SET_REGISTER] (4)                         | X     | X      | X      | X     |
 | [CMD_CONTINUE] (6)                             | X     | X      | X      | X     |
 | [CMD_PAUSE] (7)                                | X     | X      | X**    | X     |
-| [CMD_READ_MEM] (8)                             | X     | X      | X      | X     |
 | [CMD_WRITE_MEM] (9)                            | X     | X      | X      | X     |
 | [CMD_SET_SLOT] (10)                            | X     | X      | X      | -     |
 | [CMD_GET_NEXTREG] (11)                         | X     | X      | X      | -     |
@@ -117,6 +116,7 @@ The table below shows which commands are used (X) with what remote:
 | [CMD_READ_BANK_MEM] (25)                       | X     | X      | X      | X     |
 | [CMD_WRITE_BANK_MEM] (26)                      | X     | X      | X      | X     |
 | [CMD_SET_NEXTREGS] (27)                        | -     | X      | X      | -     |
+| [CMD_READ_MEM_BLOCKS] (28)                     | X     | X      | X      | X     |
 | [CMD_ENABLE_BREAK_ON_INTERRUPT] (39)           | X     | -      | -      | -     |
 | [CMD_ADD_BREAKPOINT] (40)                      | X     | X      | -      | X     |
 | [CMD_REMOVE_BREAKPOINT] (41)                   | X     | X      | -      | X     |
@@ -141,16 +141,17 @@ Added:
 - CMD_ENABLE_BREAK_ON_INTERRUPT to disable/enable pausing the debugged program on entering an interrupt.
 - CMD_READ_BANK_MEM/CMD_WRITE_BANK_MEM added to allow read from/write to a bank.
 - CMD_SET_NEXTREGS added to write a list of ZX Next registers (e.g. a complete palette).
+- CMD_READ_MEM_BLOCKS to read several memory blocks at once.
 
 Changed:
 - Sequence number range changed from 1-255 to 1-15.
 - Explanation for "normal" and "simple" mode added.
 - CMD_GET_TBBLUE_REG renamed to CMD_GET_NEXTREG (no functional change)
-- CMD_READ_MEM can read several memory blocks with one command (e.g. used for the call stack).
 
 Removed:
 - CMD_WRITE_BANK removed (use CMD_WRITE_BANK_MEM instead)
-- CMD_SET_BORDER removed (used CMD_WRITE_PORT instead)
+- CMD_SET_BORDER removed (use CMD_WRITE_PORT instead)
+- CMD_READ_MEM removed (use CMD_READ_MEM_BLOCKS instead)
 
 
 ### 2.1.0
@@ -418,35 +419,8 @@ Note: If a program is stopped a NTF_PAUSE notification is sent as well.
 The notification must be sent AFTER the CMD_PAUSE response.
 
 
-## CMD_READ_MEM=8
-Reads one or several memory blocks.
-
-Command (Length=1+4*N):
-| Index | Size | Value | Description                   |
-| ----- | ---- | ----- | ----------------------------- |
-| 0     | 1    | 0     | reserved                      |
-| 1     | 2    | addr  | Start of the 1st memory block |
-| 3     | 2    | n1    | Size of the 1st memory block  |
-| ...   | ...  | ...   | ...                           |
-| 4*N-3 | 2    | addr  | Start of the Nth memory block |
-| 4*N-1 | 2    | nN    | Size of the Nth memory block  |
-
-
-Response (Length=1+n1+...+nN):
-| Index | Size | Value | Description                      |
-| ----- | ---- | ----- | -------------------------------- |
-| 0     | 1    | 1-15  | Same seq no                      |
-| 1     | n1   | ...   | Contents of the 1st memory block |
-| ...   | ...  | ...   | ...                              |
-| ...   | nN   | ...   | Contents of the Nth memory block |
-
-- The memory is read from the 64k memory address space.
-- The number of blocks N is given by the length of the command.
-- The blocks are returned in the same order as requested, without any separator.
-
-
 ## CMD_WRITE_MEM=9
-Command (Length=3+N):
+Command (Length=4+N):
 | Index | Size | Value      | Description                |
 | ----- | ---- | ---------- | -------------------------- |
 | 0     | 1    | 0          | reserved                   |
@@ -803,6 +777,35 @@ Response (Length=1):
 - Writes the ZX Next registers in the given order. I.e. the remote executes a 'NEXTREG register,value' for each pair.
 - A register may occur several times. E.g. a complete palette can be set with (0x43, palette control), (0x40, 0) followed by 512 pairs (0x44, value).
 - The written values must persist when the debugged program is continued.
+
+
+## CMD_READ_MEM_BLOCKS=28
+Reads one or several memory blocks.
+
+Command (Length=4+4*N):
+| Index | Size | Value       | Description                               |
+| ----- | ---- | ----------- | ----------------------------------------- |
+| 0     | 4    | resp_length | Total size of the payload of the response |
+| 4     | 2    | addr        | Start of the 1st memory block             |
+| 6     | 2    | n1          | Size of the 1st memory block              |
+| ...   | ...  | ...         | ...                                       |
+| 4*N   | 2    | addr        | Start of the Nth memory block             |
+| 4*N+2 | 2    | nN          | Size of the Nth memory block              |
+
+
+Response (Length=resp_length):
+| Index | Size | Value | Description                      |
+| ----- | ---- | ----- | -------------------------------- |
+| 0     | 1    | 1-15  | Same seq no                      |
+| 1     | n1   | ...   | Contents of the 1st memory block |
+| ...   | ...  | ...   | ...                              |
+| ...   | nN   | ...   | Contents of the Nth memory block |
+
+- The memory is read from the 64k memory address space.
+- The number of blocks N is given by the length of the command.
+- The blocks are returned in the same order as requested, without any separator.
+- A block wraps at the 64k boundary.
+- resp_length: This is the length of the required response command. It is to help remotes that have limited space to assign the right size for the DZRP response. The receiver does not have to use it, but the sender has to send it.
 
 
 ## CMD_ENABLE_BREAK_ON_INTERRUPT=39
