@@ -484,6 +484,24 @@ zcc +zxn -subtype=nex -vn --list -m --c-code-in-asm -clib=sdcc_iy -Cz"--clean" -
 ]
 ~~~
 
+**Debug information (`-debug`):**
+
+If you additionally pass `-debug` to `zcc`, z88dk writes the C line information into the map file (`__C_LINE_` symbols, see [this z88dk forum thread](https://www.z88dk.org/forum/viewtopic.php?t=12139)).
+"z88dkv2" detects these symbols automatically and then uses them for the C line <-> address associations instead of the (sometimes inaccurate) C line references of the .lis files.
+The map file contains the final (linked) addresses including the bank/page, so breakpoints and stepping also work for banked C code (e.g. `#pragma codeseg PAGE_20_CODE`).
+Everything else (labels, assembler lines, WPMEM, ASSERTION, LOGPOINT) is still taken from the .lis files.
+If the map file does not contain `__C_LINE_` symbols (i.e. built without `-debug`) the C lines are taken from the .lis files:
+- from the `C_LINE` directives in the .lis files if there are any, e.g. `C_LINE 5,"main.c::x::0::0"`,
+- otherwise from the C line comments that `--c-code-in-asm` adds, e.g. `;main.c:5: int main() {`.
+
+This requires a z88dk nightly from 2026-04-21 or later.
+
+~~~
+zcc +zxn -subtype=nex -vn --list -m -debug --c-code-in-asm -clib=sdcc_iy -Cz"--clean" -startup=0 factorial.c fibonacci.c main.c clear-ula.asm -create-app -o ../build/main.nex
+~~~
+
+The bank/page that z88dk encodes in the upper bits of an address (e.g. `$14C000` for page 20) is used as bank of the memory model, e.g. 8k pages for "zxnext" or 16k banks for "zx128k". If the bank cannot be paged in at that address (e.g. for memory models without banking) the bank information is ignored.
+
 Top of stack:
 In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
 ~~~json
@@ -504,7 +522,7 @@ Notes:
 - C-support is only working with sdcc, not with sccz80.
 - For the "path" you can use globbing
 - Top of stack: In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
-- Although z88dk can create object code for banked memory, the .map and .lis files lack this information. As a consequence, DeZog can not use any banking with z88dk. You will be able to debug such programs, but it may happen that DeZog cannot correctly associate files with program addresses because e.g. the 0xC000 might be used by several banks. This results in wrong display of files when stepping or breakpoints that cannot be set.
+- Banking: see "Debug information" above. The bank/page is taken from the addresses of the map file.
 - Not all C-code may have corresponding addresses in assembler code. I.e. for those lines you cannot set breakpoints. Try to set the breakpoint at some other line in the vicinity.
 - z88dk generated C-source code line references are not very accurate or even wrong in some cases. This may result in inaccurate stepping. Please see [#167-comment](https://github.com/maziac/DeZog/issues/167#issuecomment-4586450764) for more details.
 

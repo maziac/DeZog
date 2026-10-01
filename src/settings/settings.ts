@@ -62,6 +62,8 @@ export interface Z88dkConfig extends AsmConfigBase {
 // Parsing does not required "-debug". In some cases (if there is code
 // that is not starting with a label the line/file association will
 // be missing for that portion).
+// If "-debug" is used the map file contains __C_LINE_ symbols. These are
+// used for the C line <-> address associations instead of the .lis file.
 export interface Z88dkConfigV2 extends AsmConfigBase {
 	/// The z88dk map file (option "-m").
 	mapFile: string;

@@ -1,9 +1,12 @@
 import {LabelParserBase} from './labelparserbase';
 import {Utility} from '../misc/utility';
 import {Expressions} from '../misc/expressions';
+import {WorkspacePaths} from '../misc/workspacepaths';
 import {readFileSync} from 'fs';
+import {minimatch} from 'minimatch';
 import {AsmConfigBase, Z88dkConfig} from '../settings/settings';
 import {UnifiedPath} from '../misc/unifiedpath';
+import {C_LINE_PREFIX, Z88dkMapSymbol, isDebugSymbol, parseLineLocation, parseMapLine, stripDebugFileName} from './z88dkmapfile';
 
 /**
  * This class parses z88dk asm list files.
@@ -119,13 +122,44 @@ main.asm:
  *
  * The address field of v2.2 is 6 bytes although it is 64k address range only.
  * It is changed afterwards to 4 bytes.
+ *
+ * The addresses in the .lis file are relative. The map file is used to
+ * correct them: the address of the last label (from the map file) is used
+ * as base for the following lines.
+ * The map file addresses are the final (linked) addresses. Banked
+ * addresses carry the bank/page in the bits above 0xFFFF, e.g. $14C000.
+ * Addresses of bank/page 0 cannot be distinguished from non-banked
+ * addresses, e.g. $C000.
+ * The bank numbering is the one of the memory model, e.g. 16k banks for
+ * ZX128K (bank 3 at 0x03C000) or 8k pages for ZXNext (page 20 at 0x14C000).
+ * For 8k slots the code of an even page may span 16k, i.e. the upper 8k of
+ * the 16k block belongs to the next (odd) page, e.g. 0x10E000 is in page 17.
+ *
+ * Debug information ("-debug"):
+ * If the map file contains __C_LINE_ symbols (z88dk option "-debug", see
+ * https://www.z88dk.org/forum/viewtopic.php?t=12139) these are used for the
+ * C source line <-> address associations instead of the .lis file.
+ * They contain the exact (linked and banked) addresses.
+ * Everything else (labels, assembler lines, WPMEM, ASSERTION, LOGPOINT)
+ * is still taken from the .lis files.
+ * Without __C_LINE_ symbols the C lines are taken from the .lis file:
+ * from the C_LINE directives if the .lis file contains any, otherwise from
+ * the C line comments (requires "--c-code-in-asm").
  */
 export class Z88dkLabelParserV2 extends LabelParserBase {
 	// Overwrite parser name (for errors).
 	protected parserName = "z88dkv2";
 
-	/// Map with the z88dk labels/symbols.
-	protected z88dkMappings = new Map<string, number>();
+	/// Map with the z88dk labels/symbols (from the map file).
+	/// The value contains the bank/page in the upper bits.
+	protected z88dkMappings = new Map<string, Z88dkMapSymbol>();
+
+	/// All __C_LINE_ symbols of the map file. Empty if not compiled with "-debug".
+	protected cLineSymbols: Z88dkMapSymbol[] = [];
+
+	/// All address symbols (no debug symbols) of the map file.
+	/// Used to find the end of a C line.
+	protected addressSymbols: Z88dkMapSymbol[] = [];
 
 	// z88dk: The format is line-number address opcode.
 	// Used to remove the line number.
@@ -146,8 +180,8 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	// Regex to find EQUs with labels
 	protected equRegEx = /([a-z_]\w*):\s*equ\s+(.*)/i;
 
-	// Regex to iterate over the map file.
-	protected mapFileRegEx = /^(\w*)\b\s*=\s*\$([0-9a-f]+)/i;
+	// Regex for the C_LINE/LINE directives (which contain ':' in the file name)
+	protected lineDirectiveRegEx = /^\s*(C_LINE|LINE)\b/i;
 
 	// RegEx to extract the line number for Sources-mode.
 	protected lineNumberRegEx = /^(\s*\d+\s*)/;
@@ -158,17 +192,40 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	// RegEx to parse comment lines with reference to c source line
 	protected cFileReference = /^\s*\d+\s+;(.*?):(\d+):/;
 
+	// RegEx to parse the C_LINE directives in the .lis file, e.g.
+	// '    7                          	C_LINE	5,"main.c::x::0::0"'
+	protected cLineMarkerRegEx = /^\s*\d*\s+C_LINE\s+(\d+)\s*,\s*"([^"]*)"/i;
+
+	// True if the current .lis file contains C_LINE directives.
+	// These are used instead of the (less accurate) C line comments.
+	protected listFileHasCLineMarkers: boolean;
+
+	// The max. number of bytes a C line may cover. Safety measure in case
+	// a line is followed by code without debug info.
+	protected static readonly MAX_C_LINE_SIZE = 0x400;
+
 	// To correct address by the values given in the map file.
 	protected z88dkMapOffset: number | undefined;
 
-	// The last (known) label address in the list file.
+	// The last (known) label address in the list file (incl. bank).
 	protected lastLabelAddress: number;
 
-	// The last used address in the list file.
+	// The last used address in the list file (incl. bank).
 	protected lastAddr64k: number;
 
 	// In sources mode with C files, it tracks the current C line
 	protected currentCLine: number;
+
+	/// Function to convert the z88dk (banked) address into a DeZog long address.
+	/// Set in checkMappingToTargetMemoryModel.
+	protected funcConvertAddress: (value: number) => number;
+
+
+	/** Returns true if the map file contains the "-debug" C line information. */
+	protected hasCLineDebugInfo(): boolean {
+		return this.cLineSymbols.length > 0;
+	}
+
 
 	// If current source is a C file, returns the filename (with no path)
 	protected currentCSourceFile(): string | undefined {
@@ -178,20 +235,28 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 		return matchCSource?.[1];
 	}
 
-	// Parses the line number corresponding to the C file
-	// If the file has just a line number followed by a comment with the c file and the file number
-	// sets the file number. Otherwise, reuses the previous one
+	// Parses the line number corresponding to the C file.
+	// If the .lis file contains C_LINE directives they are used, e.g. 'C_LINE 5,"main.c::x::0::0"'.
+	// Otherwise the comments with the c file and line number are used, e.g. ';main.c:5: int main() {'
+	// (requires --c-code-in-asm).
+	// If the line contains no such information the previous line number is reused.
 	protected parseCSourceFileLine(line: string, fileName: string): number {
-		const match = this.cFileReference.exec(line);
-		if (match) {
-			const matchFileName = match[1];
-			const unifiedFileName = UnifiedPath.getUnifiedPath(matchFileName);
-			if (unifiedFileName === fileName) {
-				this.currentCLine = parseInt(match[2]);
-			}
+		let ref: {file: string, lineNr: string} | undefined;
+		if (this.listFileHasCLineMarkers) {
+			const match = this.cLineMarkerRegEx.exec(line);
+			if (match)
+				ref = {file: stripDebugFileName(match[2]), lineNr: match[1]};
 		}
+		else {
+			const match = this.cFileReference.exec(line);
+			if (match)
+				ref = {file: match[1], lineNr: match[2]};
+		}
+		if (ref && UnifiedPath.getUnifiedPath(ref.file) === fileName)
+			this.currentCLine = parseInt(ref.lineNr);
 		return this.currentCLine;
 	}
+
 
 
 	/**
@@ -209,7 +274,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 			const __register_sp = this.z88dkMappings.get('__register_sp');
 			// Add label
 			if (__register_sp !== undefined) {
-				const longAddr = this.createLongAddress(__register_sp & 0xFFFF, 0);
+				const longAddr = this.createLongAddress(__register_sp.value & 0xFFFF, 0);
 				this.addLabelForNumber(longAddr, "__register_sp");
 				// I.e. Now in lauch.json "topOfStack": "__register_sp" can be used
 			}
@@ -256,21 +321,21 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 			}
 			catch {}	// do nothing in case of an error
 		}
-		else {
+		else if (!this.lineDirectiveRegEx.test(line)) {
 			// Check if there is a label (no equ)
 			const matchLabel = this.labelRegEx.exec(line);
 			if (matchLabel) {
 				const label = matchLabel[1];
 				// Special handling for z88dk to overcome the relative addresses (note: the map is empty if no z88dk is used/no map file given)
-				const realAddress = this.z88dkMappings.get(label);
-				if (realAddress !== undefined) {	// Is e.g. undefined if in an IF/ENDIF
-					//console.log('z88dk: label=' + label + ', realAddress=' + HexFormat.getHexString(realAddress, 4));
+				const sym = this.z88dkMappings.get(label);
+				if (sym !== undefined) {	// Is e.g. undefined if in an IF/ENDIF
+					//console.log('z88dk: label=' + label + ', realAddress=' + HexFormat.getHexString(sym.value, 4));
 					// Use label address
-					this.lastLabelAddress = realAddress;
-					this.lastAddr64k = realAddress;
+					this.lastLabelAddress = sym.value;
+					this.lastAddr64k = sym.value;
 					this.z88dkMapOffset = undefined;
 					// Add label
-					const longAddr = this.createLongAddress(realAddress, 0);
+					const longAddr = this.funcConvertAddress(sym.value);
 					this.addLabelForNumber(longAddr, label);
 				}
 			}
@@ -296,7 +361,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 		}
 
 		// Store address (or several addresses for one line).
-		const longAddr = this.createLongAddress(this.lastAddr64k, 0);
+		const longAddr = this.funcConvertAddress(this.lastAddr64k);
 		this.addAddressLine(longAddr, countBytes);
 		this.lastAddr64k += countBytes;
 	}
@@ -310,10 +375,14 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 		// Check for the file name
 		const matchFileName = this.fileNameRegEx.exec(line);
 		if (matchFileName) {
+			// Filename has been found, use it.
+			// Note: with "-debug" the C_LINE directive appends debug info to the file name, e.g. "main.c::x::10000::1"
+			const fileName = stripDebugFileName(matchFileName[1]);
+			const prevFileName = this.includeFileStack[this.includeFileStack.length - 1]?.includeFileName;
+			if (prevFileName === UnifiedPath.getUnifiedPath(fileName))
+				return;	// Same file (e.g. C_LINE), keep the current C line
 			// Stop any previous "include"
 			this.includeFileStack.length = 0;
-			// Filename has been found, use it
-			const fileName = matchFileName[1];
 			this.includeStart(fileName);
 			// Resets current C line
 			this.currentCLine = 0;
@@ -339,6 +408,128 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	}
 
 
+	/** Checks if the .lis file contains C_LINE directives before
+	 * parsing the file names and line numbers.
+	 */
+	protected parseAllFilesAndLineNumbers(startLineNr = 0) {
+		this.listFileHasCLineMarkers = this.listFile.some(entry => this.cLineMarkerRegEx.test(entry.line));
+		super.parseAllFilesAndLineNumbers(startLineNr);
+	}
+
+
+	/** If the map file contains the C line debug info the C lines of
+	 * the .lis file are not associated with addresses (they are taken from
+	 * the map file instead).
+	 */
+	protected associateSourceFileName() {
+		super.associateSourceFileName();
+		if (this.hasCLineDebugInfo() && this.includeFileStack.length > 0 && this.currentCSourceFile())
+			this.currentFileEntry.fileName = '';
+	}
+
+
+	/** Adds the C line associations from the map file (if available)
+	 * after the .lis file has been processed.
+	 */
+	protected sourcesModeFinish() {
+		super.sourcesModeFinish();
+		if (this.hasCLineDebugInfo())
+			this.addCLineDebugInfo();
+	}
+
+
+	/** Adds the file/line <-> address associations from the
+	 * __C_LINE_ symbols of the map file.
+	 * The map file contains only the start address of a line.
+	 * The end of a line is assumed at the start of the next C line, at the
+	 * next label of a different module or at the next slot boundary.
+	 */
+	protected addCLineDebugInfo() {
+		const config = this.config as AsmConfigBase;
+
+		// Collect line entries
+		const lineEntries: Array<{longAddr: number, module: string, fileName: string, lineNr: number}> = [];
+		const relFileCache = new Map<string, string | undefined>();
+		for (const sym of this.cLineSymbols) {
+			const info = parseLineLocation(sym.location);
+			if (!info) {
+				this.sendWarning("Could not parse location '" + sym.location + "' of '" + sym.name + "'.", "warning", (config as Z88dkConfig).mapFile);
+				continue;
+			}
+			// Get relative file name, check for excluded files
+			let fileName = relFileCache.get(info.fileName);
+			if (!relFileCache.has(info.fileName)) {
+				fileName = WorkspacePaths.getRelSourceFilePath(UnifiedPath.getUnifiedPath(info.fileName), config.srcDirs);
+				if (config.excludeFiles.some(glob => minimatch(fileName!, glob)))
+					fileName = undefined;
+				relFileCache.set(info.fileName, fileName);
+			}
+			if (fileName === undefined)
+				continue;	// Excluded
+			const longAddr = this.funcConvertAddress(sym.value);
+			const lineNr = info.lineNr - 1;	// 0-based
+			lineEntries.push({longAddr, module: sym.module, fileName, lineNr});
+
+			// Line -> address. If a line has several addresses the lowest one is used.
+			let lineArray = this.lineArrays.get(fileName);
+			if (!lineArray) {
+				lineArray = new Array<number>();
+				this.lineArrays.set(fileName, lineArray);
+			}
+			const prevAddr = lineArray[lineNr];
+			if (prevAddr === undefined || longAddr < prevAddr)
+				lineArray[lineNr] = longAddr;
+		}
+
+		// Boundaries: C lines and labels
+		const boundaries = [
+			...lineEntries.map(e => ({longAddr: e.longAddr, module: e.module})),
+			...this.addressSymbols.map(sym => ({longAddr: this.funcConvertAddress(sym.value), module: sym.module}))
+		];
+		// Lines without code (e.g. a function header) share the address with the
+		// following line. The address belongs to the last of them, i.e. the highest
+		// line number, which is processed last.
+		lineEntries.sort((a, b) => a.longAddr - b.longAddr || a.lineNr - b.lineNr);
+		boundaries.sort((a, b) => a.longAddr - b.longAddr);
+		const lineStarts = new Set<number>(lineEntries.map(e => e.longAddr));
+		const slotAssociation = this.memoryModel.slotAddress64kAssociation;
+
+		// Address -> line
+		let k = 0;
+		for (const lineEntry of lineEntries) {
+			const start = lineEntry.longAddr;
+			// Find the end: the next line or a label of a different module
+			while (k < boundaries.length && boundaries[k].longAddr <= start)
+				k++;
+			let end = start + Z88dkLabelParserV2.MAX_C_LINE_SIZE;
+			for (let j = k; j < boundaries.length; j++) {
+				const b = boundaries[j];
+				if (b.longAddr >= end)
+					break;
+				if (lineStarts.has(b.longAddr) || b.module !== lineEntry.module) {
+					end = b.longAddr;
+					break;
+				}
+			}
+			// Stay inside the slot
+			const addr64k = start & 0xFFFF;
+			const slot = slotAssociation[addr64k];
+			let size = 0;
+			while (size < end - start && addr64k + size <= 0xFFFF && slotAssociation[addr64k + size] === slot)
+				size++;
+			for (let i = 0; i < size; i++) {
+				this.setFileLineNrForAddress(start + i, {
+					fileName: lineEntry.fileName,
+					lineNr: lineEntry.lineNr,
+					modulePrefix: undefined,
+					lastLabel: undefined,
+					size
+				});
+			}
+		}
+	}
+
+
 	/**
 	 * As all addresses in a
 	 * z88dk list file are relative/starting at 0, the map file
@@ -346,23 +537,61 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	 * The z88dk map file looks like this:
 	 * print_number_address            = $1A1B ; const, local, , , , constants.inc:5
 	 * AT                              = $0016 ; const, local, , , , constants.inc:6
+	 * With "-debug" it additionally contains __C_LINE_, __ASM_LINE_ and __CDBINFO__ symbols.
 	 * @param mapFile The absolute path to the map file.
 	 */
 	protected readmapFile(mapFile) {
 		this.z88dkMapOffset = 0;
 		this.lastLabelAddress = 0;
 		this.lastAddr64k = 0;
+		this.z88dkMappings.clear();
+		this.cLineSymbols = [];
+		this.addressSymbols = [];
 		Utility.assert(mapFile);	// mapFile is already absolute path.
 
 		// Iterate over map file
-		let lines = readFileSync(mapFile).toString().split('\n');
+		const lines = readFileSync(mapFile).toString().split('\n');
 		for (const line of lines) {
-			const match = this.mapFileRegEx.exec(line);
-			if (match) {
-				const label = match[1];
-				const addr64k = parseInt(match[2], 16);
-				this.z88dkMappings.set(label, addr64k);
+			const sym = parseMapLine(line);
+			if (!sym)
+				continue;
+			if (sym.name.startsWith(C_LINE_PREFIX)) {
+				this.cLineSymbols.push(sym);
+				continue;
 			}
+			if (isDebugSymbol(sym.name))
+				continue;	// __ASM_LINE_ (the .lis file is more precise) and __CDBINFO__ (not used yet)
+			this.z88dkMappings.set(sym.name, sym);
+			if (sym.type !== 'const')
+				this.addressSymbols.push(sym);
 		}
+	}
+
+
+	/** Sets up the conversion of z88dk (banked) addresses into DeZog
+	 * long addresses.
+	 * - Addresses <= 0xFFFF: The bank is taken from the initial slot
+	 *   configuration of the memory model.
+	 * - Otherwise bits 16-23 are the bank. For 8k slots an even bank may
+	 *   span 16k, i.e. the upper 8k belongs to the next bank.
+	 *   If the bank cannot be paged into the slot of the address (e.g. for
+	 *   memory models without banking) the bank info is ignored.
+	 */
+	protected checkMappingToTargetMemoryModel() {
+		super.checkMappingToTargetMemoryModel();	// Sets funcConvertBank for 64k
+		const memModel = this.memoryModel;
+
+		this.funcConvertAddress = (value: number) => {
+			const addr64k = value & 0xFFFF;
+			if (value <= 0xFFFF)
+				return this.createLongAddress(addr64k, 0);
+			const slot = memModel.slotRanges[memModel.slotAddress64kAssociation[addr64k]];
+			let bank = value >>> 16;
+			if (slot.end + 1 - slot.start === 0x2000)
+				bank |= (addr64k >>> 13) & 0x01;	// 8k slot: upper 8k of a 16k bank
+			if (!slot.banks.has(bank))
+				return this.createLongAddress(addr64k, 0);
+			return addr64k + ((bank + 1) << 16);
+		};
 	}
 }
