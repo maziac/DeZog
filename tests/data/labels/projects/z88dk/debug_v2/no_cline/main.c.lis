@@ -1,0 +1,24 @@
+/tmp/tmpAAAAAAAA.asm:
+     1                          MODULE main_c
+     2                          LINE 0, "main.c"
+main.c:
+     3                          	SECTION code_compiler
+     4                          ;main.c:5: int main(void) {
+     5                          ;	---------------------------------
+     6                          ; Function main
+     7                          ; ---------------------------------
+     8                          _main:
+     9  0000  cd0000            	call	_util_add
+    10                          ;main.c:6: result = factorial(5);
+    11  0003  210500            	ld	hl,0x0005
+    12                          ;main.c:7: result += util_add();
+    13  0006  e5                	push	hl
+    14  0007  cd0000            	call	_factorial
+    15  000a  f1                	pop	af
+    16  000b  222080            	ld	(_result),hl
+    17  000e  cd0000            	call	_util_add
+    18                          ;main.c:8: return result;
+    19  0011  2a2080            	ld	hl,(_result)
+    20                          	SECTION bss_compiler
+    21                          _result:
+    22  0000  0000              	DEFB 0x00, 0x00

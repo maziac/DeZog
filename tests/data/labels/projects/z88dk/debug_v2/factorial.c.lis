@@ -1,0 +1,22 @@
+/tmp/tmpBBBBBBBB.asm:
+     1                          MODULE factorial_c
+     2                          LINE 0, "factorial.c"
+factorial.c:
+     1                          	SECTION PAGE_20_CODE
+     2                          ;factorial.c:3: int factorial(int n) __banked {
+     3                          _factorial:
+     4                          	C_LINE	3,"factorial.c::x::0::0"
+factorial.c::x::0::0:
+     3  0000  dde5dd21          	push	ix
+     4                          ;factorial.c:4: if (n <= 1)
+     5                          	C_LINE	4,"factorial.c::x::10000::1"
+factorial.c::x::10000::1:
+     4  0004  00003900dd7e      	ld	a,(ix+4)
+     5                          ;factorial.c:5: return 1;
+     6                          	C_LINE	5,"factorial.c::x::10000::1"
+     5  000a  210100dde1        	ld	hl,0x0001
+     6                          ;factorial.c:6: return n * factorial(n - 1);
+     7                          	C_LINE	6,"factorial.c::x::10000::1"
+     6  000f  0000000000000000  	defs	8
+     7  0017  0000000000000000  	defs	8
+     8  001f  c9                	ret
