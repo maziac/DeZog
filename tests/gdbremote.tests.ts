@@ -153,6 +153,17 @@ suite('GdbRemote', () => {
 			assert.deepEqual(sent, ['m8000,1', 'm9000,2']);
 		});
 
+		test('short memory replies are continued from the next address', async () => {
+			const replies = ['0102', '0304'];
+			gdb.sendPacketData = async (packetData: string) => {
+				sent.push(packetData);
+				return replies.shift()!;
+			};
+			const data = await gdb.readMemWithM(0x8000, 4);
+			assert.deepEqual(Array.from(data), [1, 2, 3, 4]);
+			assert.deepEqual(sent, ['m8000,4', 'm8002,2']);
+		});
+
 		test('loads a 48K SNA with flat M writes and standard registers', async () => {
 			const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'dezog-gdb-sna-'));
 			const filePath = path.join(directory, 'test.sna');

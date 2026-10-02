@@ -909,14 +909,21 @@ export class GdbRemote extends DzrpQueuedRemote {
 	 * @returns A promise with an Uint8Array.
 	 */
 	protected async readMemWithM(addr64k: number, size: number): Promise<Uint8Array> {
-		const cmd = 'm' + addr64k.toString(16) + ',' + size.toString(16);
-		const resp = await this.sendPacketData(cmd);
-		// Parse the hex values
 		const buffer = new Uint8Array(size);
-		for (let i = 0; i < size; i++) {
-			const k = 2 * i;
-			const valString = resp.substring(k, k + 2);
-			buffer[i] = parseInt(valString, 16);
+		let offset = 0;
+		while (offset < size) {
+			const remaining = size - offset;
+			const address = (addr64k + offset) & 0xFFFF;
+			const cmd = 'm' + address.toString(16) + ',' + remaining.toString(16);
+			const resp = await this.sendPacketData(cmd);
+			const bytesRead = Math.min(Math.floor(resp.length / 2), remaining);
+			if (bytesRead === 0)
+				throw Error('No memory data received for "' + cmd + '".');
+			for (let i = 0; i < bytesRead; i++) {
+				const valString = resp.substring(2 * i, 2 * i + 2);
+				buffer[offset + i] = parseInt(valString, 16);
+			}
+			offset += bytesRead;
 		}
 		return buffer;
 	}
