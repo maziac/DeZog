@@ -6,6 +6,7 @@ import {ZesaruxRemote} from './zesarux/zesaruxremote';
 import {ZxNextSerialRemote} from './dzrptransport/zxnextserialremote';
 import {ZxNextSocketRemote} from './dzrptransport/zxnextsocketremote';
 import {MameGdbRemote} from './mame/mamegdbremote';
+import {GdbRemote} from './gdb/gdbremote';
 import {SettingsParameters} from '../settings/settings';
 import {DzrpGenericSocketRemote, DzrpGenericSerialRemote} from './dzrptransport/dzrpgenericremote';
 
@@ -40,6 +41,9 @@ export class RemoteFactory {
 				break;
 			case 'mame':
 				remote = new MameGdbRemote(launch.mame);
+				break;
+			case 'gdb':	// A generic gdbstub
+				remote = new GdbRemote(launch.gdb);
 				break;
 			case 'dzrp':	// Generic dzrp. USB/serial or socket connection.
 				// 'serial' selects the serial connection, otherwise a socket is used.
