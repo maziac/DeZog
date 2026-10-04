@@ -1,0 +1,26 @@
+/tmp/tmpCCCCCCCC.asm:
+     1                          MODULE test_c
+     2                          LINE 0, "menu/test.c"
+menu/test.c:
+     1                          	SECTION code_compiler
+     2                          C_LINE 3,"test.c::x::0::7	"
+test.c::x::0::7	:
+     3                          ;menu/test.c:3: int menu_fn(int a)
+     3                          _menu_fn:
+     3                          C_LINE 5,"test.c::x::10000::7	"
+test.c::x::10000::7	:
+     5                          ;menu/test.c:5: int r = a * 1;
+     5  0000  23                	inc	hl
+     5  0001  23                	inc	hl
+     5  0002  00                	nop
+     5                          C_LINE 6,"test.c::x::10000::7	"
+test.c::x::10000::7	:
+     6                          ;menu/test.c:6: menu_value = r;
+     6  0003  220000            	ld	(_menu_value), hl
+     6                          C_LINE 7,"test.c::x::10000::7	"
+test.c::x::10000::7	:
+     7                          ;menu/test.c:7: return r;
+     7  0006  c9                	ret
+     7                          	SECTION bss_compiler
+     7                          _menu_value:
+     7  0000  0000              	DEFB 0x00, 0x00

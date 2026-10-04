@@ -2,11 +2,25 @@ import {LabelParserBase} from './labelparserbase';
 import {Utility} from '../misc/utility';
 import {Expressions} from '../misc/expressions';
 import {WorkspacePaths} from '../misc/workspacepaths';
-import {readFileSync} from 'fs';
+import {existsSync, readFileSync} from 'fs';
+import * as fglob from 'fast-glob';
 import {minimatch} from 'minimatch';
 import {AsmConfigBase, Z88dkConfig} from '../settings/settings';
 import {UnifiedPath} from '../misc/unifiedpath';
-import {C_LINE_PREFIX, Z88dkMapSymbol, isDebugSymbol, parseLineLocation, parseMapLine, stripDebugFileName} from './z88dkmapfile';
+import {C_LINE_PREFIX, Z88dkLineInfo, Z88dkMapSymbol, isDebugSymbol, parseLineLocation, parseMapLine, stripDebugFileName} from './z88dkmapfile';
+
+/** The C source file of a .lis file. */
+interface ListCFile {
+	/// The module (MODULE directive), e.g. "test_c".
+	module: string;
+	/// The name as written in the .lis file, e.g. "menu/test.c".
+	listName: string;
+	/// The resolved file name, e.g. "src/menu/test.c".
+	fileName: string;
+	/// The address ranges (long addresses, end exclusive) of its code.
+	code: Array<{start: number, end: number}>;
+}
+
 
 /**
  * This class parses z88dk asm list files.
@@ -161,9 +175,28 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	/// The module of the current .lis file (MODULE directive).
 	protected currentModule = '';
 
-	/// The C source file (relative path) of each module, from the .lis files.
-	/// The C_LINE information contains only the file name without directory.
-	protected moduleCFiles = new Map<string, string>();
+	/// The C source files of all .lis files of the current configuration:
+	/// the module, the name as written in the .lis file (e.g. "menu/test.c")
+	/// and the resolved file name (e.g. "src/menu/test.c").
+	/// Used for the C lines of the map file, whose file names have no
+	/// directory with the current z88dk ("test.c"). Collected over all .lis
+	/// files because the map file contains the C lines of all modules.
+	protected listCFiles: ListCFile[] = [];
+
+	/// The C file of the .lis file being parsed.
+	protected currentListCFile: ListCFile | undefined;
+
+	/// True if the C lines of the map file still need to be associated
+	/// (done once, after all .lis files, see finishListFiles).
+	protected cLineDebugInfoPending = false;
+
+	/// The ambiguous C file names already warned about (once each).
+	protected warnedAmbiguousFiles = new Set<string>();
+
+	/// The file names of C lines that match several files of their module,
+	/// e.g. "test.c" for "src/test.c" and "src/menu/test.c" (module "test_c").
+	/// Key: module + ':' + name.
+	protected ambiguousCFiles = new Map<string, ListCFile[]>();
 
 	/// All __C_LINE_ symbols of the map file. Empty if not compiled with "-debug".
 	protected cLineSymbols: Z88dkMapSymbol[] = [];
@@ -294,6 +327,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 		try {
 			const mapFile: string = (config as Z88dkConfig).mapFile;
 			this.readmapFile(mapFile);
+			this.currentListCFile = undefined;
 			super.loadAsmListFile(config);
 
 			// Check for "topOfStack" (for z88dk C-compiler)
@@ -417,8 +451,15 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 			// Stop any previous "include"
 			this.includeFileStack.length = 0;
 			this.includeStart(fileName);
-			if (this.currentCSourceFile())
-				this.moduleCFiles.set(this.currentModule, this.includeFileStack[0].fileName);
+			if (this.currentCSourceFile()) {
+				const resolved = this.includeFileStack[0].fileName;
+				let cFile = this.listCFiles.find(f => f.module === this.currentModule && f.fileName === resolved);
+				if (!cFile) {
+					cFile = {module: this.currentModule, listName: UnifiedPath.getUnifiedPath(fileName), fileName: resolved, code: []};
+					this.listCFiles.push(cFile);
+				}
+				this.currentListCFile = cFile;
+			}
 			// Resets current C line
 			this.currentCLine = 0;
 			return;
@@ -463,15 +504,55 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	}
 
 
-	/** Adds the C line associations from the map file (if available)
-	 * after the .lis file has been processed.
+	/** Without C line information in the map file the C lines of the .lis
+	 * file are corrected. With it they are taken from the map file, after
+	 * all .lis files have been processed (see finishListFiles).
 	 */
 	protected sourcesModeFinish() {
 		super.sourcesModeFinish();
-		if (this.hasCLineDebugInfo())
-			this.addCLineDebugInfo();
-		else
+		if (this.hasCLineDebugInfo()) {
+			this.cLineDebugInfoPending = true;
+			this.rememberCode();
+		}
+		else {
 			this.correctCLineAddresses();
+		}
+	}
+
+
+	/** Remembers the addresses of the code of the current .lis file's C file.
+	 * Used to assign the C lines of the map file if two C files have the same
+	 * file name and module (see findCLineFile).
+	 */
+	protected rememberCode() {
+		const cFile = this.currentListCFile;
+		if (!cFile)
+			return;
+		const ranges = this.listFile
+			.filter(entry => entry.longAddr !== undefined && entry.size > 0)
+			.map(entry => ({start: entry.longAddr!, end: entry.longAddr! + entry.size}))
+			.sort((a, b) => a.start - b.start);
+		for (const range of ranges) {
+			const last = cFile.code[cFile.code.length - 1];
+			if (last && range.start <= last.end)
+				last.end = Math.max(last.end, range.end);
+			else
+				cFile.code.push(range);
+		}
+	}
+
+
+	/** Adds the C line associations from the map file, once all .lis files
+	 * of the configuration are known: the map file contains the C lines of
+	 * all modules, and a C line is assigned to its source file with the help
+	 * of the .lis files.
+	 */
+	public finishListFiles() {
+		if (this.cLineDebugInfoPending)
+			this.addCLineDebugInfo();
+		this.cLineDebugInfoPending = false;
+		this.listCFiles = [];
+		this.ambiguousCFiles.clear();
 	}
 
 
@@ -529,32 +610,43 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	protected addCLineDebugInfo() {
 		const config = this.config as AsmConfigBase;
 
-		// Collect line entries
-		const lineEntries: Array<{longAddr: number, module: string, fileName: string, lineNr: number}> = [];
-		const relFileCache = new Map<string, string | undefined>();
+		// Parse the locations
+		const located: Array<{sym: Z88dkMapSymbol, info: Z88dkLineInfo}> = [];
 		for (const sym of this.cLineSymbols) {
 			const info = parseLineLocation(sym.location);
 			if (!info) {
 				this.sendWarning("Could not parse location '" + sym.location + "' of '" + sym.name + "'.", "warning", (config as Z88dkConfig).mapFile);
 				continue;
 			}
+			located.push({sym, info});
+		}
+		// The current z88dk writes the file name only ("test.c"). If a z88dk
+		// version writes the directory as well ("menu/test.c") the names are
+		// unique and are matched exactly.
+		const withDirectories = located.some(({info}) => /[\/\\]/.test(info.fileName));
+
+		// Collect line entries
+		const lineEntries: Array<{longAddr: number, module: string, fileName: string, lineNr: number}> = [];
+		const relFileCache = new Map<string, string | undefined>();
+		for (const {sym, info} of located) {
 			// Get relative file name, check for excluded files
 			const cacheKey = sym.module + ':' + info.fileName;
 			let fileName = relFileCache.get(cacheKey);
 			if (!relFileCache.has(cacheKey)) {
-				// Prefer the C file of the module's .lis file (C_LINE contains no directory)
-				const moduleCFile = this.moduleCFiles.get(sym.module);
-				if (moduleCFile && this.isSameFile(info.fileName, moduleCFile))
-					fileName = moduleCFile;
-				else
-					fileName = WorkspacePaths.getRelSourceFilePath(UnifiedPath.getUnifiedPath(info.fileName), config.srcDirs);
-				if (config.excludeFiles.some(glob => minimatch(fileName!, glob)))
-					fileName = undefined;
+				fileName = this.findCLineFile(UnifiedPath.getUnifiedPath(info.fileName), sym.module, withDirectories);
 				relFileCache.set(cacheKey, fileName);
 			}
-			if (fileName === undefined)
-				continue;	// Excluded
 			const longAddr = this.funcConvertAddress(sym.value);
+			const ambiguous = this.ambiguousCFiles.get(cacheKey);
+			if (ambiguous) {
+				// Same name and module: the file whose code contains the address
+				const owners = ambiguous.filter(f => f.code.some(r => longAddr >= r.start && longAddr < r.end));
+				fileName = (owners.length === 1) ? owners[0].fileName : undefined;
+			}
+			if (fileName !== undefined && config.excludeFiles.some(glob => minimatch(fileName!, glob)))
+				fileName = undefined;
+			if (fileName === undefined)
+				continue;	// Excluded or not assignable
 			const lineNr = info.lineNr - 1;	// 0-based
 			lineEntries.push({longAddr, module: sym.module, fileName, lineNr});
 
@@ -618,6 +710,88 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	}
 
 
+	/** Returns the source file of a C line of the map file.
+	 * 1. If the map file contains directories: the C file of a .lis file with
+	 *    exactly this name (unique, even for "test.c" and "menu/test.c").
+	 * 2. The C file of the module's .lis file. The current z88dk writes no
+	 *    directory, so "test.c" matches "src/menu/test.c". Two such files in the
+	 *    same module (both "test.c" give module "test_c") are told apart by
+	 *    address (see addCLineDebugInfo); a warning is shown because the map
+	 *    file lacks the C lines that have the same name in both files.
+	 * 3. The file itself, if it exists in a source directory.
+	 * 4. A unique file of that name in the subdirectories of the source
+	 *    directories (for modules without .lis file).
+	 * @param name The file name of the C line, e.g. "test.c" or "menu/test.c".
+	 * @param module The module of the C line.
+	 * @param withDirectories True if the map file's C lines contain directories.
+	 * @returns The file name (as for the .lis files) or undefined if ambiguous.
+	 */
+	protected findCLineFile(name: string, module: string, withDirectories: boolean): string | undefined {
+		const config = this.config as AsmConfigBase;
+		const resolved = WorkspacePaths.getRelSourceFilePath(name, config.srcDirs);
+		const unique = (files: string[]) => [...new Set(files)];
+
+		// 1. Exact name of a .lis file
+		if (withDirectories) {
+			const exact = unique(this.listCFiles.filter(f => f.listName === name || f.fileName === resolved).map(f => f.fileName));
+			if (exact.length === 1)
+				return exact[0];
+		}
+
+		// 2. The module's .lis file
+		const ofModule = this.listCFiles.filter(f => f.module === module && this.isSameFile(name, f.fileName));
+		if (ofModule.length === 1)
+			return ofModule[0].fileName;
+		if (ofModule.length > 1) {
+			this.ambiguousCFiles.set(module + ':' + name, ofModule);
+			this.warnSameName(name, module, ofModule.map(f => f.fileName));
+			return undefined;	// Decided per address
+		}
+
+		// 3. The file itself
+		if (existsSync(WorkspacePaths.getAbsFilePath(resolved)))
+			return resolved;
+
+		// 4. Search the subdirectories
+		const base = UnifiedPath.basename(name);
+		const found: string[] = [];
+		for (const srcDir of config.srcDirs) {
+			const absDir = WorkspacePaths.getAbsFilePath(srcDir);
+			for (const rel of fglob.sync('**/' + fglob.escapePath(base), {cwd: absDir, onlyFiles: true})) {
+				const fileName = UnifiedPath.join(srcDir, rel);
+				if (this.isSameFile(name, fileName))
+					found.push(fileName);
+			}
+		}
+		const foundUnique = unique(found);
+		if (foundUnique.length === 1)
+			return foundUnique[0];
+		if (foundUnique.length > 1) {
+			// No .lis file to tell them apart
+			this.warnSameName(name, module, foundUnique);
+			return undefined;
+		}
+		return resolved;
+	}
+
+
+	/** Warns (once per name and module) about C files with the same file name.
+	 * The current z88dk names a module after the file name only, and its C
+	 * line symbols contain no directory: lines with the same number (and
+	 * scope) in both files get the same symbol name and only one of them is
+	 * kept in the map file.
+	 */
+	protected warnSameName(name: string, module: string, files: string[]) {
+		const key = module + ':' + name;
+		if (this.warnedAmbiguousFiles.has(key))
+			return;
+		this.warnedAmbiguousFiles.add(key);
+		this.sendWarning("The C files " + files.join(', ') + " have the same name ('" + name + "', module '" + module
+			+ "'). The map file contains no directories, so some of their C lines are missing and cannot be debugged. Rename one of the files.",
+			"warning", (this.config as Z88dkConfig).mapFile);
+	}
+
+
 	/**
 	 * As all addresses in a
 	 * z88dk list file are relative/starting at 0, the map file
@@ -635,7 +809,6 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 		this.z88dkMappings.clear();
 		this.z88dkLocalMappings.clear();
 		this.currentModule = '';
-		this.moduleCFiles.clear();
 		this.cLineSymbols = [];
 		this.addressSymbols = [];
 		Utility.assert(mapFile);	// mapFile is already absolute path.

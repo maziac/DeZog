@@ -416,3 +416,92 @@ suite('Labels (z88dk v2 format, source in sub directory)', () => {
 		assert.equal(lbls.getAddrForFileAndLine(file, 3 - 1), -1);
 	});
 });
+
+
+suite('Labels (z88dk v2 format, C lines of sources in sub directories)', () => {
+	// The map file contains the C lines of all modules. They are assigned to
+	// their files after all .lis files have been read.
+	const base = 'tests/data/labels/projects/z88dk/';
+	const page = (p: number, addr64k: number) => addr64k + ((p + 1) << 16);
+	let lbls: LabelsClass;
+	let warnings: string[];
+
+	setup(() => {
+		lbls = new LabelsClass();
+		(WorkspacePaths as any).rootPath = undefined;
+		warnings = [];
+		LabelsClass.addDiagnosticsErrorFunc = (message: string) => warnings.push(message);
+	});
+
+	teardown(() => {
+		LabelsClass.addDiagnosticsErrorFunc = undefined;
+	});
+
+	function load(dir: string) {
+		lbls.readListFiles({
+			z88dkv2: [{
+				path: './' + dir + '/**/*.lis',
+				mapFile: './' + dir + '/main.map',
+				srcDirs: [dir],
+				excludeFiles: []
+			}]
+		} as any, new MemoryModelZxNext());
+	}
+
+	function check(dir: string, file: string, lineNr: number, addr64k: number) {
+		const msg = file + ':' + lineNr;
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/' + file, lineNr - 1), page(4, addr64k), msg);
+		const entry = lbls.getSourceFileEntryForAddress(page(4, addr64k));
+		assert.equal(entry?.fileName, dir + '/' + file, msg);
+		assert.equal(entry?.lineNr, lineNr - 1, msg);
+	}
+
+	test('file names without directory (current z88dk): several sub directories', () => {
+		// game/loop.c.lis is read before menu/menu.c.lis; util/extra.c has no .lis file
+		const dir = base + 'subdirs_v2';
+		load(dir);
+		check(dir, 'game/loop.c', 5, 0x8000);
+		check(dir, 'game/loop.c', 10, 0x8007);
+		check(dir, 'menu/menu.c', 5, 0x8010);
+		check(dir, 'util/extra.c', 3, 0x8020);
+		assert.equal(lbls.getAddrForFileAndLine('loop.c', 10 - 1), -1);	// Not at the root
+		assert.deepEqual(warnings, []);
+	});
+
+	test('file names with directory (future z88dk)', () => {
+		const dir = base + 'folders_v2';
+		load(dir);
+		check(dir, 'game/loop.c', 5, 0x8000);
+		check(dir, 'game/loop.c', 10, 0x8007);
+		check(dir, 'menu/menu.c', 5, 0x8010);
+		check(dir, 'util/extra.c', 3, 0x8020);
+		assert.deepEqual(warnings, []);
+	});
+
+	test('same file name in two directories, with directory (future z88dk)', () => {
+		// "test.c" and "menu/test.c": z88dk names both modules "test_c"
+		const dir = base + 'samename_v2';
+		load(dir);
+		check(dir, 'test.c', 5, 0x8000);
+		check(dir, 'test.c', 6, 0x8003);
+		check(dir, 'menu/test.c', 5, 0x8010);
+		check(dir, 'menu/test.c', 6, 0x8013);
+		assert.deepEqual(warnings, []);
+	});
+
+	test('same file name in two directories, without directory (current z88dk)', () => {
+		// The C line symbols of both files have the same names, the linker kept
+		// only one set (here those of menu/test.c). They are assigned by
+		// address to the file whose code contains them; the lines of the other
+		// file are missing: no breakpoints there (rather than wrong ones), and
+		// a warning.
+		const dir = base + 'samename_nofolder_v2';
+		load(dir);
+		check(dir, 'menu/test.c', 5, 0x8010);
+		check(dir, 'menu/test.c', 6, 0x8013);
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/test.c', 5 - 1), -1);
+		assert.equal(lbls.getAddrForFileAndLine(dir + '/test.c', 6 - 1), -1);
+		assert.equal(warnings.length, 1);
+		assert.ok(warnings[0].includes("'test.c'") && warnings[0].includes(dir + '/test.c') && warnings[0].includes(dir + '/menu/test.c'), warnings[0]);
+	});
+});

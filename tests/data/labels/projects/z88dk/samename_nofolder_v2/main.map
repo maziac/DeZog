@@ -1,0 +1,8 @@
+_root_fn                        = $8000 ; addr, public, , test_c, code_compiler, test.c::x::0::7	:3
+_root_value                     = $8100 ; addr, public, , test_c, bss_compiler, test.c::x::0::0	:1
+_menu_fn                        = $8010 ; addr, public, , test_c, code_compiler, test.c::x::0::7	:3
+_menu_value                     = $8102 ; addr, public, , test_c, bss_compiler, test.c::x::0::0	:1
+__C_LINE_3_test_2ec_3a_3ax_3a_3a0_3a_3a7_09 = $8010 ; addr, local, , test_c, code_compiler, test.c::x::0::7	:3
+__C_LINE_5_test_2ec_3a_3ax_3a_3a10000_3a_3a7_09 = $8010 ; addr, local, , test_c, code_compiler, test.c::x::10000::7	:5
+__C_LINE_6_test_2ec_3a_3ax_3a_3a10000_3a_3a7_09 = $8013 ; addr, local, , test_c, code_compiler, test.c::x::10000::7	:6
+__C_LINE_7_test_2ec_3a_3ax_3a_3a10000_3a_3a7_09 = $8016 ; addr, local, , test_c, code_compiler, test.c::x::10000::7	:7

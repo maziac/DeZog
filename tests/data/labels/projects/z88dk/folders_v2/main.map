@@ -1,0 +1,14 @@
+_helper                         = $8000 ; addr, local, , loop_c, code_compiler, loop.c::x::0::1	:3
+_loop                           = $8005 ; addr, public, , loop_c, code_compiler, loop.c::x::0::2	:8
+_counter                        = $8100 ; addr, public, , loop_c, bss_compiler, loop.c::x::0::0	:1
+__C_LINE_3_game_2floop_2ec_3a_3ax_3a_3a0_3a_3a1 = $8000 ; addr, local, , loop_c, code_compiler, game/loop.c::x::0::1	:3
+__C_LINE_5_game_2floop_2ec_3a_3ax_3a_3a10000_3a_3a1 = $8000 ; addr, local, , loop_c, code_compiler, game/loop.c::x::10000::1	:5
+__C_LINE_8_game_2floop_2ec_3a_3ax_3a_3a0_3a_3a2 = $8005 ; addr, local, , loop_c, code_compiler, game/loop.c::x::0::2	:8
+__C_LINE_10_game_2floop_2ec_3a_3ax_3a_3a10000_3a_3a2 = $8007 ; addr, local, , loop_c, code_compiler, game/loop.c::x::10000::2	:10
+_menu                           = $8010 ; addr, public, , menu_c, code_compiler, menu.c::x::0::1	:3
+_menu_value                     = $8102 ; addr, public, , menu_c, bss_compiler, menu.c::x::0::0	:1
+__C_LINE_3_menu_2fmenu_2ec_3a_3ax_3a_3a0_3a_3a1 = $8010 ; addr, local, , menu_c, code_compiler, menu/menu.c::x::0::1	:3
+__C_LINE_5_menu_2fmenu_2ec_3a_3ax_3a_3a10000_3a_3a1 = $8010 ; addr, local, , menu_c, code_compiler, menu/menu.c::x::10000::1	:5
+_extra                          = $8020 ; addr, public, , extra_c, code_compiler, extra.c::x::0::1	:1
+__C_LINE_1_util_2fextra_2ec_3a_3ax_3a_3a0_3a_3a1 = $8020 ; addr, local, , extra_c, code_compiler, util/extra.c::x::0::1	:1
+__C_LINE_3_util_2fextra_2ec_3a_3ax_3a_3a10000_3a_3a1 = $8020 ; addr, local, , extra_c, code_compiler, util/extra.c::x::10000::1	:3
