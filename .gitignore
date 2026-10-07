@@ -11,3 +11,5 @@ notes.md
 **/.tmp/
 comments.json
 *.cpuprofile
+CLAUDE.md
+claude/

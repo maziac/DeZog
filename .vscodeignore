@@ -39,3 +39,5 @@ node_modules/
 !node_modules/ms/
 out/src
 out/tests
+CLAUDE.md
+claude/
