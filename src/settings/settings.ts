@@ -67,6 +67,12 @@ export interface Z88dkConfig extends AsmConfigBase {
 export interface Z88dkConfigV2 extends AsmConfigBase {
 	/// The z88dk map file (option "-m").
 	mapFile: string;
+
+	/// The unit of the bank number in the upper bits (bits 16-23) of
+	/// the map file addresses, e.g. $14C000.
+	/// "8k": 8k pages (ZX Next), "16k": 16k banks (ZX128K).
+	/// If undefined the bank information is ignored.
+	bankSize?: '8k' | '16k';
 }
 
 
@@ -1035,6 +1041,7 @@ export class Settings {
 					srcDirs: fpSrcDirs ?? [""],
 					excludeFiles: fpExclFiles ?? [],
 					mapFile: undefined as any,
+					bankSize: fp.bankSize
 				};
 				if (fpPath) {
 					// Note: path is a glob path
@@ -1341,6 +1348,14 @@ export class Settings {
 				// Check that file exists
 				if (!fs.existsSync(mapFile))
 					throw Error("'z88dk.mapFile': '" + mapFile + "' does not exist.");
+			}
+		}
+		if (Settings.launch.z88dkv2) {
+			// Check bank size
+			for (const listFile of Settings.launch.z88dkv2) {
+				const bankSize = listFile.bankSize;
+				if (bankSize !== undefined && bankSize !== '8k' && bankSize !== '16k')
+					throw Error("'z88dkv2.bankSize': '" + bankSize + "' is not allowed. Use '8k' or '16k'.");
 			}
 		}
 

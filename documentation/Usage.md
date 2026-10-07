@@ -426,6 +426,7 @@ Same as sjasmplus but use: ```z80asm```, e.g.:
 For 'path', 'srcDirs' and 'excludeFiles' see z80asm configuration.
 
 - 'mapFile': The map file is required to correctly parse the label values and to get correct file/line to address associations.
+- 'bankSize': Optional. "8k" or "16k". The unit of the bank that z88dk encodes in the upper bits of the map file addresses. Only required for banked code, see "Banking" in the z88dk-zcc configuration below.
 
 Since version 2 (z88dkv2) the .lis file format has changed for z88dk.
 You can easily distinguish the 2 versions. The newer format does start with the sources file name.
@@ -500,7 +501,42 @@ This requires a z88dk nightly from 2026-04-21 or later.
 zcc +zxn -subtype=nex -vn --list -m -debug --c-code-in-asm -clib=sdcc_iy -Cz"--clean" -startup=0 factorial.c fibonacci.c main.c clear-ula.asm -create-app -o ../build/main.nex
 ~~~
 
-The bank/page that z88dk encodes in the upper bits of an address (e.g. `$14C000` for page 20) is used as bank of the memory model, e.g. 8k pages for "zxnext" or 16k banks for "zx128k". If the bank cannot be paged in at that address (e.g. for memory models without banking) the bank information is ignored.
+**Banking:**
+
+For banked code z88dk encodes the bank in the upper bits of the addresses in the map file, e.g. `$14C000` for address `0xC000` in bank `0x14`.
+The unit of that bank depends on how the sections were defined (their `ORG`) and cannot be derived from the map file:
+- z88dk's own `BANK_n` sections (`+zx` and `+zxn` classic) use 16k banks, e.g. `ORG 0x050000 + 0xC000` for `BANK_5`.
+- Sections defined by the project often use the 8k pages of the ZX Next, e.g. `ORG 0x140000` for page 20.
+
+Therefore you need to tell DeZog the unit with 'bankSize':
+~~~json
+"z88dkv2": [
+    {
+        "path": "src/*.lis",
+        "srcDirs": [
+            "src"
+        ],
+        "mapFile": "build/main.map",
+        "bankSize": "8k"
+    }
+]
+~~~
+
+The bank is converted into the banks of the 'memoryModel':
+
+| 'bankSize' | "ZXNEXT" (8k pages)                                  | "ZX128K" (16k banks)                                   |
+|------------|------------------------------------------------------|--------------------------------------------------------|
+| "8k"       | page; for an even page the upper 8k of a 16k area (e.g. 0xE000-0xFFFF) is the next page | page / 2; an odd page must be in the upper 8k |
+| "16k"      | 2 * bank, or 2 * bank + 1 for the upper 8k           | bank                                                   |
+
+E.g. with "16k" the z88dk `BANK_5` at `$05C000` is page 10 (and page 11 at `$05E000`) for "ZXNEXT".
+
+Addresses up to 0xFFFF use the initial bank of the slot.
+
+In the following cases the bank information is ignored, i.e. the initial bank of the slot is used, and a warning is shown:
+- 'bankSize' is not set but the map file contains banked addresses.
+- The 'memoryModel' is neither "ZX128K" nor "ZXNEXT" (e.g. "RAM" or "CUSTOM").
+- The converted bank does not exist at that address in the memory model, e.g. bank 9 for "ZX128K".
 
 Top of stack:
 In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
@@ -522,7 +558,7 @@ Notes:
 - C-support works with sdcc and sccz80 (e.g. `-compiler=sccz80 -clib=new`).
 - For the "path" you can use globbing
 - Top of stack: In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
-- Banking: see "Debug information" above. The bank/page is taken from the addresses of the map file.
+- Banking: see "Banking" above. The bank/page is taken from the addresses of the map file and converted according to 'bankSize'.
 - Not all C-code may have corresponding addresses in assembler code. I.e. for those lines you cannot set breakpoints. Try to set the breakpoint at some other line in the vicinity.
 - z88dk generated C-source code line references are not very accurate or even wrong in some cases. This may result in inaccurate stepping. Please see [#167-comment](https://github.com/maziac/DeZog/issues/167#issuecomment-4586450764) for more details.
 

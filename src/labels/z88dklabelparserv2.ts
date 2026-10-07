@@ -5,8 +5,11 @@ import {WorkspacePaths} from '../misc/workspacepaths';
 import {existsSync, readFileSync} from 'fs';
 import * as fglob from 'fast-glob';
 import {minimatch} from 'minimatch';
-import {AsmConfigBase, Z88dkConfig} from '../settings/settings';
+import {AsmConfigBase, Z88dkConfig, Z88dkConfigV2} from '../settings/settings';
 import {UnifiedPath} from '../misc/unifiedpath';
+import {HexFormat} from '../misc/hexformat';
+import {MemoryModelZx128k} from '../remotes/MemoryModel/zxspectrummemorymodels';
+import {MemoryModelZxNextBase} from '../remotes/MemoryModel/zxnextmemorymodels';
 import {C_LINE_PREFIX, Z88dkLineInfo, Z88dkMapSymbol, isDebugSymbol, parseLineLocation, parseMapLine, stripDebugFileName} from './z88dkmapfile';
 
 /** The C source file of a .lis file. */
@@ -269,6 +272,9 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	/// Function to convert the z88dk (banked) address into a DeZog long address.
 	/// Set in checkMappingToTargetMemoryModel.
 	protected funcConvertAddress: (value: number) => number;
+
+	/// The banked address warnings already given. To warn only once.
+	protected warnedBanks = new Set<string>();
 
 
 	/** Returns true if the map file contains the "-debug" C line information. */
@@ -841,26 +847,79 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	 * long addresses.
 	 * - Addresses <= 0xFFFF: The bank is taken from the initial slot
 	 *   configuration of the memory model.
-	 * - Otherwise bits 16-23 are the bank. For 8k slots an even bank may
-	 *   span 16k, i.e. the upper 8k belongs to the next bank.
-	 *   If the bank cannot be paged into the slot of the address (e.g. for
-	 *   memory models without banking) the bank info is ignored.
+	 * - Otherwise bits 16-23 are the bank. z88dk does not tell which
+	 *   memory model was used, so the unit of the bank is taken from the
+	 *   'bankSize' setting ("8k" pages or "16k" banks). It is converted
+	 *   into the banks of the target memory model (ZX Next or ZX128K).
+	 *   An even 8k page may span 16k, i.e. the upper 8k belongs to the
+	 *   next page.
+	 *   If 'bankSize' is not set or the bank cannot be converted, the
+	 *   bank info is ignored and a warning is given.
 	 */
 	protected checkMappingToTargetMemoryModel() {
 		super.checkMappingToTargetMemoryModel();	// Sets funcConvertBank for 64k
 		const memModel = this.memoryModel;
+		const bankSize = (this.config as Z88dkConfigV2).bankSize;
+
+		// Conversion of the bank into the bank of the target memory model.
+		// Returns undefined if not possible.
+		let convertBank: ((bank: number, addr64k: number) => number | undefined) | undefined;
+		if (memModel instanceof MemoryModelZxNextBase) {
+			if (bankSize === '8k')
+				convertBank = (page, addr64k) => page | ((addr64k >>> 13) & 0x01);	// Upper 8k of an even page
+			else if (bankSize === '16k')
+				convertBank = (bank, addr64k) => 2 * bank + ((addr64k >>> 13) & 0x01);
+		}
+		else if (memModel instanceof MemoryModelZx128k) {
+			if (bankSize === '8k') {
+				convertBank = (page, addr64k) => {
+					const half = (addr64k >>> 13) & 0x01;
+					page |= half;	// Upper 8k of an even page
+					if ((page & 0x01) !== half)
+						return undefined;	// Odd page in the lower 8k of a 16k bank
+					return page >>> 1;
+				};
+			}
+			else if (bankSize === '16k')
+				convertBank = (bank) => bank;
+		}
 
 		this.funcConvertAddress = (value: number) => {
 			const addr64k = value & 0xFFFF;
 			if (value <= 0xFFFF)
 				return this.createLongAddress(addr64k, 0);
-			const slot = memModel.slotRanges[memModel.slotAddress64kAssociation[addr64k]];
-			let bank = value >>> 16;
-			if (slot.end + 1 - slot.start === 0x2000)
-				bank |= (addr64k >>> 13) & 0x01;	// 8k slot: upper 8k of a 16k bank
-			if (!slot.banks.has(bank))
+			const bank = value >>> 16;
+			const hexValue = '$' + HexFormat.getHexString(value, 6);
+			if (bankSize === undefined) {
+				this.warnBank('no bankSize', "The map file contains banked addresses (e.g. " + hexValue + ") but 'bankSize' is not set. The bank information is ignored.");
 				return this.createLongAddress(addr64k, 0);
-			return addr64k + ((bank + 1) << 16);
+			}
+			if (!convertBank) {
+				this.warnBank('memory model', "Banked addresses (e.g. " + hexValue + ") are only supported for the ZX128K and ZX Next memory models. The bank information is ignored.");
+				return this.createLongAddress(addr64k, 0);
+			}
+			const convBank = convertBank(bank, addr64k);
+			const slot = memModel.slotRanges[memModel.slotAddress64kAssociation[addr64k]];
+			if (convBank === undefined || !slot.banks.has(convBank)) {
+				this.warnBank('bank ' + bank, "Bank " + bank + " (" + bankSize + ") of address " + hexValue + " cannot be converted to a bank of the memory model at that address. The bank information is ignored.");
+				return this.createLongAddress(addr64k, 0);
+			}
+			return addr64k + ((convBank + 1) << 16);
 		};
+	}
+
+
+	/** Warns about a banked address that cannot be converted.
+	 * Each warning (key) is given only once.
+	 * @param key Identifies the warning.
+	 * @param message The warning text.
+	 */
+	protected warnBank(key: string, message: string) {
+		const mapFile = (this.config as Z88dkConfigV2).mapFile;
+		key = mapFile + ':' + key;
+		if (this.warnedBanks.has(key))
+			return;
+		this.warnedBanks.add(key);
+		this.sendWarning(message, "warning", mapFile);
 	}
 }

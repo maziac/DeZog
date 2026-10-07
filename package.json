@@ -1292,6 +1292,18 @@
 											"type": "string",
 											"description": "The map file is required to correctly parse the label values and to get correct file/line to address associations.",
 											"default": 0
+										},
+										"bankSize": {
+											"type": "string",
+											"enum": [
+												"8k",
+												"16k"
+											],
+											"enumDescriptions": [
+												"The bank in the map file addresses (e.g. $14C000) is an 8k page (ZX Next numbering).",
+												"The bank in the map file addresses (e.g. $03C000) is a 16k bank (ZX128K numbering, e.g. z88dk 'BANK_n' sections)."
+											],
+											"description": "The unit of the bank number in the upper bits of the map file addresses (above 0xFFFF). It is converted to the banks of the 'memoryModel', e.g. 16k banks to ZX Next 8k pages. If not set, the bank information is ignored."
 										}
 									}
 								}
