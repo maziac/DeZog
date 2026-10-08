@@ -68,11 +68,12 @@ export interface Z88dkConfigV2 extends AsmConfigBase {
 	/// The z88dk map file (option "-m").
 	mapFile: string;
 
-	/// The unit of the bank number in the upper bits (bits 16-23) of
-	/// the map file addresses, e.g. $14C000.
-	/// "8k": 8k pages (ZX Next), "16k": 16k banks (ZX128K).
+	/// The z88dk target ("+zx" or "+zxn") used for compiling.
+	/// Defines the numbering of the bank in the upper bits (bits 16-23)
+	/// of the map file addresses, e.g. $14C000.
+	/// "zx": 16k banks (ZX128K), "zxn": 8k pages (ZX Next).
 	/// If undefined the bank information is ignored.
-	bankSize?: '8k' | '16k';
+	target?: 'zx' | 'zxn';
 }
 
 
@@ -1041,7 +1042,7 @@ export class Settings {
 					srcDirs: fpSrcDirs ?? [""],
 					excludeFiles: fpExclFiles ?? [],
 					mapFile: undefined as any,
-					bankSize: fp.bankSize
+					target: fp.target
 				};
 				if (fpPath) {
 					// Note: path is a glob path
@@ -1351,11 +1352,11 @@ export class Settings {
 			}
 		}
 		if (Settings.launch.z88dkv2) {
-			// Check bank size
+			// Check target
 			for (const listFile of Settings.launch.z88dkv2) {
-				const bankSize = listFile.bankSize;
-				if (bankSize !== undefined && bankSize !== '8k' && bankSize !== '16k')
-					throw Error("'z88dkv2.bankSize': '" + bankSize + "' is not allowed. Use '8k' or '16k'.");
+				const target = listFile.target;
+				if (target !== undefined && target !== 'zx' && target !== 'zxn')
+					throw Error("'z88dkv2.target': '" + target + "' is not supported. Use 'zx' or 'zxn'.");
 			}
 		}
 

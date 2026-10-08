@@ -1293,17 +1293,17 @@
 											"description": "The map file is required to correctly parse the label values and to get correct file/line to address associations.",
 											"default": 0
 										},
-										"bankSize": {
+										"target": {
 											"type": "string",
 											"enum": [
-												"8k",
-												"16k"
+												"zx",
+												"zxn"
 											],
 											"enumDescriptions": [
-												"The bank in the map file addresses (e.g. $14C000) is an 8k page (ZX Next numbering).",
-												"The bank in the map file addresses (e.g. $03C000) is a 16k bank (ZX128K numbering, e.g. z88dk 'BANK_n' sections)."
+												"Compiled with 'zcc +zx'. The bank in the map file addresses (e.g. $03C000) is a 16k bank.",
+												"Compiled with 'zcc +zxn'. The bank in the map file addresses (e.g. $14C000) is an 8k page."
 											],
-											"description": "The unit of the bank number in the upper bits of the map file addresses (above 0xFFFF). It is converted to the banks of the 'memoryModel', e.g. 16k banks to ZX Next 8k pages. If not set, the bank information is ignored."
+											"description": "The z88dk target used for compiling. Defines the numbering of the bank in the upper bits of the map file addresses (above 0xFFFF). The bank is converted to the banks of the 'memoryModel', e.g. 'zx' 16k banks to ZX Next 8k pages. If not set, the bank information is ignored."
 										}
 									}
 								}

@@ -147,9 +147,10 @@ main.asm:
  * addresses carry the bank/page in the bits above 0xFFFF, e.g. $14C000.
  * Addresses of bank/page 0 cannot be distinguished from non-banked
  * addresses, e.g. $C000.
- * The bank numbering is the one of the memory model, e.g. 16k banks for
- * ZX128K (bank 3 at 0x03C000) or 8k pages for ZXNext (page 20 at 0x14C000).
- * For 8k slots the code of an even page may span 16k, i.e. the upper 8k of
+ * The bank numbering depends on the z88dk target ('target' setting):
+ * 16k banks for "zx" (bank 3 at 0x03C000) or 8k pages for "zxn" (page 20
+ * at 0x14C000). It is converted into the banks of the memory model.
+ * For "zxn" the code of an even page may span 16k, i.e. the upper 8k of
  * the 16k block belongs to the next (odd) page, e.g. 0x10E000 is in page 17.
  *
  * Debug information ("-debug"):
@@ -848,30 +849,30 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	 * - Addresses <= 0xFFFF: The bank is taken from the initial slot
 	 *   configuration of the memory model.
 	 * - Otherwise bits 16-23 are the bank. z88dk does not tell which
-	 *   memory model was used, so the unit of the bank is taken from the
-	 *   'bankSize' setting ("8k" pages or "16k" banks). It is converted
+	 *   target was used, so it is taken from the 'target' setting:
+	 *   "zx" uses 16k banks, "zxn" 8k pages. The bank is converted
 	 *   into the banks of the target memory model (ZX Next or ZX128K).
 	 *   An even 8k page may span 16k, i.e. the upper 8k belongs to the
 	 *   next page.
-	 *   If 'bankSize' is not set or the bank cannot be converted, the
+	 *   If 'target' is not set or the bank cannot be converted, the
 	 *   bank info is ignored and a warning is given.
 	 */
 	protected checkMappingToTargetMemoryModel() {
 		super.checkMappingToTargetMemoryModel();	// Sets funcConvertBank for 64k
 		const memModel = this.memoryModel;
-		const bankSize = (this.config as Z88dkConfigV2).bankSize;
+		const target = (this.config as Z88dkConfigV2).target;
 
 		// Conversion of the bank into the bank of the target memory model.
 		// Returns undefined if not possible.
 		let convertBank: ((bank: number, addr64k: number) => number | undefined) | undefined;
 		if (memModel instanceof MemoryModelZxNextBase) {
-			if (bankSize === '8k')
+			if (target === 'zxn')
 				convertBank = (page, addr64k) => page | ((addr64k >>> 13) & 0x01);	// Upper 8k of an even page
-			else if (bankSize === '16k')
+			else if (target === 'zx')
 				convertBank = (bank, addr64k) => 2 * bank + ((addr64k >>> 13) & 0x01);
 		}
 		else if (memModel instanceof MemoryModelZx128k) {
-			if (bankSize === '8k') {
+			if (target === 'zxn') {
 				convertBank = (page, addr64k) => {
 					const half = (addr64k >>> 13) & 0x01;
 					page |= half;	// Upper 8k of an even page
@@ -880,7 +881,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 					return page >>> 1;
 				};
 			}
-			else if (bankSize === '16k')
+			else if (target === 'zx')
 				convertBank = (bank) => bank;
 		}
 
@@ -890,8 +891,8 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 				return this.createLongAddress(addr64k, 0);
 			const bank = value >>> 16;
 			const hexValue = '$' + HexFormat.getHexString(value, 6);
-			if (bankSize === undefined) {
-				this.warnBank('no bankSize', "The map file contains banked addresses (e.g. " + hexValue + ") but 'bankSize' is not set. The bank information is ignored.");
+			if (target === undefined) {
+				this.warnBank('no target', "The map file contains banked addresses (e.g. " + hexValue + ") but 'target' is not set. The bank information is ignored.");
 				return this.createLongAddress(addr64k, 0);
 			}
 			if (!convertBank) {
@@ -901,7 +902,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 			const convBank = convertBank(bank, addr64k);
 			const slot = memModel.slotRanges[memModel.slotAddress64kAssociation[addr64k]];
 			if (convBank === undefined || !slot.banks.has(convBank)) {
-				this.warnBank('bank ' + bank, "Bank " + bank + " (" + bankSize + ") of address " + hexValue + " cannot be converted to a bank of the memory model at that address. The bank information is ignored.");
+				this.warnBank('bank ' + bank, "Bank " + bank + " (target '" + target + "') of address " + hexValue + " cannot be converted to a bank of the memory model at that address. The bank information is ignored.");
 				return this.createLongAddress(addr64k, 0);
 			}
 			return addr64k + ((convBank + 1) << 16);

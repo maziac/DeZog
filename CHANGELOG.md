@@ -26,7 +26,7 @@
 - Sprites and sprite patterns views visually enhanced.
 - PR #197: "z88dkv2" improvements for C code:
   - Uses the C line information of the map file if z88dk was used with "-debug" (requires a z88dk nightly from 2026-04-21 or later).
-  - Banked code: the bank in the upper bits of the map file addresses is used. New "z88dkv2" property "bankSize" ("8k" or "16k") converts it to the banks of the "ZXNEXT" or "ZX128K" memory model.
+  - Banked code: the bank in the upper bits of the map file addresses is used. New "z88dkv2" property "target" ("zx" or "zxn") defines its numbering (16k banks or 8k pages). It is converted to the banks of the "ZXNEXT" or "ZX128K" memory model.
   - sccz80 support.
   - Fixed C lines of sources in sub directories. Files with the same name in different directories get a warning.
 

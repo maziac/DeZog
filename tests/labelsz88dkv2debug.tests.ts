@@ -80,9 +80,9 @@ suite('z88dk map file', () => {
 		let warnings: string[];
 
 		/** Returns a function that converts the address of a map file line. */
-		function converter(mm: MemoryModel, bankSize: '8k' | '16k' | undefined) {
+		function converter(mm: MemoryModel, target: 'zx' | 'zxn' | undefined) {
 			const parser = new Z88dkLabelParserV2(mm, new Map(), new Map(), [], new Map(), new Map(), new Map(), [], [], [], issue => warnings.push(issue.message)) as any;
-			parser.config = {mapFile: 'main.map', bankSize};
+			parser.config = {mapFile: 'main.map', target};
 			parser.checkMappingToTargetMemoryModel();
 			return (line: string) => parser.funcConvertAddress(parseMapLine(line)!.value);
 		}
@@ -91,8 +91,8 @@ suite('z88dk map file', () => {
 			warnings = [];
 		});
 
-		test('8k pages to ZX Next', () => {
-			const convert = converter(new MemoryModelZxNext(), '8k');
+		test('zxn (8k pages) to ZX Next', () => {
+			const convert = converter(new MemoryModelZxNext(), 'zxn');
 			assert.equal(convert('l = $60045F ; addr, local, , menu_controls_c, menu_code, menu.c:1142'), page(96, 0x045F));
 			// Even page spanning 16k: upper 8k is the next page
 			assert.equal(convert('l = $602462 ; addr, local, , menu_controls_c, menu_code, menu.c:1144'), page(97, 0x2462));
@@ -106,9 +106,9 @@ suite('z88dk map file', () => {
 			assert.deepEqual(warnings, []);
 		});
 
-		test('16k banks to ZX Next', () => {
-			const convert = converter(new MemoryModelZxNext(), '16k');
-			// z88dk classic BANK_5: pages 10 and 11
+		test('zx (16k banks) to ZX Next', () => {
+			const convert = converter(new MemoryModelZxNext(), 'zx');
+			// z88dk +zx classic BANK_5: pages 10 and 11
 			assert.equal(convert('l = $05C000 ; addr, public, , p0asm_asm, BANK_5, p0asm.asm:17'), page(10, 0xC000));
 			assert.equal(convert('l = $05E010 ; addr, public, , p0asm_asm, BANK_5, p0asm.asm:18'), page(11, 0xE010));
 			assert.equal(convert('l = $038000 ; addr, local, , m, my_bank, m.c:1'), page(6, 0x8000));
@@ -116,15 +116,15 @@ suite('z88dk map file', () => {
 			assert.deepEqual(warnings, []);
 		});
 
-		test('16k banks to ZX128K', () => {
-			const convert = converter(new MemoryModelZx128k(), '16k');
+		test('zx (16k banks) to ZX128K', () => {
+			const convert = converter(new MemoryModelZx128k(), 'zx');
 			assert.equal(convert('l = $03E000 ; addr, local, , m, my_bank, m.c:1'), page(3, 0xE000));
 			assert.equal(convert('l = $8000 ; addr, local, , m, code_compiler, m.c:1'), page(2, 0x8000));
 			assert.deepEqual(warnings, []);
 		});
 
-		test('8k pages to ZX128K', () => {
-			const convert = converter(new MemoryModelZx128k(), '8k');
+		test('zxn (8k pages) to ZX128K', () => {
+			const convert = converter(new MemoryModelZx128k(), 'zxn');
 			assert.equal(convert('l = $06C000 ; addr, local, , m, my_page, m.c:1'), page(3, 0xC000));
 			// Even page spanning 16k
 			assert.equal(convert('l = $06E000 ; addr, local, , m, my_page, m.c:1'), page(3, 0xE000));
@@ -138,7 +138,7 @@ suite('z88dk map file', () => {
 
 		test('Bank not available at the address', () => {
 			// Bank 9 does not exist in ZX128K
-			const convert = converter(new MemoryModelZx128k(), '16k');
+			const convert = converter(new MemoryModelZx128k(), 'zx');
 			assert.equal(convert('l = $09C000 ; addr, local, , m, my_bank, m.c:1'), page(0, 0xC000));
 			// Warned only once
 			assert.equal(convert('l = $09C010 ; addr, local, , m, my_bank, m.c:1'), page(0, 0xC010));
@@ -146,17 +146,17 @@ suite('z88dk map file', () => {
 			assert.ok(warnings[0].includes('Bank 9'), warnings[0]);
 		});
 
-		test('No bankSize: bank ignored', () => {
+		test('No target: bank ignored', () => {
 			const convert = converter(new MemoryModelZxNext(), undefined);
 			assert.equal(convert('l = $14C000 ; addr, local, , m, PAGE_20_CODE, m.c:1'), page(0, 0xC000));
 			assert.equal(convert('l = $16C000 ; addr, local, , m, PAGE_22_CODE, m.c:1'), page(0, 0xC000));
 			assert.equal(convert('l = $8010 ; addr, local, , main_c, code_compiler, main.c:3'), page(4, 0x8010));
 			assert.equal(warnings.length, 1);
-			assert.ok(warnings[0].includes("'bankSize' is not set"), warnings[0]);
+			assert.ok(warnings[0].includes("'target' is not set"), warnings[0]);
 		});
 
 		test('Memory model without banking: bank ignored', () => {
-			const convert = converter(new MemoryModelAllRam(), '8k');
+			const convert = converter(new MemoryModelAllRam(), 'zxn');
 			assert.equal(convert('l = $60045F ; addr, local, , m, menu_code, m.c:1'), 0x1045F);
 			assert.equal(warnings.length, 1);
 			assert.ok(warnings[0].includes('ZX128K and ZX Next'), warnings[0]);
@@ -190,7 +190,7 @@ suite('Labels (z88dk v2 format with -debug map file)', () => {
 				mapFile: './' + dir + '/' + mapFile,
 				srcDirs: [dir],
 				excludeFiles,
-				bankSize: '8k'
+				target: 'zxn'
 			}]
 		};
 	}
@@ -362,7 +362,7 @@ suite('Labels (z88dk v2 format, sccz80)', () => {
 				mapFile: './' + dir + '/' + subDir + 'main.map',
 				srcDirs: [dir],
 				excludeFiles: [],
-				bankSize: '8k'
+				target: 'zxn'
 			}]
 		};
 	}
