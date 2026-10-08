@@ -39,9 +39,9 @@ export class AmaliaGdbRemote extends GdbRemote {
 	 * @param blocks The 64k start addresses and sizes of the blocks.
 	 * @returns A promise with an array of Uint8Arrays, one for each block.
 	 */
-	protected async sendDzrpCmdReadMem(blocks: MemBlock[]): Promise<Uint8Array[]> {
+	protected async sendDzrpCmdReadMemBlocks(blocks: MemBlock[]): Promise<Uint8Array[]> {
 		if (blocks.length <= 1)
-			return super.sendDzrpCmdReadMem(blocks);
+			return super.sendDzrpCmdReadMemBlocks(blocks);
 
 		const result = new Array<Uint8Array>(blocks.length);
 

@@ -37,7 +37,7 @@ suite('AmaliaRemote', () => {
 	});
 
 
-	suite('sendDzrpCmdReadMem', () => {
+	suite('sendDzrpCmdReadMemBlocks', () => {
 
 		let amalia;
 		// The 'm' commands that were sent.
@@ -77,7 +77,7 @@ suite('AmaliaRemote', () => {
 
 		test('single block is read as is', async () => {
 			const blocks = [{addr64k: 0x8000, size: 4}];
-			const result = await amalia.sendDzrpCmdReadMem(blocks);
+			const result = await amalia.sendDzrpCmdReadMemBlocks(blocks);
 			assert.deepEqual(reads, [{addr64k: 0x8000, size: 4}]);
 			assertContents(blocks, result);
 		});
@@ -88,7 +88,7 @@ suite('AmaliaRemote', () => {
 				{addr64k: 0x8010, size: 3},
 				{addr64k: 0x8020, size: 3}
 			];
-			const result = await amalia.sendDzrpCmdReadMem(blocks);
+			const result = await amalia.sendDzrpCmdReadMemBlocks(blocks);
 			assert.equal(reads.length, 1);
 			assert.deepEqual(reads[0], {addr64k: 0x8000, size: 0x23});
 			assertContents(blocks, result);
@@ -100,7 +100,7 @@ suite('AmaliaRemote', () => {
 				{addr64k: 0x8000, size: 3},
 				{addr64k: 0x8010, size: 3}
 			];
-			const result = await amalia.sendDzrpCmdReadMem(blocks);
+			const result = await amalia.sendDzrpCmdReadMemBlocks(blocks);
 			assert.equal(reads.length, 1);
 			// The result is in the order of the requested blocks
 			assertContents(blocks, result);
@@ -111,7 +111,7 @@ suite('AmaliaRemote', () => {
 				{addr64k: 0x8000, size: 3},
 				{addr64k: 0x9000, size: 3}
 			];
-			const result = await amalia.sendDzrpCmdReadMem(blocks);
+			const result = await amalia.sendDzrpCmdReadMemBlocks(blocks);
 			assert.deepEqual(reads, [{addr64k: 0x8000, size: 3}, {addr64k: 0x9000, size: 3}]);
 			assertContents(blocks, result);
 		});
@@ -121,7 +121,7 @@ suite('AmaliaRemote', () => {
 			const blocks: MemBlock[] = [];
 			for (let addr = 0x8000; addr < 0x8000 + 0x600; addr += 0x80)
 				blocks.push({addr64k: addr, size: 3});
-			const result = await amalia.sendDzrpCmdReadMem(blocks);
+			const result = await amalia.sendDzrpCmdReadMemBlocks(blocks);
 			assert.ok(reads.length > 1, 'expected more than one read');
 			for (const read of reads)
 				assert.ok(read.size <= 0x400, 'read too big: ' + read.size);
@@ -134,7 +134,7 @@ suite('AmaliaRemote', () => {
 				{addr64k: 0x8000, size: 3},
 				{addr64k: 0x8001, size: 3}
 			];
-			const result = await amalia.sendDzrpCmdReadMem(blocks);
+			const result = await amalia.sendDzrpCmdReadMemBlocks(blocks);
 			assert.equal(reads.length, 1);
 			assert.deepEqual(reads[0], {addr64k: 0x8000, size: 4});
 			assertContents(blocks, result);
@@ -145,7 +145,7 @@ suite('AmaliaRemote', () => {
 				{addr64k: 0xFFFE, size: 4},	// Wraps around
 				{addr64k: 0x8000, size: 3}
 			];
-			const result = await amalia.sendDzrpCmdReadMem(blocks);
+			const result = await amalia.sendDzrpCmdReadMemBlocks(blocks);
 			assert.deepEqual(reads, [{addr64k: 0xFFFE, size: 4}, {addr64k: 0x8000, size: 3}]);
 			assertContents(blocks, result);
 		});
