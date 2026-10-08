@@ -15,6 +15,7 @@
 		"zx81",
 		"zx next",
 		"mame",
+		"amalia",
 		"cspect"
 	],
 	"engines": {
@@ -523,7 +524,8 @@
 									"zxnext",
 									"mame",
 									"dzrp",
-									"gdb"
+									"gdb",
+									"amalia"
 								],
 								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'cspect', 'mame', 'zrcp' (ZEsarUX), 'zxnext' or 'zsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
 								"default": "zsim"
@@ -1176,6 +1178,26 @@
 									}
 								}
 							},
+							"amalia": {
+								"description": "The configuration for debugging with the amalia gdbstub.",
+								"type": "object",
+								"additionalProperties": false,
+								"properties": {
+									"hostname": {
+										"type": "string",
+										"description": "The hostname/IP address of the Amalia socket.",
+										"default": "localhost"
+									},
+									"port": {
+										"type": "number",
+										"description": "The port of the Amalia socket."
+									},
+									"socketTimeout": {
+										"type": "number",
+										"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
+									}
+								}
+							},
 							"unitTests": {
 								"description": "Whether the configuration contains the unit tests or not. Default: false.",
 								"type": "boolean"
@@ -1743,6 +1765,29 @@
 							"name": "MAME",
 							"remoteType": "mame",
 							"mame": {
+								"port": 12000
+							},
+							"startAutomatically": false,
+							"revEng": [
+								{
+									"path": "${1:The list file (initially an empty file with extension *.list)}"
+								}
+							],
+							"history": {
+								"codeCoverageEnabled": false
+							},
+							"rootFolder": "^\"\\${workspaceFolder\\}\""
+						}
+					},
+					{
+						"label": "DeZog: Amalia",
+						"description": "Configuration for DeZog to use the Amalia emulator.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "Amalia",
+							"remoteType": "amalia",
+							"amalia": {
 								"port": 12000
 							},
 							"startAutomatically": false,

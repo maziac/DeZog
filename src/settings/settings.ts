@@ -428,7 +428,7 @@ export interface SmartDisassemblerArgs {
  */
 export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments {
 	/// The remote type: zesarux or zxnext.
-	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame' | 'dzrp' | 'gdb';
+	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame' | 'dzrp' | 'gdb' | 'amalia';
 
 	// The special settings for zrcp (ZEsarux).
 	zrcp: ZrcpType;
@@ -1295,7 +1295,7 @@ export class Settings {
 
 		// Check remote type
 		const rType = Settings.launch.remoteType;
-		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame', 'dzrp', 'gdb'];
+			const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame', 'dzrp', 'gdb', 'amalia'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("'remoteType': Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
@@ -1350,6 +1350,19 @@ export class Settings {
 		if (Settings.launch.z88dk) {
 			// Check for z88dk map file
 			const listFiles = Settings.launch.z88dk;
+			for (const listFile of listFiles) {
+				const mapFile = listFile.mapFile;
+				if (mapFile === undefined)
+					throw Error("'z88dk.mapFile': For z88dk you have to define a map file.");
+				// Check that file exists
+				if (!fs.existsSync(mapFile))
+					throw Error("'z88dk.mapFile': '" + mapFile + "' does not exist.");
+			}
+		}
+
+		if (Settings.launch.z88dkv2) {
+			// Check for z88dk map file
+			const listFiles = Settings.launch.z88dkv2;
 			for (const listFile of listFiles) {
 				const mapFile = listFile.mapFile;
 				if (mapFile === undefined)
