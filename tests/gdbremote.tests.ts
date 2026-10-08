@@ -123,6 +123,10 @@ suite('GdbRemote', () => {
 				gdb.parseXml('<target version="1.0"></target>');
 			}, Error("No architecture found in reply of the remote."));
 		});
+		test('signal-02 stop replies are accepted', () => {
+			const result = gdb.parseStopReplyPacket('T020b:3412;thread:01;');
+			assert.equal(result.pc64k, 0x1234);
+		});
 
 		test('breakpoints use Z0/z0', async () => {
 			const bp: any = {longAddress: 0x18000};	// Bank 1, address 0x8000
@@ -146,6 +150,10 @@ suite('GdbRemote', () => {
 		});
 
 		test('memory blocks are read with m packets', async () => {
+			gdb.sendPacketData = async (packetData: string) => {
+				sent.push(packetData);
+				return packetData === 'm8000,1' ? '00' : '0000';
+			};
 			await gdb.sendDzrpCmdReadMemBlocks([
 				{addr64k: 0x8000, size: 1},
 				{addr64k: 0x9000, size: 2}

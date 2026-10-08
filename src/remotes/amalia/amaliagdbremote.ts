@@ -33,6 +33,31 @@ export class AmaliaGdbRemote extends GdbRemote {
 	}
 
 
+	protected override async afterXmlParsed(): Promise<void> {
+		await this.sendPacketData('?');
+	}
+
+
+	/** Resolves Amalia's initial '?' query, whose T reply is otherwise treated as a stop notification.
+	 * Other packets are handled by the shared GDB implementation.
+	 */
+	protected override receivedMsg(packetData?: string): void {
+		if (packetData?.startsWith('T')) {
+			const msg = this.messageQueue[0];
+			if (msg?.customData.packetData === '?') {
+				this.stopCmdRespTimeout();
+				this.messageQueue.shift();
+				void (async () => {
+					await this.sendNextMessage();
+					msg.resolve(packetData);
+				})();
+				return;
+			}
+		}
+		super.receivedMsg(packetData);
+	}
+
+
 	/** Reads several memory blocks with as few 'm' packets as possible.
 	 * Neighbouring blocks (e.g. the call stack entries) are merged into one
 	 * read, which matters because each packet costs a network round trip.

@@ -10,10 +10,10 @@ import {Settings} from '../src/settings/settings';
 suite('AmaliaRemote', () => {
 
 	suite('Z80RegisterAmaliaDecoder', () => {
-		// The 'g' packet reply: words as little endian hex, the 4 slots appended.
-		// af   bc   de   hl   af2  bc2  de2  hl2  ix   iy   sp   pc   s0   s1   s2   s3
+		// The 'g' packet reply includes the unavailable IR field before the slots.
+		// af   bc   de   hl   af2  bc2  de2  hl2  ix   iy   sp   pc   ir   s0   s1   s2   s3
 		const regs = 'CDAB' + '9825' + '5611' + '4222' + '1122' + '2233' + '3344' + '2077'
-			+ 'FFFA' + 'E7CC' + 'FEFF' + '09A7' + '0400' + '0500' + '0600' + '0700';
+			+ 'FFFA' + 'E7CC' + 'FEFF' + '09A7' + 'xxxx' + '0400' + '0500' + '0600' + '0700';
 		const Decoder = new Z80RegisterAmaliaDecoder();
 
 		test('registers', () => {
@@ -32,7 +32,49 @@ suite('AmaliaRemote', () => {
 		});
 
 		test('slots', () => {
+			assert.equal(regs.length, 68);
 			assert.deepEqual(Decoder.parseSlots(regs), [4, 5, 6, 7]);
+		});
+	});
+
+
+	suite('initial stop query', () => {
+		let amalia;
+		let sent: string[];
+
+		setup(() => {
+			const cfg: any = {remoteType: 'amalia'};
+			const launch = Settings.Init(cfg);
+			Settings.launch = launch;
+			amalia = new AmaliaGdbRemote(launch.mame) as any;
+			sent = [];
+			amalia.sendPacketData = async (packetData: string) => {
+				sent.push(packetData);
+				return packetData.startsWith('qXfer') ? '<architecture>z80</architecture>' : 'T050b:0000;thread:01;';
+			};
+			amalia.createMemoryModel = () => ({init: () => {}});
+			amalia.load = async () => {};
+		});
+
+		test('queries the initial stop reply after reading target XML', async () => {
+			await amalia.onConnect();
+			assert.deepEqual(sent, ['qXfer:features:read:target.xml:00,FFFF', '?']);
+		});
+
+		test('a stop reply completes the initial stop query', async () => {
+			let reply: string | undefined;
+			const response = new Promise<string>(resolve => {
+				amalia.messageQueue.push({
+					customData: {packetData: '?'},
+					resolve,
+					reject: () => {}
+				});
+			});
+			amalia.sendNextMessage = async () => {};
+			amalia.receivedMsg('T050b:0000;thread:01;');
+			reply = await response;
+			assert.equal(reply, 'T050b:0000;thread:01;');
+			assert.equal(amalia.messageQueue.length, 0);
 		});
 	});
 

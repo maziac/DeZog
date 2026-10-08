@@ -320,7 +320,6 @@ export class GdbRemote extends DzrpQueuedRemote {
 		if (packetData?.startsWith('T')) {
 			// Yes, a Stop Reply Packet which is treated as a notification.
 			// E.g. 'T050a:0000;0b:0100;'
-
 			// Call resolve of 'continue'
 			if (this.funcContinueResolve) {
 				const continueHandler = this.funcContinueResolve;
@@ -383,7 +382,7 @@ export class GdbRemote extends DzrpQueuedRemote {
 
 		// Get break reason
 		let k = packetData.indexOf(':');
-		const param = packetData.substring(3, k);	// Skip break signal (is always '5')
+		const param = packetData.substring(3, k);	// Skip the two-character break signal.
 		let addr64k;
 		let breakReason;
 		if (param.endsWith('watch')) {
@@ -447,6 +446,8 @@ export class GdbRemote extends DzrpQueuedRemote {
 				const entry = this.putIntoQueue(buffer, this.cmdRespTimeoutTime, resolve, reject);
 				entry.customData = {
 					packet,	// Note: packet is used only for debugging.
+					// Keep the command available for response matching.
+					packetData,
 					noReply: (packetData == 'c')
 				};
 
@@ -608,7 +609,6 @@ export class GdbRemote extends DzrpQueuedRemote {
 		// All other registers are not supported
 		this.emit('warning', this.logName + ": Changing register " + Z80_REG[regIndex] + " is not supported.");
 	}
-
 
 	/** Executes the continue ('run') operation.
 	 * Sets temporary GDB breakpoints, sends the continue packet, and intercepts
