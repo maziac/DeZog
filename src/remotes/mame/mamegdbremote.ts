@@ -515,6 +515,9 @@ export class MameGdbRemote extends GdbRemote {
 		if (!this.socket)
 			return;
 		this.socket.removeAllListeners();
+		// Cancel any in-flight timeouts and clear the queue. We want the 'k' command to be sent
+		// immediately. Otherwise there is a delay of 5 seconds before the 'k' command is actually
+		// sent, causing the debug UI bar to remain visible until the command is sent.
 		this.cmdRespTimeoutTime = 0;
 		this.stopCmdRespTimeout();
 		this.messageQueue.length = 0;
