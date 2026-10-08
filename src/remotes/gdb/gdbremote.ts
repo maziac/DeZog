@@ -39,6 +39,10 @@ export class GdbRemote extends DzrpQueuedRemote {
 	// Stores the received data.
 	protected receivedData!: string;
 
+	// Merge nearby memory blocks into reads no larger than this.
+	protected readonly MAX_READ_GAP = 0x100;
+	protected readonly MAX_READ_BLOCK = 0x400;
+
 
 	/// Constructor.
 	constructor(settingsTransport: DzrpTransportType) {
@@ -764,9 +768,45 @@ export class GdbRemote extends DzrpQueuedRemote {
 	 * @returns A promise with an array of Uint8Arrays, one for each block.
 	 */
 	protected async sendDzrpCmdReadMemBlocks(blocks: MemBlock[]): Promise<Uint8Array[]> {
-		const result: Uint8Array[] = [];
-		for (const {addr64k, size} of blocks)
-			result.push(await this.readMemWithM(addr64k, size));
+		if (blocks.length <= 1)
+			return super.sendDzrpCmdReadMemBlocks(blocks);
+
+		const result = new Array<Uint8Array>(blocks.length);
+		const mergeable: number[] = [];
+		for (let i = 0; i < blocks.length; i++) {
+			const {addr64k, size} = blocks[i];
+			if (addr64k + size > 0x10000)
+				result[i] = await this.readMemWithM(addr64k, size);
+			else
+				mergeable.push(i);
+		}
+		mergeable.sort((a, b) => blocks[a].addr64k - blocks[b].addr64k);
+
+		let i = 0;
+		while (i < mergeable.length) {
+			const start = blocks[mergeable[i]].addr64k;
+			let end = start + blocks[mergeable[i]].size;
+			let j = i;
+			while (j + 1 < mergeable.length) {
+				const next = blocks[mergeable[j + 1]];
+				const nextEnd = next.addr64k + next.size;
+				if (next.addr64k - end > this.MAX_READ_GAP)
+					break;
+				if (nextEnd - start > this.MAX_READ_BLOCK)
+					break;
+				j++;
+				if (nextEnd > end)
+					end = nextEnd;
+			}
+
+			const data = await this.readMemWithM(start, end - start);
+			for (let k = i; k <= j; k++) {
+				const index = mergeable[k];
+				const offset = blocks[index].addr64k - start;
+				result[index] = data.subarray(offset, offset + blocks[index].size);
+			}
+			i = j + 1;
+		}
 		return result;
 	}
 
