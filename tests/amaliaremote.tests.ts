@@ -150,4 +150,56 @@ suite('AmaliaRemote', () => {
 			assertContents(blocks, result);
 		});
 	});
+
+
+	suite('breakpoints', () => {
+
+		let amalia;
+		// The packets that were sent.
+		let sent: string[];
+
+		setup(() => {
+			const cfg: any = {
+				remoteType: 'amalia'
+			};
+			const launch = Settings.Init(cfg);
+			Settings.launch = launch;
+			amalia = new AmaliaGdbRemote(launch.mame) as any;
+			sent = [];
+			amalia.sendPacketData = async (packetData: string) => {
+				sent.push(packetData);
+				return 'OK';
+			};
+		});
+
+		test('a 64k address is sent as is', async () => {
+			// No bank bits, i.e. the breakpoint is valid in any bank
+			const bp: any = {longAddress: 0x8000};
+			await amalia.sendDzrpCmdAddBreakpoint(bp);
+			await amalia.sendDzrpCmdRemoveBreakpoint(bp);
+			assert.deepEqual(sent, ['Z0,8000,0', 'z0,8000,0']);
+		});
+
+		test('a long address keeps its bank', async () => {
+			// Bank 4 is stored as bank+1 in bits 16+
+			const bp: any = {longAddress: 0x58000};
+			await amalia.sendDzrpCmdAddBreakpoint(bp);
+			await amalia.sendDzrpCmdRemoveBreakpoint(bp);
+			assert.deepEqual(sent, ['Z0,58000,0', 'z0,58000,0']);
+		});
+
+		test('the highest PCW bank', async () => {
+			// Bank 127 -> bank+1 = 128 (0x80)
+			const bp: any = {longAddress: 0x80C000};
+			await amalia.sendDzrpCmdAddBreakpoint(bp);
+			assert.deepEqual(sent, ['Z0,80c000,0']);
+		});
+
+		test('an id is set so that the breakpoint can be removed', async () => {
+			const bp: any = {longAddress: 0x58000};
+			await amalia.sendDzrpCmdAddBreakpoint(bp);
+			assert.notEqual(bp.bpId, 0);
+			assert.notEqual(bp.bpId, undefined);
+		});
+	});
 });
