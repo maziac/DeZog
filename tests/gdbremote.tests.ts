@@ -146,11 +146,83 @@ suite('GdbRemote', () => {
 		});
 
 		test('memory blocks are read with m packets', async () => {
+			gdb.sendPacketData = async (packetData: string) => {
+				sent.push(packetData);
+				return packetData === 'm8000,1' ? '00' : '0000';
+			};
 			await gdb.sendDzrpCmdReadMemBlocks([
 				{addr64k: 0x8000, size: 1},
 				{addr64k: 0x9000, size: 2}
 			]);
 			assert.deepEqual(sent, ['m8000,1', 'm9000,2']);
+		});
+
+		test('empty memory blocks return no data and send no packets', async () => {
+			assert.deepEqual(await gdb.sendDzrpCmdReadMemBlocks([]), []);
+			assert.deepEqual(sent, []);
+		});
+
+		test('a single memory block is read with an m packet', async () => {
+			gdb.sendPacketData = async (packetData: string) => {
+				sent.push(packetData);
+				return '010203';
+			};
+			const result = await gdb.sendDzrpCmdReadMemBlocks([{addr64k: 0x8000, size: 3}]);
+			assert.deepEqual(result.map(data => Array.from(data)), [[1, 2, 3]]);
+			assert.deepEqual(sent, ['m8000,3']);
+		});
+
+		test('nearby blocks are merged and reconstructed in request order', async () => {
+			const reads: Array<{addr64k: number, size: number}> = [];
+			gdb.readMemWithM = async (addr64k: number, size: number) => {
+				reads.push({addr64k, size});
+				return Uint8Array.from({length: size}, (_, index) => (addr64k + index) & 0xFF);
+			};
+			const blocks = [
+				{addr64k: 0x8020, size: 3},
+				{addr64k: 0x8000, size: 3},
+				{addr64k: 0x9000, size: 3}
+			];
+			const result = await gdb.sendDzrpCmdReadMemBlocks(blocks);
+
+			assert.deepEqual(reads, [
+				{addr64k: 0x8000, size: 0x23},
+				{addr64k: 0x9000, size: 3}
+			]);
+			assert.deepEqual(result.map(data => Array.from(data)), blocks.map(({addr64k, size}) =>
+				Array.from({length: size}, (_, index) => (addr64k + index) & 0xFF)));
+		});
+
+		test('nearby blocks merge beyond 0x400 bytes', async () => {
+			const reads: Array<{addr64k: number, size: number}> = [];
+			gdb.readMemWithM = async (addr64k: number, size: number) => {
+				reads.push({addr64k, size});
+				return new Uint8Array(size);
+			};
+			const blocks: Array<{addr64k: number, size: number}> = [];
+			for (let addr64k = 0x8000; addr64k < 0x8600; addr64k += 0x80)
+				blocks.push({addr64k, size: 3});
+
+			await gdb.sendDzrpCmdReadMemBlocks(blocks);
+
+			assert.deepEqual(reads, [{addr64k: 0x8000, size: 0x583}]);
+		});
+
+		test('gaps of 0x100 bytes merge but larger gaps do not', async () => {
+			const reads: Array<{addr64k: number, size: number}> = [];
+			gdb.readMemWithM = async (addr64k: number, size: number) => {
+				reads.push({addr64k, size});
+				return new Uint8Array(size);
+			};
+			await gdb.sendDzrpCmdReadMemBlocks([
+				{addr64k: 0x8000, size: 3},
+				{addr64k: 0x8103, size: 3},
+				{addr64k: 0x8207, size: 3}
+			]);
+			assert.deepEqual(reads, [
+				{addr64k: 0x8000, size: 0x106},
+				{addr64k: 0x8207, size: 3}
+			]);
 		});
 
 		test('short memory replies are continued from the next address', async () => {
