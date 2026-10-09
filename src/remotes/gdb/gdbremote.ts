@@ -39,9 +39,11 @@ export class GdbRemote extends DzrpQueuedRemote {
 	// Stores the received data.
 	protected receivedData!: string;
 
-	// Merge nearby memory blocks into reads no larger than this.
+	/** Maximum unrequested gap, in bytes, between ranges merged into one 'm' read.
+	 * 0x100 is a heuristic: read up to 256 extra bytes per gap to save a round trip.
+	 * It is not a GDB packet-size limit or a measured optimum.
+	 */
 	protected readonly MAX_READ_GAP = 0x100;
-	protected readonly MAX_READ_BLOCK = 0x400;
 
 
 	/// Constructor.
@@ -763,14 +765,11 @@ export class GdbRemote extends DzrpQueuedRemote {
 
 
 	/** Sends the command to retrieve one or several memory blocks.
-	 * Each block is read with its own 'm'.
+	 * Nearby blocks share an 'm' read; address-wrapping blocks are read separately.
 	 * @param blocks The 64k start addresses and sizes of the blocks.
 	 * @returns A promise with an array of Uint8Arrays, one for each block.
 	 */
 	protected async sendDzrpCmdReadMemBlocks(blocks: MemBlock[]): Promise<Uint8Array[]> {
-		if (blocks.length <= 1)
-			return super.sendDzrpCmdReadMemBlocks(blocks);
-
 		const result = new Array<Uint8Array>(blocks.length);
 		const mergeable: number[] = [];
 		for (let i = 0; i < blocks.length; i++) {
@@ -791,8 +790,6 @@ export class GdbRemote extends DzrpQueuedRemote {
 				const next = blocks[mergeable[j + 1]];
 				const nextEnd = next.addr64k + next.size;
 				if (next.addr64k - end > this.MAX_READ_GAP)
-					break;
-				if (nextEnd - start > this.MAX_READ_BLOCK)
 					break;
 				j++;
 				if (nextEnd > end)

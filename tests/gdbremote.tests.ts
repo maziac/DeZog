@@ -157,6 +157,21 @@ suite('GdbRemote', () => {
 			assert.deepEqual(sent, ['m8000,1', 'm9000,2']);
 		});
 
+		test('empty memory blocks return no data and send no packets', async () => {
+			assert.deepEqual(await gdb.sendDzrpCmdReadMemBlocks([]), []);
+			assert.deepEqual(sent, []);
+		});
+
+		test('a single memory block is read with an m packet', async () => {
+			gdb.sendPacketData = async (packetData: string) => {
+				sent.push(packetData);
+				return '010203';
+			};
+			const result = await gdb.sendDzrpCmdReadMemBlocks([{addr64k: 0x8000, size: 3}]);
+			assert.deepEqual(result.map(data => Array.from(data)), [[1, 2, 3]]);
+			assert.deepEqual(sent, ['m8000,3']);
+		});
+
 		test('nearby blocks are merged and reconstructed in request order', async () => {
 			const reads: Array<{addr64k: number, size: number}> = [];
 			gdb.readMemWithM = async (addr64k: number, size: number) => {
@@ -178,7 +193,7 @@ suite('GdbRemote', () => {
 				Array.from({length: size}, (_, index) => (addr64k + index) & 0xFF)));
 		});
 
-		test('merged reads are limited to the maximum block size', async () => {
+		test('nearby blocks merge beyond 0x400 bytes', async () => {
 			const reads: Array<{addr64k: number, size: number}> = [];
 			gdb.readMemWithM = async (addr64k: number, size: number) => {
 				reads.push({addr64k, size});
@@ -190,8 +205,24 @@ suite('GdbRemote', () => {
 
 			await gdb.sendDzrpCmdReadMemBlocks(blocks);
 
-			assert.ok(reads.length > 1);
-			assert.ok(reads.every(read => read.size <= 0x400));
+			assert.deepEqual(reads, [{addr64k: 0x8000, size: 0x583}]);
+		});
+
+		test('gaps of 0x100 bytes merge but larger gaps do not', async () => {
+			const reads: Array<{addr64k: number, size: number}> = [];
+			gdb.readMemWithM = async (addr64k: number, size: number) => {
+				reads.push({addr64k, size});
+				return new Uint8Array(size);
+			};
+			await gdb.sendDzrpCmdReadMemBlocks([
+				{addr64k: 0x8000, size: 3},
+				{addr64k: 0x8103, size: 3},
+				{addr64k: 0x8207, size: 3}
+			]);
+			assert.deepEqual(reads, [
+				{addr64k: 0x8000, size: 0x106},
+				{addr64k: 0x8207, size: 3}
+			]);
 		});
 
 		test('short memory replies are continued from the next address', async () => {
