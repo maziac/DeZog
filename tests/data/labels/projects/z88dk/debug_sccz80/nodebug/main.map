@@ -1,0 +1,4 @@
+_factorial                      = $140000 ; addr, public, , factorial_c, PAGE_20_CODE, factorial.c::factorial::0::0:6
+_fibonacci                      = $160000 ; addr, public, , fibonacci_c, PAGE_22_CODE, fibonacci.c::fibonacci::0::0:6
+i_2                             = $140011 ; addr, local, , factorial_c, PAGE_20_CODE, factorial.c::factorial::1::2:11
+i_2                             = $160012 ; addr, local, , fibonacci_c, PAGE_22_CODE, fibonacci.c::fibonacci::1::2:11

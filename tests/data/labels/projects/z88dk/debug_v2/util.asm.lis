@@ -1,0 +1,18 @@
+/tmp/tmpCCCCCCCC.asm:
+     1                          MODULE util
+     2                          LINE 0, "util.asm"
+util.asm:
+     1                          	SECTION code_user
+     2                          	PUBLIC _util_add
+     3
+     4                          _util_add:
+     5  0000  210100            	ld hl,1
+     6  0003  c9                	ret
+     7
+     8                          util_local:
+     9  0004  00                	nop	; LOGPOINT [UTIL] util_local reached
+    10  0005  c9                	ret
+    11
+    12                          	SECTION BANK_5
+    13                          bank5_data:
+    14  0000  010203            	defb 1, 2, 3	; WPMEM
