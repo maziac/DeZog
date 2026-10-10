@@ -1285,7 +1285,8 @@ hl: 0x${HexFormat.getHexString(resp.hl, 4)}`;
 
 
 	/** Tests if the opcode is a RET instruction.
-	 * @param opcodes E.g. 0xe52a785c
+	 * Tests only 2 bytes, order is little endian.
+	 * @param opcodes E.g. 0x785c
 	 * @returns false=if not RET (or RETI or RETN or RET cc).
 	 */
 	public isRet(opcodes: number): boolean {

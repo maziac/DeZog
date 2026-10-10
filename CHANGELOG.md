@@ -7,6 +7,7 @@
   - New command CMD_SET_NEXTREGS to write a list of ZX Next registers. Used for the NEX loading screen.
   - New command CMD_READ_MEM_BLOCKS reads several memory blocks at once, CMD_READ_MEM has been removed. Used for the call stack. mame implements it with a single qRcmd (consecutive bytes are read as words with 'w@').
 - Faster stepping: the call stack is read only once per step (not after every instruction of a step-over) and with one memory request for all stack entries.
+- mame: step-out performance improved.
 - SNA file format. Now also file extension *.snx is supported.
 - NEX file: the loading screen (Layer2, ULA, LoRes, Timex HiRes/HiCol) is now loaded before the memory banks, incl. palette and display settings like the NEX loader does. zsim only shows the ULA screen.
 - NEX file: fixed the bank offset for files with a 320x256/640x256 Layer2 loading screen (the palette was not taken into account).

@@ -5,8 +5,11 @@ import {Log, LogTransport} from '../../log';
 import {MameType} from '../../settings/settings';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {GdbRemote} from '../gdb/gdbremote';
+import {BreakInfo} from '../dzrp/dzrpremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';
-import {MemBlock} from '../remotebase';
+import {Utility} from '../../misc/utility';
+import {BREAK_REASON_NUMBER, MemBlock} from '../remotebase';
+import {PromiseCallbacks} from '../../misc/promisecallbacks';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {MemoryModelZxNext} from '../MemoryModel/zxnextmemorymodels';
 import {SnaFile} from '../dzrp/snafile';
@@ -122,6 +125,9 @@ export class MameGdbRemote extends GdbRemote {
 	/** Starts/prepares MAME before the debugged program is loaded.
 	 */
 	protected async afterXmlParsed(): Promise<void> {
+		// Remove all registerpoints, e.g. left over from a previous (aborted) session (step-out)
+		await this.sendQrcmd('rpclear');
+
 		// Delay before starting?
 		const startDelay = this.settingsMameType.startDelay;
 		if (startDelay > 0) {
@@ -320,6 +326,139 @@ export class MameGdbRemote extends GdbRemote {
 		// response is e.g. 'Breakpoint 1A set', starts at 1
 		const mameBpId = response.split(' ')[1];	// Extract the ID from the response
 		bp.bpId = parseInt(mameBpId, 16);	//
+	}
+
+
+	/** Extracts the IDs of all set registerpoints from a MAME response.
+	 * @param response E.g. 'Registerpoint 1 set\nRegisterpoint 2 set\n'
+	 * @returns The registerpoint IDs in the order of the response, e.g. [1, 2].
+	 */
+	protected parseRpsetResponse(response: string): number[] {
+		const matches = response.matchAll(/Registerpoint\s+([0-9a-fA-F]+)\s+set/g);
+		return Array.from(matches, match => parseInt(match[1], 16));
+	}
+
+
+	/** Returns the command to clear several MAME registerpoints ('rpclear').
+	 * @param rpIds The IDs of the registerpoints.
+	 * @returns E.g. 'rpclear 0x1;rpclear 0x2'
+	 */
+	protected getRpclearCmd(rpIds: number[]): string {
+		return rpIds.map(rpId => `rpclear $${rpId.toString(16)}`).join(';');
+	}
+
+
+	/** 'step out' of the current subroutine.
+	 * Optimized for MAME: MAME runs freely until a registerpoint reports
+	 * that the SP has become larger than at the start (or larger than
+	 * at the last check). Then it is checked if the last instruction was a
+	 * RET. A second registerpoint stores the PC of the executed instruction
+	 * in the MAME variable temp0.
+	 * @returns A Promise with a string with the break reason.
+	 */
+	public async stepOut(): Promise<string | undefined> {
+		return new Promise<string | undefined>(resolve => {
+			(async () => {
+				// Remember the promise resolve for dispose
+				Utility.assert(!this.continueResolve);
+				this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
+
+				// The SP must exceed this value
+				let threshold = Z80Registers.getRegValue(Z80_REG.SP);
+				const startSp = threshold;
+				let rpIds: number[] = [];
+
+				// Sets the registerpoints and continues
+				const armAndContinue = async () => {
+					// Note: the order is important. MAME checks the registerpoints
+					// from the newest to the oldest and stops checking at the first hit.
+					// So the PC store is set first and the SP check last: the SP check
+					// is evaluated first and, if hit, the PC store is not executed anymore.
+					// I.e. temp0 holds the PC of the last executed instruction.
+					// temp0 is initialized with the current PC. Otherwise, if already the first
+					// instruction hits the SP check, temp0 would contain a stale value.
+					// All is sent with one qRcmd.
+					const cmds = [
+						'rpset {pc>=0},{temp0=pc;g}',
+						'rpset {sp>$' + threshold.toString(16) + '}',
+						'temp0=pc'
+					];
+					const response = await this.sendQrcmd(cmds.join(';'));
+					rpIds = this.parseRpsetResponse(response);
+					if (rpIds.length !== 2)
+						throw Error("MAME: Could not set registerpoints: '" + response + "'");
+					this.funcContinueResolve = funcContinueResolve;
+					await this.dzrpContinue();
+				};
+
+				const funcContinueResolve = async (breakInfo: BreakInfo) => {
+					try {
+						// Remove registerpoints
+						if (rpIds.length > 0) {
+							await this.sendQrcmd(this.getRpclearCmd(rpIds));
+							rpIds = [];
+						}
+
+						// Give vscode a little time
+						await this.timeWait.waitAtInterval();
+
+						// Get registers
+						await this.getRegistersFromEmulator();
+
+						// Check for break condition
+						let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakInfo.reasonNumber, breakInfo.longAddr);
+						// Ignore stops without a reason (e.g. stop of the registerpoint)
+						if (correctedBreakNumber === BREAK_REASON_NUMBER.NO_REASON)
+							condition = undefined;
+
+						if (condition === undefined) {
+							const currSp = Z80Registers.getRegValue(Z80_REG.SP);
+							if (currSp > threshold) {
+								// SP has been increased. Check if the last instruction was a RET.
+								// Read the opcodes at the PC of the last executed instruction (little endian word)
+								const response = await this.sendQrcmd('print w@temp0');
+								const opcodes = parseInt(response.trim(), 16);
+								if (this.isRet(opcodes)) {
+									// Stop here
+									condition = '';
+									correctedBreakNumber = BREAK_REASON_NUMBER.NO_REASON;
+								}
+								else {
+									// Not a RET, e.g. a POP. Do not trigger again for the same SP.
+									threshold = Math.max(startSp, currSp);
+								}
+							}
+						}
+
+						// Check for continue
+						if (condition === undefined) {
+							await armAndContinue();
+						}
+						else {
+							// Construct break reason string to report
+							const breakReasonString = await this.constructBreakReasonString(correctedBreakNumber, breakInfo.longAddr, condition, breakInfo.reasonString);
+							// Clear registers
+							await this.getRegistersFromEmulator();
+							this.continueResolve!.resolve(breakReasonString);
+						}
+					}
+					catch (e) {
+						// Clear registers
+						await this.getRegistersFromEmulator();
+						const reason: string = e;
+						this.continueResolve!.resolve(reason);
+					}
+				};
+
+				try {
+					await armAndContinue();
+				}
+				catch (e) {
+					const reason: string = e;
+					this.continueResolve!.resolve(reason);
+				}
+			})();
+		});
 	}
 
 
