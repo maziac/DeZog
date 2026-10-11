@@ -81,7 +81,7 @@ suite('GdbRemote', () => {
 		test('gdb defaults', () => {
 			const launch = initSettings('gdb');
 			assert.equal(launch.gdb.hostname, 'localhost');
-			assert.equal(launch.gdb.port, 12000);
+			assert.equal(launch.gdb.port, 12100);
 			assert.equal(launch.gdb.timeout, 5);
 		});
 	});
