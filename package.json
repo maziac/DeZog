@@ -1168,7 +1168,7 @@
 									},
 									"port": {
 										"type": "number",
-										"description": "The port of the gdbstub socket. Defaults to 12000."
+										"description": "The port of the gdbstub socket. Defaults to 12100."
 									},
 									"timeout": {
 										"type": "number",

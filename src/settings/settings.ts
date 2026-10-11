@@ -427,7 +427,7 @@ export interface SmartDisassemblerArgs {
  * The configuration parameters for the zesarux debugger.
  */
 export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments {
-	/// The remote type: zesarux or zxnext.
+	/// The remote type: zesarux, zxnext etc.
 	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame' | 'dzrp' | 'gdb';
 
 	// The special settings for zrcp (ZEsarux).
@@ -659,7 +659,7 @@ export class Settings {
 		if (launchCfg.gdb.hostname === undefined)
 			launchCfg.gdb.hostname = 'localhost';
 		if (launchCfg.gdb.port === undefined)
-			launchCfg.gdb.port = 12000;
+			launchCfg.gdb.port = 12100;
 		if (!launchCfg.gdb.timeout)
 			launchCfg.gdb.timeout = 5;	// 5 secs
 
