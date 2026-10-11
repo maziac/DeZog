@@ -61,6 +61,12 @@ export class ZSimulationView extends BaseView {
 	// Used to determine when the web view has been loaded.
 	protected resolveLoaded: () => void;
 
+	// The pending screenshot request (only one at a time).
+	protected screenshotRequest: {id: number, resolve: (png: Buffer) => void, reject: (e: Error) => void, timer: NodeJS.Timeout} | undefined;
+
+	// Incremented for each screenshot request.
+	protected screenshotRequestId = 0;
+
 	// To create human readable numbers.
 	protected numberFormatter = new Intl.NumberFormat('en', {notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 2});
 
@@ -138,6 +144,11 @@ export class ZSimulationView extends BaseView {
 			this.updateScreen();
 		});
 
+		// Provide the screen as PNG (debug command 'save-screen')
+		if (this.simulator.zsim.ulaScreen !== 'none') {
+			this.simulator.registerScreenshotProvider(async () => this.requestScreenshot());
+		}
+
 		// Handle custom code messages
 		this.simulator.customCode?.on('sendToCustomUi', (message: any) => {
 			LogZsim.log('UI: UIAPI.receivedFromCustomLogic: ' + JSON.stringify(message));
@@ -214,6 +225,8 @@ export class ZSimulationView extends BaseView {
 	public dispose() {
 		clearInterval(this.displayTimer);
 		this.displayTimer = undefined as any;
+		this.simulator.registerScreenshotProvider(undefined);
+		this.finishScreenshotRequest(new Error("Simulation view closed."));
 		super.dispose();
 	}
 
@@ -291,6 +304,19 @@ export class ZSimulationView extends BaseView {
 				LogZsim.log("UI: " + text);
 				break;
 			}
+			case 'screenshot': {
+				// The canvas contents as data URL
+				const req = this.screenshotRequest;
+				if (!req || req.id !== message.id)
+					break;	// Outdated
+				if (message.error) {
+					this.finishScreenshotRequest(new Error(message.error));
+					break;
+				}
+				const base64 = (message.dataUrl as string).replace(/^data:image\/png;base64,/, '');
+				this.finishScreenshotRequest(undefined, Buffer.from(base64, 'base64'));
+				break;
+			}
 			case 'countOfProcessedMessages':
 				// For balancing the number of processed messages (since last time) is provided.;
 				this.countOfOutstandingMessages -= message.value;
@@ -304,6 +330,42 @@ export class ZSimulationView extends BaseView {
 				await super.webViewMessageReceived(message);
 				break;
 		}
+	}
+
+
+	/** Requests the screen (canvas) as PNG from the webview.
+	 * @returns The PNG data.
+	 */
+	protected async requestScreenshot(): Promise<Buffer> {
+		if (this.screenshotRequest)
+			throw new Error("Another screenshot request is pending.");
+		return new Promise<Buffer>((resolve, reject) => {
+			const id = ++this.screenshotRequestId;
+			const timer = setTimeout(() => {
+				this.finishScreenshotRequest(new Error("Timeout: no screen received from the simulation view."));
+			}, 2000);
+			this.screenshotRequest = {id, resolve, reject, timer};
+			// Make sure the canvas is up-to-date (messages are processed in order)
+			this.updateScreen();
+			this.sendMessageToWebView({command: 'getScreenshot', id});
+		});
+	}
+
+
+	/** Resolves or rejects a pending screenshot request.
+	 * @param error If set, the request is rejected.
+	 * @param png The PNG data on success.
+	 */
+	protected finishScreenshotRequest(error?: Error, png?: Buffer) {
+		const req = this.screenshotRequest;
+		if (!req)
+			return;
+		this.screenshotRequest = undefined;
+		clearTimeout(req.timer);
+		if (error)
+			req.reject(error);
+		else
+			req.resolve(png!);
 	}
 
 

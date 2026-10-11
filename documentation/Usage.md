@@ -526,10 +526,10 @@ Allowed values are "zx" and "zxn". Other targets are not supported.
 
 The bank is converted into the banks of the 'memoryModel':
 
-| 'target' | "ZXNEXT" (8k pages)                                  | "ZX128K" (16k banks)                                   |
-|----------|------------------------------------------------------|--------------------------------------------------------|
+| 'target' | "ZXNEXT" (8k pages)                                                                     | "ZX128K" (16k banks)                          |
+| -------- | --------------------------------------------------------------------------------------- | --------------------------------------------- |
 | "zxn"    | page; for an even page the upper 8k of a 16k area (e.g. 0xE000-0xFFFF) is the next page | page / 2; an odd page must be in the upper 8k |
-| "zx"     | 2 * bank, or 2 * bank + 1 for the upper 8k           | bank                                                   |
+| "zx"     | 2 * bank, or 2 * bank + 1 for the upper 8k                                              | bank                                          |
 
 E.g. with "zx" the `BANK_5` at `$05C000` is page 10 (and page 11 at `$05E000`) for "ZXNEXT".
 

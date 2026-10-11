@@ -17,6 +17,7 @@
 - Memory Views: fixed size 0x10000 (or the full bank size) which showed an empty view. A block ending at 0xFFFF (or at the bank end) does not show an additional line afterwards anymore.
 - Debug commands "-md", "-mdelta", "-ml", "-ms", "-msetb" and "-msetw" allow additional parameter to specify a bank to read from or write to.
 - New launch.json property "loadSysVars" to load zx16k or zx48 system variables at startup.
+- zsim: new debug console command "-exec savescreen [file]" saves the screen as PNG (to the tmp folder unless an absolute path is given).
 - Internally used 0xFF for ROM instead of 0xFE pseudo ROM identifier.
 - ROM identification for ZX Spectrum based ROMs
 - Fixed edge case failure when loading sna files (overflow).

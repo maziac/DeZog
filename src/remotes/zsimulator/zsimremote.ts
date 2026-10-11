@@ -31,7 +31,6 @@ import {Zx81UlaScreen} from './zx81ulascreen';
 import {ZxKeyboard} from './zxkeyboard';
 import {CustomJoystick} from './customjoystick';
 import {Zx81UlaScreenHiRes} from './zx81ulascreenhires';
-import path = require('path');
 import {ExecuteInterface} from './executeinterface';
 import {Zx81LoadOverlay} from './zx81loadoverlay';
 import {Zx81BasicVars} from '../../misc/zx81/zx81basicvars';
@@ -39,6 +38,9 @@ import {Z80File} from '../dzrp/z80file';
 import {LogEvalBasicZx81} from '../../misc/zx81/logevalbasiczx81';
 import {Labels} from '../../labels/labels';
 import {LogZsim} from '../../log';
+import path = require('path');
+import * as os from 'os';
+import * as fs from 'fs';
 
 
 
@@ -99,6 +101,9 @@ export class ZSimRemote extends DzrpRemote {
 	// Is set/reset by the ZSimulatorView to request processing time.
 	protected timeoutRequest: boolean;
 	protected breakTimeoutRequest: boolean;	// Similar, but required to overcome dead lock for re-init (floating window) situations
+
+	// Is set by the ZSimulatorView. Returns the screen as PNG.
+	protected screenshotProvider: (() => Promise<Buffer>) | undefined;
 
 	// ZX Beeper simulation
 	public zxBeeper: ZxBeeper;
@@ -178,6 +183,15 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	public setBreakTimeoutRequest() {
 		this.breakTimeoutRequest = true;
+	}
+
+
+	/** Is set by the ZSimulatorView to provide the screen as PNG.
+	 * Used by the 'save-screen' debug command.
+	 * @param func Function that returns the PNG data or undefined to unregister.
+	 */
+	public registerScreenshotProvider(func: (() => Promise<Buffer>) | undefined) {
+		this.screenshotProvider = func;
 	}
 
 
@@ -1293,6 +1307,7 @@ info: shows additional information about the emulator state. E.g. iff1 and iff2.
 tstates set value: set t-states to 'value', then create a tick event. E.g. "-e tstates set 1000"
 tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e tstates add 1000"
 "zx81-basic-vars [var1] [,var2...]": Get all or certain ZX81 BASIC variables. E.g. "-e zx81 basic-vars" or "-e zx81-basic-vars N Z$"
+save-screen [file]: Save the screen as PNG. Saved to the tmp folder unless an absolute path is given. E.g. "-e save-screen" or "-e save-screen /Users/me/screen.png"
 `;
 				// Generic dzrp commands
 				response += await super.dbgExec(cmd);
@@ -1373,6 +1388,25 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "-e t
 				}
 				response += `${values.join('\n')}`;
 				// Return
+				return response;
+			}
+
+			if (cmd_name === "savescreen") {
+				if (!this.screenshotProvider) {
+					throw new Error("No screen available.");
+				}
+				// Get file path (may contain spaces)
+				let fileName = tokens.join(' ').trim();
+				if (!fileName) {
+					const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').substring(0, 15);
+					fileName = 'zsim-screen-' + timestamp + '.png';
+				}
+				const filePath = path.isAbsolute(fileName) ? fileName : path.join(os.tmpdir(), fileName);
+				// Get screen and save
+				const png = await this.screenshotProvider();
+				fs.writeFileSync(filePath, png);
+				// Return
+				response = "Screen saved to " + filePath;
 				return response;
 			}
 
