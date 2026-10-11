@@ -1620,6 +1620,18 @@ But you could also use "loadObjs" or even "load" (for ZX 48K Spectrum files) if 
 
 Please also see [Reverse Engineering with DeZog](https://github.com/maziac/DeZog/blob/master/documentation/ReverseEngineeringUsage.md).
 
+### GDB
+The MAME gdbstub uses not only gdb command but also qRcmds specific to the MAME debugger (e.g. to allow accessing banking information).
+If you need 'pure' gdb commands only, then you can use the 'gdb' remote.
+~~~json
+    "remoteType": "gdb",
+    "gdb": {
+        "port": 12100
+    }
+~~~
+
+But note: with 'pure' gdb you cannot get any banking information.
+
 #### ZX Next support
 DeZog has beginning with version 3.8 support for the MAME tbblue target.
 To start it use the following commandline:
