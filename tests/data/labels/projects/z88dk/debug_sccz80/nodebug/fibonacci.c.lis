@@ -1,0 +1,125 @@
+/tmp/tmpgWI7OxKY.asm:
+     1                          MODULE fibonacci_c
+     2                          LINE 0, "fibonacci.c"
+fibonacci.c:
+                                
+     1                          ;* * * * *  Small-C/Plus z88dk * * * * *
+     2                          ;  Version: 25768-663305f8a3-20260831
+     3                          ;
+     4                          ;	Reconstructed for z80 Module Assembler
+     5                          ;
+     6                          ;	Module compile time: Thu Oct  1 22:34:01 2026
+     7                          
+     8                          
+     9                          ;/tmp/tmpgWI7OxKY.i:2: #line 1 "fibonacci.c"
+    10                          	C_LINE	2,"/tmp/tmpgWI7OxKY.i"
+/tmp/tmpgWI7OxKY.i:
+     2                          	C_LINE	0,"fibonacci.c"
+fibonacci.c:
+                                
+                                	MODULE	fibonacci_c
+fibonacci.c:
+                                
+                                
+                                ;"fibonacci.c":2: #line 1 "fibonacci.h"
+                                	C_LINE	2,"fibonacci.c"
+     2                          	C_LINE	0,"fibonacci.h"
+fibonacci.h:
+                                ;"fibonacci.h":4: extern int fibonacci(int n) __banked;
+                                	C_LINE	4,"fibonacci.h"
+     4                          	C_LINE	4,"fibonacci.h"
+     4                          ;"fibonacci.h":7: #line 2 "fibonacci.c"
+     4                          	C_LINE	7,"fibonacci.h"
+     7                          	C_LINE	1,"fibonacci.c"
+fibonacci.c:
+     1                          ;"fibonacci.c":3: #pragma codeseg PAGE_22_CODE
+     1                          	C_LINE	3,"fibonacci.c"
+     3                          ;"fibonacci.c":5: int fibonacci(int n) __banked
+     3                          	C_LINE	5,"fibonacci.c"
+     5                          	C_LINE	5,"fibonacci.c"
+     5                          ;"fibonacci.c":6: {
+     5                          	SECTION	PAGE_22_CODE
+     5                          
+     5                          ; Function fibonacci flags 0x00010200 __smallc
+     5                          ; int fibonacci(int n)
+     5                          ; parameter 'int n' at sp+2 size(2)
+     5                          	C_LINE	6,"fibonacci.c::fibonacci::0::0"
+fibonacci.c::fibonacci::0::0:
+     6                          ._fibonacci
+     6                          	C_LINE	6,"fibonacci.c::fibonacci::0::0"
+     6                          ;"fibonacci.c":7:     if (n <= 1)
+     6                          	C_LINE	7,"fibonacci.c::fibonacci::1::1"
+fibonacci.c::fibonacci::1::1:
+     7                          	C_LINE	7,"fibonacci.c::fibonacci::1::1"
+     7  0000  c1                	pop	bc
+     7  0001  d1                	pop	de
+     7  0002  d5                	push	de
+     7  0003  c5                	push	bc
+     7  0004  210100            	ld	hl,1
+     7  0007  cd0000            	call	l_le
+     7  000a  d21200            	jp	nc,i_2	;
+     7                          ;"fibonacci.c":8:     {
+     7                          	C_LINE	8,"fibonacci.c::fibonacci::1::1"
+     8                          	C_LINE	8,"fibonacci.c::fibonacci::1::1"
+     8                          ;"fibonacci.c":9:         return n;
+     8                          	C_LINE	9,"fibonacci.c::fibonacci::2::2"
+fibonacci.c::fibonacci::2::2:
+     9                          	C_LINE	9,"fibonacci.c::fibonacci::2::2"
+     9  000d  c1                	pop	bc
+     9  000e  e1                	pop	hl
+     9  000f  e5                	push	hl
+     9  0010  c5                	push	bc
+     9  0011  c9                	ret
+     9                          
+     9                          
+     9                          ;"fibonacci.c":10:     }
+     9                          	C_LINE	10,"fibonacci.c::fibonacci::2::2"
+    10                          ;"fibonacci.c":11:     return fibonacci(n - 1) + fibonacci(n - 2);
+    10                          	C_LINE	11,"fibonacci.c::fibonacci::1::2"
+fibonacci.c::fibonacci::1::2:
+    11                          .i_2
+    11                          	C_LINE	11,"fibonacci.c::fibonacci::1::2"
+    11  0012  c1                	pop	bc
+    11  0013  e1                	pop	hl
+    11  0014  e5                	push	hl
+    11  0015  c5                	push	bc
+    11  0016  2b                	dec	hl
+    11  0017  e5                	push	hl
+    11  0018  cd0000            	call	banked_call
+    11  001b  00000000          	defq	_fibonacci
+    11  001f  c1                	pop	bc
+    11  0020  e5                	push	hl
+    11  0021  cd0000            	call	l_gint4sp	;
+    11  0024  2b                	dec	hl
+    11  0025  2b                	dec	hl
+    11  0026  e5                	push	hl
+    11  0027  cd0000            	call	banked_call
+    11  002a  00000000          	defq	_fibonacci
+    11  002e  c1                	pop	bc
+    11  002f  d1                	pop	de
+    11  0030  19                	add	hl,de
+    11  0031  c9                	ret
+    11                          
+    11                          
+    11                          ;"fibonacci.c":12: }
+    11                          	SECTION	bss_compiler
+    11                          	SECTION	PAGE_22_CODE
+    11                          ; --- Start of Optimiser additions ---
+    11                          
+    11                          
+    11                          ; --- Start of Static Variables ---
+    11                          
+    11                          	SECTION	bss_compiler
+    11                          	SECTION	PAGE_22_CODE
+    11                          
+    11                          
+    11                          ; --- Start of Scope Defns ---
+    11                          
+    11                          	GLOBAL	_fibonacci
+    11                          
+    11                          
+    11                          ; --- End of Scope Defns ---
+    11                          
+    11                          
+    11                          ; --- End of Compilation ---
+    11                          

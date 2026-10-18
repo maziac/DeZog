@@ -1,0 +1,31 @@
+/tmp/tmpAAAAAAAA.asm:
+     1                          MODULE loop_c
+     2                          LINE 0, "game/loop.c"
+game/loop.c:
+     1                          	SECTION code_compiler
+     2                          C_LINE 3,"loop.c::x::0::1	"
+loop.c::x::0::1	:
+     3                          ;game/loop.c:3: static int helper(void)
+     3                          _helper:
+     3                          C_LINE 5,"loop.c::x::10000::1	"
+loop.c::x::10000::1	:
+     5                          ;game/loop.c:5: return counter + 1;
+     5  0000  2a0000            	ld	hl,(_counter)
+     5  0003  23                	inc	hl
+     5  0004  c9                	ret
+     5                          	SECTION bss_compiler
+     5                          _counter:
+     5  0000  0000              	DEFB 0x00, 0x00
+     5                          	SECTION code_compiler
+     5                          C_LINE 8,"loop.c::x::0::2	"
+loop.c::x::0::2	:
+     8                          ;game/loop.c:8: void loop(void)
+     8                          _loop:
+     8  0005  dde5              	push	ix
+     8                          C_LINE 10,"loop.c::x::10000::2	"
+loop.c::x::10000::2	:
+    10                          ;game/loop.c:10: counter = helper();
+    10  0007  cd0000            	call	_helper
+    10  000a  220000            	ld	(_counter),hl
+    10  000d  dde1              	pop	ix
+    10  000f  c9                	ret

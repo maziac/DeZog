@@ -167,6 +167,15 @@ export class LabelParserBase {
 	}
 
 
+	/** Called after all list files of one configuration have been loaded
+	 * (loadAsmListFile is called for each file of a glob). Override for work
+	 * that needs all list files, e.g. information that refers to several of them.
+	 */
+	public finishListFiles() {
+		// Nothing by default
+	}
+
+
 	/** Reads the given file (an assembler .list file) and extracts all PC
 	 * values (the first 4 digits), so that each line can be associated with a
 	 * PC value.

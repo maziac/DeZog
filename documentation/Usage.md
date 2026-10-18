@@ -426,6 +426,7 @@ Same as sjasmplus but use: ```z80asm```, e.g.:
 For 'path', 'srcDirs' and 'excludeFiles' see z80asm configuration.
 
 - 'mapFile': The map file is required to correctly parse the label values and to get correct file/line to address associations.
+- 'target': Optional. "zx" or "zxn". The z88dk target (`+zx` or `+zxn`) used for compiling. It defines the numbering of the bank that z88dk encodes in the upper bits of the map file addresses. Only required for banked code, see "Banking" in the z88dk-zcc configuration below.
 
 Since version 2 (z88dkv2) the .lis file format has changed for z88dk.
 You can easily distinguish the 2 versions. The newer format does start with the sources file name.
@@ -484,6 +485,63 @@ zcc +zxn -subtype=nex -vn --list -m --c-code-in-asm -clib=sdcc_iy -Cz"--clean" -
 ]
 ~~~
 
+**Debug information (`-debug`):**
+
+If you additionally pass `-debug` to `zcc`, z88dk writes the C line information into the map file (`__C_LINE_` symbols, see [this z88dk forum thread](https://www.z88dk.org/forum/viewtopic.php?t=12139)).
+"z88dkv2" detects these symbols automatically and then uses them for the C line <-> address associations instead of the (sometimes inaccurate) C line references of the .lis files.
+The map file contains the final (linked) addresses including the bank/page, so breakpoints and stepping also work for banked C code (e.g. `#pragma codeseg PAGE_20_CODE`).
+Everything else (labels, assembler lines, WPMEM, ASSERTION, LOGPOINT) is still taken from the .lis files.
+If the map file does not contain `__C_LINE_` symbols (i.e. built without `-debug`) the C lines are taken from the .lis files:
+- from the `C_LINE` directives in the .lis files if there are any, e.g. `C_LINE 5,"main.c::x::0::0"`,
+- otherwise from the C line comments that `--c-code-in-asm` adds, e.g. `;main.c:5: int main() {`.
+
+This requires a z88dk nightly from 2026-04-21 or later.
+
+~~~
+zcc +zxn -subtype=nex -vn --list -m -debug --c-code-in-asm -clib=sdcc_iy -Cz"--clean" -startup=0 factorial.c fibonacci.c main.c clear-ula.asm -create-app -o ../build/main.nex
+~~~
+
+**Banking:**
+
+For banked code z88dk encodes the bank in the upper bits of the addresses in the map file, e.g. `$14C000` for address `0xC000` in bank `0x14`.
+The numbering of that bank depends on the z88dk target and cannot be derived from the map file:
+- `+zx`: 16k banks, e.g. `$05C000` for `BANK_5`.
+- `+zxn`: 8k pages, e.g. `$0AC000` for `BANK_5` (page 10) or `$14C000` for page 20.
+
+Therefore you need to tell DeZog the target with 'target':
+~~~json
+"z88dkv2": [
+    {
+        "path": "src/*.lis",
+        "srcDirs": [
+            "src"
+        ],
+        "mapFile": "build/main.map",
+        "target": "zxn"
+    }
+]
+~~~
+
+Allowed values are "zx" and "zxn". Other targets are not supported.
+
+The bank is converted into the banks of the 'memoryModel':
+
+| 'target' | "ZXNEXT" (8k pages)                                  | "ZX128K" (16k banks)                                   |
+|----------|------------------------------------------------------|--------------------------------------------------------|
+| "zxn"    | page; for an even page the upper 8k of a 16k area (e.g. 0xE000-0xFFFF) is the next page | page / 2; an odd page must be in the upper 8k |
+| "zx"     | 2 * bank, or 2 * bank + 1 for the upper 8k           | bank                                                   |
+
+E.g. with "zx" the `BANK_5` at `$05C000` is page 10 (and page 11 at `$05E000`) for "ZXNEXT".
+
+Note: for `+zxn` the `BANK_n` sections use the page numbering since z88dk from 2026-04-20. Older versions (e.g. z88dk 2.4) used the 16k bank numbering.
+
+Addresses up to 0xFFFF use the initial bank of the slot.
+
+In the following cases the bank information is ignored, i.e. the initial bank of the slot is used, and a warning is shown:
+- 'target' is not set but the map file contains banked addresses.
+- The 'memoryModel' is neither "ZX128K" nor "ZXNEXT" (e.g. "RAM" or "CUSTOM").
+- The converted bank does not exist at that address in the memory model, e.g. bank 9 for "ZX128K".
+
 Top of stack:
 In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
 ~~~json
@@ -501,10 +559,10 @@ Arrays can be viewed by appending the number of elements.
 
 Notes:
 - C-support only works for "z88dkv2" not for "z88dk"
-- C-support is only working with sdcc, not with sccz80.
+- C-support works with sdcc and sccz80 (e.g. `-compiler=sccz80 -clib=new`).
 - For the "path" you can use globbing
 - Top of stack: In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
-- Although z88dk can create object code for banked memory, the .map and .lis files lack this information. As a consequence, DeZog can not use any banking with z88dk. You will be able to debug such programs, but it may happen that DeZog cannot correctly associate files with program addresses because e.g. the 0xC000 might be used by several banks. This results in wrong display of files when stepping or breakpoints that cannot be set.
+- Banking: see "Banking" above. The bank/page is taken from the addresses of the map file and converted according to 'target'.
 - Not all C-code may have corresponding addresses in assembler code. I.e. for those lines you cannot set breakpoints. Try to set the breakpoint at some other line in the vicinity.
 - z88dk generated C-source code line references are not very accurate or even wrong in some cases. This may result in inaccurate stepping. Please see [#167-comment](https://github.com/maziac/DeZog/issues/167#issuecomment-4586450764) for more details.
 
