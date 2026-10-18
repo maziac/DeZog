@@ -143,6 +143,24 @@ window.addEventListener('message', event => {// NOSONAR
 			}
 			break;
 
+		case 'getScreenshot':
+			// Return the screen canvas as PNG (native resolution)
+			if (screenImg) {
+				vscode.postMessage({
+					command: 'screenshot',
+					id: message.id,
+					dataUrl: screenImg.toDataURL('image/png')
+				});
+			}
+			else {
+				vscode.postMessage({
+					command: 'screenshot',
+					id: message.id,
+					error: 'No screen available.'
+				});
+			}
+			break;
+
 		case 'receivedFromCustomLogic':
 			// Message received from custom code.
 			// Call custom UI code
