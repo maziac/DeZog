@@ -1,4 +1,0 @@
-void extra(void)
-{
-    return;
-}

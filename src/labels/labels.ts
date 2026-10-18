@@ -293,7 +293,6 @@ export class LabelsClass {
 					this.youngestModifiedFile = {filename: path, time: changed};
 				}
 			}
-			parser.finishListFiles();
 		}
 		catch (e) {
 			// Just remember that an exception happened
