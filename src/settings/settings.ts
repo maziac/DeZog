@@ -72,7 +72,9 @@ export interface Z88dkConfigV2 extends AsmConfigBase {
 	/// Defines the numbering of the bank in the upper bits (bits 16-23)
 	/// of the map file addresses, e.g. $14C000.
 	/// "zx": 16k banks (ZX128K), "zxn": 8k pages (ZX Next).
-	/// If undefined the bank information is ignored.
+	/// If undefined the bank information of the addresses is ignored.
+	/// (The bank from the block name of a section, e.g. "BANK_3", is
+	/// used anyway.)
 	target?: 'zx' | 'zxn';
 }
 

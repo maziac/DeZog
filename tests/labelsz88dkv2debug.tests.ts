@@ -75,16 +75,28 @@ suite('z88dk map file', () => {
 		assert.equal(parseLineLocation('main.c'), undefined);
 	});
 
-	suite('banked address conversion (independent of the section name)', () => {
+	suite('banked address conversion', () => {
 		const page = (p: number, addr64k: number) => addr64k + ((p + 1) << 16);
 		let warnings: string[];
 
-		/** Returns a function that converts the address of a map file line. */
-		function converter(mm: MemoryModel, target: 'zx' | 'zxn' | undefined) {
+		/** Returns a function that converts the address of a map file line.
+		 * @param heads Optional __<section>_head lines (section -> block).
+		 */
+		function converter(mm: MemoryModel, target: 'zx' | 'zxn' | undefined, heads: string[] = []) {
 			const parser = new Z88dkLabelParserV2(mm, new Map(), new Map(), [], new Map(), new Map(), new Map(), [], [], [], issue => warnings.push(issue.message)) as any;
 			parser.config = {mapFile: 'main.map', target};
 			parser.checkMappingToTargetMemoryModel();
-			return (line: string) => parser.funcConvertAddress(parseMapLine(line)!.value);
+			for (const head of heads) {
+				const sym = parseMapLine(head)!;
+				const section = /^__(.+)_head$/.exec(sym.name)![1];
+				parser.sectionBlocks.set(section, sym.section);
+				if (section === sym.section)
+					parser.blockStarts.set(section, sym.value & 0xFFFF);
+			}
+			return (line: string) => {
+				const sym = parseMapLine(line)!;
+				return parser.convertAddress(sym.value, sym.section);
+			};
 		}
 
 		setup(() => {
@@ -133,17 +145,17 @@ suite('z88dk map file', () => {
 			// Odd page in the lower 8k of a 16k bank: bank ignored
 			assert.equal(convert('l = $07C000 ; addr, local, , m, my_page, m.c:1'), page(0, 0xC000));
 			assert.equal(warnings.length, 1);
-			assert.ok(warnings[0].includes('Bank 7'), warnings[0]);
+			assert.ok(warnings[0].includes('Page 7'), warnings[0]);
 		});
 
 		test('Bank not available at the address', () => {
-			// Bank 9 does not exist in ZX128K
+			// Bank 9 (page 18) does not exist in ZX128K
 			const convert = converter(new MemoryModelZx128k(), 'zx');
 			assert.equal(convert('l = $09C000 ; addr, local, , m, my_bank, m.c:1'), page(0, 0xC000));
 			// Warned only once
 			assert.equal(convert('l = $09C010 ; addr, local, , m, my_bank, m.c:1'), page(0, 0xC010));
 			assert.equal(warnings.length, 1);
-			assert.ok(warnings[0].includes('Bank 9'), warnings[0]);
+			assert.ok(warnings[0].includes('Page 18'), warnings[0]);
 		});
 
 		test('No target: bank ignored', () => {
@@ -160,6 +172,19 @@ suite('z88dk map file', () => {
 			assert.equal(convert('l = $60045F ; addr, local, , m, menu_code, m.c:1'), 0x1045F);
 			assert.equal(warnings.length, 1);
 			assert.ok(warnings[0].includes('ZX128K and ZX Next'), warnings[0]);
+		});
+
+		test('Block names with zx', () => {
+			// "_L"/"_H" and "PAGE" are only bank spaces for zxn (appmake)
+			const convert = converter(new MemoryModelZx128k(), 'zx', [
+				'__code_bank3l_head = $C000 ; const, public, def, , BANK_3_L,',
+				'__code_bank3h_head = $E000 ; const, public, def, , BANK_3_H,',
+				'__code_page21_head = $C100 ; const, public, def, , PAGE_21,'
+			]);
+			assert.equal(convert('_l = $C000 ; addr, public, , main, code_bank3l, main.asm:7'), page(3, 0xC000));
+			assert.equal(convert('_h = $E000 ; addr, public, , main, code_bank3h, main.asm:7'), page(3, 0xE000));
+			assert.equal(convert('_p = $C100 ; addr, public, , main, code_page21, main.asm:7'), page(0, 0xC100));
+			assert.deepEqual(warnings, []);
 		});
 	});
 

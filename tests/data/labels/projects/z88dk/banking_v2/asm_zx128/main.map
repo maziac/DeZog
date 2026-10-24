@@ -1,0 +1,9 @@
+__BANK_3_head                   = $C000 ; const, public, def, , BANK_3,
+__CODE_head                     = $8000 ; const, public, def, , CODE,
+__code_bank3_head               = $C000 ; const, public, def, , BANK_3,
+__code_extra_head               = $4C000 ; const, public, def, , extra,
+__code_user_head                = $8000 ; const, public, def, , CODE,
+__extra_head                    = $4C000 ; const, public, def, , extra,
+_bank3_fn                       = $C000 ; addr, public, , main, code_bank3, main.asm:21
+_far                            = $4C000 ; addr, public, , main, code_extra, main.asm:27
+_main                           = $8000 ; addr, public, , main, code_user, main.asm:15
