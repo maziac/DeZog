@@ -1,0 +1,31 @@
+main.asm:
+     1                          SECTION CODE            ; No bank prefix, 16 bit ORG: default mapping
+     2                          org $8000
+     3                          SECTION code_user
+     4                          
+     5                          SECTION BANK_3          ; Bank prefix, 16 bit ORG
+     6                          org $C000
+     7                          SECTION code_bank3
+     8                          
+     9                          SECTION extra           ; No bank prefix, 24 bit ORG: bank 4 (target zx)
+    10                          org $04C000
+    11                          SECTION code_extra
+    12                          
+    13                          SECTION code_user
+    14                          PUBLIC _main
+    15                          _main:
+    16  0000  00                	nop
+    17  0001  c9                	ret
+    18                          
+    19                          SECTION code_bank3
+    20                          PUBLIC _bank3_fn
+    21                          _bank3_fn:
+    22  0000  00                	nop
+    23  0001  c9                	ret
+    24                          
+    25                          SECTION code_extra
+    26                          PUBLIC _far
+    27                          _far:
+    28  0000  00                	nop
+    29  0001  c9                	ret
+    30                          

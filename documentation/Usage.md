@@ -503,6 +503,16 @@ zcc +zxn -subtype=nex -vn --list -m -debug --c-code-in-asm -clib=sdcc_iy -Cz"--c
 
 **Banking:**
 
+DeZog determines the bank of an address in this order:
+1. From the name of the block (the top level section) the code is placed in, with the same rules as appmake:
+   - `BANK_n`: 16k bank n, e.g. `BANK_0` at `0x8000` is bank 0 (pages 0/1 on the ZX Next), not the bank that is initially mapped there.
+   - `BANK_n_L`, `BANK_n_H` (`+zxn` only): the lower or upper 8k of the 16k bank n, i.e. page 2n or 2n+1.
+   - `PAGE_n` (`+zxn` only): 8k page n. Code that exceeds 8k continues in page n+1.
+
+   This requires a z88dk nightly from 2026-10-21 or later (z80asm writes the block of each section into the map file, [z88dk#3197](https://github.com/z88dk/z88dk/pull/3197)). For older versions this step is skipped.
+2. From the upper bits of the address, see below.
+3. Otherwise the initial bank of the slot is used.
+
 For banked code z88dk encodes the bank in the upper bits of the addresses in the map file, e.g. `$14C000` for address `0xC000` in bank `0x14`.
 The numbering of that bank depends on the z88dk target and cannot be derived from the map file:
 - `+zx`: 16k banks, e.g. `$05C000` for `BANK_5`.
@@ -535,10 +545,10 @@ E.g. with "zx" the `BANK_5` at `$05C000` is page 10 (and page 11 at `$05E000`) f
 
 Note: for `+zxn` the `BANK_n` sections use the page numbering since z88dk from 2026-04-20. Older versions (e.g. z88dk 2.4) used the 16k bank numbering.
 
-Addresses up to 0xFFFF use the initial bank of the slot.
+Addresses up to 0xFFFF use the initial bank of the slot (unless the block name defines the bank).
 
 In the following cases the bank information is ignored, i.e. the initial bank of the slot is used, and a warning is shown:
-- 'target' is not set but the map file contains banked addresses.
+- 'target' is not set but the map file contains banked addresses (that are not in a block with a bank name).
 - The 'memoryModel' is neither "ZX128K" nor "ZXNEXT" (e.g. "RAM" or "CUSTOM").
 - The converted bank does not exist at that address in the memory model, e.g. bank 9 for "ZX128K".
 
