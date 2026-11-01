@@ -1,0 +1,16 @@
+__BANK_0_head                   = $8000 ; const, public, def, , BANK_0,
+__BANK_3_H_head                 = $E000 ; const, public, def, , BANK_3_H,
+__CODE_head                     = $6000 ; const, public, def, , CODE,
+__PAGE_21_head                  = $C100 ; const, public, def, , PAGE_21,
+__code_bank0_head               = $8000 ; const, public, def, , BANK_0,
+__code_bank3h_head              = $E000 ; const, public, def, , BANK_3_H,
+__code_extra_head               = $14C000 ; const, public, def, , extra,
+__code_page21_head              = $C100 ; const, public, def, , PAGE_21,
+__code_user_head                = $6000 ; const, public, def, , CODE,
+__extra_head                    = $14C000 ; const, public, def, , extra,
+_bank3h_fn                      = $E000 ; addr, public, , main, code_bank3h, main.asm:35
+_banked                         = $8000 ; addr, public, , main, code_bank0, main.asm:29
+_far                            = $14C000 ; addr, public, , main, code_extra, main.asm:50
+_main                           = $6000 ; addr, public, , main, code_user, main.asm:23
+_page21_fn                      = $C100 ; addr, public, , main, code_page21, main.asm:41
+_page22_data                    = $E102 ; addr, local, , main, code_page21, main.asm:45

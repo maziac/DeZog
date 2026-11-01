@@ -1,0 +1,14 @@
+main.asm:
+     1                          SECTION CODE
+     2                          org $8000
+     3                          SECTION code_user
+     4                          
+     5                          SECTION code_user
+     6                          PUBLIC _main
+     7                          _main:
+     8  0000  cd0400            	call sub
+     9  0003  c9                	ret
+    10                          sub:
+    11  0004  00                	nop
+    12  0005  c9                	ret
+    13                          

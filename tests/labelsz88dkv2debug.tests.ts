@@ -75,24 +75,50 @@ suite('z88dk map file', () => {
 		assert.equal(parseLineLocation('main.c'), undefined);
 	});
 
-	suite('banked address conversion (independent of the section name)', () => {
+	suite('banked address conversion', () => {
 		const page = (p: number, addr64k: number) => addr64k + ((p + 1) << 16);
 		let warnings: string[];
 
-		/** Returns a function that converts the address of a map file line. */
-		function converter(mm: MemoryModel, target: 'zx' | 'zxn' | undefined) {
+		/** Sets up a parser with the given map file lines and returns a
+		 * function that converts the address of a map file line.
+		 * Like readmapFile: __<section>_head lines define the block of a
+		 * section, the other lines are address symbols.
+		 * The warnings are given in checkMappingToTargetMemoryModel.
+		 * @param blockInfo false to simulate a map file of a z88dk older than
+		 * 2026-10-21 (no block information).
+		 */
+		function converter(mm: MemoryModel, lines: string[] = [], blockInfo = true) {
 			const parser = new Z88dkLabelParserV2(mm, new Map(), new Map(), [], new Map(), new Map(), new Map(), [], [], [], issue => warnings.push(issue.message)) as any;
-			parser.config = {mapFile: 'main.map', target};
+			parser.config = {mapFile: 'main.map'};
+			if (blockInfo)
+				lines = ['__code_compiler_head = $8000 ; const, public, def, , CODE,', ...lines];
+			for (const line of lines) {
+				const sym = parseMapLine(line)!;
+				const head = /^__(.+)_head$/.exec(sym.name);
+				if (head) {
+					if (!sym.section)
+						continue;	// Older z88dk: no block
+					parser.sectionBlocks.set(head[1], sym.section);
+					if (head[1] === sym.section)
+						parser.blockStarts.set(head[1], sym.value & 0xFFFF);
+				}
+				else {
+					parser.addressSymbols.push(sym);
+				}
+			}
 			parser.checkMappingToTargetMemoryModel();
-			return (line: string) => parser.funcConvertAddress(parseMapLine(line)!.value);
+			return (line: string) => {
+				const sym = parseMapLine(line)!;
+				return parser.convertAddress(sym.value, sym.section);
+			};
 		}
 
 		setup(() => {
 			warnings = [];
 		});
 
-		test('zxn (8k pages) to ZX Next', () => {
-			const convert = converter(new MemoryModelZxNext(), 'zxn');
+		test('ZX Next: 8k pages', () => {
+			const convert = converter(new MemoryModelZxNext());
 			assert.equal(convert('l = $60045F ; addr, local, , menu_controls_c, menu_code, menu.c:1142'), page(96, 0x045F));
 			// Even page spanning 16k: upper 8k is the next page
 			assert.equal(convert('l = $602462 ; addr, local, , menu_controls_c, menu_code, menu.c:1144'), page(97, 0x2462));
@@ -106,60 +132,104 @@ suite('z88dk map file', () => {
 			assert.deepEqual(warnings, []);
 		});
 
-		test('zx (16k banks) to ZX Next', () => {
-			const convert = converter(new MemoryModelZxNext(), 'zx');
-			// z88dk +zx classic BANK_5: pages 10 and 11
-			assert.equal(convert('l = $05C000 ; addr, public, , p0asm_asm, BANK_5, p0asm.asm:17'), page(10, 0xC000));
-			assert.equal(convert('l = $05E010 ; addr, public, , p0asm_asm, BANK_5, p0asm.asm:18'), page(11, 0xE010));
-			assert.equal(convert('l = $038000 ; addr, local, , m, my_bank, m.c:1'), page(6, 0x8000));
-			assert.equal(convert('l = $8010 ; addr, local, , main_c, code_compiler, main.c:3'), page(4, 0x8010));
-			assert.deepEqual(warnings, []);
-		});
-
-		test('zx (16k banks) to ZX128K', () => {
-			const convert = converter(new MemoryModelZx128k(), 'zx');
+		test('ZX128K: 16k banks', () => {
+			const convert = converter(new MemoryModelZx128k());
 			assert.equal(convert('l = $03E000 ; addr, local, , m, my_bank, m.c:1'), page(3, 0xE000));
+			assert.equal(convert('l = $03C000 ; addr, local, , m, my_bank, m.c:1'), page(3, 0xC000));
 			assert.equal(convert('l = $8000 ; addr, local, , m, code_compiler, m.c:1'), page(2, 0x8000));
 			assert.deepEqual(warnings, []);
 		});
 
-		test('zxn (8k pages) to ZX128K', () => {
-			const convert = converter(new MemoryModelZx128k(), 'zxn');
-			assert.equal(convert('l = $06C000 ; addr, local, , m, my_page, m.c:1'), page(3, 0xC000));
-			// Even page spanning 16k
-			assert.equal(convert('l = $06E000 ; addr, local, , m, my_page, m.c:1'), page(3, 0xE000));
-			assert.equal(convert('l = $07E000 ; addr, local, , m, my_page, m.c:1'), page(3, 0xE000));
-			assert.deepEqual(warnings, []);
-			// Odd page in the lower 8k of a 16k bank: bank ignored
-			assert.equal(convert('l = $07C000 ; addr, local, , m, my_page, m.c:1'), page(0, 0xC000));
+		test('Bank not available at the address: warned once', () => {
+			// Bank 9 (pages 18/19) does not exist in ZX128K
+			const lines = [
+				'l1 = $09C000 ; addr, local, , m, my_bank, m.c:1',
+				'l2 = $09C010 ; addr, local, , m, my_bank, m.c:2'
+			];
+			const convert = converter(new MemoryModelZx128k(), lines);
 			assert.equal(warnings.length, 1);
-			assert.ok(warnings[0].includes('Bank 7'), warnings[0]);
-		});
-
-		test('Bank not available at the address', () => {
-			// Bank 9 does not exist in ZX128K
-			const convert = converter(new MemoryModelZx128k(), 'zx');
-			assert.equal(convert('l = $09C000 ; addr, local, , m, my_bank, m.c:1'), page(0, 0xC000));
-			// Warned only once
-			assert.equal(convert('l = $09C010 ; addr, local, , m, my_bank, m.c:1'), page(0, 0xC010));
+			assert.ok(warnings[0].includes('Page 18'), warnings[0]);
+			assert.ok(warnings[0].includes("'l1'"), warnings[0]);
+			// The conversion itself does not warn
+			assert.equal(convert(lines[0]), page(0, 0xC000));
+			assert.equal(convert(lines[1]), page(0, 0xC010));
+			assert.equal(convert('l3 = $09C020 ; addr, local, , m, my_bank, m.c:3'), page(0, 0xC020));
 			assert.equal(warnings.length, 1);
-			assert.ok(warnings[0].includes('Bank 9'), warnings[0]);
-		});
-
-		test('No target: bank ignored', () => {
-			const convert = converter(new MemoryModelZxNext(), undefined);
-			assert.equal(convert('l = $14C000 ; addr, local, , m, PAGE_20_CODE, m.c:1'), page(0, 0xC000));
-			assert.equal(convert('l = $16C000 ; addr, local, , m, PAGE_22_CODE, m.c:1'), page(0, 0xC000));
-			assert.equal(convert('l = $8010 ; addr, local, , main_c, code_compiler, main.c:3'), page(4, 0x8010));
-			assert.equal(warnings.length, 1);
-			assert.ok(warnings[0].includes("'target' is not set"), warnings[0]);
 		});
 
 		test('Memory model without banking: bank ignored', () => {
-			const convert = converter(new MemoryModelAllRam(), 'zxn');
-			assert.equal(convert('l = $60045F ; addr, local, , m, menu_code, m.c:1'), 0x1045F);
+			const line = 'l = $60045F ; addr, local, , m, menu_code, m.c:1';
+			const convert = converter(new MemoryModelAllRam(), [line]);
 			assert.equal(warnings.length, 1);
 			assert.ok(warnings[0].includes('ZX128K and ZX Next'), warnings[0]);
+			assert.equal(convert(line), 0x1045F);
+			assert.equal(warnings.length, 1);
+		});
+
+		test('No block information (older z88dk): 64k, warned once', () => {
+			const lines = [
+				'__code_compiler_head = $8000 ; const, public, def, , ,',
+				'l1 = $14C000 ; addr, local, , m, PAGE_20, m.c:1',
+				'l2 = $0AE010 ; addr, local, , m, BANK_5, m.c:2'
+			];
+			const convert = converter(new MemoryModelZxNext(), lines, false);
+			assert.equal(warnings.length, 1);
+			assert.ok(warnings[0].includes("'l1'"), warnings[0]);
+			assert.ok(warnings[0].includes('2026-10-21'), warnings[0]);
+			// Initial slot banks: page 0 at 0xC000/0xE000
+			assert.equal(convert(lines[1]), page(0, 0xC000));
+			assert.equal(convert(lines[2]), page(1, 0xE010));
+			assert.equal(convert('l = $8010 ; addr, local, , main_c, code_compiler, main.c:3'), page(4, 0x8010));
+			assert.equal(warnings.length, 1);
+		});
+
+		test('No block information, not banked: no warning', () => {
+			converter(new MemoryModelZxNext(), ['l = $8010 ; addr, local, , main_c, code_compiler, main.c:3'], false);
+			assert.deepEqual(warnings, []);
+		});
+
+		test('Memory model without banking: no warning for 64k', () => {
+			converter(new MemoryModelAllRam(), ['l = $8010 ; addr, local, , main_c, code_compiler, main.c:3']);
+			assert.deepEqual(warnings, []);
+		});
+
+		test('Block names', () => {
+			const heads = [
+				'__BANK_0_head = $8000 ; const, public, def, , BANK_0,',
+				'__code_bank0_head = $8000 ; const, public, def, , BANK_0,',
+				'__code_bank3l_head = $C000 ; const, public, def, , BANK_3_L,',
+				'__code_bank3h_head = $E000 ; const, public, def, , BANK_3_H,',
+				'__PAGE_21_head = $C100 ; const, public, def, , PAGE_21,',
+				'__code_page21_head = $C100 ; const, public, def, , PAGE_21,'
+			];
+			const convert = converter(new MemoryModelZxNext(), heads);
+			// BANK_0 with 16 bit address: pages 0 and 1, not the default page 4
+			assert.equal(convert('_b = $8000 ; addr, public, , main, code_bank0, main.asm:7'), page(0, 0x8000));
+			assert.equal(convert('_b = $A010 ; addr, public, , main, code_bank0, main.asm:7'), page(1, 0xA010));
+			// BANK_n_L / BANK_n_H
+			assert.equal(convert('_l = $C000 ; addr, public, , main, code_bank3l, main.asm:7'), page(6, 0xC000));
+			assert.equal(convert('_h = $E000 ; addr, public, , main, code_bank3h, main.asm:7'), page(7, 0xE000));
+			// PAGE_n continues in the next page
+			assert.equal(convert('_p = $C100 ; addr, public, , main, code_page21, main.asm:7'), page(21, 0xC100));
+			assert.equal(convert('_p = $E100 ; addr, public, , main, code_page21, main.asm:7'), page(22, 0xE100));
+			assert.deepEqual(warnings, []);
+
+			// ZX128K
+			const convert128 = converter(new MemoryModelZx128k(), heads);
+			assert.equal(convert128('_l = $C000 ; addr, public, , main, code_bank3l, main.asm:7'), page(3, 0xC000));
+			assert.equal(convert128('_h = $E000 ; addr, public, , main, code_bank3h, main.asm:7'), page(3, 0xE000));
+			assert.deepEqual(warnings, []);
+		});
+
+		test('Block name with a bank that is not available', () => {
+			// BANK_0 at 0x8000 cannot be paged there on a ZX128K
+			const convert = converter(new MemoryModelZx128k(), [
+				'__code_bank0_head = $8000 ; const, public, def, , BANK_0,',
+				'_b = $8000 ; addr, public, , main, code_bank0, main.asm:7'
+			]);
+			assert.equal(warnings.length, 1);
+			assert.ok(warnings[0].includes("section 'code_bank0'"), warnings[0]);
+			assert.equal(convert('_b = $8000 ; addr, public, , main, code_bank0, main.asm:7'), page(2, 0x8000));
 		});
 	});
 
@@ -189,8 +259,7 @@ suite('Labels (z88dk v2 format with -debug map file)', () => {
 				path: './' + dir + '/' + lisGlob,
 				mapFile: './' + dir + '/' + mapFile,
 				srcDirs: [dir],
-				excludeFiles,
-				target: 'zxn'
+				excludeFiles
 			}]
 		};
 	}
@@ -361,8 +430,7 @@ suite('Labels (z88dk v2 format, sccz80)', () => {
 				path: './' + dir + '/' + subDir + '*.lis',
 				mapFile: './' + dir + '/' + subDir + 'main.map',
 				srcDirs: [dir],
-				excludeFiles: [],
-				target: 'zxn'
+				excludeFiles: []
 			}]
 		};
 	}

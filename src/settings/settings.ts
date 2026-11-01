@@ -67,13 +67,6 @@ export interface Z88dkConfig extends AsmConfigBase {
 export interface Z88dkConfigV2 extends AsmConfigBase {
 	/// The z88dk map file (option "-m").
 	mapFile: string;
-
-	/// The z88dk target ("+zx" or "+zxn") used for compiling.
-	/// Defines the numbering of the bank in the upper bits (bits 16-23)
-	/// of the map file addresses, e.g. $14C000.
-	/// "zx": 16k banks (ZX128K), "zxn": 8k pages (ZX Next).
-	/// If undefined the bank information is ignored.
-	target?: 'zx' | 'zxn';
 }
 
 
@@ -1060,7 +1053,6 @@ export class Settings {
 					srcDirs: fpSrcDirs ?? [""],
 					excludeFiles: fpExclFiles ?? [],
 					mapFile: undefined as any,
-					target: fp.target
 				};
 				if (fpPath) {
 					// Note: path is a glob path
@@ -1367,14 +1359,6 @@ export class Settings {
 				// Check that file exists
 				if (!fs.existsSync(mapFile))
 					throw Error("'z88dk.mapFile': '" + mapFile + "' does not exist.");
-			}
-		}
-		if (Settings.launch.z88dkv2) {
-			// Check target
-			for (const listFile of Settings.launch.z88dkv2) {
-				const target = listFile.target;
-				if (target !== undefined && target !== 'zx' && target !== 'zxn')
-					throw Error("'z88dkv2.target': '" + target + "' is not supported. Use 'zx' or 'zxn'.");
 			}
 		}
 

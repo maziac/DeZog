@@ -5,12 +5,16 @@ import {WorkspacePaths} from '../misc/workspacepaths';
 import {existsSync, readFileSync} from 'fs';
 import * as fglob from 'fast-glob';
 import {minimatch} from 'minimatch';
-import {AsmConfigBase, Z88dkConfig, Z88dkConfigV2} from '../settings/settings';
+import {AsmConfigBase, Z88dkConfig} from '../settings/settings';
 import {UnifiedPath} from '../misc/unifiedpath';
 import {HexFormat} from '../misc/hexformat';
 import {MemoryModelZx128k} from '../remotes/MemoryModel/zxspectrummemorymodels';
 import {MemoryModelZxNextBase} from '../remotes/MemoryModel/zxnextmemorymodels';
 import {C_LINE_PREFIX, Z88dkLineInfo, Z88dkMapSymbol, isDebugSymbol, parseLineLocation, parseMapLine, stripDebugFileName} from './z88dkmapfile';
+
+// The section head symbols of the map file, e.g. "__code_user_head".
+const sectionHeadRegEx = /^__(.+)_head$/;
+
 
 /** The C source file of a .lis file. */
 interface ListCFile {
@@ -147,10 +151,16 @@ main.asm:
  * addresses carry the bank/page in the bits above 0xFFFF, e.g. $14C000.
  * Addresses of bank/page 0 cannot be distinguished from non-banked
  * addresses, e.g. $C000.
- * The bank numbering depends on the z88dk target ('target' setting):
- * 16k banks for "zx" (bank 3 at 0x03C000) or 8k pages for "zxn" (page 20
- * at 0x14C000). It is converted into the banks of the memory model.
- * For "zxn" the code of an even page may span 16k, i.e. the upper 8k of
+ * Newer z88dk versions (z88dk/z88dk#3197) write the block (top level
+ * section) of each section into the __<section>_head symbols. If the
+ * block name contains a bank (e.g. "BANK_0", "PAGE_20") it is used first,
+ * see sourceBank.
+ * Without block information (z88dk older than 2026-10-21) the banks are
+ * ignored, i.e. all addresses are 64k addresses.
+ * Otherwise the bank of the address is taken in the numbering of the
+ * memory model: 8k pages for ZXNEXT (page 20 at 0x14C000), 16k banks
+ * for ZX128K (bank 3 at 0x03C000).
+ * For ZXNEXT the code of an even page may span 16k, i.e. the upper 8k of
  * the 16k block belongs to the next (odd) page, e.g. 0x10E000 is in page 17.
  *
  * Debug information ("-debug"):
@@ -267,15 +277,20 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	// The last used address in the list file (incl. bank).
 	protected lastAddr64k: number;
 
+	// The section of the last (known) label in the list file.
+	protected lastLabelSection: string;
+
 	// In sources mode with C files, it tracks the current C line
 	protected currentCLine: number;
 
-	/// Function to convert the z88dk (banked) address into a DeZog long address.
-	/// Set in checkMappingToTargetMemoryModel.
-	protected funcConvertAddress: (value: number) => number;
+	/// The block (the top level section, e.g. "BANK_3") of each section.
+	/// Taken from the __<section>_head symbols of the map file. Older
+	/// z88dk versions do not write the block, then the map is empty.
+	protected sectionBlocks = new Map<string, string>();
 
-	/// The banked address warnings already given. To warn only once.
-	protected warnedBanks = new Set<string>();
+	/// The start address (64k) of each block, from the __<block>_head symbols.
+	protected blockStarts = new Map<string, number>();
+
 
 
 	/** Returns true if the map file contains the "-debug" C line information. */
@@ -403,9 +418,10 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 					// Use label address
 					this.lastLabelAddress = sym.value;
 					this.lastAddr64k = sym.value;
+					this.lastLabelSection = sym.section;
 					this.z88dkMapOffset = undefined;
 					// Add label
-					const longAddr = this.funcConvertAddress(sym.value);
+					const longAddr = this.convertAddress(sym.value, sym.section);
 					this.addLabelForNumber(longAddr, label);
 				}
 			}
@@ -431,7 +447,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 		}
 
 		// Store address (or several addresses for one line).
-		const longAddr = this.funcConvertAddress(this.lastAddr64k);
+		const longAddr = this.convertAddress(this.lastAddr64k, this.lastLabelSection);
 		this.addAddressLine(longAddr, countBytes);
 		this.lastAddr64k += countBytes;
 	}
@@ -643,7 +659,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 				fileName = this.findCLineFile(UnifiedPath.getUnifiedPath(info.fileName), sym.module, withDirectories);
 				relFileCache.set(cacheKey, fileName);
 			}
-			const longAddr = this.funcConvertAddress(sym.value);
+			const longAddr = this.convertAddress(sym.value, sym.section);
 			const ambiguous = this.ambiguousCFiles.get(cacheKey);
 			if (ambiguous) {
 				// Same name and module: the file whose code contains the address
@@ -671,7 +687,7 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 		// Boundaries: C lines and labels
 		const boundaries = [
 			...lineEntries.map(e => ({longAddr: e.longAddr, module: e.module})),
-			...this.addressSymbols.map(sym => ({longAddr: this.funcConvertAddress(sym.value), module: sym.module}))
+			...this.addressSymbols.map(sym => ({longAddr: this.convertAddress(sym.value, sym.section), module: sym.module}))
 		];
 		// Lines without code (e.g. a function header) share the address with the
 		// following line. The address belongs to the last of them, i.e. the highest
@@ -813,7 +829,10 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 		this.z88dkMapOffset = 0;
 		this.lastLabelAddress = 0;
 		this.lastAddr64k = 0;
+		this.lastLabelSection = '';
 		this.z88dkMappings.clear();
+		this.sectionBlocks.clear();
+		this.blockStarts.clear();
 		this.z88dkLocalMappings.clear();
 		this.currentModule = '';
 		this.cLineSymbols = [];
@@ -835,6 +854,14 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 			}
 			if (isDebugSymbol(sym.name))
 				continue;	// __ASM_LINE_ (the .lis file is more precise) and __CDBINFO__ (not used yet)
+			// The block of a section, e.g. "__code_bank0_head = $8000 ; const, public, def, , BANK_0,"
+			const matchHead = sectionHeadRegEx.exec(sym.name);
+			if (matchHead && sym.type === 'const' && sym.section) {
+				const section = matchHead[1];
+				this.sectionBlocks.set(section, sym.section);
+				if (section === sym.section)
+					this.blockStarts.set(section, sym.value & 0xFFFF);
+			}
 			this.z88dkMappings.set(sym.name, sym);
 			if (sym.scope === 'local' && sym.module)
 				this.z88dkLocalMappings.set(sym.module + ':' + sym.name, sym);
@@ -844,83 +871,201 @@ export class Z88dkLabelParserV2 extends LabelParserBase {
 	}
 
 
-	/** Sets up the conversion of z88dk (banked) addresses into DeZog
-	 * long addresses.
-	 * - Addresses <= 0xFFFF: The bank is taken from the initial slot
-	 *   configuration of the memory model.
-	 * - Otherwise bits 16-23 are the bank. z88dk does not tell which
-	 *   target was used, so it is taken from the 'target' setting:
-	 *   "zx" uses 16k banks, "zxn" 8k pages. The bank is converted
-	 *   into the banks of the target memory model (ZX Next or ZX128K).
-	 *   An even 8k page may span 16k, i.e. the upper 8k belongs to the
-	 *   next page.
-	 *   If 'target' is not set or the bank cannot be converted, the
-	 *   bank info is ignored and a warning is given.
+	/** Converts a z88dk (map file) address into a DeZog long address.
+	 * @param value The z88dk address. Banked addresses carry the bank in
+	 * bits 16-23.
+	 * @param section The section of the address, e.g. "code_user".
+	 * @returns The long address.
+	 */
+	protected convertAddress(value: number, section: string): number {
+		const addr64k = value & 0xFFFF;
+		return this.createLongAddress(addr64k, this.sourceBank(value, section));
+	}
+
+
+	/** Returns the bank of a z88dk address as passed to funcConvertBank.
+	 * The bank is a ZX Next 8k page + 1. 0 means that the address carries
+	 * no bank information, i.e. the bank of the initial slot configuration
+	 * is used.
+	 * The bank is determined (in this order) by:
+	 * 1. The name of the block (top level section) the section belongs to,
+	 *    with the same rules as appmake:
+	 *    "BANK_n": 16k bank n, "BANK_n_L"/"BANK_n_H": lower/upper 8k of
+	 *    16k bank n, "PAGE_n": 8k pages starting at page n.
+	 * 2. Bits 16-23 of the address. z88dk does not tell which numbering was
+	 *    used, so the numbering of the memory model is assumed: 8k pages for
+	 *    ZXNEXT, 16k banks for ZX128K. An even 8k page may span 16k, i.e.
+	 *    the upper 8k belongs to the next page.
+	 *    For other memory models there is no bank information.
+	 * 3. Otherwise (address <= 0xFFFF): no bank information.
+	 * @param value The z88dk address.
+	 * @param section The section of the address.
+	 */
+	protected sourceBank(value: number, section: string): number {
+		const addr64k = value & 0xFFFF;
+		const half = (addr64k >>> 13) & 0x01;	// Lower or upper 8k of a 16k bank
+
+		// Block name
+		const block = this.sectionBlocks.get(section);
+		if (block) {
+			const page = this.blockPage(block, addr64k);
+			if (page !== undefined)
+				return page + 1;
+		}
+
+		// Bits 16-23
+		if (value <= 0xFFFF)
+			return 0;
+		const bank = value >>> 16;
+		if (this.memoryModel instanceof MemoryModelZxNextBase)
+			return (bank | half) + 1;	// Upper 8k of an even page
+		if (this.memoryModel instanceof MemoryModelZx128k)
+			return 2 * bank + half + 1;
+		return 0;
+	}
+
+
+	/** Returns the ZX Next 8k page of an address from the name of its block.
+	 * See appmake (zx.c, zxn.c): the bank space name ("BANK", "PAGE") may be
+	 * anywhere in the block name, followed by "_<number>".
+	 * @param block The block name, e.g. "BANK_3" or "PAGE_20".
+	 * @param addr64k The 64k address.
+	 * @returns The 8k page or undefined if the block name contains no bank.
+	 */
+	protected blockPage(block: string, addr64k: number): number | undefined {
+		// 16k bank
+		let k = block.indexOf('BANK');
+		if (k >= 0) {
+			const match = /^_(\d+)(?:_([LH]))?/.exec(block.substring(k + 4));
+			if (match) {
+				const bank = parseInt(match[1]);
+				if (match[2] === 'L')
+					return 2 * bank;
+				if (match[2] === 'H')
+					return 2 * bank + 1;
+				return 2 * bank + ((addr64k >>> 13) & 0x01);
+			}
+		}
+		// 8k page. The code of a page continues in the following pages.
+		k = block.indexOf('PAGE');
+		if (k >= 0) {
+			const match = /^_(\d+)/.exec(block.substring(k + 4));
+			if (match) {
+				const page = parseInt(match[1]);
+				const start = this.blockStarts.get(block) ?? (addr64k & 0xE000);
+				const offset = (start & 0x1FFF) + addr64k - start;
+				return page + Math.max(0, offset >>> 13);
+			}
+		}
+		return undefined;
+	}
+
+
+	/** Sets up the conversion of the z88dk banks into the banks of the
+	 * target memory model (funcConvertBank).
+	 * The z88dk bank (see sourceBank) is a ZX Next 8k page + 1, 0 if the
+	 * address carries no bank information.
+	 * - 0: The bank is taken from the initial slot configuration of the
+	 *   memory model.
+	 * - Otherwise the page is converted into the banks of the target memory
+	 *   model (ZX Next or ZX128K).
+	 *   If the page cannot be converted, the bank of the initial slot
+	 *   configuration is used.
+	 * If the map file contains no block information (z88dk older than
+	 * 2026-10-21) all banks are ignored, i.e. the addresses are parsed as
+	 * 64k addresses.
+	 * The map file is already read. All its addresses are checked here, so
+	 * that a warning is given only once (funcConvertBank does not warn).
 	 */
 	protected checkMappingToTargetMemoryModel() {
 		super.checkMappingToTargetMemoryModel();	// Sets funcConvertBank for 64k
+		if (this.sectionBlocks.size === 0) {
+			// Older z88dk: 64k only
+			this.checkNoBlockInfo();
+			return;
+		}
+		const defaultBank = this.funcConvertBank;
 		const memModel = this.memoryModel;
-		const target = (this.config as Z88dkConfigV2).target;
 
-		// Conversion of the bank into the bank of the target memory model.
+		// Conversion of the 8k page into the bank of the target memory model.
 		// Returns undefined if not possible.
-		let convertBank: ((bank: number, addr64k: number) => number | undefined) | undefined;
+		let convertPage: (page: number, addr64k: number) => number | undefined;
 		if (memModel instanceof MemoryModelZxNextBase) {
-			if (target === 'zxn')
-				convertBank = (page, addr64k) => page | ((addr64k >>> 13) & 0x01);	// Upper 8k of an even page
-			else if (target === 'zx')
-				convertBank = (bank, addr64k) => 2 * bank + ((addr64k >>> 13) & 0x01);
+			convertPage = (page, addr64k) => {
+				const slot = memModel.slotRanges[memModel.slotAddress64kAssociation[addr64k]];
+				return slot.banks.has(page) ? page : undefined;
+			};
 		}
 		else if (memModel instanceof MemoryModelZx128k) {
-			if (target === 'zxn') {
-				convertBank = (page, addr64k) => {
-					const half = (addr64k >>> 13) & 0x01;
-					page |= half;	// Upper 8k of an even page
-					if ((page & 0x01) !== half)
-						return undefined;	// Odd page in the lower 8k of a 16k bank
-					return page >>> 1;
-				};
-			}
-			else if (target === 'zx')
-				convertBank = (bank) => bank;
+			convertPage = (page, addr64k) => {
+				if ((page & 0x01) !== ((addr64k >>> 13) & 0x01))
+					return undefined;	// Odd page in the lower 8k of a 16k bank or vice versa
+				const bank = page >>> 1;
+				const slot = memModel.slotRanges[memModel.slotAddress64kAssociation[addr64k]];
+				return slot.banks.has(bank) ? bank : undefined;
+			};
+		}
+		else {
+			// No banking
+			this.checkBanksNotUsed();
+			return;
 		}
 
-		this.funcConvertAddress = (value: number) => {
-			const addr64k = value & 0xFFFF;
-			if (value <= 0xFFFF)
-				return this.createLongAddress(addr64k, 0);
-			const bank = value >>> 16;
-			const hexValue = '$' + HexFormat.getHexString(value, 6);
-			if (target === undefined) {
-				this.warnBank('no target', "The map file contains banked addresses (e.g. " + hexValue + ") but 'target' is not set. The bank information is ignored.");
-				return this.createLongAddress(addr64k, 0);
-			}
-			if (!convertBank) {
-				this.warnBank('memory model', "Banked addresses (e.g. " + hexValue + ") are only supported for the ZX128K and ZX Next memory models. The bank information is ignored.");
-				return this.createLongAddress(addr64k, 0);
-			}
-			const convBank = convertBank(bank, addr64k);
-			const slot = memModel.slotRanges[memModel.slotAddress64kAssociation[addr64k]];
-			if (convBank === undefined || !slot.banks.has(convBank)) {
-				this.warnBank('bank ' + bank, "Bank " + bank + " (target '" + target + "') of address " + hexValue + " cannot be converted to a bank of the memory model at that address. The bank information is ignored.");
-				return this.createLongAddress(addr64k, 0);
-			}
-			return addr64k + ((convBank + 1) << 16);
+		this.checkPagesConvertible(convertPage);
+
+		this.funcConvertBank = (addr64k: number, bank: number) => {
+			if (bank === 0)
+				return defaultBank(addr64k, 0);
+			return convertPage(bank - 1, addr64k) ?? defaultBank(addr64k, 0);
 		};
 	}
 
 
-	/** Warns about a banked address that cannot be converted.
-	 * Each warning (key) is given only once.
-	 * @param key Identifies the warning.
-	 * @param message The warning text.
+	/** Returns the symbols of the map file that have an address
+	 * (labels and C lines).
 	 */
-	protected warnBank(key: string, message: string) {
-		const mapFile = (this.config as Z88dkConfigV2).mapFile;
-		key = mapFile + ':' + key;
-		if (this.warnedBanks.has(key))
-			return;
-		this.warnedBanks.add(key);
-		this.sendWarning(message, "warning", mapFile);
+	protected mapAddressSymbols(): Z88dkMapSymbol[] {
+		return [...this.addressSymbols, ...this.cLineSymbols];
+	}
+
+
+	/** Warns (once) if the map file contains banked addresses but no block
+	 * information (z88dk older than 2026-10-21).
+	 */
+	protected checkNoBlockInfo() {
+		const banked = this.mapAddressSymbols().find(sym => sym.value > 0xFFFF);
+		if (banked)
+			this.sendWarning("The map file contains banked addresses (e.g. '" + banked.name + "' = $" + HexFormat.getHexString(banked.value, 6) + ") but no block information of the sections. Banking requires a z88dk from 2026-10-21 or later. The bank information is ignored.", "warning", (this.config as Z88dkConfig).mapFile);
+	}
+
+
+	/** Warns (once) if the map file contains banked addresses although the
+	 * memory model has no banking (i.e. is neither ZX128K nor ZX Next).
+	 */
+	protected checkBanksNotUsed() {
+		const banked = this.mapAddressSymbols().find(sym => sym.value > 0xFFFF
+			|| this.blockPage(this.sectionBlocks.get(sym.section) ?? '', sym.value & 0xFFFF) !== undefined);
+		if (banked)
+			this.sendWarning("Banked addresses (e.g. '" + banked.name + "' in section '" + banked.section + "') are only supported for the ZX128K and ZX Next memory models. The bank information is ignored.", "warning", (this.config as Z88dkConfig).mapFile);
+	}
+
+
+	/** Warns (once per page) about pages of the map file that cannot be
+	 * converted to a bank of the memory model.
+	 * @param convertPage The conversion of a page into the memory model bank.
+	 */
+	protected checkPagesConvertible(convertPage: (page: number, addr64k: number) => number | undefined) {
+		const warned = new Set<number>();
+		for (const sym of this.mapAddressSymbols()) {
+			const bank = this.sourceBank(sym.value, sym.section);
+			if (bank === 0)
+				continue;
+			const page = bank - 1;
+			const addr64k = sym.value & 0xFFFF;
+			if (warned.has(page) || convertPage(page, addr64k) !== undefined)
+				continue;
+			warned.add(page);
+			this.sendWarning("Page " + page + " (8k) of '" + sym.name + "' (section '" + sym.section + "') cannot be converted to a bank of the memory model at $" + HexFormat.getHexString(addr64k, 4) + ". The bank information is ignored.", "warning", (this.config as Z88dkConfig).mapFile);
+		}
 	}
 }

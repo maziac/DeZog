@@ -1,3 +1,5 @@
+__PAGE_20_CODE_head             = $140000 ; const, public, def, , PAGE_20_CODE,
+__PAGE_22_CODE_head             = $160000 ; const, public, def, , PAGE_22_CODE,
 __C_LINE_0_factorial_2ec        = $0000 ; addr, local, , factorial_c, , factorial.c:0
 __C_LINE_0_factorial_2eh        = $0000 ; addr, local, , factorial_c, , factorial.h:0
 __C_LINE_0_fibonacci_2ec        = $0000 ; addr, local, , fibonacci_c, , fibonacci.c:0

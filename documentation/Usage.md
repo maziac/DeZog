@@ -426,7 +426,6 @@ Same as sjasmplus but use: ```z80asm```, e.g.:
 For 'path', 'srcDirs' and 'excludeFiles' see z80asm configuration.
 
 - 'mapFile': The map file is required to correctly parse the label values and to get correct file/line to address associations.
-- 'target': Optional. "zx" or "zxn". The z88dk target (`+zx` or `+zxn`) used for compiling. It defines the numbering of the bank that z88dk encodes in the upper bits of the map file addresses. Only required for banked code, see "Banking" in the z88dk-zcc configuration below.
 
 Since version 2 (z88dkv2) the .lis file format has changed for z88dk.
 You can easily distinguish the 2 versions. The newer format does start with the sources file name.
@@ -503,44 +502,26 @@ zcc +zxn -subtype=nex -vn --list -m -debug --c-code-in-asm -clib=sdcc_iy -Cz"--c
 
 **Banking:**
 
-For banked code z88dk encodes the bank in the upper bits of the addresses in the map file, e.g. `$14C000` for address `0xC000` in bank `0x14`.
-The numbering of that bank depends on the z88dk target and cannot be derived from the map file:
-- `+zx`: 16k banks, e.g. `$05C000` for `BANK_5`.
-- `+zxn`: 8k pages, e.g. `$0AC000` for `BANK_5` (page 10) or `$14C000` for page 20.
+Banking requires a z88dk nightly from 2026-10-21 or later. From this version on z80asm writes the block (the top level section) of each section into the map file ([z88dk#3197](https://github.com/z88dk/z88dk/pull/3197)).
+With older z88dk versions the bank information is ignored, i.e. all addresses are treated as 64k addresses with the initial banks of the slots. A warning is shown if the map file contains banked addresses.
 
-Therefore you need to tell DeZog the target with 'target':
-~~~json
-"z88dkv2": [
-    {
-        "path": "src/*.lis",
-        "srcDirs": [
-            "src"
-        ],
-        "mapFile": "build/main.map",
-        "target": "zxn"
-    }
-]
-~~~
+DeZog determines the bank of an address in this order:
+1. From the name of the block (the top level section) the code is placed in, with the same rules as appmake:
+   - `BANK_n`: 16k bank n, e.g. `BANK_0` at `0x8000` is bank 0 (pages 0/1 on the ZX Next), not the bank that is initially mapped there.
+   - `BANK_n_L`, `BANK_n_H`: the lower or upper 8k of the 16k bank n, i.e. page 2n or 2n+1.
+   - `PAGE_n`: 8k page n. Code that exceeds 8k continues in page n+1.
 
-Allowed values are "zx" and "zxn". Other targets are not supported.
+   With a current z88dk all banks of the z88dk crts (`BANK_n`, `PAGE_n`) are found this way, for `+zx` and `+zxn`, newlib and classic.
+2. From the upper bits of the address (e.g. for sections with a 24 bit ORG and no bank in the block name). For banked code z88dk may encode the bank in the upper bits of the addresses in the map file, e.g. `$14C000` for address `0xC000` in bank `0x14`. z88dk does not tell its numbering, so the numbering of the 'memoryModel' is assumed:
+   - "ZXNEXT": 8k pages, e.g. `$14C000` is page 20. For an even page the upper 8k of a 16k area (e.g. 0xE000-0xFFFF) is the next page.
+   - "ZX128K": 16k banks, e.g. `$03C000` is bank 3.
+3. Otherwise (addresses up to 0xFFFF) the initial bank of the slot is used.
 
-The bank is converted into the banks of the 'memoryModel':
+The bank is converted into the banks of the 'memoryModel': for "ZXNEXT" the 8k page is used directly, for "ZX128K" the 16k bank (page / 2).
 
-| 'target' | "ZXNEXT" (8k pages)                                  | "ZX128K" (16k banks)                                   |
-|----------|------------------------------------------------------|--------------------------------------------------------|
-| "zxn"    | page; for an even page the upper 8k of a 16k area (e.g. 0xE000-0xFFFF) is the next page | page / 2; an odd page must be in the upper 8k |
-| "zx"     | 2 * bank, or 2 * bank + 1 for the upper 8k           | bank                                                   |
-
-E.g. with "zx" the `BANK_5` at `$05C000` is page 10 (and page 11 at `$05E000`) for "ZXNEXT".
-
-Note: for `+zxn` the `BANK_n` sections use the page numbering since z88dk from 2026-04-20. Older versions (e.g. z88dk 2.4) used the 16k bank numbering.
-
-Addresses up to 0xFFFF use the initial bank of the slot.
-
-In the following cases the bank information is ignored, i.e. the initial bank of the slot is used, and a warning is shown:
-- 'target' is not set but the map file contains banked addresses.
+In the following cases the bank information is ignored, i.e. the initial bank of the slot is used, and a warning is shown (once):
 - The 'memoryModel' is neither "ZX128K" nor "ZXNEXT" (e.g. "RAM" or "CUSTOM").
-- The converted bank does not exist at that address in the memory model, e.g. bank 9 for "ZX128K".
+- The bank does not exist at that address in the memory model, e.g. bank 9 for "ZX128K" or `BANK_0` at `0x8000` for "ZX128K".
 
 Top of stack:
 In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
@@ -562,7 +543,7 @@ Notes:
 - C-support works with sdcc and sccz80 (e.g. `-compiler=sccz80 -clib=new`).
 - For the "path" you can use globbing
 - Top of stack: In launch.json you can set the `topOfStack` to the z88dk label `__register_sp` to set the stack for evaluation in DeZog.
-- Banking: see "Banking" above. The bank/page is taken from the addresses of the map file and converted according to 'target'.
+- Banking: see "Banking" above. The bank/page is taken from the block names of the sections or from the addresses of the map file and converted into the banks of the 'memoryModel'.
 - Not all C-code may have corresponding addresses in assembler code. I.e. for those lines you cannot set breakpoints. Try to set the breakpoint at some other line in the vicinity.
 - z88dk generated C-source code line references are not very accurate or even wrong in some cases. This may result in inaccurate stepping. Please see [#167-comment](https://github.com/maziac/DeZog/issues/167#issuecomment-4586450764) for more details.
 

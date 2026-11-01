@@ -1,0 +1,4 @@
+__CODE_head                     = $8000 ; const, public, def, , CODE,
+__code_user_head                = $8000 ; const, public, def, , CODE,
+_main                           = $8000 ; addr, public, , main, code_user, main.asm:7
+sub                             = $8004 ; addr, local, , main, code_user, main.asm:10
