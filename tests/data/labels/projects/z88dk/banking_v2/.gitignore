@@ -1,0 +1,11 @@
+# Build products. Only the sources, the .lis and the .map files are tracked.
+*.o
+*.bin
+*.tap
+*.sna
+*.nex
+c_*/main
+# Listing of the crt
+c_*/main.lis
+# Copy of the map file given to appmake
+asm_*/image.map
