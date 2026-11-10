@@ -14,18 +14,27 @@ main.asm:
     13                          SECTION code_user
     14                          PUBLIC _main
     15                          _main:
-    16  0000  00                	nop
-    17  0001  c9                	ret
-    18                          
-    19                          SECTION code_bank3
-    20                          PUBLIC _bank3_fn
-    21                          _bank3_fn:
-    22  0000  00                	nop
-    23  0001  c9                	ret
-    24                          
-    25                          SECTION code_extra
-    26                          PUBLIC _far
-    27                          _far:
-    28  0000  00                	nop
-    29  0001  c9                	ret
-    30                          
+    16                          	; Page each bank in at $C000 (port $7FFD, ROM 1) and call its function
+    17  0000  01fd7f            	ld bc,$7FFD
+    18  0003  3e13              	ld a,$10+3
+    19  0005  ed79              	out (c),a
+    20  0007  cd0000            	call _bank3_fn
+    21  000a  3e14              	ld a,$10+4
+    22  000c  ed79              	out (c),a
+    23  000e  cd0000            	call _far
+    24  0011  3e10              	ld a,$10+0
+    25  0013  ed79              	out (c),a
+    26  0015  c9                	ret
+    27                          
+    28                          SECTION code_bank3
+    29                          PUBLIC _bank3_fn
+    30                          _bank3_fn:
+    31  0000  00                	nop
+    32  0001  c9                	ret
+    33                          
+    34                          SECTION code_extra
+    35                          PUBLIC _far
+    36                          _far:
+    37  0000  00                	nop
+    38  0001  c9                	ret
+    39                          

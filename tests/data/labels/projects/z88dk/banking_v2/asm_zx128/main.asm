@@ -13,7 +13,16 @@ SECTION code_extra
 SECTION code_user
 PUBLIC _main
 _main:
-	nop
+	; Page each bank in at $C000 (port $7FFD, ROM 1) and call its function
+	ld bc,$7FFD
+	ld a,$10+3
+	out (c),a
+	call _bank3_fn
+	ld a,$10+4
+	out (c),a
+	call _far
+	ld a,$10+0
+	out (c),a
 	ret
 
 SECTION code_bank3

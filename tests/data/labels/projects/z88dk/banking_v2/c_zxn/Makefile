@@ -7,7 +7,9 @@ SUBTYPE ?= -subtype=nex
 CLIB    ?= sdcc_iy
 DEBUG   ?= -debug
 CFLAGS_EXTRA ?=
-ZCC      = zcc +$(TARGET) $(SUBTYPE) -clib=$(CLIB) $(DEBUG) $(CFLAGS_EXTRA)
+# The stack must stay below $C000: banked_call pages the banked code in there.
+STACK    = -pragma-define:REGISTER_SP=0xC000
+ZCC      = zcc +$(TARGET) $(SUBTYPE) -clib=$(CLIB) $(DEBUG) $(CFLAGS_EXTRA) $(STACK)
 BANKFLAGS = --codesegPAGE_20 --constsegPAGE_20
 
 all: main.nex

@@ -1,4 +1,4 @@
-extern int banked_fn(int a);
+extern int banked_fn(int a) __banked;
 
 int main(void)
 {

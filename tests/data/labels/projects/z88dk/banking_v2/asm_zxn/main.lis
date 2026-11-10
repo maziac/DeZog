@@ -22,27 +22,40 @@ main.asm:
     21                          SECTION code_user
     22                          PUBLIC _main
     23                          _main:
-    24  0000  00                	nop
-    25  0001  c9                	ret
-    26                          
-    27                          SECTION code_bank0
-    28                          PUBLIC _banked
-    29                          _banked:
-    30  0000  00                	nop
-    31  0001  c9                	ret
-    32                          
-    33                          SECTION code_bank3h
-    34                          PUBLIC _bank3h_fn
-    35                          _bank3h_fn:
-    36  0000  00                	nop
-    37  0001  c9                	ret
-    38                          
-    39                          SECTION code_page21
-    40                          PUBLIC _page21_fn
-    41                          _page21_fn:
-    42  0000  00                	nop
-    43  0001  c9                	ret
-    44  0002  0000000000000000  	defs $2000
+    24                          	; Page each section in (MMU4 = $54 ... MMU7 = $57) and call its function
+    25  0000  ed915400          	nextreg $54,0
+    26  0004  cd0000            	call _banked
+    27  0007  ed915404          	nextreg $54,4
+    28  000b  ed915707          	nextreg $57,7
+    29  000f  cd0000            	call _bank3h_fn
+    30  0012  ed915615          	nextreg $56,21
+    31  0016  ed915716          	nextreg $57,22
+    32  001a  cd0000            	call _page21_fn
+    33  001d  3a0220            	ld a,(_page22_data)
+    34  0020  ed915614          	nextreg $56,20
+    35  0024  cd0000            	call _far
+    36  0027  ed915600          	nextreg $56,0
+    37  002b  ed915701          	nextreg $57,1
+    38  002f  c9                	ret
+    39                          
+    40                          SECTION code_bank0
+    41                          PUBLIC _banked
+    42                          _banked:
+    43  0000  00                	nop
+    44  0001  c9                	ret
+    45                          
+    46                          SECTION code_bank3h
+    47                          PUBLIC _bank3h_fn
+    48                          _bank3h_fn:
+    49  0000  00                	nop
+    50  0001  c9                	ret
+    51                          
+    52                          SECTION code_page21
+    53                          PUBLIC _page21_fn
+    54                          _page21_fn:
+    55  0000  00                	nop
+    56  0001  c9                	ret
+    57  0002  0000000000000000  	defs $2000
               0000000000000000  
               0000000000000000  
               0000000000000000  
@@ -1066,12 +1079,12 @@ main.asm:
               0000000000000000  
               0000000000000000  
               0000000000000000  
-    45                          _page22_data:
-    46  2002  01                	defb 1
-    47                          
-    48                          SECTION code_extra
-    49                          PUBLIC _far
-    50                          _far:
-    51  0000  00                	nop
-    52  0001  c9                	ret
-    53                          
+    58                          _page22_data:
+    59  2002  01                	defb 1
+    60                          
+    61                          SECTION code_extra
+    62                          PUBLIC _far
+    63                          _far:
+    64  0000  00                	nop
+    65  0001  c9                	ret
+    66                          
