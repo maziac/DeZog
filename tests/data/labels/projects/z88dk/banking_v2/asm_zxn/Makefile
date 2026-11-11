@@ -1,7 +1,7 @@
 # Variations can be tested from the command line, e.g.:
-#   make ASMFLAGS="-b -m -l -DFOO"
+#   make ASMFLAGS="-mz80n -b -m -l -DFOO"
 ASM      ?= z88dk-z80asm
-ASMFLAGS ?= -b -m -l
+ASMFLAGS ?= -mz80n -b -m -l
 APPMAKE  ?= z88dk-appmake
 
 # Start address and stack of the image (hex)

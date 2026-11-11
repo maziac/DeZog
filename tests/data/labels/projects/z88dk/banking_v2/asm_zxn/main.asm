@@ -21,7 +21,20 @@ SECTION code_extra
 SECTION code_user
 PUBLIC _main
 _main:
-	nop
+	; Page each section in (MMU4 = $54 ... MMU7 = $57) and call its function
+	nextreg $54,0
+	call _banked
+	nextreg $54,4
+	nextreg $57,7
+	call _bank3h_fn
+	nextreg $56,21
+	nextreg $57,22
+	call _page21_fn
+	ld a,(_page22_data)
+	nextreg $56,20
+	call _far
+	nextreg $56,0
+	nextreg $57,1
 	ret
 
 SECTION code_bank0
