@@ -3,20 +3,20 @@
 #   make DEBUG=
 #   make CFLAGS_EXTRA=-O2
 TARGET   = zx
-SUBTYPE ?= -subtype=default
+SUBTYPE ?= -subtype=sna
 CLIB    ?= sdcc_iy
 DEBUG   ?= -debug
 CFLAGS_EXTRA ?=
 ZCC      = zcc +$(TARGET) $(SUBTYPE) -clib=$(CLIB) $(DEBUG) $(CFLAGS_EXTRA)
 
-all: main.tap
+all: main.sna
 
 # Tape with a BASIC loader. Also creates main.map and the listings.
-main.tap: main.c banked.c
+main.sna: main.c banked.c
 	$(ZCC) -m --list main.c banked.c -o main -create-app
 
 # Removes the build products (the .lis and .map files are tracked)
 clean:
-	rm -f *.o *.bin *.tap main main.lis
+	rm -f *.o *.bin *.sna main main.lis
 
 .PHONY: all clean
