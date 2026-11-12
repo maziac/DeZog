@@ -1,4 +1,4 @@
-/var/folders/74/5t45z_z52dl0fz_b_xmgwcc00000gn/T/tmp76elMxim.asm:
+/var/folders/gr/817lnxns137006z93d2dz7b00000gn/T/tmp9oQBhjfl.asm:
      1                          MODULE banked_c
      2                          LINE 0, "banked.c"
 banked.c:
@@ -238,21 +238,18 @@ banked.c:
    233                          ;--------------------------------------------------------
    234                          ; absolute ram data
    235                          ;--------------------------------------------------------
-   236                          	SECTION IGNORE
-   237                          ;--------------------------------------------------------
-   238                          ; global & static initialisations
+   236                          ;--------------------------------------------------------
+   237                          ; global & static initialisations
+   238                          ;--------------------------------------------------------
    239                          ;--------------------------------------------------------
-   240                          	SECTION code_crt_init
+   240                          ; Home
    241                          ;--------------------------------------------------------
-   242                          ; Home
-   243                          ;--------------------------------------------------------
-   244                          	SECTION code_home
-   245                          ;--------------------------------------------------------
-   246                          ; code
-   247                          ;--------------------------------------------------------
-   248                          	SECTION PAGE_20
-   249                          C_LINE 1,"banked.c::x::0::7	"
-banked.c::x::0::7	:
+   242                          ;--------------------------------------------------------
+   243                          ; code
+   244                          ;--------------------------------------------------------
+   245                          	SECTION PAGE_20
+   246                          C_LINE 1,"banked.c::x::0::7"
+banked.c::x::0::7:
      1                          ;	---------------------------------
      1                          ; Function banked_fn
      1                          ; ---------------------------------
@@ -261,30 +258,30 @@ banked.c::x::0::7	:
      1  0000  dde5              	push	ix
      1  0002  dd210000          	ld	ix,	+0
      1  0006  dd39              	add	ix, sp
-     1                          C_LINE 3,"banked.c::x::10000::7	"
-banked.c::x::10000::7	:
+     1                          C_LINE 3,"banked.c::x::10000::7"
+banked.c::x::10000::7:
      3  0008  dd4e04            	ld	c,(ix+4)
      3  000b  dd4605            	ld	b,(ix+5)
      3  000e  69                	ld	l, c
      3  000f  60                	ld	h, b
      3  0010  29                	add	hl, hl
      3  0011  09                	add	hl, bc
-     3                          C_LINE 4,"banked.c::x::10000::7	"
+     3                          C_LINE 4,"banked.c::x::10000::7"
      4  0012  dde1              	pop	ix
-     4                          C_LINE 4,"banked.c::x::10000::7	"
+     4                          C_LINE 4,"banked.c::x::10000::7"
      4  0014  c9                	ret
      4                          	SECTION IGNORE
      4                          
      4                          
      4                          ; Embedding adb file
-     4                          PUBLIC __CDBINFO__M_3abanked
-     4                          defc __CDBINFO__M_3abanked=1
+     4                          PUBLIC __CDBINFO__M_3abanked_2ec
+     4                          defc __CDBINFO__M_3abanked_2ec=1
      4                          
      4                          PUBLIC __CDBINFO__F_3aG_24banked_5ffn_24_30_5f_30_24_30_28_7b_32_7dDF_2cSI_3aS_29_2cC_2c_30_2c_30_2c_30_2c_30_2c_30
      4                          defc __CDBINFO__F_3aG_24banked_5ffn_24_30_5f_30_24_30_28_7b_32_7dDF_2cSI_3aS_29_2cC_2c_30_2c_30_2c_30_2c_30_2c_30=1
      4                          
-     4                          PUBLIC __CDBINFO__S_3aLbanked_2ebanked_5ffn_24a_24_31_5f_30_24_36_28_7b_32_7dSI_3aS_29_2cB_2c_31_2c_34
-     4                          defc __CDBINFO__S_3aLbanked_2ebanked_5ffn_24a_24_31_5f_30_24_36_28_7b_32_7dSI_3aS_29_2cB_2c_31_2c_34=1
+     4                          PUBLIC __CDBINFO__S_3aLbanked_2ec_2ebanked_5ffn_24a_24_31_5f_30_24_36_28_7b_32_7dSI_3aS_29_2cB_2c_31_2c_34
+     4                          defc __CDBINFO__S_3aLbanked_2ec_2ebanked_5ffn_24a_24_31_5f_30_24_36_28_7b_32_7dSI_3aS_29_2cB_2c_31_2c_34=1
      4                          
      4                          PUBLIC __CDBINFO__S_3aG_24banked_5ffn_24_30_5f_30_24_30_28_7b_32_7dDF_2cSI_3aS_29_2cC_2c_30_2c_30
      4                          defc __CDBINFO__S_3aG_24banked_5ffn_24_30_5f_30_24_30_28_7b_32_7dDF_2cSI_3aS_29_2cC_2c_30_2c_30=1

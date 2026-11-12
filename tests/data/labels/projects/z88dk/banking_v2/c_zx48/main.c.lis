@@ -1,4 +1,4 @@
-/var/folders/74/5t45z_z52dl0fz_b_xmgwcc00000gn/T/tmpuXZa1TK4.asm:
+/var/folders/gr/817lnxns137006z93d2dz7b00000gn/T/tmpIYfn1e9f.asm:
      1                          MODULE main_c
      2                          LINE 0, "main.c"
 main.c:
@@ -237,47 +237,44 @@ main.c:
    232                          ;--------------------------------------------------------
    233                          ; absolute ram data
    234                          ;--------------------------------------------------------
-   235                          	SECTION IGNORE
-   236                          ;--------------------------------------------------------
-   237                          ; global & static initialisations
+   235                          ;--------------------------------------------------------
+   236                          ; global & static initialisations
+   237                          ;--------------------------------------------------------
    238                          ;--------------------------------------------------------
-   239                          	SECTION code_crt_init
+   239                          ; Home
    240                          ;--------------------------------------------------------
-   241                          ; Home
-   242                          ;--------------------------------------------------------
-   243                          	SECTION code_home
-   244                          ;--------------------------------------------------------
-   245                          ; code
-   246                          ;--------------------------------------------------------
-   247                          	SECTION code_compiler
-   248                          C_LINE 3,"main.c::x::0::8	"
-main.c::x::0::8	:
+   241                          ;--------------------------------------------------------
+   242                          ; code
+   243                          ;--------------------------------------------------------
+   244                          	SECTION code_compiler
+   245                          C_LINE 3,"main.c::x::0::8"
+main.c::x::0::8:
      3                          ;	---------------------------------
      3                          ; Function main
      3                          ; ---------------------------------
      3                          _main:
-     3                          C_LINE 5,"main.c::x::10000::8	"
-main.c::x::10000::8	:
+     3                          C_LINE 5,"main.c::x::10000::8"
+main.c::x::10000::8:
      5  0000  210200            	ld	hl,0x0002
      5  0003  e5                	push	hl
      5  0004  cd0000            	call	_banked_fn
      5  0007  f1                	pop	af
-     5                          C_LINE 6,"main.c::x::10000::8	"
-     6                          C_LINE 7,"main.c::x::10000::8	"
-     7                          C_LINE 7,"main.c::x::10000::8	"
+     5                          C_LINE 6,"main.c::x::10000::8"
+     6                          C_LINE 7,"main.c::x::10000::8"
+     7                          C_LINE 7,"main.c::x::10000::8"
      7  0008  c9                	ret
      7                          	SECTION IGNORE
      7                          
      7                          
      7                          ; Embedding adb file
-     7                          PUBLIC __CDBINFO__M_3amain
-     7                          defc __CDBINFO__M_3amain=1
+     7                          PUBLIC __CDBINFO__M_3amain_2ec
+     7                          defc __CDBINFO__M_3amain_2ec=1
      7                          
      7                          PUBLIC __CDBINFO__F_3aG_24main_24_30_5f_30_24_30_28_7b_32_7dDF_2cSI_3aS_29_2cC_2c_30_2c_30_2c_30_2c_30_2c_30
      7                          defc __CDBINFO__F_3aG_24main_24_30_5f_30_24_30_28_7b_32_7dDF_2cSI_3aS_29_2cC_2c_30_2c_30_2c_30_2c_30_2c_30=1
      7                          
-     7                          PUBLIC __CDBINFO__S_3aLmain_2emain_24r_24_31_5f_30_24_38_28_7b_32_7dSI_3aS_29_2cR_2c_30_2c_30_2c_5bl_2ch_5d
-     7                          defc __CDBINFO__S_3aLmain_2emain_24r_24_31_5f_30_24_38_28_7b_32_7dSI_3aS_29_2cR_2c_30_2c_30_2c_5bl_2ch_5d=1
+     7                          PUBLIC __CDBINFO__S_3aLmain_2ec_2emain_24r_24_31_5f_30_24_38_28_7b_32_7dSI_3aS_29_2cR_2c_30_2c_30_2c_5bl_2ch_5d
+     7                          defc __CDBINFO__S_3aLmain_2ec_2emain_24r_24_31_5f_30_24_38_28_7b_32_7dSI_3aS_29_2cR_2c_30_2c_30_2c_5bl_2ch_5d=1
      7                          
      7                          PUBLIC __CDBINFO__S_3aG_24banked_5ffn_24_30_5f_30_24_30_28_7b_32_7dDF_2cSI_3aS_29_2cC_2c_30_2c_30
      7                          defc __CDBINFO__S_3aG_24banked_5ffn_24_30_5f_30_24_30_28_7b_32_7dDF_2cSI_3aS_29_2cC_2c_30_2c_30=1
