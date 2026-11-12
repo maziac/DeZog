@@ -1,0 +1,113 @@
+{
+    "configurations": [
+        {
+            "type": "dezog",
+            "request": "launch",
+            "name": "cspect",
+            "zsim": {
+                "memoryModel": "ZXNEXT"
+            },
+            "remoteType": "cspect",
+            "z88dkv2": [
+                {
+                    "path": "*.lis",
+                    "srcDirs": [
+                        ""
+                    ],
+                    "mapFile": "main.map",
+                    "excludeFiles": []
+                },
+            ],
+            "startAutomatically": true,
+            "history": {
+                "reverseDebugInstructionCount": 10000,
+                "codeCoverageEnabled": false
+            },
+            "commandsAfterLaunch": [],
+            "disassemblerArgs": {
+                "numberOfLines": 20
+            },
+            "smartDisassemblerArgs": {
+                "lowerCase": false
+            },
+            "rootFolder": "${workspaceFolder}",
+            "topOfStack": "0xFF58",
+            "load": "main.nex",
+            "smallValuesMaximum": 513,
+            "tmpDir": ".tmp"
+        },
+        {
+            "type": "dezog",
+            "request": "launch",
+            "name": "zrcp",
+            "zsim": {
+                "memoryModel": "ZXNEXT"
+            },
+            "remoteType": "zrcp",
+            "z88dkv2": [
+                {
+                    "path": "*.lis",
+                    "srcDirs": [
+                        ""
+                    ],
+                    "mapFile": "main.map",
+                    "excludeFiles": []
+                },
+            ],
+            "startAutomatically": true,
+            "history": {
+                "reverseDebugInstructionCount": 10000,
+                "codeCoverageEnabled": false
+            },
+            "commandsAfterLaunch": [],
+            "disassemblerArgs": {
+                "numberOfLines": 20
+            },
+            "smartDisassemblerArgs": {
+                "lowerCase": false
+            },
+            "rootFolder": "${workspaceFolder}",
+            "topOfStack": "0xFF58",
+            "load": "main.nex",
+            "smallValuesMaximum": 513,
+            "tmpDir": ".tmp"
+        },
+        {
+            "type": "dezog",
+            "request": "launch",
+            "name": "zsim",
+            "zsim": {
+                "memoryModel": "ZXNEXT",
+                "Z80N": true
+            },
+            "remoteType": "zsim",
+            "z88dkv2": [
+                {
+                    "path": "*.lis",
+                    "srcDirs": [
+                        ""
+                    ],
+                    "mapFile": "main.map",
+                    "excludeFiles": []
+                },
+            ],
+            "startAutomatically": true,
+            "history": {
+                "reverseDebugInstructionCount": 10000,
+                "codeCoverageEnabled": false
+            },
+            "commandsAfterLaunch": [],
+            "disassemblerArgs": {
+                "numberOfLines": 20
+            },
+            "smartDisassemblerArgs": {
+                "lowerCase": false
+            },
+            "rootFolder": "${workspaceFolder}",
+            "topOfStack": "0xFF58",
+            "load": "main.nex",
+            "smallValuesMaximum": 513,
+            "tmpDir": ".tmp"
+        }
+    ]
+}
