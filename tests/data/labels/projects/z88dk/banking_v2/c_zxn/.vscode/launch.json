@@ -75,7 +75,7 @@
         {
             "type": "dezog",
             "request": "launch",
-            "name": "zsim",
+            "name": "zsim ZXNEXT",
             "zsim": {
                 "memoryModel": "ZXNEXT",
                 "Z80N": true

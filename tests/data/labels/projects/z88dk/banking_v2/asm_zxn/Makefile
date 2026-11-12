@@ -10,7 +10,7 @@ SP  = 5FF0
 
 all: main.nex
 
-main.map: main.asm
+main.map main_extra.bin: main.asm
 	$(ASM) $(ASMFLAGS) main.asm
 
 # NEX file.
@@ -18,7 +18,7 @@ main.map: main.asm
 # of the output (image.map, image*.bin) in which the section 'extra'
 # ($14xxxx) is renamed to PAGE_20. The org and the stack, which appmake
 # reads from the map file, are added to the copy.
-main.nex: main.map
+main.nex: main.map main_extra.bin
 	sed -e 's/= \$$14\(....\) \(.*\), extra,/= $$\1 \2, PAGE_20,/' -e 's/^__extra_/__PAGE_20_/' main.map > image.map
 	echo '__crt_org_code = $$$(ORG) ; const, public, def, , ,' >> image.map
 	echo '__register_sp = $$$(SP) ; const, public, def, , ,' >> image.map

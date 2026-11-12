@@ -10,7 +10,7 @@ SP  = 7FF0
 
 all: main.sna
 
-main.map: main.asm
+main.map main_extra.bin: main.asm
 	$(ASM) $(ASMFLAGS) main.asm
 
 # 128K snapshot.
@@ -18,7 +18,7 @@ main.map: main.asm
 # of the output (image.map, image*.bin) in which the section 'extra'
 # ($04xxxx) is renamed to BANK_4. The org and the stack, which appmake
 # reads from the map file, are added to the copy.
-main.sna: main.map
+main.sna: main.map main_extra.bin
 	sed -e 's/= \$$04\(....\) \(.*\), extra,/= $$\1 \2, BANK_4,/' -e 's/^__extra_/__BANK_4_/' main.map > image.map
 	echo '__crt_org_code = $$$(ORG) ; const, public, def, , ,' >> image.map
 	echo '__register_sp = $$$(SP) ; const, public, def, , ,' >> image.map
