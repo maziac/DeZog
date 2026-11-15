@@ -1,61 +1,66 @@
 main.asm:
-     1                          SECTION CODE            ; No bank prefix, 16 bit ORG: default mapping
-     2                          org $6000
-     3                          SECTION code_user
-     4                          
-     5                          SECTION BANK_0          ; 16k bank 0 at $8000 (not the default page 4)
-     6                          org $8000
-     7                          SECTION code_bank0
-     8                          
-     9                          SECTION BANK_3_H        ; Upper 8k of 16k bank 3: page 7
-    10                          org $E000
-    11                          SECTION code_bank3h
-    12                          
-    13                          SECTION PAGE_21         ; 8k page 21, continues in page 22
-    14                          org $C100
-    15                          SECTION code_page21
-    16                          
-    17                          SECTION extra           ; No bank prefix, 24 bit ORG: page 20 (target zxn)
-    18                          org $14C000
-    19                          SECTION code_extra
-    20                          
-    21                          SECTION code_user
-    22                          PUBLIC _main
-    23                          _main:
-    24                          	; Page each section in (MMU4 = $54 ... MMU7 = $57) and call its function
-    25  0000  ed915400          	nextreg $54,0
-    26  0004  cd0000            	call _banked
-    27  0007  ed915404          	nextreg $54,4
-    28  000b  ed915707          	nextreg $57,7
-    29  000f  cd0000            	call _bank3h_fn
-    30  0012  ed915615          	nextreg $56,21
-    31  0016  ed915716          	nextreg $57,22
-    32  001a  cd0000            	call _page21_fn
-    33  001d  3a0220            	ld a,(_page22_data)
-    34  0020  ed915614          	nextreg $56,20
-    35  0024  cd0000            	call _far
-    36  0027  ed915600          	nextreg $56,0
-    37  002b  ed915701          	nextreg $57,1
-    38  002f  c9                	ret
-    39                          
-    40                          SECTION code_bank0
-    41                          PUBLIC _banked
-    42                          _banked:
-    43  0000  00                	nop
-    44  0001  c9                	ret
-    45                          
-    46                          SECTION code_bank3h
-    47                          PUBLIC _bank3h_fn
-    48                          _bank3h_fn:
-    49  0000  00                	nop
-    50  0001  c9                	ret
-    51                          
-    52                          SECTION code_page21
-    53                          PUBLIC _page21_fn
-    54                          _page21_fn:
-    55  0000  00                	nop
-    56  0001  c9                	ret
-    57  0002  0000000000000000  	defs $2000
+     1                          ; Memory map (as in a z88dk mmap.inc): a section with the bank or page in
+     2                          ; its name (BANK_n, BANK_n_L/H or PAGE_n plus a suffix) and an ORG, followed
+     3                          ; by the sections the code is put in. These have no bank in their name: the
+     4                          ; bank is the block they are linked into (z88dk/z88dk#3197), e.g.
+     5                          ;   __banked_code_head = $8000 ; const, public, def, , BANK_0_CODE,
+     6                          SECTION CODE            ; No bank, 16 bit ORG: default mapping
+     7                          org $6000
+     8                          SECTION code_user
+     9                          
+    10                          SECTION BANK_0_CODE     ; 16k bank 0 at $8000 (not the default page 4)
+    11                          org $8000
+    12                          SECTION banked_code
+    13                          
+    14                          SECTION BANK_3_H_CODE   ; Upper 8k of 16k bank 3: page 7
+    15                          org $E000
+    16                          SECTION upper_code
+    17                          
+    18                          SECTION PAGE_21_CODE    ; 8k page 21, continues in page 22
+    19                          org $C100
+    20                          SECTION paged_code
+    21                          
+    22                          SECTION PAGE_20_CODE    ; 24 bit ORG: page 20 (8k, target zxn)
+    23                          org $14C000
+    24                          SECTION far_code
+    25                          
+    26                          SECTION code_user
+    27                          PUBLIC _main
+    28                          _main:
+    29                          	; Page each section in (MMU4 = $54 ... MMU7 = $57) and call its function
+    30  0000  ed915400          	nextreg $54,0
+    31  0004  cd0000            	call _banked
+    32  0007  ed915404          	nextreg $54,4
+    33  000b  ed915707          	nextreg $57,7
+    34  000f  cd0000            	call _bank3h_fn
+    35  0012  ed915615          	nextreg $56,21
+    36  0016  ed915716          	nextreg $57,22
+    37  001a  cd0000            	call _page21_fn
+    38  001d  3a0220            	ld a,(_page22_data)
+    39  0020  ed915614          	nextreg $56,20
+    40  0024  cd0000            	call _far
+    41  0027  ed915600          	nextreg $56,0
+    42  002b  ed915701          	nextreg $57,1
+    43  002f  c9                	ret
+    44                          
+    45                          SECTION banked_code
+    46                          PUBLIC _banked
+    47                          _banked:
+    48  0000  00                	nop
+    49  0001  c9                	ret
+    50                          
+    51                          SECTION upper_code
+    52                          PUBLIC _bank3h_fn
+    53                          _bank3h_fn:
+    54  0000  00                	nop
+    55  0001  c9                	ret
+    56                          
+    57                          SECTION paged_code
+    58                          PUBLIC _page21_fn
+    59                          _page21_fn:
+    60  0000  00                	nop
+    61  0001  c9                	ret
+    62  0002  0000000000000000  	defs $2000
               0000000000000000  
               0000000000000000  
               0000000000000000  
@@ -1079,12 +1084,17 @@ main.asm:
               0000000000000000  
               0000000000000000  
               0000000000000000  
-    58                          _page22_data:
-    59  2002  01                	defb 1
-    60                          
-    61                          SECTION code_extra
-    62                          PUBLIC _far
-    63                          _far:
-    64  0000  00                	nop
-    65  0001  c9                	ret
-    66                          
+    63                          _page22_data:
+    64  2002  01                	defb 1
+    65                          
+    66                          SECTION far_code
+    67                          PUBLIC _far
+    68                          _far:
+    69  0000  00                	nop
+    70  0001  c9                	ret
+    71                          
+    72                          ; Start address and stack of the image, read by appmake from the map file
+    73                          PUBLIC __crt_org_code, __register_sp
+    74                          defc __crt_org_code = $6000
+    75                          defc __register_sp = $5FF0
+    76                          

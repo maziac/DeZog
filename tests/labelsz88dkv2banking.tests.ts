@@ -56,31 +56,40 @@ suite('Labels (z88dk v2 banking projects)', () => {
 
 		test('zx128', () => {
 			read('asm_zx128', new MemoryModelZx128k(), 'main.lis');
-			// CODE: no bank prefix, 16 bit: default (bank 2 at 0x8000)
+			// CODE: no bank, 16 bit: default (bank 2 at 0x8000)
 			assert.equal(lbls.getNumberForLabel('_main'), page(2, 0x8000));
-			// BANK_3 with 16 bit ORG
+			// fn_code in block BANK_3_CODE, 16 bit ORG
 			assert.equal(lbls.getNumberForLabel('_bank3_fn'), page(3, 0xC000));
-			assert.equal(addrOfLine('main.asm', 32), page(3, 0xC001));
-			// 24 bit ORG $04C000
+			assert.equal(addrOfLine('main.asm', 38), page(3, 0xC001));
+			// far_code in block BANK_4_CODE, 24 bit ORG $04C000
 			assert.equal(lbls.getNumberForLabel('_far'), page(4, 0xC000));
-			assert.equal(addrOfLine('main.asm', 38), page(4, 0xC001));
+			assert.equal(addrOfLine('main.asm', 44), page(4, 0xC001));
+		});
+
+		test('zx128 on a ZX Next', () => {
+			// The 16k banks of the block names are converted into 8k pages
+			read('asm_zx128', new MemoryModelZxNext(), 'main.lis');
+			assert.equal(lbls.getNumberForLabel('_main'), page(4, 0x8000));
+			assert.equal(lbls.getNumberForLabel('_bank3_fn'), page(6, 0xC000));
+			assert.equal(lbls.getNumberForLabel('_far'), page(8, 0xC000));
+			assert.equal(addrOfLine('main.asm', 44), page(8, 0xC001));
 		});
 
 		test('zxn', () => {
 			read('asm_zxn', new MemoryModelZxNext(), 'main.lis');
 			// CODE: default (page 11 at 0x6000)
 			assert.equal(lbls.getNumberForLabel('_main'), page(11, 0x6000));
-			// BANK_0 at 0x8000: page 0, not the default page 4
+			// banked_code in block BANK_0_CODE at 0x8000: page 0, not the default page 4
 			assert.equal(lbls.getNumberForLabel('_banked'), page(0, 0x8000));
-			assert.equal(addrOfLine('main.asm', 44), page(0, 0x8001));
-			// BANK_3_H: upper 8k of bank 3
+			assert.equal(addrOfLine('main.asm', 49), page(0, 0x8001));
+			// upper_code in block BANK_3_H_CODE: upper 8k of bank 3
 			assert.equal(lbls.getNumberForLabel('_bank3h_fn'), page(7, 0xE000));
-			// PAGE_21, continued in page 22
+			// paged_code in block PAGE_21_CODE, continued in page 22
 			assert.equal(lbls.getNumberForLabel('_page21_fn'), page(21, 0xC100));
 			assert.equal(lbls.getNumberForLabel('_page22_data'), page(22, 0xE102));
-			assert.equal(addrOfLine('main.asm', 56), page(21, 0xC101));
-			assert.equal(addrOfLine('main.asm', 60), page(22, 0xE103));
-			// 24 bit ORG $14C000
+			assert.equal(addrOfLine('main.asm', 61), page(21, 0xC101));
+			assert.equal(addrOfLine('main.asm', 65), page(22, 0xE103));
+			// far_code in block PAGE_20_CODE, 24 bit ORG $14C000
 			assert.equal(lbls.getNumberForLabel('_far'), page(20, 0xC000));
 		});
 	});
@@ -99,7 +108,7 @@ suite('Labels (z88dk v2 banking projects)', () => {
 		test('zx128', () => {
 			read('c_zx128', new MemoryModelZx128k(), '*.c.lis');
 			assert.equal(lbls.getNumberForLabel('_main'), page(2, 0x823B));
-			// --codesegBANK_6, 16 bit address $C000
+			// banked_code in block BANK_6_CODE (mmap.asm)
 			assert.equal(lbls.getNumberForLabel('_banked_fn'), page(6, 0xC000));
 			assert.equal(addrOfLine('banked.c', 1), page(6, 0xC000));
 			assert.equal(addrOfLine('banked.c', 3), page(6, 0xC000));
@@ -111,7 +120,7 @@ suite('Labels (z88dk v2 banking projects)', () => {
 		test('zxn', () => {
 			read('c_zxn', new MemoryModelZxNext(), '*.c.lis');
 			assert.equal(lbls.getNumberForLabel('_main'), page(4, 0x8CAE));
-			// --codesegPAGE_20, 16 bit address $C000
+			// banked_code in block PAGE_20_CODE (mmap.inc)
 			assert.equal(lbls.getNumberForLabel('_banked_fn'), page(20, 0xC000));
 			assert.equal(addrOfLine('banked.c', 3), page(20, 0xC008));
 			const entry = lbls.getSourceFileEntryForAddress(page(20, 0xC008))!;

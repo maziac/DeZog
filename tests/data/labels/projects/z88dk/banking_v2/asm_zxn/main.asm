@@ -1,22 +1,27 @@
-SECTION CODE            ; No bank prefix, 16 bit ORG: default mapping
+; Memory map (as in a z88dk mmap.inc): a section with the bank or page in
+; its name (BANK_n, BANK_n_L/H or PAGE_n plus a suffix) and an ORG, followed
+; by the sections the code is put in. These have no bank in their name: the
+; bank is the block they are linked into (z88dk/z88dk#3197), e.g.
+;   __banked_code_head = $8000 ; const, public, def, , BANK_0_CODE,
+SECTION CODE            ; No bank, 16 bit ORG: default mapping
 org $6000
 SECTION code_user
 
-SECTION BANK_0          ; 16k bank 0 at $8000 (not the default page 4)
+SECTION BANK_0_CODE     ; 16k bank 0 at $8000 (not the default page 4)
 org $8000
-SECTION code_bank0
+SECTION banked_code
 
-SECTION BANK_3_H        ; Upper 8k of 16k bank 3: page 7
+SECTION BANK_3_H_CODE   ; Upper 8k of 16k bank 3: page 7
 org $E000
-SECTION code_bank3h
+SECTION upper_code
 
-SECTION PAGE_21         ; 8k page 21, continues in page 22
+SECTION PAGE_21_CODE    ; 8k page 21, continues in page 22
 org $C100
-SECTION code_page21
+SECTION paged_code
 
-SECTION extra           ; No bank prefix, 24 bit ORG: page 20 (target zxn)
+SECTION PAGE_20_CODE    ; 24 bit ORG: page 20 (8k, target zxn)
 org $14C000
-SECTION code_extra
+SECTION far_code
 
 SECTION code_user
 PUBLIC _main
@@ -37,19 +42,19 @@ _main:
 	nextreg $57,1
 	ret
 
-SECTION code_bank0
+SECTION banked_code
 PUBLIC _banked
 _banked:
 	nop
 	ret
 
-SECTION code_bank3h
+SECTION upper_code
 PUBLIC _bank3h_fn
 _bank3h_fn:
 	nop
 	ret
 
-SECTION code_page21
+SECTION paged_code
 PUBLIC _page21_fn
 _page21_fn:
 	nop
@@ -58,8 +63,13 @@ _page21_fn:
 _page22_data:
 	defb 1
 
-SECTION code_extra
+SECTION far_code
 PUBLIC _far
 _far:
 	nop
 	ret
+
+; Start address and stack of the image, read by appmake from the map file
+PUBLIC __crt_org_code, __register_sp
+defc __crt_org_code = $6000
+defc __register_sp = $5FF0

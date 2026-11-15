@@ -17,6 +17,6 @@ main.sna: main.c banked.c
 
 # Removes the build products (the .lis and .map files are tracked)
 clean:
-	rm -f *.o *.bin *.sna main main.lis
+	rm -f *.o *.bin *.sna main.sna *.lis main.map
 
 .PHONY: all clean

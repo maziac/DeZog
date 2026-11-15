@@ -4,30 +4,19 @@ ASM      ?= z88dk-z80asm
 ASMFLAGS ?= -b -m -l
 APPMAKE  ?= z88dk-appmake
 
-# Start address and stack of the image (hex)
-ORG = 8000
-SP  = 7FF0
-
 all: main.sna
 
 main.map: main.asm
 	$(ASM) $(ASMFLAGS) main.asm
 
-# 128K snapshot.
-# appmake does not understand sections with a 24 bit ORG, so it gets a copy
-# of the output (image.map, image*.bin) in which the section 'extra'
-# ($04xxxx) is renamed to BANK_4. The org and the stack, which appmake
-# reads from the map file, are added to the copy.
+# 128K snapshot. appmake takes the bank of each binary (main_BANK_n_CODE.bin)
+# from the BANK_n in its name, and the start address and the stack from the
+# map file (__crt_org_code, __register_sp).
 main.sna: main.map
-	sed -e 's/= \$$04\(....\) \(.*\), extra,/= $$\1 \2, BANK_4,/' -e 's/^__extra_/__BANK_4_/' main.map > image.map
-	echo '__crt_org_code = $$$(ORG) ; const, public, def, , ,' >> image.map
-	echo '__register_sp = $$$(SP) ; const, public, def, , ,' >> image.map
-	for f in main*.bin; do cp $$f image$${f#main}; done
-	mv image_extra.bin image_BANK_4.bin
-	$(APPMAKE) +zx --sna -b image -c image -o main.sna
+	$(APPMAKE) +zx --sna -b main -c main -o main.sna
 
 # Removes the build products (the .lis and .map files are tracked)
 clean:
-	rm -f *.o *.bin main.sna image.map
+	rm -f *.o *.bin *.lis main.sna main.map
 
 .PHONY: all clean

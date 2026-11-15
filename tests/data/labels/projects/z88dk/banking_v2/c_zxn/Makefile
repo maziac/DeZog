@@ -1,28 +1,24 @@
-# Variations can be tested from the command line, e.g.:
-#   make CLIB=sdcc_ix
-#   make DEBUG=
-#   make CFLAGS_EXTRA=-O2
 TARGET   = zxn
 SUBTYPE ?= -subtype=nex
 CLIB    ?= sdcc_iy
 DEBUG   ?= -debug
 CFLAGS_EXTRA ?=
-# The stack must stay below $C000: banked_call pages the banked code in there.
 STACK    = -pragma-define:REGISTER_SP=0xC000
-ZCC      = zcc +$(TARGET) $(SUBTYPE) -clib=$(CLIB) $(DEBUG) $(CFLAGS_EXTRA) $(STACK)
-BANKFLAGS = --codesegPAGE_20 --constsegPAGE_20
+# zpragma.inc appends mmap.inc to the memory map of the CRT
+PRAGMAS  = -pragma-include:zpragma.inc
+ZCC      = zcc +$(TARGET) $(SUBTYPE) -clib=$(CLIB) $(DEBUG) $(CFLAGS_EXTRA) $(STACK) $(PRAGMAS)
+# The sections have no page in their name, mmap.inc puts them in page 20
+BANKFLAGS = --codeseg banked_code --constseg banked_const
 
 all: main.nex
 
 banked.o: banked.c
 	$(ZCC) -c --list $(BANKFLAGS) banked.c -o banked.o
 
-# NEX file, contains page 20. Also creates main.map and the listings.
-main.nex: main.c banked.o
+main.nex: main.c banked.o mmap.inc zpragma.inc
 	$(ZCC) -m --list main.c banked.o -o main -create-app
 
-# Removes the build products (the .lis and .map files are tracked)
 clean:
-	rm -f *.o *.bin *.nex main main.lis
+	rm -f *.o *.bin *.nex *.lis *.map
 
 .PHONY: all clean

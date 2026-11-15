@@ -16,6 +16,6 @@ main.sna: main.bin
 
 # Removes the build products (the .lis and .map files are tracked)
 clean:
-	rm -f *.o *.bin *.sna
+	rm -f *.o *.bin *.sna *.map *.lis
 
 .PHONY: all clean

@@ -1,40 +1,51 @@
 main.asm:
-     1                          SECTION CODE            ; No bank prefix, 16 bit ORG: default mapping
-     2                          org $8000
-     3                          SECTION code_user
-     4                          
-     5                          SECTION BANK_3          ; Bank prefix, 16 bit ORG
-     6                          org $C000
-     7                          SECTION code_bank3
-     8                          
-     9                          SECTION extra           ; No bank prefix, 24 bit ORG: bank 4 (target zx)
-    10                          org $04C000
-    11                          SECTION code_extra
-    12                          
-    13                          SECTION code_user
-    14                          PUBLIC _main
-    15                          _main:
-    16                          	; Page each bank in at $C000 (port $7FFD, ROM 1) and call its function
-    17  0000  01fd7f            	ld bc,$7FFD
-    18  0003  3e13              	ld a,$10+3
-    19  0005  ed79              	out (c),a
-    20  0007  cd0000            	call _bank3_fn
-    21  000a  3e14              	ld a,$10+4
-    22  000c  ed79              	out (c),a
-    23  000e  cd0000            	call _far
-    24  0011  3e10              	ld a,$10+0
-    25  0013  ed79              	out (c),a
-    26  0015  c9                	ret
-    27                          
-    28                          SECTION code_bank3
-    29                          PUBLIC _bank3_fn
-    30                          _bank3_fn:
-    31  0000  00                	nop
-    32  0001  c9                	ret
+     1                          ; Memory map (as in a z88dk mmap.inc): a section with the bank in its name
+     2                          ; (BANK_n plus a suffix) and an ORG, followed by the sections the code is
+     3                          ; put in. These have no bank in their name: the bank is the block they are
+     4                          ; linked into (z88dk/z88dk#3197), e.g.
+     5                          ;   __fn_code_head = $C000 ; const, public, def, , BANK_3_CODE,
+     6                          SECTION CODE            ; No bank, 16 bit ORG: default mapping
+     7                          org $8000
+     8                          SECTION code_user
+     9                          
+    10                          SECTION BANK_3_CODE     ; 16 bit ORG: bank only from the block name
+    11                          org $C000
+    12                          SECTION fn_code
+    13                          
+    14                          SECTION BANK_4_CODE     ; 24 bit ORG: bank 4 (16k, target zx)
+    15                          org $04C000
+    16                          SECTION far_code
+    17                          
+    18                          
+    19                          SECTION code_user
+    20                          PUBLIC _main
+    21                          _main:
+    22                          	; Page each bank in at $C000 (port $7FFD, ROM 1) and call its function
+    23  0000  01fd7f            	ld bc,$7FFD
+    24  0003  3e13              	ld a,$10+3
+    25  0005  ed79              	out (c),a
+    26  0007  cd0000            	call _bank3_fn
+    27  000a  3e14              	ld a,$10+4
+    28  000c  ed79              	out (c),a
+    29  000e  cd0000            	call _far
+    30  0011  3e10              	ld a,$10+0
+    31  0013  ed79              	out (c),a
+    32  0015  c9                	ret
     33                          
-    34                          SECTION code_extra
-    35                          PUBLIC _far
-    36                          _far:
+    34                          SECTION fn_code
+    35                          PUBLIC _bank3_fn
+    36                          _bank3_fn:
     37  0000  00                	nop
     38  0001  c9                	ret
     39                          
+    40                          SECTION far_code
+    41                          PUBLIC _far
+    42                          _far:
+    43  0000  00                	nop
+    44  0001  c9                	ret
+    45                          
+    46                          ; Start address and stack of the image, read by appmake from the map file
+    47                          PUBLIC __crt_org_code, __register_sp
+    48                          defc __crt_org_code = $8000
+    49                          defc __register_sp = $7FF0
+    50                          

@@ -1,4 +1,4 @@
-/var/folders/74/5t45z_z52dl0fz_b_xmgwcc00000gn/T/tmpk3uW6gUk.asm:
+/var/folders/74/5t45z_z52dl0fz_b_xmgwcc00000gn/T/tmpZgaeHide.asm:
      1                          MODULE banked_c
      2                          LINE 0, "banked.c"
 banked.c:
@@ -249,7 +249,7 @@ banked.c:
    244                          ;--------------------------------------------------------
    245                          ; code
    246                          ;--------------------------------------------------------
-   247                          	SECTION BANK_6
+   247                          	SECTION banked_code
    248                          C_LINE 1,"banked.c::x::0::7	"
 banked.c::x::0::7	:
      1                          ;	---------------------------------

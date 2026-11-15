@@ -1,4 +1,11 @@
 __CODE_head                     = $8000 ; const, public, def, , CODE,
+__CODE_size                     = $0000 ; const, public, def, , CODE,
+__CODE_tail                     = $8000 ; const, public, def, , CODE,
 __code_user_head                = $8000 ; const, public, def, , CODE,
+__code_user_size                = $0006 ; const, public, def, , CODE,
+__code_user_tail                = $8006 ; const, public, def, , CODE,
+__head                          = $0000 ; const, public, def, , ,
+__size                          = $8006 ; const, public, def, , ,
+__tail                          = $8006 ; const, public, def, , ,
 _main                           = $8000 ; addr, public, , main, code_user, main.asm:7
 sub                             = $8004 ; addr, local, , main, code_user, main.asm:10

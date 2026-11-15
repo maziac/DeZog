@@ -1,14 +1,20 @@
-SECTION CODE            ; No bank prefix, 16 bit ORG: default mapping
+; Memory map (as in a z88dk mmap.inc): a section with the bank in its name
+; (BANK_n plus a suffix) and an ORG, followed by the sections the code is
+; put in. These have no bank in their name: the bank is the block they are
+; linked into (z88dk/z88dk#3197), e.g.
+;   __fn_code_head = $C000 ; const, public, def, , BANK_3_CODE,
+SECTION CODE            ; No bank, 16 bit ORG: default mapping
 org $8000
 SECTION code_user
 
-SECTION BANK_3          ; Bank prefix, 16 bit ORG
+SECTION BANK_3_CODE     ; 16 bit ORG: bank only from the block name
 org $C000
-SECTION code_bank3
+SECTION fn_code
 
-SECTION extra           ; No bank prefix, 24 bit ORG: bank 4 (target zx)
+SECTION BANK_4_CODE     ; 24 bit ORG: bank 4 (16k, target zx)
 org $04C000
-SECTION code_extra
+SECTION far_code
+
 
 SECTION code_user
 PUBLIC _main
@@ -25,14 +31,19 @@ _main:
 	out (c),a
 	ret
 
-SECTION code_bank3
+SECTION fn_code
 PUBLIC _bank3_fn
 _bank3_fn:
 	nop
 	ret
 
-SECTION code_extra
+SECTION far_code
 PUBLIC _far
 _far:
 	nop
 	ret
+
+; Start address and stack of the image, read by appmake from the map file
+PUBLIC __crt_org_code, __register_sp
+defc __crt_org_code = $8000
+defc __register_sp = $7FF0

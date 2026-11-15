@@ -1,0 +1,19 @@
+/var/folders/74/5t45z_z52dl0fz_b_xmgwcc00000gn/T/tmpuGyJmFQS.asm:
+     1                          MODULE mmap_asm
+     2                          LINE 0, "mmap.asm"
+mmap.asm:
+                                
+     1                          ; Memory map for the banked code. Linked before the other modules, so these
+     2                          ; sections follow the memory map of the CRT in link order. (The classic CRT
+     3                          ; can only replace its whole memory map, it has no CRT_APPEND_MMAP.)
+     4                          ; A section with the bank in its name (BANK_n plus a suffix) and an ORG,
+     5                          ; followed by the sections the code is put in (--codeseg, --constseg).
+     6                          ; These have no bank in their name: the bank is the block they are linked
+     7                          ; into (z88dk/z88dk#3197), e.g.
+     8                          ;   __banked_code_head = $6C000 ; const, public, def, , BANK_6_CODE,
+     9                          
+    10                          SECTION BANK_6_CODE     ; 16k bank 6
+    11                          	org 0x06C000
+    12                          SECTION banked_code
+    13                          SECTION banked_const
+    14                          
